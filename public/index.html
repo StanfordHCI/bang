@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bang!</title>
+  <link rel="stylesheet" href="style.css">
+<!--   <script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script> -->
+</head>
+
+<body>
+  <ul class="pages">
+    <li id="chat" class="chat page">
+      <div class="chatArea">
+        <ul class="messages"></ul>
+      </div>
+      <input class="inputMessage" placeholder="Type here..." oninput="console.log(this.value)"/>
+    </li>
+    <li id="login" class="login page">
+      <div class="form">
+        <h3 class="title">Please enter your MTurk ID.</h3>
+        <input class="usernameInput" type="text" maxlength="14" />
+        <p style="color: white;">Please double check because we can't pay you if its not accurate.<br>When done, press <b>enter</b>.</p>
+      </div>
+    </li>
+    <li id="holding" class="login page">
+      <div class="form">
+        <h3 class="title">You're signed in as <b><span id="username"></span></b>.</h3>
+        <p style="color: white;">Wait here while we set things up.</p>
+      </div>
+    </li>
+    <li id="preSurvey" class="login page">
+      <div class="form">
+        Please answer the following questions to get started.
+        <ul class="postSurveyQuestions"></ul>
+      </div>
+    </li>
+    <li id="postSurvey" class="login page">
+      <div class="form">
+        <form style="color: white;">
+         <h3 class="title">Two of the four teams you worked with were the same. Select the pair of teams you think were the same?</h3>
+         <input type="radio" name="team" value="1 and 2"><label for="1 and 2"> 1 and 2</label><br>
+         <input type="radio" name="team" value="1 and 3"><label for="1 and 3"> 1 and 3</label><br>
+         <input type="radio" name="team" value="1 and 4"><label for="1 and 4"> 1 and 4</label><br>
+         <input type="radio" name="team" value="2 and 3"><label for="2 and 3"> 2 and 3</label><br>
+         <input type="radio" name="team" value="2 and 4"><label for="2 and 4"> 2 and 4</label><br>
+         <input type="radio" name="team" value="3 and 4"><label for="3 and 4"> 3 and 4</label><br>
+          <br>
+          <input type="submit" value="Submit" onclick="submitSurvey()">
+      </form>
+        
+      </div>
+    </li>
+    <li id="finishing" class="login page">
+      <div class="form">
+        <h3 class="title">Thanks for participating, you're all done!</h3>
+        <p style="color: white;">Paste <span id="finishingcode"></span> into the MTurk task to receive payment.</p>
+      </div>
+    </li>
+  </ul>
+
+  <script src="https://code.jquery.com/jquery-2.2.2.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/client.js"></script>
+</body>
+
+</html>
