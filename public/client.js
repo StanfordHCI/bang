@@ -51,7 +51,6 @@ $(function() {
     console.log(this) 
   }
   
-  
     /* globals io */
     const socket = io();
 
@@ -230,28 +229,25 @@ $(function() {
   // addSurvey($messsages,{post:true})
   
   // Adds a survey to pre or post, depending on the element passed
-  function addSurvey (element, options) {
-      const $element = $(element);
+//   function addSurvey (element, options) {
+//       const $element = $(element);
 
-    // Setup default options
-    if (!options) { options = {}; }
-    if (typeof options.post === 'undefined') { options.post = false; }
+//     // Setup default options
+//     if (!options) { options = {}; }
+//     if (typeof options.post === 'undefined') { options.post = false; }
 
-    // Apply options
-    if (options.fade) {
-      $element.hide().fadeIn(FADE_TIME);
-    }
-    if (options.post) {
-      $messages.val($element);
-    } else {
-      $messages.val($element);
-    }
-    $messages[0].scrollTop = $messages[0].scrollHeight;
-  }
+//     // Apply options
+//     if (options.fade) {
+//       $element.hide().fadeIn(FADE_TIME);
+//     }
+//     if (options.post) {
+//       $messages.val($element);
+//     } else {
+//       $messages.val($element);
+//     }
+//     $messages[0].scrollTop = $messages[0].scrollHeight;
+//   }
   
-  function submitSurvey () {
-    socket.emit('postSurveySubmit', 'Hi')
-  }
   
   // Keyboard events
   $window.keydown(event => {
@@ -353,12 +349,19 @@ $(function() {
     }, 1000 * 3)
   });
 
-  socket.on('timer',data => { log("You're about 90% done with this session.") });
+  socket.on('timer',data => { log("You're about 90% done with this session. Get ready to finish and mark your chosen tagline with: *Result*") });
 
   socket.on('postSurvey',data => {
     hideAll();
     $postSurvey.show();
   })
+  
+  $('.postForm').on("submit", socket.emit('mostSurveySubmit', this))
+  
+  // $('.postForm').on("submit", "My data", data => {
+  //   alert("here")
+  //   socket.emit('postSurveySubmit',data)
+  // })
 
   socket.on('finished',data => {
     hideAll();

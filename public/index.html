@@ -35,17 +35,15 @@
       </div>
     </li>
     <li id="postSurvey" class="login page">
-      <div class="form">
+      <div class="form" id="postForm">
         <form style="color: white;">
-         <h3 class="title">Two of the four teams you worked with were the same. Select the pair of teams you think were the same?</h3>
+         <h3 class="title">Select which teams you worked with were the same people.</h3>
          <input type="radio" name="team" value="1 and 2"><label for="1 and 2"> 1 and 2</label><br>
          <input type="radio" name="team" value="1 and 3"><label for="1 and 3"> 1 and 3</label><br>
-         <input type="radio" name="team" value="1 and 4"><label for="1 and 4"> 1 and 4</label><br>
          <input type="radio" name="team" value="2 and 3"><label for="2 and 3"> 2 and 3</label><br>
-         <input type="radio" name="team" value="2 and 4"><label for="2 and 4"> 2 and 4</label><br>
-         <input type="radio" name="team" value="3 and 4"><label for="3 and 4"> 3 and 4</label><br>
+         <input type="radio" name="team" value="None were the same"><label for="None were the same"> None were the same</label><br>
           <br>
-          <input type="submit" value="Submit" onclick="submitSurvey()">
+          <input id="submitButton" type="submit" value="Submit">
       </form>
         
       </div>
