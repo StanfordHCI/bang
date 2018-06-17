@@ -9,8 +9,8 @@
   "dependencies": {
     "coffeescript": "latest",
     "express": "^4.16.3",
-    "socket.io": "^2.1.1",
-    "nedb": "*"
+    "nedb": "^1.8.0",
+    "socket.io": "^2.1.1"
   },
   "engines": {
     "node": "8.11.1"
