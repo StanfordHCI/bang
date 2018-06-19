@@ -1,0 +1,23 @@
+{
+  "name": "TeamChat",
+  "version": "0.1.0",
+  "description": "A simple team chat system",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "coffeescript": "latest",
+    "express": "^4.16.3",
+    "nedb": "^1.8.0",
+    "socket.io": "^2.1.1"
+  },
+  "engines": {
+    "node": "8.11.1"
+  },
+  "keywords": [
+    "node",
+    "research"
+  ],
+  "license": "MIT"
+}
