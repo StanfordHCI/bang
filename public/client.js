@@ -15,7 +15,7 @@ $(function() {
   const $preSurvey = $('#preSurvey'); // The preSurvey page
   const $postSurvey = $('#postSurvey'); // The postSurvey page
   const $finishingPage = $('#finishing'); // The finishing page
-  
+
   const hideAll = () => {
     $loginPage.hide();
     $chatPage.hide();
@@ -24,33 +24,33 @@ $(function() {
     $postSurvey.hide();
     $finishingPage.hide();
   }
-  
+
   let holdingUsername = document.getElementById('username');
   let messagesSafe = document.getElementsByClassName('messages')[0];
   let finishingcode = document.getElementById('finishingcode');
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
 
-  // Clear before starting  
+  // Clear before starting
   hideAll();
   $loginPage.show();
-  
+
   // Get permission to notify
   Notification.requestPermission()
-  
+
   // Prompt for setting a username
   let username;
   let connected = false;
   let typing = false;
   let lastTypingTime;
   let $currentInput = $usernameInput.focus();
-  
+
   const users = ["mark"]
 
   const autocomplete = () => {
-    console.log(this) 
+    console.log(this)
   }
-  
+
     /* globals io */
     const socket = io();
 
@@ -58,7 +58,7 @@ $(function() {
   $usernameInput.val('');
 
   // Implements notifications
-  let notify = (title, body) => { 
+  let notify = (title, body) => {
     if (Notification.permission !== "granted") { Notification.requestPermission()
     } else {
       if (!document.hasFocus()) {
@@ -81,9 +81,9 @@ $(function() {
   function setUsername () {
     username = cleanInput($usernameInput.val().trim());
     $usernameInput.innerHTML = username;
-    
+
     // If the username is valid
-    if (username) {  
+    if (username) {
       hideAll();
       $holdingPage.show();
       $loginPage.off('click');
@@ -225,9 +225,9 @@ $(function() {
       const index = Math.abs(hash % COLORS.length);
       return COLORS[index];
   }
-  
+
   // addSurvey($messsages,{post:true})
-  
+
   // Adds a survey to pre or post, depending on the element passed
 //   function addSurvey (element, options) {
 //       const $element = $(element);
@@ -247,8 +247,8 @@ $(function() {
 //     }
 //     $messages[0].scrollTop = $messages[0].scrollHeight;
 //   }
-  
-  
+
+
   // Keyboard events
   $window.keydown(event => {
     // Auto-focus the current input when a key is typed
@@ -287,7 +287,7 @@ $(function() {
   socket.on('login', data => {
     connected = true;
     // Display the welcome message
-    const message = "Welcome";  
+    const message = "Welcome";
 
     log(message, { prepend: true });
     addParticipantsMessage(data);
@@ -355,9 +355,9 @@ $(function() {
     hideAll();
     $postSurvey.show();
   })
-  
-  $('.postForm').on("submit", socket.emit('mostSurveySubmit', this))
-  
+
+  $('.postForm').on("submit", socket.emit('postSurveySubmit', this))
+
   // $('.postForm').on("submit", "My data", data => {
   //   alert("here")
   //   socket.emit('postSurveySubmit',data)
@@ -368,5 +368,5 @@ $(function() {
     $finishingPage.show();
     finishingcode.innerText = data.finishingCode
   })
-  
+
 });
