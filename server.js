@@ -1,7 +1,7 @@
 //Settings
-const devMode = true
-const teamSize = 1;
-const roundMinutes = devMode ? 0.001 : 10;
+const devMode = false
+const teamSize = 2
+const roundMinutes = 1
 
 // Setup basic express server
 let tools = require('./tools');
@@ -178,7 +178,7 @@ io.on('connection', (socket) => {
 
           // update DB with change
           db.users.update({ id: socket.id }, {$set: {active: false}}, {}, (err, numReplaced) => {
-                          console.log(err ? "Activity not changed:" + err : "User left" + socket.id)
+                          console.log(err ? "Activity not changed:" + err : "User left " + socket.id)
           })
 
           // users.forEach(user => {
@@ -262,11 +262,11 @@ io.on('connection', (socket) => {
 
   // Task
   socket.on('postSurveySubmit', (data) => {
+    if (users.length < people.length) { return } //are all users ready?
     let result = data.location.search.slice(6);
     console.log("Survey submitted:", result);
-
+    
     io.in(socket.id).emit('finished', {finishingCode: socket.id});
-
   });
 
 });

@@ -346,12 +346,12 @@ packages:
     dev: false
     resolution:
       integrity: sha1-mkNrLMd0bKWd56QfpGmz77dr2H4=
-  /localforage/1.7.1:
+  /localforage/1.7.2:
     dependencies:
       lie: 3.1.1
     dev: false
     resolution:
-      integrity: sha1-5JJ+BCMCuGTbMPMhHxO1xvDell0=
+      integrity: sha1-+kRCYC+Abt0rympUq05lbwMfEhw=
   /media-typer/0.3.0:
     dev: false
     engines:
@@ -404,7 +404,7 @@ packages:
     dependencies:
       async: 0.2.10
       binary-search-tree: 0.2.5
-      localforage: 1.7.1
+      localforage: 1.7.2
       mkdirp: 0.5.1
       underscore: 1.4.4
     dev: false
@@ -646,5 +646,5 @@ shrinkwrapVersion: 3
 specifiers:
   coffeescript: latest
   express: ^4.16.3
-  nedb: '*'
+  nedb: ^1.8.0
   socket.io: ^2.1.1
