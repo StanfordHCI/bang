@@ -74,7 +74,7 @@ $(function() {
     } else {
       message += "there are " + data.numUsers + " participants";
     }
-    log(message);
+    // log(message);
   }
 
   // Sets the client's username
@@ -108,7 +108,8 @@ $(function() {
 
   // Log a message
   function log (message, options) {
-      const $el = $('<li>').addClass('log').text(message);
+      const $el = $('<li>').addClass('log').html(message);
+      // const $el = $('<li>').addClass('log').(message);
       addMessageElement($el, options);
   }
 
@@ -289,7 +290,7 @@ $(function() {
     // Display the welcome message
     const message = "Welcome";
 
-    log(message, { prepend: true });
+    // log(message, { prepend: true });
     addParticipantsMessage(data);
   });
 
@@ -335,6 +336,9 @@ $(function() {
     hideAll();
     $chatPage.show();
     log(data.task);
+    log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
+    log("You will have <strong>10 minutes</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
+    log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
     $currentInput = $inputMessage.focus();
     notify("Session ready", "Come back and join in!")
   });
@@ -349,7 +353,12 @@ $(function() {
     }, 1000 * 3)
   });
 
-  socket.on('timer',data => { log("You're about 90% done with this session. Get ready to finish and mark your chosen tagline with: *Result*") });
+  socket.on('timer',data => {
+    log("You're about <strong>90% done with this session</strong>. Enter your final result now.")
+    log("Remember, it needs to be <strong>maximum 30 characters long</strong>.")
+    log("To indicate your final result, <strong>start the line with am exclamation mark (i.e., '!')</strong>. We will not count that character toward your length limit.")
+    log("<br>If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat.")
+  });
 
   socket.on('postSurvey',data => {
     hideAll();

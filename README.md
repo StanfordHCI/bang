@@ -7,7 +7,7 @@
 
 ## Conditions
 
-| | Truth | Deception | 
+| | Truth | Deception |
 |--|:-:|:-:|
 | **Reset** | ? | treatment |
 | **Same** | control | ? |
@@ -21,37 +21,26 @@ Are teams persistent or different?
 2. Training: to a point of negligible improvement in individual and team tasks.
 3. Team tasks: game, task, negotiation, discussion
 
+## Tools
 
-## Taks
+- [NeDB](https://github.com/louischatriot/nedb/)  and perhaps MongoDB later if needed.
+- [MTurk API](https://blog.mturk.com/tutorial-getting-started-with-mturk-and-node-js-72826ad6e002)
+- [supervisor]()
 
-- [x] Set up basic chat room
-- [x] Build name deception - hiding any one member’s name from other members
-- [x] Build cohorts - creating independent rooms that are simultaneous
-- [x] Set condition [from URL](https://stackoverflow.com/a/16274116/1857095)
-- [x] Implement notifications to bring users back to platform
+## Next steps
 
-- [x] Add persistent db - use [NeDB](https://github.com/louischatriot/nedb/)  and perhaps MongoDB later if needed.
-- [ ] Build pre and post survey instruments
-  - start with post survey
-  - load survey questions from teams table for each user
-  - send survey responses to server
-  - new routing
-- [ ] Build activities
+- [ ] Improve pre and post survey instruments
+- [ ] Build activities module
 - [ ] Build auto login
 - [ ] Build forced state mentions
   - share users in room with all clients
   - force user like statements to be completed with a current username
-- [ ] Integrate [MTurk API](https://blog.mturk.com/tutorial-getting-started-with-mturk-and-node-js-72826ad6e002)
 - [ ] Explore stronger waiting room with [LegionTools](http://rochci.github.io/LegionTools/)
 
-# Terms
-teams
-rooms
-
-# Activities: 
+# Activities:
 - Length - 1 hour?
 - Rests - same time next day?
-- Team size - 
+- Team size -
 - Tasks {
   - Google ads
   - Codewords
@@ -60,13 +49,14 @@ rooms
   - Incredible machine (how might we share display)
   - Youtube ads
   - Shopping cart -> design one and see how well it works
-  - Moocs
+  - mockups
+  - develop learning materials
  }
- 
-# Steps
+
+# User flow
 1. Users load in Mturk **how?**
 2. Users choose task
-3. Users see actual task frontpage where:
+3. Users see actual task front page where:
 
   - they are registered to us from MTurk **how?**
   - they have an assigned username that stays the same the entire time
@@ -76,7 +66,7 @@ rooms
 5. Users wait for others in the waiting room
 6. Users do activities
 7. Users do follow up tasks and take a break
-8. Users repeate until done
+8. Users repeat until done
 9. Users do closing tasks
 10. Users are done and can close the task **how?**
 

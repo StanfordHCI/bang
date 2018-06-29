@@ -1,7 +1,7 @@
 //Settings
-const devMode = true
-const teamSize = 1;
-const roundMinutes = devMode ? 0.001 : 10;
+const devMode = false
+const teamSize = 1
+const roundMinutes = .1
 
 // Setup basic express server
 let tools = require('./tools');
@@ -71,30 +71,31 @@ io.on('connection', (socket) => {
 
     //Chat engine
     // when the client emits 'new message', this listens and executes
-    socket.on('new message', function (data) {
+    socket.on('new message', function (message) {
         // we tell the client to execute 'new message'
-        console.log("received:", socket.username, data);
-        let nameData = data;
+        console.log("received:", socket.username, message);
+        let cleanMessage = message;
         users.forEach(user => {
-            nameData = aliasToID(user, nameData)
+            cleanMessage = aliasToID(user, cleanMessage)
         });
 
-        console.log("converted to:", nameData);
+        console.log("converted to:", cleanMessage);
 
         let currentRoom = users.byID(socket.id).room
 
-        db.chats.insert({'room':currentRoom,'userID':socket.id, 'message': data}, (err, usersAdded) => {
+        db.chats.insert({'room':currentRoom,'userID':socket.id, 'message': message}, (err, usersAdded) => {
           if(err) console.log("There's a problem adding a message to the DB: ", err);
           else if(usersAdded) console.log("Message added to the DB");
         });
 
         users.filter(user => user.room == currentRoom).forEach(user => {
-            let friendData = idToAlias(user, nameData);
+            let customMessage = idToAlias(user, cleanMessage);
+            console.log("Sending:",customMessage)
             socket.broadcast.to(user.id).emit('new message', {
-                username: idToAlias(user, socket.username),
-                message: friendData
+                username: idToAlias(user, String(socket.id)),
+                message: customMessage
             });
-            console.log('new message', user.room, user.name, friendData)
+            console.log('new message', user.room, user.name, customMessage)
         });
     });
 
@@ -140,14 +141,19 @@ io.on('connection', (socket) => {
           'person': people.pop(),
           'name': socket.username,
           'ready': false,
-          'friends': users.map(user => { return {'id': user.id,
-                                                 'alias': tools.makeName(),
-                                                 'tAlias':tools.makeName() }}),
+          'friends': users.map(user => {
+            return {'id': user.id,
+                    'alias': tools.makeName(),
+                    'tAlias':tools.makeName() }}),
           'active': true
         };
 
+        newUser.friends.push({'id':newUser.id,
+                              'alias': newUser.name,
+                              'tAlias':newUser.name})
+
         db.users.insert(newUser, (err, usersAdded) => {
-          console.log( err ? "There's a problem adding a user to the DB: " + err : "Added to DB: " + newUser.name)
+          console.log( err ? "Didn't store user: " + err : "Added " + newUser.name + " to DB.")
         });
 
         users.push(newUser)
@@ -160,14 +166,12 @@ io.on('connection', (socket) => {
         console.log('now we have:', users.map(user => user.name));
 
         //each client knows the alias of the new user
-        users.forEach(user => {
-          console.log("lets welcome", socket.username, 'aka', idToAlias(user, socket.id));
-
+        // users.forEach(user => {
             // io.in(user.id).emit('user joined ', {
             //     username: idToAlias(user, socket.username),
             //     numUsers: numUsers(user.room)
             // });
-        })
+        // })
     });
 
     // when the user disconnects.. perform this
@@ -178,7 +182,7 @@ io.on('connection', (socket) => {
 
           // update DB with change
           db.users.update({ id: socket.id }, {$set: {active: false}}, {}, (err, numReplaced) => {
-                          console.log(err ? "Activity not changed:" + err : "User left" + socket.id)
+                          console.log(err ? "Activity not changed:" + err : "User left " + socket.id)
           })
 
           // users.forEach(user => {
@@ -200,13 +204,13 @@ io.on('connection', (socket) => {
 
       //are we ready to go? if not return empty
       if (users.filter(user => !user.ready).length) {
-        console.log("some users not ready", users.filter(user => !user.ready))
+        console.log("some users not ready", users.filter(user => !user.ready).map(user => user.name))
         return } //are all users ready?
       // if (incompleteRooms().length) {
       //   console.log("Some rooms empty:",incompleteRooms())
       //   return } //are all rooms assigned
       if (users.length != teamSize ** 2) {
-        console.log("not enough users",users.length - teamSize ** 2)
+        console.log("Need",teamSize ** 2 - users.length,"more users.")
         return
       }
 
@@ -217,21 +221,21 @@ io.on('connection', (socket) => {
       //can we move this into its own on.*** call
 
       if (currentRound < numRounds){
-        console.log("running")
         treatmentNow = (currentCondition == "treatment" && currentRound == numRounds-1)
+        const conditionRound = conditions[currentCondition][currentRound] - 1
 
         // assign rooms to peple and reset.
-        Object.entries(teams[currentRound]).forEach(([roomName,room]) => {
+        Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
           users.filter(user => room.includes(user.person)).forEach(user => {
             user.room = roomName
             user.ready = false; //return users to unready state
-            console.log(user.name, 'assigned to', user.room);
+            console.log(user.name, '-> room', user.room);
           })
         })
 
         //Notify user 'go' and send task.
         let currentProduct = products[currentRound]
-        let taskText = "Follow the propmpts to design an advertisement for " + currentProduct.name + ". You can find out more about it here: " + currentProduct.url + " "
+        let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
         users.forEach(user => { io.in(user.id).emit('go', {task: taskText}) })
         console.log('Issued task for:', currentProduct.name)
         console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
@@ -262,31 +266,31 @@ io.on('connection', (socket) => {
 
   // Task
   socket.on('postSurveySubmit', (data) => {
+    if (users.length < people.length) { return } //are all users ready?
     let result = data.location.search.slice(6);
     console.log("Survey submitted:", result);
 
     io.in(socket.id).emit('finished', {finishingCode: socket.id});
-
   });
 
 });
 
-//replaces usernames with aliases in string: user, string -> string
-function idToAlias(user, newString) {
+//replaces user.friend aliases with corresponding user IDs
+function aliasToID(user, newString) {
     user.friends.forEach(friend => {
-      let idRegEx = new RegExp(friend.id, 'gi');
-      let friendName = treatmentNow ? friend.tAlias : friend.alias
-      newString = newString.replace(idRegEx, friendName)
+      let currentAlias = treatmentNow ? friend.tAlias : friend.alias
+      let aliasRegEx = new RegExp(currentAlias, 'g');
+      newString = newString.replace(aliasRegEx, friend.id)
     });
     return newString
 }
 
-//replaces aliases with usernames in string: user, string -> string
-function aliasToID(user, newString) {
+//replaces other users IDs with user.friend alieses in string
+function idToAlias(user, newString) {
     user.friends.forEach(friend => {
-      let friendName = treatmentNow ? friend.tAlias : friend.alias
-      let aliasRegEx = new RegExp(friendName, 'gi');
-      newString = newString.replace(aliasRegEx, friend.id)
+      let idRegEx = new RegExp(friend.id, 'g');
+      let currentAlias = treatmentNow ? friend.tAlias : friend.alias
+      newString = newString.replace(idRegEx, currentAlias)
     });
     return newString
 }
