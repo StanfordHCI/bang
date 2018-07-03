@@ -38,6 +38,7 @@ $(function() {
   // Get permission to notify
   Notification.requestPermission()
 
+
   // Prompt for setting a username
   let username;
   let connected = false;
@@ -47,14 +48,13 @@ $(function() {
 
   const users = ["mark"]
 
-  const autocomplete = () => {
-    console.log(this)
-  }
+  // currently disabled
+  // const autocomplete = () => {}
 
-    /* globals io */
-    const socket = io();
+  /* globals io */
+  const socket = io();
 
-    document.title = "Team work";
+  document.title = "Team work";
   $usernameInput.val('');
 
   // Implements notifications
@@ -79,7 +79,9 @@ $(function() {
 
   // Sets the client's username
   function setUsername () {
-    username = cleanInput($usernameInput.val().trim());
+    var d = new Date();
+    username = d.getTime()
+    // username = cleanInput($usernameInput.val().trim());
     $usernameInput.innerHTML = username;
 
     // If the username is valid
@@ -251,6 +253,7 @@ $(function() {
 
 
   // Keyboard events
+  setUsername ()
   $window.keydown(event => {
     // Auto-focus the current input when a key is typed
     if (!(event.ctrlKey || event.metaKey || event.altKey)) {

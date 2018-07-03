@@ -1,7 +1,7 @@
 //Settings
 const devMode = false
 const teamSize = 1
-const roundMinutes = .1
+const roundMinutes = .01
 
 // Setup basic express server
 let tools = require('./tools');
@@ -31,12 +31,19 @@ const Datastore = require('nedb'),
 // Setting up variables
 const currentCondition = "treatment"
 let treatmentNow = false
-const conditions = {"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]}
+
+const conditionSet = [{"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]},
+                      {"control": [2,1,1], "treatment": [2,1,1], "baseline": [1,2,3]},
+                      {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
+
+const conditions = conditionSet[0] // or conditionSet.pick() for ramdomized orderings.
+const experimentRound = conditions[currentCondition].lastIndexOf(1) //assumes that the manipulation is always the second instance of team 1's interaction.
 const numRounds = conditions.baseline.length
 
 const numberOfRooms = teamSize * numRounds
 const rooms = tools.letters.slice(0,numberOfRooms)
 const people = tools.letters.slice(0,teamSize ** 2)
+const population = people.length
 const teams = tools.createTeams(teamSize,numRounds,people)
 
 //Add more products
@@ -46,19 +53,8 @@ let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
                  'url': 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches' },
                 {'name':"First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC",
                  'url': 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono' }]
-
-let users = [];
+let users = []; //the main local user storage
 let currentRound = 0
-
-//emit a 'finish' and go to blank page, restart after some time
-//organize to people in rounds based on signup information
-// Onboarding
-// modify current handshake to get user's MTurk ID and establish connection with client
-// Waiting room
-//emit a 'start' and go to chat
-// Fail
-//closing servey
-//emit a 'fail' and move everyone to a page that shows a completion code
 
 // Routing
 app.use(express.static('public'));
@@ -106,15 +102,13 @@ io.on('connection', (socket) => {
 
         // we store the username in the socket session for this client
         socket.username = tools.makeName(); // how they see themselves
-        let room = assignRoom();
 
-        //is the user valid and do we have space for them?
-        if (!checkUser(mturkID) || !room) {
-            io.in(socket.id).emit('rejected user', {});
-            console.log('user was rejected');
-            socket.disconnect()
-            return
-        }
+        // if (users.length >= population) {
+        //     io.in(socket.id).emit('rejected user', {});
+        //     console.log('user was rejected');
+        //     socket.disconnect()
+        //     return
+        // }
 
         io.in(socket.id).emit('accepted user', {name: socket.username});
 
@@ -137,7 +131,7 @@ io.on('connection', (socket) => {
         const newUser = {
           'id': socket.id,
           'mturk': mturkID,
-          'room': room,
+          'room': '',
           'person': people.pop(),
           'name': socket.username,
           'ready': false,
@@ -145,7 +139,12 @@ io.on('connection', (socket) => {
             return {'id': user.id,
                     'alias': tools.makeName(),
                     'tAlias':tools.makeName() }}),
-          'active': true
+          'active': true,
+          'results':{
+            'condition':currentCondition,
+            'format':conditions[currentCondition],
+            'manipulationCheck':''
+          }
         };
 
         newUser.friends.push({'id':newUser.id,
@@ -163,7 +162,7 @@ io.on('connection', (socket) => {
             io.in(user.id).emit('login', {numUsers: numUsers(user.room)})
         });
 
-        console.log('now we have:', users.map(user => user.name));
+        console.log('now we have:', users.filter(user => user.active == true).map(user => user.name));
 
         //each client knows the alias of the new user
         // users.forEach(user => {
@@ -221,7 +220,7 @@ io.on('connection', (socket) => {
       //can we move this into its own on.*** call
 
       if (currentRound < numRounds){
-        treatmentNow = (currentCondition == "treatment" && currentRound == numRounds-1)
+        treatmentNow = (currentCondition == "treatment" && currentRound == experimentRound)
         const conditionRound = conditions[currentCondition][currentRound] - 1
 
         // assign rooms to peple and reset.
@@ -244,7 +243,7 @@ io.on('connection', (socket) => {
         // make timers run in serial
         setTimeout(() => {
           console.log('time warning', currentRound);
-          users.forEach(user => { io.in(user.id).emit('timer', {time: 1}) })
+          users.forEach(user => { io.in(user.id).emit('timer', {time: roundMinutes * .1}) })
 
           //Doen with round
           setTimeout(() => {
@@ -266,9 +265,14 @@ io.on('connection', (socket) => {
 
   // Task
   socket.on('postSurveySubmit', (data) => {
-    if (users.length < people.length) { return } //are all users ready?
+    if (currentRound < numRounds) {
+      console.log("ran survey")
+      return
+    }
     let result = data.location.search.slice(6);
-    console.log("Survey submitted:", result);
+    let user = users.byID(socket.id)
+    user.results.manipulationCheck = result
+    console.log(user.name, "submitted survey:", user.results.manipulationCheck);
 
     io.in(socket.id).emit('finished', {finishingCode: socket.id});
   });
@@ -306,6 +310,8 @@ const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize)
 const assignRoom = () => incompleteRooms().pick()
 
 const postSurvey = (user) => {
+  //currently using client side survey
+
   // get collaborators
   // let userTeams = []
   // teams.forEach(round => {
