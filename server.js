@@ -1,7 +1,7 @@
 //Settings
 const devMode = false
 const teamSize = 1
-const roundMinutes = .01
+const roundMinutes = 1
 
 // Setup basic express server
 let tools = require('./tools');
@@ -37,7 +37,7 @@ const conditionSet = [{"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,
                       {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
 
 const conditions = conditionSet[0] // or conditionSet.pick() for ramdomized orderings.
-const experimentRound = conditions[currentCondition].lastIndexOf(1) //assumes that the manipulation is always the second instance of team 1's interaction.
+const experimentRound = conditions[currentCondition].lastIndexOf(1) //assumes that the manipulation is always the last instance of team 1's interaction.
 const numRounds = conditions.baseline.length
 
 const numberOfRooms = teamSize * numRounds
@@ -176,8 +176,11 @@ io.on('connection', (socket) => {
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
         if (addedUser) {
-          users.byID(socket.id).active = false //set user to inactive
-          users.byID(socket.id).ready = false //set user to not ready
+          user = users.byID(socket.id)
+          user.active = false //set user to inactive
+          user.ready = false //set user to not ready
+          people.push(user.person)
+          user.person = ""
 
           // update DB with change
           db.users.update({ id: socket.id }, {$set: {active: false}}, {}, (err, numReplaced) => {
@@ -234,8 +237,15 @@ io.on('connection', (socket) => {
 
         //Notify user 'go' and send task.
         let currentProduct = products[currentRound]
+
+        console.log(users.map(user => user.room))
         let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
-        users.forEach(user => { io.in(user.id).emit('go', {task: taskText}) })
+        users.forEach(user => {
+          // let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
+          // console.log(teamNames)
+          // io.in(user.id).emit('go', {task: taskText, team: teamNames }) })
+
+          io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }) }) })
         console.log('Issued task for:', currentProduct.name)
         console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
 
@@ -266,7 +276,6 @@ io.on('connection', (socket) => {
   // Task
   socket.on('postSurveySubmit', (data) => {
     if (currentRound < numRounds) {
-      console.log("ran survey")
       return
     }
     let result = data.location.search.slice(6);

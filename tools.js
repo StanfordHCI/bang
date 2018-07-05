@@ -13,7 +13,7 @@ const teamChecker = (roundTeams) => {
 }
 
 const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")
-const randomAnimal = 'Bison Eagle Pony Cow Deer Duck Rabit Spider Wolf Lion Snake Shark Bird Bear Fish Horse Cat Dog'.split(" ")
+const randomAnimal = 'Bison Eagle Pony Cow Deer Duck Rabbit Spider Wolf Lion Snake Shark Bird Bear Fish Horse Cat Dog'.split(" ")
 const randomAdjective = 'new small young little likely nice cultured snappy spry conventional'.split(" ")
 let nameCount = 2
 

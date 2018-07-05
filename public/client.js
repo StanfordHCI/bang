@@ -45,11 +45,7 @@ $(function() {
   let typing = false;
   let lastTypingTime;
   let $currentInput = $usernameInput.focus();
-
-  const users = ["mark"]
-
-  // currently disabled
-  // const autocomplete = () => {}
+  let currentTeam =   []
 
   /* globals io */
   const socket = io();
@@ -57,7 +53,7 @@ $(function() {
   document.title = "Team work";
   $usernameInput.val('');
 
-  // Implements notifications
+  // Implements notificationsthis
   let notify = (title, body) => {
     if (Notification.permission !== "granted") { Notification.requestPermission()
     } else {
@@ -253,11 +249,12 @@ $(function() {
 
 
   // Keyboard events
-  setUsername ()
+  setUsername()
   $window.keydown(event => {
     // Auto-focus the current input when a key is typed
     if (!(event.ctrlKey || event.metaKey || event.altKey)) {
       $currentInput.focus();
+      // forcedComplete($currentInput)
     }
 
     // When the client hits ENTER on their keyboard
@@ -267,6 +264,26 @@ $(function() {
         socket.emit('stop typing');
         typing = false;
       } else { setUsername() }
+    }
+    if (event.keyCode === $.ui.keyCode.TAB) { //&& $inputMessage.autocomplete("instance").menu.active as a poteantial second condition
+      event.preventDefault()
+    }
+  })
+
+  //Simple autocomplete
+  $inputMessage.autocomplete({
+    source: ["test"],
+    position: { my : "right top-90%", at: "right top" },
+    minLength: 2,
+    autoFocus: true,
+    delay: 50,
+    select: (event, ui) => {
+      var terms = $inputMessage.val().split(" ");
+      terms.pop();
+      terms.push( ui.item.value );
+      terms.push( "" );
+      $inputMessage.val(terms.join( " " ))
+      return false;
     }
   });
 
@@ -337,13 +354,28 @@ $(function() {
 
   socket.on('go', data => {
     hideAll();
-    $chatPage.show();
-    log(data.task);
+    $chatPage.show()
+
+    //Bring back users
+    notify("Team session ready to go!", "Come back and join the team.")
+
+    //Post the task
+    log(data.task)
     log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
     log("You will have <strong>10 minutes</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
     log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
+
+    //Set up team autocomplete
+    currentTeam = data.team
     $currentInput = $inputMessage.focus();
-    notify("Session ready", "Come back and join in!")
+    $inputMessage.autocomplete( "option", "source", (request, response) => {
+      let currentTerm = request.term.split(" ").pop()
+      if (currentTerm.length < 2){
+        response("")
+        return
+      }
+      response($.ui.autocomplete.filter(currentTeam, currentTerm));
+    });
   });
 
   socket.on('stop', data => {
