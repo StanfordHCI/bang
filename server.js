@@ -29,6 +29,7 @@ const Datastore = require('nedb'),
     db.chats = new Datastore({ filename:'.data/chats', autoload: true });
     db.products = new Datastore({ filename:'.data/products', autoload: true });
     db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
+    db.switches = new Datastore({ filename: '.data/switches', autoload: true});
 
 // Setting up variables
 const currentCondition = "treatment"
@@ -153,6 +154,7 @@ io.on('connection', (socket) => {
                     'alias': tools.makeName(),
                     'tAlias':tools.makeName() }}),
           'active': true,
+          'switch': false,
           'results':{
             'condition':currentCondition,
             'format':conditions[currentCondition],
@@ -261,7 +263,7 @@ io.on('connection', (socket) => {
           console.log('time warning', currentRound);
           users.forEach(user => { io.in(user.id).emit('timer', {time: roundMinutes * .1}) })
 
-          //Doen with round
+          //Done with round
           setTimeout(() => {
             console.log('done with round', currentRound);
             users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound}) });
@@ -281,6 +283,11 @@ io.on('connection', (socket) => {
           else socket.emit("checkin popup");
 
         }, 1000 * 60 * checkinIntervalMinutes)
+        setTimeout(() => {
+          users.forEach(user => { io.in(user.id).emit('switchTeams', {time: roundMinutes * .01})})
+
+        }, 1000 * 60 * 0.005 * roundMinutes)
+      }
       //Launch post survey
       if (currentRound >= numRounds) {
         users.forEach(user => {
@@ -289,6 +296,14 @@ io.on('connection', (socket) => {
         })
       }
   });
+
+
+  socket.on('switchTeams', (data) => {
+    let user = users.byID(socket.id)
+    db.switches.insert({'room':users.byID(socket.id).room, 'userID':socket.id, 'round':currentRound})
+  });
+
+
 
   // Task
   socket.on('postSurveySubmit', (data) => {
