@@ -284,7 +284,7 @@ ul {
 .rb-tab {
   display: inline-block;
   position: relative;
-  width: 10%;
+  width: 12%;
 }
 
 .rb-txt {
@@ -292,18 +292,18 @@ ul {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: .5em;
+  font-size: 1em;
   color: black;
 }
 
 .rb-spot {
   position: absolute;
-  width: 18px;
-  height: 18px;
+  width: 25px;
+  height: 25px;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: transparent;
+  background: white;
   border: 2px solid gray;
   border-radius: 100%;
   cursor: pointer;
@@ -315,16 +315,24 @@ ul {
   border: 2px solid rgba(0,0,255,.6);
 }
 
+.rb-spot + label {
+  position: relative;
+  top: 30px;
+  font-size:.5em;
+}
+
+
 /* Submit Button */
 .button-box {
   padding: 10px 0;
   text-align: center;
+  margin-top: 20px 
 }
 
 button {
   display: inline-block;
   width: 80%;
-  margin-top: 1.2em;
+  margin-top: 15px;
   padding: 1em;
   max-width: 220px;
   font-size: .9em;
@@ -358,10 +366,10 @@ button:hover {
 .popup {
   display: none;
   width: 50%;
-  height: 50%;
+  height: 40%;
   position: absolute;
   z-index: 999;
-  background-color: white;
+  background-color: #F5F5F5;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -369,16 +377,8 @@ button:hover {
   border-style: solid;
   border-width: 2px;
   border-radius: 0.5rem;
-}
-.popup-content {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80%;
-  background-color: white;
-  padding: 1rem 1.5rem;
-  border-radius: 0.5rem;
+    padding: 1rem 1.5rem;
+
 }
 
 

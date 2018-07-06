@@ -2,7 +2,7 @@
 const devMode = false
 const teamSize = 1
 const roundMinutes = 10
-const checkinIntervalMinutes = 2;
+const checkinIntervalMinutes = .25;
 
 // Setup basic express server
 let tools = require('./tools');
@@ -278,9 +278,14 @@ io.on('connection', (socket) => {
           if(err) console.log("There's a problem adding a checkin to the DB: ", err);
           else if(usersAdded) console.log("Checkin added to the DB");
         });
-        setInterval(() => {
-          if(roundMinutes - (getSecondsPassed *60) <checkinIntervalMinutes) clearInterval();
-          else socket.emit("checkin popup");
+        let numPopups = 0;
+        let interval = setInterval(() => {
+          if(numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
+            clearInterval(interval);
+          } else {
+            socket.emit("checkin popup");
+            numPopups++;
+          }
 
         }, 1000 * 60 * checkinIntervalMinutes)
         setTimeout(() => {

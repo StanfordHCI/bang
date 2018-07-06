@@ -11,6 +11,7 @@ $(function() {
   const $staticCheckinButton = $('.rbcheckin'); // radio buttons on side
   const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
   const $checkinSubmit = $('#checkin-submit');
+  const $neutralCheckin = $('#neutral-checkin');
 
   const $loginPage = $('#login'); // The login page
   const $chatPage = $('#chat'); // The chatroom page
@@ -372,6 +373,8 @@ $(function() {
   socket.on('go', data => {
     hideAll();
     $chatPage.show();
+    $popupCheckinButton.removeClass("rb-tab-active");
+    $neutralCheckin.addClass("rb-tab-active");
     log(data.task);
     log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
     log("You will have <strong>10 minutes</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")

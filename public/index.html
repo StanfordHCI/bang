@@ -48,49 +48,56 @@
       <input class="inputMessage" placeholder="Type here..." oninput="console.log(this.value)"/>
     </li>
     <div class="popup">
-      <div class="popup-content">
-        <p>An algorithm that assesses team cohesion will be run on your experience. Please answer as accurately as possible. If your input aligns with the assessment, you may receive a bonus monetary compensation. </p>
+      
+        <p>These check-ins are anonymous and will be used by an algorithm to pair you with an optimal team for the next round.</p>
         <p>To what extent do you agree with the statement: The members of this team could work for a long time together.</p>
+        <br>
         <div id="rb-1" class="rb">
           <div class="rb-tab" value="1">
             <div class="rb-spot">
               <span class="rb-txt">1</span>
             </div>
+            <label>Strongly Disagree</label>
           </div>
           <div class="rb-tab" value="2">
             <div class="rb-spot">
               <span class="rb-txt">2</span>
             </div>
+            <label>Disagree</label>
           </div>
           <div class="rb-tab" value="3">
             <div class="rb-spot">
               <span class="rb-txt">3</span>
             </div>
+            <label>Slightly Disagree</label>
           </div>
-          <div class="rb-tab rb-tab-active" value="4">
+          <div class="rb-tab rb-tab-active" id='neutral-checkin' value="4">
             <div class="rb-spot">
               <span class="rb-txt">4</span>
             </div>
+            <label>Neutral</label>
           </div>
           <div class="rb-tab" value="5">
             <div class="rb-spot">
               <span class="rb-txt">5</span>
             </div>
+            <label>Slightly Agree</label>
           </div>
           <div class="rb-tab rb-tab" value="6">
             <div class="rb-spot">
               <span class="rb-txt">6</span>
             </div>
+            <label>Agree</label>
           </div>
             <div class="rb-tab rb-tab" value="7">
             <div class="rb-spot">
               <span class="rb-txt">7</span>
             </div>
+            <label>Strongly Agree</label>
           </div> 
         <div class="button-box">
           <button id="checkin-submit" class="button trigger">Submit!</button>
         </div>
-      </div>
     </div>
     <li id="login" class="login page">
       <div class="form">
