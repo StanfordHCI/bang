@@ -1,15 +1,7 @@
 //Settings
 const devMode = false
 const teamSize = 1
-<<<<<<< HEAD
-<<<<<<< HEAD
-const roundMinutes = 0.2
-=======
-const roundMinutes = 1
->>>>>>> 62b9679ff87a15f140c715a6c9f7cb421a1bb7b7
-=======
-const roundMinutes = .01
->>>>>>> parent of 62b9679... Improved autocomplete
+const roundMinutes = .0001
 
 // Setup basic express server
 let tools = require('./tools');
@@ -246,22 +238,17 @@ io.on('connection', (socket) => {
         //Notify user 'go' and send task.
         let currentProduct = products[currentRound]
         let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
-<<<<<<< HEAD
-<<<<<<< HEAD
+
         users.forEach(user => { io.in(user.id).emit('go', {task: taskText}) });
         console.log('Issued task for:', currentProduct.name);
-=======
         users.forEach(user => {
-          // let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
-          // console.log(teamNames)
-          // io.in(user.id).emit('go', {task: taskText, team: teamNames }) })
+          
+          let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
+          console.log(teamNames)
+          io.in(user.id).emit('go', {task: taskText, team: teamNames }) })
 
-          io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }) }) })
-=======
-        users.forEach(user => { io.in(user.id).emit('go', {task: taskText}) })
->>>>>>> parent of 62b9679... Improved autocomplete
+          // io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }) }) })
         console.log('Issued task for:', currentProduct.name)
->>>>>>> 62b9679ff87a15f140c715a6c9f7cb421a1bb7b7
         console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
 
         //Round warning
@@ -316,9 +303,8 @@ io.on('connection', (socket) => {
       console.log("ran survey")
       return
     }
-    let result = data.location.search.slice(6);
     let user = users.byID(socket.id)
-    user.results.manipulationCheck = result
+    user.results.manipulationCheck = data
     console.log(user.name, "submitted survey:", user.results.manipulationCheck);
 
     io.in(socket.id).emit('finished', {finishingCode: socket.id});

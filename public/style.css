@@ -293,12 +293,9 @@ ul {
   position: absolute;
   right: 0;
   width: 100%;
-<<<<<<< HEAD
 }
 
-<<<<<<< HEAD
 /* midSurvey */
-
 #midSurvey .form {
   background-color: black;
   overflow: visible;
@@ -310,11 +307,14 @@ ul {
 #midSurvey .form label {
   margin-right: 40px;  /* space between label and next radio button */ 
 }
-=======
+
 .ui-autocomplete .ui-menu-item{
   background-color: #eee;
 }
->>>>>>> 62b9679ff87a15f140c715a6c9f7cb421a1bb7b7
-=======
+
+.ui-autocomplete::before{
+  /* float: right; */
+  display: inline;
+  padding: 3px;
+  content: "Tab to select";
 }
->>>>>>> parent of 62b9679... Improved autocomplete

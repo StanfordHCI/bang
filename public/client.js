@@ -381,14 +381,14 @@ $(function() {
   socket.on('postSurvey',data => {
     hideAll();
     $postSurvey.show();
+    $('.postForm').submit((result) => {
+      event.preventDefault()
+      socket.emit('postSurveySubmit', $('.postForm').serialize())
+    })
   })
 
-  $('.postForm').on("submit", socket.emit('postSurveySubmit', this))
-
-  // $('.postForm').on("submit", "My data", data => {
-  //   alert("here")
-  //   socket.emit('postSurveySubmit',data)
-  // })
+  // $('.postForm').on("submit", socket.emit('postSurveySubmit', this))
+  // $('.postForm').submit(alert("HI")) ///socket.emit('postSurveySubmit',this))
 
   socket.on('finished',data => {
     hideAll();
