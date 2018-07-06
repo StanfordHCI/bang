@@ -1,6 +1,6 @@
 //Settings
 const devMode = false
-const teamSize = 2
+const teamSize = 1
 const roundMinutes = 10
 const checkinIntervalMinutes = 2;
 
