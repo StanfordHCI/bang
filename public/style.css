@@ -148,6 +148,45 @@ ul {
   top: 0;
 }
 
+.popup {
+  width: 47em;
+  height: 10em;
+  position: absolute;
+  z-index: 999;
+  background-color: beige;
+  text-indent: 1em;
+  left: 2.5em;
+  top: 15em;
+  margin-top: 1em;
+  border-color: #A9A9A9;
+  border-style: solid;
+  border-width: 8px;
+}
+
+.popup .button1 {
+  position: absolute;
+  margin-left: 11em;
+  text-align: left;
+  height: 40px;
+  line-height: 40px;
+  min-width: 150px;
+  font-size: 16px;
+}
+
+.popup .button2 {
+  position: absolute;
+  margin-left: 22em;
+  text-align: left;
+  height: 40px;
+  line-height: 40px;
+  min-width: 150px;
+  font-size: 16px;
+}
+
+.hidden {
+  visibility: hidden;
+}
+
 .wrap {
   display: table-cell;
   vertical-align: middle;
@@ -303,6 +342,12 @@ button {
     box-shadow 0.3s, 
     transform 0.3s;
   cursor: pointer;
+*/
+.messages {
+  height: 100%;
+  margin: 0;
+  overflow-y: scroll;
+  padding: 10px 20px 10px 20px;
 }
 
 button:hover {
