@@ -1,7 +1,7 @@
 //Settings
 const devMode = false
 const teamSize = 1
-const roundMinutes = 1
+const roundMinutes = .0001
 
 // Setup basic express server
 let tools = require('./tools');
@@ -241,11 +241,12 @@ io.on('connection', (socket) => {
         console.log(users.map(user => user.room))
         let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
         users.forEach(user => {
-          // let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
-          // console.log(teamNames)
-          // io.in(user.id).emit('go', {task: taskText, team: teamNames }) })
 
-          io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }) }) })
+          let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
+          console.log(teamNames)
+          io.in(user.id).emit('go', {task: taskText, team: teamNames }) })
+
+          // io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }) }) })
         console.log('Issued task for:', currentProduct.name)
         console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
 
@@ -275,6 +276,7 @@ io.on('connection', (socket) => {
 
   // Task
   socket.on('postSurveySubmit', (data) => {
+    console.log(data)
     if (currentRound < numRounds) {
       return
     }

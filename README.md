@@ -13,10 +13,7 @@ Run with `supervisor server.js` for a live-reload version and `node server.js` f
 
 - [ ] Encapsulate activities module
 - [ ] Improve auto login
-- [ ] Improve autocomplete
-  - share users in room with all clients
-  - force user like statements to be completed with a current username
-- [ ] Explore stronger waiting room with
+- [ ] Explore stronger waiting room with LegionTools
 
 ## Literature
 1. Salganik, Matthew J., Peter Sheridan Dodds, and Duncan J. Watts. **[Experimental study of inequality and unpredictability in an artificial cultural market](http://science.sciencemag.org/content/311/5762/854.full)**. Science 311.5762 (2006): 854-856.

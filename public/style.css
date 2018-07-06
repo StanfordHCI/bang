@@ -150,3 +150,10 @@ ul {
 .ui-autocomplete .ui-menu-item{
   background-color: #eee;
 }
+
+.ui-autocomplete::before{
+  /* float: right; */
+  display: inline;
+  padding: 3px;
+  content: "Tab to select";
+}
