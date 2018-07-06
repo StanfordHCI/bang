@@ -19,6 +19,10 @@ $(function() {
   const $postSurvey = $('#postSurvey'); // The postSurvey page
   const $finishingPage = $('#finishing'); // The finishing page
 
+  const $switchTeamsSubmit = $('#button1');
+  const $keepTeamsSubmit = $('#button2');
+  const $switchTeamsPopup = $('#switchTeamsPopup'); // added this
+
   const hideAll = () => {
     $loginPage.hide();
     $chatPage.hide();
@@ -26,6 +30,7 @@ $(function() {
     $preSurvey.hide();
     $postSurvey.hide();
     $finishingPage.hide();
+    $switchTeamsPopup.hide();
   }
 
   let holdingUsername = document.getElementById('username');
@@ -391,6 +396,21 @@ $(function() {
     log("To indicate your final result, <strong>start the line with am exclamation mark (i.e., '!')</strong>. We will not count that character toward your length limit.")
     log("<br>If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat.")
   });
+
+
+  socket.on('switchTeams', data => {
+    $switchTeamsPopup.show();
+  });
+
+  $switchTeamsSubmit.click(function() {
+    socket.emit('switchTeams');
+    $('.popup').toggleClass("hidden");
+  });
+
+  $keepTeamsSubmit.click(function() {
+    $('.popup').toggleClass("hidden");
+  });
+
 
   socket.on('postSurvey',data => {
     hideAll();
