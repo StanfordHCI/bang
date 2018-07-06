@@ -7,17 +7,13 @@
 html {
   font-weight: 300;
   -webkit-font-smoothing: antialiased;
-}
-
-html, input {
-  font-family:
-    "HelveticaNeue-Light",
-    "Helvetica Neue Light",
-    "Helvetica Neue",
-    Helvetica,
-    Arial,
-    "Lucida Grande",
-    sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans",
+    "Droid Sans", "Helvetica Neue", Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-kerning: normal;
+  font-variant-ligatures: common-ligatures;
 }
 
 html, body {
@@ -112,8 +108,8 @@ ul {
 .log {
   color: gray;
   font-size: 70%;
-  margin: 5px;
-  text-align: center;
+  margin: 20px 5px;
+  text-align: left;
 }
 
 /* Messages */
@@ -295,6 +291,7 @@ ul {
   width: 100%;
 }
 
+<<<<<<< HEAD
 /* midSurvey */
 
 #midSurvey .form {
@@ -308,3 +305,8 @@ ul {
 #midSurvey .form label {
   margin-right: 40px;  /* space between label and next radio button */ 
 }
+=======
+.ui-autocomplete .ui-menu-item{
+  background-color: #eee;
+}
+>>>>>>> 62b9679ff87a15f140c715a6c9f7cb421a1bb7b7
