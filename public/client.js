@@ -13,6 +13,7 @@ $(function() {
   const $chatPage = $('#chat'); // The chatroom page
   const $holdingPage = $('#holding'); // The holding page
   const $preSurvey = $('#preSurvey'); // The preSurvey page
+  const $midSurvey = $('#midSurvey'); // the midSurvey page
   const $postSurvey = $('#postSurvey'); // The postSurvey page
   const $finishingPage = $('#finishing'); // The finishing page
 
@@ -21,6 +22,7 @@ $(function() {
     $chatPage.hide();
     $holdingPage.hide();
     $preSurvey.hide();
+    $midSurvey.hide();
     $postSurvey.hide();
     $finishingPage.hide();
   }
@@ -29,6 +31,7 @@ $(function() {
   let messagesSafe = document.getElementsByClassName('messages')[0];
   let finishingcode = document.getElementById('finishingcode');
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
+  const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
 
   // Clear before starting
@@ -352,7 +355,7 @@ $(function() {
       hideAll();
       $holdingPage.show();
       messagesSafe.innerHTML = '';
-      socket.emit('ready')
+      //socket.emit('ready')
     }, 1000 * 3)
   });
 
@@ -362,6 +365,18 @@ $(function() {
     log("To indicate your final result, <strong>start the line with am exclamation mark (i.e., '!')</strong>. We will not count that character toward your length limit.")
     log("<br>If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat.")
   });
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  socket.on('midSurvey',data => {
+    setTimeout(() => {
+      hideAll();
+      $midSurvey.show();
+    }, 1000 * 3)
+  })
+
+  $('.midForm').on("submit", socket.emit('midSurveySubmit', this))
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   socket.on('postSurvey',data => {
     hideAll();
