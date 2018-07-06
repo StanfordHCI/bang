@@ -398,10 +398,9 @@ $(function() {
   socket.on('postSurvey',data => {
     hideAll();
     $postSurvey.show();
-    $('.postForm').submit((result,request) => {
-      alert(request)
-
-      // socket.emit('postSurveySubmit', result)
+    $('.postForm').submit((result) => {
+      event.preventDefault()
+      socket.emit('postSurveySubmit', $('.postForm').serialize())
     })
   })
 

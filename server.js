@@ -276,13 +276,8 @@ io.on('connection', (socket) => {
 
   // Task
   socket.on('postSurveySubmit', (data) => {
-    console.log(data)
-    if (currentRound < numRounds) {
-      return
-    }
-    let result = data.location.search.slice(6);
     let user = users.byID(socket.id)
-    user.results.manipulationCheck = result
+    user.results.manipulationCheck = data
     console.log(user.name, "submitted survey:", user.results.manipulationCheck);
 
     io.in(socket.id).emit('finished', {finishingCode: socket.id});
