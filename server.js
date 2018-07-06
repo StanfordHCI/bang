@@ -1,7 +1,8 @@
 //Settings
 const devMode = false
-const teamSize = 1
-const roundMinutes = 1
+const teamSize = 2
+const roundMinutes = 10
+const checkinIntervalMinutes = 2;
 
 // Setup basic express server
 let tools = require('./tools');
@@ -27,6 +28,7 @@ const Datastore = require('nedb'),
     db.users = new Datastore({ filename:'.data/users', autoload: true });
     db.chats = new Datastore({ filename:'.data/chats', autoload: true });
     db.products = new Datastore({ filename:'.data/products', autoload: true });
+    db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
 
 // Setting up variables
 const currentCondition = "treatment"
@@ -37,7 +39,7 @@ const conditionSet = [{"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,
                       {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
 
 const conditions = conditionSet[0] // or conditionSet.pick() for ramdomized orderings.
-const experimentRound = conditions[currentCondition].lastIndexOf(1) //assumes that the manipulation is always the last instance of team 1's interaction.
+const experimentRound = conditions[currentCondition].lastIndexOf(1) //assumes that the manipulation is always the second instance of team 1's interaction.
 const numRounds = conditions.baseline.length
 
 const numberOfRooms = teamSize * numRounds
@@ -55,6 +57,7 @@ let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
                  'url': 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono' }]
 let users = []; //the main local user storage
 let currentRound = 0
+let startTime = 0
 
 // Routing
 app.use(express.static('public'));
@@ -92,6 +95,16 @@ io.on('connection', (socket) => {
                 message: customMessage
             });
             console.log('new message', user.room, user.name, customMessage)
+        });
+    });
+
+    //when the client emits 'new checkin', this listens and executes
+    socket.on('new checkin', function (value) {
+      console.log(socket.username + "checked in with value " + value);
+      let currentRoom = users.byID(socket.id).room;
+      db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': value, 'time': getSecondsPassed()}, (err, usersAdded) => {
+          if(err) console.log("There's a problem adding a checkin to the DB: ", err);
+          else if(usersAdded) console.log("Checkin added to the DB");
         });
     });
 
@@ -176,11 +189,8 @@ io.on('connection', (socket) => {
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
         if (addedUser) {
-          user = users.byID(socket.id)
-          user.active = false //set user to inactive
-          user.ready = false //set user to not ready
-          people.push(user.person)
-          user.person = ""
+          users.byID(socket.id).active = false //set user to inactive
+          users.byID(socket.id).ready = false //set user to not ready
 
           // update DB with change
           db.users.update({ id: socket.id }, {$set: {active: false}}, {}, (err, numReplaced) => {
@@ -237,17 +247,13 @@ io.on('connection', (socket) => {
 
         //Notify user 'go' and send task.
         let currentProduct = products[currentRound]
-
-        console.log(users.map(user => user.room))
         let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
-        users.forEach(user => {
-          // let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
-          // console.log(teamNames)
-          // io.in(user.id).emit('go', {task: taskText, team: teamNames }) })
-
-          io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }) }) })
+        users.forEach(user => { io.in(user.id).emit('go', {task: taskText}) })
         console.log('Issued task for:', currentProduct.name)
         console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
+
+        
+        startTime = (new Date()).getTime();//record start time
 
         //Round warning
         // make timers run in serial
@@ -259,11 +265,22 @@ io.on('connection', (socket) => {
           setTimeout(() => {
             console.log('done with round', currentRound);
             users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound}) });
-            currentRound += 1 // guard to only do this when a round is actually done.
-            console.log(currentRound, "out of", numRounds)
-          }, 1000 * 60 * 0.1 * roundMinutes)
-        }, 1000 * 60 * 0.9 * roundMinutes)
-      }
+              currentRound += 1 // guard to only do this when a round is actually done.
+              console.log(currentRound, "out of", numRounds)
+            }, 1000 * 60 * 0.1 * roundMinutes)
+          }, 1000 * 60 * 0.9 * roundMinutes)
+        }
+        //record start checkin time in db
+        let currentRoom = users.byID(socket.id).room
+        db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed()}, (err, usersAdded) => {
+          if(err) console.log("There's a problem adding a checkin to the DB: ", err);
+          else if(usersAdded) console.log("Checkin added to the DB");
+        });
+        setInterval(() => {
+          if(roundMinutes - (getSecondsPassed *60) <checkinIntervalMinutes) clearInterval();
+          else socket.emit("checkin popup");
+
+        }, 1000 * 60 * checkinIntervalMinutes)
       //Launch post survey
       if (currentRound >= numRounds) {
         users.forEach(user => {
@@ -276,6 +293,7 @@ io.on('connection', (socket) => {
   // Task
   socket.on('postSurveySubmit', (data) => {
     if (currentRound < numRounds) {
+      console.log("ran survey")
       return
     }
     let result = data.location.search.slice(6);
@@ -307,6 +325,12 @@ function idToAlias(user, newString) {
     });
     return newString
 }
+
+//returns time since task began
+function getSecondsPassed() {
+  return ((new Date()).getTime() - startTime)/1000;
+}
+
 
 //returns number of users in a room: room -> int
 const numUsers = room => users.filter(user => user.room === room).length
