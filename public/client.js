@@ -357,7 +357,6 @@ $(function() {
 
   socket.on('go', data => {
     hideAll();
-    log(data.task);
     $chatPage.show()
 
     //Bring back users
@@ -372,7 +371,6 @@ $(function() {
     //Set up team autocomplete
     currentTeam = data.team
     $currentInput = $inputMessage.focus();
-    notify("Session ready", "Come back and join in!")
     $inputMessage.autocomplete( "option", "source", (request, response) => {
       let currentTerm = request.term.split(" ").pop()
       if (currentTerm.length < 2){
