@@ -10,7 +10,6 @@
     "coffeescript": "latest",
     "express": "^4.16.3",
     "nedb": "^1.8.0",
-    "npm": "^6.1.0",
     "socket.io": "^2.1.1"
   },
   "engines": {
