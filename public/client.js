@@ -380,12 +380,12 @@ $(function() {
 
   socket.on('stop', data => {
     log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
-    setTimeout(() => {
+    // setTimeout(() => {
       hideAll();
       $holdingPage.show();
       messagesSafe.innerHTML = '';
       socket.emit('ready')
-    }, 1000 * 3)
+    // }, 1000 * 3)
   });
 
   socket.on('timer',data => {
@@ -398,19 +398,15 @@ $(function() {
   socket.on('postSurvey',data => {
     hideAll();
     $postSurvey.show();
+    $('#postForm').submit( (event) => { //watches form element
+      event.preventDefault() //stops page reloading
+      socket.emit('postSurveySubmit', $('#postForm').serialize()) //submits results alone
+    })
   })
-
-  $('.postForm').on("submit", socket.emit('postSurveySubmit', this))
-
-  // $('.postForm').on("submit", "My data", data => {
-  //   alert("here")
-  //   socket.emit('postSurveySubmit',data)
-  // })
 
   socket.on('finished',data => {
     hideAll();
     $finishingPage.show();
     finishingcode.innerText = data.finishingCode
   })
-
 });

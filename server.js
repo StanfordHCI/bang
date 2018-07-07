@@ -1,7 +1,11 @@
 //Settings
 const devMode = false
-const teamSize = 1
-const roundMinutes = 1
+const teamSize = 2
+const roundMinutes = .001
+
+// Settup toggles
+const autocompleteTest = false //turns on fake team to test autocomplete
+const midSurvey = true
 
 // Setup basic express server
 let tools = require('./tools');
@@ -36,8 +40,9 @@ const conditionSet = [{"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,
                       {"control": [2,1,1], "treatment": [2,1,1], "baseline": [1,2,3]},
                       {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
 
+const experimentRoundIndicator = 1
 const conditions = conditionSet[0] // or conditionSet.pick() for ramdomized orderings.
-const experimentRound = conditions[currentCondition].lastIndexOf(1) //assumes that the manipulation is always the last instance of team 1's interaction.
+const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
 const numRounds = conditions.baseline.length
 
 const numberOfRooms = teamSize * numRounds
@@ -132,6 +137,7 @@ io.on('connection', (socket) => {
           'id': socket.id,
           'mturk': mturkID,
           'room': '',
+          'rooms':[],
           'person': people.pop(),
           'name': socket.username,
           'ready': false,
@@ -230,6 +236,7 @@ io.on('connection', (socket) => {
         Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
           users.filter(user => room.includes(user.person)).forEach(user => {
             user.room = roomName
+            user.rooms.push(roomName)
             user.ready = false; //return users to unready state
             console.log(user.name, '-> room', user.room);
           })
@@ -241,11 +248,16 @@ io.on('connection', (socket) => {
         console.log(users.map(user => user.room))
         let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
         users.forEach(user => {
-          // let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
-          // console.log(teamNames)
-          // io.in(user.id).emit('go', {task: taskText, team: teamNames }) })
 
-          io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }) }) })
+          if (autocompleteTest) {
+            let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
+            console.log(teamNames)
+            io.in(user.id).emit('go', {task: taskText, team: teamNames })
+          } else {
+            io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }) })
+          }
+        })
+
         console.log('Issued task for:', currentProduct.name)
         console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
 
@@ -275,14 +287,14 @@ io.on('connection', (socket) => {
 
   // Task
   socket.on('postSurveySubmit', (data) => {
-    if (currentRound < numRounds) {
-      return
-    }
-    let result = data.location.search.slice(6);
     let user = users.byID(socket.id)
-    user.results.manipulationCheck = result
+    // TODO add in interpretation of data based on socket.id.
+    user.results.manipulationCheck = data
     console.log(user.name, "submitted survey:", user.results.manipulationCheck);
 
+    db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": data}}, {}, (err, numReplaced) => {
+                    console.log(err ? "Manipulation check not stored:" + err : "Manipulation check stored for " + user.name)
+    })
     io.in(socket.id).emit('finished', {finishingCode: socket.id});
   });
 
@@ -319,24 +331,25 @@ const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize)
 const assignRoom = () => incompleteRooms().pick()
 
 const postSurvey = (user) => {
-  //currently using client side survey
-
   // get collaborators
-  // let userTeams = []
-  // teams.forEach(round => {
-  //   Object.entries(round).forEach(([teamName,team]) => {
-  //     console.log("Team",teamName,team)
-  //     if (team.includes(user)) {
-  //       let group = team.map(person => { return users.find(user => user.person == person) })
-  //       console.log(group)
-  //       // find members of team
-  //       userTeams.push(group)
-  //     }
-  //   })
-  // })
+  const options = user.rooms.length
+  const rooms = user.rooms
+  const roomTeams = rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
+  const answers = roomTeams.map((team, tIndex) => team.reduce((total, current, pIndex, pArr)=>{
+    const friend = user.friends.find(friend => friend.id == current.id)
+    let name = ((experimentRound == tIndex && currentCondition == "treatment") ? friend.tAlias : friend.alias)
+    if (name == user.name) {name = "you"}
+    return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
+  },""))
+  let correctAnswer = answers.filter((team,index) => {
+    return conditions[currentCondition][index] == experimentRoundIndicator })
+  if (correctAnswer.length == 1) {correctAnswer = ""}
+  console.log(answers,correctAnswer)
 
   // get aliases
   // render team options
-  return {questions:{'1': { question:"Select which teams you worked with were the same people.",
-                            answers:["1 and 2", "1 and 3", "2 and 3","none were the same"] } }}
+  return { question:"Select teams you think consisted of the same people.",
+           answers: answers,
+           correctAnswer: correctAnswer
+         }
 }
