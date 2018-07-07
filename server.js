@@ -1,8 +1,8 @@
 //Settings
 const devMode = false
-const teamSize = 1
+const teamSize = 2
 const roundMinutes = 10
-const checkinIntervalMinutes = .25;
+const checkinIntervalMinutes = 2;
 
 // Setup basic express server
 let tools = require('./tools');
