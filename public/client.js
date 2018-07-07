@@ -233,26 +233,26 @@ $(function() {
   }
 
   // addSurvey($messsages,{post:true})
-
+  //
   // Adds a survey to pre or post, depending on the element passed
-//   function addSurvey (element, options) {
-//       const $element = $(element);
-
-//     // Setup default options
-//     if (!options) { options = {}; }
-//     if (typeof options.post === 'undefined') { options.post = false; }
-
-//     // Apply options
-//     if (options.fade) {
-//       $element.hide().fadeIn(FADE_TIME);
-//     }
-//     if (options.post) {
-//       $messages.val($element);
-//     } else {
-//       $messages.val($element);
-//     }
-//     $messages[0].scrollTop = $messages[0].scrollHeight;
-//   }
+  // function addSurvey (element, options) {
+  //     const $element = $(element);
+  //
+  //   // Setup default options
+  //   if (!options) { options = {}; }
+  //   if (typeof options.post === 'undefined') { options.post = false; }
+  //
+  //   // Apply options
+  //   if (options.fade) {
+  //     $element.hide().fadeIn(FADE_TIME);
+  //   }
+  //   if (options.post) {
+  //     $messages.val($element);
+  //   } else {
+  //     $messages.val($element);
+  //   }
+  //   $messages[0].scrollTop = $messages[0].scrollHeight;
+  // }
 
 
   // Keyboard events
@@ -351,12 +351,13 @@ $(function() {
 
   socket.on('stop', data => {
     log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
-    setTimeout(() => {
+    // setTimeout(() => {
       hideAll();
       $holdingPage.show();
       messagesSafe.innerHTML = '';
-      //socket.emit('ready')
-    }, 1000 * 3)
+
+      socket.emit('ready')
+    // }, 1000 * 3)
   });
 
   socket.on('timer',data => {
@@ -366,7 +367,6 @@ $(function() {
     log("<br>If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat.")
   });
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
   socket.on('midSurvey',data => {
     setTimeout(() => {
       hideAll();
@@ -376,24 +376,19 @@ $(function() {
 
   $('.midForm').on("submit", socket.emit('midSurveySubmit', this))
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
   socket.on('postSurvey',data => {
     hideAll();
     $postSurvey.show();
-    $('.postForm').submit((result) => {
-      event.preventDefault()
-      socket.emit('postSurveySubmit', $('.postForm').serialize())
+
+    $('#postForm').submit( (event) => { //watches form element
+      event.preventDefault() //stops page reloading
+      socket.emit('postSurveySubmit', $('#postForm').serialize()) //submits results alone
     })
   })
-
-  // $('.postForm').on("submit", socket.emit('postSurveySubmit', this))
-  // $('.postForm').submit(alert("HI")) ///socket.emit('postSurveySubmit',this))
 
   socket.on('finished',data => {
     hideAll();
     $finishingPage.show();
     finishingcode.innerText = data.finishingCode
   })
-
 });

@@ -13,81 +13,7 @@
       <div class="chatArea">
         <ul class="messages"></ul>
       </div>
-<<<<<<< HEAD
-<<<<<<< HEAD
-      <div class="checkinArea">
-        <!-- Radio Button Module -->
-        <p>To what extent do you agree with the statement: The members of this team could work for a long time together.</p>
-        <!--<div id="rb-1" class="rb">
-          <div class="rb-tab rb-tab-active" value="1">
-            <div class="rb-spot">
-              <span class="rb-txt">1</span>
-            </div>
-          </div>
-          <div class="rb-tab" value="2">
-            <div class="rb-spot">
-              <span class="rb-txt">2</span>
-            </div>
-          </div>
-          <div class="rb-tab" value="3">
-            <div class="rb-spot">
-              <span class="rb-txt">3</span>
-            </div>
-          </div>
-          <div class="rb-tab" value="4">
-            <div class="rb-spot">
-              <span class="rb-txt">4</span>
-            </div>
-          </div>
-          <div class="rb-tab" value="5">
-            <div class="rb-spot">
-              <span class="rb-txt">5</span>
-            </div>
-          </div>
-          <div class="rb-tab rb-tab" value="6">
-            <div class="rb-spot">
-              <span class="rb-txt">6</span>
-            </div>
-          </div>
-            <div class="rb-tab rb-tab" value="7">
-            <div class="rb-spot">
-              <span class="rb-txt">7</span>
-            </div>
-          </div> -->
-        <div class="wrap">
-          <div class="RadioBtnsWrap">
-            <input type="radio" name="radio1" id="radio17" class="Radio" value="7" />
-            <label for="radio17">7 Strongly Agree</label>
-
-            <input type="radio" name="radio1" id="radio16" class="Radio" value="6" />
-            <label  for="radio16">6 Agree</label>
-
-            <input type="radio" name="radio1" id="radio15" class="Radio" value="5" />
-            <label  for="radio15">5 Slightly Agree</label>
-            
-            <input type="radio" name="radio1" checked id="radio14" class="Radio" value="4" />
-            <label  for="radio14">4 Neutral</label>
-
-            <input type="radio" name="radio1" id="radio13" class="Radio" value="3" />
-            <label  for="radio13">3 Slightly Disagree</label>
-
-            <input type="radio" name="radio1" id="radio12" class="Radio" value="2" />
-            <label  for="radio12">2 Disagree</label>
-
-            <input type="radio" name="radio1" id="radio11" class="Radio" value="1" />
-            <label  for="radio11">1 Strongly Disagree</label>
-
-            
-          </div>
-        </div>
-      </div>
-      <input class="inputMessage" placeholder="Type here..." oninput="console.log(this.value)"/>
-=======
       <input class="inputMessage" placeholder="Type here..." oninput=""/>
->>>>>>> 62b9679ff87a15f140c715a6c9f7cb421a1bb7b7
-=======
-      <input class="inputMessage" placeholder="Type here..." oninput="console.log(this.value)"/>
->>>>>>> parent of 62b9679... Improved autocomplete
     </li>
     <li id="login" class="login page">
       <div class="form">
@@ -242,16 +168,16 @@
 
     <li id="postSurvey" class="login page">
       <div class="form">
-        <form style="color: white;" class="postForm">
-         <h3 class="title">Select which teams you worked with were the same people.</h3>
-         <input type="radio" name="team" value="1 and 2"><label for="1 and 2"> 1 and 2</label><br>
-         <input type="radio" name="team" value="1 and 3"><label for="1 and 3"> 1 and 3</label><br>
-         <input type="radio" name="team" value="2 and 3"><label for="2 and 3"> 2 and 3</label><br>
-         <input type="radio" name="team" value="None were the same"><label for="None were the same"> None were the same</label><br>
-          <br>
-          <input type="submit" value="Submit">
-      </form>
 
+        <form style="color: white;" id="postForm">
+         <h3 class="title">Select which teams you worked with were the same people.</h3>
+         <input type="checkbox" name="team" value="1 and 2"><label for="1 and 2"> 1 and 2</label><br>
+         <input type="checkbox" name="team" value="1 and 3"><label for="1 and 3"> 1 and 3</label><br>
+         <input type="checkbox" name="team" value="2 and 3"><label for="2 and 3"> 2 and 3</label><br>
+         <br>
+         <input type="submit" value="Submit">
+        </form>
+      
       </div>
     </li>
     <li id="finishing" class="login page">
