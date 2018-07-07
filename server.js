@@ -1,11 +1,11 @@
 //Settings
 const devMode = false
 const teamSize = 1
-const roundMinutes = .001
+const roundMinutes = 1
 
 // Settup toggles
 const autocompleteTest = false //turns on fake team to test autocomplete
-const midSurvey = true
+const midSurveyToggle = true
 
 // Setup basic express server
 let tools = require('./tools');
@@ -247,10 +247,7 @@ io.on('connection', (socket) => {
         let currentProduct = products[currentRound]
         let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
-        users.forEach(user => { io.in(user.id).emit('go', {task: taskText}) });
-        console.log('Issued task for:', currentProduct.name);
         users.forEach(user => {
-
           if (autocompleteTest) {
             let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
             console.log(teamNames)
@@ -274,16 +271,14 @@ io.on('connection', (socket) => {
             console.log('done with round', currentRound);
             users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound}) });
 
-
             console.log('launching midSurvey', currentRound);
             users.forEach(user => { io.in(user.id).emit('midSurvey', midSurvey(user)) });
-
 
             currentRound += 1 // guard to only do this when a round is actually done.
             console.log(currentRound, "out of", numRounds)
           }, 1000 * 60 * 0.1 * roundMinutes)
         }, 1000 * 60 * 0.9 * roundMinutes)
-        
+
       }
 
       //Launch post survey
@@ -295,22 +290,23 @@ io.on('connection', (socket) => {
           db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
           io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
         })
-      } 
+      }
   });
 
    // Task after each round - midSurvey - MAIKA
    socket.on('midSurveySubmit', (data) => {
-    let result = data.location.search.slice(6);
-    let user = users.byID(socket.id)
-    let currentRoom = users.byID(socket.id).room
-    user.results.viabilityCheck = result
-    console.log(user.name, "submitted survey:", user.results.viabilityCheck);
-    db.midSurvey.insert({'room':currentRoom,'userID':socket.id, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
-      if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
-      else if(usersAdded) console.log("MidSurvey added to the DB");
-    });
-    console.log("room:", currentRoom); 
-  }); 
+    // let result = data.location.search.slice(6);
+    // let user = users.byID(socket.id)
+    // let currentRoom = users.byID(socket.id).room
+    // user.results.viabilityCheck = result
+    // console.log(user.name, "submitted survey:", user.results.viabilityCheck);
+    // db.midSurvey.insert({'room':currentRoom,'userID':socket.id, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
+      // if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
+      // else if(usersAdded) console.log("MidSurvey added to the DB");
+    // });
+    // console.log("room:", currentRoom);
+    console.log(data)
+  });
 
   // Task
   socket.on('postSurveySubmit', (data) => {
@@ -321,9 +317,9 @@ io.on('connection', (socket) => {
 
     db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
     io.in(socket.id).emit('finished', {finishingCode: socket.id});
-  }); 
+  });
 
-}); 
+});
 
 //replaces user.friend aliases with corresponding user IDs
 function aliasToID(user, newString) {

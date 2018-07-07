@@ -49,10 +49,7 @@ $(function() {
   let lastTypingTime;
   let $currentInput = $usernameInput.focus();
 
-  const users = ["mark"]
-
-  // currently disabled
-  // const autocomplete = () => {}
+  let currentTeam = []
 
   /* globals io */
   const socket = io();
@@ -256,11 +253,12 @@ $(function() {
 
 
   // Keyboard events
-  setUsername ()
+  setUsername()
   $window.keydown(event => {
     // Auto-focus the current input when a key is typed
     if (!(event.ctrlKey || event.metaKey || event.altKey)) {
       $currentInput.focus();
+      // forcedComplete($currentInput)
     }
 
     // When the client hits ENTER on their keyboard
@@ -270,6 +268,27 @@ $(function() {
         socket.emit('stop typing');
         typing = false;
       } else { setUsername() }
+    }
+    if (event.keyCode === $.ui.keyCode.TAB) {
+      //&& $inputMessage.autocomplete("instance").menu.active as a poteantial second condition
+      event.preventDefault()
+    }
+  })
+
+  //Simple autocomplete
+  $inputMessage.autocomplete({
+    source: ["test"],
+    position: { my : "right top-90%", at: "right top" },
+    minLength: 2,
+    autoFocus: true,
+    delay: 50,
+    select: (event, ui) => {
+      var terms = $inputMessage.val().split(" ");
+      terms.pop();
+      terms.push( ui.item.value );
+      terms.push( "" );
+      $inputMessage.val(terms.join( " " ))
+      return false;
     }
   });
 
@@ -347,6 +366,18 @@ $(function() {
     log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
     $currentInput = $inputMessage.focus();
     notify("Session ready", "Come back and join in!")
+
+    //Set up team autocomplete
+    currentTeam = data.team
+    $currentInput = $inputMessage.focus();
+    $inputMessage.autocomplete( "option", "source", (request, response) => {
+      let currentTerm = request.term.split(" ").pop()
+      if (currentTerm.length < 2){
+        response("")
+        return
+      }
+      response($.ui.autocomplete.filter(currentTeam, currentTerm));
+    });
   });
 
   socket.on('stop', data => {
@@ -355,8 +386,6 @@ $(function() {
       hideAll();
       $holdingPage.show();
       messagesSafe.innerHTML = '';
-
-      socket.emit('ready')
     // }, 1000 * 3)
   });
 
@@ -368,18 +397,18 @@ $(function() {
   });
 
   socket.on('midSurvey',data => {
-    setTimeout(() => {
-      hideAll();
-      $midSurvey.show();
-    }, 1000 * 3)
+    hideAll();
+    $midSurvey.show();
+    $('#midForm').submit( (event) => {
+      event.preventDefault() //stops page reloading
+      socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
+      socket.emit('ready')
+    })
   })
-
-  $('.midForm').on("submit", socket.emit('midSurveySubmit', this))
 
   socket.on('postSurvey',data => {
     hideAll();
     $postSurvey.show();
-
     $('#postForm').submit( (event) => { //watches form element
       event.preventDefault() //stops page reloading
       socket.emit('postSurveySubmit', $('#postForm').serialize()) //submits results alone

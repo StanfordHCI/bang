@@ -5,6 +5,9 @@
   <title>Bang!</title>
   <link rel="stylesheet" href="style.css">
   <script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
+<script src="//code.jquery.com/jquery-1.12.4.js"></script>
+<script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 </head>
 
 <body>
@@ -37,8 +40,8 @@
 
 <!--  Mid-survey Code (Maika) -->
     <li id="midSurvey" class="login page">
-        <div class="form" id="midForm">
-          <form style="color: white;">
+        <div class="form">
+          <form style="color: white;" id="midForm">
             <h3 class="intro">Your answers to the following questions will have no impact on your task performance<br>or ability to work with us in the future.</h3>
             <br>
             <br>
@@ -168,7 +171,6 @@
 
     <li id="postSurvey" class="login page">
       <div class="form">
-
         <form style="color: white;" id="postForm">
          <h3 class="title">Select which teams you worked with were the same people.</h3>
          <input type="checkbox" name="team" value="1 and 2"><label for="1 and 2"> 1 and 2</label><br>
@@ -177,18 +179,17 @@
          <br>
          <input type="submit" value="Submit">
         </form>
-      
+
       </div>
     </li>
     <li id="finishing" class="login page">
       <div class="form">
         <h3 class="title">Thanks for participating, you're all done!</h3>
-        <p style="color: white;">Paste <span id="finishingcode"></span> into the MTurk task to receive payment.</p>
+        <p style="color: white;">Paste <strong><span id="finishingcode"></span></strong> into the MTurk task to receive payment.</p>
       </div>
     </li>
   </ul>
-
-  <script src="https://code.jquery.com/jquery-2.2.2.min.js"></script>
+  
   <script src="/socket.io/socket.io.js"></script>
   <script src="/client.js"></script>
 </body>

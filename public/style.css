@@ -34,7 +34,7 @@ ul {
 /* Pages */
 
 .pages {
-  height: 100%; 
+  height: 100%;
   margin: 0;
   padding: 0;
   width: 100%;
@@ -112,8 +112,8 @@ ul {
 .log {
   color: gray;
   font-size: 70%;
-  margin: 5px;
-  text-align: center;
+  margin: 20px 5px;
+  text-align: left;
 }
 
 /* Messages */
@@ -126,7 +126,7 @@ ul {
 }
 
 .checkinArea {
-  float: left;  
+  float: left;
   height: 25%;
   width: 25%;
   background-color: white;
@@ -257,7 +257,7 @@ ul {
 }
 
 .rb-tab-active .rb-spot {
-  
+
   border: 2px solid rgba(0,0,255,.6);
 }
 */
@@ -305,7 +305,7 @@ ul {
 }
 
 #midSurvey .form label {
-  margin-right: 40px;  /* space between label and next radio button */ 
+  margin-right: 40px;  /* space between label and next radio button */
 }
 
 .ui-autocomplete .ui-menu-item{
