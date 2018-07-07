@@ -31,6 +31,7 @@ const Datastore = require('nedb'),
     db.users = new Datastore({ filename:'.data/users', autoload: true });
     db.chats = new Datastore({ filename:'.data/chats', autoload: true });
     db.products = new Datastore({ filename:'.data/products', autoload: true });
+    db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results - MAIKA
 
 // Setting up variables
 const currentCondition = "treatment"
@@ -150,7 +151,8 @@ io.on('connection', (socket) => {
             'condition':currentCondition,
             'format':conditions[currentCondition],
             'manipulation':[],
-            'manipulationCheck':""
+            'viabilityCheck':'', // survey questions after each round - MAIKA
+            'manipulationCheck':''
           }
         };
 
@@ -183,11 +185,8 @@ io.on('connection', (socket) => {
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
         if (addedUser) {
-          user = users.byID(socket.id)
-          user.active = false //set user to inactive
-          user.ready = false //set user to not ready
-          people.push(user.person)
-          user.person = ""
+          users.byID(socket.id).active = false //set user to inactive
+          users.byID(socket.id).ready = false //set user to not ready
 
           // update DB with change
           db.users.update({ id: socket.id }, {$set: {active: false}}, {}, (err, numReplaced) => {
@@ -208,6 +207,7 @@ io.on('connection', (socket) => {
 
     // Main experiment run
     socket.on('ready', function (data) {
+
       users.byID(socket.id).ready = true;
       console.log(socket.username, 'is ready');
 
@@ -245,9 +245,10 @@ io.on('connection', (socket) => {
 
         //Notify user 'go' and send task.
         let currentProduct = products[currentRound]
-
-        console.log(users.map(user => user.room))
         let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
+
+        users.forEach(user => { io.in(user.id).emit('go', {task: taskText}) });
+        console.log('Issued task for:', currentProduct.name);
         users.forEach(user => {
 
           if (autocompleteTest) {
@@ -266,17 +267,25 @@ io.on('connection', (socket) => {
         // make timers run in serial
         setTimeout(() => {
           console.log('time warning', currentRound);
-          users.forEach(user => { io.in(user.id).emit('timer', {time: roundMinutes * .1}) })
+          users.forEach(user => { io.in(user.id).emit('timer', {time: roundMinutes * .1}) });
 
-          //Doen with round
+          //Done with round
           setTimeout(() => {
             console.log('done with round', currentRound);
             users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound}) });
+
+
+            console.log('launching midSurvey', currentRound);
+            users.forEach(user => { io.in(user.id).emit('midSurvey', midSurvey(user)) });
+
+
             currentRound += 1 // guard to only do this when a round is actually done.
             console.log(currentRound, "out of", numRounds)
           }, 1000 * 60 * 0.1 * roundMinutes)
         }, 1000 * 60 * 0.9 * roundMinutes)
+        
       }
+
       //Launch post survey
       if (currentRound >= numRounds) {
         users.forEach(user => {
@@ -286,8 +295,22 @@ io.on('connection', (socket) => {
           db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
           io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
         })
-      }
+      } 
   });
+
+   // Task after each round - midSurvey - MAIKA
+   socket.on('midSurveySubmit', (data) => {
+    let result = data.location.search.slice(6);
+    let user = users.byID(socket.id)
+    let currentRoom = users.byID(socket.id).room
+    user.results.viabilityCheck = result
+    console.log(user.name, "submitted survey:", user.results.viabilityCheck);
+    db.midSurvey.insert({'room':currentRoom,'userID':socket.id, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
+      else if(usersAdded) console.log("MidSurvey added to the DB");
+    });
+    console.log("room:", currentRoom); 
+  }); 
 
   // Task
   socket.on('postSurveySubmit', (data) => {
@@ -298,9 +321,9 @@ io.on('connection', (socket) => {
 
     db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
     io.in(socket.id).emit('finished', {finishingCode: socket.id});
-  });
+  }); 
 
-});
+}); 
 
 //replaces user.friend aliases with corresponding user IDs
 function aliasToID(user, newString) {
@@ -331,6 +354,38 @@ const checkUser = mturkID => true
 //Returns a random remaining room space, or error if none. () -> room | error
 const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize)
 const assignRoom = () => incompleteRooms().pick()
+
+//define midSurvey - MAIKA - returns answers from individual
+const midSurvey = (user) => {
+  return {questions:{'Q1': { question:"The members of this team could work for a long time together.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q2': { question:"Most of the members of this team would welcome the opportunity to work as a group again in the future.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q3': { question:"This team has the capacity for long-term success. ",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q4': { question:"This team has what it takes to be effective in the future. ",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q5': { question:"This team would work well together in the future.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q6': { question:"This team has positioned itself well for continued success. ",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q7': { question:"This team has the ability to perform well in the future.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q8': { question:"This team has the ability to function as an ongoing unit.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q9': { question:"This team should continue to function as a unit.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q10': { question:"This team has the resources to perform well in the future.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q11': { question:"This team is well positioned for growth over time.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q12': { question:"This team can develop to meet future challenges. ",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q13': { question:"This team has the capacity to sustain itself.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q14': { question:"This team has what it takes to endure in future performance episodes.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] } }}
+}
 
 const postSurvey = (user) => {
   const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })

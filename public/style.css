@@ -7,13 +7,17 @@
 html {
   font-weight: 300;
   -webkit-font-smoothing: antialiased;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans",
-    "Droid Sans", "Helvetica Neue", Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-kerning: normal;
-  font-variant-ligatures: common-ligatures;
+}
+
+html, input {
+  font-family:
+    "HelveticaNeue-Light",
+    "Helvetica Neue Light",
+    "Helvetica Neue",
+    Helvetica,
+    Arial,
+    "Lucida Grande",
+    sans-serif;
 }
 
 html, body {
@@ -30,7 +34,7 @@ ul {
 /* Pages */
 
 .pages {
-  height: 100%;
+  height: 100%; 
   margin: 0;
   padding: 0;
   width: 100%;
@@ -73,6 +77,10 @@ ul {
   font-size: 200%;
 }
 
+.login.page .intro {
+  font-size: 100%;
+}
+
 .login.page .usernameInput {
   font-size: 200%;
   letter-spacing: 3px;
@@ -87,6 +95,7 @@ ul {
 
 .chat.page {
   display: none;
+  background-color: white;
 }
 
 /* Font */
@@ -103,16 +112,155 @@ ul {
 .log {
   color: gray;
   font-size: 70%;
-  margin: 20px 5px;
-  text-align: left;
+  margin: 5px;
+  text-align: center;
 }
 
 /* Messages */
 
 .chatArea {
+  float: left;
   height: 100%;
+  width:  75%;
   padding-bottom: 60px;
 }
+
+.checkinArea {
+  float: left;  
+  height: 25%;
+  width: 25%;
+  background-color: white;
+  top: 0;
+}
+
+.wrap {
+  display: table-cell;
+  vertical-align: middle;
+}
+.wrap .RadioBtnsWrap {
+  display: inline-block;
+  position: relative;
+  width: 140px;
+}
+.wrap .RadioBtnsWrap label {
+  display: inline-block;
+  position: relative;
+  margin-left: 40px;
+  text-align: left;
+  height: 40px;
+  line-height: 40px;
+  min-width: 200px;
+  font-size: 16px;
+}
+.wrap .RadioBtnsWrap label:not(:nth-of-type(1)) {
+  margin-top: 17px;
+}
+.wrap .Radio {
+  -webkit-appearance: none;
+  height: 0;
+  width: 0;
+  opacity: 0;
+  margin: 0;
+  padding: 0;
+  outline: 0;
+  border: none;
+}
+.wrap .RadioBtnsWrap label::after {
+  content: 'x';
+  color: transparent;
+  position: absolute;
+  left: -44px;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+  width: 10px;
+  height: 10px;
+  background-color: #FFFFFF;
+  display: inline-block;
+  border-bottom-left-radius: 40px;
+  border-bottom-right-radius: 40px;
+  border-top-left-radius: 40px;
+  border-top-right-radius: 40px;
+  border-color: #79C5FF;
+  border-style: solid;
+  border-width: 8px;
+  transition: background-color 0.6s, border-width 0.4s, width 0.6s, height 0.6s, left 0.6s;
+  -webkit-transition: background-color 0.6s, border-width 0.4s, width 0.6s, height 0.6s, left 0.6s;
+  -webkit-box-shadow: 0px 2px 3px -1px rgba(0, 0, 0, 0.75);
+  box-shadow: 0px 2px 3px -1px rgba(0, 0, 0, 0.75);
+}
+.wrap .Radio:checked + label::after {
+  background-color: #c5416e;
+  width: 20px;
+  height: 20px;
+  left: -47px;
+  border-width: 6px;
+  -webkit-box-shadow: 0px 2px 3px -1px rgba(0, 0, 0, 0.75), inset 0px 0px 5px 1px rgba(0, 0, 0, 0.75);
+  box-shadow: 0px 2px 3px -1px rgba(0, 0, 0, 0.75), inset 0px 0px 5px 1px rgba(0, 0, 0, 0.75);
+}
+.wrap .RadioBtnsWrap label:not(:nth-of-type(1))::before {
+  content: '';
+  position: absolute;
+  left: -35px;
+  height: 57px;
+  width: 8px;
+  display: inline-block;
+  background-color: #79C5FF;
+  -webkit-box-shadow: 1px 4px 2px 1px rgba(0, 0, 0, 0.25);
+  box-shadow: 1px 4px 2px 1px rgba(0, 0, 0, 0.25);
+}
+.wrap .RadioBtnsWrap label::before {
+  bottom: 28px;
+}
+.wrap .Radio:checked + label + input + label::before {
+  height: 52px;
+  transition: height .0s linear .3s;
+  -webkit-transition: height .0s linear .3s;
+}
+
+
+/*
+.rb {
+  padding: 16px 0;
+  text-align: center;
+  background: rgba(255,255,255,.03);
+  border-radius: .3em;
+}
+
+.rb-tab {
+  display: inline-block;
+  position: relative;
+  width: 10%;
+}
+
+.rb-txt {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: .5em;
+  color: black;
+}
+
+.rb-spot {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: transparent;
+  border: 2px solid gray;
+  border-radius: 100%;
+  cursor: pointer;
+  transition: ease .5s;
+}
+
+.rb-tab-active .rb-spot {
+  
+  border: 2px solid rgba(0,0,255,.6);
+}
+*/
 
 .messages {
   height: 100%;
@@ -147,6 +295,26 @@ ul {
   width: 100%;
 }
 
+/* midSurvey */
+#midSurvey .form {
+  background-color: black;
+  overflow: visible;
+  top: 40%;
+  min-height: 350%;
+  position: relative;
+}
+
+#midSurvey .form label {
+  margin-right: 40px;  /* space between label and next radio button */ 
+}
+
 .ui-autocomplete .ui-menu-item{
   background-color: #eee;
+}
+
+.ui-autocomplete::before{
+  /* float: right; */
+  display: inline;
+  padding: 3px;
+  content: "Tab to select";
 }
