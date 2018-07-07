@@ -1,7 +1,11 @@
 //Settings
 const devMode = false
 const teamSize = 1
-const roundMinutes = 0.2
+const roundMinutes = 1
+
+// Settup toggles
+const autocompleteTest = false //turns on fake team to test autocomplete
+const midSurveyToggle = true
 
 // Setup basic express server
 let tools = require('./tools');
@@ -37,8 +41,9 @@ const conditionSet = [{"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,
                       {"control": [2,1,1], "treatment": [2,1,1], "baseline": [1,2,3]},
                       {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
 
+const experimentRoundIndicator = 1
 const conditions = conditionSet[0] // or conditionSet.pick() for ramdomized orderings.
-const experimentRound = conditions[currentCondition].lastIndexOf(1) //assumes that the manipulation is always the second instance of team 1's interaction.
+const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
 const numRounds = conditions.baseline.length
 
 const numberOfRooms = teamSize * numRounds
@@ -133,6 +138,7 @@ io.on('connection', (socket) => {
           'id': socket.id,
           'mturk': mturkID,
           'room': '',
+          'rooms':[],
           'person': people.pop(),
           'name': socket.username,
           'ready': false,
@@ -144,6 +150,7 @@ io.on('connection', (socket) => {
           'results':{
             'condition':currentCondition,
             'format':conditions[currentCondition],
+            'manipulation':[],
             'viabilityCheck':'', // survey questions after each round - MAIKA
             'manipulationCheck':''
           }
@@ -230,6 +237,7 @@ io.on('connection', (socket) => {
         Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
           users.filter(user => room.includes(user.person)).forEach(user => {
             user.room = roomName
+            user.rooms.push(roomName)
             user.ready = false; //return users to unready state
             console.log(user.name, '-> room', user.room);
           })
@@ -238,8 +246,18 @@ io.on('connection', (socket) => {
         //Notify user 'go' and send task.
         let currentProduct = products[currentRound]
         let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
-        users.forEach(user => { io.in(user.id).emit('go', {task: taskText}) });
-        console.log('Issued task for:', currentProduct.name);
+
+        users.forEach(user => {
+          if (autocompleteTest) {
+            let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
+            console.log(teamNames)
+            io.in(user.id).emit('go', {task: taskText, team: teamNames })
+          } else {
+            io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }) })
+          }
+        })
+
+        console.log('Issued task for:', currentProduct.name)
         console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
 
         //Round warning
@@ -253,56 +271,55 @@ io.on('connection', (socket) => {
             console.log('done with round', currentRound);
             users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound}) });
 
-
             console.log('launching midSurvey', currentRound);
             users.forEach(user => { io.in(user.id).emit('midSurvey', midSurvey(user)) });
-
 
             currentRound += 1 // guard to only do this when a round is actually done.
             console.log(currentRound, "out of", numRounds)
           }, 1000 * 60 * 0.1 * roundMinutes)
         }, 1000 * 60 * 0.9 * roundMinutes)
-        
+
       }
 
       //Launch post survey
       if (currentRound >= numRounds) {
         users.forEach(user => {
           user.ready = false
-          io.in(user.id).emit('postSurvey', postSurvey(user))
+          let survey = postSurvey(user)
+          user.results.manipulation = survey.correctAnswer
+          db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+          io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
         })
-      } 
+      }
   });
 
    // Task after each round - midSurvey - MAIKA
    socket.on('midSurveySubmit', (data) => {
-    let result = data.location.search.slice(6);
-    let user = users.byID(socket.id)
-    let currentRoom = users.byID(socket.id).room
-    user.results.viabilityCheck = result
-    console.log(user.name, "submitted survey:", user.results.viabilityCheck);
-    db.midSurvey.insert({'room':currentRoom,'userID':socket.id, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
-      if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
-      else if(usersAdded) console.log("MidSurvey added to the DB");
-    });
-    console.log("room:", currentRoom); 
-  }); 
+    // let result = data.location.search.slice(6);
+    // let user = users.byID(socket.id)
+    // let currentRoom = users.byID(socket.id).room
+    // user.results.viabilityCheck = result
+    // console.log(user.name, "submitted survey:", user.results.viabilityCheck);
+    // db.midSurvey.insert({'room':currentRoom,'userID':socket.id, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
+      // if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
+      // else if(usersAdded) console.log("MidSurvey added to the DB");
+    // });
+    // console.log("room:", currentRoom);
+    console.log(data)
+  });
 
   // Task
   socket.on('postSurveySubmit', (data) => {
-    if (currentRound < numRounds) {
-      console.log("ran survey")
-      return
-    }
-    let result = data.location.search.slice(6);
     let user = users.byID(socket.id)
-    user.results.manipulationCheck = result
+    //in the future this could be checked.
+    user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
     console.log(user.name, "submitted survey:", user.results.manipulationCheck);
 
+    db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
     io.in(socket.id).emit('finished', {finishingCode: socket.id});
-  }); 
+  });
 
-}); 
+});
 
 //replaces user.friend aliases with corresponding user IDs
 function aliasToID(user, newString) {
@@ -363,28 +380,27 @@ const midSurvey = (user) => {
                      'Q13': { question:"This team has the capacity to sustain itself.",
                             answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
                      'Q14': { question:"This team has what it takes to endure in future performance episodes.",
-                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] } }}
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q15': { question:"If you had the choice, would you like to work with the same team in a future round?",
+                            answers:["1. No", "5. Yes"] }  }}
 }
 
 const postSurvey = (user) => {
-  //currently using client side survey
+  const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
+  const answers = roomTeams.map((team, tIndex) => team.reduce((total, current, pIndex, pArr)=>{
+    const friend = user.friends.find(friend => friend.id == current.id)
+    let name = ((experimentRound == tIndex && currentCondition == "treatment") ? friend.tAlias : friend.alias)
+    if (name == user.name) {name = "you"}
+    return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
+  },""))
 
-  // get collaborators
-  // let userTeams = []
-  // teams.forEach(round => {
-  //   Object.entries(round).forEach(([teamName,team]) => {
-  //     console.log("Team",teamName,team)
-  //     if (team.includes(user)) {
-  //       let group = team.map(person => { return users.find(user => user.person == person) })
-  //       console.log(group)
-  //       // find members of team
-  //       userTeams.push(group)
-  //     }
-  //   })
-  // })
+  let correctAnswer = answers.filter((team,index) => {
+    return conditions[currentCondition][index] == experimentRoundIndicator })
+  if (correctAnswer.length == 1) {correctAnswer = ""}
+  console.log(answers,correctAnswer)
 
-  // get aliases
-  // render team options
-  return {questions:{'1': { question:"Select which teams you worked with were the same people.",
-                            answers:["1 and 2", "1 and 3", "2 and 3","none were the same"] } }} 
-} 
+  return { question:"Select teams you think consisted of the same people.",
+           answers: answers,
+           correctAnswer: correctAnswer
+         }
+}
