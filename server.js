@@ -1,9 +1,10 @@
 //Settings
 const devMode = false
-const checkinOn = true
+const checkinOn = false
 const teamSize = 1
 const roundMinutes = 10
-const checkinIntervalMinutes = .25;
+const checkinIntervalMinutes = .1;
+
 
 // Setup basic express server
 let tools = require('./tools');
@@ -30,7 +31,6 @@ const Datastore = require('nedb'),
     db.chats = new Datastore({ filename:'.data/chats', autoload: true });
     db.products = new Datastore({ filename:'.data/products', autoload: true });
     db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
-    db.switches = new Datastore({ filename: '.data/switches', autoload: true});
 
 // Setting up variables
 const currentCondition = "treatment"
@@ -281,16 +281,17 @@ io.on('connection', (socket) => {
           if(err) console.log("There's a problem adding a checkin to the DB: ", err);
           else if(usersAdded) console.log("Checkin added to the DB");
         });
-
-        let numPopups = 0;
-        let interval = setInterval(() => {
-          if(numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
-            clearInterval(interval);
-          } else {
-            socket.emit("checkin popup");
-            numPopups++;
-          }
-        }, 1000 * 60 * checkinIntervalMinutes)
+        if(checkinOn){
+          let numPopups = 0;
+          let interval = setInterval(() => {
+            if(numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
+              clearInterval(interval);
+            } else {
+              socket.emit("checkin popup");
+              numPopups++;
+            }
+          }, 1000 * 60 * checkinIntervalMinutes)
+        }
       
         
         
