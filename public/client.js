@@ -403,6 +403,8 @@ $(function() {
       event.preventDefault() //stops page reloading
       socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
       socket.emit('ready')
+      $midSurvey.hide()
+      $holdingPage.show()
     })
     $('#midForm')[0].reset();
   })
