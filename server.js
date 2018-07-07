@@ -1,8 +1,9 @@
 //Settings
 const devMode = false
-const teamSize = 2
+const checkinOn = true
+const teamSize = 1
 const roundMinutes = 10
-const checkinIntervalMinutes = 2;
+const checkinIntervalMinutes = .25;
 
 // Setup basic express server
 let tools = require('./tools');
@@ -254,8 +255,8 @@ io.on('connection', (socket) => {
         console.log('Issued task for:', currentProduct.name)
         console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
 
-        
-        startTime = (new Date()).getTime();//record start time
+        // save start time
+        startTime = (new Date()).getTime();
 
         //Round warning
         // make timers run in serial
@@ -267,17 +268,20 @@ io.on('connection', (socket) => {
           setTimeout(() => {
             console.log('done with round', currentRound);
             users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound}) });
-              currentRound += 1 // guard to only do this when a round is actually done.
-              console.log(currentRound, "out of", numRounds)
-            }, 1000 * 60 * 0.1 * roundMinutes)
-          }, 1000 * 60 * 0.9 * roundMinutes)
-        }
+            currentRound += 1 // guard to only do this when a round is actually done.
+            console.log(currentRound, "out of", numRounds)
+          }, 1000 * 60 * 0.1 * roundMinutes)
+        }, 1000 * 60 * 0.9 * roundMinutes)
+      }
+        
+
         //record start checkin time in db
         let currentRoom = users.byID(socket.id).room
         db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed()}, (err, usersAdded) => {
           if(err) console.log("There's a problem adding a checkin to the DB: ", err);
           else if(usersAdded) console.log("Checkin added to the DB");
         });
+
         let numPopups = 0;
         let interval = setInterval(() => {
           if(numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
@@ -286,13 +290,11 @@ io.on('connection', (socket) => {
             socket.emit("checkin popup");
             numPopups++;
           }
-
         }, 1000 * 60 * checkinIntervalMinutes)
-        setTimeout(() => {
-          users.forEach(user => { io.in(user.id).emit('switchTeams', {time: roundMinutes * .01})})
-
-        }, 1000 * 60 * 0.005 * roundMinutes)
-      }
+      
+        
+        
+      
       //Launch post survey
       if (currentRound >= numRounds) {
         users.forEach(user => {
@@ -303,13 +305,7 @@ io.on('connection', (socket) => {
   });
 
 
-  socket.on('switchTeams', (data) => {
-    let user = users.byID(socket.id)
-    db.switches.insert({'room':users.byID(socket.id).room, 'userID':socket.id, 'round':currentRound})
-  });
-
-
-
+  
   // Task
   socket.on('postSurveySubmit', (data) => {
     if (currentRound < numRounds) {
