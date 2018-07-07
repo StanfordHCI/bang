@@ -1,6 +1,6 @@
 //Settings
 const devMode = false
-const teamSize = 2
+const teamSize = 1
 const roundMinutes = .001
 
 // Settup toggles
@@ -149,7 +149,8 @@ io.on('connection', (socket) => {
           'results':{
             'condition':currentCondition,
             'format':conditions[currentCondition],
-            'manipulationCheck':''
+            'manipulation':[],
+            'manipulationCheck':""
           }
         };
 
@@ -280,7 +281,10 @@ io.on('connection', (socket) => {
       if (currentRound >= numRounds) {
         users.forEach(user => {
           user.ready = false
-          io.in(user.id).emit('postSurvey', postSurvey(user))
+          let survey = postSurvey(user)
+          user.results.manipulation = survey.correctAnswer
+          db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+          io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
         })
       }
   });
@@ -288,13 +292,11 @@ io.on('connection', (socket) => {
   // Task
   socket.on('postSurveySubmit', (data) => {
     let user = users.byID(socket.id)
-    // TODO add in interpretation of data based on socket.id.
-    user.results.manipulationCheck = data
+    //in the future this could be checked.
+    user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
     console.log(user.name, "submitted survey:", user.results.manipulationCheck);
 
-    db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": data}}, {}, (err, numReplaced) => {
-                    console.log(err ? "Manipulation check not stored:" + err : "Manipulation check stored for " + user.name)
-    })
+    db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
     io.in(socket.id).emit('finished', {finishingCode: socket.id});
   });
 
@@ -331,23 +333,19 @@ const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize)
 const assignRoom = () => incompleteRooms().pick()
 
 const postSurvey = (user) => {
-  // get collaborators
-  const options = user.rooms.length
-  const rooms = user.rooms
-  const roomTeams = rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
+  const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
   const answers = roomTeams.map((team, tIndex) => team.reduce((total, current, pIndex, pArr)=>{
     const friend = user.friends.find(friend => friend.id == current.id)
     let name = ((experimentRound == tIndex && currentCondition == "treatment") ? friend.tAlias : friend.alias)
     if (name == user.name) {name = "you"}
     return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
   },""))
+
   let correctAnswer = answers.filter((team,index) => {
     return conditions[currentCondition][index] == experimentRoundIndicator })
   if (correctAnswer.length == 1) {correctAnswer = ""}
   console.log(answers,correctAnswer)
 
-  // get aliases
-  // render team options
   return { question:"Select teams you think consisted of the same people.",
            answers: answers,
            correctAnswer: correctAnswer

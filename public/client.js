@@ -226,26 +226,26 @@ $(function() {
   }
 
   // addSurvey($messsages,{post:true})
-
+  //
   // Adds a survey to pre or post, depending on the element passed
-//   function addSurvey (element, options) {
-//       const $element = $(element);
-
-//     // Setup default options
-//     if (!options) { options = {}; }
-//     if (typeof options.post === 'undefined') { options.post = false; }
-
-//     // Apply options
-//     if (options.fade) {
-//       $element.hide().fadeIn(FADE_TIME);
-//     }
-//     if (options.post) {
-//       $messages.val($element);
-//     } else {
-//       $messages.val($element);
-//     }
-//     $messages[0].scrollTop = $messages[0].scrollHeight;
-//   }
+  // function addSurvey (element, options) {
+  //     const $element = $(element);
+  //
+  //   // Setup default options
+  //   if (!options) { options = {}; }
+  //   if (typeof options.post === 'undefined') { options.post = false; }
+  //
+  //   // Apply options
+  //   if (options.fade) {
+  //     $element.hide().fadeIn(FADE_TIME);
+  //   }
+  //   if (options.post) {
+  //     $messages.val($element);
+  //   } else {
+  //     $messages.val($element);
+  //   }
+  //   $messages[0].scrollTop = $messages[0].scrollHeight;
+  // }
 
 
   // Keyboard events
