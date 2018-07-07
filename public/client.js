@@ -404,6 +404,7 @@ $(function() {
       socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
       socket.emit('ready')
     })
+    $('#midForm')[0].reset();
   })
 
   socket.on('postSurvey',data => {

@@ -1,7 +1,7 @@
 //Settings
 const devMode = false
 const teamSize = 1
-const roundMinutes = 1
+const roundMinutes = 0.1
 
 // Settup toggles
 const autocompleteTest = false //turns on fake team to test autocomplete
@@ -295,16 +295,17 @@ io.on('connection', (socket) => {
 
    // Task after each round - midSurvey - MAIKA
    socket.on('midSurveySubmit', (data) => {
-    // let result = data.location.search.slice(6);
-    // let user = users.byID(socket.id)
-    // let currentRoom = users.byID(socket.id).room
-    // user.results.viabilityCheck = result
-    // console.log(user.name, "submitted survey:", user.results.viabilityCheck);
-    // db.midSurvey.insert({'room':currentRoom,'userID':socket.id, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
-      // if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
-      // else if(usersAdded) console.log("MidSurvey added to the DB");
-    // });
-    // console.log("room:", currentRoom);
+    let user = users.byID(socket.id)
+    let currentRoom = users.byID(socket.id).room
+    user.results.viabilityCheck = data
+    console.log(user.name, "submitted survey:", user.results.viabilityCheck);
+
+    //let result = data.location.search.slice(6);
+    //user.results.viabilityCheck = result
+    db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
+      else if(usersAdded) console.log("MidSurvey added to the DB");
+    });
     console.log(data)
   });
 
