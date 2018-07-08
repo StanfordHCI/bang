@@ -1,11 +1,11 @@
 //Settings
 const teamSize = 1
-const roundMinutes = .2
+const roundMinutes = .1
 
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 const midSurveyOn = false
-const blacklistOn = false //not implemented yet
+const blacklistOn = true //not implemented yet
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/2
 
@@ -346,26 +346,39 @@ io.on('connection', (socket) => {
   });
 
   // Task
-  socket.on('postSurveySubmit', (data) => {
-    let user = users.byID(socket.id)
-    //in the future this could be checked.
-    user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
-    console.log(user.name, "submitted survey:", user.results.manipulationCheck);
-
-    db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-    io.in(socket.id).emit('blacklistSurvey');
-  });
-
-  socket.on('blacklistSurveySubmit', (data) => {
-    let user = users.byID(socket.id)
-    //in the future this could be checked.
-    user.results.blacklistCheck = data //(user.results.manipulation == data) ? true : false
-    // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
-    console.log(user.name, "submitted blacklist survey:", data);
-
-    db.users.update({ id: socket.id }, {$set: {"results.blacklistCheck": user.results.blacklistCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
-    io.in(socket.id).emit('finished', {finishingCode: socket.id});
-  });
+  if (blacklistOn) {
+    socket.on('postSurveySubmit', (data) => {
+      let user = users.byID(socket.id)
+      //in the future this could be checked.
+      user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
+      console.log(user.name, "submitted survey:", user.results.manipulationCheck);
+  
+      db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+      io.in(socket.id).emit('blacklistSurvey');
+    });
+  
+    socket.on('blacklistSurveySubmit', (data) => {
+      let user = users.byID(socket.id)
+      //in the future this could be checked.
+      user.results.blacklistCheck = data //(user.results.manipulation == data) ? true : false
+      // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
+      console.log(user.name, "submitted blacklist survey:", data);
+  
+      db.users.update({ id: socket.id }, {$set: {"results.blacklistCheck": user.results.blacklistCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
+      io.in(socket.id).emit('finished', {finishingCode: socket.id});
+    });
+  } else {
+    socket.on('postSurveySubmit', (data) => {
+      let user = users.byID(socket.id)
+      //in the future this could be checked.
+      user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
+      console.log(user.name, "submitted survey:", user.results.manipulationCheck);
+  
+      db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+      io.in(socket.id).emit('finished');
+    });
+  }
+  
 
 });
 
