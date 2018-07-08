@@ -5,7 +5,7 @@ const roundMinutes = .1
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 const midSurveyOn = false
-const blacklistOn = true //not implemented yet
+const blacklistOn = false //not implemented yet
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/2
 
