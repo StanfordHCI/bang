@@ -5,7 +5,7 @@ const roundMinutes = 0.1
 
 // Settup toggles
 const autocompleteTest = false //turns on fake team to test autocomplete
-const midSurveyToggle = true
+const midSurveyToggle = true // turns on midSurvey to appear after each round 
 
 // Setup basic express server
 let tools = require('./tools');
@@ -271,8 +271,10 @@ io.on('connection', (socket) => {
             console.log('done with round', currentRound);
             users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound}) });
 
-            console.log('launching midSurvey', currentRound);
-            users.forEach(user => { io.in(user.id).emit('midSurvey', midSurvey(user)) });
+            if(midSurveyToggle) {
+              console.log('launching midSurvey', currentRound);
+              users.forEach(user => { io.in(user.id).emit('midSurvey', midSurvey(user)) });
+            }
 
             currentRound += 1 // guard to only do this when a round is actually done.
             console.log(currentRound, "out of", numRounds)
