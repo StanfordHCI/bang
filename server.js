@@ -298,7 +298,6 @@ io.on('connection', (socket) => {
           }, 1000 * 60 * 0.1 * roundMinutes)
         }, 1000 * 60 * 0.9 * roundMinutes)
 
-      }
 
         //record start checkin time in db
         let currentRoom = users.byID(socket.id).room
@@ -317,6 +316,9 @@ io.on('connection', (socket) => {
             }
           }, 1000 * 60 * checkinIntervalMinutes)
         }
+      }
+
+        
       
         
         

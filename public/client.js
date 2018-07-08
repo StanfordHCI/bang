@@ -436,7 +436,6 @@ $(function() {
     hideAll();
 
     $midSurvey.show();
-    log("ms");
     $('#midForm').submit( (event) => {
       event.preventDefault() //stops page reloading
       socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
