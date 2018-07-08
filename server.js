@@ -5,6 +5,9 @@ const teamSize = 1
 const roundMinutes = 10
 const checkinIntervalMinutes = .1;
 
+// Settup toggles
+const autocompleteTest = false //turns on fake team to test autocomplete
+const midSurveyToggle = true
 
 // Setup basic express server
 let tools = require('./tools');
@@ -31,6 +34,7 @@ const Datastore = require('nedb'),
     db.chats = new Datastore({ filename:'.data/chats', autoload: true });
     db.products = new Datastore({ filename:'.data/products', autoload: true });
     db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
+    db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results - MAIKA
 
 // Setting up variables
 const currentCondition = "treatment"
@@ -40,8 +44,9 @@ const conditionSet = [{"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,
                       {"control": [2,1,1], "treatment": [2,1,1], "baseline": [1,2,3]},
                       {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
 
+const experimentRoundIndicator = 1
 const conditions = conditionSet[0] // or conditionSet.pick() for ramdomized orderings.
-const experimentRound = conditions[currentCondition].lastIndexOf(1) //assumes that the manipulation is always the second instance of team 1's interaction.
+const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
 const numRounds = conditions.baseline.length
 
 const numberOfRooms = teamSize * numRounds
@@ -147,6 +152,7 @@ io.on('connection', (socket) => {
           'id': socket.id,
           'mturk': mturkID,
           'room': '',
+          'rooms':[],
           'person': people.pop(),
           'name': socket.username,
           'ready': false,
@@ -155,10 +161,11 @@ io.on('connection', (socket) => {
                     'alias': tools.makeName(),
                     'tAlias':tools.makeName() }}),
           'active': true,
-          'switch': false,
           'results':{
             'condition':currentCondition,
             'format':conditions[currentCondition],
+            'manipulation':[],
+            'viabilityCheck':'', // survey questions after each round - MAIKA
             'manipulationCheck':''
           }
         };
@@ -214,6 +221,7 @@ io.on('connection', (socket) => {
 
     // Main experiment run
     socket.on('ready', function (data) {
+
       users.byID(socket.id).ready = true;
       console.log(socket.username, 'is ready');
 
@@ -243,6 +251,7 @@ io.on('connection', (socket) => {
         Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
           users.filter(user => room.includes(user.person)).forEach(user => {
             user.room = roomName
+            user.rooms.push(roomName)
             user.ready = false; //return users to unready state
             console.log(user.name, '-> room', user.room);
           })
@@ -251,7 +260,17 @@ io.on('connection', (socket) => {
         //Notify user 'go' and send task.
         let currentProduct = products[currentRound]
         let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
-        users.forEach(user => { io.in(user.id).emit('go', {task: taskText}) })
+
+        users.forEach(user => {
+          if (autocompleteTest) {
+            let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
+            console.log(teamNames)
+            io.in(user.id).emit('go', {task: taskText, team: teamNames })
+          } else {
+            io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }) })
+          }
+        })
+
         console.log('Issued task for:', currentProduct.name)
         console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
 
@@ -262,18 +281,22 @@ io.on('connection', (socket) => {
         // make timers run in serial
         setTimeout(() => {
           console.log('time warning', currentRound);
-          users.forEach(user => { io.in(user.id).emit('timer', {time: roundMinutes * .1}) })
+          users.forEach(user => { io.in(user.id).emit('timer', {time: roundMinutes * .1}) });
 
           //Done with round
           setTimeout(() => {
             console.log('done with round', currentRound);
             users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound}) });
+
+            console.log('launching midSurvey', currentRound);
+            users.forEach(user => { io.in(user.id).emit('midSurvey', midSurvey(user)) });
+
             currentRound += 1 // guard to only do this when a round is actually done.
             console.log(currentRound, "out of", numRounds)
           }, 1000 * 60 * 0.1 * roundMinutes)
         }, 1000 * 60 * 0.9 * roundMinutes)
+
       }
-        
 
         //record start checkin time in db
         let currentRoom = users.byID(socket.id).room
@@ -300,24 +323,38 @@ io.on('connection', (socket) => {
       if (currentRound >= numRounds) {
         users.forEach(user => {
           user.ready = false
-          io.in(user.id).emit('postSurvey', postSurvey(user))
+          let survey = postSurvey(user)
+          user.results.manipulation = survey.correctAnswer
+          db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+          io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
         })
       }
   });
 
+   // Task after each round - midSurvey - MAIKA
+   socket.on('midSurveySubmit', (data) => {
+    let user = users.byID(socket.id)
+    let currentRoom = users.byID(socket.id).room
+    user.results.viabilityCheck = data
+    console.log(user.name, "submitted survey:", user.results.viabilityCheck);
 
-  
+    //let result = data.location.search.slice(6);
+    //user.results.viabilityCheck = result
+    db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
+      else if(usersAdded) console.log("MidSurvey added to the DB");
+    });
+    console.log(data)
+  });
+
   // Task
   socket.on('postSurveySubmit', (data) => {
-    if (currentRound < numRounds) {
-      console.log("ran survey")
-      return
-    }
-    let result = data.location.search.slice(6);
     let user = users.byID(socket.id)
-    user.results.manipulationCheck = result
+    //in the future this could be checked.
+    user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
     console.log(user.name, "submitted survey:", user.results.manipulationCheck);
 
+    db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
     io.in(socket.id).emit('finished', {finishingCode: socket.id});
   });
 
@@ -359,25 +396,56 @@ const checkUser = mturkID => true
 const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize)
 const assignRoom = () => incompleteRooms().pick()
 
+//define midSurvey - MAIKA - returns answers from individual
+const midSurvey = (user) => {
+  return {questions:{'Q1': { question:"The members of this team could work for a long time together.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q2': { question:"Most of the members of this team would welcome the opportunity to work as a group again in the future.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q3': { question:"This team has the capacity for long-term success. ",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q4': { question:"This team has what it takes to be effective in the future. ",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q5': { question:"This team would work well together in the future.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q6': { question:"This team has positioned itself well for continued success. ",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q7': { question:"This team has the ability to perform well in the future.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q8': { question:"This team has the ability to function as an ongoing unit.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q9': { question:"This team should continue to function as a unit.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q10': { question:"This team has the resources to perform well in the future.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q11': { question:"This team is well positioned for growth over time.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q12': { question:"This team can develop to meet future challenges. ",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q13': { question:"This team has the capacity to sustain itself.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q14': { question:"This team has what it takes to endure in future performance episodes.",
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q15': { question:"If you had the choice, would you like to work with the same team in a future round?",
+                            answers:["1. No", "5. Yes"] }  }}
+}
+
 const postSurvey = (user) => {
-  //currently using client side survey
+  const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
+  const answers = roomTeams.map((team, tIndex) => team.reduce((total, current, pIndex, pArr)=>{
+    const friend = user.friends.find(friend => friend.id == current.id)
+    let name = ((experimentRound == tIndex && currentCondition == "treatment") ? friend.tAlias : friend.alias)
+    if (name == user.name) {name = "you"}
+    return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
+  },""))
 
-  // get collaborators
-  // let userTeams = []
-  // teams.forEach(round => {
-  //   Object.entries(round).forEach(([teamName,team]) => {
-  //     console.log("Team",teamName,team)
-  //     if (team.includes(user)) {
-  //       let group = team.map(person => { return users.find(user => user.person == person) })
-  //       console.log(group)
-  //       // find members of team
-  //       userTeams.push(group)
-  //     }
-  //   })
-  // })
+  let correctAnswer = answers.filter((team,index) => {
+    return conditions[currentCondition][index] == experimentRoundIndicator })
+  if (correctAnswer.length == 1) {correctAnswer = ""}
+  console.log(answers,correctAnswer)
 
-  // get aliases
-  // render team options
-  return {questions:{'1': { question:"Select which teams you worked with were the same people.",
-                            answers:["1 and 2", "1 and 3", "2 and 3","none were the same"] } }}
+  return { question:"Select teams you think consisted of the same people.",
+           answers: answers,
+           correctAnswer: correctAnswer
+         }
 }

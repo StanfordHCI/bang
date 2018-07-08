@@ -1,3 +1,4 @@
+
 /* Fix user-agent */
 
 * {
@@ -77,6 +78,10 @@ ul {
   font-size: 200%;
 }
 
+.login.page .intro {
+  font-size: 100%;
+}
+
 .login.page .usernameInput {
   font-size: 200%;
   letter-spacing: 3px;
@@ -108,29 +113,11 @@ ul {
 .log {
   color: gray;
   font-size: 70%;
-  margin: 5px;
-  text-align: center;
+  margin: 20px 5px;
+  text-align: left;
 }
 
 /* Messages */
-
-.messages {
-  height: 100%;
-  margin: 0;
-  overflow-y: scroll;
-  padding: 10px 20px 10px 20px;
-}
-
-.message.typing .messageBody {
-  color: gray;
-}
-
-.username {
-  font-weight: 700;
-  overflow: hidden;
-  padding-right: 15px;
-  text-align: right;
-}
 
 /* Check In */
 .chatArea {
@@ -141,7 +128,7 @@ ul {
 }
 
 .checkinArea {
-  float: left;  
+  float: left;
   height: 25%;
   width: 25%;
   background-color: white;
@@ -241,13 +228,11 @@ ul {
   background: rgba(255,255,255,.03);
   border-radius: .3em;
 }
-
 .rb-tab {
   display: inline-block;
   position: relative;
   width: 12%;
 }
-
 .rb-txt {
   position: absolute;
   top: 50%;
@@ -256,7 +241,6 @@ ul {
   font-size: 1em;
   color: black;
 }
-
 .rb-spot {
   position: absolute;
   width: 25px;
@@ -270,9 +254,7 @@ ul {
   cursor: pointer;
   transition: ease .5s;
 }
-
 .rb-tab-active .rb-spot {
-  
   border: 2px solid rgba(0,0,255,.6);
 }
 
@@ -343,7 +325,6 @@ button:hover {
 
 }
 
-
 /* Input */
 
 .inputMessage {
@@ -357,4 +338,28 @@ button:hover {
   position: absolute;
   right: 0;
   width: 100%;
+}
+
+/* midSurvey */
+#midSurvey .form {
+  background-color: black;
+  overflow: visible;
+  top: 40%;
+  min-height: 350%;
+  position: relative;
+}
+
+#midSurvey .form label {
+  margin-right: 40px;  /* space between label and next radio button */
+}
+
+.ui-autocomplete .ui-menu-item{
+  background-color: #eee;
+}
+
+.ui-autocomplete::before{
+  /* float: right; */
+  display: inline;
+  padding: 3px;
+  content: "Tab to select";
 }

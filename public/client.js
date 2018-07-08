@@ -17,15 +17,16 @@ $(function() {
   const $chatPage = $('#chat'); // The chatroom page
   const $holdingPage = $('#holding'); // The holding page
   const $preSurvey = $('#preSurvey'); // The preSurvey page
+  const $midSurvey = $('#midSurvey'); // the midSurvey page
   const $postSurvey = $('#postSurvey'); // The postSurvey page
   const $finishingPage = $('#finishing'); // The finishing page
-
 
   const hideAll = () => {
     $loginPage.hide();
     $chatPage.hide();
     $holdingPage.hide();
     $preSurvey.hide();
+    $midSurvey.hide();
     $postSurvey.hide();
     $finishingPage.hide();
   }
@@ -34,6 +35,7 @@ $(function() {
   let messagesSafe = document.getElementsByClassName('messages')[0];
   let finishingcode = document.getElementById('finishingcode');
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
+  const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
 
   // Clear before starting
@@ -51,10 +53,7 @@ $(function() {
   let lastTypingTime;
   let $currentInput = $usernameInput.focus();
 
-  const users = ["mark"]
-
-  // currently disabled
-  // const autocomplete = () => {}
+  let currentTeam = []
 
   /* globals io */
   const socket = io();
@@ -234,36 +233,36 @@ $(function() {
       return COLORS[index];
   }
 
-
   // addSurvey($messsages,{post:true})
-
+  //
   // Adds a survey to pre or post, depending on the element passed
-//   function addSurvey (element, options) {
-//       const $element = $(element);
-
-//     // Setup default options
-//     if (!options) { options = {}; }
-//     if (typeof options.post === 'undefined') { options.post = false; }
-
-//     // Apply options
-//     if (options.fade) {
-//       $element.hide().fadeIn(FADE_TIME);
-//     }
-//     if (options.post) {
-//       $messages.val($element);
-//     } else {
-//       $messages.val($element);
-//     }
-//     $messages[0].scrollTop = $messages[0].scrollHeight;
-//   }
+  // function addSurvey (element, options) {
+  //     const $element = $(element);
+  //
+  //   // Setup default options
+  //   if (!options) { options = {}; }
+  //   if (typeof options.post === 'undefined') { options.post = false; }
+  //
+  //   // Apply options
+  //   if (options.fade) {
+  //     $element.hide().fadeIn(FADE_TIME);
+  //   }
+  //   if (options.post) {
+  //     $messages.val($element);
+  //   } else {
+  //     $messages.val($element);
+  //   }
+  //   $messages[0].scrollTop = $messages[0].scrollHeight;
+  // }
 
 
   // Keyboard events
-  setUsername ()
+  setUsername()
   $window.keydown(event => {
     // Auto-focus the current input when a key is typed
     if (!(event.ctrlKey || event.metaKey || event.altKey)) {
       $currentInput.focus();
+      // forcedComplete($currentInput)
     }
 
     // When the client hits ENTER on their keyboard
@@ -273,6 +272,27 @@ $(function() {
         socket.emit('stop typing');
         typing = false;
       } else { setUsername() }
+    }
+    if (event.keyCode === $.ui.keyCode.TAB) {
+      //&& $inputMessage.autocomplete("instance").menu.active as a poteantial second condition
+      event.preventDefault()
+    }
+  })
+
+  //Simple autocomplete
+  $inputMessage.autocomplete({
+    source: ["test"],
+    position: { my : "right top-90%", at: "right top" },
+    minLength: 2,
+    autoFocus: true,
+    delay: 50,
+    select: (event, ui) => {
+      var terms = $inputMessage.val().split(" ");
+      terms.pop();
+      terms.push( ui.item.value );
+      terms.push( "" );
+      $inputMessage.val(terms.join( " " ))
+      return false;
     }
   });
 
@@ -377,16 +397,27 @@ $(function() {
     log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
     $currentInput = $inputMessage.focus();
     notify("Session ready", "Come back and join in!")
+
+    //Set up team autocomplete
+    currentTeam = data.team
+    $currentInput = $inputMessage.focus();
+    $inputMessage.autocomplete( "option", "source", (request, response) => {
+      let currentTerm = request.term.split(" ").pop()
+      if (currentTerm.length < 2){
+        response("")
+        return
+      }
+      response($.ui.autocomplete.filter(currentTeam, currentTerm));
+    });
   });
 
   socket.on('stop', data => {
     log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
-    setTimeout(() => {
+    // setTimeout(() => {
       hideAll();
       $holdingPage.show();
       messagesSafe.innerHTML = '';
-      socket.emit('ready')
-    }, 1000 * 3)
+    // }, 1000 * 3)
   });
 
   socket.on('timer',data => {
@@ -396,25 +427,31 @@ $(function() {
     log("<br>If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat.")
   });
 
+  socket.on('midSurvey',data => {
+    hideAll();
+    $midSurvey.show();
+    $('#midForm').submit( (event) => {
+      event.preventDefault() //stops page reloading
+      socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
+      socket.emit('ready')
+      $midSurvey.hide()
+      $holdingPage.show()
+    })
+    $('#midForm')[0].reset();
+  })
+
   socket.on('postSurvey',data => {
     hideAll();
     $postSurvey.show();
+    $('#postForm').submit( (event) => { //watches form element
+      event.preventDefault() //stops page reloading
+      socket.emit('postSurveySubmit', $('#postForm').serialize()) //submits results alone
+    })
   })
-
-  $('.postForm').on("submit", socket.emit('postSurveySubmit', this))
-
-  // $('.postForm').on("submit", "My data", data => {
-  //   alert("here")
-  //   socket.emit('postSurveySubmit',data)
-  // })
 
   socket.on('finished',data => {
     hideAll();
     $finishingPage.show();
     finishingcode.innerText = data.finishingCode
   })
-  
-
-
-
 });
