@@ -1,11 +1,11 @@
 //Settings
 const devMode = false
 const teamSize = 1
-const roundMinutes = 1
+const roundMinutes = 0.1
 
 // Settup toggles
 const autocompleteTest = false //turns on fake team to test autocomplete
-const midSurveyToggle = true
+const midSurveyToggle = true // turns on midSurvey to appear after each round
 
 // Setup basic express server
 let tools = require('./tools');
@@ -269,11 +269,13 @@ io.on('connection', (socket) => {
           //Done with round
           setTimeout(() => {
             console.log('done with round', currentRound);
-            users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound}) });
+            users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: midSurveyToggle}) });
 
-            console.log('launching midSurvey', currentRound);
-            users.forEach(user => { io.in(user.id).emit('midSurvey', midSurvey(user)) });
-
+            if(midSurveyToggle) {
+              console.log('launching midSurvey', currentRound);
+              users.forEach(user => { io.in(user.id).emit('midSurvey', midSurvey(user)) });
+            }
+            
             currentRound += 1 // guard to only do this when a round is actually done.
             console.log(currentRound, "out of", numRounds)
           }, 1000 * 60 * 0.1 * roundMinutes)
@@ -295,17 +297,17 @@ io.on('connection', (socket) => {
 
    // Task after each round - midSurvey - MAIKA
    socket.on('midSurveySubmit', (data) => {
-    // let result = data.location.search.slice(6);
-    // let user = users.byID(socket.id)
-    // let currentRoom = users.byID(socket.id).room
-    // user.results.viabilityCheck = result
-    // console.log(user.name, "submitted survey:", user.results.viabilityCheck);
-    // db.midSurvey.insert({'room':currentRoom,'userID':socket.id, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
-      // if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
-      // else if(usersAdded) console.log("MidSurvey added to the DB");
-    // });
-    // console.log("room:", currentRoom);
-    console.log(data)
+    let user = users.byID(socket.id)
+    let currentRoom = users.byID(socket.id).room
+    user.results.viabilityCheck = data
+    console.log(user.name, "submitted survey:", user.results.viabilityCheck);
+
+    //let result = data.location.search.slice(6);
+    //user.results.viabilityCheck = result
+    db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
+      else if(usersAdded) console.log("MidSurvey added to the DB");
+    });
   });
 
   // Task
@@ -380,7 +382,9 @@ const midSurvey = (user) => {
                      'Q13': { question:"This team has the capacity to sustain itself.",
                             answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
                      'Q14': { question:"This team has what it takes to endure in future performance episodes.",
-                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] } }}
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q15': { question:"If you had the choice, would you like to work with the same team in a future round?",
+                            answers:["1. No", "5. Yes"] }  }}
 }
 
 // This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.

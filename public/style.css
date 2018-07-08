@@ -1,3 +1,4 @@
+
 /* Fix user-agent */
 
 * {
@@ -226,13 +227,11 @@ ul {
   background: rgba(255,255,255,.03);
   border-radius: .3em;
 }
-
 .rb-tab {
   display: inline-block;
   position: relative;
   width: 10%;
 }
-
 .rb-txt {
   position: absolute;
   top: 50%;
@@ -241,7 +240,6 @@ ul {
   font-size: .5em;
   color: black;
 }
-
 .rb-spot {
   position: absolute;
   width: 18px;
@@ -255,10 +253,8 @@ ul {
   cursor: pointer;
   transition: ease .5s;
 }
-
 .rb-tab-active .rb-spot {
-
-  border: 2px solid rgba(0,0,255,.6);
+border: 2px solid rgba(0,0,255,.6);
 }
 */
 

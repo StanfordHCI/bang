@@ -381,12 +381,11 @@ $(function() {
   });
 
   socket.on('stop', data => {
-    log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
-    // setTimeout(() => {
+    // log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
       hideAll();
       $holdingPage.show();
       messagesSafe.innerHTML = '';
-    // }, 1000 * 3)
+      if (data.survey == false) {socket.emit('ready')}
   });
 
   socket.on('timer',data => {
@@ -403,7 +402,10 @@ $(function() {
       event.preventDefault() //stops page reloading
       socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
       socket.emit('ready')
+      $midSurvey.hide()
+      $holdingPage.show()
     })
+    $('#midForm')[0].reset();
   })
 
   socket.on('postSurvey',data => {
