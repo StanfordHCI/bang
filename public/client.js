@@ -20,6 +20,7 @@ $(function() {
   const $preSurvey = $('#preSurvey'); // The preSurvey page
   const $midSurvey = $('#midSurvey'); // the midSurvey page
   const $postSurvey = $('#postSurvey'); // The postSurvey page
+  const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
   const $finishingPage = $('#finishing'); // The finishing page
 
   const hideAll = () => {
@@ -29,6 +30,7 @@ $(function() {
     $preSurvey.hide();
     $midSurvey.hide();
     $postSurvey.hide();
+    $blacklistSurvey.hide();
     $finishingPage.hide();
     $checkinPopup.hide();
   }
@@ -451,6 +453,15 @@ $(function() {
     $('#postForm').submit( (event) => { //watches form element
       event.preventDefault() //stops page reloading
       socket.emit('postSurveySubmit', $('#postForm').serialize()) //submits results alone
+    })
+  })
+
+  socket.on('blacklistSurvey', () => {
+    hideAll();
+    $blacklistSurvey.show();
+    $('#blacklistForm').submit( (event) => { //watches form element
+      event.preventDefault() //stops page reloading
+      socket.emit('blacklistSurveySubmit', $('#blacklistForm').serialize()) //submits results alone
     })
   })
 

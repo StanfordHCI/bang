@@ -8,6 +8,7 @@ const checkinIntervalMinutes = .1;
 // Settup toggles
 const autocompleteTest = false //turns on fake team to test autocomplete
 const midSurveyToggle = true
+const blacklistToggle = true
 
 // Setup basic express server
 let tools = require('./tools');
@@ -166,7 +167,8 @@ io.on('connection', (socket) => {
             'format':conditions[currentCondition],
             'manipulation':[],
             'viabilityCheck':'', // survey questions after each round - MAIKA
-            'manipulationCheck':''
+            'manipulationCheck':'',
+            'blacklistCheck':'' // check whether the team member blacklisted
           }
         };
 
@@ -323,7 +325,7 @@ io.on('connection', (socket) => {
       if (currentRound >= numRounds) {
         users.forEach(user => {
           user.ready = false
-          let survey = postSurvey(user)
+          let survey = postSurveyGenerator(user)
           user.results.manipulation = survey.correctAnswer
           db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
           io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
@@ -355,6 +357,17 @@ io.on('connection', (socket) => {
     console.log(user.name, "submitted survey:", user.results.manipulationCheck);
 
     db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+    io.in(socket.id).emit('blacklistSurvey');
+  });
+
+  socket.on('blacklistSurveySubmit', (data) => {
+    let user = users.byID(socket.id)
+    //in the future this could be checked.
+    user.results.blacklistCheck = data //(user.results.manipulation == data) ? true : false
+    // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
+    console.log(user.name, "submitted blacklist survey:", data);
+
+    db.users.update({ id: socket.id }, {$set: {"results.blacklistCheck": user.results.blacklistCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
     io.in(socket.id).emit('finished', {finishingCode: socket.id});
   });
 
@@ -430,8 +443,12 @@ const midSurvey = (user) => {
                             answers:["1. No", "5. Yes"] }  }}
 }
 
-const postSurvey = (user) => {
+// This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
+const postSurveyGenerator = (user) => {
+  // Makes a list of teams this user has worked with
   const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
+
+  // Makes a human friendly string for each team with things like 'you' for the current user, commas and 'and' before the last name.
   const answers = roomTeams.map((team, tIndex) => team.reduce((total, current, pIndex, pArr)=>{
     const friend = user.friends.find(friend => friend.id == current.id)
     let name = ((experimentRound == tIndex && currentCondition == "treatment") ? friend.tAlias : friend.alias)
@@ -439,6 +456,7 @@ const postSurvey = (user) => {
     return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
   },""))
 
+  // Makes a list comtaining the 2 team same teams, or empty if none.
   let correctAnswer = answers.filter((team,index) => {
     return conditions[currentCondition][index] == experimentRoundIndicator })
   if (correctAnswer.length == 1) {correctAnswer = ""}
@@ -446,6 +464,5 @@ const postSurvey = (user) => {
 
   return { question:"Select teams you think consisted of the same people.",
            answers: answers,
-           correctAnswer: correctAnswer
-         }
+           correctAnswer: correctAnswer }
 }
