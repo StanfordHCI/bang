@@ -275,7 +275,7 @@ io.on('connection', (socket) => {
               console.log('launching midSurvey', currentRound);
               users.forEach(user => { io.in(user.id).emit('midSurvey', midSurvey(user)) });
             }
-
+            
             currentRound += 1 // guard to only do this when a round is actually done.
             console.log(currentRound, "out of", numRounds)
           }, 1000 * 60 * 0.1 * roundMinutes)
@@ -287,7 +287,7 @@ io.on('connection', (socket) => {
       if (currentRound >= numRounds) {
         users.forEach(user => {
           user.ready = false
-          let survey = postSurvey(user)
+          let survey = postSurveyGenerator(user)
           user.results.manipulation = survey.correctAnswer
           db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
           io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
@@ -308,7 +308,6 @@ io.on('connection', (socket) => {
       if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
       else if(usersAdded) console.log("MidSurvey added to the DB");
     });
-    console.log(data)
   });
 
   // Task
@@ -388,8 +387,12 @@ const midSurvey = (user) => {
                             answers:["1. No", "5. Yes"] }  }}
 }
 
-const postSurvey = (user) => {
+// This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
+const postSurveyGenerator = (user) => {
+  // Makes a list of teams this user has worked with
   const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
+
+  // Makes a human friendly string for each team with things like 'you' for the current user, commas and 'and' before the last name.
   const answers = roomTeams.map((team, tIndex) => team.reduce((total, current, pIndex, pArr)=>{
     const friend = user.friends.find(friend => friend.id == current.id)
     let name = ((experimentRound == tIndex && currentCondition == "treatment") ? friend.tAlias : friend.alias)
@@ -397,6 +400,7 @@ const postSurvey = (user) => {
     return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
   },""))
 
+  // Makes a list comtaining the 2 team same teams, or empty if none.
   let correctAnswer = answers.filter((team,index) => {
     return conditions[currentCondition][index] == experimentRoundIndicator })
   if (correctAnswer.length == 1) {correctAnswer = ""}
@@ -404,6 +408,5 @@ const postSurvey = (user) => {
 
   return { question:"Select teams you think consisted of the same people.",
            answers: answers,
-           correctAnswer: correctAnswer
-         }
+           correctAnswer: correctAnswer }
 }
