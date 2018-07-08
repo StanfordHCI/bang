@@ -1,11 +1,14 @@
 //Settings
-const devMode = false
+
 const teamSize = 1
-const roundMinutes = 0.1
+const roundMinutes = .2
 
 // Settup toggles
 const autocompleteTest = false //turns on fake team to test autocomplete
-const midSurveyToggle = true // turns on midSurvey to appear after each round
+const midSurveyToggle = false
+const blacklistToggle = false //not implemented yet
+const checkinOn = false
+const checkinIntervalMinutes = roundMinutes/2
 
 // Setup basic express server
 let tools = require('./tools');
@@ -31,6 +34,7 @@ const Datastore = require('nedb'),
     db.users = new Datastore({ filename:'.data/users', autoload: true });
     db.chats = new Datastore({ filename:'.data/chats', autoload: true });
     db.products = new Datastore({ filename:'.data/products', autoload: true });
+    db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results - MAIKA
 
 // Setting up variables
@@ -61,6 +65,7 @@ let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
                  'url': 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono' }]
 let users = []; //the main local user storage
 let currentRound = 0
+let startTime = 0
 
 // Routing
 app.use(express.static('public'));
@@ -98,6 +103,16 @@ io.on('connection', (socket) => {
                 message: customMessage
             });
             console.log('new message', user.room, user.name, customMessage)
+        });
+    });
+
+    //when the client emits 'new checkin', this listens and executes
+    socket.on('new checkin', function (value) {
+      console.log(socket.username + "checked in with value " + value);
+      let currentRoom = users.byID(socket.id).room;
+      db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': value, 'time': getSecondsPassed()}, (err, usersAdded) => {
+          if(err) console.log("There's a problem adding a checkin to the DB: ", err);
+          else if(usersAdded) console.log("Checkin added to the DB");
         });
     });
 
@@ -152,7 +167,8 @@ io.on('connection', (socket) => {
             'format':conditions[currentCondition],
             'manipulation':[],
             'viabilityCheck':'', // survey questions after each round - MAIKA
-            'manipulationCheck':''
+            'manipulationCheck':'',
+            'blacklistCheck':'' // check whether the team member blacklisted
           }
         };
 
@@ -260,6 +276,9 @@ io.on('connection', (socket) => {
         console.log('Issued task for:', currentProduct.name)
         console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
 
+        // save start time
+        startTime = (new Date()).getTime();
+
         //Round warning
         // make timers run in serial
         setTimeout(() => {
@@ -275,13 +294,30 @@ io.on('connection', (socket) => {
               console.log('launching midSurvey', currentRound);
               users.forEach(user => { io.in(user.id).emit('midSurvey', midSurvey(user)) });
             }
-            
+
             currentRound += 1 // guard to only do this when a round is actually done.
             console.log(currentRound, "out of", numRounds)
           }, 1000 * 60 * 0.1 * roundMinutes)
         }, 1000 * 60 * 0.9 * roundMinutes)
 
       }
+        //record start checkin time in db
+        let currentRoom = users.byID(socket.id).room
+        db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed()}, (err, usersAdded) => {
+          if(err) console.log("There's a problem adding a checkin to the DB: ", err);
+          else if(usersAdded) console.log("Checkin added to the DB");
+        });
+        if(checkinOn){
+          let numPopups = 0;
+          let interval = setInterval(() => {
+            if(numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
+              clearInterval(interval);
+            } else {
+              socket.emit("checkin popup");
+              numPopups++;
+            }
+          }, 1000 * 60 * checkinIntervalMinutes)
+        }
 
       //Launch post survey
       if (currentRound >= numRounds) {
@@ -318,6 +354,17 @@ io.on('connection', (socket) => {
     console.log(user.name, "submitted survey:", user.results.manipulationCheck);
 
     db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+    io.in(socket.id).emit('blacklistSurvey');
+  });
+
+  socket.on('blacklistSurveySubmit', (data) => {
+    let user = users.byID(socket.id)
+    //in the future this could be checked.
+    user.results.blacklistCheck = data //(user.results.manipulation == data) ? true : false
+    // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
+    console.log(user.name, "submitted blacklist survey:", data);
+
+    db.users.update({ id: socket.id }, {$set: {"results.blacklistCheck": user.results.blacklistCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
     io.in(socket.id).emit('finished', {finishingCode: socket.id});
   });
 
@@ -342,6 +389,12 @@ function idToAlias(user, newString) {
     });
     return newString
 }
+
+//returns time since task began
+function getSecondsPassed() {
+  return ((new Date()).getTime() - startTime)/1000;
+}
+
 
 //returns number of users in a room: room -> int
 const numUsers = room => users.filter(user => user.room === room).length
