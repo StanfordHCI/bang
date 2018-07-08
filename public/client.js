@@ -12,6 +12,7 @@ $(function() {
   const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
   const $checkinSubmit = $('#checkin-submit');
   const $neutralCheckin = $('#neutral-checkin');
+  const $checkinPopup = $('.popup');
 
   const $loginPage = $('#login'); // The login page
   const $chatPage = $('#chat'); // The chatroom page
@@ -29,6 +30,7 @@ $(function() {
     $midSurvey.hide();
     $postSurvey.hide();
     $finishingPage.hide();
+    $checkinPopup.hide();
   }
 
   let holdingUsername = document.getElementById('username');
@@ -319,6 +321,7 @@ $(function() {
 
   $popupCheckinButton.click(function(){
   //Spot switcher:
+  
     $(this).parent().find(".rb-tab").removeClass("rb-tab-active");
     $(this).addClass("rb-tab-active");
     
@@ -328,7 +331,7 @@ $(function() {
     let rbValue = $('#rb-1').parent().find(".rb-tab-active").attr("value");
     //log(username + " radio button change: " + rbValue);
     socket.emit('new checkin', rbValue);
-    $('.popup').hide();
+    $checkinPopup.hide();
   });
 
   // Socket events
@@ -429,7 +432,9 @@ $(function() {
 
   socket.on('midSurvey',data => {
     hideAll();
+
     $midSurvey.show();
+    log("ms");
     $('#midForm').submit( (event) => {
       event.preventDefault() //stops page reloading
       socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone

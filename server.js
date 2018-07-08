@@ -1,8 +1,8 @@
 //Settings
 const devMode = false
-const checkinOn = false
+const checkinOn = true
 const teamSize = 1
-const roundMinutes = 10
+const roundMinutes = .2
 const checkinIntervalMinutes = .1;
 
 // Settup toggles

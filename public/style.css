@@ -118,6 +118,23 @@ ul {
 }
 
 /* Messages */
+.messages {
+  height: 100%;
+  margin: 0;
+  overflow-y: scroll;
+  padding: 10px 20px 10px 20px;
+}
+
+.message.typing .messageBody {
+  color: gray;
+}
+
+.username {
+  font-weight: 700;
+  overflow: hidden;
+  padding-right: 15px;
+  text-align: right;
+}
 
 /* Check In */
 .chatArea {
@@ -261,7 +278,7 @@ ul {
 .rb-spot + label {
   position: relative;
   top: 30px;
-  font-size:.7em;
+  font-size:.6em;
 }
 
 
