@@ -1,12 +1,11 @@
 //Settings
-
 const teamSize = 1
 const roundMinutes = .2
 
 // Settup toggles
-const autocompleteTest = false //turns on fake team to test autocomplete
-const midSurveyToggle = false
-const blacklistToggle = false //not implemented yet
+const autocompleteTestOn = false //turns on fake team to test autocomplete
+const midSurveyOn = false
+const blacklistOn = false //not implemented yet
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/2
 
@@ -264,7 +263,7 @@ io.on('connection', (socket) => {
         let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
         users.forEach(user => {
-          if (autocompleteTest) {
+          if (autocompleteTestOn) {
             let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
             console.log(teamNames)
             io.in(user.id).emit('go', {task: taskText, team: teamNames })
@@ -288,9 +287,9 @@ io.on('connection', (socket) => {
           //Done with round
           setTimeout(() => {
             console.log('done with round', currentRound);
-            users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: midSurveyToggle}) });
+            users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: midSurveyOn}) });
 
-            if(midSurveyToggle) {
+            if(midSurveyOn) {
               console.log('launching midSurvey', currentRound);
               users.forEach(user => { io.in(user.id).emit('midSurvey', midSurvey(user)) });
             }
@@ -300,7 +299,6 @@ io.on('connection', (socket) => {
           }, 1000 * 60 * 0.1 * roundMinutes)
         }, 1000 * 60 * 0.9 * roundMinutes)
 
-      }
         //record start checkin time in db
         let currentRoom = users.byID(socket.id).room
         db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed()}, (err, usersAdded) => {
@@ -318,6 +316,7 @@ io.on('connection', (socket) => {
             }
           }, 1000 * 60 * checkinIntervalMinutes)
         }
+      }
 
       //Launch post survey
       if (currentRound >= numRounds) {
