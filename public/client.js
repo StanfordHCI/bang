@@ -421,11 +421,7 @@ $(function() {
       hideAll();
       $holdingPage.show();
       messagesSafe.innerHTML = '';
-<<<<<<< HEAD
       if (!data.survey) {socket.emit('ready')}
-=======
-      if (data.survey == false) {socket.emit('ready')}
->>>>>>> f94ae45e7cad2ae4f1b6f0ccc97b4daa9e2b7ae5
   });
 
   socket.on('timer',data => {
