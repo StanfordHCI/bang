@@ -3,11 +3,16 @@ const teamSize = 1
 const roundMinutes = .1
 
 // Settup toggles
+<<<<<<< HEAD
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 const midSurveyOn = false
 const blacklistOn = false //not implemented yet
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/2
+=======
+const autocompleteTest = false //turns on fake team to test autocomplete
+const midSurveyToggle = true // turns on midSurvey to appear after each round
+>>>>>>> f94ae45e7cad2ae4f1b6f0ccc97b4daa9e2b7ae5
 
 // Setup basic express server
 let tools = require('./tools');
@@ -287,13 +292,17 @@ io.on('connection', (socket) => {
           //Done with round
           setTimeout(() => {
             console.log('done with round', currentRound);
+<<<<<<< HEAD
             users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: midSurveyOn}) });
+=======
+            users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: midSurveyToggle}) });
+>>>>>>> f94ae45e7cad2ae4f1b6f0ccc97b4daa9e2b7ae5
 
             if(midSurveyOn) {
               console.log('launching midSurvey', currentRound);
               users.forEach(user => { io.in(user.id).emit('midSurvey', midSurvey(user)) });
             }
-
+            
             currentRound += 1 // guard to only do this when a round is actually done.
             console.log(currentRound, "out of", numRounds)
           }, 1000 * 60 * 0.1 * roundMinutes)
@@ -474,4 +483,8 @@ const postSurveyGenerator = (user) => {
   return { question:"Select teams you think consisted of the same people.",
            answers: answers,
            correctAnswer: correctAnswer }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> f94ae45e7cad2ae4f1b6f0ccc97b4daa9e2b7ae5
