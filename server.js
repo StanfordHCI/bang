@@ -1,11 +1,13 @@
 //Settings
-const devMode = false
 const teamSize = 1
-const roundMinutes = 0.1
+const roundMinutes = .1
 
 // Settup toggles
-const autocompleteTest = false //turns on fake team to test autocomplete
-const midSurveyToggle = true // turns on midSurvey to appear after each round 
+const autocompleteTestOn = false //turns on fake team to test autocomplete
+const midSurveyOn = false
+const blacklistOn = false //not implemented yet
+const checkinOn = false
+const checkinIntervalMinutes = roundMinutes/2
 
 // Setup basic express server
 let tools = require('./tools');
@@ -31,6 +33,7 @@ const Datastore = require('nedb'),
     db.users = new Datastore({ filename:'.data/users', autoload: true });
     db.chats = new Datastore({ filename:'.data/chats', autoload: true });
     db.products = new Datastore({ filename:'.data/products', autoload: true });
+    db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results - MAIKA
 
 // Setting up variables
@@ -61,6 +64,7 @@ let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
                  'url': 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono' }]
 let users = []; //the main local user storage
 let currentRound = 0
+let startTime = 0
 
 // Routing
 app.use(express.static('public'));
@@ -98,6 +102,16 @@ io.on('connection', (socket) => {
                 message: customMessage
             });
             console.log('new message', user.room, user.name, customMessage)
+        });
+    });
+
+    //when the client emits 'new checkin', this listens and executes
+    socket.on('new checkin', function (value) {
+      console.log(socket.username + "checked in with value " + value);
+      let currentRoom = users.byID(socket.id).room;
+      db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': value, 'time': getSecondsPassed()}, (err, usersAdded) => {
+          if(err) console.log("There's a problem adding a checkin to the DB: ", err);
+          else if(usersAdded) console.log("Checkin added to the DB");
         });
     });
 
@@ -152,7 +166,8 @@ io.on('connection', (socket) => {
             'format':conditions[currentCondition],
             'manipulation':[],
             'viabilityCheck':'', // survey questions after each round - MAIKA
-            'manipulationCheck':''
+            'manipulationCheck':'',
+            'blacklistCheck':'' // check whether the team member blacklisted
           }
         };
 
@@ -248,7 +263,7 @@ io.on('connection', (socket) => {
         let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
         users.forEach(user => {
-          if (autocompleteTest) {
+          if (autocompleteTestOn) {
             let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
             console.log(teamNames)
             io.in(user.id).emit('go', {task: taskText, team: teamNames })
@@ -260,6 +275,9 @@ io.on('connection', (socket) => {
         console.log('Issued task for:', currentProduct.name)
         console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
 
+        // save start time
+        startTime = (new Date()).getTime();
+
         //Round warning
         // make timers run in serial
         setTimeout(() => {
@@ -269,9 +287,9 @@ io.on('connection', (socket) => {
           //Done with round
           setTimeout(() => {
             console.log('done with round', currentRound);
-            users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound}) });
+            users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: midSurveyOn}) });
 
-            if(midSurveyToggle) {
+            if(midSurveyOn) {
               console.log('launching midSurvey', currentRound);
               users.forEach(user => { io.in(user.id).emit('midSurvey', midSurvey(user)) });
             }
@@ -281,13 +299,30 @@ io.on('connection', (socket) => {
           }, 1000 * 60 * 0.1 * roundMinutes)
         }, 1000 * 60 * 0.9 * roundMinutes)
 
+        //record start checkin time in db
+        let currentRoom = users.byID(socket.id).room
+        db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed()}, (err, usersAdded) => {
+          if(err) console.log("There's a problem adding a checkin to the DB: ", err);
+          else if(usersAdded) console.log("Checkin added to the DB");
+        });
+        if(checkinOn){
+          let numPopups = 0;
+          let interval = setInterval(() => {
+            if(numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
+              clearInterval(interval);
+            } else {
+              socket.emit("checkin popup");
+              numPopups++;
+            }
+          }, 1000 * 60 * checkinIntervalMinutes)
+        }
       }
 
       //Launch post survey
       if (currentRound >= numRounds) {
         users.forEach(user => {
           user.ready = false
-          let survey = postSurvey(user)
+          let survey = postSurveyGenerator(user)
           user.results.manipulation = survey.correctAnswer
           db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
           io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
@@ -308,19 +343,42 @@ io.on('connection', (socket) => {
       if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
       else if(usersAdded) console.log("MidSurvey added to the DB");
     });
-    console.log(data)
   });
 
   // Task
-  socket.on('postSurveySubmit', (data) => {
-    let user = users.byID(socket.id)
-    //in the future this could be checked.
-    user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
-    console.log(user.name, "submitted survey:", user.results.manipulationCheck);
-
-    db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-    io.in(socket.id).emit('finished', {finishingCode: socket.id});
-  });
+  if (blacklistOn) {
+    socket.on('postSurveySubmit', (data) => {
+      let user = users.byID(socket.id)
+      //in the future this could be checked.
+      user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
+      console.log(user.name, "submitted survey:", user.results.manipulationCheck);
+  
+      db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+      io.in(socket.id).emit('blacklistSurvey');
+    });
+  
+    socket.on('blacklistSurveySubmit', (data) => {
+      let user = users.byID(socket.id)
+      //in the future this could be checked.
+      user.results.blacklistCheck = data //(user.results.manipulation == data) ? true : false
+      // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
+      console.log(user.name, "submitted blacklist survey:", data);
+  
+      db.users.update({ id: socket.id }, {$set: {"results.blacklistCheck": user.results.blacklistCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
+      io.in(socket.id).emit('finished', {finishingCode: socket.id});
+    });
+  } else {
+    socket.on('postSurveySubmit', (data) => {
+      let user = users.byID(socket.id)
+      //in the future this could be checked.
+      user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
+      console.log(user.name, "submitted survey:", user.results.manipulationCheck);
+  
+      db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+      io.in(socket.id).emit('finished');
+    });
+  }
+  
 
 });
 
@@ -343,6 +401,12 @@ function idToAlias(user, newString) {
     });
     return newString
 }
+
+//returns time since task began
+function getSecondsPassed() {
+  return ((new Date()).getTime() - startTime)/1000;
+}
+
 
 //returns number of users in a room: room -> int
 const numUsers = room => users.filter(user => user.room === room).length
@@ -388,8 +452,12 @@ const midSurvey = (user) => {
                             answers:["1. No", "5. Yes"] }  }}
 }
 
-const postSurvey = (user) => {
+// This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
+const postSurveyGenerator = (user) => {
+  // Makes a list of teams this user has worked with
   const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
+
+  // Makes a human friendly string for each team with things like 'you' for the current user, commas and 'and' before the last name.
   const answers = roomTeams.map((team, tIndex) => team.reduce((total, current, pIndex, pArr)=>{
     const friend = user.friends.find(friend => friend.id == current.id)
     let name = ((experimentRound == tIndex && currentCondition == "treatment") ? friend.tAlias : friend.alias)
@@ -397,6 +465,7 @@ const postSurvey = (user) => {
     return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
   },""))
 
+  // Makes a list comtaining the 2 team same teams, or empty if none.
   let correctAnswer = answers.filter((team,index) => {
     return conditions[currentCondition][index] == experimentRoundIndicator })
   if (correctAnswer.length == 1) {correctAnswer = ""}
@@ -404,6 +473,5 @@ const postSurvey = (user) => {
 
   return { question:"Select teams you think consisted of the same people.",
            answers: answers,
-           correctAnswer: correctAnswer
-         }
+           correctAnswer: correctAnswer }
 }
