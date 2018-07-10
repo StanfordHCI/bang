@@ -382,7 +382,6 @@ io.on('connection', (socket) => {
       io.in(socket.id).emit('finished');
     });
   }
-  
 
 });
 
