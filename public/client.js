@@ -8,6 +8,11 @@ $(function() {
   const $usernameInput = $('.usernameInput'); // Input for username
   const $messages = $('.messages'); // Messages area
   const $inputMessage = $('.inputMessage'); // Input message input box
+  const $staticCheckinButton = $('.rbcheckin'); // radio buttons on side
+  const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
+  const $checkinSubmit = $('#checkin-submit');
+  const $neutralCheckin = $('#neutral-checkin');
+  const $checkinPopup = $('.popup');
 
   const $loginPage = $('#login'); // The login page
   const $chatPage = $('#chat'); // The chatroom page
@@ -15,6 +20,10 @@ $(function() {
   const $preSurvey = $('#preSurvey'); // The preSurvey page
   const $midSurvey = $('#midSurvey'); // the midSurvey page
   const $postSurvey = $('#postSurvey'); // The postSurvey page
+  const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
+  const $team1_feedbackSurvey = $('#team1_feedbackSurvey'); // Feedback for team 1 page
+  const $team2_feedbackSurvey = $('#team2_feedbackSurvey'); // Feedback for team 1 page
+  const $team3_feedbackSurvey = $('#team3_feedbackSurvey'); // Feedback for team 1 page
   const $finishingPage = $('#finishing'); // The finishing page
 
   const hideAll = () => {
@@ -24,7 +33,12 @@ $(function() {
     $preSurvey.hide();
     $midSurvey.hide();
     $postSurvey.hide();
+    $blacklistSurvey.hide();
+    $team1_feedbackSurvey.hide();
+    $team2_feedbackSurvey.hide();
+    $team3_feedbackSurvey.hide();
     $finishingPage.hide();
+    $checkinPopup.hide();
   }
 
   let holdingUsername = document.getElementById('username');
@@ -307,6 +321,27 @@ $(function() {
     $inputMessage.focus();
   });
 
+  /*$staticCheckinButton.click(function(){
+    let rbValue = $("input[name='radio1']:checked").val();
+    log(username + " changed rb to " + rbValue);
+    socket.emit('checkin', rbValue);
+  });*/
+
+  $popupCheckinButton.click(function(){
+  //Spot switcher:
+
+    $(this).parent().find(".rb-tab").removeClass("rb-tab-active");
+    $(this).addClass("rb-tab-active");
+
+  });
+
+  $checkinSubmit.click(function() {
+    let rbValue = $('#rb-1').parent().find(".rb-tab-active").attr("value");
+    //log(username + " radio button change: " + rbValue);
+    socket.emit('new checkin', rbValue);
+    $checkinPopup.hide();
+  });
+
   // Socket events
 
   // Whenever the server emits 'login', log the login message
@@ -332,6 +367,11 @@ $(function() {
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', data => {
     addChatMessage(data);
+  });
+
+  // whenever the server emits 'checkin pop up', show checkin popup
+  socket.on('checkin popup', data => {
+    $('.popup').show();
   });
 
   // Whenever the server emits 'user joined', log it in the chat body
@@ -360,6 +400,8 @@ $(function() {
   socket.on('go', data => {
     hideAll();
     $chatPage.show();
+    $popupCheckinButton.removeClass("rb-tab-active");
+    $neutralCheckin.addClass("rb-tab-active");
     log(data.task);
     log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
     log("You will have <strong>10 minutes</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
@@ -381,12 +423,11 @@ $(function() {
   });
 
   socket.on('stop', data => {
-    log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
-    // setTimeout(() => {
+    // log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
       hideAll();
       $holdingPage.show();
       messagesSafe.innerHTML = '';
-    // }, 1000 * 3)
+      if (!data.survey) {socket.emit('ready')}
   });
 
   socket.on('timer',data => {
@@ -403,7 +444,10 @@ $(function() {
       event.preventDefault() //stops page reloading
       socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
       socket.emit('ready')
+      $midSurvey.hide()
+      $holdingPage.show()
     })
+    $('#midForm')[0].reset();
   })
 
   socket.on('postSurvey',data => {
@@ -414,6 +458,47 @@ $(function() {
       socket.emit('postSurveySubmit', $('#postForm').serialize()) //submits results alone
     })
   })
+
+  socket.on('blacklistSurvey', () => {
+    hideAll();
+    $blacklistSurvey.show();
+    $('#blacklistForm').submit( (event) => { //watches form element
+      event.preventDefault() //stops page reloading
+      socket.emit('blacklistSurveySubmit', $('#blacklistForm').serialize()) //submits results alone
+    })
+  })
+
+  socket.on('team1_feedbackSurvey', () => {
+    hideAll();
+    $team1_feedbackSurvey.show();
+    $('#team1_feedbackForm').submit( (event) => { //watches form element
+      event.preventDefault() //stops page reloading
+      socket.emit('team1_feedbackSurveySubmit', $('#team1_feedbackForm').serialize(), $('#teamfeedbackInput_1').val())
+      //submits results alone
+    })
+  })
+
+  socket.on('team2_feedbackSurvey', () => {
+    hideAll();
+    $team2_feedbackSurvey.show();
+    $('#team2_feedbackForm').submit( (event) => { //watches form element
+      event.preventDefault() //stops page reloading
+      socket.emit('team2_feedbackSurveySubmit', $('#team2_feedbackForm').serialize(), $('#teamfeedbackInput_2').val())
+      //submits results alone
+    })
+  })
+
+  socket.on('team3_feedbackSurvey', () => {
+    hideAll();
+    $team3_feedbackSurvey.show();
+    $('#team3_feedbackForm').submit( (event) => { //watches form element
+      event.preventDefault() //stops page reloading
+      socket.emit('team3_feedbackSurveySubmit', $('#team3_feedbackForm').serialize(), $('#teamfeedbackInput_3').val())
+      //submits results alone
+    })
+  })
+
+
 
   socket.on('finished',data => {
     hideAll();

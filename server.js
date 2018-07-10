@@ -1,11 +1,13 @@
 //Settings
-const devMode = false
 const teamSize = 1
-const roundMinutes = 1
+const roundMinutes = .01
 
 // Settup toggles
-const autocompleteTest = false //turns on fake team to test autocomplete
-const midSurveyToggle = true
+const autocompleteTestOn = false //turns on fake team to test autocomplete
+const midSurveyOn = false
+const blacklistOn = false //not implemented yet
+const checkinOn = false
+const checkinIntervalMinutes = roundMinutes/2
 
 // Setup basic express server
 let tools = require('./tools');
@@ -31,6 +33,7 @@ const Datastore = require('nedb'),
     db.users = new Datastore({ filename:'.data/users', autoload: true });
     db.chats = new Datastore({ filename:'.data/chats', autoload: true });
     db.products = new Datastore({ filename:'.data/products', autoload: true });
+    db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results - MAIKA
 
 // Setting up variables
@@ -61,6 +64,7 @@ let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
                  'url': 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono' }]
 let users = []; //the main local user storage
 let currentRound = 0
+let startTime = 0
 
 // Routing
 app.use(express.static('public'));
@@ -98,6 +102,16 @@ io.on('connection', (socket) => {
                 message: customMessage
             });
             console.log('new message', user.room, user.name, customMessage)
+        });
+    });
+
+    //when the client emits 'new checkin', this listens and executes
+    socket.on('new checkin', function (value) {
+      console.log(socket.username + "checked in with value " + value);
+      let currentRoom = users.byID(socket.id).room;
+      db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': value, 'time': getSecondsPassed()}, (err, usersAdded) => {
+          if(err) console.log("There's a problem adding a checkin to the DB: ", err);
+          else if(usersAdded) console.log("Checkin added to the DB");
         });
     });
 
@@ -151,8 +165,9 @@ io.on('connection', (socket) => {
             'condition':currentCondition,
             'format':conditions[currentCondition],
             'manipulation':[],
-            'viabilityCheck':'', // survey questions after each round - MAIKA
-            'manipulationCheck':''
+            'viabilityCheck':[], // survey questions after each round - MAIKA
+            'manipulationCheck':'',
+            'blacklistCheck':'' // check whether the team member blacklisted
           }
         };
 
@@ -248,7 +263,7 @@ io.on('connection', (socket) => {
         let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
         users.forEach(user => {
-          if (autocompleteTest) {
+          if (autocompleteTestOn) {
             let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
             console.log(teamNames)
             io.in(user.id).emit('go', {task: taskText, team: teamNames })
@@ -260,6 +275,9 @@ io.on('connection', (socket) => {
         console.log('Issued task for:', currentProduct.name)
         console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
 
+        // save start time
+        startTime = (new Date()).getTime();
+
         //Round warning
         // make timers run in serial
         setTimeout(() => {
@@ -269,16 +287,35 @@ io.on('connection', (socket) => {
           //Done with round
           setTimeout(() => {
             console.log('done with round', currentRound);
-            users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound}) });
+            users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: midSurveyOn}) });
 
-            console.log('launching midSurvey', currentRound);
-            users.forEach(user => { io.in(user.id).emit('midSurvey', midSurvey(user)) });
-
+            if(midSurveyOn) {
+              console.log('launching midSurvey', currentRound);
+              users.forEach(user => { io.in(user.id).emit('midSurvey', midSurvey(user)) });
+            }
+            
             currentRound += 1 // guard to only do this when a round is actually done.
             console.log(currentRound, "out of", numRounds)
           }, 1000 * 60 * 0.1 * roundMinutes)
         }, 1000 * 60 * 0.9 * roundMinutes)
 
+        //record start checkin time in db
+        let currentRoom = users.byID(socket.id).room
+        db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed()}, (err, usersAdded) => {
+          if(err) console.log("There's a problem adding a checkin to the DB: ", err);
+          else if(usersAdded) console.log("Checkin added to the DB");
+        });
+        if(checkinOn){
+          let numPopups = 0;
+          let interval = setInterval(() => {
+            if(numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
+              clearInterval(interval);
+            } else {
+              socket.emit("checkin popup");
+              numPopups++;
+            }
+          }, 1000 * 60 * checkinIntervalMinutes)
+        }
       }
 
       //Launch post survey
@@ -295,29 +332,52 @@ io.on('connection', (socket) => {
 
    // Task after each round - midSurvey - MAIKA
    socket.on('midSurveySubmit', (data) => {
-    // let result = data.location.search.slice(6);
-    // let user = users.byID(socket.id)
-    // let currentRoom = users.byID(socket.id).room
-    // user.results.viabilityCheck = result
-    // console.log(user.name, "submitted survey:", user.results.viabilityCheck);
-    // db.midSurvey.insert({'room':currentRoom,'userID':socket.id, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
-      // if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
-      // else if(usersAdded) console.log("MidSurvey added to the DB");
-    // });
-    // console.log("room:", currentRoom);
-    console.log(data)
+    let user = users.byID(socket.id)
+    let currentRoom = users.byID(socket.id).room
+    let midSurveyResults = data;
+    let parsedResults = midSurveyResults.split('&')
+    user.results.viabilityCheck = parsedResults
+    console.log(user.name, "submitted survey:", user.results.viabilityCheck);
+    db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
+      else if(usersAdded) console.log("MidSurvey added to the DB");
+    });
   });
 
   // Task
-  socket.on('postSurveySubmit', (data) => {
-    let user = users.byID(socket.id)
-    //in the future this could be checked.
-    user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
-    console.log(user.name, "submitted survey:", user.results.manipulationCheck);
-
-    db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-    io.in(socket.id).emit('finished', {finishingCode: socket.id});
-  });
+  if (blacklistOn) {
+    socket.on('postSurveySubmit', (data) => {
+      let user = users.byID(socket.id)
+      //in the future this could be checked.
+      user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
+      console.log(user.name, "submitted survey:", user.results.manipulationCheck);
+  
+      db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+      io.in(socket.id).emit('blacklistSurvey');
+    });
+  
+    socket.on('blacklistSurveySubmit', (data) => {
+      let user = users.byID(socket.id)
+      //in the future this could be checked.
+      user.results.blacklistCheck = data //(user.results.manipulation == data) ? true : false
+      // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
+      console.log(user.name, "submitted blacklist survey:", data);
+  
+      db.users.update({ id: socket.id }, {$set: {"results.blacklistCheck": user.results.blacklistCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
+      io.in(socket.id).emit('finished', {finishingCode: socket.id});
+    });
+  } else {
+    socket.on('postSurveySubmit', (data) => {
+      let user = users.byID(socket.id)
+      //in the future this could be checked.
+      user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
+      console.log(user.name, "submitted survey:", user.results.manipulationCheck);
+  
+      db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+      io.in(socket.id).emit('finished');
+    });
+  }
+  
 
 });
 
@@ -340,6 +400,12 @@ function idToAlias(user, newString) {
     });
     return newString
 }
+
+//returns time since task began
+function getSecondsPassed() {
+  return ((new Date()).getTime() - startTime)/1000;
+}
+
 
 //returns number of users in a room: room -> int
 const numUsers = room => users.filter(user => user.room === room).length
@@ -380,7 +446,9 @@ const midSurvey = (user) => {
                      'Q13': { question:"This team has the capacity to sustain itself.",
                             answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
                      'Q14': { question:"This team has what it takes to endure in future performance episodes.",
-                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] } }}
+                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
+                     'Q15': { question:"If you had the choice, would you like to work with the same team in a future round?",
+                            answers:["1. No", "5. Yes"] }  }}
 }
 
 // This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
