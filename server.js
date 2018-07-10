@@ -165,7 +165,6 @@ io.on('connection', (socket) => {
             'condition':currentCondition,
             'format':conditions[currentCondition],
             'manipulation':[],
-            //'viabilityCheck':'', // survey questions after each round - MAIKA
             'viabilityCheck':[], // survey questions after each round - MAIKA
             'manipulationCheck':'',
             'blacklistCheck':'' // check whether the team member blacklisted
@@ -338,11 +337,7 @@ io.on('connection', (socket) => {
     let midSurveyResults = data;
     let parsedResults = midSurveyResults.split('&')
     user.results.viabilityCheck = parsedResults
-   // user.results.viabilityCheck = data
     console.log(user.name, "submitted survey:", user.results.viabilityCheck);
-
-    //let result = data.location.search.slice(6);
-    //user.results.viabilityCheck = result
     db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
       if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
       else if(usersAdded) console.log("MidSurvey added to the DB");
