@@ -51,7 +51,7 @@ ul {
 /* Login Page */
 
 .login.page {
-  background-color: #000;
+  background-color: #100;
 }
 
 .login.page .form {
@@ -73,6 +73,23 @@ ul {
   text-align: center;
   width: 400px;
 }
+
+
+
+.login.page .form .teamfeedbackInput {
+  background-color: transparent;
+  border: none;
+  border-bottom: 2px solid #fff;
+  outline: none;
+  padding-bottom: 15px;
+  text-align: center;
+  width: 800px;
+  height: 200px;
+  color: white;
+  font-size:15pt;
+}
+
+
 
 .login.page .title {
   font-size: 200%;
@@ -520,3 +537,4 @@ button:hover {
   padding: 3px;
   content: "Tab to select";
 }
+

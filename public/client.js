@@ -21,6 +21,9 @@ $(function() {
   const $midSurvey = $('#midSurvey'); // the midSurvey page
   const $postSurvey = $('#postSurvey'); // The postSurvey page
   const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
+  const $team1_feedbackSurvey = $('#team1_feedbackSurvey'); // Feedback for team 1 page
+  const $team2_feedbackSurvey = $('#team2_feedbackSurvey'); // Feedback for team 1 page
+  const $team3_feedbackSurvey = $('#team3_feedbackSurvey'); // Feedback for team 1 page
   const $finishingPage = $('#finishing'); // The finishing page
 
   const hideAll = () => {
@@ -31,6 +34,9 @@ $(function() {
     $midSurvey.hide();
     $postSurvey.hide();
     $blacklistSurvey.hide();
+    $team1_feedbackSurvey.hide();
+    $team2_feedbackSurvey.hide();
+    $team3_feedbackSurvey.hide();
     $finishingPage.hide();
     $checkinPopup.hide();
   }
@@ -461,6 +467,38 @@ $(function() {
       socket.emit('blacklistSurveySubmit', $('#blacklistForm').serialize()) //submits results alone
     })
   })
+
+  socket.on('team1_feedbackSurvey', () => {
+    hideAll();
+    $team1_feedbackSurvey.show();
+    $('#team1_feedbackForm').submit( (event) => { //watches form element
+      event.preventDefault() //stops page reloading
+      socket.emit('team1_feedbackSurveySubmit', $('#team1_feedbackForm').serialize(), $('#teamfeedbackInput_1').val())
+      //submits results alone
+    })
+  })
+
+  socket.on('team2_feedbackSurvey', () => {
+    hideAll();
+    $team2_feedbackSurvey.show();
+    $('#team2_feedbackForm').submit( (event) => { //watches form element
+      event.preventDefault() //stops page reloading
+      socket.emit('team2_feedbackSurveySubmit', $('#team2_feedbackForm').serialize(), $('#teamfeedbackInput_2').val())
+      //submits results alone
+    })
+  })
+
+  socket.on('team3_feedbackSurvey', () => {
+    hideAll();
+    $team3_feedbackSurvey.show();
+    $('#team3_feedbackForm').submit( (event) => { //watches form element
+      event.preventDefault() //stops page reloading
+      socket.emit('team3_feedbackSurveySubmit', $('#team3_feedbackForm').serialize(), $('#teamfeedbackInput_3').val())
+      //submits results alone
+    })
+  })
+
+
 
   socket.on('finished',data => {
     hideAll();

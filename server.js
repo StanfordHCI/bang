@@ -1,11 +1,11 @@
 //Settings
 const teamSize = 1
-const roundMinutes = .1
+const roundMinutes = .001
 
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 const midSurveyOn = false
-const blacklistOn = false //not implemented yet
+const blacklistOn = true 
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/2
 
@@ -167,7 +167,13 @@ io.on('connection', (socket) => {
             'manipulation':[],
             'viabilityCheck':'', // survey questions after each round - MAIKA
             'manipulationCheck':'',
-            'blacklistCheck':'' // check whether the team member blacklisted
+            'blacklistCheck':'', // check whether the team member blacklisted
+            'team1feedback':'',
+            'team1fracture':'',
+            'team2feedback':'',
+            'team2fracture':'',
+            'team3feedback':'',
+            'team3fracture':''
           }
         };
 
@@ -362,9 +368,46 @@ io.on('connection', (socket) => {
       //in the future this could be checked.
       user.results.blacklistCheck = data //(user.results.manipulation == data) ? true : false
       // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
-      console.log(user.name, "submitted blacklist survey:", data);
+      console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
   
       db.users.update({ id: socket.id }, {$set: {"results.blacklistCheck": user.results.blacklistCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
+      // io.in(socket.id).emit('finished', {finishingCode: socket.id});
+      io.in(socket.id).emit('team1_feedbackSurvey');
+    });
+
+    socket.on('team1_feedbackSurveySubmit', (team1_fracture, team1_feedback) => {
+      let user = users.byID(socket.id)
+      //in the future this could be checked.
+      user.results.team1feedback = team1_feedback 
+      console.log(user.name, "submitted team 1 feedback survey:", user.results.team1feedback);
+      user.results.team1fracture = team1_fracture
+      console.log(user.name, "submitted team 1 fracture survey:", user.results.team1fracture);
+
+      db.users.update({ id: socket.id }, {$set: {"results.team1feedback": user.results.team1feedback, "results.team1fracture": user.results.team1fracture}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored feedback, post-rating for team 1: " + user.name) })
+      io.in(socket.id).emit('team2_feedbackSurvey');
+    });
+
+    socket.on('team2_feedbackSurveySubmit', (team2_fracture, team2_feedback) => {
+      let user = users.byID(socket.id)
+      //in the future this could be checked.
+      user.results.team2feedback = team2_feedback 
+      console.log(user.name, "submitted team 2 feedback survey:", user.results.team2feedback);
+      user.results.team2fracture = team2_fracture
+      console.log(user.name, "submitted team 2 fracture survey:", user.results.team2fracture);
+
+      db.users.update({ id: socket.id }, {$set: {"results.team2feedback": user.results.team2feedback, "results.team2fracture": user.results.team2fracture}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored feedback, post-rating for team 2: " + user.name) })
+      io.in(socket.id).emit('team3_feedbackSurvey');
+    });
+
+    socket.on('team3_feedbackSurveySubmit', (team3_fracture, team3_feedback) => {
+      let user = users.byID(socket.id)
+      //in the future this could be checked.
+      user.results.team3feedback = team3_feedback 
+      console.log(user.name, "submitted team 3 feedback survey:", user.results.team3feedback);
+      user.results.team3fracture = team3_fracture
+      console.log(user.name, "submitted team 3 fracture survey:", user.results.team3fracture);
+
+      db.users.update({ id: socket.id }, {$set: {"results.team3feedback": user.results.team3feedback, "results.team3fracture": user.results.team3fracture}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored feedback, post-rating for team 3: " + user.name) })
       io.in(socket.id).emit('finished', {finishingCode: socket.id});
     });
   } else {
@@ -375,7 +418,7 @@ io.on('connection', (socket) => {
       console.log(user.name, "submitted survey:", user.results.manipulationCheck);
   
       db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-      io.in(socket.id).emit('finished');
+      io.in(socket.id).emit('finished', {finishingCode: socket.id});
     });
   }
   
