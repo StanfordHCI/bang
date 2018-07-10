@@ -4,7 +4,7 @@ const roundMinutes = .1
 
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
-const midSurveyOn = false
+const midSurveyOn = true
 const blacklistOn = false //not implemented yet
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/2
@@ -165,7 +165,8 @@ io.on('connection', (socket) => {
             'condition':currentCondition,
             'format':conditions[currentCondition],
             'manipulation':[],
-            'viabilityCheck':'', // survey questions after each round - MAIKA
+            //'viabilityCheck':'', // survey questions after each round - MAIKA
+            'viabilityCheck':[], // survey questions after each round - MAIKA
             'manipulationCheck':'',
             'blacklistCheck':'' // check whether the team member blacklisted
           }
@@ -334,7 +335,10 @@ io.on('connection', (socket) => {
    socket.on('midSurveySubmit', (data) => {
     let user = users.byID(socket.id)
     let currentRoom = users.byID(socket.id).room
-    user.results.viabilityCheck = data
+    let midSurveyResults = data;
+    let parsedResults = midSurveyResults.split('&')
+    user.results.viabilityCheck = parsedResults
+   // user.results.viabilityCheck = data
     console.log(user.name, "submitted survey:", user.results.viabilityCheck);
 
     //let result = data.location.search.slice(6);
