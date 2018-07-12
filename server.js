@@ -4,10 +4,11 @@ const roundMinutes = .01
 
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
-const midSurveyOn = true
-const blacklistOn = true //not implemented yet
+
+const midSurveyOn = false
+const blacklistOn = false //not implemented yet
 const checkinOn = false
-const checkinIntervalMinutes = roundMinutes/30
+const checkinIntervalMinutes = roundMinutes/2
 
 // Setup basic express server
 let tools = require('./tools');
@@ -420,6 +421,7 @@ function loadQuestions(socket) {
   })
   return questions
 }
+
 
 
 //returns number of users in a room: room -> int

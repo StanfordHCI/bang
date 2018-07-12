@@ -342,6 +342,7 @@ border: 2px solid rgba(0,0,255,.6);
   cursor: pointer;
   transition: ease .5s;
 }
+
 input[type='radio']:checked+.rb-spot {
   border: 2px solid rgba(0,0,255,.6);
 }
