@@ -8,7 +8,6 @@ $(function() {
   const $usernameInput = $('.usernameInput'); // Input for username
   const $messages = $('.messages'); // Messages area
   const $inputMessage = $('.inputMessage'); // Input message input box
-  const $staticCheckinButton = $('.rbcheckin'); // radio buttons on side
   const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
   const $checkinSubmit = $('#checkin-submit');
   const $neutralCheckin = $('#neutral-checkin');
@@ -21,6 +20,9 @@ $(function() {
   const $midSurvey = $('#midSurvey'); // the midSurvey page
   const $postSurvey = $('#postSurvey'); // The postSurvey page
   const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
+  const $team1_feedbackSurvey = $('#team1_feedbackSurvey'); // Feedback for team 1 page
+  const $team2_feedbackSurvey = $('#team2_feedbackSurvey'); // Feedback for team 1 page
+  const $team3_feedbackSurvey = $('#team3_feedbackSurvey'); // Feedback for team 1 page
   const $finishingPage = $('#finishing'); // The finishing page
 
   const hideAll = () => {
@@ -31,6 +33,9 @@ $(function() {
     $midSurvey.hide();
     $postSurvey.hide();
     $blacklistSurvey.hide();
+    $team1_feedbackSurvey.hide();
+    $team2_feedbackSurvey.hide();
+    $team3_feedbackSurvey.hide();
     $finishingPage.hide();
     $checkinPopup.hide();
   }
@@ -41,6 +46,8 @@ $(function() {
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
   const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
+  
+
 
   // Clear before starting
   hideAll();
@@ -283,6 +290,24 @@ $(function() {
     }
   })
 
+  $('#checkin-form').submit( (event) => {
+      event.preventDefault() //stops page reloading
+      let rbValue = $('input[name=checkin]:checked').val();
+      socket.emit('new checkin', rbValue);
+      log(rbValue);
+      $checkinPopup.hide();
+    })
+
+  $('#midForm').submit( (event) => {
+      event.preventDefault() //stops page reloading
+      socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
+      socket.emit('ready')
+      $midSurvey.hide()
+      $holdingPage.show()
+      $('#midForm')[0].reset();
+    })
+    
+
   //Simple autocomplete
   $inputMessage.autocomplete({
     source: ["test"],
@@ -315,27 +340,6 @@ $(function() {
     $inputMessage.focus();
   });
 
-  /*$staticCheckinButton.click(function(){
-    let rbValue = $("input[name='radio1']:checked").val();
-    log(username + " changed rb to " + rbValue);
-    socket.emit('checkin', rbValue);
-  });*/
-
-  $popupCheckinButton.click(function(){
-  //Spot switcher:
-
-    $(this).parent().find(".rb-tab").removeClass("rb-tab-active");
-    $(this).addClass("rb-tab-active");
-
-  });
-
-  $checkinSubmit.click(function() {
-    let rbValue = $('#rb-1').parent().find(".rb-tab-active").attr("value");
-    //log(username + " radio button change: " + rbValue);
-    socket.emit('new checkin', rbValue);
-    $checkinPopup.hide();
-  });
-
   // Socket events
 
   // Whenever the server emits 'login', log the login message
@@ -358,6 +362,31 @@ $(function() {
     alert("The experiment is already full. Please return this HIT.")
   });
 
+  socket.on('load questions', questions => {
+    Vue.component('question-component', {
+      template: `
+        <h3 class="title">{{question.q}}</h3>
+               <input type="radio" name="{{question.name}}" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
+               <input type="radio" name="{{question.name}}" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
+               <input type="radio" name="{{question.name}}" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
+               <input type="radio" name="{{question.name}}" value="4. agree"><label for="4. agree"> 4. agree    </label>
+               <input type="radio" name="{{question.name}}" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
+                <br>
+                <br>
+      `,
+      props: {
+        question: Object
+      }
+    });
+
+    new Vue({
+      el: '#midsurvey-questions',
+      data: {
+        questions
+      }
+    });
+  }) 
+
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', data => {
     addChatMessage(data);
@@ -366,6 +395,7 @@ $(function() {
   // whenever the server emits 'checkin pop up', show checkin popup
   socket.on('checkin popup', data => {
     $('.popup').show();
+    
   });
 
   // Whenever the server emits 'user joined', log it in the chat body
@@ -394,8 +424,7 @@ $(function() {
   socket.on('go', data => {
     hideAll();
     $chatPage.show();
-    $popupCheckinButton.removeClass("rb-tab-active");
-    $neutralCheckin.addClass("rb-tab-active");
+    $neutralCheckin.checked = true;
     log(data.task);
     log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
     log("You will have <strong>10 minutes</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
@@ -434,14 +463,6 @@ $(function() {
   socket.on('midSurvey',data => {
     hideAll();
     $midSurvey.show();
-    $('#midForm').submit( (event) => {
-      event.preventDefault() //stops page reloading
-      socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
-      socket.emit('ready')
-      $midSurvey.hide()
-      $holdingPage.show()
-    })
-    $('#midForm')[0].reset();
   })
 
   socket.on('postSurvey',data => {
@@ -461,6 +482,38 @@ $(function() {
       socket.emit('blacklistSurveySubmit', $('#blacklistForm').serialize()) //submits results alone
     })
   })
+
+  socket.on('team1_feedbackSurvey', () => {
+    hideAll();
+    $team1_feedbackSurvey.show();
+    $('#team1_feedbackForm').submit( (event) => { //watches form element
+      event.preventDefault() //stops page reloading
+      socket.emit('team1_feedbackSurveySubmit', $('#team1_feedbackForm').serialize(), $('#teamfeedbackInput_1').val())
+      //submits results alone
+    })
+  })
+
+  socket.on('team2_feedbackSurvey', () => {
+    hideAll();
+    $team2_feedbackSurvey.show();
+    $('#team2_feedbackForm').submit( (event) => { //watches form element
+      event.preventDefault() //stops page reloading
+      socket.emit('team2_feedbackSurveySubmit', $('#team2_feedbackForm').serialize(), $('#teamfeedbackInput_2').val())
+      //submits results alone
+    })
+  })
+
+  socket.on('team3_feedbackSurvey', () => {
+    hideAll();
+    $team3_feedbackSurvey.show();
+    $('#team3_feedbackForm').submit( (event) => { //watches form element
+      event.preventDefault() //stops page reloading
+      socket.emit('team3_feedbackSurveySubmit', $('#team3_feedbackForm').serialize(), $('#teamfeedbackInput_3').val())
+      //submits results alone
+    })
+  })
+
+
 
   socket.on('finished',data => {
     hideAll();

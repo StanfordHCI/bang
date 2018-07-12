@@ -1,13 +1,13 @@
 //Settings
 const teamSize = 1
-const roundMinutes = .1
+const roundMinutes = .01
 
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 const midSurveyOn = true
-const blacklistOn = false //not implemented yet
+const blacklistOn = true //not implemented yet
 const checkinOn = false
-const checkinIntervalMinutes = roundMinutes/2
+const checkinIntervalMinutes = roundMinutes/30
 
 // Setup basic express server
 let tools = require('./tools');
@@ -15,7 +15,6 @@ let express = require('express');
 const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
-
 const port = process.env.PORT || 3000;
 server.listen(port, () => { console.log('Server listening at port %d', port); });
 
@@ -26,6 +25,8 @@ Array.prototype.set = function() {
   this.forEach(element => { if (!setArray.includes(element)) { setArray.push(element) } })
   return setArray
 };
+
+const fs = require('fs')
 
 // Setting up DB
 const Datastore = require('nedb'),
@@ -72,7 +73,7 @@ app.use(express.static('public'));
 // Chatroom
 io.on('connection', (socket) => {
     let addedUser = false;
-
+    socket.emit('load questions', loadQuestions())
     socket.on('log', string => { console.log(string); });
 
     //Chat engine
@@ -165,7 +166,6 @@ io.on('connection', (socket) => {
             'condition':currentCondition,
             'format':conditions[currentCondition],
             'manipulation':[],
-            //'viabilityCheck':'', // survey questions after each round - MAIKA
             'viabilityCheck':[], // survey questions after each round - MAIKA
             'manipulationCheck':'',
             'blacklistCheck':'' // check whether the team member blacklisted
@@ -338,11 +338,7 @@ io.on('connection', (socket) => {
     let midSurveyResults = data;
     let parsedResults = midSurveyResults.split('&')
     user.results.viabilityCheck = parsedResults
-   // user.results.viabilityCheck = data
     console.log(user.name, "submitted survey:", user.results.viabilityCheck);
-
-    //let result = data.location.search.slice(6);
-    //user.results.viabilityCheck = result
     db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
       if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
       else if(usersAdded) console.log("MidSurvey added to the DB");
@@ -382,6 +378,7 @@ io.on('connection', (socket) => {
       io.in(socket.id).emit('finished');
     });
   }
+  
 
 });
 
@@ -408,6 +405,20 @@ function idToAlias(user, newString) {
 //returns time since task began
 function getSecondsPassed() {
   return ((new Date()).getTime() - startTime)/1000;
+}
+
+function loadQuestions(socket) {
+  let questions = []
+  const questionFile = "midsurvey-questions.txt";
+  let i = 0
+  fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) { 
+    let questionObj = {}; 
+    questionObj['q'] = line; 
+    i++
+    questionObj['name'] = "question-" + i;
+    questions.push(questionObj) 
+  })
+  return questions
 }
 
 
