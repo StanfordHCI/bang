@@ -72,14 +72,6 @@ const params = {
   Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
 };
 
-// FIGURE OUT HOW TO DELETE A HIT?? 
-
-//This will create a new HIT based on params
-// mturk.createHIT(params,(err, data) => {
-//   if (err) console.log(err, err.stack); 
-//   else     console.log(data);           
-// });
-
 // Creates new HIT every timeActive minutes for numPosts times to ensure HIT appears at top of list
 // BUG - only posts first one? or maybe testing time is too short to see if it posts the next one. Might 
 // need to manually delete and repost the HIT, although HIT ID is different each time...
@@ -87,7 +79,9 @@ for(let i = 0; i < numPosts; i++) {
   setTimeout(() => {
     mturk.createHIT(params,(err, data) => {
       if (err) console.log(err, err.stack); 
-      else     console.log(data);     
+      else     console.log(data); 
+      let hitId = data.HIT.HITId;    
+      console.log(hitId);
     });
   }, 1000 * 60 * timeActive)
 }
