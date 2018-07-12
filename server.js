@@ -2,6 +2,97 @@
 const teamSize = 1
 const roundMinutes = .01
 
+// MTurk AWS
+const AWS = require('aws-sdk');
+require('express')().listen(); //Sets to only relaunch with source changes
+
+const region = 'us-east-1';
+// Hard coded because .env method caused credentials error
+const aws_access_key_id = "AKIAJV6G2CON2PKCJREA"
+const aws_secret_access_key = "WOGgQar1egg8i8YszXeMXWFaltIoieQSxH/eQrgB"
+// const aws_access_key_id = process.env.YOUR_ACCESS_ID
+// const aws_secret_access_key = process.env.YOUR_SECRET_KEY
+
+AWS.config = {
+  "accessKeyId": aws_access_key_id,
+  "secretAccessKey": aws_secret_access_key,
+  "region": region,
+  "sslEnabled": 'true'
+};
+
+const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
+
+// Uncomment this line to use in production
+// const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
+
+// This initiates the API
+// Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
+const mturk = new AWS.MTurk({ endpoint: endpoint });
+
+// This will return $10,000.00 in the MTurk Developer Sandbox
+mturk.getAccountBalance((err, data) => {
+  if (err) console.log(err, err.stack); // an error occurred
+  else console.log(data);           // successful response
+});
+
+// This will return the HITs you currently have
+// mturk.listHITs({},(err, data) => {
+//   if (err) console.log(err, err.stack); 
+//   else     console.log(data);           
+// });
+
+// This will find a particular HIT
+// mturk.getHIT({},(err, data) => {
+//   if (err) console.log(err, err.stack); 
+//   else     console.log(data);           
+// });
+
+const taskURL = 'https://foobar.com/task.html'  // direct them to server URL
+
+// HIT Parameters
+const taskDuration = 30; // how many minutes?
+const timeActive = 1; // How long a task stays alive in minutes -  repost same task to assure top of list
+const numPosts = 3; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
+
+const params = {
+  Title: 'Testing.. testing.. read all about it', 
+  Description: 'You will work in a small group to write a 30-word advertisement for new products.',
+  AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
+  LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
+  Reward: '0.50', 
+  AutoApprovalDelayInSeconds: 60*taskDuration*2,
+  Keywords: 'ads, research, etc',
+  MaxAssignments: 10,
+  QualificationRequirements: [{
+    QualificationTypeId: '000000000000000000L0', 
+    Comparator: 'GreaterThan', 
+    IntegerValues: [85],
+    RequiredToPreview: true
+  }],
+  Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
+};
+
+// FIGURE OUT HOW TO DELETE A HIT?? 
+
+//This will create a new HIT based on params
+// mturk.createHIT(params,(err, data) => {
+//   if (err) console.log(err, err.stack); 
+//   else     console.log(data);           
+// });
+
+// Creates new HIT every timeActive minutes for numPosts times to ensure HIT appears at top of list
+// BUG - only posts first one? or maybe testing time is too short to see if it posts the next one. Might 
+// need to manually delete and repost the HIT, although HIT ID is different each time...
+for(let i = 0; i < numPosts; i++) {
+  setTimeout(() => {
+    mturk.createHIT(params,(err, data) => {
+      if (err) console.log(err, err.stack); 
+      else     console.log(data);     
+    });
+  }, 1000 * 60 * timeActive)
+}
+
+
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 const midSurveyOn = true
@@ -73,7 +164,7 @@ app.use(express.static('public'));
 // Chatroom
 io.on('connection', (socket) => {
     let addedUser = false;
-    socket.emit('load questions', loadQuestions())
+    socket.emit('load questions', loadQuestions());
     socket.on('log', string => { console.log(string); });
 
     //Chat engine
