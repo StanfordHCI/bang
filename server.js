@@ -4,6 +4,7 @@ const roundMinutes = .01
 
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
+
 const midSurveyOn = false
 const blacklistOn = false //not implemented yet
 const checkinOn = false
@@ -15,7 +16,6 @@ let express = require('express');
 const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
-
 const port = process.env.PORT || 3000;
 server.listen(port, () => { console.log('Server listening at port %d', port); });
 
@@ -26,6 +26,8 @@ Array.prototype.set = function() {
   this.forEach(element => { if (!setArray.includes(element)) { setArray.push(element) } })
   return setArray
 };
+
+const fs = require('fs')
 
 // Setting up DB
 const Datastore = require('nedb'),
@@ -72,7 +74,7 @@ app.use(express.static('public'));
 // Chatroom
 io.on('connection', (socket) => {
     let addedUser = false;
-
+    socket.emit('load questions', loadQuestions())
     socket.on('log', string => { console.log(string); });
 
     //Chat engine
@@ -405,6 +407,21 @@ function idToAlias(user, newString) {
 function getSecondsPassed() {
   return ((new Date()).getTime() - startTime)/1000;
 }
+
+function loadQuestions(socket) {
+  let questions = []
+  const questionFile = "midsurvey-questions.txt";
+  let i = 0
+  fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) { 
+    let questionObj = {}; 
+    questionObj['q'] = line; 
+    i++
+    questionObj['name'] = "question-" + i;
+    questions.push(questionObj) 
+  })
+  return questions
+}
+
 
 
 //returns number of users in a room: room -> int
