@@ -8,7 +8,7 @@ $(function() {
   const $usernameInput = $('.usernameInput'); // Input for username
   const $messages = $('.messages'); // Messages area
   const $inputMessage = $('.inputMessage'); // Input message input box
-  const $staticCheckinButton = $('.rbcheckin'); // radio buttons on side
+
   const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
   const $checkinSubmit = $('#checkin-submit');
   const $neutralCheckin = $('#neutral-checkin');
@@ -47,6 +47,8 @@ $(function() {
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
   const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
+  
+
 
   // Clear before starting
   hideAll();
@@ -289,6 +291,24 @@ $(function() {
     }
   })
 
+  $('#checkin-form').submit( (event) => {
+      event.preventDefault() //stops page reloading
+      let rbValue = $('input[name=checkin]:checked').val();
+      socket.emit('new checkin', rbValue);
+      log(rbValue);
+      $checkinPopup.hide();
+    })
+
+  $('#midForm').submit( (event) => {
+      event.preventDefault() //stops page reloading
+      socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
+      socket.emit('ready')
+      $midSurvey.hide()
+      $holdingPage.show()
+      $('#midForm')[0].reset();
+    })
+    
+
   //Simple autocomplete
   $inputMessage.autocomplete({
     source: ["test"],
@@ -364,6 +384,31 @@ $(function() {
     alert("The experiment is already full. Please return this HIT.")
   });
 
+  socket.on('load questions', questions => {
+    Vue.component('question-component', {
+      template: `
+        <h3 class="title">{{question.q}}</h3>
+               <input type="radio" name="{{question.name}}" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
+               <input type="radio" name="{{question.name}}" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
+               <input type="radio" name="{{question.name}}" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
+               <input type="radio" name="{{question.name}}" value="4. agree"><label for="4. agree"> 4. agree    </label>
+               <input type="radio" name="{{question.name}}" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
+                <br>
+                <br>
+      `,
+      props: {
+        question: Object
+      }
+    });
+
+    new Vue({
+      el: '#midsurvey-questions',
+      data: {
+        questions
+      }
+    });
+  }) 
+
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', data => {
     addChatMessage(data);
@@ -400,8 +445,8 @@ $(function() {
   socket.on('go', data => {
     hideAll();
     $chatPage.show();
-    $popupCheckinButton.removeClass("rb-tab-active");
-    $neutralCheckin.addClass("rb-tab-active");
+    $neutralCheckin.checked = true;
+
     log(data.task);
     log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
     log("You will have <strong>10 minutes</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
@@ -440,14 +485,6 @@ $(function() {
   socket.on('midSurvey',data => {
     hideAll();
     $midSurvey.show();
-    $('#midForm').submit( (event) => {
-      event.preventDefault() //stops page reloading
-      socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
-      socket.emit('ready')
-      $midSurvey.hide()
-      $holdingPage.show()
-    })
-    $('#midForm')[0].reset();
   })
 
   socket.on('postSurvey',data => {
