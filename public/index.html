@@ -8,68 +8,62 @@
   <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
 <script src="//code.jquery.com/jquery-1.12.4.js"></script>
 <script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/1.0.18/vue.min.js"></script>
+
 </head>
 
 <body>
   <ul class="pages">
     <li id="chat" class="chat page">
+      
       <div class="chatArea">
         <ul class="messages"></ul>
       </div>
       <input class="inputMessage" placeholder="Type here..." oninput=""/>
     </li>
     <div class="popup">
-
-        <p>These check-ins are anonymous and will be used by an algorithm to pair you with an optimal team for the next round.</p>
-        <p>To what extent do you agree with the statement: The members of this team could work for a long time together.</p>
+      <p>These check-ins are anonymous and will be used by an algorithm to pair you with an optimal team for the next round.</p>
+      <p>To what extent do you agree with the statement: The members of this team could work for a long time together.</p>
+      <br>
+      <form id="checkin-form" class="rb">
+        <label for="checkin-1" class="rb-tab">
+          <input type="radio" name="checkin" id="checkin-1" value="1" checked/>
+          <span class='rb-spot'>1</span>
+          <label for='checkin-1'>Strongly Disagree</label>
+        </label>                
+        <label for="checkin-2" class="rb-tab">
+          <input type="radio" name="checkin" id="checkin-2" value="2" />
+          <span class='rb-spot'>2</span>
+          <label for='checkin-2'>Disagree</label>
+        </label>
+        <label for="checkin-3" class="rb-tab">
+          <input type="radio" name="checkin" id="checkin-3" value="3" />
+          <span class='rb-spot'>3</span>
+          <label for='checkin-3'>Slightly Disagree</label>
+        </label>
+        <label for="checkin-4" class="rb-tab">
+          <input type="radio" checked name="checkin" id="checkin-4" value="4" />
+          <span class='rb-spot'>4</span>
+          <label for='checkin-4'>Neutral</label>
+        </label>
+        <label for="checkin-5" class="rb-tab">
+          <input type="radio" name="checkin" id="checkin-5" value="5" />
+          <span class='rb-spot'>5</span>
+          <label for='checkin-5'>Slightly Agree</label>
+        </label>
+        <label for="checkin-6" class="rb-tab">
+          <input type="radio" name="checkin" id="checkin-6" value="6" />
+          <span class='rb-spot'>6</span>
+          <label for='checkin-6'>Agree</label>
+        </label>
+        <label for="checkin-7" class="rb-tab">
+          <input type="radio" name="checkin" id="checkin-7" value="7" />
+          <span class='rb-spot'>7</span>
+          <label for='checkin-7'>Strongly Agree</label>
+        </label>
         <br>
-        <div id="rb-1" class="rb">
-          <div class="rb-tab" value="1">
-            <div class="rb-spot">
-              <span class="rb-txt">1</span>
-            </div>
-            <label>Strongly Disagree</label>
-          </div>
-          <div class="rb-tab" value="2">
-            <div class="rb-spot">
-              <span class="rb-txt">2</span>
-            </div>
-            <label>Disagree</label>
-          </div>
-          <div class="rb-tab" value="3">
-            <div class="rb-spot">
-              <span class="rb-txt">3</span>
-            </div>
-            <label>Slightly Disagree</label>
-          </div>
-          <div class="rb-tab rb-tab-active" id='neutral-checkin' value="4">
-            <div class="rb-spot">
-              <span class="rb-txt">4</span>
-            </div>
-            <label>Neutral</label>
-          </div>
-          <div class="rb-tab" value="5">
-            <div class="rb-spot">
-              <span class="rb-txt">5</span>
-            </div>
-            <label>Slightly Agree</label>
-          </div>
-          <div class="rb-tab rb-tab" value="6">
-            <div class="rb-spot">
-              <span class="rb-txt">6</span>
-            </div>
-            <label>Agree</label>
-          </div>
-            <div class="rb-tab rb-tab" value="7">
-            <div class="rb-spot">
-              <span class="rb-txt">7</span>
-            </div>
-            <label>Strongly Agree</label>
-          </div>
-        <div class="button-box">
-          <button id="checkin-submit" class="button trigger">Submit!</button>
-        </div>
-      </div>
+        <input id="checkin-submit" type="submit" value="Submit">
+      </form>
     </div>
     <li id="login" class="login page">
       <div class="form">
@@ -90,137 +84,17 @@
         <ul class="postSurveyQuestions"></ul>
       </div>
     </li>
-
+    
 <!--  Mid-survey Code (Maika) -->
     <li id="midSurvey" class="login page">
+      
+
         <div class="form">
           <form style="color: white; background-color: black" id="midForm">
             <h3 class="intro">Your answers to the following questions will have no impact on your task performance<br>or ability to work with us in the future.</h3>
-            <br>
-            <br>
-            <br>
-            <br>
-           <!-- Questions -->
-           <h3 class="title">The members of this team could work for a long time together.</h3>
-           <input type="radio" name="Q1" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
-           <input type="radio" name="Q1" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
-           <input type="radio" name="Q1" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
-           <input type="radio" name="Q1" value="4. agree"><label for="4. agree"> 4. agree    </label>
-           <input type="radio" name="Q1" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
-            <br>
-            <br>
-            <h3 class="title">Most of the members of this team would welcome the opportunity<br>to work as a group again in the future.</h3>
-           <input type="radio" name="Q2" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
-           <input type="radio" name="Q2" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
-           <input type="radio" name="Q2" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
-           <input type="radio" name="Q2" value="4. agree"><label for="4. agree"> 4. agree    </label>
-           <input type="radio" name="Q2" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
-           <br>
-           <br>
-           <h3 class="title">This team has the capacity for long-term success. </h3>
-           <input type="radio" name="Q3" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
-           <input type="radio" name="Q3" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
-           <input type="radio" name="Q3" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
-           <input type="radio" name="Q3" value="4. agree"><label for="4. agree"> 4. agree    </label>
-           <input type="radio" name="Q3" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
-           <br>
-           <br>
-           <h3 class="title">This team has what it takes to be effective in the future. </h3>
-           <input type="radio" name="Q4" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
-           <input type="radio" name="Q4" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
-           <input type="radio" name="Q4" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
-           <input type="radio" name="Q4" value="4. agree"><label for="4. agree"> 4. agree    </label>
-           <input type="radio" name="Q4" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
-           <br>
-           <br>
-           <h3 class="title">This team would work well together in the future. </h3>
-           <input type="radio" name="Q5" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
-           <input type="radio" name="Q5" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
-           <input type="radio" name="Q5" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
-           <input type="radio" name="Q5" value="4. agree"><label for="4. agree"> 4. agree    </label>
-           <input type="radio" name="Q5" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
-           <br>
-           <br>
-           <h3 class="title">This team has positioned itself well for continued success. </h3>
-           <input type="radio" name="Q6" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
-           <input type="radio" name="Q6" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
-           <input type="radio" name="Q6" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
-           <input type="radio" name="Q6" value="4. agree"><label for="4. agree"> 4. agree    </label>
-           <input type="radio" name="Q6" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
-           <br>
-           <br>
-           <h3 class="title">This team has the ability to perform well in the future. </h3>
-           <input type="radio" name="Q7" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
-           <input type="radio" name="Q7" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
-           <input type="radio" name="Q7" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
-           <input type="radio" name="Q7" value="4. agree"><label for="4. agree"> 4. agree    </label>
-           <input type="radio" name="Q7" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
-           <br>
-           <br>
-           <h3 class="title">This team has the ability to function as an ongoing unit. </h3>
-           <input type="radio" name="Q8" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
-           <input type="radio" name="Q8" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
-           <input type="radio" name="Q8" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
-           <input type="radio" name="Q8" value="4. agree"><label for="4. agree"> 4. agree    </label>
-           <input type="radio" name="Q8" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
-           <br>
-           <br>
-           <h3 class="title">This team should continue to function as a unit. </h3>
-           <input type="radio" name="Q9" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
-           <input type="radio" name="Q9" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
-           <input type="radio" name="Q9" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
-           <input type="radio" name="Q9" value="4. agree"><label for="4. agree"> 4. agree    </label>
-           <input type="radio" name="Q9" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
-           <br>
-           <br>
-           <h3 class="title">This team has the resources to perform well in the future. </h3>
-           <input type="radio" name="Q10" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
-           <input type="radio" name="Q10" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
-           <input type="radio" name="Q10" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
-           <input type="radio" name="Q10" value="4. agree"><label for="4. agree"> 4. agree    </label>
-           <input type="radio" name="Q10" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
-           <br>
-           <br>
-           <h3 class="title">This team is well positioned for growth over time. </h3>
-           <input type="radio" name="Q11" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
-           <input type="radio" name="Q11" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
-           <input type="radio" name="Q11" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
-           <input type="radio" name="Q11" value="4. agree"><label for="4. agree"> 4. agree    </label>
-           <input type="radio" name="Q11" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
-           <br>
-           <br>
-           <h3 class="title">This team can develop to meet future challenges.  </h3>
-           <input type="radio" name="Q12" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
-           <input type="radio" name="Q12" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
-           <input type="radio" name="Q12" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
-           <input type="radio" name="Q12" value="4. agree"><label for="4. agree"> 4. agree    </label>
-           <input type="radio" name="Q12" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
-           <br>
-           <br>
-           <h3 class="title">This team has the capacity to sustain itself.  </h3>
-           <input type="radio" name="Q13" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
-           <input type="radio" name="Q13" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
-           <input type="radio" name="Q13" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
-           <input type="radio" name="Q13" value="4. agree"><label for="4. agree"> 4. agree    </label>
-           <input type="radio" name="Q13" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
-           <br>
-           <br>
-           <h3 class="title">This team has what it takes to endure in future performance episodes.  </h3>
-           <input type="radio" name="Q14" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
-           <input type="radio" name="Q14" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
-           <input type="radio" name="Q14" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
-           <input type="radio" name="Q14" value="4. agree"><label for="4. agree"> 4. agree    </label>
-           <input type="radio" name="Q14" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
-           <br>
-           <br>
-           <h3 class="title">If you had the choice, would you like to work with the same team in a future round?</h3>
-           <input type="radio" name="Q15" value="1. No"><label for="No" required>  No    </label>
-           <input type="radio" name="Q15" value="5. Yes"><label for="Yes">  Yes    </label>
-           <br>
-           <br>
-           <br>
-           <br>
-           <br>
+            <div id="midsurvey-questions" >
+              <question-component v-for="question in questions" :question="question" />
+            </div>
             <input id="submitButton" type="submit" value="Submit">
         </form>
         </div>
