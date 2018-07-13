@@ -481,6 +481,24 @@ button:hover {
 
 }
 
+.chatLink {
+    display: none;
+  width: 50%;
+  height: 40%;
+  position: absolute;
+  z-index: 999;
+  background-color: #F5F5F5;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-color: gray;
+  border-style: solid;
+  border-width: 2px;
+  border-radius: 0.5rem;
+    padding: 1rem 1.5rem;
+
+}
+
 /* Input */
 
 .inputMessage {

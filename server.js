@@ -47,11 +47,13 @@ mturk.getAccountBalance((err, data) => {
 //   else     console.log(data);           
 // });
 
+const viewingRoomURL = ''  // for users who have not accepted the HIT
+const waitingRoomURL = ''  // for users who have accepted the HIT and are waiting until enough people join
 const taskURL = 'https://foobar.com/task.html'  // direct them to server URL
 
 // HIT Parameters
 const taskDuration = 30; // how many minutes?
-const timeActive = 1; // How long a task stays alive in minutes -  repost same task to assure top of list
+const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
 const numPosts = 3; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
 
 const params = {
@@ -73,19 +75,26 @@ const params = {
 };
 
 // Creates new HIT every timeActive minutes for numPosts times to ensure HIT appears at top of list
-// BUG - only posts first one? or maybe testing time is too short to see if it posts the next one. Might 
-// need to manually delete and repost the HIT, although HIT ID is different each time...
+// NOTE: takes a few moments for it to show up
 for(let i = 0; i < numPosts; i++) {
-  setTimeout(() => {
+  if(i == 0) { // posts one immeditately
     mturk.createHIT(params,(err, data) => {
       if (err) console.log(err, err.stack); 
       else     console.log(data); 
-      let hitId = data.HIT.HITId;    
-      console.log(hitId);
+      // let hitId = data.HIT.HITId;  // returns hit ID 
+      // console.log(hitId);
     });
-  }, 1000 * 60 * timeActive)
+  } else { // reposts every timeActive minutes
+    setTimeout(() => { 
+      mturk.createHIT(params,(err, data) => {
+        if (err) console.log(err, err.stack); 
+        else     console.log(data); 
+        // let hitId = data.HIT.HITId;  // returns hit ID 
+        // console.log(hitId);
+      });
+    }, 1000 * 60 * timeActive * i)  
+  }
 }
-
 
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
@@ -152,8 +161,40 @@ let users = []; //the main local user storage
 let currentRound = 0
 let startTime = 0
 
+let fullUrl = ''
+
+let usersWaiting = 0;
+
+//waiting page
+app.route('/').get(function(req, res)
+{
+  app.use(express.static(__dirname + '/public'));
+  res.sendFile(__dirname + '/public/waiting.html');
+  fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+});
+
+//chat page
+app.route('/chat').get(function(req, res)
+{
+  res.sendFile(__dirname + '/public/index.html');
+  fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+});
+
+//app.all('/', function (req, res, next) {
+//  express.static('public');
+//  next()
+//})
+//app.all('/waiting', function(req, res, next) {
+//  express.static('waiting');
+//});
+//app.use('/waiting', express.static('waiting'))
+
 // Routing
-app.use(express.static('public'));
+//app.route('/waiting').get(function (req, res) {
+//  res.send(express.static('waiting'));
+  //res.send('oh hi there');
+//});
+
 
 // Chatroom
 io.on('connection', (socket) => {
@@ -205,6 +246,16 @@ io.on('connection', (socket) => {
     // when the client emits 'add user', this listens and executes
     socket.on('add user', function (mturkID) {
         if (addedUser) return;
+
+        //waits until user ends up on correct link before adding user
+        if(fullUrl.substr(fullUrl.length - 4) != 'chat') {
+          usersWaiting = usersWaiting + 1;
+            if(usersWaiting == teamSize ** 2) {
+              io.sockets.emit('enough people');
+            }
+          return
+        }
+
 
         // we store the username in the socket session for this client
         socket.username = tools.makeName(); // how they see themselves
@@ -285,6 +336,9 @@ io.on('connection', (socket) => {
 
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
+      usersWaiting = usersWaiting - 1;
+      console.log(usersWaiting);
+
         if (addedUser) {
           users.byID(socket.id).active = false //set user to inactive
           users.byID(socket.id).ready = false //set user to not ready
@@ -308,6 +362,10 @@ io.on('connection', (socket) => {
 
     // Main experiment run
     socket.on('ready', function (data) {
+      //waits until user ends up on correct link before adding user - repeated code, make function
+      if(fullUrl.substr(fullUrl.length - 4) != 'chat') {
+        return
+      }
 
       users.byID(socket.id).ready = true;
       console.log(socket.username, 'is ready');

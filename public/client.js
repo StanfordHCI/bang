@@ -13,6 +13,8 @@ $(function() {
   const $neutralCheckin = $('#neutral-checkin');
   const $checkinPopup = $('.popup');
 
+  const $chatLink = $('.chatlink');
+
   const $loginPage = $('#login'); // The login page
   const $chatPage = $('#chat'); // The chatroom page
   const $holdingPage = $('#holding'); // The holding page
@@ -38,6 +40,7 @@ $(function() {
     $team3_feedbackSurvey.hide();
     $finishingPage.hide();
     $checkinPopup.hide();
+    $chatLink.hide();
   }
 
   let holdingUsername = document.getElementById('username');
@@ -65,6 +68,8 @@ $(function() {
   let $currentInput = $usernameInput.focus();
 
   let currentTeam = []
+
+  let usersWaiting = 0;
 
   /* globals io */
   const socket = io();
@@ -342,6 +347,12 @@ $(function() {
 
   // Socket events
 
+  socket.on('enough people', data => {
+    console.log("enough people!");
+    $('.chatLink').show();
+  });
+
+
   // Whenever the server emits 'login', log the login message
   socket.on('login', data => {
     connected = true;
@@ -512,8 +523,6 @@ $(function() {
       //submits results alone
     })
   })
-
-
 
   socket.on('finished',data => {
     hideAll();
