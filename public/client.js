@@ -15,10 +15,10 @@ $(function() {
 
   const $chatLink = $('.chatlink');
 
-  const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
-  const $checkinSubmit = $('#checkin-submit');
-  const $neutralCheckin = $('#neutral-checkin');
-  const $checkinPopup = $('.popup');
+  //const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
+  //const $checkinSubmit = $('#checkin-submit');
+  //const $neutralCheckin = $('#neutral-checkin');
+  //const $checkinPopup = $('.popup');
 
   const $loginPage = $('#login'); // The login page
   const $chatPage = $('#chat'); // The chatroom page
@@ -376,6 +376,10 @@ $(function() {
   socket.on('enough people', data => {
     console.log("enough people!");
     $('.chatLink').show();
+  });
+
+  socket.on('testing', data => {
+    console.log(window.parent.document.getElementsByTagName("iframe")[0].src);
   });
 
 
