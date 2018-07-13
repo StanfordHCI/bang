@@ -8,6 +8,12 @@ $(function() {
   const $usernameInput = $('.usernameInput'); // Input for username
   const $messages = $('.messages'); // Messages area
   const $inputMessage = $('.inputMessage'); // Input message input box
+  const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
+  const $checkinSubmit = $('#checkin-submit');
+  const $neutralCheckin = $('#neutral-checkin');
+  const $checkinPopup = $('.popup');
+
+  const $chatLink = $('.chatlink');
 
   const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
   const $checkinSubmit = $('#checkin-submit');
@@ -39,6 +45,7 @@ $(function() {
     $team3_feedbackSurvey.hide();
     $finishingPage.hide();
     $checkinPopup.hide();
+    $chatLink.hide();
   }
 
   let holdingUsername = document.getElementById('username');
@@ -47,7 +54,7 @@ $(function() {
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
   const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
-  
+
 
 
   // Clear before starting
@@ -66,6 +73,8 @@ $(function() {
   let $currentInput = $usernameInput.focus();
 
   let currentTeam = []
+
+  let usersWaiting = 0;
 
   /* globals io */
   const socket = io();
@@ -307,7 +316,7 @@ $(function() {
       $holdingPage.show()
       $('#midForm')[0].reset();
     })
-    
+
 
   //Simple autocomplete
   $inputMessage.autocomplete({
@@ -364,6 +373,12 @@ $(function() {
 
   // Socket events
 
+  socket.on('enough people', data => {
+    console.log("enough people!");
+    $('.chatLink').show();
+  });
+
+
   // Whenever the server emits 'login', log the login message
   socket.on('login', data => {
     connected = true;
@@ -407,7 +422,7 @@ $(function() {
         questions
       }
     });
-  }) 
+  })
 
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', data => {
