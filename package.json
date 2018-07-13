@@ -1,5 +1,5 @@
 {
-  "name": "TeamChat",
+  "name": "teamchat",
   "version": "0.1.0",
   "description": "A simple team chat system",
   "main": "server.js",
@@ -27,5 +27,14 @@
   "devDependencies": {
     "aws-sdk": "^2.274.1",
     "pm2": "^3.0.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/StanfordHCI/bang.git"
+  },
+  "author": "",
+  "bugs": {
+    "url": "https://github.com/StanfordHCI/bang/issues"
+  },
+  "homepage": "https://github.com/StanfordHCI/bang#readme"
 }
