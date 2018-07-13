@@ -47,14 +47,14 @@ mturk.getAccountBalance((err, data) => {
 //   else     console.log(data);           
 // });
 
-const viewingRoomURL = ''  // for users who have not accepted the HIT
-const waitingRoomURL = ''  // for users who have accepted the HIT and are waiting until enough people join
+//const viewingRoomURL = ''  // for users who have not accepted the HIT
+//const waitingRoomURL = ''  // for users who have accepted the HIT and are waiting until enough people join
 const taskURL = 'https://foobar.com/task.html'  // direct them to server URL
 
 // HIT Parameters
-const taskDuration = 30; // how many minutes?
-const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
-const numPosts = 3; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
+const taskDuration = 45; // how many minutes?
+const timeActive = 30; // How long a task stays alive in minutes -  repost same task to assure top of list
+const numPosts = 1; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
 
 const params = {
   Title: 'Testing.. testing.. read all about it', 
@@ -75,13 +75,12 @@ const params = {
 };
 
 // Creates new HIT every timeActive minutes for numPosts times to ensure HIT appears at top of list
-// NOTE: takes a few moments for it to show up
 for(let i = 0; i < numPosts; i++) {
   if(i == 0) { // posts one immeditately
     mturk.createHIT(params,(err, data) => {
       if (err) console.log(err, err.stack); 
       else     console.log(data); 
-      // let hitId = data.HIT.HITId;  // returns hit ID 
+      hitId = data.HIT.HITId;  // returns hit ID 
       // console.log(hitId);
     });
   } else { // reposts every timeActive minutes
