@@ -367,8 +367,8 @@ $(function() {
   });
 
   socket.on('testing', data => {
-      url = parent.document.URL;
-      console.log('<iframe src="http://example.com/mydata/page.php?url=' + url + '"></iframe>');
+    url = parent.document.URL;
+    console.log('<iframe src="https://bang.dmorina.com?url=' + url + '"></iframe>');
     //console.log(window.parent.document.getElementsByTagName("iframe")[0].src);
   });
 
