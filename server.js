@@ -246,10 +246,10 @@ io.on('connection', (socket) => {
     socket.on('add user', function (mturkID) {
         if (addedUser) return;
 
-        socket.emit('testing');
 
         //waits until user ends up on correct link before adding user
         if(fullUrl.substr(fullUrl.length - 4) != 'chat') {
+          socket.emit('testing');
           usersWaiting = usersWaiting + 1;
             if(usersWaiting == teamSize ** 2) {
               io.sockets.emit('enough people');
