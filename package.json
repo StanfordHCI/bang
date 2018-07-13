@@ -4,7 +4,10 @@
   "description": "A simple team chat system",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "restart": "pm2 startOrRestart ecosystem.config.js",
+    "deploy": "pm2 deploy ecosystem.config.js production",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "coffeescript": "latest",
@@ -20,5 +23,8 @@
     "node",
     "research"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "pm2": "^3.0.0"
+  }
 }
