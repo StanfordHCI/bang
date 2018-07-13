@@ -15,7 +15,7 @@ $(function() {
 
   const $chatLink = $('.chatlink');
 
-  const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
+  //const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
   const $checkinSubmit = $('#checkin-submit');
   const $neutralCheckin = $('#neutral-checkin');
   const $checkinPopup = $('.popup');
