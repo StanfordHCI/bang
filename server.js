@@ -432,6 +432,7 @@ function loadQuestions(questionFile) {
   return questions
 }
 
+
 //returns number of users in a room: room -> int
 const numUsers = room => users.filter(user => user.room === room).length
 

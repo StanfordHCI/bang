@@ -355,6 +355,27 @@ $(function() {
     $inputMessage.focus();
   });
 
+  /*$staticCheckinButton.click(function(){
+    let rbValue = $("input[name='radio1']:checked").val();
+    log(username + " changed rb to " + rbValue);
+    socket.emit('checkin', rbValue);
+  });*/
+
+  $popupCheckinButton.click(function(){
+  //Spot switcher:
+
+    $(this).parent().find(".rb-tab").removeClass("rb-tab-active");
+    $(this).addClass("rb-tab-active");
+
+  });
+
+  $checkinSubmit.click(function() {
+    let rbValue = $('#rb-1').parent().find(".rb-tab-active").attr("value");
+    //log(username + " radio button change: " + rbValue);
+    socket.emit('new checkin', rbValue);
+    $checkinPopup.hide();
+  });
+
   // Socket events
 
   // Whenever the server emits 'login', log the login message
@@ -433,6 +454,7 @@ $(function() {
     hideAll();
     $chatPage.show();
     $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
+
 
     log(data.task);
     log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
