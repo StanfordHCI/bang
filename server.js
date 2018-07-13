@@ -65,7 +65,7 @@ const params = {
   Reward: hourlyWage * (taskDuration / 60), 
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
   Keywords: 'ads, writing, copy editing, advertising',
-  MaxAssignments: 10,
+  MaxAssignments: teamSize * teamSize,
   QualificationRequirements: [{
     QualificationTypeId: '000000000000000000L0', 
     Comparator: 'GreaterThan', 
