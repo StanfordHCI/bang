@@ -2,15 +2,12 @@ $(function() {
   const FADE_TIME = 150; // ms
   const TYPING_TIMER_LENGTH = 400; // ms
   const COLORS = ['#e21400', '#91580f', '#f8a700', '#f78b00', '#58dc00', '#287b00', '#a8f07a', '#4ae8c4', '#3b88eb', '#3824aa', '#a700ff', '#d300e7'];
-
   // Initialize variables
   const $window = $(window);
   const $usernameInput = $('.usernameInput'); // Input for username
   const $messages = $('.messages'); // Messages area
   const $inputMessage = $('.inputMessage'); // Input message input box
-  const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
-  const $checkinSubmit = $('#checkin-submit');
-  const $neutralCheckin = $('#neutral-checkin');
+
   const $checkinPopup = $('.popup');
 
   const $loginPage = $('#login'); // The login page
@@ -24,6 +21,24 @@ $(function() {
   const $team2_feedbackSurvey = $('#team2_feedbackSurvey'); // Feedback for team 1 page
   const $team3_feedbackSurvey = $('#team3_feedbackSurvey'); // Feedback for team 1 page
   const $finishingPage = $('#finishing'); // The finishing page
+
+  Vue.component('question-component', {
+    template: `
+      <h3>{{question.q}}</h3>
+      <div id="{{question.name}}-rb-box" class='rb-box'>
+        <template v-for="(index, option) in question.answers" :option="option">
+          <label for="{{question.name}}-{{index+1}}" class="rb-tab">
+            <input type="radio" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" required/>
+            <span class='rb-spot'>{{index+1}}</span>
+            <label for='{{question.name}}-{{index+1}}'>{{option}}</label>
+          </label> 
+        </template> 
+      </div>
+    `,
+    props: {
+      question: Object
+    }
+  });
 
   const hideAll = () => {
     $loginPage.hide();
@@ -290,22 +305,22 @@ $(function() {
     }
   })
 
+  //note: only built to handle 1 checkin question, should expand?
   $('#checkin-form').submit( (event) => {
-      event.preventDefault() //stops page reloading
-      let rbValue = $('input[name=checkin]:checked').val();
-      socket.emit('new checkin', rbValue);
-      log(rbValue);
-      $checkinPopup.hide();
-    })
+    event.preventDefault() //stops page reloading
+    let selectedValue = $('input[name=checkin-q1]:checked').val();
+    socket.emit('new checkin', selectedValue);
+    $checkinPopup.hide();
+  })
 
   $('#midForm').submit( (event) => {
-      event.preventDefault() //stops page reloading
-      socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
-      socket.emit('ready')
-      $midSurvey.hide()
-      $holdingPage.show()
-      $('#midForm')[0].reset();
-    })
+    event.preventDefault() //stops page reloading
+    socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
+    socket.emit('ready')
+    $midSurvey.hide()
+    $holdingPage.show()
+    $('#midForm')[0].reset();
+  })
     
 
   //Simple autocomplete
@@ -361,30 +376,24 @@ $(function() {
     hideAll();
     alert("The experiment is already full. Please return this HIT.")
   });
-
-  socket.on('load questions', questions => {
-    Vue.component('question-component', {
-      template: `
-        <h3 class="title">{{question.q}}</h3>
-               <input type="radio" name="{{question.name}}" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
-               <input type="radio" name="{{question.name}}" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
-               <input type="radio" name="{{question.name}}" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
-               <input type="radio" name="{{question.name}}" value="4. agree"><label for="4. agree"> 4. agree    </label>
-               <input type="radio" name="{{question.name}}" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
-                <br>
-                <br>
-      `,
-      props: {
-        question: Object
+  
+  socket.on('load checkin questions', questions => {
+    new Vue({
+      el: '#checkin-questions',
+      data: {
+        questions
       }
     });
+  })
 
+  socket.on('load midsurvey questions', questions => {
     new Vue({
       el: '#midsurvey-questions',
       data: {
         questions
       }
     });
+    
   }) 
 
   // Whenever the server emits 'new message', update the chat body
@@ -395,7 +404,6 @@ $(function() {
   // whenever the server emits 'checkin pop up', show checkin popup
   socket.on('checkin popup', data => {
     $('.popup').show();
-    
   });
 
   // Whenever the server emits 'user joined', log it in the chat body
@@ -424,7 +432,8 @@ $(function() {
   socket.on('go', data => {
     hideAll();
     $chatPage.show();
-    $neutralCheckin.checked = true;
+    $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
+
     log(data.task);
     log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
     log("You will have <strong>10 minutes</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")

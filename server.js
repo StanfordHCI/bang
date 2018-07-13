@@ -1,13 +1,15 @@
 //Settings
 const teamSize = 1
-const roundMinutes = .01
+const roundMinutes = .5
 
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
+
 const midSurveyOn = true
 const blacklistOn = true //not implemented yet
-const checkinOn = false
-const checkinIntervalMinutes = roundMinutes/30
+const checkinOn = true
+const checkinIntervalMinutes = roundMinutes/2
+
 
 // Setup basic express server
 let tools = require('./tools');
@@ -27,6 +29,11 @@ Array.prototype.set = function() {
 };
 
 const fs = require('fs')
+const midsurveyQuestionFile = "midsurvey-q.txt";
+const checkinQuestionFile = "checkin-q.txt";
+const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
+
+
 
 // Setting up DB
 const Datastore = require('nedb'),
@@ -73,7 +80,8 @@ app.use(express.static('public'));
 // Chatroom
 io.on('connection', (socket) => {
     let addedUser = false;
-    socket.emit('load questions', loadQuestions())
+    socket.emit('load midsurvey questions', loadQuestions(midsurveyQuestionFile))
+    socket.emit('load checkin questions', loadQuestions(checkinQuestionFile))
     socket.on('log', string => { console.log(string); });
 
     //Chat engine
@@ -407,20 +415,22 @@ function getSecondsPassed() {
   return ((new Date()).getTime() - startTime)/1000;
 }
 
-function loadQuestions(socket) {
+//loads qs in text file, returns json array
+function loadQuestions(questionFile) {
+  const prefix = questionFile.substr(0, questionFile.indexOf('.'))
   let questions = []
-  const questionFile = "midsurvey-questions.txt";
   let i = 0
   fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) { 
     let questionObj = {}; 
     questionObj['q'] = line; 
     i++
-    questionObj['name'] = "question-" + i;
+    questionObj['name'] = prefix + i;
+    questionObj['answers'] = answers;
+    questionObj['correctAnswer'] = '';
     questions.push(questionObj) 
   })
   return questions
 }
-
 
 //returns number of users in a room: room -> int
 const numUsers = room => users.filter(user => user.room === room).length
