@@ -1,6 +1,99 @@
 //Settings
-const teamSize = 1
+const teamSize = 2
 const roundMinutes = .01
+
+// MTurk AWS
+const AWS = require('aws-sdk');
+require('express')().listen(); //Sets to only relaunch with source changes
+
+const region = 'us-east-1';
+// Hard coded because .env method caused credentials error
+const aws_access_key_id = "AKIAJV6G2CON2PKCJREA"
+const aws_secret_access_key = "WOGgQar1egg8i8YszXeMXWFaltIoieQSxH/eQrgB"
+// const aws_access_key_id = process.env.YOUR_ACCESS_ID
+// const aws_secret_access_key = process.env.YOUR_SECRET_KEY
+
+AWS.config = {
+  "accessKeyId": aws_access_key_id,
+  "secretAccessKey": aws_secret_access_key,
+  "region": region,
+  "sslEnabled": 'true'
+};
+
+const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
+
+// Uncomment this line to use in production
+// const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
+
+// This initiates the API
+// Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
+const mturk = new AWS.MTurk({ endpoint: endpoint });
+
+// This will return $10,000.00 in the MTurk Developer Sandbox
+mturk.getAccountBalance((err, data) => {
+  if (err) console.log(err, err.stack); // an error occurred
+  else console.log(data);           // successful response
+});
+
+// This will return the HITs you currently have
+// mturk.listHITs({},(err, data) => {
+//   if (err) console.log(err, err.stack); 
+//   else     console.log(data);           
+// });
+
+// This will find a particular HIT
+// mturk.getHIT({},(err, data) => {
+//   if (err) console.log(err, err.stack); 
+//   else     console.log(data);           
+// });
+
+//const viewingRoomURL = ''  // for users who have not accepted the HIT
+//const waitingRoomURL = ''  // for users who have accepted the HIT and are waiting until enough people join
+const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
+
+// HIT Parameters
+const taskDuration = 60; // how many minutes?
+const timeActive = 5; // How long a task stays alive in minutes -  repost same task to assure top of list
+const numPosts = (2 * taskDuration) / timeActive; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
+const hourlyWage = 10.50; // changes reward of experiment depending on length
+
+const params = {
+  Title: 'Write online ads by chat/text with group', 
+  Description: 'You will work in a small group in a text/chat environment to write ads for new products. Approximately one hour in length, hourly pay.',
+  AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
+  LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
+  Reward: hourlyWage * (taskDuration / 60), 
+  AutoApprovalDelayInSeconds: 60*taskDuration*2,
+  Keywords: 'ads, writing, copy editing, advertising',
+  MaxAssignments: 10,
+  QualificationRequirements: [{
+    QualificationTypeId: '000000000000000000L0', 
+    Comparator: 'GreaterThan', 
+    IntegerValues: [85],
+    RequiredToPreview: true
+  }],
+  Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
+};
+
+// Creates new HIT every timeActive minutes for numPosts times to ensure HIT appears at top of list
+for(let i = 0; i < numPosts; i++) {
+  if(i == 0) { // posts one immeditately
+    mturk.createHIT(params,(err, data) => {
+      if (err) console.log(err, err.stack); 
+      else     console.log(data); 
+      // console.log(hitId);
+    });
+  } else { // reposts every timeActive minutes
+    setTimeout(() => { 
+      mturk.createHIT(params,(err, data) => {
+        if (err) console.log(err, err.stack); 
+        else     console.log(data); 
+        // let hitId = data.HIT.HITId;  // returns hit ID 
+        // console.log(hitId);
+      });
+    }, 1000 * 60 * timeActive * i)  
+  }
+}
 
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
@@ -9,7 +102,7 @@ const midSurveyOn = 1
 const blacklistOn = 1 
 const teamfeedbackOn = 1
 const checkinOn = false
-const checkinIntervalMinutes = roundMinutes/2
+const checkinIntervalMinutes = roundMinutes/30
 
 // Setup basic express server
 let tools = require('./tools');
@@ -87,14 +180,45 @@ if (blacklistOn) {
 task_list.push("finished")
 console.log(task_list)
 
+let fullUrl = ''
+
+let usersWaiting = 0;
+
+//waiting page
+app.route('/').get(function(req, res)
+{
+  app.use(express.static(__dirname + '/public'));
+  res.sendFile(__dirname + '/public/waiting.html');
+  fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+});
+
+//chat page
+app.route('/chat').get(function(req, res)
+{
+  res.sendFile(__dirname + '/public/index.html');
+  fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+});
+
+//app.all('/', function (req, res, next) {
+//  express.static('public');
+//  next()
+//})
+//app.all('/waiting', function(req, res, next) {
+//  express.static('waiting');
+//});
+//app.use('/waiting', express.static('waiting'))
 
 // Routing
-app.use(express.static('public'));
+//app.route('/waiting').get(function (req, res) {
+//  res.send(express.static('waiting'));
+  //res.send('oh hi there');
+//});
+
 
 // Chatroom
 io.on('connection', (socket) => {
     let addedUser = false;
-    socket.emit('load questions', loadQuestions())
+    socket.emit('load questions', loadQuestions());
     socket.on('log', string => { console.log(string); });
 
     //Chat engine
@@ -141,6 +265,18 @@ io.on('connection', (socket) => {
     // when the client emits 'add user', this listens and executes
     socket.on('add user', function (mturkID) {
         if (addedUser) return;
+
+
+        //waits until user ends up on correct link before adding user
+        if(fullUrl.substr(fullUrl.length - 4) != 'chat') {
+          socket.emit('testing');
+          usersWaiting = usersWaiting + 1;
+            if(usersWaiting == teamSize ** 2) {
+              io.sockets.emit('enough people');
+            }
+          return
+        }
+
 
         // we store the username in the socket session for this client
         socket.username = tools.makeName(); // how they see themselves
@@ -223,6 +359,9 @@ io.on('connection', (socket) => {
 
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
+      usersWaiting = usersWaiting - 1;
+      console.log(usersWaiting);
+
         if (addedUser) {
           users.byID(socket.id).active = false //set user to inactive
           users.byID(socket.id).ready = false //set user to not ready
@@ -280,6 +419,11 @@ io.on('connection', (socket) => {
 
     // Main experiment run
     socket.on('ready', function (data) {
+      console.log(fullUrl);
+      //waits until user ends up on correct link before adding user - repeated code, make function
+      if(fullUrl.substr(fullUrl.length - 4) != 'chat') {
+        return
+      }
 
       users.byID(socket.id).ready = true;
       console.log(socket.username, 'is ready');
@@ -349,6 +493,7 @@ io.on('connection', (socket) => {
           console.log(currentRound, "out of", numRounds)
         }, 1000 * 60 * 0.1 * roundMinutes)
       }, 1000 * 60 * 0.9 * roundMinutes)
+
 
         //record start checkin time in db
       let currentRoom = users.byID(socket.id).room
@@ -420,6 +565,7 @@ io.on('connection', (socket) => {
 
   
 
+
 });
 
 //replaces user.friend aliases with corresponding user IDs
@@ -451,12 +597,12 @@ function loadQuestions(socket) {
   let questions = []
   const questionFile = "midsurvey-questions.txt";
   let i = 0
-  fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) { 
-    let questionObj = {}; 
-    questionObj['q'] = line; 
+  fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) {
+    let questionObj = {};
+    questionObj['q'] = line;
     i++
     questionObj['name'] = "question-" + i;
-    questions.push(questionObj) 
+    questions.push(questionObj)
   })
   return questions
 }
@@ -469,7 +615,6 @@ function replicate(arr, times) {
       res[i] = arr[i % al];
   return res;
 }
-
 
 
 //returns number of users in a room: room -> int
