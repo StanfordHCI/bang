@@ -52,18 +52,18 @@ mturk.getAccountBalance((err, data) => {
 const taskURL = 'https://foobar.com/task.html'  // direct them to server URL
 
 // HIT Parameters
-const taskDuration = 45; // how many minutes?
-const timeActive = 30; // How long a task stays alive in minutes -  repost same task to assure top of list
-const numPosts = 1; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
+const taskDuration = 60; // how many minutes?
+const timeActive = 5; // How long a task stays alive in minutes -  repost same task to assure top of list
+const numPosts = (2 * taskDuration) / timeActive; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
 
 const params = {
   Title: 'Testing.. testing.. read all about it', 
-  Description: 'You will work in a small group to write a 30-word advertisement for new products.',
+  Description: 'You will work in a small group in a text/chat environment to write ads for new products. Approximately one hour in length, hourly pay.',
   AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
   LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
-  Reward: '0.50', 
+  Reward: '10.50', // 10.50 an hour
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
-  Keywords: 'ads, research, etc',
+  Keywords: 'ads, writing, copy editing, advertising',
   MaxAssignments: 10,
   QualificationRequirements: [{
     QualificationTypeId: '000000000000000000L0', 
@@ -80,8 +80,6 @@ for(let i = 0; i < numPosts; i++) {
     mturk.createHIT(params,(err, data) => {
       if (err) console.log(err, err.stack); 
       else     console.log(data); 
-      hitId = data.HIT.HITId;  // returns hit ID 
-      // console.log(hitId);
     });
   } else { // reposts every timeActive minutes
     setTimeout(() => { 
