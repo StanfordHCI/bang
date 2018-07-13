@@ -367,7 +367,9 @@ $(function() {
   });
 
   socket.on('testing', data => {
-    console.log(window.parent.document.getElementsByTagName("iframe")[0].src);
+      url = parent.document.URL;
+      console.log('<iframe src="http://example.com/mydata/page.php?url=' + url + '"></iframe>');
+    //console.log(window.parent.document.getElementsByTagName("iframe")[0].src);
   });
 
 
