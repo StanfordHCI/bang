@@ -15,53 +15,17 @@
 <body>
   <ul class="pages">
     <li id="chat" class="chat page">
-      
       <div class="chatArea">
         <ul class="messages"></ul>
       </div>
       <input class="inputMessage" placeholder="Type here..." oninput=""/>
     </li>
     <div class="popup">
-      <p>These check-ins are anonymous and will be used by an algorithm to pair you with an optimal team for the next round.</p>
-      <p>To what extent do you agree with the statement: The members of this team could work for a long time together.</p>
-      <br>
       <form id="checkin-form" class="rb">
-        <label for="checkin-1" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-1" value="1" checked/>
-          <span class='rb-spot'>1</span>
-          <label for='checkin-1'>Strongly Disagree</label>
-        </label>                
-        <label for="checkin-2" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-2" value="2" />
-          <span class='rb-spot'>2</span>
-          <label for='checkin-2'>Disagree</label>
-        </label>
-        <label for="checkin-3" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-3" value="3" />
-          <span class='rb-spot'>3</span>
-          <label for='checkin-3'>Slightly Disagree</label>
-        </label>
-        <label for="checkin-4" class="rb-tab">
-          <input type="radio" checked name="checkin" id="checkin-4" value="4" />
-          <span class='rb-spot'>4</span>
-          <label for='checkin-4'>Neutral</label>
-        </label>
-        <label for="checkin-5" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-5" value="5" />
-          <span class='rb-spot'>5</span>
-          <label for='checkin-5'>Slightly Agree</label>
-        </label>
-        <label for="checkin-6" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-6" value="6" />
-          <span class='rb-spot'>6</span>
-          <label for='checkin-6'>Agree</label>
-        </label>
-        <label for="checkin-7" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-7" value="7" />
-          <span class='rb-spot'>7</span>
-          <label for='checkin-7'>Strongly Agree</label>
-        </label>
-        <br>
+        <p>These check-ins are anonymous and will be used by an algorithm to pair you with an optimal team for the next round.</p>
+        <div id="checkin-questions" >
+          <question-component v-for="question in questions" :question="question" />
+        </div>
         <input id="checkin-submit" type="submit" value="Submit">
       </form>
 
@@ -87,9 +51,10 @@
     </li>
     
 <!--  Mid-survey Code (Maika) -->
+
     <li id="midSurvey" class="login page">
         <div class="form">
-          <form style="color: white; background-color: black" id="midForm">
+          <form id="midForm" style="background-color: #292942;">
             <h3 class="intro">Your answers to the following questions will have no impact on your task performance<br>or ability to work with us in the future.</h3>
             <div id="midsurvey-questions" >
               <question-component v-for="question in questions" :question="question" />
