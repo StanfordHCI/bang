@@ -56,7 +56,6 @@ const taskDuration = 60; // how many minutes?
 const timeActive = 5; // How long a task stays alive in minutes -  repost same task to assure top of list
 const numPosts = (2 * taskDuration) / timeActive; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
 const hourlyWage = 10.50; // changes reward of experiment depending on length
-// hourly wage, time for experiment
 
 const params = {
   Title: 'Write online ads by chat/text with group', 
@@ -66,7 +65,7 @@ const params = {
   Reward: hourlyWage * (taskDuration / 60), 
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
   Keywords: 'ads, writing, copy editing, advertising',
-  MaxAssignments: 10,
+  MaxAssignments: teamSize * teamSize,
   QualificationRequirements: [{
     QualificationTypeId: '000000000000000000L0', 
     Comparator: 'GreaterThan', 
