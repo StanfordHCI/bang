@@ -57,8 +57,8 @@ const timeActive = 5; // How long a task stays alive in minutes -  repost same t
 const numPosts = (2 * taskDuration) / timeActive; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
 
 const params = {
-  Title: 'Testing.. testing.. read all about it!!!', 
-  Description: 'You will work in a small group to write a 30-word advertisement for new products.',
+  Title: 'Write online ads by chat/text with group', 
+  Description: 'You will work in a small group in a text/chat environment to write ads for new products. Approximately one hour in length, hourly pay.',
   AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
   LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
   Reward: '10.50', // 10.50 an hour
