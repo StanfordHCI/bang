@@ -25,7 +25,7 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "aws-sdk": "^2.274.1",
+    "aws-sdk": "^2.275.1",
     "pm2": "^3.0.0"
   },
   "repository": {
