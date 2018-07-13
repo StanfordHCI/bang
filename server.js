@@ -5,8 +5,9 @@ const roundMinutes = .01
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 
-const midSurveyOn = false
-const blacklistOn = false //not implemented yet
+const midSurveyOn = 1
+const blacklistOn = 1 
+const teamfeedbackOn = 1
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/2
 
@@ -66,7 +67,26 @@ let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
                  'url': 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono' }]
 let users = []; //the main local user storage
 let currentRound = 0
+
 let startTime = 0
+
+// Building task list
+let task_list = []
+task_list[0] = "ready"
+if (midSurveyOn) {
+  task_list[1] = "midSurvey"
+}
+if (teamfeedbackOn) {
+  task_list[2] = "teamfeedbackSurvey"
+}
+task_list = replicate(task_list, 3)
+task_list.push("postSurvey")
+if (blacklistOn) {
+  task_list.push("blacklistSurvey")
+}
+task_list.push("finished")
+console.log(task_list)
+
 
 // Routing
 app.use(express.static('public'));
@@ -163,6 +183,8 @@ io.on('connection', (socket) => {
                     'alias': tools.makeName(),
                     'tAlias':tools.makeName() }}),
           'active': true,
+          'task_list': task_list,
+          'currentActivity': 0,
           'results':{
             'condition':currentCondition,
             'format':conditions[currentCondition],
@@ -222,6 +244,40 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on("execute experiment", function(data) {
+      let user = users.byID(socket.id)
+      let currentActivity = user.currentActivity;
+      let task_list = user.task_list;
+      console.log ("Activity:", currentActivity, "which is", task_list[currentActivity])
+      if (task_list[currentActivity] == "ready") {
+        io.in(user.id).emit("echo", "ready");
+      }
+      else if (task_list[currentActivity] == "midSurvey") {
+        io.in(user.id).emit("midSurvey");
+      }
+      else if (task_list[currentActivity] == "teamfeedbackSurvey") {
+        io.in(socket.id).emit('teamfeedbackSurvey')
+      }
+      else if (task_list[currentActivity] == "postSurvey") {
+        //Launch post survey
+        users.forEach(user => {
+          user.ready = false
+          let survey = postSurveyGenerator(user)
+          user.results.manipulation = survey.correctAnswer
+          db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+          io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
+        })
+      }
+      else if (task_list[currentActivity] == "blacklistSurvey") {
+        io.in(socket.id).emit('blacklistSurvey')
+      }
+      else if (task_list[currentActivity] == "finished") {
+        io.in(socket.id).emit('finished', {finishingCode: socket.id})
+      }
+      user.currentActivity += 1
+    })
+    
+
     // Main experiment run
     socket.on('ready', function (data) {
 
@@ -246,90 +302,71 @@ io.on('connection', (socket) => {
 
       //can we move this into its own on.*** call
 
-      if (currentRound < numRounds){
-        treatmentNow = (currentCondition == "treatment" && currentRound == experimentRound)
-        const conditionRound = conditions[currentCondition][currentRound] - 1
+      treatmentNow = (currentCondition == "treatment" && currentRound == experimentRound)
+      const conditionRound = conditions[currentCondition][currentRound] - 1
 
-        // assign rooms to peple and reset.
-        Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
-          users.filter(user => room.includes(user.person)).forEach(user => {
-            user.room = roomName
-            user.rooms.push(roomName)
-            user.ready = false; //return users to unready state
-            console.log(user.name, '-> room', user.room);
-          })
+      // assign rooms to peple and reset.
+      Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
+        users.filter(user => room.includes(user.person)).forEach(user => {
+          user.room = roomName
+          user.rooms.push(roomName)
+          user.ready = false; //return users to unready state
+          console.log(user.name, '-> room', user.room);
         })
+      })
 
-        //Notify user 'go' and send task.
-        let currentProduct = products[currentRound]
-        let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
+      //Notify user 'go' and send task.
+      let currentProduct = products[currentRound]
+      let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
-        users.forEach(user => {
-          if (autocompleteTestOn) {
-            let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
-            console.log(teamNames)
-            io.in(user.id).emit('go', {task: taskText, team: teamNames })
-          } else {
-            io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }) })
-          }
-        })
+      users.forEach(user => {
+        if (autocompleteTestOn) {
+          let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
+          console.log(teamNames)
+          io.in(user.id).emit('go', {task: taskText, team: teamNames })
+        } else {
+          io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }) })
+        }
+      })
 
-        console.log('Issued task for:', currentProduct.name)
-        console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
+      console.log('Issued task for:', currentProduct.name)
+      console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
 
-        // save start time
-        startTime = (new Date()).getTime();
+      // save start time
+      startTime = (new Date()).getTime();
 
-        //Round warning
-        // make timers run in serial
+      //Round warning
+      // make timers run in serial
+      setTimeout(() => {
+        console.log('time warning', currentRound);
+        users.forEach(user => { io.in(user.id).emit('timer', {time: roundMinutes * .1}) });
+
+        //Done with round
         setTimeout(() => {
-          console.log('time warning', currentRound);
-          users.forEach(user => { io.in(user.id).emit('timer', {time: roundMinutes * .1}) });
-
-          //Done with round
-          setTimeout(() => {
-            console.log('done with round', currentRound);
-            users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: midSurveyOn}) });
-
-            if(midSurveyOn) {
-              console.log('launching midSurvey', currentRound);
-              users.forEach(user => { io.in(user.id).emit('midSurvey', midSurvey(user)) });
-            }
-            
-            currentRound += 1 // guard to only do this when a round is actually done.
-            console.log(currentRound, "out of", numRounds)
-          }, 1000 * 60 * 0.1 * roundMinutes)
-        }, 1000 * 60 * 0.9 * roundMinutes)
+          console.log('done with round', currentRound);
+          users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn)}) });
+          currentRound += 1 // guard to only do this when a round is actually done.
+          console.log(currentRound, "out of", numRounds)
+        }, 1000 * 60 * 0.1 * roundMinutes)
+      }, 1000 * 60 * 0.9 * roundMinutes)
 
         //record start checkin time in db
-        let currentRoom = users.byID(socket.id).room
-        db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed()}, (err, usersAdded) => {
-          if(err) console.log("There's a problem adding a checkin to the DB: ", err);
-          else if(usersAdded) console.log("Checkin added to the DB");
-        });
-        if(checkinOn){
-          let numPopups = 0;
-          let interval = setInterval(() => {
-            if(numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
-              clearInterval(interval);
-            } else {
-              socket.emit("checkin popup");
-              numPopups++;
-            }
-          }, 1000 * 60 * checkinIntervalMinutes)
-        }
-      }
-
-      //Launch post survey
-      if (currentRound >= numRounds) {
-        users.forEach(user => {
-          user.ready = false
-          let survey = postSurveyGenerator(user)
-          user.results.manipulation = survey.correctAnswer
-          db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-          io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
-        })
-      }
+      let currentRoom = users.byID(socket.id).room
+      db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed()}, (err, usersAdded) => {
+        if(err) console.log("There's a problem adding a checkin to the DB: ", err);
+        else if(usersAdded) console.log("Checkin added to the DB");
+      });
+      if(checkinOn){
+        let numPopups = 0;
+        let interval = setInterval(() => {
+          if(numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
+            clearInterval(interval);
+          } else {
+            socket.emit("checkin popup");
+            numPopups++;
+          }
+        }, 1000 * 60 * checkinIntervalMinutes)
+      }      
   });
 
    // Task after each round - midSurvey - MAIKA
@@ -346,39 +383,41 @@ io.on('connection', (socket) => {
     });
   });
 
+  
+
+  socket.on('teamfeedbackSurveySubmit', (teamFracture, teamFeedback) => {
+    let user = users.byID(socket.id)
+    let currentRoom = users.byID(socket.id).room
+    user.results.teamfracture = teamFracture
+    user.results.teamfeedback = teamFeedback
+    console.log(user.name, "submitted team fracture survey:", user.results.teamfracture);
+    console.log(user.name, "submitted team feedback survey:", user.results.teamfeedback);
+    db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'teamfracture': user.results.teamfracture, 'teamfeedback' : user.results.teamfeedback}, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
+      else if(usersAdded) console.log("MidSurvey added to the DB");
+    });
+  });
+
   // Task
-  if (blacklistOn) {
-    socket.on('postSurveySubmit', (data) => {
-      let user = users.byID(socket.id)
-      //in the future this could be checked.
-      user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
-      console.log(user.name, "submitted survey:", user.results.manipulationCheck);
+  socket.on('postSurveySubmit', (data) => {
+    let user = users.byID(socket.id)
+    //in the future this could be checked.
+    user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
+    console.log(user.name, "submitted survey:", user.results.manipulationCheck);
+
+    db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+  });
   
-      db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-      io.in(socket.id).emit('blacklistSurvey');
-    });
-  
-    socket.on('blacklistSurveySubmit', (data) => {
-      let user = users.byID(socket.id)
-      //in the future this could be checked.
-      user.results.blacklistCheck = data //(user.results.manipulation == data) ? true : false
-      // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
-      console.log(user.name, "submitted blacklist survey:", data);
-  
-      db.users.update({ id: socket.id }, {$set: {"results.blacklistCheck": user.results.blacklistCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
-      io.in(socket.id).emit('finished', {finishingCode: socket.id});
-    });
-  } else {
-    socket.on('postSurveySubmit', (data) => {
-      let user = users.byID(socket.id)
-      //in the future this could be checked.
-      user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
-      console.log(user.name, "submitted survey:", user.results.manipulationCheck);
-  
-      db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-      io.in(socket.id).emit('finished');
-    });
-  }
+  socket.on('blacklistSurveySubmit', (data) => {
+    let user = users.byID(socket.id)
+    //in the future this could be checked.
+    user.results.blacklistCheck = data //(user.results.manipulation == data) ? true : false
+    // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
+    console.log(user.name, "submitted blacklist survey:", data);
+
+    db.users.update({ id: socket.id }, {$set: {"results.blacklistCheck": user.results.blacklistCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
+  });
+
   
 
 });
@@ -420,6 +459,15 @@ function loadQuestions(socket) {
     questions.push(questionObj) 
   })
   return questions
+}
+
+function replicate(arr, times) {
+  let al = arr.length,
+      rl = al*times,
+      res = new Array(rl);
+  for (let i=0; i<rl; i++)
+      res[i] = arr[i % al];
+  return res;
 }
 
 
