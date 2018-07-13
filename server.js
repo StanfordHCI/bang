@@ -37,14 +37,14 @@ mturk.getAccountBalance((err, data) => {
 
 // This will return the HITs you currently have
 // mturk.listHITs({},(err, data) => {
-//   if (err) console.log(err, err.stack);
-//   else     console.log(data);
+//   if (err) console.log(err, err.stack); 
+//   else     console.log(data);           
 // });
 
 // This will find a particular HIT
 // mturk.getHIT({},(err, data) => {
-//   if (err) console.log(err, err.stack);
-//   else     console.log(data);
+//   if (err) console.log(err, err.stack); 
+//   else     console.log(data);           
 // });
 
 //const viewingRoomURL = ''  // for users who have not accepted the HIT
@@ -52,22 +52,22 @@ mturk.getAccountBalance((err, data) => {
 const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
 
 // HIT Parameters
-const taskDuration = 45; // how many minutes?
-const timeActive = 30; // How long a task stays alive in minutes -  repost same task to assure top of list
-const numPosts = 1; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
+const taskDuration = 60; // how many minutes?
+const timeActive = 5; // How long a task stays alive in minutes -  repost same task to assure top of list
+const numPosts = (2 * taskDuration) / timeActive; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
 
 const params = {
-  Title: 'Testing.. testing.. read all about it!!!',
-  Description: 'You will work in a small group to write a 30-word advertisement for new products.',
+  Title: 'Write online ads by chat/text with group', 
+  Description: 'You will work in a small group in a text/chat environment to write ads for new products. Approximately one hour in length, hourly pay.',
   AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
   LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
-  Reward: '0.50',
+  Reward: '10.50', // 10.50 an hour
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
-  Keywords: 'ads, research, etc',
+  Keywords: 'ads, writing, copy editing, advertising',
   MaxAssignments: 10,
   QualificationRequirements: [{
-    QualificationTypeId: '000000000000000000L0',
-    Comparator: 'GreaterThan',
+    QualificationTypeId: '000000000000000000L0', 
+    Comparator: 'GreaterThan', 
     IntegerValues: [85],
     RequiredToPreview: true
   }],
@@ -78,19 +78,19 @@ const params = {
 for(let i = 0; i < numPosts; i++) {
   if(i == 0) { // posts one immeditately
     mturk.createHIT(params,(err, data) => {
-      if (err) console.log(err, err.stack);
-      else     console.log(data);
+      if (err) console.log(err, err.stack); 
+      else     console.log(data); 
       // console.log(hitId);
     });
   } else { // reposts every timeActive minutes
-    setTimeout(() => {
+    setTimeout(() => { 
       mturk.createHIT(params,(err, data) => {
-        if (err) console.log(err, err.stack);
-        else     console.log(data);
-        // let hitId = data.HIT.HITId;  // returns hit ID
+        if (err) console.log(err, err.stack); 
+        else     console.log(data); 
+        // let hitId = data.HIT.HITId;  // returns hit ID 
         // console.log(hitId);
       });
-    }, 1000 * 60 * timeActive * i)
+    }, 1000 * 60 * timeActive * i)  
   }
 }
 
