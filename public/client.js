@@ -378,6 +378,10 @@ $(function() {
     $('.chatLink').show();
   });
 
+  socket.on('testing', data => {
+    console.log(window.parent.document.getElementsByTagName("iframe")[0].src);
+  });
+
 
   // Whenever the server emits 'login', log the login message
   socket.on('login', data => {

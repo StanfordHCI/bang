@@ -245,6 +245,8 @@ io.on('connection', (socket) => {
     socket.on('add user', function (mturkID) {
         if (addedUser) return;
 
+        socket.emit('testing');
+
         //waits until user ends up on correct link before adding user
         if(fullUrl.substr(fullUrl.length - 4) != 'chat') {
           usersWaiting = usersWaiting + 1;
