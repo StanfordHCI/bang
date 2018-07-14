@@ -222,9 +222,9 @@ io.on('connection', (socket) => {
     let addedUser = false;
     socket.emit('load questions', loadQuestions());
 
-    socket.on('accepted HIT', function (mturkID) {
+    socket.on('accepted HIT', data => {
       console.log("accepted hit")
-      usersAccepted.push(mturkID);
+      usersAccepted.push(String(socket.id));
       console.log(usersAccepted);
     });
 
