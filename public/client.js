@@ -518,6 +518,7 @@ $(function() {
     socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
     socket.emit('execute experiment')
     $midSurvey.hide()
+    $holdingPage.show()
     $('#midForm')[0].reset();
   })
   
@@ -558,6 +559,7 @@ $(function() {
     event.preventDefault() //stops page reloading
     socket.emit('teamfeedbackSurveySubmit', $('#teamfeedbackForm').serialize(), $('#teamfeedbackInput').val()) //submits results alone
     $teamfeedbackSurvey.hide()
+    $holdingPage.show()
     $('#teamfeedbackForm')[0].reset();
     socket.emit('execute experiment')
   })
