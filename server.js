@@ -183,7 +183,8 @@ console.log(task_list)
 
 let fullUrl = ''
 
-let usersWaiting = 0;
+// array of the users that have accepted the task
+let usersAccepted = [];
 
 //waiting page
 app.route('/').get(function(req, res)
@@ -220,6 +221,7 @@ app.route('/chat').get(function(req, res)
 io.on('connection', (socket) => {
     let addedUser = false;
     socket.emit('load questions', loadQuestions());
+
     socket.on('log', string => { console.log(string); });
 
     //Chat engine
@@ -268,13 +270,10 @@ io.on('connection', (socket) => {
         if (addedUser) return;
 
 
-        //waits until user ends up on correct link before adding user
+        //waits till user ends up on correct link before adding user
         if(fullUrl.substr(fullUrl.length - 4) != 'chat') {
-          socket.emit('testing');
-          usersWaiting = usersWaiting + 1;
-            if(usersWaiting == teamSize ** 2) {
-              io.sockets.emit('enough people');
-            }
+            console.log("first");
+            socket.emit('check accept', mturkID);
           return
         }
 
@@ -360,8 +359,12 @@ io.on('connection', (socket) => {
 
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
-      usersWaiting = usersWaiting - 1;
-      console.log(usersWaiting);
+      // if the user had accepted, removes them from the array of accepted users
+        if (usersAccepted.indexOf(String(socket.id)) > -1){
+          usersAccepted.splice(usersAccepted.indexOf(String(socket.id)), 1);
+          let numWaiting = (teamSize ** 2) - usersAccepted.length;
+          io.sockets.emit('update number waiting', {num: numWaiting});
+        }
 
         if (addedUser) {
           users.byID(socket.id).active = false //set user to inactive
@@ -385,6 +388,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on("execute experiment", function(data) {
+      //if on the wrong page, don't execute experiment
       if(fullUrl.substr(fullUrl.length - 4) != 'chat') {
         return
       }
@@ -514,6 +518,24 @@ io.on('connection', (socket) => {
         }, 1000 * 60 * checkinIntervalMinutes)
       }      
   });
+
+  //if the user has accepted the HIT, add the user to the array usersAccepted
+  socket.on('accepted HIT', (data) => {
+    console.log("accepted hit")
+    usersAccepted.push(String(socket.id));
+    console.log(usersAccepted); //for debugging purposes
+    console.log(usersAccepted.length); //for debugging purposes
+    // if enough people have accepted, push prompt to start task
+    if(usersAccepted.length == teamSize ** 2) {
+        let numWaiting = 0;
+        io.sockets.emit('update number waiting', {num: 0});
+      io.sockets.emit('enough people');
+    } else {
+      let numWaiting = (teamSize ** 2) - usersAccepted.length;
+      io.sockets.emit('update number waiting', {num: numWaiting});
+    }
+  });
+
 
    // Task after each round - midSurvey - MAIKA
    socket.on('midSurveySubmit', (data) => {

@@ -47,6 +47,8 @@ $(function() {
   let holdingUsername = document.getElementById('username');
   let messagesSafe = document.getElementsByClassName('messages')[0];
   let finishingcode = document.getElementById('finishingcode');
+  let usersWaiting = document.getElementById('numberwaiting');
+
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
   const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
@@ -69,8 +71,6 @@ $(function() {
   let $currentInput = $usernameInput.focus();
 
   let currentTeam = []
-
-  let usersWaiting = 0;
 
   /* globals io */
   const socket = io();
@@ -361,20 +361,27 @@ $(function() {
 
   // Socket events
 
+  //if there are enough workers who have accepted the task, show link to chat page
   socket.on('enough people', data => {
     console.log("enough people!");
     $('.chatLink').show();
   });
 
-  socket.on('testing', data => {
-      var assignmentId = location.search.includes("ASSIGNMENT_ID_NOT_AVAILABLE");
-      if (assignmentId) {
+  //checks if the user actually accepted or if they are previewing the task
+  socket.on('check accept', data => {
+      var assignmentId = location.search;
+      if (assignmentId.includes("ASSIGNMENT_ID_NOT_AVAILABLE")) {
         console.log("user has not accepted");
       } else {
         console.log("user has accepted");
+        console.log(assignmentId);
+        //tell the server that the user has accepted the hit - server then adds this worker to array of accepted workers
+        socket.emit('accepted HIT');
       }
-      console.log(assignmentId);
   });
+
+
+
     //url = parent.document.URL;
     //console.log('<iframe src="https://bang.dmorina.com?url=' + url + '"></iframe>');
     //console.log(window.parent.document.getElementsByTagName("iframe")[0].src);
@@ -564,7 +571,11 @@ $(function() {
     socket.emit('execute experiment')
   })
 
-
+  //update waiting page with number of workers that must join until task can start
+  socket.on('update number waiting', data => {
+    console.log(data.num);
+    usersWaiting.innerText = data.num; 
+  });
 
   
 
