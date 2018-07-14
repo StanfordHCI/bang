@@ -223,6 +223,7 @@ io.on('connection', (socket) => {
     socket.emit('load questions', loadQuestions());
 
     socket.on('accepted HIT', function (mturkID) {
+      console.log("accepted hit")
       usersAccepted.push(mturkID);
       console.log(usersAccepted);
     });
