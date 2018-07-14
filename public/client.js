@@ -24,11 +24,12 @@ $(function() {
 
   Vue.component('question-component', {
     template: `
-      <h3>{{question.q}}</h3>
+      <h3>{{question.question}}</h3>
       <div id="{{question.name}}-rb-box" class='rb-box'>
         <template v-for="(index, option) in question.answers" :option="option">
           <label for="{{question.name}}-{{index+1}}" class="rb-tab">
-            <input type="radio" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" required/>
+            <input v-if="question.answerType === 'radio'" type="radio" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" required/>
+            <input v-else-if="question.answerType === 'checkbox'" type="checkbox" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" />
             <span class='rb-spot'>{{index+1}}</span>
             <label for='{{question.name}}-{{index+1}}'>{{option}}</label>
           </label> 
@@ -355,27 +356,7 @@ $(function() {
     $inputMessage.focus();
   });
 
-  /*$staticCheckinButton.click(function(){
-    let rbValue = $("input[name='radio1']:checked").val();
-    log(username + " changed rb to " + rbValue);
-    socket.emit('checkin', rbValue);
-  });*/
-
-  $popupCheckinButton.click(function(){
-  //Spot switcher:
-
-    $(this).parent().find(".rb-tab").removeClass("rb-tab-active");
-    $(this).addClass("rb-tab-active");
-
-  });
-
-  $checkinSubmit.click(function() {
-    let rbValue = $('#rb-1').parent().find(".rb-tab-active").attr("value");
-    //log(username + " radio button change: " + rbValue);
-    socket.emit('new checkin', rbValue);
-    $checkinPopup.hide();
-  });
-
+  
   // Socket events
 
   // Whenever the server emits 'login', log the login message
@@ -416,6 +397,16 @@ $(function() {
     });
     
   }) 
+
+  socket.on('load post', questions =>
+  {
+    new Vue({
+      el: '#postsurvey-questions',
+      data: {
+        questions
+      }
+    });
+  })
 
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', data => {

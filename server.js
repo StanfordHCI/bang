@@ -1,13 +1,13 @@
 //Settings
-const teamSize = 1
-const roundMinutes = .5
+const teamSize = 3
+const roundMinutes = .01
 
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 
-const midSurveyOn = true
+const midSurveyOn = false
 const blacklistOn = true //not implemented yet
-const checkinOn = true
+const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/2
 
 
@@ -80,8 +80,12 @@ app.use(express.static('public'));
 // Chatroom
 io.on('connection', (socket) => {
     let addedUser = false;
-    socket.emit('load midsurvey questions', loadQuestions(midsurveyQuestionFile))
-    socket.emit('load checkin questions', loadQuestions(checkinQuestionFile))
+    users.forEach(user => { 
+      //can this be done in a single emit w all questions passed in?
+      io.in(user.id).emit('load midsurvey questions', loadQuestions(midsurveyQuestionFile));
+      io.in(user.id).emit('load checkin questions', loadQuestions(checkinQuestionFile));
+    });
+
     socket.on('log', string => { console.log(string); });
 
     //Chat engine
@@ -320,7 +324,7 @@ io.on('connection', (socket) => {
             if(numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
               clearInterval(interval);
             } else {
-              socket.emit("checkin popup");
+              users.forEach(user => { io.in(user.id).emit("checkin popup") });
               numPopups++;
             }
           }, 1000 * 60 * checkinIntervalMinutes)
@@ -332,6 +336,7 @@ io.on('connection', (socket) => {
         users.forEach(user => {
           user.ready = false
           let survey = postSurveyGenerator(user)
+          io.in(user.id).emit('load post', {survey})//change to io.on?
           user.results.manipulation = survey.correctAnswer
           db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
           io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
@@ -422,11 +427,12 @@ function loadQuestions(questionFile) {
   let i = 0
   fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) { 
     let questionObj = {}; 
-    questionObj['q'] = line; 
+    questionObj['question'] = line; 
     i++
     questionObj['name'] = prefix + i;
     questionObj['answers'] = answers;
     questionObj['correctAnswer'] = '';
+    questionObj['answerType'] = 'radio';
     questions.push(questionObj) 
   })
   return questions
@@ -497,6 +503,8 @@ const postSurveyGenerator = (user) => {
   console.log(answers,correctAnswer)
 
   return { question:"Select teams you think consisted of the same people.",
+           name: "postsurvey",
            answers: answers,
+           answerType: 'checkbox',
            correctAnswer: correctAnswer }
 }

@@ -40,7 +40,7 @@ ul {
   margin: 0;
   padding: 0;
   width: 100%;
-  background: black;
+  background: black;;
 }
 
 .page {
@@ -52,7 +52,7 @@ ul {
 /* Login Page */
 
 .login.page {
-  background-color: #100;
+  background-color: #292942;;
 }
 
 .login.page .form {
@@ -176,6 +176,8 @@ ul {
   border-radius: .3em;
 }
 .rb-box {
+  display: flex;
+  justify-content: space-between;
   margin: auto;
   width: 640px;
   height: 70px;
@@ -212,13 +214,17 @@ ul {
   border: 2px solid rgba(0,0,0,.3);
 }
 
-input[type='radio']:checked+.rb-spot {
+input[type='radio']:checked+.rb-spot, input[type='checkbox']:checked+.rb-spot{
   background: rgba(243,49,128,.6);
   color:white;
   border: 2px solid rgba(243,49,128,.6);
 }
 
-input[type='radio']:checked~label {
+input[type='radio']~label, input[type='checkbox']~label {
+  border: 2px solid rgba(0, 0, 0, 0);
+}
+
+input[type='radio']:checked~label, input[type='checkbox']:checked~label {
   border: 2px solid rgba(243,49,128,.6);
   border-radius: 10%;
   background: rgba(243,49,128,.6);
@@ -233,7 +239,7 @@ input[type='radio']:checked~label {
   min-width: 30px;
 }
 
-input[type="radio"] {
+input[type="radio"], input[type="checkbox"] {
   opacity: 0;
 }
 
@@ -316,21 +322,13 @@ button:hover {
 }
 
 /* midSurvey */
-#midsurvey {
-  background-color: #292942;
-}
-
-#midform {
-  background-color: #292942;
-}
 
 #midSurvey .form {
   overflow: visible;
   position: relative;
   color:white;
-  background-color: #292942;
-
 }
+
 #midsurvey-questions {
   margin-left: 150px;
   margin-right: 150px;
