@@ -1,11 +1,11 @@
 //Settings
-const teamSize = 3
+const teamSize = 1
 const roundMinutes = .01
 
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 
-const midSurveyOn = false
+const midSurveyOn = true
 const blacklistOn = true //not implemented yet
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/2
@@ -80,11 +80,6 @@ app.use(express.static('public'));
 // Chatroom
 io.on('connection', (socket) => {
     let addedUser = false;
-    users.forEach(user => { 
-      //can this be done in a single emit w all questions passed in?
-      io.in(user.id).emit('load midsurvey questions', loadQuestions(midsurveyQuestionFile));
-      io.in(user.id).emit('load checkin questions', loadQuestions(checkinQuestionFile));
-    });
 
     socket.on('log', string => { console.log(string); });
 
@@ -208,6 +203,7 @@ io.on('connection', (socket) => {
             //     numUsers: numUsers(user.room)
             // });
         // })
+        
     });
 
     // when the user disconnects.. perform this
@@ -252,7 +248,11 @@ io.on('connection', (socket) => {
       }
 
       console.log('all users ready -> starting experiment');
-
+      users.forEach(user => { 
+          //can this be done in a single emit w all questions passed in?
+          io.in(user.id).emit('load midsurvey questions', loadQuestions(midsurveyQuestionFile));
+          io.in(user.id).emit('load checkin questions', loadQuestions(checkinQuestionFile));
+        });
       //do we have more experiments to run? if not, finish
 
       //can we move this into its own on.*** call

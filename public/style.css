@@ -52,7 +52,7 @@ ul {
 /* Login Page */
 
 .login.page {
-  background-color: #292942;;
+  background-color: #292942;
 }
 
 .login.page .form {
@@ -60,6 +60,7 @@ ul {
   position: absolute;
   text-align: center;
   width: 100%;
+  background-color: #292942;
 }
 
 .login.page .form .usernameInput {
