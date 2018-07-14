@@ -367,14 +367,8 @@ $(function() {
   });
 
   socket.on('testing', data => {
-    try {
-      var assignmentId = location.search.match(/assignmentId=(\w+)/)[1];
-      $($("#assignmentId")[0]).val(assignmentId);
-    } catch (e) {
-      if (e.name == "TypeError") {
-        console.log('preview detected')
-      }
-    }
+      var assignmentId = location.search;
+      console.log(assignmentId);
   });
     //url = parent.document.URL;
     //console.log('<iframe src="https://bang.dmorina.com?url=' + url + '"></iframe>');
