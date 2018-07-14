@@ -223,7 +223,8 @@ io.on('connection', (socket) => {
     socket.emit('load questions', loadQuestions());
 
     socket.on('accepted HIT', function (mturkID) {
-
+      usersAccepted.push(mturkID);
+      console.log(usersAccepted);
     });
 
     socket.on('log', string => { console.log(string); });
@@ -276,7 +277,7 @@ io.on('connection', (socket) => {
 
         //waits till user ends up on correct link before adding user
         if(fullUrl.substr(fullUrl.length - 4) != 'chat') {
-            socket.emit('check accept');
+            socket.emit('check accept', mturkID);
             if(usersAccepted == teamSize ** 2) {
               io.sockets.emit('enough people');
             }

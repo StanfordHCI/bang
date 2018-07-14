@@ -372,7 +372,7 @@ $(function() {
         console.log("user has not accepted");
       } else {
         console.log("user has accepted");
-        socket.emit('accepted HIT');
+        socket.emit('accepted HIT', data.mturkID);
       }
       console.log(assignmentId);
   });
