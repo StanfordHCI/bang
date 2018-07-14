@@ -273,7 +273,7 @@ io.on('connection', (socket) => {
         //waits till user ends up on correct link before adding user
         if(fullUrl.substr(fullUrl.length - 4) != 'chat') {
             socket.emit('check accept', mturkID);
-            if(usersAccepted == teamSize ** 2) {
+            if(usersAccepted.length == teamSize ** 2) {
               io.sockets.emit('enough people');
             }
           return
@@ -363,6 +363,9 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
       // usersWaiting = usersWaiting - 1;
       // console.log(usersWaiting);
+        if (usersAccepted.indexOf(String(socket.id)) > -1){
+          usersAccepted.splice(usersAccepted.indexOf(String(socket.id)), 1);
+        }
 
         if (addedUser) {
           users.byID(socket.id).active = false //set user to inactive
@@ -520,7 +523,6 @@ io.on('connection', (socket) => {
     console.log("accepted hit")
     usersAccepted.push(String(socket.id));
     console.log(usersAccepted);
-    socket.emit('success');
   });
 
 
