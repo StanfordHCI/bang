@@ -367,7 +367,10 @@ $(function() {
   });
 
   socket.on('testing', data => {
-      var assignmentId = location.search;
+      var assignmentId = location.search.match("ASSIGNMENT_ID_NOT_AVAILABLE");
+      if (assignmentId != -1) {
+        console.log("user has not accepted");
+      }
       console.log(assignmentId);
   });
     //url = parent.document.URL;
