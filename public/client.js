@@ -376,6 +376,12 @@ $(function() {
         socket.emit('accepted HIT');
       }
   });
+
+
+//delete this - testing
+  socket.on('success', data => {
+    console.log("success!");
+  }
     //url = parent.document.URL;
     //console.log('<iframe src="https://bang.dmorina.com?url=' + url + '"></iframe>');
     //console.log(window.parent.document.getElementsByTagName("iframe")[0].src);

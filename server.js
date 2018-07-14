@@ -224,14 +224,6 @@ io.on('connection', (socket) => {
 
     socket.on('log', string => { console.log(string); });
 
-    socket.on('accepted HIT', function (data) {
-      console.log("accepted hit")
-      usersAccepted.push(String(socket.id));
-      console.log(usersAccepted);
-    });
-
-
-
     //Chat engine
     // when the client emits 'new message', this listens and executes
     socket.on('new message', function (message) {
@@ -523,6 +515,14 @@ io.on('connection', (socket) => {
         }, 1000 * 60 * checkinIntervalMinutes)
       }      
   });
+
+  socket.on('accepted HIT', (data) => {
+    console.log("accepted hit")
+    usersAccepted.push(String(socket.id));
+    console.log(usersAccepted);
+    socket.emit('success');
+  });
+
 
    // Task after each round - midSurvey - MAIKA
    socket.on('midSurveySubmit', (data) => {
