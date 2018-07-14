@@ -276,7 +276,7 @@ io.on('connection', (socket) => {
 
         //waits till user ends up on correct link before adding user
         if(fullUrl.substr(fullUrl.length - 4) != 'chat') {
-            socket.emit('testing');
+            socket.emit('check accept');
             if(usersAccepted == teamSize ** 2) {
               io.sockets.emit('enough people');
             }
