@@ -367,8 +367,8 @@ $(function() {
   });
 
   socket.on('check accept', data => {
-      var assignmentId = location.search.includes("ASSIGNMENT_ID_NOT_AVAILABLE");
-      if (assignmentId) {
+      var assignmentId = location.search;
+      if (assignmentId.includes("ASSIGNMENT_ID_NOT_AVAILABLE")) {
         console.log("user has not accepted");
       } else {
         console.log("user has accepted");
