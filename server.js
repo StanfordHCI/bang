@@ -222,13 +222,15 @@ io.on('connection', (socket) => {
     let addedUser = false;
     socket.emit('load questions', loadQuestions());
 
-    socket.on('accepted HIT', data => {
+    socket.on('log', string => { console.log(string); });
+
+    socket.on('accepted HIT', function (data) {
       console.log("accepted hit")
       usersAccepted.push(String(socket.id));
       console.log(usersAccepted);
     });
 
-    socket.on('log', string => { console.log(string); });
+
 
     //Chat engine
     // when the client emits 'new message', this listens and executes
