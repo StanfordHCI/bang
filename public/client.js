@@ -367,8 +367,18 @@ $(function() {
   });
 
   socket.on('testing', data => {
-    url = parent.document.URL;
-    console.log('<iframe src="https://bang.dmorina.com?url=' + url + '"></iframe>');
+    $(document).ready(_ => {
+      try {
+      var assignmentId = location.search.match(/assignmentId=(\w+)/)[1];
+      $($("#assignmentId")[0]).val(assignmentId);
+    } catch (e) {
+      if (e.name == "TypeError") {
+        console.log('preview detected')
+      }
+    }
+  });
+    //url = parent.document.URL;
+    //console.log('<iframe src="https://bang.dmorina.com?url=' + url + '"></iframe>');
     //console.log(window.parent.document.getElementsByTagName("iframe")[0].src);
   });
 
