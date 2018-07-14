@@ -180,7 +180,7 @@ ul {
   display: flex;
   justify-content: space-between;
   margin: auto;
-  width: 640px;
+  width: max-content;
   height: 70px;
   padding: 16px;
   background: rgba(255,255,255,.03);

@@ -6,7 +6,7 @@ const roundMinutes = .01
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 
 const midSurveyOn = true
-const blacklistOn = true //not implemented yet
+const blacklistOn = true 
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/2
 
@@ -32,6 +32,7 @@ const fs = require('fs')
 const midsurveyQuestionFile = "midsurvey-q.txt";
 const checkinQuestionFile = "checkin-q.txt";
 const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
+const binaryAnswers =['Yes', 'No']
 
 
 
@@ -427,10 +428,17 @@ function loadQuestions(questionFile) {
   let i = 0
   fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) { 
     let questionObj = {}; 
-    questionObj['question'] = line; 
-    i++
+    i++;
     questionObj['name'] = prefix + i;
-    questionObj['answers'] = answers;
+
+    if(line.charAt(line.length-1) === "2") {
+      questionObj['question'] = line.substr(0, line.length-1);
+      questionObj['answers'] = binaryAnswers;
+    } else {
+      questionObj['question'] = line; 
+      questionObj['answers'] = answers;
+    }
+    
     questionObj['correctAnswer'] = '';
     questionObj['answerType'] = 'radio';
     questions.push(questionObj) 
