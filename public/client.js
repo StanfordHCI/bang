@@ -366,12 +366,13 @@ $(function() {
     $('.chatLink').show();
   });
 
-  socket.on('testing', data => {
+  socket.on('check accept', data => {
       var assignmentId = location.search.includes("ASSIGNMENT_ID_NOT_AVAILABLE");
       if (assignmentId) {
         console.log("user has not accepted");
       } else {
         console.log("user has accepted");
+        socket.emit('accepted HIT');
       }
       console.log(assignmentId);
   });

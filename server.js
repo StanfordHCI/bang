@@ -183,7 +183,8 @@ console.log(task_list)
 
 let fullUrl = ''
 
-let usersWaiting = 0;
+// let usersWaiting = 0;
+let usersAccepted = [];
 
 //waiting page
 app.route('/').get(function(req, res)
@@ -220,6 +221,11 @@ app.route('/chat').get(function(req, res)
 io.on('connection', (socket) => {
     let addedUser = false;
     socket.emit('load questions', loadQuestions());
+
+    socket.on('accepted', function (mturkID) {
+      
+    });
+
     socket.on('log', string => { console.log(string); });
 
     //Chat engine
@@ -268,11 +274,9 @@ io.on('connection', (socket) => {
         if (addedUser) return;
 
 
-        //waits until user ends up on correct link before adding user
+        waits until user ends up on correct link before adding user
         if(fullUrl.substr(fullUrl.length - 4) != 'chat') {
-          socket.emit('testing');
-          usersWaiting = usersWaiting + 1;
-            if(usersWaiting == teamSize ** 2) {
+            if(usersAccepted == teamSize ** 2) {
               io.sockets.emit('enough people');
             }
           return
@@ -360,8 +364,8 @@ io.on('connection', (socket) => {
 
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
-      usersWaiting = usersWaiting - 1;
-      console.log(usersWaiting);
+      // usersWaiting = usersWaiting - 1;
+      // console.log(usersWaiting);
 
         if (addedUser) {
           users.byID(socket.id).active = false //set user to inactive
