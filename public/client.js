@@ -372,9 +372,9 @@ $(function() {
         console.log("user has not accepted");
       } else {
         console.log("user has accepted");
+        console.log(assignmentId);
         socket.emit('accepted HIT');
       }
-      console.log(assignmentId);
   });
     //url = parent.document.URL;
     //console.log('<iframe src="https://bang.dmorina.com?url=' + url + '"></iframe>');
