@@ -385,6 +385,9 @@ io.on('connection', (socket) => {
     });
 
     socket.on("execute experiment", function(data) {
+      if(fullUrl.substr(fullUrl.length - 4) != 'chat') {
+        return
+      }
       let user = users.byID(socket.id)
       let currentActivity = user.currentActivity;
       let task_list = user.task_list;
@@ -420,11 +423,8 @@ io.on('connection', (socket) => {
 
     // Main experiment run
     socket.on('ready', function (data) {
-      console.log(fullUrl);
+      //console.log(fullUrl);
       //waits until user ends up on correct link before adding user - repeated code, make function
-      if(fullUrl.substr(fullUrl.length - 4) != 'chat') {
-        return
-      }
 
       users.byID(socket.id).ready = true;
       console.log(socket.username, 'is ready');
