@@ -367,8 +367,7 @@ $(function() {
   });
 
   socket.on('testing', data => {
-    $(document).ready(_ => {
-      try {
+    try {
       var assignmentId = location.search.match(/assignmentId=(\w+)/)[1];
       $($("#assignmentId")[0]).val(assignmentId);
     } catch (e) {
