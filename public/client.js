@@ -367,11 +367,11 @@ $(function() {
   });
 
   socket.on('testing', data => {
-      var assignmentId = location.search.match("ASSIGNMENT_ID_NOT_AVAILABLE");
-      if (assignmentId == null) {
-        console.log("user has accepted");
-      } else {
+      var assignmentId = location.search.includes("ASSIGNMENT_ID_NOT_AVAILABLE");
+      if (assignmentId) {
         console.log("user has not accepted");
+      } else {
+        console.log("user has accepted");
       }
       console.log(assignmentId);
   });
