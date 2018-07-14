@@ -557,7 +557,7 @@ $(function() {
   $('#teamfeedbackForm').submit( (event) => {
     event.preventDefault() //stops page reloading
     socket.emit('teamfeedbackSurveySubmit', $('#teamfeedbackForm').serialize(), $('#teamfeedbackInput').val()) //submits results alone
-    $teamfeedbackSurvey.show()
+    $teamfeedbackSurvey.hide()
     $('#teamfeedbackForm')[0].reset();
     socket.emit('execute experiment')
   })
