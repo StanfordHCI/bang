@@ -1,4 +1,4 @@
-//Settings
+//Settings - change for actual deployment
 const teamSize = 2
 const roundMinutes = .01
 
@@ -59,7 +59,7 @@ const hourlyWage = 10.50; // changes reward of experiment depending on length
 const rewardPrice = (hourlyWage * (taskDuration / 60)); // BUG - make this a string? Reward must be a string
 
 const params = {
-  Title: 'Write online ads by chat/text with group', 
+  Title: 'Write online ads by chat/text with group - test 3', 
   Description: 'You will work in a small group in a text/chat environment to write ads for new products. Approximately one hour in length, hourly pay.',
   AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
   LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
@@ -68,11 +68,32 @@ const params = {
   Keywords: 'ads, writing, copy editing, advertising',
   MaxAssignments: teamSize * teamSize,
   QualificationRequirements: [{
-    QualificationTypeId: '000000000000000000L0', 
+    QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
+    // 000000000000000000L0 
     Comparator: 'GreaterThan', 
-    IntegerValues: [85],
-    RequiredToPreview: true
+    IntegerValues: [1000], 
+    RequiredToPreview: true,
+    ActionsGuarded:"DiscoverPreviewAndAccept"},
+    {
+    QualificationTypeId:"00000000000000000071",  // US workers only
+    LocaleValues:[{
+  		Country:"US",
+    }],
+    Comparator:"In",
+    ActionsGuarded:"DiscoverPreviewAndAccept"
   }],
+  // QualificationRequirements:{
+  //   QualificationTypeId:"00000000000000000071",  // US workers only
+  //   LocaleValues:[{
+  // 		Country:"US",
+  // 	}],
+  //   RequiredToPreview: true
+  // },
+  // QualificationRequirements:{  // hide from unqualified workers
+  //   QualificationTypeId:"789RVWYBAZW00EXAMPLE",
+  //   Comparator:"Exists",
+  //   ActionsGuarded:"DiscoverPreviewAndAccept"
+  // },
   Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
 };
 
