@@ -168,12 +168,12 @@ let startTime = 0
 let task_list = []
 task_list[0] = "ready"
 if (midSurveyOn) {
-  task_list[1] = "midSurvey"
+  task_list.push("midSurvey")
 }
 if (teamfeedbackOn) {
-  task_list[2] = "teamfeedbackSurvey"
+  task_list.push("teamfeedbackSurvey")
 }
-task_list = replicate(task_list, 3)
+task_list = replicate(task_list, numRounds)
 task_list.push("postSurvey")
 if (blacklistOn) {
   task_list.push("blacklistSurvey")
