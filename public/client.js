@@ -563,7 +563,7 @@ $(function() {
   //update waiting page with number of workers that must join until task can start
   socket.on('update number waiting', data => {
     console.log(data.num);
-    usersWaiting.innerText = data.num;
+    //usersWaiting.innerText = data.num;
   });
 
 
