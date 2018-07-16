@@ -377,8 +377,8 @@ $(function() {
         console.log(assignmentId);
 
         //set up submit
-        document.getElementById("mturk_form").action = turkGetParam("turkSubmitTo","")
-        document.getElementById("assignmentId").value = turkGetParam("assignmentId","")
+        document.getElementById("mturk_form").action = turkGetParam("turkSubmitTo","",assignmentId)
+        document.getElementById("assignmentId").value = turkGetParam("assignmentId","",assignmentId)
 
         //tell the server that the user has accepted the hit - server then adds this worker to array of accepted workers
         socket.emit('accepted HIT');
@@ -582,10 +582,11 @@ $(function() {
   })
 });
 
-function turkGetParam( name, defaultValue ) {
+function turkGetParam( name, defaultValue, uri) {
    var regexS = "[\?&]"+name+"=([^&#]*)";
    var regex = new RegExp( regexS );
-   var tmpURL = window.location.href;
+   // var tmpURL = window.location.href;
+   var tmpURL = uri
    var results = regex.exec( tmpURL );
    if( results == null ) {
      return defaultValue;
