@@ -154,17 +154,14 @@
   </div>
     </li>
 
-
-
-
-
-
     <li id="finishing" class="login page">
       <div class="form">
         <h3 class="title">Thanks for participating, you're all done!</h3>
-        <form name='mturk_form' method='post' id='mturk_form' action='https://www.mturk.com/mturk/externalSubmit'>
+        <form name='mturk_form' method='post' id='mturk_form'>
+          <!-- action='https://www.mturk.com/mturk/externalSubmit' -->
           <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
-          <p><input type='submit' id='submitButton' value='Submit' /></p></form>
+          <p><input type='submit' id='submitButton' value='Submit' /></p>
+        </form>
         <!-- <p style="color: white;">Paste <strong><span id="finishingcode"></span></strong> into the MTurk task to receive payment.</p> -->
       </div>
     </li>
