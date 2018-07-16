@@ -375,6 +375,11 @@ $(function() {
       } else {
         console.log("user has accepted");
         console.log(assignmentId);
+
+        //set up submit
+        document.getElementById("mturk_form").action = turkGetParam("turkSubmitTo","")
+        document.getElementById("assignmentId").value = turkGetParam("assignmentId","")
+
         //tell the server that the user has accepted the hit - server then adds this worker to array of accepted workers
         socket.emit('accepted HIT');
       }
@@ -576,3 +581,15 @@ $(function() {
     finishingcode.innerText = data.finishingCode
   })
 });
+
+function turkGetParam( name, defaultValue ) {
+   var regexS = "[\?&]"+name+"=([^&#]*)";
+   var regex = new RegExp( regexS );
+   var tmpURL = window.location.href;
+   var results = regex.exec( tmpURL );
+   if( results == null ) {
+     return defaultValue;
+   } else {
+     return results[1];
+   }
+}
