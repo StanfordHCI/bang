@@ -1,6 +1,6 @@
 //Settings
 const teamSize = 2
-const roundMinutes = .01
+const roundMinutes = .12
 
 // MTurk AWS
 const AWS = require('aws-sdk');
@@ -99,8 +99,8 @@ for(let i = 0; i < numPosts; i++) {
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 
-const midSurveyOn = 1
-const blacklistOn = 1 
+const midSurveyOn = 0
+const blacklistOn = 0
 const teamfeedbackOn = 1
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
