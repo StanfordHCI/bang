@@ -1,6 +1,6 @@
 //Settings - change for actual deployment
 const teamSize = 2
-const roundMinutes = .01
+const roundMinutes = .3
 
 // MTurk AWS
 const AWS = require('aws-sdk');
