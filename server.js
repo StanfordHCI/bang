@@ -73,15 +73,15 @@ const params = {
     Comparator: 'GreaterThan', 
     IntegerValues: [1000], 
     RequiredToPreview: true,
-    ActionsGuarded:"DiscoverPreviewAndAccept"},
+    },
     {
     QualificationTypeId:"00000000000000000071",  // US workers only
     LocaleValues:[{
   		Country:"US",
     }],
     Comparator:"In",
-    ActionsGuarded:"DiscoverPreviewAndAccept"
-  }],
+    ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
+    }],
   Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
 };
 
