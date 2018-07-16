@@ -82,18 +82,6 @@ const params = {
     Comparator:"In",
     ActionsGuarded:"DiscoverPreviewAndAccept"
   }],
-  // QualificationRequirements:{
-  //   QualificationTypeId:"00000000000000000071",  // US workers only
-  //   LocaleValues:[{
-  // 		Country:"US",
-  // 	}],
-  //   RequiredToPreview: true
-  // },
-  // QualificationRequirements:{  // hide from unqualified workers
-  //   QualificationTypeId:"789RVWYBAZW00EXAMPLE",
-  //   Comparator:"Exists",
-  //   ActionsGuarded:"DiscoverPreviewAndAccept"
-  // },
   Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
 };
 
