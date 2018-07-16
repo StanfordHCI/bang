@@ -379,7 +379,7 @@ $(function() {
     alert("The experiment is already full. Please return this HIT.")
   });
   
-  socket.on('load checkin questions', questions => {
+  socket.on('load checkin', questions => {
     new Vue({
       el: '#checkin-questions',
       data: {
@@ -388,7 +388,7 @@ $(function() {
     });
   })
 
-  socket.on('load midsurvey questions', questions => {
+  socket.on('load midsurvey', questions => {
     new Vue({
       el: '#midsurvey-questions',
       data: {
@@ -398,7 +398,7 @@ $(function() {
     
   }) 
 
-  socket.on('load post', questions =>
+  socket.on('load postsurvey', questions =>
   {
     new Vue({
       el: '#postsurvey-questions',
@@ -406,6 +406,15 @@ $(function() {
         questions
       }
     });
+  })
+
+  socket.on('load blacklist', questions => {
+    new Vue({
+      el:'#blacklist-questions',
+      data: {
+        questions
+      }
+    })
   })
 
   // Whenever the server emits 'new message', update the chat body

@@ -1,11 +1,11 @@
 //Settings
-const teamSize = 1
+const teamSize = 2
 const roundMinutes = .01
 
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 
-const midSurveyOn = true
+const midSurveyOn = false
 const blacklistOn = true 
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/2
@@ -31,6 +31,7 @@ Array.prototype.set = function() {
 const fs = require('fs')
 const midsurveyQuestionFile = "midsurvey-q.txt";
 const checkinQuestionFile = "checkin-q.txt";
+const blacklistFile = "blacklist-q.txt"
 const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
 const binaryAnswers =['Yes', 'No']
 
@@ -251,8 +252,8 @@ io.on('connection', (socket) => {
       console.log('all users ready -> starting experiment');
       users.forEach(user => { 
           //can this be done in a single emit w all questions passed in?
-          io.in(user.id).emit('load midsurvey questions', loadQuestions(midsurveyQuestionFile));
-          io.in(user.id).emit('load checkin questions', loadQuestions(checkinQuestionFile));
+          io.in(user.id).emit('load midsurvey', loadQuestions(midsurveyQuestionFile, {answers: answers, answerType: 'radio', correctAnswer:''}));
+          io.in(user.id).emit('load checkin', loadQuestions(checkinQuestionFile, {answers: answers, answerType: 'radio', correctAnswer:''}));
         });
       //do we have more experiments to run? if not, finish
 
@@ -337,7 +338,7 @@ io.on('connection', (socket) => {
         users.forEach(user => {
           user.ready = false
           let survey = postSurveyGenerator(user)
-          io.in(user.id).emit('load post', {survey})//change to io.on?
+          io.in(user.id).emit('load postsurvey', {survey})//change to io.on?
           user.results.manipulation = survey.correctAnswer
           db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
           io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
@@ -368,6 +369,12 @@ io.on('connection', (socket) => {
       console.log(user.name, "submitted survey:", user.results.manipulationCheck);
   
       db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+      users.forEach(user => {
+        let survey = postSurveyGenerator(user);
+
+        io.in(user.id).emit('load blacklist', loadQuestions(blacklistFile, {answers: getTeamMembers(user), answerType: 'radio', correctAnswer:''}));
+      })
+      
       io.in(socket.id).emit('blacklistSurvey');
     });
   
@@ -422,7 +429,7 @@ function getSecondsPassed() {
 }
 
 //loads qs in text file, returns json array
-function loadQuestions(questionFile) {
+function loadQuestions(questionFile, answerObj) {
   const prefix = questionFile.substr(0, questionFile.indexOf('.'))
   let questions = []
   let i = 0
@@ -431,16 +438,12 @@ function loadQuestions(questionFile) {
     i++;
     questionObj['name'] = prefix + i;
 
-    if(line.charAt(line.length-1) === "2") {
-      questionObj['question'] = line.substr(0, line.length-1);
-      questionObj['answers'] = binaryAnswers;
-    } else {
-      questionObj['question'] = line; 
-      questionObj['answers'] = answers;
-    }
     
-    questionObj['correctAnswer'] = '';
-    questionObj['answerType'] = 'radio';
+    questionObj['question'] = line; 
+    questionObj['answers'] = answerObj.answers;
+    
+    questionObj['correctAnswer'] = answerObj.correctAnswer;
+    questionObj['answerType'] = answerObj.answerType;
     questions.push(questionObj) 
   })
   return questions
@@ -491,6 +494,17 @@ const midSurvey = (user) => {
                             answers:["1. No", "5. Yes"] }  }}
 }
 
+const getTeamMembers = (user) => {
+  const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
+
+  const answers = roomTeams.map((team, tIndex) => team.reduce((total, current, pIndex, pArr)=>{
+    const friend = user.friends.find(friend => friend.id == current.id)
+    let name = ((experimentRound == tIndex && currentCondition == "treatment") ? friend.tAlias : friend.alias)
+    if (name == user.name) {name = "you"}
+    return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
+  },""))
+  return answers;
+}
 // This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
 const postSurveyGenerator = (user) => {
   // Makes a list of teams this user has worked with
