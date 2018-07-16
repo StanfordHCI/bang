@@ -1,5 +1,5 @@
 //Settings - change for actual deployment
-const teamSize = 2
+const teamSize = 1
 const roundMinutes = .3
 
 // MTurk AWS
