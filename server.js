@@ -59,7 +59,7 @@ const hourlyWage = 10.50; // changes reward of experiment depending on length
 const rewardPrice = (hourlyWage * (taskDuration / 60)); // BUG - make this a string? Reward must be a string
 
 const params = {
-  Title: 'Write online ads by chat/text with group - test 3', 
+  Title: 'Write online ads by chat/text with group', 
   Description: 'You will work in a small group in a text/chat environment to write ads for new products. Approximately one hour in length, hourly pay.',
   AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
   LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
