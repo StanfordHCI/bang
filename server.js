@@ -1,6 +1,6 @@
 //Settings - change for actual deployment
 const teamSize = 2
-const roundMinutes = .01
+const roundMinutes = .12
 
 // MTurk AWS
 const AWS = require('aws-sdk');
@@ -108,8 +108,8 @@ for(let i = 0; i < numPosts; i++) {
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 
-const midSurveyOn = 1
-const blacklistOn = 1 
+const midSurveyOn = 0
+const blacklistOn = 0
 const teamfeedbackOn = 1
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
@@ -177,12 +177,12 @@ let startTime = 0
 let task_list = []
 task_list[0] = "ready"
 if (midSurveyOn) {
-  task_list[1] = "midSurvey"
+  task_list.push("midSurvey")
 }
 if (teamfeedbackOn) {
-  task_list[2] = "teamfeedbackSurvey"
+  task_list.push("teamfeedbackSurvey")
 }
-task_list = replicate(task_list, 3)
+task_list = replicate(task_list, numRounds)
 task_list.push("postSurvey")
 if (blacklistOn) {
   task_list.push("blacklistSurvey")
