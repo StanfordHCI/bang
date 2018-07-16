@@ -505,19 +505,14 @@ $(function() {
     log("<br>If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat.")
   });
 
-
-
-  
-  
   socket.on('echo',data => {
     socket.emit(data)
   })
 
-
   socket.on('midSurvey',data => {
     hideAll();
     $midSurvey.show();
-    
+
   })
 
   $('#midForm').submit( (event) => {
@@ -528,13 +523,10 @@ $(function() {
     $holdingPage.show()
     $('#midForm')[0].reset();
   })
-  
-  
 
   socket.on('postSurvey',data => {
     hideAll();
     $postSurvey.show();
-    
   })
 
   $('#postForm').submit( (event) => { //watches form element
@@ -554,17 +546,14 @@ $(function() {
     socket.emit('execute experiment')
   })
 
-  
-
   socket.on('teamfeedbackSurvey', () => {
     hideAll();
     $teamfeedbackSurvey.show();
-    
   })
 
   $('#teamfeedbackForm').submit( (event) => {
     event.preventDefault() //stops page reloading
-    socket.emit('teamfeedbackSurveySubmit', $('#teamfeedbackForm').serialize(), $('#teamfeedbackInput').val()) //submits results alone
+    socket.emit('teamfeedbackSurveySubmit', $('#teamfeedbackForm').serialize())
     $teamfeedbackSurvey.hide()
     $holdingPage.show()
     $('#teamfeedbackForm')[0].reset();
@@ -574,10 +563,10 @@ $(function() {
   //update waiting page with number of workers that must join until task can start
   socket.on('update number waiting', data => {
     console.log(data.num);
-    usersWaiting.innerText = data.num; 
+    usersWaiting.innerText = data.num;
   });
 
-  
+
 
 
   socket.on('finished',data => {

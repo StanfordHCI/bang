@@ -1,6 +1,6 @@
 //Settings - change for actual deployment
 const teamSize = 2
-const roundMinutes = .12
+const roundMinutes = .01
 
 // MTurk AWS
 const AWS = require('aws-sdk');
@@ -37,14 +37,14 @@ mturk.getAccountBalance((err, data) => {
 
 // This will return the HITs you currently have
 // mturk.listHITs({},(err, data) => {
-//   if (err) console.log(err, err.stack); 
-//   else     console.log(data);           
+//   if (err) console.log(err, err.stack);
+//   else     console.log(data);
 // });
 
 // This will find a particular HIT
 // mturk.getHIT({},(err, data) => {
-//   if (err) console.log(err, err.stack); 
-//   else     console.log(data);           
+//   if (err) console.log(err, err.stack);
+//   else     console.log(data);
 // });
 
 //const viewingRoomURL = ''  // for users who have not accepted the HIT
@@ -59,29 +59,28 @@ const hourlyWage = 10.50; // changes reward of experiment depending on length
 const rewardPrice = (hourlyWage * (taskDuration / 60)); // BUG - make this a string? Reward must be a string
 
 const params = {
-  Title: 'Write online ads by chat/text with group - test 3', 
+  Title: 'Write online ads by chat/text with group',
   Description: 'You will work in a small group in a text/chat environment to write ads for new products. Approximately one hour in length, hourly pay.',
   AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
   LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
-  Reward: '10.50', 
+  Reward: '10.50',
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
   Keywords: 'ads, writing, copy editing, advertising',
   MaxAssignments: teamSize * teamSize,
   QualificationRequirements: [{
     QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
-    // 000000000000000000L0 
-    Comparator: 'GreaterThan', 
-    IntegerValues: [1000], 
+    Comparator: 'GreaterThan',
+    IntegerValues: [1000],
     RequiredToPreview: true,
-    ActionsGuarded:"DiscoverPreviewAndAccept"},
+    },
     {
     QualificationTypeId:"00000000000000000071",  // US workers only
     LocaleValues:[{
   		Country:"US",
     }],
     Comparator:"In",
-    ActionsGuarded:"DiscoverPreviewAndAccept"
-  }],
+    ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
+    }],
   Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
 };
 
@@ -89,19 +88,19 @@ const params = {
 for(let i = 0; i < numPosts; i++) {
   if(i == 0) { // posts one immeditately
     mturk.createHIT(params,(err, data) => {
-      if (err) console.log(err, err.stack); 
-      else     console.log(data); 
+      if (err) console.log(err, err.stack);
+      else     console.log(data);
       // console.log(hitId);
     });
   } else { // reposts every timeActive minutes
-    setTimeout(() => { 
+    setTimeout(() => {
       mturk.createHIT(params,(err, data) => {
-        if (err) console.log(err, err.stack); 
-        else     console.log(data); 
-        // let hitId = data.HIT.HITId;  // returns hit ID 
+        if (err) console.log(err, err.stack);
+        else     console.log(data);
+        // let hitId = data.HIT.HITId;  // returns hit ID
         // console.log(hitId);
       });
-    }, 1000 * 60 * timeActive * i)  
+    }, 1000 * 60 * timeActive * i)
   }
 }
 
@@ -140,6 +139,7 @@ const Datastore = require('nedb'),
     db.chats = new Datastore({ filename:'.data/chats', autoload: true });
     db.products = new Datastore({ filename:'.data/products', autoload: true });
     db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
+    db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true});
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results - MAIKA
 
 // Setting up variables
@@ -427,12 +427,12 @@ io.on('connection', (socket) => {
       else if (task_list[currentActivity] == "blacklistSurvey") {
         io.in(socket.id).emit('blacklistSurvey')
       }
-      else if (task_list[currentActivity] == "finished") {
+      else if (task_list[currentActivity] == "finished" || currentActivity > task_list.lenght) {
         io.in(socket.id).emit('finished', {finishingCode: socket.id})
       }
       user.currentActivity += 1
     })
-    
+
 
     // Main experiment run
     socket.on('ready', function (data) {
@@ -525,7 +525,7 @@ io.on('connection', (socket) => {
             numPopups++;
           }
         }, 1000 * 60 * checkinIntervalMinutes)
-      }      
+      }
   });
 
   //if the user has accepted the HIT, add the user to the array usersAccepted
@@ -549,7 +549,7 @@ io.on('connection', (socket) => {
    // Task after each round - midSurvey - MAIKA
    socket.on('midSurveySubmit', (data) => {
     let user = users.byID(socket.id)
-    let currentRoom = users.byID(socket.id).room
+    let currentRoom = user.room
     let midSurveyResults = data;
     let parsedResults = midSurveyResults.split('&')
     user.results.viabilityCheck = parsedResults
@@ -560,18 +560,18 @@ io.on('connection', (socket) => {
     });
   });
 
-  
 
-  socket.on('teamfeedbackSurveySubmit', (teamFracture, teamFeedback) => {
+
+  socket.on('teamfeedbackSurveySubmit', (data) => {
     let user = users.byID(socket.id)
-    let currentRoom = users.byID(socket.id).room
-    user.results.teamfracture = teamFracture
-    user.results.teamfeedback = teamFeedback
+    let currentRoom = user.room
+    user.results.teamfracture = data.fracture
+    user.results.teamfeedback = data.feedback
     console.log(user.name, "submitted team fracture survey:", user.results.teamfracture);
     console.log(user.name, "submitted team feedback survey:", user.results.teamfeedback);
-    db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'teamfracture': user.results.teamfracture, 'teamfeedback' : user.results.teamfeedback}, (err, usersAdded) => {
-      if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
-      else if(usersAdded) console.log("MidSurvey added to the DB");
+    db.teamFeedback.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'teamfracture': user.results.teamfracture, 'teamfeedback' : user.results.teamfeedback}, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding TeamFeedback to the DB: ", err);
+      else if(usersAdded) console.log("TeamFeedback added to the DB");
     });
   });
 
@@ -581,10 +581,9 @@ io.on('connection', (socket) => {
     //in the future this could be checked.
     user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
     console.log(user.name, "submitted survey:", user.results.manipulationCheck);
-
     db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
   });
-  
+
   socket.on('blacklistSurveySubmit', (data) => {
     let user = users.byID(socket.id)
     //in the future this could be checked.
@@ -595,7 +594,7 @@ io.on('connection', (socket) => {
     db.users.update({ id: socket.id }, {$set: {"results.blacklistCheck": user.results.blacklistCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
   });
 
-  
+
 
 
 });
