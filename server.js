@@ -62,16 +62,25 @@ const params = {
   Description: 'You will work in a small group in a text/chat environment to write ads for new products. Approximately one hour in length, hourly pay.',
   AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
   LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
-  Reward: hourlyWage * (taskDuration / 60), 
+  Reward: '10.50', 
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
   Keywords: 'ads, writing, copy editing, advertising',
   MaxAssignments: teamSize * teamSize,
   QualificationRequirements: [{
-    QualificationTypeId: '000000000000000000L0', 
+    QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
+    // 000000000000000000L0 
     Comparator: 'GreaterThan', 
-    IntegerValues: [85],
-    RequiredToPreview: true
-  }],
+    IntegerValues: [1000], 
+    RequiredToPreview: true,
+    },
+    {
+    QualificationTypeId:"00000000000000000071",  // US workers only
+    LocaleValues:[{
+  		Country:"US",
+    }],
+    Comparator:"In",
+    ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
+    }],
   Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
 };
 
