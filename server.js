@@ -414,15 +414,12 @@ io.on('connection', (socket) => {
       else if (task_list[currentActivity] == "teamfeedbackSurvey") {
         io.in(socket.id).emit('teamfeedbackSurvey')
       }
-      else if (task_list[currentActivity] == "postSurvey") {
-        //Launch post survey
-        users.forEach(user => {
+      else if (task_list[currentActivity] == "postSurvey") { //Launch post survey
           user.ready = false
           let survey = postSurveyGenerator(user)
           user.results.manipulation = survey.correctAnswer
           db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
           io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
-        })
       }
       else if (task_list[currentActivity] == "blacklistSurvey") {
         io.in(socket.id).emit('blacklistSurvey')
