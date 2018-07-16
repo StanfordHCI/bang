@@ -1,4 +1,4 @@
-//Settings
+//Settings - change for actual deployment
 const teamSize = 2
 const roundMinutes = .01
 
@@ -68,11 +68,19 @@ const params = {
   Keywords: 'ads, writing, copy editing, advertising',
   MaxAssignments: teamSize * teamSize,
   QualificationRequirements: [{
-    QualificationTypeId: '000000000000000000L0',
+    QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
     Comparator: 'GreaterThan',
-    IntegerValues: [85],
-    RequiredToPreview: true
-  }],
+    IntegerValues: [1000],
+    RequiredToPreview: true,
+    },
+    {
+    QualificationTypeId:"00000000000000000071",  // US workers only
+    LocaleValues:[{
+  		Country:"US",
+    }],
+    Comparator:"In",
+    ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
+    }],
   Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
 };
 
