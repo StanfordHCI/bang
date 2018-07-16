@@ -1,6 +1,6 @@
 //Settings - change for actual deployment
 const teamSize = 1
-const roundMinutes = .3
+const roundMinutes = .01
 
 // MTurk AWS
 const AWS = require('aws-sdk');
@@ -109,7 +109,7 @@ const autocompleteTestOn = false //turns on fake team to test autocomplete
 
 const midSurveyOn = 0
 const blacklistOn = 0
-const teamfeedbackOn = 1
+const teamfeedbackOn = 0
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
 
