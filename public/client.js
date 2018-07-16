@@ -572,6 +572,7 @@ $(function() {
   socket.on('finished',data => {
     hideAll();
     $finishingPage.show();
+
     finishingcode.innerText = data.finishingCode
   })
 });
