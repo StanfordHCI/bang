@@ -1,6 +1,6 @@
 //Settings - change for actual deployment
 const teamSize = 1
-const roundMinutes = .15
+const roundMinutes = .01
 
 // MTurk AWS
 const AWS = require('aws-sdk');
@@ -51,13 +51,14 @@ mturk.getAccountBalance((err, data) => {
 
 //const viewingRoomURL = ''  // for users who have not accepted the HIT
 //const waitingRoomURL = ''  // for users who have accepted the HIT and are waiting until enough people join
-const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
+//const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
+const taskURL = 'https://localhost:3000/'; 
 
 // HIT Parameters
 const taskDuration = 60; // how many minutes?
-const timeActive = 5; // How long a task stays alive in minutes -  repost same task to assure top of list
+const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
 const numPosts = (2 * taskDuration) / timeActive; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
-const hourlyWage = 10.50; // changes reward of experiment depending on length
+const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
 const rewardPrice = (hourlyWage * (taskDuration / 60)); // BUG - make this a string? Reward must be a string
 
 const params = {
@@ -65,7 +66,7 @@ const params = {
   Description: 'You will work in a small group in a text/chat environment to write ads for new products. Approximately one hour in length, hourly pay. If you have already completed this task, do not attempt again.',
   AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
   LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
-  Reward: '6',
+  Reward: '10.50',
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
   Keywords: 'ads, writing, copy editing, advertising',
   MaxAssignments: teamSize * teamSize,
@@ -86,9 +87,11 @@ const params = {
   Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
 };
 
-mturk.createHIT(params, (err, data) => {
+// creates single HIT
+mturk.createHIT(params,(err, data) => {
   if (err) console.log(err, err.stack);
-  else     console.log("Fist HITS posted bro");
+  else     console.log("Fist HITS posted");
+  // console.log(hitId);
 });
 
 // Creates new HIT every timeActive minutes for numPosts times to ensure HIT appears at top of list
@@ -114,7 +117,8 @@ mturk.createHIT(params, (err, data) => {
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 
-const midSurveyOn = 1
+const starterSurveyOn = 1
+const midSurveyOn = 0
 const blacklistOn = 0
 const teamfeedbackOn = 0
 const checkinOn = false
@@ -142,6 +146,7 @@ const fs = require('fs')
 // Setting up DB
 const Datastore = require('nedb'),
     db = {};
+    db.starterSurvey = new Datastore({ filename:'.data/starterSurvey', autoload: true });
     db.users = new Datastore({ filename:'.data/users', autoload: true });
     db.chats = new Datastore({ filename:'.data/chats', autoload: true });
     db.products = new Datastore({ filename:'.data/products', autoload: true });
@@ -183,14 +188,19 @@ let startTime = 0
 
 // Building task list
 let task_list = []
-task_list[0] = "ready"
+if (starterSurveyOn) {
+  task_list.push("starterSurvey")
+}
+let task_loop = []
+task_loop.push("ready")
 if (midSurveyOn) {
-  task_list.push("midSurvey")
+  task_loop.push("midSurvey")
 }
 if (teamfeedbackOn) {
-  task_list.push("teamfeedbackSurvey")
+  task_loop.push("teamfeedbackSurvey")
 }
-task_list = replicate(task_list, numRounds)
+task_loop = replicate(task_loop, numRounds)
+task_list= task_list.concat(task_loop)
 task_list.push("postSurvey")
 if (blacklistOn) {
   task_list.push("blacklistSurvey")
@@ -232,7 +242,8 @@ app.use(express.static('public'));
 // Chatroom
 io.on('connection', (socket) => {
     let addedUser = false;
-    socket.emit('load questions', loadQuestions());
+    socket.emit('load questions', loadQuestions("midsurvey-questions.txt"));
+    socket.emit('load starter questions', loadQuestions("startersurvey-questions.txt"));
 
     socket.on('log', string => { console.log(string); });
 
@@ -250,7 +261,9 @@ io.on('connection', (socket) => {
 
         let currentRoom = users.byID(socket.id).room
 
-        db.chats.insert({'room':currentRoom,'userID':socket.id, 'message': message}, (err, usersAdded) => {
+        let timeStamp = getSecondsPassed();
+
+        db.chats.insert({'room':currentRoom,'userID':socket.id, 'message': message, 'time': timeStamp}, (err, usersAdded) => {
           if(err) console.log("There's a problem adding a message to the DB: ", err);
           else if(usersAdded) console.log("Message added to the DB");
         });
@@ -331,6 +344,7 @@ io.on('connection', (socket) => {
             'condition':currentCondition,
             'format':conditions[currentCondition],
             'manipulation':[],
+            'starterCheck':[],
             'viabilityCheck':[],
             'manipulationCheck':'',
             'blacklistCheck':''
@@ -395,7 +409,10 @@ io.on('connection', (socket) => {
       let currentActivity = user.currentActivity;
       let task_list = user.task_list;
       console.log ("Activity:", currentActivity, "which is", task_list[currentActivity])
-      if (task_list[currentActivity] == "ready") {
+      if (task_list[currentActivity] == "starterSurvey") {
+        io.in(user.id).emit("starterSurvey");
+      }
+      else if (task_list[currentActivity] == "ready") {
         io.in(user.id).emit("echo", "ready");
       }
       else if (task_list[currentActivity] == "midSurvey") {
@@ -527,6 +544,8 @@ io.on('connection', (socket) => {
     usersAccepted.push({
       "id": socket.id,
       "mturkID": data.workerId,
+      "id": String(socket.id),
+      "workerId": data.workerId,
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
     });
@@ -544,22 +563,42 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Starter task
+   socket.on('starterSurveySubmit', (data) => {
+    let user = users.byID(socket.id)
+    let currentRoom = user.room
+    let parsedResults = parseResults(data);
+    user.results.starterCheck = parsedResults
+    console.log(user.name, "submitted survey:", user.results.starterCheck);
+    db.starterSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'starterCheck': user.results.starterCheck}, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding starterSurvey to the DB: ", err);
+      else if(usersAdded) console.log("starterSurvey added to the DB");
+    });
+  });
 
+  // parses results from Midsurvey to proper format for JSON file 
+  function parseResults(data) {
+    let SurveyResults = data;
+    let parsedResults = SurveyResults.split('&');
+    let arrayLength = parsedResults.length;
+    for(var i = 0; i < arrayLength; i++) {
+      parsedResults[i] = parsedResults[i].slice(9, parsedResults[i].indexOf("=")) + '=' + parsedResults[i].slice(parsedResults[i].indexOf("=") + 4);
+    }
+    return parsedResults;
+  }
+ 
    // Task after each round - midSurvey - MAIKA
    socket.on('midSurveySubmit', (data) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
-    let midSurveyResults = data;
-    let parsedResults = midSurveyResults.split('&')
-    user.results.viabilityCheck = parsedResults
+    let midSurveyResults = parseResults(data);
+    user.results.viabilityCheck = midSurveyResults;
     console.log(user.name, "submitted survey:", user.results.viabilityCheck);
-    db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round': currentRound, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
+    db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
       if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
       else if(usersAdded) console.log("MidSurvey added to the DB");
     });
   });
-
-
 
   socket.on('teamfeedbackSurveySubmit', (data) => {
     let user = users.byID(socket.id)
@@ -623,9 +662,9 @@ function getSecondsPassed() {
   return ((new Date()).getTime() - startTime)/1000;
 }
 
-function loadQuestions(socket) {
+function loadQuestions(questiontxtFile) {
   let questions = []
-  const questionFile = "midsurvey-questions.txt";
+  const questionFile = questiontxtFile;
   let i = 0
   fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) {
     let questionObj = {};
