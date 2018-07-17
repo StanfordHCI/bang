@@ -49,8 +49,6 @@ mturk.getAccountBalance((err, data) => {
 //   else     console.log(data);
 // });
 
-//const viewingRoomURL = ''  // for users who have not accepted the HIT
-//const waitingRoomURL = ''  // for users who have accepted the HIT and are waiting until enough people join
 //const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
 const taskURL = 'https://localhost:3000/'; 
 
@@ -91,7 +89,6 @@ const params = {
 mturk.createHIT(params,(err, data) => {
   if (err) console.log(err, err.stack);
   else     console.log("Fist HITS posted");
-  // console.log(hitId);
 });
 
 // Creates new HIT every timeActive minutes for numPosts times to ensure HIT appears at top of list
@@ -153,7 +150,8 @@ const Datastore = require('nedb'),
     db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
     db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true});
     db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true});
-    db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results - MAIKA
+    db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results 
+    db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
 
 // Setting up variables
 const currentCondition = "treatment"
@@ -173,6 +171,8 @@ const rooms = tools.letters.slice(0,numberOfRooms)
 const people = tools.letters.slice(0,teamSize ** 2)
 const population = people.length
 const teams = tools.createTeams(teamSize,numRounds,people)
+
+const batchID = Date.now();
 
 //Add more products
 let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
@@ -212,7 +212,6 @@ let fullUrl = ''
 
 // array of the users that have accepted the task
 let usersAccepted = [];
-let tempArray = [];
 
 app.use(express.static('public'));
 
@@ -241,6 +240,14 @@ app.use(express.static('public'));
 
 // Chatroom
 io.on('connection', (socket) => {
+
+  db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn, 
+                   'teamfeedbackOn': teamfeedbackOn, 'checkinOn': checkinOn, 'conditions': conditions, 'experimentRound': experimentRound,
+                   'numRounds': numRounds, 'teamSize': teamSize, 'users': users}, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding batch to the DB: ", err);
+      else if(usersAdded) console.log("Batch added to the DB");
+  }); // task_list instead of all of the toggles? (missing checkinOn)
+
     let addedUser = false;
     socket.emit('load questions', loadQuestions("midsurvey-questions.txt"));
     socket.emit('load starter questions', loadQuestions("startersurvey-questions.txt"));
@@ -263,7 +270,7 @@ io.on('connection', (socket) => {
 
         let timeStamp = getSecondsPassed();
 
-        db.chats.insert({'room':currentRoom,'userID':socket.id, 'message': message, 'time': timeStamp}, (err, usersAdded) => {
+        db.chats.insert({'room':currentRoom,'userID':socket.id, 'message': message, 'time': timeStamp, 'batch': batchID}, (err, usersAdded) => {
           if(err) console.log("There's a problem adding a message to the DB: ", err);
           else if(usersAdded) console.log("Message added to the DB");
         });
@@ -283,7 +290,7 @@ io.on('connection', (socket) => {
     socket.on('new checkin', function (value) {
       console.log(socket.username + "checked in with value " + value);
       let currentRoom = users.byID(socket.id).room;
-      db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': value, 'time': getSecondsPassed()}, (err, usersAdded) => {
+      db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': value, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
           if(err) console.log("There's a problem adding a checkin to the DB: ", err);
           else if(usersAdded) console.log("Checkin added to the DB");
         });
@@ -372,17 +379,9 @@ io.on('connection', (socket) => {
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
         // if the user had accepted, removes them from the array of accepted users
-        console.log(socket.id)
-        if (usersAccepted.find(function(element) {return element.id == socket.id})) {
-          console.log('there was a disconnect');
-          usersAccepted = usersAccepted.filter(user => user.id != socket.id);
-          console.log(usersAccepted)
-          console.log("num users accepted:", usersAccepted.length);
-          if((teamSize ** 2) - usersAccepted.length < 0) {
-            io.sockets.emit('update number waiting', {num: 0});
-          } else {
-            io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersAccepted.length});
-          }
+        if (usersAccepted.find((user)=>{ user.id == socket.id })){
+          usersAccepted = usersAccepted.filter((user) => {user.id != socket.id})
+          io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersAccepted.length});
         }
 
         if (addedUser) {
@@ -522,7 +521,7 @@ io.on('connection', (socket) => {
 
         //record start checkin time in db
       let currentRoom = users.byID(socket.id).room
-      db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed()}, (err, usersAdded) => {
+      db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
         if(err) console.log("There's a problem adding a checkin to the DB: ", err);
         else if(usersAdded) console.log("Checkin added to the DB");
       });
@@ -542,18 +541,15 @@ io.on('connection', (socket) => {
   //if the user has accepted the HIT, add the user to the array usersAccepted
   socket.on('accepted HIT', (data) => {
     usersAccepted.push({
-      "id": socket.id,
-      "mturkID": data.workerId,
       "id": String(socket.id),
       "workerId": data.workerId,
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
     });
-    tempArray.push(socket.id);
     console.log(data.turkSubmitTo);
     console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
     // if enough people have accepted, push prompt to start task
-    if(usersAccepted.length >= teamSize ** 2) {
+    if(usersAccepted.length == teamSize ** 2) {
         let numWaiting = 0;
         io.sockets.emit('update number waiting', {num: 0});
       io.sockets.emit('enough people');
@@ -567,10 +563,10 @@ io.on('connection', (socket) => {
    socket.on('starterSurveySubmit', (data) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
-    let parsedResults = parseResults(data);
+    let parsedResults = parsesurveyResults(data);
     user.results.starterCheck = parsedResults
     console.log(user.name, "submitted survey:", user.results.starterCheck);
-    db.starterSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'starterCheck': user.results.starterCheck}, (err, usersAdded) => {
+    db.starterSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'starterCheck': user.results.starterCheck, 'batch':batchID}, (err, usersAdded) => {
       if(err) console.log("There's a problem adding starterSurvey to the DB: ", err);
       else if(usersAdded) console.log("starterSurvey added to the DB");
     });
@@ -578,8 +574,8 @@ io.on('connection', (socket) => {
 
   // parses results from Midsurvey to proper format for JSON file 
   function parseResults(data) {
-    let SurveyResults = data;
-    let parsedResults = SurveyResults.split('&');
+    let midSurveyResults = data;
+    let parsedResults = midSurveyResults.split('&');
     let arrayLength = parsedResults.length;
     for(var i = 0; i < arrayLength; i++) {
       parsedResults[i] = parsedResults[i].slice(9, parsedResults[i].indexOf("=")) + '=' + parsedResults[i].slice(parsedResults[i].indexOf("=") + 4);
@@ -594,7 +590,7 @@ io.on('connection', (socket) => {
     let midSurveyResults = parseResults(data);
     user.results.viabilityCheck = midSurveyResults;
     console.log(user.name, "submitted survey:", user.results.viabilityCheck);
-    db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
+    db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'midSurvey': user.results.viabilityCheck, 'batch':batchID}, (err, usersAdded) => {
       if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
       else if(usersAdded) console.log("MidSurvey added to the DB");
     });
@@ -607,7 +603,7 @@ io.on('connection', (socket) => {
     user.results.teamfeedback = data.feedback
     console.log(user.name, "submitted team fracture survey:", user.results.teamfracture);
     console.log(user.name, "submitted team feedback survey:", user.results.teamfeedback);
-    db.teamFeedback.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'teamfracture': user.results.teamfracture, 'teamfeedback' : user.results.teamfeedback}, (err, usersAdded) => {
+    db.teamFeedback.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'teamfracture': user.results.teamfracture, 'teamfeedback' : user.results.teamfeedback, 'batch':batchID}, (err, usersAdded) => {
       if(err) console.log("There's a problem adding TeamFeedback to the DB: ", err);
       else if(usersAdded) console.log("TeamFeedback added to the DB");
     });
@@ -629,12 +625,8 @@ io.on('connection', (socket) => {
     // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
     console.log(user.name, "submitted blacklist survey:", data);
 
-    db.blacklist.insert({ id: socket.id }, {$set: {"results.blacklistCheck": user.results.blacklistCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
+    db.blacklist.insert({ id: socket.id }, {$set: {"results.blacklistCheck": user.results.blacklistCheck, 'batch':batchID}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
   });
-
-
-
-
 });
 
 //replaces user.friend aliases with corresponding user IDs
