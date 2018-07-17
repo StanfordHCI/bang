@@ -1,6 +1,6 @@
 //Settings - change for actual deployment
 const teamSize = 1
-const roundMinutes = .01
+const roundMinutes = .15
 
 // MTurk AWS
 const AWS = require('aws-sdk');
@@ -65,7 +65,7 @@ const params = {
   Description: 'You will work in a small group in a text/chat environment to write ads for new products. Approximately one hour in length, hourly pay. If you have already completed this task, do not attempt again.',
   AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
   LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
-  Reward: '10.50',
+  Reward: '6',
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
   Keywords: 'ads, writing, copy editing, advertising',
   MaxAssignments: teamSize * teamSize,
@@ -86,25 +86,30 @@ const params = {
   Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
 };
 
+mturk.createHIT(params, (err, data) => {
+  if (err) console.log(err, err.stack);
+  else     console.log("Fist HITS posted bro");
+});
+
 // Creates new HIT every timeActive minutes for numPosts times to ensure HIT appears at top of list
-for(let i = 0; i < numPosts; i++) {
-  if(i == 0) { // posts one immeditately
-    mturk.createHIT(params,(err, data) => {
-      if (err) console.log(err, err.stack);
-      else     console.log("Fist HITS posted");
-      // console.log(hitId);
-    });
-  } else { // reposts every timeActive minutes
-    setTimeout(() => {
-      mturk.createHIT(params,(err, data) => {
-        if (err) console.log(err, err.stack);
-        else     console.log("Hits posted for round",i);
-        // let hitId = data.HIT.HITId;  // returns hit ID
-        // console.log(hitId);
-      });
-    }, 1000 * 60 * timeActive * i)
-  }
-}
+// for(let i = 0; i < numPosts; i++) {
+//   if(i == 0) { // posts one immeditately
+//     mturk.createHIT(params,(err, data) => {
+//       if (err) console.log(err, err.stack);
+//       else     console.log("Fist HITS posted");
+//       // console.log(hitId);
+//     });
+//   } else { // reposts every timeActive minutes
+//     setTimeout(() => {
+//       mturk.createHIT(params,(err, data) => {
+//         if (err) console.log(err, err.stack);
+//         else     console.log("Hits posted for round",i);
+//         // let hitId = data.HIT.HITId;  // returns hit ID
+//         // console.log(hitId);
+//       });
+//     }, 1000 * 60 * timeActive * i)
+//   }
+// }
 
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
