@@ -554,9 +554,9 @@ $(function() {
   socket.on('finished',data => {
     hideAll();
     $finishingPage.show();
-    document.getElementById("mturk_form").action = data.turkSubmitTo
+    document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
     document.getElementById("assignmentId").value = data.assignmentId
-    finishingcode.innerText = data.finishingCode
+    // finishingcode.innerText = data.finishingCode
   })
 });
 
