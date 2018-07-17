@@ -374,11 +374,6 @@ io.on('connection', (socket) => {
           usersAccepted = usersAccepted.filter((user) => {user.id != socket.id})
           io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersAccepted.length});
         }
-        // if (usersAccepted.indexOf(String(socket.id)) > -1){
-        //   usersAccepted.splice(usersAccepted.indexOf(String(socket.id)), 1);
-        //   let numWaiting = (teamSize ** 2) - usersAccepted.length;
-        //   io.sockets.emit('update number waiting', {num: numWaiting});
-        // }
 
         if (addedUser) {
           users.byID(socket.id).active = false //set user to inactive
@@ -428,7 +423,9 @@ io.on('connection', (socket) => {
         io.in(socket.id).emit('blacklistSurvey')
       }
       else if (task_list[currentActivity] == "finished" || currentActivity > task_list.lenght) {
-        io.in(socket.id).emit('finished', {finishingCode: socket.id})
+        submitUser = usersAccepted.find((user) => user.id == socket.id)
+
+        io.in(socket.id).emit('finished', {finishingCode: socket.id,mturk_form: submitUser.mturk_form, assignmentId: submitUser.assignmentId})
       }
       user.currentActivity += 1
     })

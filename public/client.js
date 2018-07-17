@@ -376,9 +376,6 @@ $(function() {
         console.log("user has accepted");
         console.log(assignmentId);
 
-        //set up submit
-        // document.getElementById("mturk_form").action =
-        // document.getElementById("assignmentId").value =
         //tell the server that the user has accepted the hit - server then adds this worker to array of accepted workers
         socket.emit('accepted HIT',{
           turkSubmitTo: turkGetParam("turkSubmitTo","",assignmentId),
@@ -579,7 +576,8 @@ $(function() {
   socket.on('finished',data => {
     hideAll();
     $finishingPage.show();
-
+    document.getElementById("mturk_form").action = data.mturk_form
+    document.getElementById("assignmentId").value = data.assignmentId
     finishingcode.innerText = data.finishingCode
   })
 });
