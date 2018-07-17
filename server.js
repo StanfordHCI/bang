@@ -333,6 +333,7 @@ io.on('connection', (socket) => {
             'condition':currentCondition,
             'format':conditions[currentCondition],
             'manipulation':[],
+            'starterCheck':[],
             'viabilityCheck':[],
             'manipulationCheck':'',
             'blacklistCheck':''
