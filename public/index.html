@@ -94,6 +94,23 @@
       </div>
     </li>
 
+    <li id="starterSurvey" class="login page">
+        <div class="form">
+          <form style="color: white; background-color: black" id="starterForm">
+            <h3>You will see 20 statements, one at a time, and you will 
+              be asked to evaluate the extent to which you agree with them. 
+              Please answer honestly with regard to how you see yourself 
+              in the present moment, not how you would like to be in the future. 
+              There are no incorrect answers nor any personality profile that is 
+              inherently more desirable than another.</h3>
+            <div id="startersurvey-questions" >
+              <starter-question-component v-for="question in questions" :question="question" />
+            </div>
+            <input type="submit" value="Submit">
+        </form>
+        </div>
+      </li>
+
 <!--  Mid-survey Code (Maika) -->
     <li id="midSurvey" class="login page">
         <div class="form">
