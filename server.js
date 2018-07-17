@@ -1,11 +1,6 @@
-// TODO feedback surveys aren't forming
-// TODO submit on blacklist isn't working
-// TODO chiecking hide?
-// TODO bool questions not renderd correctly
-
 //Settings - change for actual deployment
 const teamSize = 1
-const roundMinutes = .0015
+const roundMinutes = .05
 
 // MTurk AWS
 const AWS = require('aws-sdk');
@@ -147,6 +142,7 @@ const fs = require('fs')
 const midsurveyQuestionFile = "midsurvey-q.txt";
 const checkinQuestionFile = "checkin-q.txt";
 const blacklistFile = "blacklist-q.txt"
+const feedbackFile = "feedback-q.txt"
 const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
 const binaryAnswers =['Yes', 'No']
 
@@ -387,6 +383,7 @@ io.on('connection', (socket) => {
         io.in(user.id).emit("midSurvey");
       }
       else if (task_list[currentActivity] == "teamfeedbackSurvey") {
+        io.in(user.id).emit('load feedback', loadQuestions(feedbackFile, {answers:answers, answerType: 'radio', correctAnswer:''}))
         io.in(socket.id).emit('teamfeedbackSurvey')
       }
       else if (task_list[currentActivity] == "postSurvey") { //Launch post survey
@@ -523,7 +520,7 @@ io.on('connection', (socket) => {
   socket.on('accepted HIT', (data) => {
     usersAccepted.push({
       "id": String(socket.id),
-      "mturkID": data.workerId,
+      "mturkId": data.mturkId,
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
     });
@@ -560,23 +557,11 @@ io.on('connection', (socket) => {
     //in the future this could be checked.
     user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
     console.log(user.name, "submitted survey:", user.results.manipulationCheck);
-
     db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-    users.forEach(user => {
-      let survey = postSurveyGenerator(user);
 
-      io.in(user.id).emit('load blacklist', loadQuestions(blacklistFile, {answers: getTeamMembers(user), answerType: 'radio', correctAnswer:''}));
-    })
-
+    let survey = postSurveyGenerator(user);
+    io.in(user.id).emit('load blacklist', loadQuestions(blacklistFile, {answers: getTeamMembers(user), answerType: 'radio', correctAnswer:''}));
     io.in(socket.id).emit('blacklistSurvey');
-  })
-  // Task
-  socket.on('postSurveySubmit', (data) => {
-    let user = users.byID(socket.id)
-    user.results.manipulationCheck = data
-    //(user.results.manipulation == data) ? true : false
-    console.log(user.name, "submitted survey:", user.results.manipulationCheck);
-    db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
   })
 
   socket.on('blacklistSurveySubmit', (data) => {
@@ -629,7 +614,7 @@ function getSecondsPassed() {
 }
 
 //loads qs in text file, returns json array
-function loadQuestions(questionFile, answerObj) {
+function loadQuestions(questionFile, answerObj) { // may want to change the way this function works, answerObj may be unnecessary
   const prefix = questionFile.substr(0, questionFile.indexOf('.'))
   let questions = []
   let i = 0
@@ -638,10 +623,14 @@ function loadQuestions(questionFile, answerObj) {
     i++;
     questionObj['name'] = prefix + i;
 
-
-    questionObj['question'] = line;
-    questionObj['answers'] = answerObj.answers;
-
+    if(line.charAt(line.length-1) === "2") {
+      questionObj['question'] = line.substr(0, line.length-1);
+      questionObj['answers'] = binaryAnswers;
+    } else {
+      questionObj['question'] = line; 
+      questionObj['answers'] = answerObj.answers;
+    }
+  
     questionObj['correctAnswer'] = answerObj.correctAnswer;
     questionObj['answerType'] = answerObj.answerType;
     questions.push(questionObj)
@@ -666,18 +655,6 @@ const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize)
 const assignRoom = () => incompleteRooms().pick()
 
 const getTeamMembers = (user) => {
-  const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
-
-  const answers = roomTeams.map((team, tIndex) => team.reduce((total, current, pIndex, pArr)=>{
-    const friend = user.friends.find(friend => friend.id == current.id)
-    let name = ((experimentRound == tIndex && currentCondition == "treatment") ? friend.tAlias : friend.alias)
-    if (name == user.name) {name = "you"}
-    return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
-  },""))
-  return answers;
-}
-// This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
-const postSurveyGenerator = (user) => {
   // Makes a list of teams this user has worked with
   const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
 
@@ -688,6 +665,11 @@ const postSurveyGenerator = (user) => {
     if (name == user.name) {name = "you"}
     return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
   },""))
+  return answers;
+}
+// This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
+const postSurveyGenerator = (user) => {
+  const answers = getTeamMembers(user);
 
   // Makes a list comtaining the 2 team same teams, or empty if none.
   let correctAnswer = answers.filter((team,index) => {

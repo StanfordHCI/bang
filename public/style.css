@@ -55,14 +55,14 @@ ul {
 }
 
 .login.page .form {
-  padding: 100px 0 100px 0;
+  padding: 100px 150px 100px 150px;
   position: absolute;
   text-align: center;
-  width: 100%;
   background-color: #292942;
   overflow: visible;
   position: relative;
   color:white;
+
 }
 
 .login.page .form .usernameInput {
@@ -85,7 +85,6 @@ ul {
   padding-bottom: 15px;
   text-align: center;
   width: 800px;
-  height: 200px;
   color: white;
   font-size:15pt;
 }
@@ -288,7 +287,6 @@ ul {
   position: absolute;
   width: 25px;
   height: 25px;
-  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   background: transparent;
@@ -442,10 +440,10 @@ button:hover {
   color:white;
 }
 
-.survey-questions {
+/*.survey-questions {
   margin-left: 150px;
   margin-right: 150px;
-}
+}*/
 
 
 .ui-autocomplete .ui-menu-item{

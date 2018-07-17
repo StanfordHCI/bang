@@ -51,6 +51,7 @@ $(function() {
   });
 
   const hideAll = () => {
+    $checkinPopup.hide();
     $lockPage.hide();
     $waitingPage.hide();
     $loginPage.hide();
@@ -62,7 +63,6 @@ $(function() {
     $blacklistSurvey.hide();
     $teamfeedbackSurvey.hide();
     $finishingPage.hide();
-    $checkinPopup.hide();
     $chatLink.hide();
   }
 
@@ -416,8 +416,7 @@ $(function() {
     });
   })
 
-  socket.on('load postsurvey', questions =>
-  {
+  socket.on('load postsurvey', questions => {
     new Vue({
       el: '#postsurvey-questions',
       data: {
@@ -434,6 +433,16 @@ $(function() {
       }
     })
   })
+
+  socket.on('load feedback', questions => {
+    new Vue({
+      el:'#feedback-questions',
+      data: {
+        questions
+      }
+    })
+  })
+
 
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', data => {
