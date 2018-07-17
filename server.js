@@ -6,21 +6,21 @@ const roundMinutes = .01
 const AWS = require('aws-sdk');
 require('express')().listen(); //Sets to only relaunch with source changes
 
-const region = 'us-east-1';
-// Hard coded because .env method caused credentials error
-const aws_access_key_id = "AKIAJV6G2CON2PKCJREA"
-const aws_secret_access_key = "WOGgQar1egg8i8YszXeMXWFaltIoieQSxH/eQrgB"
-// const aws_access_key_id = process.env.YOUR_ACCESS_ID
-// const aws_secret_access_key = process.env.YOUR_SECRET_KEY
-
 AWS.config = {
-  "accessKeyId": aws_access_key_id,
-  "secretAccessKey": aws_secret_access_key,
-  "region": region,
+  "accessKeyId": 'AKIAJV6G2CON2PKCJREA', //process.env.YOUR_ACCESS_ID,
+  "secretAccessKey": 'WOGgQar1egg8i8YszXeMXWFaltIoieQSxH/eQrgB', //process.env.YOUR_SECRET_KEY,
+  "region": 'us-east-1',
   "sslEnabled": 'true'
 };
 
-const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
+const live = flase //ONLY CHANGE AFTER TESTING EVERYTHING
+if (live){
+  console.log("RUNNING LIVE");
+  const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
+} else {
+  console.log("RUNNING SANDBOXED");
+  const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
+}
 
 // Uncomment this line to use in production
 // const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
