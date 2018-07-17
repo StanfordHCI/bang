@@ -252,7 +252,9 @@ io.on('connection', (socket) => {
 
         let currentRoom = users.byID(socket.id).room
 
-        db.chats.insert({'room':currentRoom,'userID':socket.id, 'message': message}, (err, usersAdded) => {
+        let timeStamp = getSecondsPassed();
+
+        db.chats.insert({'room':currentRoom,'userID':socket.id, 'message': message, 'time': timeStamp}, (err, usersAdded) => {
           if(err) console.log("There's a problem adding a message to the DB: ", err);
           else if(usersAdded) console.log("Message added to the DB");
         });
