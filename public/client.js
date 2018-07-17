@@ -556,7 +556,7 @@ $(function() {
     $finishingPage.show();
     document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
     document.getElementById("assignmentId").value = data.assignmentId
-    // finishingcode.innerText = data.finishingCode
+    finishingcode.value = data.finishingCode
   })
 });
 
