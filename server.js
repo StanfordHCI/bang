@@ -595,7 +595,7 @@ io.on('connection', (socket) => {
     // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
     console.log(user.name, "submitted blacklist survey:", data);
 
-    db.blacklist.insert({ id: socket.id }, {"results.blacklistCheck": user.results.blacklistCheck}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
+    db.blacklist.insert({ id: socket.id }, {$set: {"results.blacklistCheck": user.results.blacklistCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
   });
 
 

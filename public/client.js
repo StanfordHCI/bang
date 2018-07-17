@@ -549,7 +549,7 @@ $(function() {
 
   $('#blacklistForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
-    socket.emit('blacklistSurvey', $('#blacklistForm').serialize()) //submits results alone
+    socket.emit('blacklistSurveySubmit', $('#blacklistForm').serialize()) //submits results alone
     socket.emit('execute experiment')
   })
 
