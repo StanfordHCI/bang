@@ -4,16 +4,25 @@
   <meta charset="UTF-8">
   <title>Bang!</title>
   <link rel="stylesheet" href="style.css">
-  <script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
+  <!-- <script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script> -->
   <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
 <script src="//code.jquery.com/jquery-1.12.4.js"></script>
 <script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/1.0.18/vue.min.js"></script>
-
+<script type='text/javascript' src='https://s3.amazonaws.com/mturk-public/externalHIT_v1.js'></script>
 </head>
 
 <body>
   <ul class="pages">
+    <li id="lockPage" class="lockPage page white"><h3 class="title">Please accept the hit to see instructions.</h3></li>
+
+    <li id="waiting" class="waiting page white">
+        <h3 class="title">Waiting room</h3>
+        <p style="color: black;">Waiting on <strong><span id="numberwaiting"></span></strong> more MTurk users to accept the task.</p>
+        <p style="color: black;">Once enough people have accepted, you will be able to begin the task.</p>
+        <button type="button" id="chatLink" class="chatLink">Click here begin the task</button>
+    </li>
+
     <li id="chat" class="chat page">
       <div class="chatArea">
         <ul class="messages"></ul>
@@ -85,86 +94,40 @@
     </div>
     </li>
 
-    <li id="team1_feedbackSurvey" class="login page">
+    <li id="teamfeedbackSurvey" class="login page">
       <div class="form" style="margin-top: -440px">
-        <form style="color: white;" id="team1_feedbackForm">
-         <h3 class="title">We're thinking about hiring a manager 
-           to lead each team in the future. For team 1, provide the manager 
-           with an anonymous statement about how your team would work together 
-           on future tasks. Your answers will have no impact on your ability 
-           to work with us in the future. 
+        <form style="color: white;" id="teamfeedbackForm">
+         <h3 class="title">We're thinking about hiring a manager
+           to lead each team in the future. For this team, provide the manager
+           with an anonymous statement about how your team would work together
+           on future tasks. Your answers will have no impact on your ability
+           to work with us in the future.
         </h3>
-         <textarea class="teamfeedbackInput" id="teamfeedbackInput_1"></textarea> 
+         <textarea class="teamfeedbackInput" id="teamfeedbackInput"></textarea>
+
           <br>
-      
-       <h3 class="title">How likely are you to want to work with Team 1 again?
+
+       <h3 class="title">How likely are you to want to work with this team again?
       </h3>
-      <input type="radio" name="team1_fracture" value="Very likely"><label for="Very likely"> Very likely</label><br>
-      <input type="radio" name="team1_fracture" value="Somewhat likely"><label for="Somewhat likely"> Somewhat likely</label><br>
-      <input type="radio" name="team1_fracture" value="Not very likely"><label for="Not very likely"> Not very likely</label><br>
-      <input type="radio" name="team1_fracture" value="Not at all likely"><label for="Not at all likely">Not at all likely</label><br>
+      <input type="radio" name="teamfracture" value="Very likely"><label for="Very likely"> Very likely</label><br>
+      <input type="radio" name="teamfracture" value="Somewhat likely"><label for="Somewhat likely"> Somewhat likely</label><br>
+      <input type="radio" name="teamfracture" value="Not very likely"><label for="Not very likely"> Not very likely</label><br>
+      <input type="radio" name="teamfracture" value="Not at all likely"><label for="Not at all likely">Not at all likely</label><br>
         <br>
         <input type="submit" value="Submit">
     </form>
   </div>
     </li>
-
-    <li id="team2_feedbackSurvey" class="login page">
-        <div class="form" style="margin-top: -440px">
-          <form style="color: white;" id="team2_feedbackForm">
-           <h3 class="title">We're thinking about hiring a manager 
-             to lead each team in the future. For team 2, provide the manager 
-             with an anonymous statement about how your team would work together 
-             on future tasks. Your answers will have no impact on your ability 
-             to work with us in the future. 
-          </h3>
-           <textarea class="teamfeedbackInput" id="teamfeedbackInput_2"></textarea> 
-            <br>
-        
-         <h3 class="title">How likely are you to want to work with Team 2 again?
-        </h3>
-        <input type="radio" name="team2_fracture" value="Very likely"><label for="Very likely"> Very likely</label><br>
-        <input type="radio" name="team2_fracture" value="Somewhat likely"><label for="Somewhat likely"> Somewhat likely</label><br>
-        <input type="radio" name="team2_fracture" value="Not very likely"><label for="Not very likely"> Not very likely</label><br>
-        <input type="radio" name="team2_fracture" value="Not at all likely"><label for="Not at all likely">Not at all likely</label><br>
-          <br>
-          <input type="submit" value="Submit">
-      </form>
-    </div>
-      </li>
-  
-    <li id="team3_feedbackSurvey" class="login page">
-      <div class="form" style="margin-top: -440px">
-        <form style="color: white;" id="team3_feedbackForm">
-         <h3 class="title">We're thinking about hiring a manager 
-           to lead each team in the future. For team 3, provide the manager 
-           with an anonymous statement about how your team would work together 
-           on future tasks. Your answers will have no impact on your ability 
-           to work with us in the future. 
-        </h3>
-         <textarea class="teamfeedbackInput" id="teamfeedbackInput_3"></textarea> 
-          <br>
-      
-       <h3 class="title">How likely are you to want to work with Team 3 again?
-      </h3>
-      <input type="radio" name="team3_fracture" value="Very likely"><label for="Very likely"> Very likely</label><br>
-      <input type="radio" name="team3_fracture" value="Somewhat likely"><label for="Somewhat likely"> Somewhat likely</label><br>
-      <input type="radio" name="team3_fracture" value="Not very likely"><label for="Not very likely"> Not very likely</label><br>
-      <input type="radio" name="team3_fracture" value="Not at all likely"><label for="Not at all likely">Not at all likely</label><br>
-        <br>
-        <input type="submit" value="Submit">
-    </form>
-  </div>
-    </li>
-
-
-
-
 
     <li id="finishing" class="login page">
       <div class="form">
         <h3 class="title">Thanks for participating, you're all done!</h3>
-        <p style="color: white;">Paste <strong><span id="finishingcode"></span></strong> into the MTurk task to receive payment.</p>
+        <form name='mturk_form' method='post' id='mturk_form' action=''>
+        <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
+        <input type='hidden' value='' name='finishingcode' id='finishingcode'/>
+        <p><input type='submit' id='submitButton' value='Submit' /></p>
+        </form>
+        <!-- <p style="color: white;">Paste <strong><span id="finishingcode"></span></strong> into the MTurk task to receive payment.</p> -->
       </div>
     </li>
   </ul>
