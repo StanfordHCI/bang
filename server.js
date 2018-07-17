@@ -13,14 +13,16 @@ AWS.config = {
   "sslEnabled": 'true'
 };
 
-const live = flase //ONLY CHANGE AFTER TESTING EVERYTHING
+const live = false //ONLY CHANGE AFTER TESTING EVERYTHING
 if (live){
   console.log("RUNNING LIVE");
-  const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
+  // const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
 } else {
   console.log("RUNNING SANDBOXED");
-  const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
+  // const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 }
+
+const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 
 // Uncomment this line to use in production
 // const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
