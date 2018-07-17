@@ -114,7 +114,7 @@ mturk.createHIT(params, (err, data) => {
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 
-const midSurveyOn = 0
+const midSurveyOn = 1
 const blacklistOn = 0
 const teamfeedbackOn = 0
 const checkinOn = false
@@ -540,7 +540,7 @@ io.on('connection', (socket) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
     let midSurveyResults = data;
-    let currentTrial = user.currentActivity
+    let currentTrial = currentRound
     let parsedResults = midSurveyResults.split('&')
     user.results.viabilityCheck = parsedResults
     console.log(user.name, "submitted survey:", user.results.viabilityCheck);
