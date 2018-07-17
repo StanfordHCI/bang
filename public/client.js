@@ -377,11 +377,13 @@ $(function() {
         console.log(assignmentId);
 
         //set up submit
-        document.getElementById("mturk_form").action = turkGetParam("turkSubmitTo","",assignmentId)
-        document.getElementById("assignmentId").value = turkGetParam("assignmentId","",assignmentId)
-
+        // document.getElementById("mturk_form").action =
+        // document.getElementById("assignmentId").value =
         //tell the server that the user has accepted the hit - server then adds this worker to array of accepted workers
-        socket.emit('accepted HIT');
+        socket.emit('accepted HIT',{
+          turkSubmitTo: turkGetParam("turkSubmitTo","",assignmentId),
+          assignmentId: turkGetParam("assignmentId","",assignmentId)
+        });
       }
   });
 

@@ -368,21 +368,23 @@ io.on('connection', (socket) => {
 
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
-      // if the user had accepted, removes them from the array of accepted users
-        if (usersAccepted.indexOf(String(socket.id)) > -1){
-          usersAccepted.splice(usersAccepted.indexOf(String(socket.id)), 1);
-          let numWaiting = (teamSize ** 2) - usersAccepted.length;
-          io.sockets.emit('update number waiting', {num: numWaiting});
+        // if the user had accepted, removes them from the array of accepted users
+        if (usersAccepted.find((user)=>{ user.id == socket.id })){
+          usersAccepted = usersAccepted.filter((user) => {user.id != socket.id})
+          io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersAccepted.length});
         }
+        // if (usersAccepted.indexOf(String(socket.id)) > -1){
+        //   usersAccepted.splice(usersAccepted.indexOf(String(socket.id)), 1);
+        //   let numWaiting = (teamSize ** 2) - usersAccepted.length;
+        //   io.sockets.emit('update number waiting', {num: numWaiting});
+        // }
 
         if (addedUser) {
           users.byID(socket.id).active = false //set user to inactive
           users.byID(socket.id).ready = false //set user to not ready
 
           // update DB with change
-          db.users.update({ id: socket.id }, {$set: {active: false}}, {}, (err, numReplaced) => {
-                          console.log(err ? "Activity not changed:" + err : "User left " + socket.id)
-          })
+          db.users.update({ id: socket.id }, {$set: {active: false}}, {}, (err, numReplaced) => { console.log(err ? "Activity not changed:" + err : "User left " + socket.id) })
 
           // users.forEach(user => {
           //   socket.broadcast.to(user.id).emit('user left', {
@@ -528,7 +530,11 @@ io.on('connection', (socket) => {
   //if the user has accepted the HIT, add the user to the array usersAccepted
   socket.on('accepted HIT', (data) => {
     console.log("accepted hit")
-    usersAccepted.push(String(socket.id));
+    usersAccepted.push({
+      "id": String(socket.id),
+      "turkSubmitTo": data.turkSubmitTo,
+      "assignmentId": data.assignmentId
+    });
     console.log(usersAccepted); //for debugging purposes
     console.log(usersAccepted.length); //for debugging purposes
     // if enough people have accepted, push prompt to start task
