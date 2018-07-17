@@ -25,6 +25,7 @@ $(function() {
   const $chatPage = $('#chat'); // The chatroom page
   const $holdingPage = $('#holding'); // The holding page
   const $preSurvey = $('#preSurvey'); // The preSurvey page
+  const $starterSurvey = $('#starterSurvey'); // The starterSurvey page
   const $midSurvey = $('#midSurvey'); // the midSurvey page
   const $postSurvey = $('#postSurvey'); // The postSurvey page
   const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
@@ -58,6 +59,7 @@ $(function() {
     $chatPage.hide();
     $holdingPage.hide();
     $preSurvey.hide();
+    $starterSurvey.hide();
     $midSurvey.hide();
     $postSurvey.hide();
     $blacklistSurvey.hide();
@@ -416,6 +418,7 @@ $(function() {
     });
   })
 
+
   socket.on('load postsurvey', questions => {
     new Vue({
       el: '#postsurvey-questions',
@@ -443,6 +446,30 @@ $(function() {
     })
   })
 
+  socket.on('load starter questions', questions => {
+    Vue.component('starter-question-component', {
+      template: `
+        <h3 class="title">{{question.q}}</h3>
+               <input type="radio" name="{{question.name}}" value="1. very inaccurate"><label for="1. very inaccurate"> 1. very inaccurate    </label>
+               <input type="radio" name="{{question.name}}" value="2. moderately inaccurate"><label for="2. moderately inaccurate"> 2. moderately inaccurate    </label>
+               <input type="radio" name="{{question.name}}" value="3. neither inaccurate nor accurate"><label for="3. neither inaccurate nor accurate"> 3. neither inaccurate nor accurate    </label>
+               <input type="radio" name="{{question.name}}" value="4. moderately accurate"><label for="4. moderately accurate"> 4. moderately accurate    </label>
+               <input type="radio" name="{{question.name}}" value="5. very accurate"><label for="5. very accurate"> 5. very accurate    </label><br>
+                <br>
+                <br>
+      `,
+      props: {
+        question: Object
+      }
+    });
+
+    new Vue({
+      el: '#startersurvey-questions',
+      data: {
+        questions
+      }
+    });
+  })
 
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', data => {
@@ -520,6 +547,21 @@ $(function() {
 
   socket.on('echo',data => {
     socket.emit(data)
+  })
+
+  socket.on('starterSurvey',data => {
+    hideAll();
+    $starterSurvey.show();
+
+  })
+
+  $('#starterForm').submit( (event) => {
+    event.preventDefault() //stops page reloading
+    socket.emit('starterSurveySubmit', $('#starterForm').serialize()) //submits results alone
+    socket.emit('execute experiment')
+    $starterSurvey.hide()
+    $holdingPage.show()
+    $('#starterForm')[0].reset();
   })
 
   socket.on('midSurvey',data => {
