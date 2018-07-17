@@ -117,7 +117,8 @@ mturk.createHIT(params,(err, data) => {
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 
-const midSurveyOn = 1
+const starterSurveyOn = 1
+const midSurveyOn = 0
 const blacklistOn = 0
 const teamfeedbackOn = 0
 const checkinOn = false
@@ -187,7 +188,9 @@ let startTime = 0
 
 // Building task list
 let task_list = []
-task_list.push("starterSurvey")
+if (starterSurveyOn) {
+  task_list.push("starterSurvey")
+}
 task_list.push("ready")
 if (midSurveyOn) {
   task_list.push("midSurvey")
