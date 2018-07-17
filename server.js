@@ -522,7 +522,7 @@ io.on('connection', (socket) => {
       "assignmentId": data.assignmentId
     });
     console.log(data.turkSubmitTo);
-    console.log(usersAccepted,"users accepted currently"); //for debugging purposes
+    console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
     // if enough people have accepted, push prompt to start task
     if(usersAccepted.length == teamSize ** 2) {
         let numWaiting = 0;
@@ -540,11 +540,10 @@ io.on('connection', (socket) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
     let midSurveyResults = data;
-    let currentTrial = currentRound
     let parsedResults = midSurveyResults.split('&')
     user.results.viabilityCheck = parsedResults
     console.log(user.name, "submitted survey:", user.results.viabilityCheck);
-    db.midSurvey.insert({'userID':socket.id, 'round': currentTrial, 'room':currentRoom, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
+    db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round': currentRound, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
       if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
       else if(usersAdded) console.log("MidSurvey added to the DB");
     });
