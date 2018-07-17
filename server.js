@@ -238,15 +238,16 @@ app.use(express.static('public'));
 //});
 //app.use('/waiting', express.static('waiting'))
 
+// Adds Batch data for this experiment. unique batchID based on time/date
+db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn, 
+        'teamfeedbackOn': teamfeedbackOn, 'checkinOn': checkinOn, 'conditions': conditions, 'experimentRound': experimentRound,
+        'numRounds': numRounds, 'teamSize': teamSize}, (err, usersAdded) => {
+    if(err) console.log("There's a problem adding batch to the DB: ", err);
+    else if(usersAdded) console.log("Batch added to the DB");
+}); // task_list instead of all of the toggles? (missing checkinOn)
+
 // Chatroom
 io.on('connection', (socket) => {
-
-  db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn, 
-                   'teamfeedbackOn': teamfeedbackOn, 'checkinOn': checkinOn, 'conditions': conditions, 'experimentRound': experimentRound,
-                   'numRounds': numRounds, 'teamSize': teamSize, 'users': users}, (err, usersAdded) => {
-      if(err) console.log("There's a problem adding batch to the DB: ", err);
-      else if(usersAdded) console.log("Batch added to the DB");
-  }); // task_list instead of all of the toggles? (missing checkinOn)
 
     let addedUser = false;
     socket.emit('load questions', loadQuestions("midsurvey-questions.txt"));
