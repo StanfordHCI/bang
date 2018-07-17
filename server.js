@@ -1,6 +1,6 @@
 //Settings - change for actual deployment
 const teamSize = 1
-const roundMinutes = .15
+const roundMinutes = .01
 
 // MTurk AWS
 const AWS = require('aws-sdk');
@@ -51,13 +51,14 @@ mturk.getAccountBalance((err, data) => {
 
 //const viewingRoomURL = ''  // for users who have not accepted the HIT
 //const waitingRoomURL = ''  // for users who have accepted the HIT and are waiting until enough people join
-const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
+//const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
+const taskURL = 'https://localhost:3000/'; 
 
 // HIT Parameters
 const taskDuration = 60; // how many minutes?
-const timeActive = 5; // How long a task stays alive in minutes -  repost same task to assure top of list
+const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
 const numPosts = (2 * taskDuration) / timeActive; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
-const hourlyWage = 10.50; // changes reward of experiment depending on length
+const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
 const rewardPrice = (hourlyWage * (taskDuration / 60)); // BUG - make this a string? Reward must be a string
 
 const params = {
@@ -65,7 +66,7 @@ const params = {
   Description: 'You will work in a small group in a text/chat environment to write ads for new products. Approximately one hour in length, hourly pay. If you have already completed this task, do not attempt again.',
   AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
   LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
-  Reward: '6',
+  Reward: '10.50',
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
   Keywords: 'ads, writing, copy editing, advertising',
   MaxAssignments: teamSize * teamSize,
@@ -86,9 +87,11 @@ const params = {
   Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
 };
 
-mturk.createHIT(params, (err, data) => {
+// creates single HIT
+mturk.createHIT(params,(err, data) => {
   if (err) console.log(err, err.stack);
-  else     console.log("Fist HITS posted bro");
+  else     console.log("Fist HITS posted");
+  // console.log(hitId);
 });
 
 // Creates new HIT every timeActive minutes for numPosts times to ensure HIT appears at top of list
@@ -114,7 +117,7 @@ mturk.createHIT(params, (err, data) => {
 // Settup toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 
-const midSurveyOn = 0
+const midSurveyOn = 1
 const blacklistOn = 0
 const teamfeedbackOn = 0
 const checkinOn = false
@@ -517,7 +520,7 @@ io.on('connection', (socket) => {
   socket.on('accepted HIT', (data) => {
     usersAccepted.push({
       "id": String(socket.id),
-      "mturkID": data.workerId,
+      "workerId": data.workerId,
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
     });
@@ -534,22 +537,39 @@ io.on('connection', (socket) => {
     }
   });
 
-
+  // parses results from Midsurvey to proper format for JSON file 
+  function parseMidsurveyResults(data) {
+    let midSurveyResults = data;
+    let parsedResults = midSurveyResults.split('&');
+    let arrayLength = parsedResults.length;
+    for(var i = 0; i < arrayLength; i++) {
+      let response = parsedResults[i];
+      let questionNumber = response.slice(9, 11);  // ex "2="
+      if(questionNumber.charAt(1) == '=') { // question number 1 - 9
+        let quality = response.slice(14); // grabs rest of string
+        let result = questionNumber + quality;
+        parsedResults[i] = result;
+      } else { // question number 10 - 15
+        let quality = response.slice(15);
+        let result = questionNumber + '=' + quality;
+        parsedResults[i] = result;
+      }
+    }
+    return parsedResults;
+  }
+ 
    // Task after each round - midSurvey - MAIKA
    socket.on('midSurveySubmit', (data) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
-    let midSurveyResults = data;
-    let parsedResults = midSurveyResults.split('&')
-    user.results.viabilityCheck = parsedResults
+    let midSurveyResults = parseMidsurveyResults(data);
+    user.results.viabilityCheck = midSurveyResults;
     console.log(user.name, "submitted survey:", user.results.viabilityCheck);
-    db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
+    db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
       if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
       else if(usersAdded) console.log("MidSurvey added to the DB");
     });
   });
-
-
 
   socket.on('teamfeedbackSurveySubmit', (data) => {
     let user = users.byID(socket.id)
