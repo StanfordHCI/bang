@@ -517,7 +517,7 @@ io.on('connection', (socket) => {
   socket.on('accepted HIT', (data) => {
     usersAccepted.push({
       "id": String(socket.id),
-      "workerId": data.workerId,
+      "mturkID": data.workerId,
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
     });
