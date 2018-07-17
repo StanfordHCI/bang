@@ -7,9 +7,20 @@ $(function() {
   const $usernameInput = $('.usernameInput'); // Input for username
   const $messages = $('.messages'); // Messages area
   const $inputMessage = $('.inputMessage'); // Input message input box
-
+  const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
+  const $checkinSubmit = $('#checkin-submit');
+  const $neutralCheckin = $('#neutral-checkin');
   const $checkinPopup = $('.popup');
 
+  const $chatLink = $('#chatLink');
+
+  //const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
+  //const $checkinSubmit = $('#checkin-submit');
+  //const $neutralCheckin = $('#neutral-checkin');
+  //const $checkinPopup = $('.popup');
+
+  const $lockPage = $('#lockPage'); // The page shown before acceptance
+  const $waitingPage = $('#waiting'); // The waiting page
   const $loginPage = $('#login'); // The login page
   const $chatPage = $('#chat'); // The chatroom page
   const $holdingPage = $('#holding'); // The holding page
@@ -17,9 +28,7 @@ $(function() {
   const $midSurvey = $('#midSurvey'); // the midSurvey page
   const $postSurvey = $('#postSurvey'); // The postSurvey page
   const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
-  const $team1_feedbackSurvey = $('#team1_feedbackSurvey'); // Feedback for team 1 page
-  const $team2_feedbackSurvey = $('#team2_feedbackSurvey'); // Feedback for team 1 page
-  const $team3_feedbackSurvey = $('#team3_feedbackSurvey'); // Feedback for team 1 page
+  const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
   const $finishingPage = $('#finishing'); // The finishing page
 
   Vue.component('question-component', {
@@ -32,8 +41,8 @@ $(function() {
             <input v-if="question.answerType === 'checkbox'" type="checkbox" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" />
             <span class='rb-spot'>{{index+1}}</span>
             <label for='{{question.name}}-{{index+1}}'>{{option}}</label>
-          </label> 
-        </template> 
+          </label>
+        </template>
       </div>
     `,
     props: {
@@ -42,6 +51,8 @@ $(function() {
   });
 
   const hideAll = () => {
+    $lockPage.hide();
+    $waitingPage.hide();
     $loginPage.hide();
     $chatPage.hide();
     $holdingPage.hide();
@@ -49,29 +60,37 @@ $(function() {
     $midSurvey.hide();
     $postSurvey.hide();
     $blacklistSurvey.hide();
-    $team1_feedbackSurvey.hide();
-    $team2_feedbackSurvey.hide();
-    $team3_feedbackSurvey.hide();
+    $teamfeedbackSurvey.hide();
     $finishingPage.hide();
     $checkinPopup.hide();
+    $chatLink.hide();
   }
 
   let holdingUsername = document.getElementById('username');
   let messagesSafe = document.getElementsByClassName('messages')[0];
   let finishingcode = document.getElementById('finishingcode');
+  let usersWaiting = document.getElementById('numberwaiting');
+
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
   const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
-  
 
+  const socket = io();
 
-  // Clear before starting
   hideAll();
-  $loginPage.show();
+
+  //Check if user has accepted based on URL. Store URL variables.
+  const URLvars = getUrlVars(location.href)
+  if (URLvars.assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
+    $lockPage.show(); //prompt user to accept HIT
+  } else { // tell the server that the user has accepted the HIT - server then adds this worker to array of accepted workers
+
+    $waitingPage.show();
+    socket.emit('accepted HIT',{ mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId });
+  }
 
   // Get permission to notify
   Notification.requestPermission()
-
 
   // Prompt for setting a username
   let username;
@@ -81,9 +100,6 @@ $(function() {
   let $currentInput = $usernameInput.focus();
 
   let currentTeam = []
-
-  /* globals io */
-  const socket = io();
 
   document.title = "Team work";
   $usernameInput.val('');
@@ -110,19 +126,13 @@ $(function() {
 
   // Sets the client's username
   function setUsername () {
-    var d = new Date();
-    username = d.getTime()
     // username = cleanInput($usernameInput.val().trim());
-    $usernameInput.innerHTML = username;
-
-    // If the username is valid
-    if (username) {
-      hideAll();
-      $holdingPage.show();
-      $loginPage.off('click');
-      socket.emit('add user', username);
-      socket.emit('ready')
-    }
+    // $usernameInput.innerHTML = username;
+    hideAll();
+    $holdingPage.show();
+    // $loginPage.off('click');
+    socket.emit('add user');
+    socket.emit('execute experiment')
   }
 
   // Sends a chat message
@@ -260,31 +270,12 @@ $(function() {
       return COLORS[index];
   }
 
-  // addSurvey($messsages,{post:true})
-  //
-  // Adds a survey to pre or post, depending on the element passed
-  // function addSurvey (element, options) {
-  //     const $element = $(element);
-  //
-  //   // Setup default options
-  //   if (!options) { options = {}; }
-  //   if (typeof options.post === 'undefined') { options.post = false; }
-  //
-  //   // Apply options
-  //   if (options.fade) {
-  //     $element.hide().fadeIn(FADE_TIME);
-  //   }
-  //   if (options.post) {
-  //     $messages.val($element);
-  //   } else {
-  //     $messages.val($element);
-  //   }
-  //   $messages[0].scrollTop = $messages[0].scrollHeight;
-  // }
-
+  $chatLink.click((event) => {
+    event.preventDefault()
+    setUsername()
+  })
 
   // Keyboard events
-  setUsername()
   $window.keydown(event => {
     // Auto-focus the current input when a key is typed
     if (!(event.ctrlKey || event.metaKey || event.altKey)) {
@@ -317,12 +308,11 @@ $(function() {
   $('#midForm').submit( (event) => {
     event.preventDefault() //stops page reloading
     socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
-    socket.emit('ready')
+    socket.emit('execute experiment')
     $midSurvey.hide()
     $holdingPage.show()
     $('#midForm')[0].reset();
   })
-    
 
   //Simple autocomplete
   $inputMessage.autocomplete({
@@ -356,8 +346,37 @@ $(function() {
     $inputMessage.focus();
   });
 
-  
+
   // Socket events
+
+  //if there are enough workers who have accepted the task, show link to chat page
+  socket.on('enough people', data => {
+    notify("There's enough people!", "Come and get started with the activity.")
+    $('.chatLink').show();
+  });
+
+  //checks if the user actually accepted or if they are previewing the task
+  // socket.on('check accept', data => {
+      // var assignmentId = location.search;
+      // if (assignmentId.includes("ASSIGNMENT_ID_NOT_AVAILABLE")) {
+      //   console.log("user has not accepted");
+      // } else {
+      //   console.log("user has accepted");
+      //   console.log(assignmentId);
+      //
+      //   //tell the server that the user has accepted the hit - server then adds this worker to array of accepted workers
+      //   socket.emit('accepted HIT',{
+      //     mturkId: turkGetParam("workerId","NONE",assignmentId),
+      //     turkSubmitTo: turkGetParam("turkSubmitTo","NONE",assignmentId),
+      //     assignmentId: turkGetParam("assignmentId","NONE",assignmentId)
+      //   });
+      // }
+  // });
+
+    //url = parent.document.URL;
+    //console.log('<iframe src="https://bang.dmorina.com?url=' + url + '"></iframe>');
+    //console.log(window.parent.document.getElementsByTagName("iframe")[0].src);
+
 
   // Whenever the server emits 'login', log the login message
   socket.on('login', data => {
@@ -378,7 +397,7 @@ $(function() {
     hideAll();
     alert("The experiment is already full. Please return this HIT.")
   });
-  
+
   socket.on('load checkin', questions => {
     new Vue({
       el: '#checkin-questions',
@@ -395,8 +414,7 @@ $(function() {
         questions
       }
     });
-    
-  }) 
+  })
 
   socket.on('load postsurvey', questions =>
   {
@@ -481,7 +499,7 @@ $(function() {
       hideAll();
       $holdingPage.show();
       messagesSafe.innerHTML = '';
-      if (!data.survey) {socket.emit('ready')}
+      socket.emit('execute experiment')
   });
 
   socket.on('timer',data => {
@@ -491,64 +509,91 @@ $(function() {
     log("<br>If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat.")
   });
 
+  socket.on('echo',data => {
+    socket.emit(data)
+  })
+
   socket.on('midSurvey',data => {
     hideAll();
     $midSurvey.show();
+
   })
 
   socket.on('postSurvey',data => {
     hideAll();
     $postSurvey.show();
-    $('#postForm').submit( (event) => { //watches form element
-      event.preventDefault() //stops page reloading
-      socket.emit('postSurveySubmit', $('#postForm').serialize()) //submits results alone
-    })
+  })
+
+  $('#postForm').submit( (event) => { //watches form element
+    event.preventDefault() //stops page reloading
+    socket.emit('postSurveySubmit', $('#postForm').serialize()) //submits results alone
+    socket.emit('execute experiment')
   })
 
   socket.on('blacklistSurvey', () => {
     hideAll();
     $blacklistSurvey.show();
-    $('#blacklistForm').submit( (event) => { //watches form element
-      event.preventDefault() //stops page reloading
-      socket.emit('blacklistSurveySubmit', $('#blacklistForm').serialize()) //submits results alone
-    })
   })
 
-  socket.on('team1_feedbackSurvey', () => {
+  $('#blacklistForm').submit( (event) => { //watches form element
+    event.preventDefault() //stops page reloading
+    socket.emit('blacklistSurveySubmit', $('#blacklistForm').serialize()) //submits results alone
+    socket.emit('execute experiment')
+  })
+
+  socket.on('teamfeedbackSurvey', () => {
     hideAll();
-    $team1_feedbackSurvey.show();
-    $('#team1_feedbackForm').submit( (event) => { //watches form element
-      event.preventDefault() //stops page reloading
-      socket.emit('team1_feedbackSurveySubmit', $('#team1_feedbackForm').serialize(), $('#teamfeedbackInput_1').val())
-      //submits results alone
-    })
+    $teamfeedbackSurvey.show();
   })
 
-  socket.on('team2_feedbackSurvey', () => {
-    hideAll();
-    $team2_feedbackSurvey.show();
-    $('#team2_feedbackForm').submit( (event) => { //watches form element
-      event.preventDefault() //stops page reloading
-      socket.emit('team2_feedbackSurveySubmit', $('#team2_feedbackForm').serialize(), $('#teamfeedbackInput_2').val())
-      //submits results alone
-    })
+  $('#teamfeedbackForm').submit( (event) => {
+    event.preventDefault() //stops page reloading
+    socket.emit('teamfeedbackSurveySubmit', $('#teamfeedbackForm').serialize())
+    $teamfeedbackSurvey.hide()
+    $holdingPage.show()
+    $('#teamfeedbackForm')[0].reset();
+    socket.emit('execute experiment')
   })
 
-  socket.on('team3_feedbackSurvey', () => {
-    hideAll();
-    $team3_feedbackSurvey.show();
-    $('#team3_feedbackForm').submit( (event) => { //watches form element
-      event.preventDefault() //stops page reloading
-      socket.emit('team3_feedbackSurveySubmit', $('#team3_feedbackForm').serialize(), $('#teamfeedbackInput_3').val())
-      //submits results alone
-    })
-  })
-
-
+  //update waiting page with number of workers that must join until task can start
+  socket.on('update number waiting', data => {
+    usersWaiting.innerText = data.num;
+  });
 
   socket.on('finished',data => {
     hideAll();
     $finishingPage.show();
-    finishingcode.innerText = data.finishingCode
+    document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
+    document.getElementById("assignmentId").value = data.assignmentId
+    finishingcode.value = data.finishingCode
   })
 });
+
+function turkGetParam( name, defaultValue, uri) {
+   var regexS = "[\?&]"+name+"=([^&#]*)";
+   var regex = new RegExp( regexS );
+   // var tmpURL = window.location.href;
+   var tmpURL = uri
+   var results = regex.exec( tmpURL );
+   if( results == null ) {
+     return defaultValue;
+   } else {
+     return results[1];
+   }
+}
+
+const getUrlVars = (url) => {
+    var hash;
+    var myJson = {};
+    var hashes = url.slice(url.indexOf('?') + 1).split('&');
+    for (var i = 0; i < hashes.length; i++) {
+        hash = hashes[i].split('=');
+        myJson[hash[0]] = hash[1];
+    }
+    return myJson;
+}
+
+const decodeURL = (toDecode) => {
+  var encoded = toDecode;
+  return unescape(encoded.replace(/\+/g,  " "));
+}
