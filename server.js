@@ -525,7 +525,7 @@ io.on('connection', (socket) => {
       "assignmentId": data.assignmentId
     });
     console.log(data.turkSubmitTo);
-    console.log(usersAccepted,"users accepted currently"); //for debugging purposes
+    console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
     // if enough people have accepted, push prompt to start task
     if(usersAccepted.length == teamSize ** 2) {
         let numWaiting = 0;
