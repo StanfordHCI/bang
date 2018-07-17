@@ -540,10 +540,11 @@ io.on('connection', (socket) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
     let midSurveyResults = data;
+    let currentTrial = user.currentActivity
     let parsedResults = midSurveyResults.split('&')
     user.results.viabilityCheck = parsedResults
     console.log(user.name, "submitted survey:", user.results.viabilityCheck);
-    db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
+    db.midSurvey.insert({'userID':socket.id, 'round': currentTrial, 'room':currentRoom, 'name':user.name, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
       if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
       else if(usersAdded) console.log("MidSurvey added to the DB");
     });
