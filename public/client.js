@@ -13,13 +13,15 @@ $(function() {
   const $neutralCheckin = $('#neutral-checkin');
   const $checkinPopup = $('.popup');
 
-  const $chatLink = $('.chatlink');
+  const $chatLink = $('#chatLink');
 
   //const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
   //const $checkinSubmit = $('#checkin-submit');
   //const $neutralCheckin = $('#neutral-checkin');
   //const $checkinPopup = $('.popup');
 
+  const $lockPage = $('#lockPage'); // The page shown before acceptance
+  const $waitingPage = $('#waiting'); // The waiting page
   const $loginPage = $('#login'); // The login page
   const $chatPage = $('#chat'); // The chatroom page
   const $holdingPage = $('#holding'); // The holding page
@@ -31,6 +33,8 @@ $(function() {
   const $finishingPage = $('#finishing'); // The finishing page
 
   const hideAll = () => {
+    $lockPage.hide();
+    $waitingPage.hide();
     $loginPage.hide();
     $chatPage.hide();
     $holdingPage.hide();
@@ -53,15 +57,21 @@ $(function() {
   const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
 
+  const socket = io();
 
-
-  // Clear before starting
   hideAll();
-  $loginPage.show();
+
+  //Check if user has accepted based on URL. Store URL variables.
+  const URLvars = getUrlVars(location.href)
+  if (URLvars.assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
+    $lockPage.show(); //prompt user to accept HIT
+  } else { // tell the server that the user has accepted the HIT - server then adds this worker to array of accepted workers
+    $waitingPage.show();
+    socket.emit('accepted HIT',{ mturkId: URLvars.workerId, turkSubmitTo: URLvars.turkSubmitTo, assignmentId: URLvars.assignmentId });
+  }
 
   // Get permission to notify
   Notification.requestPermission()
-
 
   // Prompt for setting a username
   let username;
@@ -71,9 +81,6 @@ $(function() {
   let $currentInput = $usernameInput.focus();
 
   let currentTeam = []
-
-  /* globals io */
-  const socket = io();
 
   document.title = "Team work";
   $usernameInput.val('');
@@ -100,19 +107,13 @@ $(function() {
 
   // Sets the client's username
   function setUsername () {
-    var d = new Date();
-    username = d.getTime()
     // username = cleanInput($usernameInput.val().trim());
-    $usernameInput.innerHTML = username;
-
-    // If the username is valid
-    if (username) {
-      hideAll();
-      $holdingPage.show();
-      $loginPage.off('click');
-      socket.emit('add user', username);
-      socket.emit('execute experiment')
-    }
+    // $usernameInput.innerHTML = username;
+    hideAll();
+    $holdingPage.show();
+    // $loginPage.off('click');
+    socket.emit('add user');
+    socket.emit('execute experiment')
   }
 
   // Sends a chat message
@@ -250,31 +251,12 @@ $(function() {
       return COLORS[index];
   }
 
-  // addSurvey($messsages,{post:true})
-  //
-  // Adds a survey to pre or post, depending on the element passed
-  // function addSurvey (element, options) {
-  //     const $element = $(element);
-  //
-  //   // Setup default options
-  //   if (!options) { options = {}; }
-  //   if (typeof options.post === 'undefined') { options.post = false; }
-  //
-  //   // Apply options
-  //   if (options.fade) {
-  //     $element.hide().fadeIn(FADE_TIME);
-  //   }
-  //   if (options.post) {
-  //     $messages.val($element);
-  //   } else {
-  //     $messages.val($element);
-  //   }
-  //   $messages[0].scrollTop = $messages[0].scrollHeight;
-  // }
-
+  $chatLink.click((event) => {
+    event.preventDefault()
+    setUsername()
+  })
 
   // Keyboard events
-  setUsername()
   $window.keydown(event => {
     // Auto-focus the current input when a key is typed
     if (!(event.ctrlKey || event.metaKey || event.altKey)) {
@@ -363,28 +345,27 @@ $(function() {
 
   //if there are enough workers who have accepted the task, show link to chat page
   socket.on('enough people', data => {
-    console.log("enough people!");
+    notify("There's enough people!", "Come and get started with the activity.")
     $('.chatLink').show();
   });
 
   //checks if the user actually accepted or if they are previewing the task
-  socket.on('check accept', data => {
-      var assignmentId = location.search;
-      if (assignmentId.includes("ASSIGNMENT_ID_NOT_AVAILABLE")) {
-        console.log("user has not accepted");
-      } else {
-        console.log("user has accepted");
-        console.log(assignmentId);
-
-        //tell the server that the user has accepted the hit - server then adds this worker to array of accepted workers
-        socket.emit('accepted HIT',{
-          turkSubmitTo: turkGetParam("turkSubmitTo","NONE",assignmentId),
-          assignmentId: turkGetParam("assignmentId","NONE",assignmentId)
-        });
-      }
-  });
-
-
+  // socket.on('check accept', data => {
+      // var assignmentId = location.search;
+      // if (assignmentId.includes("ASSIGNMENT_ID_NOT_AVAILABLE")) {
+      //   console.log("user has not accepted");
+      // } else {
+      //   console.log("user has accepted");
+      //   console.log(assignmentId);
+      //
+      //   //tell the server that the user has accepted the hit - server then adds this worker to array of accepted workers
+      //   socket.emit('accepted HIT',{
+      //     mturkId: turkGetParam("workerId","NONE",assignmentId),
+      //     turkSubmitTo: turkGetParam("turkSubmitTo","NONE",assignmentId),
+      //     assignmentId: turkGetParam("assignmentId","NONE",assignmentId)
+      //   });
+      // }
+  // });
 
     //url = parent.document.URL;
     //console.log('<iframe src="https://bang.dmorina.com?url=' + url + '"></iframe>');
@@ -566,17 +547,13 @@ $(function() {
 
   //update waiting page with number of workers that must join until task can start
   socket.on('update number waiting', data => {
-    console.log(data.num);
-    //usersWaiting.innerText = data.num;
+    usersWaiting.innerText = data.num;
   });
-
-
-
 
   socket.on('finished',data => {
     hideAll();
     $finishingPage.show();
-    document.getElementById("mturk_form").action = data.mturk_form
+    document.getElementById("mturk_form").action = data.turkSubmitTo
     document.getElementById("assignmentId").value = data.assignmentId
     finishingcode.innerText = data.finishingCode
   })
@@ -593,4 +570,15 @@ function turkGetParam( name, defaultValue, uri) {
    } else {
      return results[1];
    }
+}
+
+function getUrlVars(url) {
+    var hash;
+    var myJson = {};
+    var hashes = url.slice(url.indexOf('?') + 1).split('&');
+    for (var i = 0; i < hashes.length; i++) {
+        hash = hashes[i].split('=');
+        myJson[hash[0]] = hash[1];
+    }
+    return myJson;
 }

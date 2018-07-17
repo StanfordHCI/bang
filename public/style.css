@@ -10,14 +10,9 @@ html {
 }
 
 html, input {
-  font-family:
-    "HelveticaNeue-Light",
-    "Helvetica Neue Light",
-    "Helvetica Neue",
-    Helvetica,
-    Arial,
-    "Lucida Grande",
-    sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans",
+    "Droid Sans", "Helvetica Neue", Helvetica, sans-serif;
 }
 
 html, body {
@@ -40,6 +35,11 @@ ul {
   padding: 0;
   width: 100%;
   background: black;
+}
+
+.white {
+  background:white;
+  padding: 2em;
 }
 
 .page {
@@ -454,7 +454,6 @@ button {
   max-width: 220px;
   font-size: .9em;
   color: #D42D78;
-  text-transform: uppercase;
   text-decoration: none;
   letter-spacing: .15em;
   background: white;
@@ -463,10 +462,15 @@ button {
   border-radius: 5em;
   box-shadow: 0 15px 20px -10px rgba(0, 0, 0, 0.3);
   transition:
-    color 0.6s,
+    color 0.3s,
     box-shadow 0.3s,
     transform 0.3s;
   cursor: pointer;
+}
+
+button:hover {
+  box-shadow: 0 3px 5px -5px rgba(0, 0, 0, 0.3);
+  color: #6f6f6f;
 }
 
 .messages {
@@ -476,10 +480,6 @@ button {
   padding: 10px 20px 10px 20px;
 }
 
-button:hover {
-  box-shadow: 0 3px 5px -5px rgba(0, 0, 0, 0.3);
-  color: #6f6f6f;
-}
 
 .popup {
   display: none;
@@ -500,21 +500,24 @@ button:hover {
 }
 
 .chatLink {
-    display: none;
+  display: none;
   width: 50%;
-  height: 40%;
   position: absolute;
+  text-decoration: none;
+  font-size: 20px;
   z-index: 999;
-  background-color: #F5F5F5;
+  color: white;
+  text-align: center;
+  background-color: black;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  border-color: gray;
-  border-style: solid;
-  border-width: 2px;
   border-radius: 0.5rem;
-    padding: 1rem 1.5rem;
+  padding: 3rem 1.5rem;
+}
 
+.chatLink:hover{
+  background: #444;
 }
 
 /* Input */
@@ -566,4 +569,3 @@ input[type="radio"] {
   -webkit-transform: scale(1.5); /* Chrome, Safari, Opera */
   transform: scale(1.5);
 }
-

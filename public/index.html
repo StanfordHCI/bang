@@ -14,8 +14,16 @@
 
 <body>
   <ul class="pages">
-    <li id="chat" class="chat page">
+    <li id="lockPage" class="lockPage page white"><h3 class="title">Please accept the hit to see instructions.</h3></li>
 
+    <li id="waiting" class="waiting page white">
+        <h3 class="title">Waiting room</h3>
+        <p style="color: black;">Waiting on <strong><span id="numberwaiting"></span></strong> more MTurk users to accept the task.</p>
+        <p style="color: black;">Once enough people have accepted, you will be able to begin the task.</p>
+        <button type="button" id="chatLink" class="chatLink">Click here begin the task</button>
+    </li>
+
+    <li id="chat" class="chat page">
       <div class="chatArea">
         <ul class="messages"></ul>
       </div>

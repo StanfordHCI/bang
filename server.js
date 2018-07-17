@@ -1,5 +1,5 @@
 //Settings - change for actual deployment
-const teamSize = 1
+const teamSize = 2
 const roundMinutes = .01
 
 // MTurk AWS
@@ -89,14 +89,14 @@ for(let i = 0; i < numPosts; i++) {
   if(i == 0) { // posts one immeditately
     mturk.createHIT(params,(err, data) => {
       if (err) console.log(err, err.stack);
-      else     console.log(data);
+      else     console.log("Fist HITS posted");
       // console.log(hitId);
     });
   } else { // reposts every timeActive minutes
     setTimeout(() => {
       mturk.createHIT(params,(err, data) => {
         if (err) console.log(err, err.stack);
-        else     console.log(data);
+        else     console.log("Hits posted for round",i);
         // let hitId = data.HIT.HITId;  // returns hit ID
         // console.log(hitId);
       });
@@ -196,36 +196,30 @@ let fullUrl = ''
 // array of the users that have accepted the task
 let usersAccepted = [];
 
-//waiting page
-app.route('/').get(function(req, res)
-{
-  app.use(express.static(__dirname + '/public'));
-  res.sendFile(__dirname + '/public/waiting.html');
-  fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
-});
+app.use(express.static('public'));
 
-//chat page
-app.route('/chat').get(function(req, res)
-{
-  res.sendFile(__dirname + '/public/index.html');
-  fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
-});
+// //waiting page
+// app.route('/').get(function(req, res){
+//   app.use(express.static(__dirname + '/public'));
+//   res.sendFile(__dirname + '/public/waiting.html');
+//   fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+// });
+//
+// //chat page
+// app.route('/chat').get(function(req, res)
+// {
+//   res.sendFile(__dirname + '/public/index.html');
+//   fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+// });
 
-//app.all('/', function (req, res, next) {
+// app.all('/', function (req, res, next) {
 //  express.static('public');
 //  next()
-//})
+// })
 //app.all('/waiting', function(req, res, next) {
 //  express.static('waiting');
 //});
 //app.use('/waiting', express.static('waiting'))
-
-// Routing
-//app.route('/waiting').get(function (req, res) {
-//  res.send(express.static('waiting'));
-  //res.send('oh hi there');
-//});
-
 
 // Chatroom
 io.on('connection', (socket) => {
@@ -276,17 +270,8 @@ io.on('connection', (socket) => {
 
     //Login
     // when the client emits 'add user', this listens and executes
-    socket.on('add user', function (mturkID) {
-        if (addedUser) return;
-
-
-        //waits till user ends up on correct link before adding user
-        if(fullUrl.substr(fullUrl.length - 4) != 'chat') {
-            console.log("first");
-            socket.emit('check accept', mturkID);
-          return
-        }
-
+    socket.on('add user', function (data) {
+        if (addedUser) {return;}
 
         // we store the username in the socket session for this client
         socket.username = tools.makeName(); // how they see themselves
@@ -315,10 +300,13 @@ io.on('connection', (socket) => {
           })
         })
 
+        const acceptedUser = usersAccepted.byID(socket.id)
+
         // Add user to graph and add others as friends
         const newUser = {
           'id': socket.id,
-          'mturk': mturkID,
+          'mturk': acceptedUser.mturkId,
+          'assignmentId': acceptedUser.assignmentId,
           'room': '',
           'rooms':[],
           'person': people.pop(),
@@ -335,9 +323,9 @@ io.on('connection', (socket) => {
             'condition':currentCondition,
             'format':conditions[currentCondition],
             'manipulation':[],
-            'viabilityCheck':[], // survey questions after each round - MAIKA
+            'viabilityCheck':[],
             'manipulationCheck':'',
-            'blacklistCheck':'' // check whether the team member blacklisted
+            'blacklistCheck':''
           }
         };
 
@@ -357,14 +345,6 @@ io.on('connection', (socket) => {
         });
 
         console.log('now we have:', users.filter(user => user.active == true).map(user => user.name));
-
-        //each client knows the alias of the new user
-        // users.forEach(user => {
-            // io.in(user.id).emit('user joined ', {
-            //     username: idToAlias(user, socket.username),
-            //     numUsers: numUsers(user.room)
-            // });
-        // })
     });
 
     // when the user disconnects.. perform this
@@ -394,11 +374,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on("execute experiment", function(data) {
-      //if on the wrong page, don't execute experiment
-      if(fullUrl.substr(fullUrl.length - 4) != 'chat') {
-        return
-      }
+    socket.on("execute experiment", (data) => {
       let user = users.byID(socket.id)
       let currentActivity = user.currentActivity;
       let task_list = user.task_list;
@@ -423,13 +399,18 @@ io.on('connection', (socket) => {
         io.in(socket.id).emit('blacklistSurvey')
       }
       else if (task_list[currentActivity] == "finished" || currentActivity > task_list.lenght) {
+        console.log(usersAccepted)
+        console.log(socket.id)
         submitUser = usersAccepted.find((user) => user.id == socket.id)
 
-        io.in(socket.id).emit('finished', {finishingCode: socket.id,mturk_form: submitUser.mturk_form, assignmentId: submitUser.assignmentId})
+        io.in(socket.id).emit('finished', {
+          finishingCode: socket.id,
+          turkSubmitTo: submitUser.turkSubmitTo,
+          assignmentId: submitUser.assignmentId
+        })
       }
       user.currentActivity += 1
     })
-
 
     // Main experiment run
     socket.on('ready', function (data) {
@@ -530,6 +511,7 @@ io.on('connection', (socket) => {
     console.log("accepted hit")
     usersAccepted.push({
       "id": String(socket.id),
+      "workerId": data.workerId,
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
     });
@@ -579,8 +561,8 @@ io.on('connection', (socket) => {
   // Task
   socket.on('postSurveySubmit', (data) => {
     let user = users.byID(socket.id)
-    //in the future this could be checked.
-    user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
+    user.results.manipulationCheck = data
+    //(user.results.manipulation == data) ? true : false
     console.log(user.name, "submitted survey:", user.results.manipulationCheck);
     db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
   });
@@ -651,9 +633,6 @@ function replicate(arr, times) {
 
 //returns number of users in a room: room -> int
 const numUsers = room => users.filter(user => user.room === room).length
-
-//used to check if users are supposed to be in the study based on: mturkID -> boolean
-const checkUser = mturkID => true
 
 //Returns a random remaining room space, or error if none. () -> room | error
 const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize)
