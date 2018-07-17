@@ -121,6 +121,7 @@ const teamfeedbackOn = 0
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
 
+
 // Setup basic express server
 let tools = require('./tools');
 let express = require('express');
@@ -139,6 +140,14 @@ Array.prototype.set = function() {
 };
 
 const fs = require('fs')
+const midsurveyQuestionFile = "midsurvey-q.txt";
+const checkinQuestionFile = "checkin-q.txt";
+const blacklistFile = "blacklist-q.txt"
+const feedbackFile = "feedback-q.txt"
+const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
+const binaryAnswers =['Yes', 'No']
+
+
 
 // Setting up DB
 const Datastore = require('nedb'),
@@ -250,7 +259,7 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
 io.on('connection', (socket) => {
 
     let addedUser = false;
-    socket.emit('load questions', loadQuestions("midsurvey-questions.txt"));
+
     socket.emit('load starter questions', loadQuestions("startersurvey-questions.txt"));
 
     socket.on('log', string => { console.log(string); });
@@ -409,22 +418,27 @@ io.on('connection', (socket) => {
       let currentActivity = user.currentActivity;
       let task_list = user.task_list;
       console.log ("Activity:", currentActivity, "which is", task_list[currentActivity])
+
       if (task_list[currentActivity] == "starterSurvey") {
         io.in(user.id).emit("starterSurvey");
       }
       else if (task_list[currentActivity] == "ready") {
+        if (checkinOn) {io.in(user.id).emit('load checkin', loadQuestions(checkinQuestionFile, {answers: answers, answerType: 'radio', correctAnswer:''}));}
         io.in(user.id).emit("echo", "ready");
       }
       else if (task_list[currentActivity] == "midSurvey") {
+        io.in(user.id).emit('load midsurvey', loadQuestions(midsurveyQuestionFile, {answers: answers, answerType: 'radio', correctAnswer:''}));
         io.in(user.id).emit("midSurvey");
       }
       else if (task_list[currentActivity] == "teamfeedbackSurvey") {
+        io.in(user.id).emit('load feedback', loadQuestions(feedbackFile, {answers:answers, answerType: 'radio', correctAnswer:''}))
         io.in(socket.id).emit('teamfeedbackSurvey')
       }
       else if (task_list[currentActivity] == "postSurvey") { //Launch post survey
           user.ready = false
           let survey = postSurveyGenerator(user)
           user.results.manipulation = survey.correctAnswer
+          io.in(user.id).emit('load postsurvey', {survey})
           db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
           io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
       }
@@ -466,7 +480,6 @@ io.on('connection', (socket) => {
       }
 
       console.log('all users ready -> starting experiment');
-
       //do we have more experiments to run? if not, finish
 
       //can we move this into its own on.*** call
@@ -520,7 +533,7 @@ io.on('connection', (socket) => {
       }, 1000 * 60 * 0.9 * roundMinutes)
 
 
-        //record start checkin time in db
+      //record start checkin time in db
       let currentRoom = users.byID(socket.id).room
       db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
         if(err) console.log("There's a problem adding a checkin to the DB: ", err);
@@ -537,13 +550,24 @@ io.on('connection', (socket) => {
           }
         }, 1000 * 60 * checkinIntervalMinutes)
       }
-  });
+    })
 
+  //Launch post survey
+  // if (currentRound >= numRounds) {
+  //   users.forEach(user => {
+  //     user.ready = false
+  //     let survey = postSurveyGenerator(user)
+  //     io.in(user.id).emit('load postsurvey', {survey})//change to io.on?
+  //     user.results.manipulation = survey.correctAnswer
+  //     db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+  //     io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
+  //   })
+  // }
   //if the user has accepted the HIT, add the user to the array usersAccepted
   socket.on('accepted HIT', (data) => {
     usersAccepted.push({
       "id": String(socket.id),
-      "workerId": data.workerId,
+      "mturkId": data.mturkId,
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
     });
@@ -558,7 +582,7 @@ io.on('connection', (socket) => {
       let numWaiting = (teamSize ** 2) - usersAccepted.length;
       io.sockets.emit('update number waiting', {num: numWaiting});
     }
-  });
+  })
 
   // Starter task
    socket.on('starterSurveySubmit', (data) => {
@@ -610,14 +634,17 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Task
   socket.on('postSurveySubmit', (data) => {
     let user = users.byID(socket.id)
-    user.results.manipulationCheck = data
-    //(user.results.manipulation == data) ? true : false
+    //in the future this could be checked.
+    user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
     console.log(user.name, "submitted survey:", user.results.manipulationCheck);
     db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-  });
+
+    let survey = postSurveyGenerator(user);
+    io.in(user.id).emit('load blacklist', loadQuestions(blacklistFile, {answers: getTeamMembers(user), answerType: 'radio', correctAnswer:''}));
+    io.in(socket.id).emit('blacklistSurvey');
+  })
 
   socket.on('blacklistSurveySubmit', (data) => {
     let user = users.byID(socket.id)
@@ -628,6 +655,7 @@ io.on('connection', (socket) => {
 
     db.blacklist.insert({ id: socket.id }, {$set: {"results.blacklistCheck": user.results.blacklistCheck, 'batch':batchID}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
   });
+
 });
 
 //replaces user.friend aliases with corresponding user IDs
@@ -655,15 +683,26 @@ function getSecondsPassed() {
   return ((new Date()).getTime() - startTime)/1000;
 }
 
-function loadQuestions(questiontxtFile) {
+//loads qs in text file, returns json array
+function loadQuestions(questionFile, answerObj) { // may want to change the way this function works, answerObj may be unnecessary
+  const prefix = questionFile.substr(0, questionFile.indexOf('.'))
   let questions = []
-  const questionFile = questiontxtFile;
   let i = 0
   fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) {
     let questionObj = {};
-    questionObj['q'] = line;
-    i++
-    questionObj['name'] = "question-" + i;
+    i++;
+    questionObj['name'] = prefix + i;
+
+    if(line.charAt(line.length-1) === "2") {
+      questionObj['question'] = line.substr(0, line.length-1);
+      questionObj['answers'] = binaryAnswers;
+    } else {
+      questionObj['question'] = line; 
+      questionObj['answers'] = answerObj.answers;
+    }
+  
+    questionObj['correctAnswer'] = answerObj.correctAnswer;
+    questionObj['answerType'] = answerObj.answerType;
     questions.push(questionObj)
   })
   return questions
@@ -678,7 +717,6 @@ function replicate(arr, times) {
   return res;
 }
 
-
 //returns number of users in a room: room -> int
 const numUsers = room => users.filter(user => user.room === room).length
 
@@ -686,42 +724,7 @@ const numUsers = room => users.filter(user => user.room === room).length
 const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize)
 const assignRoom = () => incompleteRooms().pick()
 
-//define midSurvey - MAIKA - returns answers from individual
-const midSurvey = (user) => {
-  return {questions:{'Q1': { question:"The members of this team could work for a long time together.",
-                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
-                     'Q2': { question:"Most of the members of this team would welcome the opportunity to work as a group again in the future.",
-                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
-                     'Q3': { question:"This team has the capacity for long-term success. ",
-                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
-                     'Q4': { question:"This team has what it takes to be effective in the future. ",
-                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
-                     'Q5': { question:"This team would work well together in the future.",
-                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
-                     'Q6': { question:"This team has positioned itself well for continued success. ",
-                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
-                     'Q7': { question:"This team has the ability to perform well in the future.",
-                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
-                     'Q8': { question:"This team has the ability to function as an ongoing unit.",
-                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
-                     'Q9': { question:"This team should continue to function as a unit.",
-                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
-                     'Q10': { question:"This team has the resources to perform well in the future.",
-                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
-                     'Q11': { question:"This team is well positioned for growth over time.",
-                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
-                     'Q12': { question:"This team can develop to meet future challenges. ",
-                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
-                     'Q13': { question:"This team has the capacity to sustain itself.",
-                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
-                     'Q14': { question:"This team has what it takes to endure in future performance episodes.",
-                            answers:["1. strongly disagree", "2. disagree", "3. neutral", "4. agree", "5. strongly agree"] },
-                     'Q15': { question:"If you had the choice, would you like to work with the same team in a future round?",
-                            answers:["1. No", "5. Yes"] }  }}
-}
-
-// This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
-const postSurveyGenerator = (user) => {
+const getTeamMembers = (user) => {
   // Makes a list of teams this user has worked with
   const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
 
@@ -732,6 +735,11 @@ const postSurveyGenerator = (user) => {
     if (name == user.name) {name = "you"}
     return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
   },""))
+  return answers;
+}
+// This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
+const postSurveyGenerator = (user) => {
+  const answers = getTeamMembers(user);
 
   // Makes a list comtaining the 2 team same teams, or empty if none.
   let correctAnswer = answers.filter((team,index) => {
@@ -740,6 +748,8 @@ const postSurveyGenerator = (user) => {
   console.log(answers,correctAnswer)
 
   return { question:"Select teams you think consisted of the same people.",
+           name: "postsurvey",
            answers: answers,
+           answerType: 'checkbox',
            correctAnswer: correctAnswer }
 }

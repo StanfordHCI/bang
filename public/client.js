@@ -2,7 +2,6 @@ $(function() {
   const FADE_TIME = 150; // ms
   const TYPING_TIMER_LENGTH = 400; // ms
   const COLORS = ['#e21400', '#91580f', '#f8a700', '#f78b00', '#58dc00', '#287b00', '#a8f07a', '#4ae8c4', '#3b88eb', '#3824aa', '#a700ff', '#d300e7'];
-
   // Initialize variables
   const $window = $(window);
   const $usernameInput = $('.usernameInput'); // Input for username
@@ -33,7 +32,27 @@ $(function() {
   const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
   const $finishingPage = $('#finishing'); // The finishing page
 
+  Vue.component('question-component', {
+    template: `
+      <h3>{{question.question}}</h3>
+      <div id="{{question.name}}-rb-box" class='rb-box'>
+        <template v-for="(index, option) in question.answers" :option="option">
+          <label for="{{question.name}}-{{index+1}}" class="rb-tab">
+            <input v-if="question.answerType === 'radio'" type="radio" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" required/>
+            <input v-if="question.answerType === 'checkbox'" type="checkbox" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" />
+            <span class='rb-spot'>{{index+1}}</span>
+            <label for='{{question.name}}-{{index+1}}'>{{option}}</label>
+          </label>
+        </template>
+      </div>
+    `,
+    props: {
+      question: Object
+    }
+  });
+
   const hideAll = () => {
+    $checkinPopup.hide();
     $lockPage.hide();
     $waitingPage.hide();
     $loginPage.hide();
@@ -46,7 +65,6 @@ $(function() {
     $blacklistSurvey.hide();
     $teamfeedbackSurvey.hide();
     $finishingPage.hide();
-    $checkinPopup.hide();
     $chatLink.hide();
   }
 
@@ -281,15 +299,22 @@ $(function() {
     }
   })
 
+  //note: only built to handle 1 checkin question, should expand?
   $('#checkin-form').submit( (event) => {
-      event.preventDefault() //stops page reloading
-      let rbValue = $('input[name=checkin]:checked').val();
-      socket.emit('new checkin', rbValue);
-      log(rbValue);
-      $checkinPopup.hide();
-    })
+    event.preventDefault() //stops page reloading
+    let selectedValue = $('input[name=checkin-q1]:checked').val();
+    socket.emit('new checkin', selectedValue);
+    $checkinPopup.hide();
+  })
 
-
+  $('#midForm').submit( (event) => {
+    event.preventDefault() //stops page reloading
+    socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
+    socket.emit('execute experiment')
+    $midSurvey.hide()
+    $holdingPage.show()
+    $('#midForm')[0].reset();
+  })
 
   //Simple autocomplete
   $inputMessage.autocomplete({
@@ -323,26 +348,6 @@ $(function() {
     $inputMessage.focus();
   });
 
-  /*$staticCheckinButton.click(function(){
-    let rbValue = $("input[name='radio1']:checked").val();
-    log(username + " changed rb to " + rbValue);
-    socket.emit('checkin', rbValue);
-  });*/
-
-  $popupCheckinButton.click(function(){
-  //Spot switcher:
-
-    $(this).parent().find(".rb-tab").removeClass("rb-tab-active");
-    $(this).addClass("rb-tab-active");
-
-  });
-
-  $checkinSubmit.click(function() {
-    let rbValue = $('#rb-1').parent().find(".rb-tab-active").attr("value");
-    //log(username + " radio button change: " + rbValue);
-    socket.emit('new checkin', rbValue);
-    $checkinPopup.hide();
-  });
 
   // Socket events
 
@@ -395,29 +400,50 @@ $(function() {
     alert("The experiment is already full. Please return this HIT.")
   });
 
-  socket.on('load questions', questions => {
-    Vue.component('question-component', {
-      template: `
-        <h3 class="title">{{question.q}}</h3>
-               <input type="radio" name="{{question.name}}" value="1. strongly disagree"><label for="1. strongly disagree"> 1. strongly disagree    </label>
-               <input type="radio" name="{{question.name}}" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
-               <input type="radio" name="{{question.name}}" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
-               <input type="radio" name="{{question.name}}" value="4. agree"><label for="4. agree"> 4. agree    </label>
-               <input type="radio" name="{{question.name}}" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
-                <br>
-                <br>
-      `,
-      props: {
-        question: Object
+  socket.on('load checkin', questions => {
+    new Vue({
+      el: '#checkin-questions',
+      data: {
+        questions
       }
     });
+  })
 
+  socket.on('load midsurvey', questions => {
     new Vue({
       el: '#midsurvey-questions',
       data: {
         questions
       }
     });
+  })
+
+
+  socket.on('load postsurvey', questions => {
+    new Vue({
+      el: '#postsurvey-questions',
+      data: {
+        questions
+      }
+    });
+  })
+
+  socket.on('load blacklist', questions => {
+    new Vue({
+      el:'#blacklist-questions',
+      data: {
+        questions
+      }
+    })
+  })
+
+  socket.on('load feedback', questions => {
+    new Vue({
+      el:'#feedback-questions',
+      data: {
+        questions
+      }
+    })
   })
 
   socket.on('load starter questions', questions => {
@@ -481,7 +507,8 @@ $(function() {
   socket.on('go', data => {
     hideAll();
     $chatPage.show();
-    $neutralCheckin.checked = true;
+    $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
+
 
     log(data.task);
     log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
@@ -541,15 +568,6 @@ $(function() {
     hideAll();
     $midSurvey.show();
 
-  })
-
-  $('#midForm').submit( (event) => {
-    event.preventDefault() //stops page reloading
-    socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
-    socket.emit('execute experiment')
-    $midSurvey.hide()
-    $holdingPage.show()
-    $('#midForm')[0].reset();
   })
 
   socket.on('postSurvey',data => {

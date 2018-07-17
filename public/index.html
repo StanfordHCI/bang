@@ -30,49 +30,13 @@
       <input class="inputMessage" placeholder="Type here..." oninput=""/>
     </li>
     <div class="popup">
-      <p>These check-ins are anonymous and will be used by an algorithm to pair you with an optimal team for the next round.</p>
-      <p>To what extent do you agree with the statement: The members of this team could work for a long time together.</p>
-      <br>
       <form id="checkin-form" class="rb">
-        <label for="checkin-1" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-1" value="1" checked/>
-          <span class='rb-spot'>1</span>
-          <label for='checkin-1'>Strongly Disagree</label>
-        </label>
-        <label for="checkin-2" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-2" value="2" />
-          <span class='rb-spot'>2</span>
-          <label for='checkin-2'>Disagree</label>
-        </label>
-        <label for="checkin-3" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-3" value="3" />
-          <span class='rb-spot'>3</span>
-          <label for='checkin-3'>Slightly Disagree</label>
-        </label>
-        <label for="checkin-4" class="rb-tab">
-          <input type="radio" checked name="checkin" id="checkin-4" value="4" />
-          <span class='rb-spot'>4</span>
-          <label for='checkin-4'>Neutral</label>
-        </label>
-        <label for="checkin-5" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-5" value="5" />
-          <span class='rb-spot'>5</span>
-          <label for='checkin-5'>Slightly Agree</label>
-        </label>
-        <label for="checkin-6" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-6" value="6" />
-          <span class='rb-spot'>6</span>
-          <label for='checkin-6'>Agree</label>
-        </label>
-        <label for="checkin-7" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-7" value="7" />
-          <span class='rb-spot'>7</span>
-          <label for='checkin-7'>Strongly Agree</label>
-        </label>
-        <br>
+        <p>These check-ins are anonymous and will be used by an algorithm to pair you with an optimal team for the next round.</p>
+        <div id="checkin-questions" >
+          <question-component v-for="question in questions" :question="question" />
+        </div>
         <input id="checkin-submit" type="submit" value="Submit">
       </form>
-
     </div>
     <li id="login" class="login page">
       <div class="form">
@@ -111,12 +75,11 @@
         </div>
       </li>
 
-<!--  Mid-survey Code (Maika) -->
     <li id="midSurvey" class="login page">
         <div class="form">
-          <form style="color: white; background-color: black" id="midForm">
+          <form id="midForm" >
             <h3 class="intro">Your answers to the following questions will have no impact on your task performance<br>or ability to work with us in the future.</h3>
-            <div id="midsurvey-questions" >
+            <div id="midsurvey-questions" class="survey-questions">
               <question-component v-for="question in questions" :question="question" />
             </div>
             <input id="submitButton" type="submit" value="Submit">
@@ -126,54 +89,40 @@
 
     <li id="postSurvey" class="login page">
       <div class="form">
-        <form style="color: white;" id="postForm">
-         <h3 class="title">Select which teams you worked with were the same people.</h3>
-         <input type="radio" name="team" value="1 and 2"><label for="1 and 2"> 1 and 2</label><br>
-         <input type="radio" name="team" value="1 and 3"><label for="1 and 3"> 1 and 3</label><br>
-         <input type="radio" name="team" value="2 and 3"><label for="2 and 3"> 2 and 3</label><br>
-         <br>
+        <form id="postForm">
+          <div id="postsurvey-questions" class='survey-questions'>
+            <question-component v-for="question in questions" :question="question" />
+          </div>
          <input type="submit" value="Submit">
         </form>
-
       </div>
     </li>
 
     <li id="blacklistSurvey" class="login page">
       <div class="form">
-        <form style="color: white;" id="blacklistForm">
-         <h3 class="title">For the final task, you will be collaborating with one of the 3 teams you previously worked with, selected at random. At this time, you can elect to eliminate 1 team from the pool of potential teams you collaborate with for the final task.
-        </h3>
-         <input type="radio" name="blacklist_team" value="A"><label for="A"> Team A</label><br>
-         <input type="radio" name="blacklist_team" value="B"><label for="B"> Team B</label><br>
-         <input type="radio" name="blacklist_team" value="C"><label for="C"> Team C</label><br>
-         <input type="radio" name="blacklist_team" value="Any"><label for="Any">I’m open to working with any of these teams.</label><br>
-          <br>
-          <!-- <input id="submitButton_blacklist" type="submit" value="Submit"> -->
+        <form id="blacklistForm">
+          <div id="blacklist-questions" class='survey-questions'>
+            <question-component v-for="question in questions" :question="question" />
+          </div>
           <input type="submit" value="Submit">
-      </form>
-    </div>
+        </form>
+      </div>
     </li>
 
     <li id="teamfeedbackSurvey" class="login page">
-      <div class="form" style="margin-top: -440px">
-        <form style="color: white;" id="teamfeedbackForm">
-         <h3 class="title">We're thinking about hiring a manager
+      <div class="form">
+        <form id="teamfeedbackForm">
+         <h3 class ='intro'>We're thinking about hiring a manager
            to lead each team in the future. For this team, provide the manager
            with an anonymous statement about how your team would work together
            on future tasks. Your answers will have no impact on your ability
            to work with us in the future.
         </h3>
          <textarea class="teamfeedbackInput" id="teamfeedbackInput"></textarea>
-
-          <br>
-
-       <h3 class="title">How likely are you to want to work with this team again?
-      </h3>
-      <input type="radio" name="teamfracture" value="Very likely"><label for="Very likely"> Very likely</label><br>
-      <input type="radio" name="teamfracture" value="Somewhat likely"><label for="Somewhat likely"> Somewhat likely</label><br>
-      <input type="radio" name="teamfracture" value="Not very likely"><label for="Not very likely"> Not very likely</label><br>
-      <input type="radio" name="teamfracture" value="Not at all likely"><label for="Not at all likely">Not at all likely</label><br>
         <br>
+        <div id="feedback-questions" class='survey-questions'>
+          <question-component v-for="question in questions" :question="question" />
+        </div>
         <input type="submit" value="Submit">
     </form>
   </div>
