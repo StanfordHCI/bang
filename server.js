@@ -1,5 +1,5 @@
 //Settings - change for actual deployment
-const teamSize = 1
+const teamSize = 2
 const roundMinutes = .01
 
 // MTurk AWS
@@ -592,7 +592,7 @@ io.on('connection', (socket) => {
     // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
     console.log(user.name, "submitted blacklist survey:", data);
 
-    db.blacklist.update({ id: socket.id }, {$set: {"results.blacklistCheck": user.results.blacklistCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
+    db.blacklist.insert({ id: socket.id }, {$set: {"results.blacklistCheck": user.results.blacklistCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
   });
 
 
