@@ -142,6 +142,7 @@ const fs = require('fs')
 // Setting up DB
 const Datastore = require('nedb'),
     db = {};
+    db.starterSurvey = new Datastore({ filename:'.data/starterSurvey', autoload: true });
     db.users = new Datastore({ filename:'.data/users', autoload: true });
     db.chats = new Datastore({ filename:'.data/chats', autoload: true });
     db.products = new Datastore({ filename:'.data/products', autoload: true });
@@ -183,7 +184,8 @@ let startTime = 0
 
 // Building task list
 let task_list = []
-task_list[0] = "ready"
+task_list.push("starterSurvey")
+task_list.push("ready")
 if (midSurveyOn) {
   task_list.push("midSurvey")
 }
@@ -231,7 +233,8 @@ app.use(express.static('public'));
 // Chatroom
 io.on('connection', (socket) => {
     let addedUser = false;
-    socket.emit('load questions', loadQuestions());
+    socket.emit('load questions', loadQuestions("midsurvey-questions.txt"));
+    socket.emit('load starter questions', loadQuestions("startersurvey-questions.txt"));
 
     socket.on('log', string => { console.log(string); });
 
@@ -386,7 +389,10 @@ io.on('connection', (socket) => {
       let currentActivity = user.currentActivity;
       let task_list = user.task_list;
       console.log ("Activity:", currentActivity, "which is", task_list[currentActivity])
-      if (task_list[currentActivity] == "ready") {
+      if (task_list[currentActivity] == "starterSurvey") {
+        io.in(user.id).emit("starterSurvey");
+      }
+      else if (task_list[currentActivity] == "ready") {
         io.in(user.id).emit("echo", "ready");
       }
       else if (task_list[currentActivity] == "midSurvey") {
@@ -534,6 +540,19 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Starter task
+   socket.on('starterSurveySubmit', (data) => {
+    let user = users.byID(socket.id)
+    let currentRoom = user.room
+    let starterSurveyResults = data;
+    let parsedResults = starterSurveyResults.split('&')
+    user.results.starterCheck = parsedResults
+    console.log(user.name, "submitted survey:", user.results.starterCheck);
+    db.starterSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'starterCheck': user.results.starterCheck}, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding starterSurvey to the DB: ", err);
+      else if(usersAdded) console.log("starterSurvey added to the DB");
+    });
+  });
 
    // Task after each round - midSurvey - MAIKA
    socket.on('midSurveySubmit', (data) => {
@@ -613,9 +632,9 @@ function getSecondsPassed() {
   return ((new Date()).getTime() - startTime)/1000;
 }
 
-function loadQuestions(socket) {
+function loadQuestions(questiontxtFile) {
   let questions = []
-  const questionFile = "midsurvey-questions.txt";
+  const questionFile = questiontxtFile;
   let i = 0
   fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) {
     let questionObj = {};
