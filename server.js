@@ -563,7 +563,7 @@ io.on('connection', (socket) => {
    socket.on('starterSurveySubmit', (data) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
-    let parsedResults = parsesurveyResults(data);
+    let parsedResults = parseResults(data);
     user.results.starterCheck = parsedResults
     console.log(user.name, "submitted survey:", user.results.starterCheck);
     db.starterSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'starterCheck': user.results.starterCheck, 'batch':batchID}, (err, usersAdded) => {
