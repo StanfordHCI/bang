@@ -1,5 +1,5 @@
 //Settings - change for actual deployment
-const teamSize = 2
+const teamSize = 1
 const roundMinutes = .01
 
 // MTurk AWS
@@ -508,15 +508,14 @@ io.on('connection', (socket) => {
 
   //if the user has accepted the HIT, add the user to the array usersAccepted
   socket.on('accepted HIT', (data) => {
-    console.log("accepted hit")
     usersAccepted.push({
       "id": String(socket.id),
       "workerId": data.workerId,
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
     });
-    console.log(usersAccepted); //for debugging purposes
-    console.log(usersAccepted.length); //for debugging purposes
+    console.log(data.turkSubmitTo);
+    console.log(usersAccepted,"users accepted currently"); //for debugging purposes
     // if enough people have accepted, push prompt to start task
     if(usersAccepted.length == teamSize ** 2) {
         let numWaiting = 0;

@@ -66,8 +66,9 @@ $(function() {
   if (URLvars.assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
     $lockPage.show(); //prompt user to accept HIT
   } else { // tell the server that the user has accepted the HIT - server then adds this worker to array of accepted workers
+
     $waitingPage.show();
-    socket.emit('accepted HIT',{ mturkId: URLvars.workerId, turkSubmitTo: URLvars.turkSubmitTo, assignmentId: URLvars.assignmentId });
+    socket.emit('accepted HIT',{ mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId });
   }
 
   // Get permission to notify
@@ -572,7 +573,7 @@ function turkGetParam( name, defaultValue, uri) {
    }
 }
 
-function getUrlVars(url) {
+const getUrlVars = (url) => {
     var hash;
     var myJson = {};
     var hashes = url.slice(url.indexOf('?') + 1).split('&');
@@ -581,4 +582,9 @@ function getUrlVars(url) {
         myJson[hash[0]] = hash[1];
     }
     return myJson;
+}
+
+const decodeURL = (toDecode) => {
+  var encoded = toDecode;
+  return unescape(encoded.replace(/\+/g,  " "));
 }
