@@ -555,7 +555,7 @@ io.on('connection', (socket) => {
    socket.on('starterSurveySubmit', (data) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
-    let parsedResults = parsesurveyResults(data);
+    let parsedResults = parseResults(data);
     user.results.starterCheck = parsedResults
     console.log(user.name, "submitted survey:", user.results.starterCheck);
     db.starterSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'starterCheck': user.results.starterCheck}, (err, usersAdded) => {
@@ -566,8 +566,8 @@ io.on('connection', (socket) => {
 
   // parses results from Midsurvey to proper format for JSON file 
   function parseResults(data) {
-    let midSurveyResults = data;
-    let parsedResults = midSurveyResults.split('&');
+    let SurveyResults = data;
+    let parsedResults = SurveyResults.split('&');
     let arrayLength = parsedResults.length;
     for(var i = 0; i < arrayLength; i++) {
       parsedResults[i] = parsedResults[i].slice(9, parsedResults[i].indexOf("=")) + '=' + parsedResults[i].slice(parsedResults[i].indexOf("=") + 4);
