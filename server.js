@@ -202,6 +202,7 @@ let fullUrl = ''
 
 // array of the users that have accepted the task
 let usersAccepted = [];
+let tempArray = [];
 
 app.use(express.static('public'));
 
@@ -357,9 +358,17 @@ io.on('connection', (socket) => {
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
         // if the user had accepted, removes them from the array of accepted users
-        if (usersAccepted.find((user)=>{ user.id == socket.id })){
-          usersAccepted = usersAccepted.filter((user) => {user.id != socket.id})
-          io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersAccepted.length});
+        console.log(socket.id)
+        if (usersAccepted.find(function(element) {return element.id == socket.id})) {
+          console.log('there was a disconnect');
+          usersAccepted = usersAccepted.filter(user => user.id != socket.id);
+          console.log(usersAccepted)
+          console.log("num users accepted:", usersAccepted.length);
+          if((teamSize ** 2) - usersAccepted.length < 0) {
+            io.sockets.emit('update number waiting', {num: 0});
+          } else {
+            io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersAccepted.length});
+          }
         }
 
         if (addedUser) {
@@ -516,15 +525,16 @@ io.on('connection', (socket) => {
   //if the user has accepted the HIT, add the user to the array usersAccepted
   socket.on('accepted HIT', (data) => {
     usersAccepted.push({
-      "id": String(socket.id),
+      "id": socket.id,
       "mturkID": data.workerId,
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
     });
+    tempArray.push(socket.id);
     console.log(data.turkSubmitTo);
     console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
     // if enough people have accepted, push prompt to start task
-    if(usersAccepted.length == teamSize ** 2) {
+    if(usersAccepted.length >= teamSize ** 2) {
         let numWaiting = 0;
         io.sockets.emit('update number waiting', {num: 0});
       io.sockets.emit('enough people');
