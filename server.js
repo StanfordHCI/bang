@@ -565,22 +565,12 @@ io.on('connection', (socket) => {
   });
 
   // parses results from Midsurvey to proper format for JSON file 
-  function parsesurveyResults(data) {
-    let SurveyResults = data;
-    let parsedResults = SurveyResults.split('&');
+  function parseResults(data) {
+    let midSurveyResults = data;
+    let parsedResults = midSurveyResults.split('&');
     let arrayLength = parsedResults.length;
     for(var i = 0; i < arrayLength; i++) {
-      let response = parsedResults[i];
-      let questionNumber = response.slice(9, 11);  // ex "2="
-      if(questionNumber.charAt(1) == '=') { // question number 1 - 9
-        let quality = response.slice(14); // grabs rest of string
-        let result = questionNumber + quality;
-        parsedResults[i] = result;
-      } else { // question number 10 - 15
-        let quality = response.slice(15);
-        let result = questionNumber + '=' + quality;
-        parsedResults[i] = result;
-      }
+      parsedResults[i] = parsedResults[i].slice(9, parsedResults[i].indexOf("=")) + '=' + parsedResults[i].slice(parsedResults[i].indexOf("=") + 4);
     }
     return parsedResults;
   }
@@ -589,7 +579,7 @@ io.on('connection', (socket) => {
    socket.on('midSurveySubmit', (data) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
-    let midSurveyResults = parsesurveyResults(data);
+    let midSurveyResults = parseResults(data);
     user.results.viabilityCheck = midSurveyResults;
     console.log(user.name, "submitted survey:", user.results.viabilityCheck);
     db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {
