@@ -191,14 +191,16 @@ let task_list = []
 if (starterSurveyOn) {
   task_list.push("starterSurvey")
 }
-task_list.push("ready")
+let task_loop = []
+task_loop.push("ready")
 if (midSurveyOn) {
-  task_list.push("midSurvey")
+  task_loop.push("midSurvey")
 }
 if (teamfeedbackOn) {
-  task_list.push("teamfeedbackSurvey")
+  task_loop.push("teamfeedbackSurvey")
 }
-task_list = replicate(task_list, numRounds)
+task_loop = replicate(task_loop, numRounds)
+task_list= task_list.concat(task_loop)
 task_list.push("postSurvey")
 if (blacklistOn) {
   task_list.push("blacklistSurvey")
@@ -553,8 +555,7 @@ io.on('connection', (socket) => {
    socket.on('starterSurveySubmit', (data) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
-    let starterSurveyResults = data;
-    let parsedResults = starterSurveyResults.split('&')
+    let parsedResults = parsesurveyResults(data);
     user.results.starterCheck = parsedResults
     console.log(user.name, "submitted survey:", user.results.starterCheck);
     db.starterSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'starterCheck': user.results.starterCheck}, (err, usersAdded) => {
@@ -564,9 +565,9 @@ io.on('connection', (socket) => {
   });
 
   // parses results from Midsurvey to proper format for JSON file 
-  function parseMidsurveyResults(data) {
-    let midSurveyResults = data;
-    let parsedResults = midSurveyResults.split('&');
+  function parsesurveyResults(data) {
+    let SurveyResults = data;
+    let parsedResults = SurveyResults.split('&');
     let arrayLength = parsedResults.length;
     for(var i = 0; i < arrayLength; i++) {
       let response = parsedResults[i];
@@ -588,7 +589,7 @@ io.on('connection', (socket) => {
    socket.on('midSurveySubmit', (data) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
-    let midSurveyResults = parseMidsurveyResults(data);
+    let midSurveyResults = parsesurveyResults(data);
     user.results.viabilityCheck = midSurveyResults;
     console.log(user.name, "submitted survey:", user.results.viabilityCheck);
     db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'midSurvey': user.results.viabilityCheck}, (err, usersAdded) => {

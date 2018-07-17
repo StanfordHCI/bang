@@ -399,7 +399,7 @@ $(function() {
     Vue.component('question-component', {
       template: `
         <h3 class="title">{{question.q}}</h3>
-               <input type="radio" name="{{question.name}}" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
+               <input type="radio" name="{{question.name}}" value="1. strongly disagree"><label for="1. strongly disagree"> 1. strongly disagree    </label>
                <input type="radio" name="{{question.name}}" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
                <input type="radio" name="{{question.name}}" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
                <input type="radio" name="{{question.name}}" value="4. agree"><label for="4. agree"> 4. agree    </label>
@@ -424,7 +424,7 @@ $(function() {
     Vue.component('starter-question-component', {
       template: `
         <h3 class="title">{{question.q}}</h3>
-               <input type="radio" name="{{question.name}}" value="1. very inaccurate" required><label for="1. very inaccurate"> 1. very inaccurate    </label>
+               <input type="radio" name="{{question.name}}" value="1. very inaccurate"><label for="1. very inaccurate"> 1. very inaccurate    </label>
                <input type="radio" name="{{question.name}}" value="2. moderately inaccurate"><label for="2. moderately inaccurate"> 2. moderately inaccurate    </label>
                <input type="radio" name="{{question.name}}" value="3. neither inaccurate nor accurate"><label for="3. neither inaccurate nor accurate"> 3. neither inaccurate nor accurate    </label>
                <input type="radio" name="{{question.name}}" value="4. moderately accurate"><label for="4. moderately accurate"> 4. moderately accurate    </label>
