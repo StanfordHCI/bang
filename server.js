@@ -114,20 +114,20 @@ mturk.createHIT(params,(err, data) => {
   else     console.log("Fist HITS posted");
 });
 
-let delay = 1;
-// only continues to post if not enough people accepted HIT
-setTimeout(() => {
-  if(usersAcceptedHIT < (teamSize * teamSize)) {
-    numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
-    mturk.createHIT(params,(err, data) => {
-      if (err) console.log(err, err.stack);
-      else     console.log("Another HIT posted");
-    });
-    i++;
-  } else {
-    clearTimeout();
-  }
-}, 1000 * 60 * timeActive * delay)
+// let delay = 1;
+// // only continues to post if not enough people accepted HIT
+// setTimeout(() => {
+//   if(usersAcceptedHIT < (teamSize * teamSize)) {
+//     numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
+//     mturk.createHIT(params,(err, data) => {
+//       if (err) console.log(err, err.stack);
+//       else     console.log("Another HIT posted");
+//     });
+//     i++;
+//   } else {
+//     clearTimeout();
+//   }
+// }, 1000 * 60 * timeActive * delay)
 
 // Setup basic express server
 let tools = require('./tools');
