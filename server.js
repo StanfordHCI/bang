@@ -112,20 +112,20 @@ const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
 //const taskURL = 'https://localhost:3000/';
 
 // HIT Parameters
-const taskDuration = 60; // how many minutes?
+const taskDuration = 60; // how many minutes - this is a Maximum for the task
 const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
 const numPosts = (2 * taskDuration) / timeActive; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
 const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
-const rewardPrice = (hourlyWage * (taskDuration / 60)); // BUG - make this a string? Reward must be a string
+const rewardPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60)).toString();
 let usersAcceptedHIT = 0;
 let numAssignments = teamSize * teamSize;
 
 const params = {
-  Title: 'Write online ads by chat/text with group',
+  Title: 'Write online ads by chat/text with group...',
   Description: 'You will work in a small group in a text/chat environment to write ads for new products. This task will take approximately ' + ((roundMinutes * numRounds) + 10)  + ' minutes in length, hourly pay. If you have already completed this task, do not attempt again.',
   AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
   LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
-  Reward: '6.00',
+  Reward: rewardPrice,
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
   Keywords: 'ads, writing, copy editing, advertising',
   MaxAssignments: numAssignments,
