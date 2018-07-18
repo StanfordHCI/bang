@@ -42,13 +42,13 @@
       <div class="form">
         <h3 class="title">Please enter your MTurk ID.</h3>
         <input class="usernameInput" type="text" maxlength="14" />
-        <p style="color: white;">Please double check because we can't pay you if its not accurate.<br>When done, press <b>enter</b>.</p>
+        <p>Please double check because we can't pay you if its not accurate.<br>When done, press <b>enter</b>.</p>
       </div>
     </li>
     <li id="holding" class="login page">
       <div class="form">
         <h3 class="title">You're signed in as <b><span id="username"></span></b>.</h3>
-        <p style="color: white;">Wait here while we set things up.</p>
+        <p>Wait here while we set things up.</p>
       </div>
     </li>
     <li id="preSurvey" class="login page">
@@ -60,7 +60,7 @@
 
     <li id="starterSurvey" class="login page">
         <div class="form">
-          <form style="color: white; background-color: black" id="starterForm">
+          <form id="starterForm">
             <h3>You will see 20 statements and you will 
               be asked to evaluate the extent to which you agree with them. 
               Please answer honestly with regard to how you see yourself 
@@ -68,7 +68,7 @@
               There are no incorrect answers nor any personality profile that is 
               inherently more desirable than another.</h3>
             <div id="startersurvey-questions" >
-              <starter-question-component v-for="question in questions" :question="question" />
+              <question-component v-for="question in questions" :question="question" />
             </div>
             <input type="submit" value="Submit">
         </form>
