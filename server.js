@@ -1,6 +1,6 @@
 //Settings - change for actual deployment
-const teamSize = 1
-const roundMinutes = .01
+const teamSize = 2
+const roundMinutes = .1
 
 // Toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
@@ -70,8 +70,8 @@ mturk.getAccountBalance((err, data) => {
 //   else     console.log(data);
 // });
 
-//const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
-const taskURL = 'https://localhost:3000/'; 
+const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
+//const taskURL = 'https://localhost:3000/'; 
 
 // HIT Parameters
 const taskDuration = 60; // how many minutes?
@@ -114,20 +114,20 @@ mturk.createHIT(params,(err, data) => {
   else     console.log("Fist HITS posted");
 });
 
-let delay = 1;
-// only continues to post if not enough people accepted HIT
-setTimeout(() => {
-  if(usersAcceptedHIT < (teamSize * teamSize)) {
-    numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
-    mturk.createHIT(params,(err, data) => {
-      if (err) console.log(err, err.stack);
-      else     console.log("Another HIT posted");
-    });
-    i++;
-  } else {
-    clearTimeout();
-  }
-}, 1000 * 60 * timeActive * delay)
+// let delay = 1;
+// // only continues to post if not enough people accepted HIT
+// setTimeout(() => {
+//   if(usersAcceptedHIT < (teamSize * teamSize)) {
+//     numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
+//     mturk.createHIT(params,(err, data) => {
+//       if (err) console.log(err, err.stack);
+//       else     console.log("Another HIT posted");
+//     });
+//     i++;
+//   } else {
+//     clearTimeout();
+//   }
+// }, 1000 * 60 * timeActive * delay)
 
 // Setup basic express server
 let tools = require('./tools');
