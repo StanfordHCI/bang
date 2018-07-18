@@ -339,6 +339,7 @@ io.on('connection', (socket) => {
         const newUser = {
           'id': socket.id,
           'mturk': acceptedUser.mturkId,
+          'workerId': acceptedUser.mturkId,
           'assignmentId': acceptedUser.assignmentId,
           'room': '',
           'rooms':[],
