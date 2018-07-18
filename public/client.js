@@ -511,6 +511,8 @@ $(function() {
         response("")
         return
       }
+      response($.ui.autocomplete.filter(currentTeam, currentTerm));
+      
       // if (match) {
       //   response(["hello world"]);
       // }
