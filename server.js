@@ -79,6 +79,7 @@ const timeActive = 10; // How long a task stays alive in minutes -  repost same 
 const numPosts = (2 * taskDuration) / timeActive; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
 const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
 const rewardPrice = (hourlyWage * (taskDuration / 60)); // BUG - make this a string? Reward must be a string
+let usersAcceptedHIT = 0;
 
 const params = {
   Title: 'Write online ads by chat/text with group',
@@ -112,28 +113,19 @@ mturk.createHIT(params,(err, data) => {
   else     console.log("Fist HITS posted");
 });
 
-// Creates new HIT every timeActive minutes for numPosts times to ensure HIT appears at top of list
-// for(let i = 0; i < numPosts; i++) {
-//   if(i == 0) { // posts one immeditately
-//     mturk.createHIT(params,(err, data) => {
-//       if (err) console.log(err, err.stack);
-//       else     console.log("Fist HITS posted");
-//       // console.log(hitId);
-//     });
-//   } else { // reposts every timeActive minutes
-//     setTimeout(() => {
-//       mturk.createHIT(params,(err, data) => {
-//         if (err) console.log(err, err.stack);
-//         else     console.log("Hits posted for round",i);
-//         // let hitId = data.HIT.HITId;  // returns hit ID
-//         // console.log(hitId);
-//       });
-//     }, 1000 * 60 * timeActive * i)
-//   }
-// }
-
-
-
+let delay = 1;
+// only continues to post if not enough people accepted HIT
+setTimeout(() => {
+  if(usersAcceptedHIT < (teamSize * teamSize)) {
+    mturk.createHIT(params,(err, data) => {
+      if (err) console.log(err, err.stack);
+      else     console.log("Another HIT posted");
+    });
+    i++;
+  } else {
+    clearTimeout();
+  }
+}, 1000 * 60 * timeActive * delay)
 
 // Setup basic express server
 let tools = require('./tools');
@@ -575,6 +567,7 @@ io.on('connection', (socket) => {
     });
     console.log(data.turkSubmitTo);
     console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
+    usersAcceptedHIT = usersAccepted.length; // to keep track of if we should keep posting hits?
     // if enough people have accepted, push prompt to start task
     if(usersAccepted.length == teamSize ** 2) {
         let numWaiting = 0;

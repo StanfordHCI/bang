@@ -48,8 +48,3 @@ let chatlogText = chatlogArr.map(function(chatObj){
 //     db.products = new Datastore({ filename:'.data/products', autoload: true });
 //     db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
 //     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true});
-
-
-
-
-
