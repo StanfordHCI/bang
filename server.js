@@ -144,6 +144,7 @@ const midsurveyQuestionFile = "midsurvey-q.txt";
 const checkinQuestionFile = "checkin-q.txt";
 const blacklistFile = "blacklist-q.txt"
 const feedbackFile = "feedback-q.txt"
+const starterSurveyFile = "startersurvey-q.txt"
 const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
 const binaryAnswers =['Yes', 'No']
 
@@ -259,8 +260,6 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
 io.on('connection', (socket) => {
 
     let addedUser = false;
-
-    socket.emit('load starter questions', loadQuestions("startersurvey-questions.txt"));
 
     socket.on('log', string => { console.log(string); });
 
@@ -420,6 +419,7 @@ io.on('connection', (socket) => {
       console.log ("Activity:", currentActivity, "which is", task_list[currentActivity])
 
       if (task_list[currentActivity] == "starterSurvey") {
+        socket.emit('load starter questions', loadQuestions(starterSurveyFile, {answers: answers, answerType: 'radio', correctAnswer:''}));
         io.in(user.id).emit("starterSurvey");
       }
       else if (task_list[currentActivity] == "ready") {
