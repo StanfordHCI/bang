@@ -38,13 +38,6 @@
         <input id="checkin-submit" type="submit" value="Submit">
       </form>
     </div>
-    <li id="login" class="login page">
-      <div class="form">
-        <h3 class="title">Please enter your MTurk ID.</h3>
-        <input class="usernameInput" type="text" maxlength="14" />
-        <p>Please double check because we can't pay you if its not accurate.<br>When done, press <b>enter</b>.</p>
-      </div>
-    </li>
     <li id="holding" class="login page">
       <div class="form">
         <h3 class="title">You're signed in as <b><span id="username"></span></b>.</h3>
@@ -59,85 +52,73 @@
     </li>
 
     <li id="starterSurvey" class="login page">
-        <div class="form">
-          <form id="starterForm">
-            <h3>You will see 20 statements and you will 
-              be asked to evaluate the extent to which you agree with them. 
-              Please answer honestly with regard to how you see yourself 
-              in the present moment, not how you would like to be in the future. 
-              There are no incorrect answers nor any personality profile that is 
-              inherently more desirable than another.</h3>
-            <div id="startersurvey-questions" >
-              <question-component v-for="question in questions" :question="question" />
-            </div>
-            <input type="submit" value="Submit">
-        </form>
+      <form id="starterForm">
+        <h3>You will see 20 statements and you will 
+          be asked to evaluate the extent to which you agree with them. 
+          Please answer honestly with regard to how you see yourself 
+          in the present moment, not how you would like to be in the future. 
+          There are no incorrect answers nor any personality profile that is 
+          inherently more desirable than another.</h3>
+        <div id="startersurvey-questions" >
+          <question-component v-for="question in questions" :question="question" />
         </div>
-      </li>
+        <input type="submit" value="Submit">
+      </form>
+    </li>
 
     <li id="midSurvey" class="login page">
-        <div class="form">
-          <form id="midForm" >
-            <h3 class="intro">Your answers to the following questions will have no impact on your task performance<br>or ability to work with us in the future.</h3>
-            <div id="midsurvey-questions" class="survey-questions">
-              <question-component v-for="question in questions" :question="question" />
-            </div>
-            <input id="submitButton" type="submit" value="Submit">
-        </form>
+      <form id="midForm" >
+        <h3 class="intro">Your answers to the following questions will have no impact on your task performance<br>or ability to work with us in the future.</h3>
+        <div id="midsurvey-questions" class="survey-questions">
+          <question-component v-for="question in questions" :question="question" />
         </div>
-      </li>
+        <input id="submitButton" type="submit" value="Submit">
+      </form>
+    </li>
 
     <li id="postSurvey" class="login page">
-      <div class="form">
-        <form id="postForm">
-          <div id="postsurvey-questions" class='survey-questions'>
-            <question-component v-for="question in questions" :question="question" />
-          </div>
-         <input type="submit" value="Submit">
-        </form>
-      </div>
+      <form id="postForm">
+        <div id="postsurvey-questions" class='survey-questions'>
+          <question-component v-for="question in questions" :question="question" />
+        </div>
+       <input type="submit" value="Submit">
+      </form>
     </li>
 
     <li id="blacklistSurvey" class="login page">
-      <div class="form">
-        <form id="blacklistForm">
-          <div id="blacklist-questions" class='survey-questions'>
-            <question-component v-for="question in questions" :question="question" />
-          </div>
-          <input type="submit" value="Submit">
-        </form>
-      </div>
+      <form id="blacklistForm">
+        <div id="blacklist-questions" class='survey-questions'>
+          <question-component v-for="question in questions" :question="question" />
+        </div>
+        <input type="submit" value="Submit">
+      </form>
     </li>
 
     <li id="teamfeedbackSurvey" class="login page">
-      <div class="form">
-        <form id="teamfeedbackForm">
-         <h3 class ='intro'>We're thinking about hiring a manager
+      <form id="teamfeedbackForm">
+        <h3 class ='intro'>We're thinking about hiring a manager
            to lead each team in the future. For this team, provide the manager
            with an anonymous statement about how your team would work together
            on future tasks. Your answers will have no impact on your ability
            to work with us in the future.
         </h3>
-         <textarea class="teamfeedbackInput" id="teamfeedbackInput"></textarea>
+        <textarea class="teamfeedbackInput" id="teamfeedbackInput"></textarea>
         <br>
         <div id="feedback-questions" class='survey-questions'>
           <question-component v-for="question in questions" :question="question" />
         </div>
         <input type="submit" value="Submit">
-    </form>
-  </div>
+      </form>
     </li>
 
     <li id="finishing" class="login page">
-      <div class="form">
-        <h3 class="title">Thanks for participating, you're all done!</h3>
-        <form name='mturk_form' method='post' id='mturk_form' action=''>
-        <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
-        <input type='hidden' value='' name='finishingcode' id='finishingcode'/>
-        <p><input type='submit' id='submitButton' value='Submit' /></p>
-        </form>
-        <!-- <p style="color: white;">Paste <strong><span id="finishingcode"></span></strong> into the MTurk task to receive payment.</p> -->
-      </div>
+      <h3 class="title">Thanks for participating, you're all done!</h3>
+      <form name='mturk_form' method='post' id='mturk_form' action=''>
+      <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
+      <input type='hidden' value='' name='finishingcode' id='finishingcode'/>
+      <p><input type='submit' id='submitButton' value='Submit' /></p>
+      </form>
+      <!-- <p style="color: white;">Paste <strong><span id="finishingcode"></span></strong> into the MTurk task to receive payment.</p> -->
     </li>
   </ul>
 
