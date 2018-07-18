@@ -1,11 +1,11 @@
 //Settings - change for actual deployment
-const teamSize = 1
-const roundMinutes = 1
+const teamSize = 3
+const roundMinutes = 10
 
 // Toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
-const starterSurveyOn = false
-const midSurveyOn = false
+const starterSurveyOn = true
+const midSurveyOn = true
 const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
@@ -43,10 +43,10 @@ if (live){
   // const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 }
 
-const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
+// const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 
 // Uncomment this line to use in production
-// const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
+const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
 
 // This initiates the API
 // Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
@@ -83,20 +83,20 @@ let usersAcceptedHIT = 0;
 let numAssignments = teamSize * teamSize;
 
 const params = {
-  Title: 'Write online ads by chat/text with group!',
+  Title: 'Write online ads by chat/text with group',
   Description: 'You will work in a small group in a text/chat environment to write ads for new products. Approximately one hour in length, hourly pay. If you have already completed this task, do not attempt again.',
   AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
   LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
-  Reward: '10.50',
+  Reward: '6.00',
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
   Keywords: 'ads, writing, copy editing, advertising',
   MaxAssignments: numAssignments,
   QualificationRequirements: [
-    // QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
-    // Comparator: 'GreaterThan',
-    // IntegerValues: [1000],
-    // RequiredToPreview: true,
-    // },
+    QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
+    Comparator: 'GreaterThan',
+    IntegerValues: [1000],
+    RequiredToPreview: true,
+    },
     {
     QualificationTypeId:"00000000000000000071",  // US workers only
     LocaleValues:[{
