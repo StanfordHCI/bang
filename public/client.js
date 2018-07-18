@@ -28,7 +28,7 @@ $(function() {
       <div id="{{question.name}}-rb-box" class='rb-box'>
         <template v-for="(index, option) in question.answers" :option="option">
           <label for="{{question.name}}-{{index+1}}" class="rb-tab">
-            <input v-if="question.answerType === 'radio'" type="radio" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" />
+            <input v-if="question.answerType === 'radio'" type="radio" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" required/>
             <input v-if="question.answerType === 'checkbox'" type="checkbox" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" />
             <span class='rb-spot'>{{index+1}}</span>
             <label for='{{question.name}}-{{index+1}}'>{{option}}</label>
