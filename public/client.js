@@ -37,7 +37,7 @@ $(function() {
       <div id="{{question.name}}-rb-box" class='rb-box'>
         <template v-for="(index, option) in question.answers" :option="option">
           <label for="{{question.name}}-{{index+1}}" class="rb-tab">
-            <input v-if="question.answerType === 'radio'" type="radio" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" required/>
+            <input v-if="question.answerType === 'radio'" type="radio" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" />
             <input v-if="question.answerType === 'checkbox'" type="checkbox" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" />
             <span class='rb-spot'>{{index+1}}</span>
             <label for='{{question.name}}-{{index+1}}'>{{option}}</label>
@@ -498,14 +498,23 @@ $(function() {
     //Set up team autocomplete
     currentTeam = data.team
     $currentInput = $inputMessage.focus();
-    
+    // let options = {
+    //   data: ["blue", "green", "pink", "red", "yellow"]
+    // };
+
+    // $inputMessage.easyAutocomplete(options);
+
+
     $inputMessage.autocomplete( "option", "source", (request, response) => {
       let currentTerm = request.term.split(" ").pop()
       if (currentTerm.length < 2){
         response("")
         return
       }
-      response($.ui.autocomplete.filter(currentTeam, currentTerm));
+      // if (match) {
+      //   response(["hello world"]);
+      // }
+        
     });
   });
 
