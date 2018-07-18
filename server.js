@@ -1,5 +1,5 @@
 //Settings - change for actual deployment
-const teamSize = 3
+const teamSize = 1
 const roundMinutes = 10
 
 // Toggles
@@ -61,6 +61,19 @@ const teams = tools.createTeams(teamSize,numRounds,people)
 
 const batchID = Date.now();
 
+// Setting up DB
+const Datastore = require('nedb'),
+    db = {};
+    db.starterSurvey = new Datastore({ filename:'.data/starterSurvey', autoload: true });
+    db.users = new Datastore({ filename:'.data/users', autoload: true });
+    db.chats = new Datastore({ filename:'.data/chats', autoload: true });
+    db.products = new Datastore({ filename:'.data/products', autoload: true });
+    db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
+    db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true});
+    db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true});
+    db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
+    db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
+
 // MTurk AWS
 const AWS = require('aws-sdk');
 require('express')().listen(); //Sets to only relaunch with source changes
@@ -108,8 +121,8 @@ mturk.getAccountBalance((err, data) => {
 //   else     console.log(data);
 // });
 
-const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
-//const taskURL = 'https://localhost:3000/';
+//const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
+const taskURL = 'https://localhost:3000/';
 
 // HIT Parameters
 const taskDuration = 60; // how many minutes - this is a Maximum for the task
@@ -134,8 +147,8 @@ const params = {
     Comparator: 'GreaterThan',
     IntegerValues: [1000],
     RequiredToPreview: true,
-    },
-    {
+  },
+  {
     QualificationTypeId:"00000000000000000071",  // US workers only
     LocaleValues:[{
   		Country:"US",
@@ -152,6 +165,24 @@ mturk.createHIT(params,(err, data) => {
   else     console.log("Fist HITS posted");
 });
 
+// blocks all previous users - or all the users stored in the DB
+let pastUser = '';
+
+const block = {
+  WokerId: pastUser,
+  Reason: 'This worker has already completed this task'
+}
+
+db.users.find({}, (err, usersInDB) => {
+  if (err) {console.log("Err loading users:" + err)}
+  usersInDB.forEach((user) => {
+    let pastUser = users.byID(user.id)
+    if (pastUser){
+      mturk.createWorkerBlock(block, (err, data));
+    }
+  })
+})
+
 let delay = 1;
 // only continues to post if not enough people accepted HIT
 setTimeout(() => {
@@ -167,19 +198,6 @@ setTimeout(() => {
     clearTimeout();
   }
 }, 1000 * 60 * timeActive * delay)
-
-// Setting up DB
-const Datastore = require('nedb'),
-    db = {};
-    db.starterSurvey = new Datastore({ filename:'.data/starterSurvey', autoload: true });
-    db.users = new Datastore({ filename:'.data/users', autoload: true });
-    db.chats = new Datastore({ filename:'.data/chats', autoload: true });
-    db.products = new Datastore({ filename:'.data/products', autoload: true });
-    db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
-    db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true});
-    db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true});
-    db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
-    db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
 
 //Add more products
 let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
