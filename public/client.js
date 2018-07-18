@@ -21,7 +21,6 @@ $(function() {
 
   const $lockPage = $('#lockPage'); // The page shown before acceptance
   const $waitingPage = $('#waiting'); // The waiting page
-  const $loginPage = $('#login'); // The login page
   const $chatPage = $('#chat'); // The chatroom page
   const $holdingPage = $('#holding'); // The holding page
   const $preSurvey = $('#preSurvey'); // The preSurvey page
@@ -55,7 +54,6 @@ $(function() {
     $checkinPopup.hide();
     $lockPage.hide();
     $waitingPage.hide();
-    $loginPage.hide();
     $chatPage.hide();
     $holdingPage.hide();
     $preSurvey.hide();
@@ -132,7 +130,6 @@ $(function() {
     // $usernameInput.innerHTML = username;
     hideAll();
     $holdingPage.show();
-    // $loginPage.off('click');
     socket.emit('add user');
     socket.emit('execute experiment')
   }
@@ -338,11 +335,6 @@ $(function() {
   });
 
   // Click events
-  // Focus input when clicking anywhere on login page
-  $loginPage.click(function () {
-    $currentInput.focus();
-  });
-
   // Focus input when clicking on the message input's border
   $inputMessage.click(function () {
     $inputMessage.focus();
