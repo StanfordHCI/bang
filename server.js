@@ -176,7 +176,7 @@ const block = {
 db.users.find({}, (err, usersInDB) => {
   if (err) {console.log("Err loading users:" + err)}
   usersInDB.forEach((user) => {
-    let pastUser = users.byID(user.id)
+    let pastUser = users.byID(user.mturk)
     if (pastUser){
       mturk.createWorkerBlock(block, (err, data));
     }
@@ -358,6 +358,7 @@ io.on('connection', (socket) => {
         const newUser = {
           'id': socket.id,
           'mturk': acceptedUser.mturkId,
+          'workerId': acceptedUser.mturkId,
           'assignmentId': acceptedUser.assignmentId,
           'room': '',
           'rooms':[],
@@ -592,7 +593,7 @@ io.on('connection', (socket) => {
   socket.on('accepted HIT', (data) => {
     usersAccepted.push({
       "id": socket.id,
-      "mturkId": data.mturkId,
+      "mturkID": data.mturkId,
       "id": String(socket.id),
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
