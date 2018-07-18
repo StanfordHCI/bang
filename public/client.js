@@ -4,7 +4,6 @@ $(function() {
   const COLORS = ['#e21400', '#91580f', '#f8a700', '#f78b00', '#58dc00', '#287b00', '#a8f07a', '#4ae8c4', '#3b88eb', '#3824aa', '#a700ff', '#d300e7'];
   // Initialize variables
   const $window = $(window);
-  const $usernameInput = $('.usernameInput'); // Input for username
   const $messages = $('.messages'); // Messages area
   const $inputMessage = $('.inputMessage'); // Input message input box
   const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
@@ -97,12 +96,11 @@ $(function() {
   let connected = false;
   let typing = false;
   let lastTypingTime;
-  let $currentInput = $usernameInput.focus();
+  let $currentInput = $inputMessage.focus();
 
   let currentTeam = []
 
   document.title = "Team work";
-  $usernameInput.val('');
 
   // Implements notifications
   let notify = (title, body) => {
@@ -126,8 +124,6 @@ $(function() {
 
   // Sets the client's username
   function setUsername () {
-    // username = cleanInput($usernameInput.val().trim());
-    // $usernameInput.innerHTML = username;
     hideAll();
     $holdingPage.show();
     socket.emit('add user');
