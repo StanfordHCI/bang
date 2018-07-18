@@ -339,6 +339,7 @@ io.on('connection', (socket) => {
         const newUser = {
           'id': socket.id,
           'mturk': acceptedUser.mturkId,
+          'workerId': acceptedUser.mturkId,
           'assignmentId': acceptedUser.assignmentId,
           'room': '',
           'rooms':[],
@@ -572,9 +573,8 @@ io.on('connection', (socket) => {
   socket.on('accepted HIT', (data) => {
     usersAccepted.push({
       "id": socket.id,
-      "mturkID": data.workerId,
+      "mturkID": data.mturkId,
       "id": String(socket.id),
-      "workerId": data.workerId,
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
     });
@@ -604,17 +604,53 @@ io.on('connection', (socket) => {
     });
   });
 
-  // parses results from Midsurvey to proper format for JSON file 
+  // parses results from surveys to proper format for JSON file 
   function parseResults(data) {
-    
-    let SurveyResults = data;
-    let parsedResults = SurveyResults.split('&');
-    console.log("survey", parsedResults)
+    let surveyResults = data;
+    let parsedResults = surveyResults.split('&');
     let arrayLength = parsedResults.length;
     for(var i = 0; i < arrayLength; i++) {
-      parsedResults[i] = parsedResults[i].slice(9, parsedResults[i].indexOf("=")) + '=' + parsedResults[i].slice(parsedResults[i].indexOf("=") + 4);
+      console.log(parsedResults[i]);
+      let result = parsedResults[i].slice(parsedResults[i].indexOf("=") + 1);
+      let resultValue = numberToValue(result);
+      let qIndex = (parsedResults[i].slice(0, parsedResults[i].indexOf("="))).lastIndexOf('q');
+      let questionNumber = (parsedResults[i].slice(0, parsedResults[i].indexOf("="))).slice(qIndex + 1);
+      if(questionNumber == "15") {  // because last question is a binary question
+        resultValue = numberToBinary(result);
+      }
+      parsedResults[i] = questionNumber + '=' + resultValue;
     }
     return parsedResults;
+  }
+
+  // for 1-5 scale questions
+  function numberToValue(value) {
+    switch(value) {
+      case "1":
+        return "strongly disagree";
+        break;
+      case "2":
+        return "disagree";
+        break;
+      case "3":
+        return "neutral";
+        break;
+      case "4":
+        return "agree";
+        break;
+      case "5":
+        return "strongly agree";
+        break;
+    }
+  }
+
+  // for binary questions
+  function numberToBinary(value) {
+    if(value == "1") {
+      return "Yes";
+    } else if(value == "2") {
+      return "No";
+    }
   }
  
    // Task after each round - midSurvey - MAIKA
