@@ -340,7 +340,6 @@ io.on('connection', (socket) => {
         const newUser = {
           'id': socket.id,
           'mturk': acceptedUser.mturkId,
-          'workerId': acceptedUser.mturkId,
           'assignmentId': acceptedUser.assignmentId,
           'room': '',
           'rooms':[],
@@ -575,7 +574,7 @@ io.on('connection', (socket) => {
   socket.on('accepted HIT', (data) => {
     usersAccepted.push({
       "id": socket.id,
-      "mturkID": data.mturkId,
+      "mturkId": data.mturkId,
       "id": String(socket.id),
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
