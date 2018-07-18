@@ -1,14 +1,14 @@
 //Settings - change for actual deployment
 const teamSize = 1
-const roundMinutes = 5
+const roundMinutes = .01
 
 // Toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
-const starterSurveyOn = false
+const starterSurveyOn = false 
 const midSurveyOn = false
-const blacklistOn = false
-const teamfeedbackOn = true
-const checkinOn = true
+const blacklistOn = true
+const teamfeedbackOn = false
+const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
 
 // Question Files
@@ -654,8 +654,11 @@ io.on('connection', (socket) => {
     user.results.blacklistCheck = data //(user.results.manipulation == data) ? true : false
     // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
     console.log(user.name, "submitted blacklist survey:", data);
+    db.blacklist.insert({'userID':socket.id, 'name':user.name, 'midSurvey': user.results.blacklistCheck, 'batch':batchID}, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding blacklist to the DB: ", err);
+      else if(usersAdded) console.log("Blacklist added to the DB");
+    });
 
-    db.blacklist.insert({ id: socket.id }, {$set: {"results.blacklistCheck": user.results.blacklistCheck, 'batch':batchID}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored blacklist: " + user.name) })
   });
 
 });
