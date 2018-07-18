@@ -1,11 +1,11 @@
 //Settings - change for actual deployment
-const teamSize = 2
-const roundMinutes = .15
+const teamSize = 1
+const roundMinutes = 1
 
 // Toggles
-const autocompleteTestOn = 1 //turns on fake team to test autocomplete
-const starterSurveyOn = 1 
-const midSurveyOn = 1
+const autocompleteTestOn = false //turns on fake team to test autocomplete
+const starterSurveyOn = false
+const midSurveyOn = false
 const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
@@ -71,7 +71,7 @@ mturk.getAccountBalance((err, data) => {
 // });
 
 const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
-//const taskURL = 'https://localhost:3000/'; 
+//const taskURL = 'https://localhost:3000/';
 
 // HIT Parameters
 const taskDuration = 60; // how many minutes?
@@ -156,7 +156,7 @@ const Datastore = require('nedb'),
     db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
     db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true});
     db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true});
-    db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results 
+    db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
 
 // Setting up variables
@@ -245,7 +245,7 @@ app.use(express.static('public'));
 //app.use('/waiting', express.static('waiting'))
 
 // Adds Batch data for this experiment. unique batchID based on time/date
-db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn, 
+db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn,
         'teamfeedbackOn': teamfeedbackOn, 'checkinOn': checkinOn, 'conditions': conditions, 'experimentRound': experimentRound,
         'numRounds': numRounds, 'teamSize': teamSize}, (err, usersAdded) => {
     if(err) console.log("There's a problem adding batch to the DB: ", err);
@@ -591,7 +591,7 @@ io.on('connection', (socket) => {
       io.sockets.emit('update number waiting', {num: numWaiting});
     }
   });
-  
+
   // Starter task
    socket.on('starterSurveySubmit', (data) => {
     let user = users.byID(socket.id)
@@ -605,7 +605,7 @@ io.on('connection', (socket) => {
     });
   });
 
-  // parses results from surveys to proper format for JSON file 
+  // parses results from surveys to proper format for JSON file
   function parseResults(data) {
     let surveyResults = data;
     let parsedResults = surveyResults.split('&');
@@ -624,7 +624,7 @@ io.on('connection', (socket) => {
     return parsedResults;
   }
 
-  // for 1-5 scale questions based on: 
+  // for 1-5 scale questions based on:
   // Answer Option Sets - around line 22
   // const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
   function numberToValue(value) {
@@ -637,7 +637,7 @@ io.on('connection', (socket) => {
   function numberToBinary(value) {
     return binaryAnswers[parseInt(value) - 1];  // index 0
   }
- 
+
    // Task after each round - midSurvey - MAIKA
    socket.on('midSurveySubmit', (data) => {
     let user = users.byID(socket.id)
@@ -726,10 +726,10 @@ function loadQuestions(questionFile, answerObj) { // may want to change the way 
       questionObj['question'] = line.substr(0, line.length-1);
       questionObj['answers'] = binaryAnswers;
     } else {
-      questionObj['question'] = line; 
+      questionObj['question'] = line;
       questionObj['answers'] = answerObj.answers;
     }
-  
+
     questionObj['correctAnswer'] = answerObj.correctAnswer;
     questionObj['answerType'] = answerObj.answerType;
     questions.push(questionObj)
