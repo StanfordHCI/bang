@@ -13,8 +13,8 @@ const teamChecker = (roundTeams) => {
 }
 
 const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")
-const randomAnimal = 'Bison Eagle Pony Cow Deer Duck Rabbit Spider Wolf Lion Snake Shark Bird Bear Fish Horse Cat Dog'.split(" ")
-const randomAdjective = 'new small young little likely nice cultured snappy spry conventional'.split(" ")
+const randomAnimal = 'Maika Phoebe Nik Mark Alex Allie RabBit RabBit'.split(" ")
+const randomAdjective = 'new smol yung little nice cultured snappy spry conventional'.split(" ")
 let nameCount = 2
 
 const createTeams = (teamSize, numRounds, people) => {
