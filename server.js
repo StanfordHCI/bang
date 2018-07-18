@@ -449,6 +449,7 @@ io.on('connection', (socket) => {
           io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
       }
       else if (task_list[currentActivity] == "blacklistSurvey") {
+        io.in(user.id).emit('load blacklist', loadQuestions(blacklistFile, {answers: getTeamMembers(user), answerType: 'radio', correctAnswer:''}));
         io.in(socket.id).emit('blacklistSurvey')
       }
       else if (task_list[currentActivity] == "finished" || currentActivity > task_list.lenght) {
@@ -647,10 +648,6 @@ io.on('connection', (socket) => {
     user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
     console.log(user.name, "submitted survey:", user.results.manipulationCheck);
     db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-
-    let survey = postSurveyGenerator(user);
-    io.in(user.id).emit('load blacklist', loadQuestions(blacklistFile, {answers: getTeamMembers(user), answerType: 'radio', correctAnswer:''}));
-    io.in(socket.id).emit('blacklistSurvey');
   })
 
   socket.on('blacklistSurveySubmit', (data) => {
