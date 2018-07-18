@@ -91,7 +91,7 @@ const params = {
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
   Keywords: 'ads, writing, copy editing, advertising',
   MaxAssignments: numAssignments,
-  QualificationRequirements: [
+  QualificationRequirements: [{
     QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
     Comparator: 'GreaterThan',
     IntegerValues: [1000],
