@@ -130,8 +130,8 @@ ul {
 .log {
   color: gray;
   font-size: 70%;
-  margin: 20px 5px;
-  text-align: left;
+  margin: 5px;
+  text-align: center;
 }
 
 /* Messages */
@@ -170,93 +170,7 @@ ul {
   top: 0;
 }
 
-.wrap {
-  display: table-cell;
-  vertical-align: middle;
-}
-.wrap .RadioBtnsWrap {
-  display: inline-block;
-  position: relative;
-  width: 140px;
-}
-.wrap .RadioBtnsWrap label {
-  display: inline-block;
-  position: relative;
-  margin-left: 40px;
-  text-align: left;
-  height: 40px;
-  line-height: 40px;
-  min-width: 200px;
-  font-size: 16px;
-}
-.wrap .RadioBtnsWrap label:not(:nth-of-type(1)) {
-  margin-top: 17px;
-}
-.wrap .rbcheckin{
-  -webkit-appearance: none;
-  height: 0;
-  width: 0;
-  opacity: 0;
-  margin: 0;
-  padding: 0;
-  outline: 0;
-  border: none;
-}
-.wrap .RadioBtnsWrap label::after {
-  content: 'x';
-  color: transparent;
-  position: absolute;
-  left: -44px;
-  top: 0;
-  bottom: 0;
-  margin: auto;
-  width: 10px;
-  height: 10px;
-  background-color: #FFFFFF;
-  display: inline-block;
-  border-bottom-left-radius: 40px;
-  border-bottom-right-radius: 40px;
-  border-top-left-radius: 40px;
-  border-top-right-radius: 40px;
-  border-color: #79C5FF;
-  border-style: solid;
-  border-width: 8px;
-  transition: background-color 0.6s, border-width 0.4s, width 0.6s, height 0.6s, left 0.6s;
-  -webkit-transition: background-color 0.6s, border-width 0.4s, width 0.6s, height 0.6s, left 0.6s;
-  -webkit-box-shadow: 0px 2px 3px -1px rgba(0, 0, 0, 0.75);
-  box-shadow: 0px 2px 3px -1px rgba(0, 0, 0, 0.75);
-}
-.wrap .rbcheckin:checked + label::after {
-  background-color: #c5416e;
-  width: 20px;
-  height: 20px;
-  left: -47px;
-  border-width: 6px;
-  -webkit-box-shadow: 0px 2px 3px -1px rgba(0, 0, 0, 0.75), inset 0px 0px 5px 1px rgba(0, 0, 0, 0.75);
-  box-shadow: 0px 2px 3px -1px rgba(0, 0, 0, 0.75), inset 0px 0px 5px 1px rgba(0, 0, 0, 0.75);
-}
-.wrap .RadioBtnsWrap label:not(:nth-of-type(1))::before {
-  content: '';
-  position: absolute;
-  left: -35px;
-  height: 57px;
-  width: 8px;
-  display: inline-block;
-  background-color: #79C5FF;
-  -webkit-box-shadow: 1px 4px 2px 1px rgba(0, 0, 0, 0.25);
-  box-shadow: 1px 4px 2px 1px rgba(0, 0, 0, 0.25);
-}
-.wrap .RadioBtnsWrap label::before {
-  bottom: 28px;
-}
-.wrap .rbcheckin:checked + label + input + label::before {
-  height: 52px;
-  transition: height .0s linear .3s;
-  -webkit-transition: height .0s linear .3s;
-}
-
-
-
+/* Survey Question buttons */
 .rb {
   padding: 16px 0;
   text-align: center;
@@ -276,7 +190,6 @@ ul {
 .rb-tab {
   display: inline-block;
   position: relative;
-  padding: 1%;
   float: left;
   min-width: 100px
 }
@@ -286,7 +199,7 @@ ul {
   width: 25px;
   height: 25px;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -25%);
   background: transparent;
   border: 2px solid rgba(255,255,255,.3);
   border-radius: 100%;
@@ -322,7 +235,7 @@ input[type='radio']:checked~label, input[type='checkbox']:checked~label {
   position: relative;
   display: inherit;
   font-size:.8em;
-  min-width: 30px;
+  transform: translate(0, 25%);
 }
 
 input[type="radio"], input[type="checkbox"] {
