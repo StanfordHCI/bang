@@ -80,6 +80,7 @@ const numPosts = (2 * taskDuration) / timeActive; // How many times do you want 
 const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
 const rewardPrice = (hourlyWage * (taskDuration / 60)); // BUG - make this a string? Reward must be a string
 let usersAcceptedHIT = 0;
+let numAssignments = teamSize * teamSize;
 
 const params = {
   Title: 'Write online ads by chat/text with group',
@@ -89,7 +90,7 @@ const params = {
   Reward: '10.50',
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
   Keywords: 'ads, writing, copy editing, advertising',
-  MaxAssignments: teamSize * teamSize,
+  MaxAssignments: numAssignments,
   QualificationRequirements: [
     // QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
     // Comparator: 'GreaterThan',
@@ -117,6 +118,7 @@ let delay = 1;
 // only continues to post if not enough people accepted HIT
 setTimeout(() => {
   if(usersAcceptedHIT < (teamSize * teamSize)) {
+    numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
     mturk.createHIT(params,(err, data) => {
       if (err) console.log(err, err.stack);
       else     console.log("Another HIT posted");
