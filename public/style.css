@@ -55,7 +55,7 @@ ul {
 }
 
 .login.page .form {
-  padding: 100px 150px 100px 150px;
+  padding: 100px 10% 100px 10%;
   position: absolute;
   text-align: center;
   background-color: #292942;
@@ -79,12 +79,11 @@ ul {
 
 .login.page .form .teamfeedbackInput {
   background-color: transparent;
-  border: none;
-  border-bottom: 2px solid #fff;
+  border: 2px solid #fff;
   outline: none;
   padding-bottom: 15px;
-  text-align: center;
-  width: 800px;
+  text-align: left;
+  width: 60%;
   color: white;
   font-size:15pt;
 }
@@ -269,7 +268,6 @@ ul {
   justify-content: space-between;
   margin: auto;
   width: max-content;
-  height: 70px;
   padding: 16px;
   background: rgba(255,255,255,.03);
   border-radius: .3em;
@@ -278,7 +276,7 @@ ul {
 .rb-tab {
   display: inline-block;
   position: relative;
-  margin: 10px;
+  padding: 1%;
   float: left;
   min-width: 100px
 }
@@ -380,8 +378,7 @@ button:hover {
 
 .popup {
   display: none;
-  width: 50%;
-  height: 40%;
+  height: max-content;
   position: absolute;
   z-index: 999;
   background-color: #F5F5F5;
@@ -392,7 +389,7 @@ button:hover {
   border-style: solid;
   border-width: 2px;
   border-radius: 0.5rem;
-    padding: 1rem 1.5rem;
+  padding: 1rem 1.5rem;
 
 }
 
@@ -431,20 +428,6 @@ button:hover {
   right: 0;
   width: 100%;
 }
-
-/* midSurvey */
-
-#midSurvey .form {
-  overflow: visible;
-  position: relative;
-  color:white;
-}
-
-/*.survey-questions {
-  margin-left: 150px;
-  margin-right: 150px;
-}*/
-
 
 .ui-autocomplete .ui-menu-item{
   background-color: #eee;
