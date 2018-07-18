@@ -2,6 +2,27 @@
 const teamSize = 1
 const roundMinutes = .01
 
+// Toggles
+const autocompleteTestOn = false //turns on fake team to test autocomplete
+const starterSurveyOn = true
+const midSurveyOn = false
+const blacklistOn = false
+const teamfeedbackOn = false
+const checkinOn = false
+const checkinIntervalMinutes = roundMinutes/30
+
+// Question Files
+const midsurveyQuestionFile = "midsurvey-q.txt"
+const checkinQuestionFile = "checkin-q.txt"
+const blacklistFile = "blacklist-q.txt"
+const feedbackFile = "feedback-q.txt"
+const starterSurveyFile = "startersurvey-q.txt"
+const fs = require('fs')
+
+// Answer Option Sets
+const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
+const binaryAnswers =['Yes', 'No']
+
 // MTurk AWS
 const AWS = require('aws-sdk');
 require('express')().listen(); //Sets to only relaunch with source changes
@@ -111,15 +132,7 @@ mturk.createHIT(params,(err, data) => {
 //   }
 // }
 
-// Settup toggles
-const autocompleteTestOn = false //turns on fake team to test autocomplete
 
-const starterSurveyOn = 1
-const midSurveyOn = 0
-const blacklistOn = 0
-const teamfeedbackOn = 0
-const checkinOn = false
-const checkinIntervalMinutes = roundMinutes/30
 
 
 // Setup basic express server
@@ -138,17 +151,6 @@ Array.prototype.set = function() {
   this.forEach(element => { if (!setArray.includes(element)) { setArray.push(element) } })
   return setArray
 };
-
-const fs = require('fs')
-const midsurveyQuestionFile = "midsurvey-q.txt";
-const checkinQuestionFile = "checkin-q.txt";
-const blacklistFile = "blacklist-q.txt"
-const feedbackFile = "feedback-q.txt"
-const starterSurveyFile = "startersurvey-q.txt"
-const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
-const binaryAnswers =['Yes', 'No']
-
-
 
 // Setting up DB
 const Datastore = require('nedb'),
