@@ -4,6 +4,7 @@ $(function() {
   const COLORS = ['#e21400', '#91580f', '#f8a700', '#f78b00', '#58dc00', '#287b00', '#a8f07a', '#4ae8c4', '#3b88eb', '#3824aa', '#a700ff', '#d300e7'];
   // Initialize variables
   const $window = $(window);
+  const $usernameInput = $('.usernameInput'); // Input for username
   const $messages = $('.messages'); // Messages area
   const $inputMessage = $('.inputMessage'); // Input message input box
   const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
@@ -96,11 +97,12 @@ $(function() {
   let connected = false;
   let typing = false;
   let lastTypingTime;
-  let $currentInput = $inputMessage.focus();
+  let $currentInput = $usernameInput.focus();
 
   let currentTeam = []
 
   document.title = "Team work";
+  $usernameInput.val('');
 
   // Implements notifications
   let notify = (title, body) => {
@@ -124,6 +126,8 @@ $(function() {
 
   // Sets the client's username
   function setUsername () {
+    // username = cleanInput($usernameInput.val().trim());
+    // $usernameInput.innerHTML = username;
     hideAll();
     $holdingPage.show();
     socket.emit('add user');
@@ -477,6 +481,7 @@ $(function() {
   });
 
   socket.on('go', data => {
+    document.getElementById("inputMessage").value = '' //clear chat in new round
     hideAll();
     $chatPage.show();
     $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
@@ -487,11 +492,13 @@ $(function() {
     log("You will have <strong>10 minutes</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
     log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
     $currentInput = $inputMessage.focus();
+    
     notify("Session ready", "Come back and join in!")
 
     //Set up team autocomplete
     currentTeam = data.team
     $currentInput = $inputMessage.focus();
+    
     $inputMessage.autocomplete( "option", "source", (request, response) => {
       let currentTerm = request.term.split(" ").pop()
       if (currentTerm.length < 2){
