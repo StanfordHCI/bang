@@ -70,8 +70,8 @@ mturk.getAccountBalance((err, data) => {
 //   else     console.log(data);
 // });
 
-//const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
-const taskURL = 'https://localhost:3000/'; 
+const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
+//const taskURL = 'https://localhost:3000/'; 
 
 // HIT Parameters
 const taskDuration = 60; // how many minutes?
