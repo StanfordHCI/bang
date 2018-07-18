@@ -46,7 +46,7 @@ if (live){
 // const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 
 // Uncomment this line to use in production
-const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
+//const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
 
 // This initiates the API
 // Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
