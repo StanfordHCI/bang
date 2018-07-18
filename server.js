@@ -1,11 +1,11 @@
 //Settings - change for actual deployment
-const teamSize = 1
-const roundMinutes = .1
+const teamSize = 2
+const roundMinutes = 5
 
 // Toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
-const starterSurveyOn = false 
-const midSurveyOn = false
+const starterSurveyOn = 0
+const midSurveyOn = 1
 const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
@@ -606,8 +606,10 @@ io.on('connection', (socket) => {
 
   // parses results from Midsurvey to proper format for JSON file 
   function parseResults(data) {
-    let midSurveyResults = data;
-    let parsedResults = midSurveyResults.split('&');
+    
+    let SurveyResults = data;
+    let parsedResults = SurveyResults.split('&');
+    console.log("survey", parsedResults)
     let arrayLength = parsedResults.length;
     for(var i = 0; i < arrayLength; i++) {
       parsedResults[i] = parsedResults[i].slice(9, parsedResults[i].indexOf("=")) + '=' + parsedResults[i].slice(parsedResults[i].indexOf("=") + 4);
