@@ -178,7 +178,8 @@ ul {
   display: inline-block;
   position: relative;
   float: left;
-  min-width: 100px
+  min-width: 100px;
+  margin: 5px;
 }
 
 .rb-spot {
