@@ -1,14 +1,14 @@
 //Settings - change for actual deployment
 const teamSize = 1
-const roundMinutes = .01
+const roundMinutes = 5
 
 // Toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
-const starterSurveyOn = true
+const starterSurveyOn = false
 const midSurveyOn = false
 const blacklistOn = false
-const teamfeedbackOn = false
-const checkinOn = false
+const teamfeedbackOn = true
+const checkinOn = true
 const checkinIntervalMinutes = roundMinutes/30
 
 // Question Files
@@ -695,7 +695,7 @@ function loadQuestions(questionFile, answerObj) { // may want to change the way 
     i++;
     questionObj['name'] = prefix + i;
 
-    if(line.charAt(line.length-1) === "2") {
+    if(line.charAt(line.length-1) === "2") {// if question has binary tag, use binary answers
       questionObj['question'] = line.substr(0, line.length-1);
       questionObj['answers'] = binaryAnswers;
     } else {
