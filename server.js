@@ -1,5 +1,5 @@
 //Settings - change for actual deployment
-const teamSize = 1
+const teamSize = 2
 const roundMinutes = .15
 
 // Toggles
@@ -83,7 +83,7 @@ let usersAcceptedHIT = 0;
 let numAssignments = teamSize * teamSize;
 
 const params = {
-  Title: 'Write online ads by chat/text with group',
+  Title: 'Write online ads by chat/text with group!',
   Description: 'You will work in a small group in a text/chat environment to write ads for new products. Approximately one hour in length, hourly pay. If you have already completed this task, do not attempt again.',
   AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
   LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
