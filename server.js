@@ -578,7 +578,6 @@ io.on('connection', (socket) => {
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
     });
-    tempArray.push(socket.id);
     console.log(data.turkSubmitTo);
     console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
     // if enough people have accepted, push prompt to start task
