@@ -1,5 +1,5 @@
 //Settings - change for actual deployment
-const teamSize = 2
+const teamSize = 1
 const roundMinutes = .15
 
 // Toggles
@@ -624,34 +624,18 @@ io.on('connection', (socket) => {
     return parsedResults;
   }
 
-  // for 1-5 scale questions
+  // for 1-5 scale questions based on: 
+  // Answer Option Sets - around line 22
+  // const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
   function numberToValue(value) {
-    switch(value) {
-      case "1":
-        return "strongly disagree";
-        break;
-      case "2":
-        return "disagree";
-        break;
-      case "3":
-        return "neutral";
-        break;
-      case "4":
-        return "agree";
-        break;
-      case "5":
-        return "strongly agree";
-        break;
-    }
+    return answers[parseInt(value) - 1];  // index 0
   }
 
   // for binary questions
+  // Answer Option Sets - around line 22
+  // const binaryAnswers = ['Yes', 'No']
   function numberToBinary(value) {
-    if(value == "1") {
-      return "Yes";
-    } else if(value == "2") {
-      return "No";
-    }
+    return binaryAnswers[parseInt(value) - 1];  // index 0
   }
  
    // Task after each round - midSurvey - MAIKA
