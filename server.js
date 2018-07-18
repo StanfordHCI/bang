@@ -207,10 +207,10 @@ if (teamfeedbackOn) {
 }
 task_loop = replicate(task_loop, numRounds)
 task_list= task_list.concat(task_loop)
-task_list.push("postSurvey")
 if (blacklistOn) {
   task_list.push("blacklistSurvey")
 }
+task_list.push("postSurvey")
 task_list.push("finished")
 console.log(task_list)
 
@@ -440,6 +440,10 @@ io.on('connection', (socket) => {
         io.in(user.id).emit('load feedback', loadQuestions(feedbackFile, {answers:answers, answerType: 'radio', correctAnswer:''}))
         io.in(socket.id).emit('teamfeedbackSurvey')
       }
+      else if (task_list[currentActivity] == "blacklistSurvey") {
+        io.in(user.id).emit('load blacklist', loadQuestions(blacklistFile, {answers: getTeamMembers(user), answerType: 'radio', correctAnswer:''}));
+        io.in(socket.id).emit('blacklistSurvey')
+      }
       else if (task_list[currentActivity] == "postSurvey") { //Launch post survey
           user.ready = false
           let survey = postSurveyGenerator(user)
@@ -447,10 +451,6 @@ io.on('connection', (socket) => {
           io.in(user.id).emit('load postsurvey', {survey})
           db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
           io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
-      }
-      else if (task_list[currentActivity] == "blacklistSurvey") {
-        io.in(user.id).emit('load blacklist', loadQuestions(blacklistFile, {answers: getTeamMembers(user), answerType: 'radio', correctAnswer:''}));
-        io.in(socket.id).emit('blacklistSurvey')
       }
       else if (task_list[currentActivity] == "finished" || currentActivity > task_list.lenght) {
         console.log(usersAccepted)
