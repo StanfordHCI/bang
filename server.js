@@ -23,6 +23,44 @@ const fs = require('fs')
 const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
 const binaryAnswers =['Yes', 'No']
 
+// Setup basic express server
+let tools = require('./tools');
+let express = require('express');
+const app = express();
+const server = require('http').createServer(app);
+const io = require('socket.io')(server);
+const port = process.env.PORT || 3000;
+server.listen(port, () => { console.log('Server listening at port %d', port); });
+
+Array.prototype.pick = function() { return this[Math.floor(Math.random() * this.length)] };
+Array.prototype.byID = function(id) { return this.find(user => user.id === id) };
+Array.prototype.set = function() {
+  const setArray = []
+  this.forEach(element => { if (!setArray.includes(element)) { setArray.push(element) } })
+  return setArray
+};
+
+// Setting up variables
+const currentCondition = "treatment"
+let treatmentNow = false
+
+const conditionSet = [{"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]},
+                      {"control": [2,1,1], "treatment": [2,1,1], "baseline": [1,2,3]},
+                      {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
+
+const experimentRoundIndicator = 1
+const conditions = conditionSet[0] // or conditionSet.pick() for ramdomized orderings.
+const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
+const numRounds = conditions.baseline.length
+
+const numberOfRooms = teamSize * numRounds
+const rooms = tools.letters.slice(0,numberOfRooms)
+const people = tools.letters.slice(0,teamSize ** 2)
+const population = people.length
+const teams = tools.createTeams(teamSize,numRounds,people)
+
+const batchID = Date.now();
+
 // MTurk AWS
 const AWS = require('aws-sdk');
 require('express')().listen(); //Sets to only relaunch with source changes
@@ -43,7 +81,7 @@ if (live){
   // const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 }
 
-// const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
+ const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 
 // Uncomment this line to use in production
 //const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
@@ -84,7 +122,7 @@ let numAssignments = teamSize * teamSize;
 
 const params = {
   Title: 'Write online ads by chat/text with group',
-  Description: 'You will work in a small group in a text/chat environment to write ads for new products. Approximately one hour in length, hourly pay. If you have already completed this task, do not attempt again.',
+  Description: 'You will work in a small group in a text/chat environment to write ads for new products. This task will take approximately ' + ((roundMinutes * numRounds) + 10)  + ' minutes in length, hourly pay. If you have already completed this task, do not attempt again.',
   AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
   LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
   Reward: '6.00',
@@ -114,37 +152,21 @@ mturk.createHIT(params,(err, data) => {
   else     console.log("Fist HITS posted");
 });
 
-// let delay = 1;
-// // only continues to post if not enough people accepted HIT
-// setTimeout(() => {
-//   if(usersAcceptedHIT < (teamSize * teamSize)) {
-//     numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
-//     mturk.createHIT(params,(err, data) => {
-//       if (err) console.log(err, err.stack);
-//       else     console.log("Another HIT posted");
-//     });
-//     i++;
-//   } else {
-//     clearTimeout();
-//   }
-// }, 1000 * 60 * timeActive * delay)
-
-// Setup basic express server
-let tools = require('./tools');
-let express = require('express');
-const app = express();
-const server = require('http').createServer(app);
-const io = require('socket.io')(server);
-const port = process.env.PORT || 3000;
-server.listen(port, () => { console.log('Server listening at port %d', port); });
-
-Array.prototype.pick = function() { return this[Math.floor(Math.random() * this.length)] };
-Array.prototype.byID = function(id) { return this.find(user => user.id === id) };
-Array.prototype.set = function() {
-  const setArray = []
-  this.forEach(element => { if (!setArray.includes(element)) { setArray.push(element) } })
-  return setArray
-};
+let delay = 1;
+// only continues to post if not enough people accepted HIT
+setTimeout(() => {
+  usersAcceptedHIT = usersAccepted.length;
+  if(usersAcceptedHIT < (teamSize * teamSize)) {
+    numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
+    mturk.createHIT(params,(err, data) => {
+      if (err) console.log(err, err.stack);
+      else     console.log("Another HIT posted");
+    });
+    i++;
+  } else {
+    clearTimeout();
+  }
+}, 1000 * 60 * timeActive * delay)
 
 // Setting up DB
 const Datastore = require('nedb'),
@@ -158,27 +180,6 @@ const Datastore = require('nedb'),
     db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true});
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
-
-// Setting up variables
-const currentCondition = "treatment"
-let treatmentNow = false
-
-const conditionSet = [{"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]},
-                      {"control": [2,1,1], "treatment": [2,1,1], "baseline": [1,2,3]},
-                      {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
-
-const experimentRoundIndicator = 1
-const conditions = conditionSet[0] // or conditionSet.pick() for ramdomized orderings.
-const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
-const numRounds = conditions.baseline.length
-
-const numberOfRooms = teamSize * numRounds
-const rooms = tools.letters.slice(0,numberOfRooms)
-const people = tools.letters.slice(0,teamSize ** 2)
-const population = people.length
-const teams = tools.createTeams(teamSize,numRounds,people)
-
-const batchID = Date.now();
 
 //Add more products
 let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
