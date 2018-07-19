@@ -1,6 +1,6 @@
 //Settings - change for actual deployment
 const teamSize = 1
-const roundMinutes = .5
+const roundMinutes = 0.01
 
 // Toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
@@ -162,26 +162,31 @@ const params = {
 // creates single HIT
 mturk.createHIT(params,(err, data) => {
   if (err) console.log(err, err.stack);
-  else     console.log("Fist HITS posted");
+  else     console.log("First HIT posted");
 });
 
-// blocks all previous users - or all the users stored in the DB
-let pastUser = '';
+// Blocks users who have already worked with us
+// db.users.find({}, (err, usersInDB) => {
+//   if (err) {console.log("Err loading users:" + err)}
+//   usersInDB.forEach((user) => {
+//     let pastUser = user.mturkId;
+//     if (pastUser){
+//       console.log("Blocking", pastUser);
 
-const block = {
-  WokerId: pastUser,
-  Reason: 'This worker has already completed this task'
-}
+//       //Block user
+//       mturk.createWorkerBlock({ WorkerId: pastUser, Reason: 'Bang' }, (err, data) => { console.log( err ? "Blocking error: " + err : data) });
 
-db.users.find({}, (err, usersInDB) => {
-  if (err) {console.log("Err loading users:" + err)}
-  usersInDB.forEach((user) => {
-    let pastUser = users.byID(user.mturk)
-    if (pastUser){
-      mturk.createWorkerBlock(block, (err, data));
-    }
-  })
-})
+//       //Unblock user
+//       // mturk.deleteWorkerBlock({ WorkerId: pastUser, Reason: 'Bang' }, (err, data) => { console.log( err ? "Unblocking error: " + err : data) });
+//     }
+//   })
+// })
+
+// A quick way to check who we've blocked
+// mturk.listWorkerBlocks({},(err,data) => {
+//   if (err) {console.log("Blocking error:", err)}
+//   console.log("Users currently blocked:", data.WorkerBlocks.filter((user) => user.Reason == "Bang").map((user) => {return user.WorkerId}))
+// })
 
 let delay = 1;
 // only continues to post if not enough people accepted HIT
@@ -192,8 +197,8 @@ setTimeout(() => {
     mturk.createHIT(params,(err, data) => {
       if (err) console.log(err, err.stack);
       else     console.log("Another HIT posted");
-    });
-    i++;
+    }); 
+    delay++;
   } else {
     clearTimeout();
   }
@@ -357,8 +362,7 @@ io.on('connection', (socket) => {
         // Add user to graph and add others as friends
         const newUser = {
           'id': socket.id,
-          'mturk': acceptedUser.mturkId,
-          'workerId': acceptedUser.mturkId,
+          'mturkId': acceptedUser.mturkId,
           'assignmentId': acceptedUser.assignmentId,
           'room': '',
           'rooms':[],
@@ -531,9 +535,9 @@ io.on('connection', (socket) => {
         if (autocompleteTestOn) {
           let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
           console.log(teamNames)
-          io.in(user.id).emit('go', {task: taskText, team: teamNames })
+          io.in(user.id).emit('go', {task: taskText, team: teamNames, duration: roundMinutes })
         } else {
-          io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }) })
+          io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
         }
       })
 
@@ -593,7 +597,7 @@ io.on('connection', (socket) => {
   socket.on('accepted HIT', (data) => {
     usersAccepted.push({
       "id": socket.id,
-      "mturkID": data.mturkId,
+      "mturkId": data.mturkId,
       "id": String(socket.id),
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId

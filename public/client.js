@@ -474,25 +474,67 @@ $(function() {
     $chatPage.show();
     $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
 
-
     log(data.task);
     log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
-    log("You will have <strong>10 minutes</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
-    log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
-    $currentInput = $inputMessage.focus();
 
+    let durationString = ""
+    if (data.duration < 1) { durationString = Math.round(data.duration * 60) + " seconds"
+    } else if (data.duration == 1) { durationString = "one minute"
+    } else { durationString = data.duration + " minutes" }
+
+    log("You will have <strong>" + durationString + "</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
+    log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
+
+    $currentInput = $inputMessage.focus();
+    
     notify("Session ready", "Come back and join in!")
 
     //Set up team autocomplete
     currentTeam = data.team
     $currentInput = $inputMessage.focus();
-    $inputMessage.autocomplete( "option", "source", (request, response) => {
-      let currentTerm = request.term.split(" ").pop()
-      if (currentTerm.length < 2){
-        response("")
-        return
-      }
-      response($.ui.autocomplete.filter(currentTeam, currentTerm));
+
+    // Do I spawn a ton of keypress watchers after each go
+    $inputMessage.keydown(function (event) {
+      $inputMessage.autocomplete( "option", "source", (request, response) => {
+        let terms_typed = request.term.split(" ");
+        let currentTerm = terms_typed.pop()
+        let wordlength = currentTerm.length;
+
+        // console.log("request", request)
+        // console.log("currentTerm", currentTerm)
+        // console.log("currentTeam", currentTeam)
+        // console.log("wordlength", wordlength)
+
+        if (wordlength < 2){
+          response("")
+          return
+        }
+        else if (wordlength <= 5) {
+          let matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
+          response($.grep( currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); }))
+        }
+        else if (5 < wordlength) {
+          matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
+          matches = $.grep( currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); })
+            if (matches.length === 1 && matches[0] !== undefined
+              && event.keyCode !== 8 //do not autocomplete if client backspace-d
+              && event.keyCode !== $.ui.keyCode.SPACE) {
+              $inputMessage.autocomplete("close")
+              current_text = $("#inputMessage").val().split(" ");
+              current_text.splice(-1, 1)
+              let joined_text = current_text.join(" ");
+              $("#inputMessage").val(joined_text + " " + matches[0]);
+              // console.log($("#inputMessage").val().split(" ").splice(-1, 1))
+              // console.log("current_text", current_text)
+              // console.log("matches", matches)
+              // console.log("wordlength now", wordlength)
+              response("");
+              return;
+            };
+        }
+    });
+
+
     });
   });
 
