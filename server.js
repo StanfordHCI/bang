@@ -1,5 +1,5 @@
 //Settings - change for actual deployment
-const teamSize = 1
+const teamSize = 2
 const roundMinutes = 5
 
 // Toggles
@@ -612,7 +612,13 @@ io.on('connection', (socket) => {
     });
     console.log(data.turkSubmitTo);
     console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
-    console.log(Object.keys(io.sockets.sockets));
+    console.log("Sockets active: " + Object.keys(io.sockets.sockets));
+    // Disconnect leftover users
+    io.sockets.sockets.forEach(socketID => {
+      if (usersAccepted.every(acceptedUser => {acceptedUser.id != socketID})) {
+        io.sockets.connected[socketId].disconnect();
+      }
+    });
     // if enough people have accepted, push prompt to start task
     if(usersAccepted.length >= teamSize ** 2) {
       let numWaiting = 0;
