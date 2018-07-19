@@ -1,12 +1,12 @@
 //Settings - change for actual deployment
 const teamSize = 1
-const roundMinutes = 10
+const roundMinutes = .5
 
 // Toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
-const starterSurveyOn = true
-const midSurveyOn = true
-const blacklistOn = true
+const starterSurveyOn = false
+const midSurveyOn = false
+const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
@@ -129,7 +129,7 @@ const taskDuration = 60; // how many minutes - this is a Maximum for the task
 const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
 const numPosts = (2 * taskDuration) / timeActive; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
 const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
-const rewardPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60)).toString();
+const rewardPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60)).toFixed();
 let usersAcceptedHIT = 0;
 let numAssignments = teamSize * teamSize;
 
