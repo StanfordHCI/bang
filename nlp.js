@@ -14,17 +14,37 @@ const tone_analyzer = new ToneAnalyzer({
   password: 'N3WpdlogdyOP',
   version_date: '2017-09-21'
 });
-
+//TODO: make it handle empty line at end of file
 const chatlogFile = '.data/chats'// should change this to access copy of db chats?
 let chatlogArr =[]
 fs.readFileSync(chatlogFile).toString().split('\n').forEach(function (line) {
   chatlogArr.push(JSON.parse(line));
 })
 
-let chatlogText = chatlogArr.map(function(chatObj){
+let map = new Map();
+for(let i = 0; i < chatlogArr.length; i++) {
+  let chatObj = chatlogArr[i];
+  let logIdObj = {'batch':chatObj.batch, 'round':chatObj.round, 'room':chatObj.room};
+  if(!map.has(logIdObj)) {
+    map.set(logIdObj, [chatObj.message]);
+  } else {
+    console.log('map has key')
+    map.set(logIdObj, map.get(logIdObj).push(chatObj.message));
+  }
+}
+console.log(map)
+
+for (var entry of map.entries()) {
+  //console.log(entry)
+  let chatlogText = entry.value.map(function(chatObj){
     return chatObj.message;
   }).join('\n');
+  getTone(chatlogText);
+}
 
+  
+
+const getTone = (chatlogText) => {
   let params = {
     tone_input: chatlogText,
     content_type: 'text/plain',
@@ -38,7 +58,7 @@ let chatlogText = chatlogArr.map(function(chatObj){
       console.log(JSON.stringify(response, null, 2));//should store this in db tone file
     }
   });
-
+}
 
 // Setting up DB
 // const Datastore = require('nedb'),
