@@ -10,6 +10,9 @@ const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = true
 const checkinIntervalMinutes = roundMinutes/30
+const qualificationsOn = false
+const runningLocal = false
+const runningLive = false//ONLY CHANGE IN VIM ON SERVER
 
 // Question Files
 const midsurveyQuestionFile = "midsurvey-q.txt"
@@ -85,19 +88,12 @@ AWS.config = {
   "sslEnabled": 'true'
 };
 
-const live = false //ONLY CHANGE AFTER TESTING EVERYTHING
-if (live){
-  console.log("RUNNING LIVE");
-  // const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
-} else {
-  console.log("RUNNING SANDBOXED");
-  // const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
+
+let endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
+
+if (runningLive) {
+  endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
 }
-
- const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
-
-// Uncomment this line to use in production
-//const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
 
 // This initiates the API
 // Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
@@ -121,8 +117,15 @@ mturk.getAccountBalance((err, data) => {
 //   else     console.log(data);
 // });
 
-//const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
-const taskURL = 'https://localhost:3000/';
+
+// direct them to server URL
+
+let taskURL = 'https://bang.dmorina.com/';
+if (runningLocal) {
+   taskURL = 'https://localhost:3000/';
+}
+
+
 
 // HIT Parameters
 const taskDuration = 60; // how many minutes - this is a Maximum for the task
@@ -132,6 +135,24 @@ const hourlyWage = 10.50; // changes reward of experiment depending on length - 
 const rewardPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60)).toFixed(2);
 let usersAcceptedHIT = 0;
 let numAssignments = teamSize * teamSize;
+let QualificationReqs = [
+  {
+    QualificationTypeId:"00000000000000000071",  // US workers only
+    LocaleValues:[{
+      Country:"US",
+    }],
+    Comparator:"In",
+    ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
+  }];
+
+if (qualificationsOn) {
+  QualificationReqs.push({
+    QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
+    Comparator: 'GreaterThan',
+    IntegerValues: [1000],
+    RequiredToPreview: true,
+  })
+}
 
 const params = {
   Title: 'Write online ads by chat/text with group...',
@@ -142,20 +163,7 @@ const params = {
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
   Keywords: 'ads, writing, copy editing, advertising',
   MaxAssignments: numAssignments,
-  QualificationRequirements: [{
-    QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
-    Comparator: 'GreaterThan',
-    IntegerValues: [1000],
-    RequiredToPreview: true,
-  },
-  {
-    QualificationTypeId:"00000000000000000071",  // US workers only
-    LocaleValues:[{
-      Country:"US",
-    }],
-    Comparator:"In",
-    ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
-  }],
+  QualificationRequirements: QualificationReqs,
   Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
 };
 
@@ -606,9 +614,9 @@ io.on('connection', (socket) => {
     console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
     // if enough people have accepted, push prompt to start task
     if(usersAccepted.length >= teamSize ** 2) {
-        let numWaiting = 0;
-        io.sockets.emit('update number waiting', {num: 0});
-      io.sockets.emit('enough people');
+      let numWaiting = 0;
+      io.sockets.emit('update number waiting', {num: 0});
+      usersAccepted.forEach(user => {io.in(user.id).emit('enough people')});
     } else {
       let numWaiting = (teamSize ** 2) - usersAccepted.length;
       io.sockets.emit('update number waiting', {num: numWaiting});
