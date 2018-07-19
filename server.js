@@ -612,15 +612,14 @@ io.on('connection', (socket) => {
     });
     console.log(data.turkSubmitTo);
     console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
-    console.log("Sockets active: " + Object.keys(io.sockets.sockets));
     // Disconnect leftover users
     Object.keys(io.sockets.sockets).forEach(socketID => {
-      console.log("testing this socketID: " + socketID);
       if (usersAccepted.every(acceptedUser => {return acceptedUser.id !== socketID})) {
-        console.log("this should be disconnected" + socketID)
+        //TODO: tell user that the HIT has been cancelled.
         io.sockets.connected[socketID].disconnect();
       }
     });
+    console.log("Sockets active: " + Object.keys(io.sockets.sockets));
     // if enough people have accepted, push prompt to start task
     if(usersAccepted.length >= teamSize ** 2) {
       let numWaiting = 0;
