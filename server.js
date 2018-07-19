@@ -23,6 +23,8 @@ const blacklistFile = "blacklist-q.txt"
 const feedbackFile = "feedback-q.txt"
 const starterSurveyFile = "startersurvey-q.txt"
 const fs = require('fs')
+const dotenv = require('dotenv').config()
+
 
 // Answer Option Sets
 const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
@@ -89,6 +91,9 @@ AWS.config = {
   "region": 'us-east-1',
   "sslEnabled": 'true'
 };
+
+console.log("process.env.YOUR_ACCESS_ID", process.env.YOUR_ACCESS_ID)
+console.log("process.env.DB_HOST", process.env.DB_HOST)
 
 let endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 let turkSubmitTo = 'https://workersandbox.mturk.com'
