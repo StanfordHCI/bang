@@ -1,9 +1,9 @@
 //Settings - change for actual deployment
-const teamSize = 2
-const roundMinutes = 0.1
+const teamSize = 1
+const roundMinutes = 0.5
 
 // Toggles
-const autocompleteTestOn = false //turns on fake team to test autocomplete
+const autocompleteTestOn = true //turns on fake team to test autocomplete
 const starterSurveyOn = false
 const midSurveyOn = false
 const blacklistOn = false

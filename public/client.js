@@ -493,17 +493,13 @@ $(function() {
     currentTeam = data.team
     $currentInput = $inputMessage.focus();
 
-    // Do I spawn a ton of keypress watchers after each go
     $inputMessage.keydown(function (event) {
+      console.log("Typing things now!")
       $inputMessage.autocomplete( "option", "source", (request, response) => {
         let terms_typed = request.term.split(" ");
-        let currentTerm = terms_typed.pop()
+        let currentTerm = terms_typed.pop();
         let wordlength = currentTerm.length;
 
-        // console.log("request", request)
-        // console.log("currentTerm", currentTerm)
-        // console.log("currentTeam", currentTeam)
-        // console.log("wordlength", wordlength)
 
         if (wordlength < 2){
           response("")
@@ -514,35 +510,99 @@ $(function() {
           response($.grep( currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); }))
         }
         else if (5 < wordlength) {
-          matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
+          matcher = new RegExp( ".*" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
           matches = $.grep( currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); })
             if (matches.length === 1 && matches[0] !== undefined
-              && event.keyCode !== 8 //do not autocomplete if client backspace-d
-              && event.keyCode !== $.ui.keyCode.SPACE) {
-              $inputMessage.autocomplete("close")
+              && event.keyCode !== 8
+              && event.keyCode !== $.ui.keyCode.SPACE)  { //do not autocomplete if client backspace-d)
               current_text = $("#inputMessage").val().split(" ");
               current_text.splice(-1, 1)
               let joined_text = current_text.join(" ");
               $("#inputMessage").val(joined_text + " " + matches[0]);
-              // console.log($("#inputMessage").val().split(" ").splice(-1, 1))
-              // console.log("current_text", current_text)
-              // console.log("matches", matches)
-              // console.log("wordlength now", wordlength)
-              response("");
-              return;
+              console.log($("#inputMessage").val().split(" ").splice(-1, 1))
+              console.log("current_text", current_text)
+              console.log("matches", matches)
+              console.log("wordlength now", wordlength)
+              // response("");
             };
+          }
+          
+
+          
+      });
+
+      // initiate spell check after space is hit
+      if (event.keyCode === $.ui.keyCode.SPACE) {
+        let terms_typed = $("#inputMessage").val().split(" ");
+        let currentTerm = terms_typed.pop();
+        let fuzzyMatches = [];
+        for (i = 0; i < currentTeam.length; i++) {
+          if (fuzzyMatched(currentTeam[i], currentTerm, 0.7)) {
+            fuzzyMatches.push(currentTeam[i]);
+          }
         }
-    });
-
-
+        // if there is only 1 possible match, correct the user
+        if (fuzzyMatches.length === 1 && fuzzyMatches[0] !== undefined) {
+          current_text = $("#inputMessage").val().split(" ");
+          current_text.splice(-1, 1)
+          let joined_text = current_text.join(" ");
+          $("#inputMessage").val(joined_text + " " + fuzzyMatches[0]);
+        }
+      }
     });
   });
+
+  // fuzzy Match function 
+  function fuzzyMatched (comparer, comparitor, matchCount) {
+    let isMatched = false;
+    a = comparer.trim().toLowerCase();
+    b = comparitor.trim().toLowerCase();
+   
+    if(a.length == 0) return b.length;
+    if(b.length == 0) return a.length;
+    let matrix = [];
+
+    // increment along the first column of each row
+    let i;
+    for(i = 0; i <= b.length; i++){
+        matrix[i] = [i];
+    }
+
+    // increment each column in the first row
+    let j;
+    for(j = 0; j <= a.length; j++){
+        matrix[0][j] = j;
+    }
+    
+
+    // Fill in the rest of the matrix
+    for(i = 1; i <= b.length; i++){
+        for(j = 1; j <= a.length; j++){
+            if(b.charAt(i-1) == a.charAt(j-1)){
+                matrix[i][j] = matrix[i-1][j-1];
+            } else {
+                matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, // substitution
+                                        Math.min(matrix[i][j-1] + 1, // insertion
+                                                matrix[i-1][j] + 1)); // deletion
+            }
+        }
+    }
+
+    let fuzzyDistance = matrix[b.length][a.length];
+    let cLength = Math.max(a.length, b.length);
+    let score = 1.0 - (fuzzyDistance / cLength);
+    if (score > matchCount)
+        isMatched = true;
+
+    return isMatched;
+  }
 
   socket.on('stop', data => {
     // log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
       hideAll();
       $holdingPage.show();
       messagesSafe.innerHTML = '';
+      $inputMessage.unbind("keydown")
       socket.emit('execute experiment')
   });
 
