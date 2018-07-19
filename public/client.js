@@ -486,13 +486,49 @@ $(function() {
     //Set up team autocomplete
     currentTeam = data.team
     $currentInput = $inputMessage.focus();
-    $inputMessage.autocomplete( "option", "source", (request, response) => {
-      let currentTerm = request.term.split(" ").pop()
-      if (currentTerm.length < 2){
-        response("")
-        return
-      }
-      response($.ui.autocomplete.filter(currentTeam, currentTerm));
+
+    // Do I spawn a ton of keypress watchers after each go 
+    $inputMessage.keydown(function (event) {
+      $inputMessage.autocomplete( "option", "source", (request, response) => {
+        let terms_typed = request.term.split(" ");
+        let currentTerm = terms_typed.pop()
+        let wordlength = currentTerm.length;
+
+        // console.log("request", request)
+        // console.log("currentTerm", currentTerm)
+        // console.log("currentTeam", currentTeam)
+        // console.log("wordlength", wordlength)
+
+        if (wordlength < 2){
+          response("")
+          return
+        }
+        else if (wordlength <= 5) {
+          let matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
+          response($.grep( currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); }))
+        }
+        else if (5 < wordlength) {
+          matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
+          matches = $.grep( currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); })
+            if (matches.length === 1 && matches[0] !== undefined 
+              && event.keyCode !== 8 //do not autocomplete if client backspace-d
+              && event.keyCode !== $.ui.keyCode.SPACE) {
+              $inputMessage.autocomplete("close")
+              current_text = $("#inputMessage").val().split(" ");
+              current_text.splice(-1, 1)
+              let joined_text = current_text.join(" ");
+              $("#inputMessage").val(joined_text + " " + matches[0]);
+              // console.log($("#inputMessage").val().split(" ").splice(-1, 1))
+              // console.log("current_text", current_text)
+              // console.log("matches", matches)
+              // console.log("wordlength now", wordlength)
+              response("");
+              return;
+            };         
+        }
+    });
+
+
     });
   });
 
