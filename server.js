@@ -10,7 +10,7 @@ const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
-const prepareForLive = false //still need to change the line for endpoint after deploying
+const qualificationsOn = false
 const runningLocal = false
 const runningLive = false//ONLY CHANGE IN VIM ON SERVER
 
@@ -135,7 +135,6 @@ const hourlyWage = 10.50; // changes reward of experiment depending on length - 
 const rewardPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60)).toFixed(2);
 let usersAcceptedHIT = 0;
 let numAssignments = teamSize * teamSize;
-
 let QualificationReqs = [
   {
     QualificationTypeId:"00000000000000000071",  // US workers only
@@ -146,7 +145,7 @@ let QualificationReqs = [
     ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
   }];
 
-if (prepareForLive) {
+if (qualificationsOn) {
   QualificationReqs.push({
     QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
     Comparator: 'GreaterThan',
@@ -615,9 +614,9 @@ io.on('connection', (socket) => {
     console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
     // if enough people have accepted, push prompt to start task
     if(usersAccepted.length >= teamSize ** 2) {
-        let numWaiting = 0;
-        io.sockets.emit('update number waiting', {num: 0});
-      io.sockets.emit('enough people');
+      let numWaiting = 0;
+      io.sockets.emit('update number waiting', {num: 0});
+      acceptedUsers.forEach(user => {io.socket.emit('enough people')});
     } else {
       let numWaiting = (teamSize ** 2) - usersAccepted.length;
       io.sockets.emit('update number waiting', {num: numWaiting});
