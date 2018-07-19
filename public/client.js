@@ -2,80 +2,97 @@ $(function() {
   const FADE_TIME = 150; // ms
   const TYPING_TIMER_LENGTH = 400; // ms
   const COLORS = ['#e21400', '#91580f', '#f8a700', '#f78b00', '#58dc00', '#287b00', '#a8f07a', '#4ae8c4', '#3b88eb', '#3824aa', '#a700ff', '#d300e7'];
-
   // Initialize variables
   const $window = $(window);
-  const $usernameInput = $('.usernameInput'); // Input for username
   const $messages = $('.messages'); // Messages area
   const $inputMessage = $('.inputMessage'); // Input message input box
-  const $popupCheckinButton = $('.rb-tab'); // Checkin radio buttons on popup
-  const $checkinSubmit = $('#checkin-submit');
-  const $neutralCheckin = $('#neutral-checkin');
   const $checkinPopup = $('.popup');
 
-  const $chatLink = $('.chatlink');
+  const $chatLink = $('#chatLink');
 
-  const $loginPage = $('#login'); // The login page
+  const $lockPage = $('#lockPage'); // The page shown before acceptance
+  const $waitingPage = $('#waiting'); // The waiting page
   const $chatPage = $('#chat'); // The chatroom page
   const $holdingPage = $('#holding'); // The holding page
   const $preSurvey = $('#preSurvey'); // The preSurvey page
+  const $starterSurvey = $('#starterSurvey'); // The starterSurvey page
   const $midSurvey = $('#midSurvey'); // the midSurvey page
   const $postSurvey = $('#postSurvey'); // The postSurvey page
   const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
-  const $team1_feedbackSurvey = $('#team1_feedbackSurvey'); // Feedback for team 1 page
-  const $team2_feedbackSurvey = $('#team2_feedbackSurvey'); // Feedback for team 1 page
-  const $team3_feedbackSurvey = $('#team3_feedbackSurvey'); // Feedback for team 1 page
+  const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
   const $finishingPage = $('#finishing'); // The finishing page
 
+  Vue.component('question-component', {
+    template: `
+      <h3>{{question.question}}</h3>
+      <div id="{{question.name}}-rb-box" class='rb-box'>
+        <template v-for="(index, option) in question.answers" :option="option">
+          <label for="{{question.name}}-{{index+1}}" class="rb-tab">
+            <input v-if="question.answerType === 'radio'" type="radio" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" required/>
+            <input v-if="question.answerType === 'checkbox'" type="checkbox" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" />
+            <span class='rb-spot'>{{index+1}}</span>
+            <label for='{{question.name}}-{{index+1}}'>{{option}}</label>
+          </label>
+        </template>
+      </div>
+    `,
+    props: {
+      question: Object
+    }
+  });
+
   const hideAll = () => {
-    $loginPage.hide();
+    $checkinPopup.hide();
+    $lockPage.hide();
+    $waitingPage.hide();
     $chatPage.hide();
     $holdingPage.hide();
     $preSurvey.hide();
+    $starterSurvey.hide();
     $midSurvey.hide();
     $postSurvey.hide();
     $blacklistSurvey.hide();
-    $team1_feedbackSurvey.hide();
-    $team2_feedbackSurvey.hide();
-    $team3_feedbackSurvey.hide();
+    $teamfeedbackSurvey.hide();
     $finishingPage.hide();
-    $checkinPopup.hide();
     $chatLink.hide();
   }
 
   let holdingUsername = document.getElementById('username');
   let messagesSafe = document.getElementsByClassName('messages')[0];
   let finishingcode = document.getElementById('finishingcode');
+  let usersWaiting = document.getElementById('numberwaiting');
+
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
   const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
-  
 
+  const socket = io();
 
-  // Clear before starting
   hideAll();
-  $loginPage.show();
+
+  //Check if user has accepted based on URL. Store URL variables.
+  const URLvars = getUrlVars(location.href)
+  if (URLvars.assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
+    $lockPage.show(); //prompt user to accept HIT
+  } else { // tell the server that the user has accepted the HIT - server then adds this worker to array of accepted workers
+
+    $waitingPage.show();
+    socket.emit('accepted HIT',{ mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId });
+  }
 
   // Get permission to notify
   Notification.requestPermission()
-
 
   // Prompt for setting a username
   let username;
   let connected = false;
   let typing = false;
   let lastTypingTime;
-  let $currentInput = $usernameInput.focus();
+  let $currentInput = $inputMessage.focus();
 
   let currentTeam = []
 
-  let usersWaiting = 0;
-
-  /* globals io */
-  const socket = io();
-
   document.title = "Team work";
-  $usernameInput.val('');
 
   // Implements notifications
   let notify = (title, body) => {
@@ -99,19 +116,10 @@ $(function() {
 
   // Sets the client's username
   function setUsername () {
-    var d = new Date();
-    username = d.getTime()
-    // username = cleanInput($usernameInput.val().trim());
-    $usernameInput.innerHTML = username;
-
-    // If the username is valid
-    if (username) {
-      hideAll();
-      $holdingPage.show();
-      $loginPage.off('click');
-      socket.emit('add user', username);
-      socket.emit('ready')
-    }
+    hideAll();
+    $holdingPage.show();
+    socket.emit('add user');
+    socket.emit('execute experiment')
   }
 
   // Sends a chat message
@@ -249,31 +257,12 @@ $(function() {
       return COLORS[index];
   }
 
-  // addSurvey($messsages,{post:true})
-  //
-  // Adds a survey to pre or post, depending on the element passed
-  // function addSurvey (element, options) {
-  //     const $element = $(element);
-  //
-  //   // Setup default options
-  //   if (!options) { options = {}; }
-  //   if (typeof options.post === 'undefined') { options.post = false; }
-  //
-  //   // Apply options
-  //   if (options.fade) {
-  //     $element.hide().fadeIn(FADE_TIME);
-  //   }
-  //   if (options.post) {
-  //     $messages.val($element);
-  //   } else {
-  //     $messages.val($element);
-  //   }
-  //   $messages[0].scrollTop = $messages[0].scrollHeight;
-  // }
-
+  $chatLink.click((event) => {
+    event.preventDefault()
+    setUsername()
+  })
 
   // Keyboard events
-  setUsername()
   $window.keydown(event => {
     // Auto-focus the current input when a key is typed
     if (!(event.ctrlKey || event.metaKey || event.altKey)) {
@@ -295,23 +284,22 @@ $(function() {
     }
   })
 
+  //note: only built to handle 1 checkin question, should expand?
   $('#checkin-form').submit( (event) => {
-      event.preventDefault() //stops page reloading
-      let rbValue = $('input[name=checkin]:checked').val();
-      socket.emit('new checkin', rbValue);
-      log(rbValue);
-      $checkinPopup.hide();
-    })
+    event.preventDefault() //stops page reloading
+    let selectedValue = $('input[name=checkin-q1]:checked').val();
+    socket.emit('new checkin', selectedValue);
+    $checkinPopup.hide();
+  })
 
   $('#midForm').submit( (event) => {
-      event.preventDefault() //stops page reloading
-      socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
-      socket.emit('ready')
-      $midSurvey.hide()
-      $holdingPage.show()
-      $('#midForm')[0].reset();
-    })
-    
+    event.preventDefault() //stops page reloading
+    socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
+    socket.emit('execute experiment')
+    $midSurvey.hide()
+    $holdingPage.show()
+    $('#midForm')[0].reset();
+  })
 
   //Simple autocomplete
   $inputMessage.autocomplete({
@@ -335,22 +323,41 @@ $(function() {
   });
 
   // Click events
-  // Focus input when clicking anywhere on login page
-  $loginPage.click(function () {
-    $currentInput.focus();
-  });
-
   // Focus input when clicking on the message input's border
   $inputMessage.click(function () {
     $inputMessage.focus();
   });
 
+
   // Socket events
 
+  //if there are enough workers who have accepted the task, show link to chat page
   socket.on('enough people', data => {
-    console.log("enough people!");
+    notify("There's enough people!", "Come and get started with the activity.")
     $('.chatLink').show();
   });
+
+  //checks if the user actually accepted or if they are previewing the task
+  // socket.on('check accept', data => {
+      // var assignmentId = location.search;
+      // if (assignmentId.includes("ASSIGNMENT_ID_NOT_AVAILABLE")) {
+      //   console.log("user has not accepted");
+      // } else {
+      //   console.log("user has accepted");
+      //   console.log(assignmentId);
+      //
+      //   //tell the server that the user has accepted the hit - server then adds this worker to array of accepted workers
+      //   socket.emit('accepted HIT',{
+      //     mturkId: turkGetParam("workerId","NONE",assignmentId),
+      //     turkSubmitTo: turkGetParam("turkSubmitTo","NONE",assignmentId),
+      //     assignmentId: turkGetParam("assignmentId","NONE",assignmentId)
+      //   });
+      // }
+  // });
+
+    //url = parent.document.URL;
+    //console.log('<iframe src="https://bang.dmorina.com?url=' + url + '"></iframe>');
+    //console.log(window.parent.document.getElementsByTagName("iframe")[0].src);
 
 
   // Whenever the server emits 'login', log the login message
@@ -373,30 +380,60 @@ $(function() {
     alert("The experiment is already full. Please return this HIT.")
   });
 
-  socket.on('load questions', questions => {
-    Vue.component('question-component', {
-      template: `
-        <h3 class="title">{{question.q}}</h3>
-               <input type="radio" name="{{question.name}}" value="1. strongly disagree" required><label for="1. strongly disagree"> 1. strongly disagree    </label>
-               <input type="radio" name="{{question.name}}" value="2. disagree"><label for="2. disagree"> 2. disagree    </label>
-               <input type="radio" name="{{question.name}}" value="3. neutral"><label for="3. neutral"> 3. neutral    </label>
-               <input type="radio" name="{{question.name}}" value="4. agree"><label for="4. agree"> 4. agree    </label>
-               <input type="radio" name="{{question.name}}" value="5. strongly agree"><label for="5. strongly agree"> 5. strongly agree    </label><br>
-                <br>
-                <br>
-      `,
-      props: {
-        question: Object
+  socket.on('load checkin', questions => {
+    new Vue({
+      el: '#checkin-questions',
+      data: {
+        questions
       }
     });
+  })
 
+  socket.on('load midsurvey', questions => {
     new Vue({
       el: '#midsurvey-questions',
       data: {
         questions
       }
     });
-  }) 
+  })
+
+
+  socket.on('load postsurvey', questions => {
+    new Vue({
+      el: '#postsurvey-questions',
+      data: {
+        questions
+      }
+    });
+  })
+
+  socket.on('load blacklist', questions => {
+    new Vue({
+      el:'#blacklist-questions',
+      data: {
+        questions
+      }
+    })
+  })
+
+  socket.on('load feedback', questions => {
+    new Vue({
+      el:'#feedback-questions',
+      data: {
+        questions
+      }
+    })
+  })
+
+  socket.on('load starter questions', questions => {
+    new Vue({
+      el: '#startersurvey-questions',
+      data: {
+        questions
+      }
+    });
+  })
 
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', data => {
@@ -406,7 +443,6 @@ $(function() {
   // whenever the server emits 'checkin pop up', show checkin popup
   socket.on('checkin popup', data => {
     $('.popup').show();
-    
   });
 
   // Whenever the server emits 'user joined', log it in the chat body
@@ -433,26 +469,72 @@ $(function() {
   });
 
   socket.on('go', data => {
+    document.getElementById("inputMessage").value = '' //clear chat in new round
     hideAll();
     $chatPage.show();
-    $neutralCheckin.checked = true;
+    $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
+
     log(data.task);
     log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
-    log("You will have <strong>10 minutes</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
+
+    let durationString = ""
+    if (data.duration < 1) { durationString = Math.round(data.duration * 60) + " seconds"
+    } else if (data.duration == 1) { durationString = "one minute"
+    } else { durationString = data.duration + " minutes" }
+
+    log("You will have <strong>" + durationString + "</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
     log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
+
     $currentInput = $inputMessage.focus();
+    
     notify("Session ready", "Come back and join in!")
 
     //Set up team autocomplete
     currentTeam = data.team
     $currentInput = $inputMessage.focus();
-    $inputMessage.autocomplete( "option", "source", (request, response) => {
-      let currentTerm = request.term.split(" ").pop()
-      if (currentTerm.length < 2){
-        response("")
-        return
-      }
-      response($.ui.autocomplete.filter(currentTeam, currentTerm));
+
+    // Do I spawn a ton of keypress watchers after each go
+    $inputMessage.keydown(function (event) {
+      $inputMessage.autocomplete( "option", "source", (request, response) => {
+        let terms_typed = request.term.split(" ");
+        let currentTerm = terms_typed.pop()
+        let wordlength = currentTerm.length;
+
+        // console.log("request", request)
+        // console.log("currentTerm", currentTerm)
+        // console.log("currentTeam", currentTeam)
+        // console.log("wordlength", wordlength)
+
+        if (wordlength < 2){
+          response("")
+          return
+        }
+        else if (wordlength <= 5) {
+          let matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
+          response($.grep( currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); }))
+        }
+        else if (5 < wordlength) {
+          matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
+          matches = $.grep( currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); })
+            if (matches.length === 1 && matches[0] !== undefined
+              && event.keyCode !== 8 //do not autocomplete if client backspace-d
+              && event.keyCode !== $.ui.keyCode.SPACE) {
+              $inputMessage.autocomplete("close")
+              current_text = $("#inputMessage").val().split(" ");
+              current_text.splice(-1, 1)
+              let joined_text = current_text.join(" ");
+              $("#inputMessage").val(joined_text + " " + matches[0]);
+              // console.log($("#inputMessage").val().split(" ").splice(-1, 1))
+              // console.log("current_text", current_text)
+              // console.log("matches", matches)
+              // console.log("wordlength now", wordlength)
+              response("");
+              return;
+            };
+        }
+    });
+
+
     });
   });
 
@@ -461,7 +543,7 @@ $(function() {
       hideAll();
       $holdingPage.show();
       messagesSafe.innerHTML = '';
-      if (!data.survey) {socket.emit('ready')}
+      socket.emit('execute experiment')
   });
 
   socket.on('timer',data => {
@@ -471,62 +553,106 @@ $(function() {
     log("<br>If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat.")
   });
 
+  socket.on('echo',data => {
+    socket.emit(data)
+  })
+
+  socket.on('starterSurvey',data => {
+    hideAll();
+    $starterSurvey.show();
+
+  })
+
+  $('#starterForm').submit( (event) => {
+    event.preventDefault() //stops page reloading
+    socket.emit('starterSurveySubmit', $('#starterForm').serialize()) //submits results alone
+    socket.emit('execute experiment')
+    $starterSurvey.hide()
+    $holdingPage.show()
+    $('#starterForm')[0].reset();
+  })
+
   socket.on('midSurvey',data => {
     hideAll();
     $midSurvey.show();
+
   })
 
   socket.on('postSurvey',data => {
     hideAll();
     $postSurvey.show();
-    $('#postForm').submit( (event) => { //watches form element
-      event.preventDefault() //stops page reloading
-      socket.emit('postSurveySubmit', $('#postForm').serialize()) //submits results alone
-    })
+  })
+
+  $('#postForm').submit( (event) => { //watches form element
+    event.preventDefault() //stops page reloading
+    socket.emit('postSurveySubmit', $('#postForm').serialize()) //submits results alone
+    socket.emit('execute experiment')
   })
 
   socket.on('blacklistSurvey', () => {
     hideAll();
     $blacklistSurvey.show();
-    $('#blacklistForm').submit( (event) => { //watches form element
-      event.preventDefault() //stops page reloading
-      socket.emit('blacklistSurveySubmit', $('#blacklistForm').serialize()) //submits results alone
-    })
   })
 
-  socket.on('team1_feedbackSurvey', () => {
-    hideAll();
-    $team1_feedbackSurvey.show();
-    $('#team1_feedbackForm').submit( (event) => { //watches form element
-      event.preventDefault() //stops page reloading
-      socket.emit('team1_feedbackSurveySubmit', $('#team1_feedbackForm').serialize(), $('#teamfeedbackInput_1').val())
-      //submits results alone
-    })
+  $('#blacklistForm').submit( (event) => { //watches form element
+    event.preventDefault() //stops page reloading
+    socket.emit('blacklistSurveySubmit', $('#blacklistForm').serialize()) //submits results alone
+    socket.emit('execute experiment')
   })
 
-  socket.on('team2_feedbackSurvey', () => {
+  socket.on('teamfeedbackSurvey', () => {
     hideAll();
-    $team2_feedbackSurvey.show();
-    $('#team2_feedbackForm').submit( (event) => { //watches form element
-      event.preventDefault() //stops page reloading
-      socket.emit('team2_feedbackSurveySubmit', $('#team2_feedbackForm').serialize(), $('#teamfeedbackInput_2').val())
-      //submits results alone
-    })
+    $teamfeedbackSurvey.show();
   })
 
-  socket.on('team3_feedbackSurvey', () => {
-    hideAll();
-    $team3_feedbackSurvey.show();
-    $('#team3_feedbackForm').submit( (event) => { //watches form element
-      event.preventDefault() //stops page reloading
-      socket.emit('team3_feedbackSurveySubmit', $('#team3_feedbackForm').serialize(), $('#teamfeedbackInput_3').val())
-      //submits results alone
-    })
+  $('#teamfeedbackForm').submit( (event) => {
+    event.preventDefault() //stops page reloading
+    socket.emit('teamfeedbackSurveySubmit', $('#teamfeedbackForm').serialize())
+    $teamfeedbackSurvey.hide()
+    $holdingPage.show()
+    $('#teamfeedbackForm')[0].reset();
+    socket.emit('execute experiment')
   })
+
+  //update waiting page with number of workers that must join until task can start
+  socket.on('update number waiting', data => {
+    usersWaiting.innerText = data.num;
+  });
 
   socket.on('finished',data => {
     hideAll();
     $finishingPage.show();
-    finishingcode.innerText = data.finishingCode
+    document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
+    document.getElementById("assignmentId").value = data.assignmentId
+    finishingcode.value = data.finishingCode
   })
 });
+
+function turkGetParam( name, defaultValue, uri) {
+   var regexS = "[\?&]"+name+"=([^&#]*)";
+   var regex = new RegExp( regexS );
+   // var tmpURL = window.location.href;
+   var tmpURL = uri
+   var results = regex.exec( tmpURL );
+   if( results == null ) {
+     return defaultValue;
+   } else {
+     return results[1];
+   }
+}
+
+const getUrlVars = (url) => {
+    var hash;
+    var myJson = {};
+    var hashes = url.slice(url.indexOf('?') + 1).split('&');
+    for (var i = 0; i < hashes.length; i++) {
+        hash = hashes[i].split('=');
+        myJson[hash[0]] = hash[1];
+    }
+    return myJson;
+}
+
+const decodeURL = (toDecode) => {
+  var encoded = toDecode;
+  return unescape(encoded.replace(/\+/g,  " "));
+}

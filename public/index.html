@@ -4,78 +4,44 @@
   <meta charset="UTF-8">
   <title>Bang!</title>
   <link rel="stylesheet" href="style.css">
-  <script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
+  <!-- <script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script> -->
   <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
 <script src="//code.jquery.com/jquery-1.12.4.js"></script>
 <script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/1.0.18/vue.min.js"></script>
-
+<script type='text/javascript' src='https://s3.amazonaws.com/mturk-public/externalHIT_v1.js'></script>
 </head>
 
 <body>
   <ul class="pages">
+    <li id="lockPage" class="lockPage page white"><h3 class="title">Please accept the hit to see instructions.</h3></li>
+
+    <li id="waiting" class="waiting page white">
+        <h3 class="title">Waiting room</h3>
+        <p style="color: black;">Waiting on <strong><span id="numberwaiting"></span></strong> more MTurk users to accept the task.</p>
+        <p style="color: black;">Once enough people have accepted, you will be able to begin the task.</p>
+        <button type="button" id="chatLink" class="chatLink">Click here begin the task</button>
+    </li>
+
     <li id="chat" class="chat page">
-      
       <div class="chatArea">
         <ul class="messages"></ul>
       </div>
-      <input class="inputMessage" placeholder="Type here..." oninput=""/>
+      <input id="inputMessage" class="inputMessage" placeholder="Type here..." oninput=""/>
     </li>
     <div class="popup">
-      <p>These check-ins are anonymous and will be used by an algorithm to pair you with an optimal team for the next round.</p>
-      <p>To what extent do you agree with the statement: The members of this team could work for a long time together.</p>
-      <br>
       <form id="checkin-form" class="rb">
-        <label for="checkin-1" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-1" value="1" checked/>
-          <span class='rb-spot'>1</span>
-          <label for='checkin-1'>Strongly Disagree</label>
-        </label>                
-        <label for="checkin-2" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-2" value="2" />
-          <span class='rb-spot'>2</span>
-          <label for='checkin-2'>Disagree</label>
-        </label>
-        <label for="checkin-3" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-3" value="3" />
-          <span class='rb-spot'>3</span>
-          <label for='checkin-3'>Slightly Disagree</label>
-        </label>
-        <label for="checkin-4" class="rb-tab">
-          <input type="radio" checked name="checkin" id="checkin-4" value="4" />
-          <span class='rb-spot'>4</span>
-          <label for='checkin-4'>Neutral</label>
-        </label>
-        <label for="checkin-5" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-5" value="5" />
-          <span class='rb-spot'>5</span>
-          <label for='checkin-5'>Slightly Agree</label>
-        </label>
-        <label for="checkin-6" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-6" value="6" />
-          <span class='rb-spot'>6</span>
-          <label for='checkin-6'>Agree</label>
-        </label>
-        <label for="checkin-7" class="rb-tab">
-          <input type="radio" name="checkin" id="checkin-7" value="7" />
-          <span class='rb-spot'>7</span>
-          <label for='checkin-7'>Strongly Agree</label>
-        </label>
-        <br>
+        <p>These check-ins are anonymous and will be used by an algorithm to pair you with an optimal team for the next round.</p>
+        <div id="checkin-questions" >
+          <question-component v-for="question in questions" :question="question" />
+        </div>
         <input id="checkin-submit" type="submit" value="Submit">
       </form>
     </div>
-    <li id="login" class="login page">
-      <div class="form">
-        <h3 class="title">Please enter your MTurk ID.</h3>
-        <input class="usernameInput" type="text" maxlength="14" />
-        <p style="color: white;">Please double check because we can't pay you if its not accurate.<br>When done, press <b>enter</b>.</p>
-      </div>
-    </li>
     <li id="holding" class="login page">
       <div class="form">
         <h3 class="title">You're signed in as <b><span id="username"></span></b>.</h3>
-        <p style="color: white;">Wait here while we set things up.</p>
+        <p>Loading data. Please do not refresh the page.</p>
       </div>
     </li>
     <li id="preSurvey" class="login page">
@@ -84,132 +50,75 @@
         <ul class="postSurveyQuestions"></ul>
       </div>
     </li>
-    
-<!--  Mid-survey Code (Maika) -->
-    <li id="midSurvey" class="login page">
-        <div class="form">
-          <form style="color: white; background-color: black" id="midForm">
-            <h3 class="intro">Your answers to the following questions will have no impact on your task performance<br>or ability to work with us in the future.</h3>
-            <div id="midsurvey-questions" >
-              <question-component v-for="question in questions" :question="question" />
-            </div>
-            <input id="submitButton" type="submit" value="Submit">
-        </form>
+
+    <li id="starterSurvey" class="login page">
+      <form id="starterForm">
+        <h3>You will see 20 statements and you will
+          be asked to evaluate the extent to which you agree with them.
+          Please answer honestly with regard to how you see yourself
+          in the present moment, not how you would like to be in the future.
+          There are no incorrect answers nor any personality profile that is
+          inherently more desirable than another.</h3>
+        <div id="startersurvey-questions" >
+          <question-component v-for="question in questions" :question="question" />
         </div>
-      </li>
-<!--   -->
+        <input type="submit" value="Submit">
+      </form>
+    </li>
+
+    <li id="midSurvey" class="login page">
+      <form id="midForm" >
+        <h3 class="intro">Your answers to the following questions will have no impact on your task performance<br>or ability to work with us in the future.</h3>
+        <div id="midsurvey-questions" class="survey-questions">
+          <question-component v-for="question in questions" :question="question" />
+        </div>
+        <input id="submitButton" type="submit" value="Submit">
+      </form>
+    </li>
 
     <li id="postSurvey" class="login page">
-      <div class="form">
-        <form style="color: white;" id="postForm">
-         <h3 class="title">Select which teams you worked with were the same people.</h3>
-         <input type="radio" name="team" value="1 and 2"><label for="1 and 2"> 1 and 2</label><br>
-         <input type="radio" name="team" value="1 and 3"><label for="1 and 3"> 1 and 3</label><br>
-         <input type="radio" name="team" value="2 and 3"><label for="2 and 3"> 2 and 3</label><br>
-         <br>
-         <input type="submit" value="Submit">
-        </form>
-
-      </div>
+      <form id="postForm">
+        <div id="postsurvey-questions" class='survey-questions'>
+          <question-component v-for="question in questions" :question="question" />
+        </div>
+       <input type="submit" value="Submit">
+      </form>
     </li>
 
     <li id="blacklistSurvey" class="login page">
-      <div class="form">
-        <form style="color: white;" id="blacklistForm">
-         <h3 class="title">For the final task, you will be collaborating with one of the 3 teams you previously worked with, selected at random. At this time, you can elect to eliminate 1 team from the pool of potential teams you collaborate with for the final task.
-        </h3>
-         <input type="radio" name="blacklist_team" value="A"><label for="A"> Team A</label><br>
-         <input type="radio" name="blacklist_team" value="B"><label for="B"> Team B</label><br>
-         <input type="radio" name="blacklist_team" value="C"><label for="C"> Team C</label><br>
-         <input type="radio" name="blacklist_team" value="Any"><label for="Any">I’m open to working with any of these teams.</label><br>
-          <br>
-          <!-- <input id="submitButton_blacklist" type="submit" value="Submit"> -->
-          <input type="submit" value="Submit">
-      </form>
-    </div>
-    </li>
-
-    <li id="team1_feedbackSurvey" class="login page">
-      <div class="form" style="margin-top: -440px">
-        <form style="color: white;" id="team1_feedbackForm">
-         <h3 class="title">We're thinking about hiring a manager 
-           to lead each team in the future. For team 1, provide the manager 
-           with an anonymous statement about how your team would work together 
-           on future tasks. Your answers will have no impact on your ability 
-           to work with us in the future. 
-        </h3>
-         <textarea class="teamfeedbackInput" id="teamfeedbackInput_1"></textarea> 
-          <br>
-      
-       <h3 class="title">How likely are you to want to work with Team 1 again?
-      </h3>
-      <input type="radio" name="team1_fracture" value="Very likely"><label for="Very likely"> Very likely</label><br>
-      <input type="radio" name="team1_fracture" value="Somewhat likely"><label for="Somewhat likely"> Somewhat likely</label><br>
-      <input type="radio" name="team1_fracture" value="Not very likely"><label for="Not very likely"> Not very likely</label><br>
-      <input type="radio" name="team1_fracture" value="Not at all likely"><label for="Not at all likely">Not at all likely</label><br>
-        <br>
+      <form id="blacklistForm">
+        <div id="blacklist-questions" class='survey-questions'>
+          <question-component v-for="question in questions" :question="question" />
+        </div>
         <input type="submit" value="Submit">
-    </form>
-  </div>
-    </li>
-
-    <li id="team2_feedbackSurvey" class="login page">
-        <div class="form" style="margin-top: -440px">
-          <form style="color: white;" id="team2_feedbackForm">
-           <h3 class="title">We're thinking about hiring a manager 
-             to lead each team in the future. For team 2, provide the manager 
-             with an anonymous statement about how your team would work together 
-             on future tasks. Your answers will have no impact on your ability 
-             to work with us in the future. 
-          </h3>
-           <textarea class="teamfeedbackInput" id="teamfeedbackInput_2"></textarea> 
-            <br>
-        
-         <h3 class="title">How likely are you to want to work with Team 2 again?
-        </h3>
-        <input type="radio" name="team2_fracture" value="Very likely"><label for="Very likely"> Very likely</label><br>
-        <input type="radio" name="team2_fracture" value="Somewhat likely"><label for="Somewhat likely"> Somewhat likely</label><br>
-        <input type="radio" name="team2_fracture" value="Not very likely"><label for="Not very likely"> Not very likely</label><br>
-        <input type="radio" name="team2_fracture" value="Not at all likely"><label for="Not at all likely">Not at all likely</label><br>
-          <br>
-          <input type="submit" value="Submit">
       </form>
-    </div>
-      </li>
-  
-    <li id="team3_feedbackSurvey" class="login page">
-      <div class="form" style="margin-top: -440px">
-        <form style="color: white;" id="team3_feedbackForm">
-         <h3 class="title">We're thinking about hiring a manager 
-           to lead each team in the future. For team 3, provide the manager 
-           with an anonymous statement about how your team would work together 
-           on future tasks. Your answers will have no impact on your ability 
-           to work with us in the future. 
-        </h3>
-         <textarea class="teamfeedbackInput" id="teamfeedbackInput_3"></textarea> 
-          <br>
-      
-       <h3 class="title">How likely are you to want to work with Team 3 again?
-      </h3>
-      <input type="radio" name="team3_fracture" value="Very likely"><label for="Very likely"> Very likely</label><br>
-      <input type="radio" name="team3_fracture" value="Somewhat likely"><label for="Somewhat likely"> Somewhat likely</label><br>
-      <input type="radio" name="team3_fracture" value="Not very likely"><label for="Not very likely"> Not very likely</label><br>
-      <input type="radio" name="team3_fracture" value="Not at all likely"><label for="Not at all likely">Not at all likely</label><br>
-        <br>
-        <input type="submit" value="Submit">
-    </form>
-  </div>
     </li>
 
-
-
-
+    <li id="teamfeedbackSurvey" class="login page">
+      <form id="teamfeedbackForm">
+        <h3 class ='intro'>We're thinking about hiring a manager
+           to lead each team in the future. For this team, provide the manager
+           with an anonymous statement about how your team would work together
+           on future tasks. Your answers will have no impact on your ability
+           to work with us in the future.
+        </h3>
+        <textarea class="teamfeedbackInput" id="teamfeedbackInput"></textarea>
+        <br>
+        <div id="feedback-questions" class='survey-questions'>
+          <question-component v-for="question in questions" :question="question" />
+        </div>
+        <input type="submit" value="Submit">
+      </form>
+    </li>
 
     <li id="finishing" class="login page">
-      <div class="form">
-        <h3 class="title">Thanks for participating, you're all done!</h3>
-        <p style="color: white;">Paste <strong><span id="finishingcode"></span></strong> into the MTurk task to receive payment.</p>
-      </div>
+      <h3 class="title">Thanks for participating, you're all done!</h3>
+      <form name='mturk_form' method='post' id='mturk_form' action=''>
+      <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
+      <input type='hidden' value='' name='finishingcode' id='finishingcode'/>
+      <p><input type='submit' id='submitButton' value='Submit' /></p>
+      </form>
+      <!-- <p style="color: white;">Paste <strong><span id="finishingcode"></span></strong> into the MTurk task to receive payment.</p> -->
     </li>
   </ul>
 
