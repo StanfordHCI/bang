@@ -129,7 +129,7 @@ const taskDuration = 60; // how many minutes - this is a Maximum for the task
 const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
 const numPosts = (2 * taskDuration) / timeActive; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
 const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
-const rewardPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60)).toFixed();
+const rewardPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60)).toFixed(2);
 let usersAcceptedHIT = 0;
 let numAssignments = teamSize * teamSize;
 
