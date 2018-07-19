@@ -10,8 +10,9 @@ const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
-const runningLive = false //still need to change the line for endpoint after deploying
+const prepareForLive = false //still need to change the line for endpoint after deploying
 const runningLocal = false
+const runningLive = false//ONLY CHANGE IN VIM ON SERVER
 
 // Question Files
 const midsurveyQuestionFile = "midsurvey-q.txt"
@@ -88,10 +89,11 @@ AWS.config = {
 };
 
 
- const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
+let endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 
-// Uncomment this line to use in production
-//const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
+if (runningLive) {
+  endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
+}
 
 // This initiates the API
 // Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
@@ -144,7 +146,7 @@ let QualificationReqs = [
     ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
   }];
 
-if (runningLive) {
+if (prepareForLive) {
   QualificationReqs.push({
     QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
     Comparator: 'GreaterThan',
