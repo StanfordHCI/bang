@@ -511,7 +511,7 @@ $(function() {
           matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
           matches = $.grep( currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); })
             if (matches.length === 1 && matches[0] !== undefined 
-              && event.keyCode !== 8
+              && event.keyCode !== 8 //do not autocomplete if client backspace-d
               && event.keyCode !== $.ui.keyCode.SPACE) {
               $inputMessage.autocomplete("close")
               current_text = $("#inputMessage").val().split(" ");
