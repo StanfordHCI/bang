@@ -557,6 +557,13 @@ $(function() {
     socket.emit(data)
   })
 
+  socket.on('get IDs', data => {
+    const URLvars = getUrlVars(location.href);
+    console.log('get IDs ran');
+    socket.emit(data,{mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId });
+  })
+
+
   socket.on('starterSurvey',data => {
     hideAll();
     $starterSurvey.show();

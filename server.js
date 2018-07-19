@@ -8,12 +8,12 @@ const starterSurveyOn = false
 const midSurveyOn = true
 const blacklistOn = false
 const teamfeedbackOn = false
-const checkinOn = true
+const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
 
 const bonusUsersOn = true // If true, any remaining bonuses will be run, default to true
 const qualificationsOn = false
-const runningLocal = false
+const runningLocal = true
 const runningLive = false//ONLY CHANGE IN VIM ON SERVER
 
 // Question Files
@@ -604,6 +604,13 @@ io.on('connection', (socket) => {
       }
     })
 
+  //if broken, tell users they're done and disconnect their socket
+  socket.on('broken', (data) => {
+        socket.emit('finished', {finishingCode: "broken", turkSubmitTo: turkSubmitTo, assignmentId: data.assignmentId, message: "The task has completed. You will be compensated."})
+        socket.disconnect();
+        console.log("Sockets active: " + Object.keys(io.sockets.sockets));
+  });
+
   //Launch post survey
   // if (currentRound >= numRounds) {
   //   users.forEach(user => {
@@ -629,8 +636,8 @@ io.on('connection', (socket) => {
     // Disconnect leftover users
     Object.keys(io.sockets.sockets).forEach(socketID => {
       if (usersAccepted.every(acceptedUser => {return acceptedUser.id !== socketID})) {
-        //TODO: tell user that the HIT has been cancelled.
-        io.sockets.connected[socketID].disconnect();
+        console.log("Removing dead socket: " + socketID);
+        io.sockets.connected[socketID].emit('get IDs', 'broken');
       }
     });
     console.log("Sockets active: " + Object.keys(io.sockets.sockets));
