@@ -614,8 +614,10 @@ io.on('connection', (socket) => {
     console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
     console.log("Sockets active: " + Object.keys(io.sockets.sockets));
     // Disconnect leftover users
-    io.sockets.sockets.forEach(socketID => {
+    Object.keys(io.sockets.sockets).forEach(socketID => {
+      console.log("testing this socketID: " + socketID);
       if (usersAccepted.every(acceptedUser => {acceptedUser.id != socketID})) {
+        console.log("this should be disconnected" + socketID)
         io.sockets.connected[socketId].disconnect();
       }
     });
