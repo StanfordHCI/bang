@@ -1,0 +1,11 @@
+Respected - Not respected 
+Inconsiderate - Considerate 
+Unlikable - Likable
+Power - Powerless 
+Low status - High status
+Leader - Follower 
+Pleasant - Unpleasant
+Competent - Incompetent 
+Knowledgeable - Unknowledgeable 
+Incapable - Capable  
+Cooperative - Uncooperative 
