@@ -24,7 +24,7 @@ const feedbackFile = "feedback-q.txt"
 const starterSurveyFile = "startersurvey-q.txt"
 const postSurveyFile = "postsurvey-q.txt"
 const fs = require('fs')
-const dotenv = require('dotenv').config()
+require('dotenv').config()
 
 
 // Answer Option Sets
@@ -88,10 +88,10 @@ const AWS = require('aws-sdk');
 require('express')().listen(); //Sets to only relaunch with source changes
 
 AWS.config = {
-  "accessKeyId": 'AKIAJV6G2CON2PKCJREA', //process.env.YOUR_ACCESS_ID,
-  "secretAccessKey": 'WOGgQar1egg8i8YszXeMXWFaltIoieQSxH/eQrgB', //process.env.YOUR_SECRET_KEY,
-  "region": 'us-east-1',
-  "sslEnabled": 'true'
+  "accessKeyId": process.env.YOUR_ACCESS_ID , //,
+  "secretAccessKey": process.env.secretAccessKey,
+  "region": "us-east-1",
+  "sslEnabled": true.
 };
 
 console.log("process.env.YOUR_ACCESS_ID", process.env.YOUR_ACCESS_ID)
