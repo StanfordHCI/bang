@@ -41,7 +41,7 @@
     <li id="holding" class="login page">
       <div class="form">
         <h3 class="title">You're signed in as <b><span id="username"></span></b>.</h3>
-        <p>Wait here while we set things up.</p>
+        <p>Loading data. Please do not refresh the page.</p>
       </div>
     </li>
     <li id="preSurvey" class="login page">
@@ -53,11 +53,11 @@
 
     <li id="starterSurvey" class="login page">
       <form id="starterForm">
-        <h3>You will see 20 statements and you will 
-          be asked to evaluate the extent to which you agree with them. 
-          Please answer honestly with regard to how you see yourself 
-          in the present moment, not how you would like to be in the future. 
-          There are no incorrect answers nor any personality profile that is 
+        <h3>You will see 20 statements and you will
+          be asked to evaluate the extent to which you agree with them.
+          Please answer honestly with regard to how you see yourself
+          in the present moment, not how you would like to be in the future.
+          There are no incorrect answers nor any personality profile that is
           inherently more desirable than another.</h3>
         <div id="startersurvey-questions" >
           <question-component v-for="question in questions" :question="question" />
