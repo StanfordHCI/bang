@@ -1,6 +1,6 @@
 //Settings - change for actual deployment
 const teamSize = 1
-const roundMinutes = .5
+const roundMinutes = 0.01
 
 // Toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
@@ -357,8 +357,7 @@ io.on('connection', (socket) => {
         // Add user to graph and add others as friends
         const newUser = {
           'id': socket.id,
-          'mturk': acceptedUser.mturkId,
-          'workerId': acceptedUser.mturkId,
+          'mturkId': acceptedUser.mturkId,
           'assignmentId': acceptedUser.assignmentId,
           'room': '',
           'rooms':[],
@@ -531,9 +530,9 @@ io.on('connection', (socket) => {
         if (autocompleteTestOn) {
           let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
           console.log(teamNames)
-          io.in(user.id).emit('go', {task: taskText, team: teamNames })
+          io.in(user.id).emit('go', {task: taskText, team: teamNames, duration: roundMinutes })
         } else {
-          io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }) })
+          io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
         }
       })
 
@@ -593,7 +592,7 @@ io.on('connection', (socket) => {
   socket.on('accepted HIT', (data) => {
     usersAccepted.push({
       "id": socket.id,
-      "mturkID": data.mturkId,
+      "mturkId": data.mturkId,
       "id": String(socket.id),
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
