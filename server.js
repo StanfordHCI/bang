@@ -1,11 +1,11 @@
 //Settings - change for actual deployment
-const teamSize = 2
-const roundMinutes = .15
+const teamSize = 1
+const roundMinutes = 10
 
 // Toggles
-const autocompleteTestOn = 1 //turns on fake team to test autocomplete
-const starterSurveyOn = 1 
-const midSurveyOn = 1
+const autocompleteTestOn = false //turns on fake team to test autocomplete
+const starterSurveyOn = true
+const midSurveyOn = true
 const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
@@ -22,6 +22,57 @@ const fs = require('fs')
 // Answer Option Sets
 const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
 const binaryAnswers =['Yes', 'No']
+
+// Setup basic express server
+let tools = require('./tools');
+let express = require('express');
+const app = express();
+const server = require('http').createServer(app);
+const io = require('socket.io')(server);
+const port = process.env.PORT || 3000;
+server.listen(port, () => { console.log('Server listening at port %d', port); });
+
+Array.prototype.pick = function() { return this[Math.floor(Math.random() * this.length)] };
+Array.prototype.byID = function(id) { return this.find(user => user.id === id) };
+Array.prototype.set = function() {
+  const setArray = []
+  this.forEach(element => { if (!setArray.includes(element)) { setArray.push(element) } })
+  return setArray
+};
+
+// Setting up variables
+const currentCondition = "treatment"
+let treatmentNow = false
+
+const conditionSet = [{"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]},
+                      {"control": [2,1,1], "treatment": [2,1,1], "baseline": [1,2,3]},
+                      {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
+
+const experimentRoundIndicator = 1
+const conditions = conditionSet[0] // or conditionSet.pick() for ramdomized orderings.
+const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
+const numRounds = conditions.baseline.length
+
+const numberOfRooms = teamSize * numRounds
+const rooms = tools.letters.slice(0,numberOfRooms)
+const people = tools.letters.slice(0,teamSize ** 2)
+const population = people.length
+const teams = tools.createTeams(teamSize,numRounds,people)
+
+const batchID = Date.now();
+
+// Setting up DB
+const Datastore = require('nedb'),
+    db = {};
+    db.starterSurvey = new Datastore({ filename:'.data/starterSurvey', autoload: true });
+    db.users = new Datastore({ filename:'.data/users', autoload: true });
+    db.chats = new Datastore({ filename:'.data/chats', autoload: true });
+    db.products = new Datastore({ filename:'.data/products', autoload: true });
+    db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
+    db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true});
+    db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true});
+    db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
+    db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
 
 // MTurk AWS
 const AWS = require('aws-sdk');
@@ -43,10 +94,10 @@ if (live){
   // const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 }
 
-const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
+ const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 
 // Uncomment this line to use in production
-// const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
+//const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
 
 // This initiates the API
 // Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
@@ -70,37 +121,37 @@ mturk.getAccountBalance((err, data) => {
 //   else     console.log(data);
 // });
 
-const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
-//const taskURL = 'https://localhost:3000/'; 
+//const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
+const taskURL = 'https://localhost:3000/';
 
 // HIT Parameters
-const taskDuration = 60; // how many minutes?
+const taskDuration = 60; // how many minutes - this is a Maximum for the task
 const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
 const numPosts = (2 * taskDuration) / timeActive; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
 const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
-const rewardPrice = (hourlyWage * (taskDuration / 60)); // BUG - make this a string? Reward must be a string
+const rewardPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60)).toString();
 let usersAcceptedHIT = 0;
 let numAssignments = teamSize * teamSize;
 
 const params = {
-  Title: 'Write online ads by chat/text with group!',
-  Description: 'You will work in a small group in a text/chat environment to write ads for new products. Approximately one hour in length, hourly pay. If you have already completed this task, do not attempt again.',
+  Title: 'Write online ads by chat/text with group...',
+  Description: 'You will work in a small group in a text/chat environment to write ads for new products. This task will take approximately ' + ((roundMinutes * numRounds) + 10)  + ' minutes in length, hourly pay. If you have already completed this task, do not attempt again.',
   AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
   LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
-  Reward: '10.50',
+  Reward: rewardPrice,
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
   Keywords: 'ads, writing, copy editing, advertising',
   MaxAssignments: numAssignments,
-  QualificationRequirements: [
-    // QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
-    // Comparator: 'GreaterThan',
-    // IntegerValues: [1000],
-    // RequiredToPreview: true,
-    // },
-    {
+  QualificationRequirements: [{
+    QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
+    Comparator: 'GreaterThan',
+    IntegerValues: [1000],
+    RequiredToPreview: true,
+  },
+  {
     QualificationTypeId:"00000000000000000071",  // US workers only
     LocaleValues:[{
-  		Country:"US",
+      Country:"US",
     }],
     Comparator:"In",
     ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
@@ -114,71 +165,39 @@ mturk.createHIT(params,(err, data) => {
   else     console.log("Fist HITS posted");
 });
 
-// let delay = 1;
-// // only continues to post if not enough people accepted HIT
-// setTimeout(() => {
-//   if(usersAcceptedHIT < (teamSize * teamSize)) {
-//     numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
-//     mturk.createHIT(params,(err, data) => {
-//       if (err) console.log(err, err.stack);
-//       else     console.log("Another HIT posted");
-//     });
-//     i++;
-//   } else {
-//     clearTimeout();
-//   }
-// }, 1000 * 60 * timeActive * delay)
+// blocks all previous users - or all the users stored in the DB
+let pastUser = '';
 
-// Setup basic express server
-let tools = require('./tools');
-let express = require('express');
-const app = express();
-const server = require('http').createServer(app);
-const io = require('socket.io')(server);
-const port = process.env.PORT || 3000;
-server.listen(port, () => { console.log('Server listening at port %d', port); });
+const block = {
+  WokerId: pastUser,
+  Reason: 'This worker has already completed this task'
+}
 
-Array.prototype.pick = function() { return this[Math.floor(Math.random() * this.length)] };
-Array.prototype.byID = function(id) { return this.find(user => user.id === id) };
-Array.prototype.set = function() {
-  const setArray = []
-  this.forEach(element => { if (!setArray.includes(element)) { setArray.push(element) } })
-  return setArray
-};
+db.users.find({}, (err, usersInDB) => {
+  if (err) {console.log("Err loading users:" + err)}
+  usersInDB.forEach((user) => {
+    let pastUser = users.byID(user.mturk)
+    if (pastUser){
+      mturk.createWorkerBlock(block, (err, data));
+    }
+  })
+})
 
-// Setting up DB
-const Datastore = require('nedb'),
-    db = {};
-    db.starterSurvey = new Datastore({ filename:'.data/starterSurvey', autoload: true });
-    db.users = new Datastore({ filename:'.data/users', autoload: true });
-    db.chats = new Datastore({ filename:'.data/chats', autoload: true });
-    db.products = new Datastore({ filename:'.data/products', autoload: true });
-    db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
-    db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true});
-    db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true});
-    db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results 
-    db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
-
-// Setting up variables
-const currentCondition = "treatment"
-let treatmentNow = false
-
-const conditionSet = [{"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]},
-                      {"control": [2,1,1], "treatment": [2,1,1], "baseline": [1,2,3]},
-                      {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
-
-const experimentRoundIndicator = 1
-const conditions = conditionSet[0] // or conditionSet.pick() for ramdomized orderings.
-const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
-const numRounds = conditions.baseline.length
-
-const numberOfRooms = teamSize * numRounds
-const rooms = tools.letters.slice(0,numberOfRooms)
-const people = tools.letters.slice(0,teamSize ** 2)
-const population = people.length
-const teams = tools.createTeams(teamSize,numRounds,people)
-
-const batchID = Date.now();
+let delay = 1;
+// only continues to post if not enough people accepted HIT
+setTimeout(() => {
+  usersAcceptedHIT = usersAccepted.length;
+  if(usersAcceptedHIT < (teamSize * teamSize)) {
+    numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
+    mturk.createHIT(params,(err, data) => {
+      if (err) console.log(err, err.stack);
+      else     console.log("Another HIT posted");
+    });
+    i++;
+  } else {
+    clearTimeout();
+  }
+}, 1000 * 60 * timeActive * delay)
 
 //Add more products
 let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
@@ -245,7 +264,7 @@ app.use(express.static('public'));
 //app.use('/waiting', express.static('waiting'))
 
 // Adds Batch data for this experiment. unique batchID based on time/date
-db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn, 
+db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn,
         'teamfeedbackOn': teamfeedbackOn, 'checkinOn': checkinOn, 'conditions': conditions, 'experimentRound': experimentRound,
         'numRounds': numRounds, 'teamSize': teamSize}, (err, usersAdded) => {
     if(err) console.log("There's a problem adding batch to the DB: ", err);
@@ -591,7 +610,7 @@ io.on('connection', (socket) => {
       io.sockets.emit('update number waiting', {num: numWaiting});
     }
   });
-  
+
   // Starter task
    socket.on('starterSurveySubmit', (data) => {
     let user = users.byID(socket.id)
@@ -605,7 +624,7 @@ io.on('connection', (socket) => {
     });
   });
 
-  // parses results from surveys to proper format for JSON file 
+  // parses results from surveys to proper format for JSON file
   function parseResults(data) {
     let surveyResults = data;
     let parsedResults = surveyResults.split('&');
@@ -624,7 +643,7 @@ io.on('connection', (socket) => {
     return parsedResults;
   }
 
-  // for 1-5 scale questions based on: 
+  // for 1-5 scale questions based on:
   // Answer Option Sets - around line 22
   // const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
   function numberToValue(value) {
@@ -637,7 +656,7 @@ io.on('connection', (socket) => {
   function numberToBinary(value) {
     return binaryAnswers[parseInt(value) - 1];  // index 0
   }
- 
+
    // Task after each round - midSurvey - MAIKA
    socket.on('midSurveySubmit', (data) => {
     let user = users.byID(socket.id)
@@ -726,10 +745,10 @@ function loadQuestions(questionFile, answerObj) { // may want to change the way 
       questionObj['question'] = line.substr(0, line.length-1);
       questionObj['answers'] = binaryAnswers;
     } else {
-      questionObj['question'] = line; 
+      questionObj['question'] = line;
       questionObj['answers'] = answerObj.answers;
     }
-  
+
     questionObj['correctAnswer'] = answerObj.correctAnswer;
     questionObj['answerType'] = answerObj.answerType;
     questions.push(questionObj)
