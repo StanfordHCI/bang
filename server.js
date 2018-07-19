@@ -616,7 +616,7 @@ io.on('connection', (socket) => {
     if(usersAccepted.length >= teamSize ** 2) {
       let numWaiting = 0;
       io.sockets.emit('update number waiting', {num: 0});
-      acceptedUsers.forEach(user => {io.socket.emit('enough people')});
+      acceptedUsers.forEach(user => {io.in(user.id).emit('enough people')});
     } else {
       let numWaiting = (teamSize ** 2) - usersAccepted.length;
       io.sockets.emit('update number waiting', {num: numWaiting});
