@@ -612,6 +612,7 @@ io.on('connection', (socket) => {
     });
     console.log(data.turkSubmitTo);
     console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
+    console.log(Object.keys(io.sockets.sockets));
     // if enough people have accepted, push prompt to start task
     if(usersAccepted.length >= teamSize ** 2) {
       let numWaiting = 0;
