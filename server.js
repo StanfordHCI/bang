@@ -10,8 +10,8 @@ const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
-const runningLive = true //still need to change the line for endpoint after deploying
-const runningLocal = true
+const runningLive = false //still need to change the line for endpoint after deploying
+const runningLocal = false
 
 // Question Files
 const midsurveyQuestionFile = "midsurvey-q.txt"
