@@ -10,6 +10,8 @@ const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
+const runningLive = false //still need to change the line for endpoint after deploying
+const runningLocal = false
 
 // Question Files
 const midsurveyQuestionFile = "midsurvey-q.txt"
@@ -85,14 +87,6 @@ AWS.config = {
   "sslEnabled": 'true'
 };
 
-const live = false //ONLY CHANGE AFTER TESTING EVERYTHING
-if (live){
-  console.log("RUNNING LIVE");
-  // const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
-} else {
-  console.log("RUNNING SANDBOXED");
-  // const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
-}
 
  const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 
@@ -121,8 +115,15 @@ mturk.getAccountBalance((err, data) => {
 //   else     console.log(data);
 // });
 
-//const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
-const taskURL = 'https://localhost:3000/';
+
+// direct them to server URL
+
+let taskURL = 'https://bang.dmorina.com/';
+if (runningLocal) {
+   taskURL = 'https://localhost:3000/';
+}
+
+
 
 // HIT Parameters
 const taskDuration = 60; // how many minutes - this is a Maximum for the task
@@ -142,12 +143,7 @@ const params = {
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
   Keywords: 'ads, writing, copy editing, advertising',
   MaxAssignments: numAssignments,
-  QualificationRequirements: [{
-    QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
-    Comparator: 'GreaterThan',
-    IntegerValues: [1000],
-    RequiredToPreview: true,
-  },
+  QualificationRequirements: [
   {
     QualificationTypeId:"00000000000000000071",  // US workers only
     LocaleValues:[{
@@ -155,7 +151,12 @@ const params = {
     }],
     Comparator:"In",
     ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
-  }],
+  }, runningLive ? {
+    QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
+    Comparator: 'GreaterThan',
+    IntegerValues: [1000],
+    RequiredToPreview: true,
+  } : {}],
   Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
 };
 
