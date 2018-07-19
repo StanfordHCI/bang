@@ -486,7 +486,7 @@ $(function() {
     log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
 
     $currentInput = $inputMessage.focus();
-    
+
     notify("Session ready", "Come back and join in!")
 
     //Set up team autocomplete
@@ -622,6 +622,7 @@ $(function() {
   socket.on('finished',data => {
     hideAll();
     $finishingPage.show();
+    document.getElementById("finishingMessage").innerText = data.message
     document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
     document.getElementById("assignmentId").value = data.assignmentId
     finishingcode.value = data.finishingCode

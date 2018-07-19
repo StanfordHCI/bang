@@ -205,7 +205,7 @@ setTimeout(() => {
     mturk.createHIT(params,(err, data) => {
       if (err) console.log(err, err.stack);
       else     console.log("Another HIT posted");
-    }); 
+    });
     delay++;
   } else {
     clearTimeout();
@@ -484,14 +484,15 @@ io.on('connection', (socket) => {
           io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
       }
       else if (task_list[currentActivity] == "finished" || currentActivity > task_list.lenght) {
-        console.log(usersAccepted)
-        console.log(socket.id)
+        // console.log(usersAccepted)
+        // console.log(socket.id)
         submitUser = usersAccepted.find((user) => user.id == socket.id)
 
         io.in(socket.id).emit('finished', {
+          message: "Thanks for participating, you're all done!",
           finishingCode: socket.id,
           turkSubmitTo: submitUser.turkSubmitTo,
-          assignmentId: submitUser.assignmentId
+          assignmentId: user.assignmentId
         })
       }
       user.currentActivity += 1
