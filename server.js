@@ -10,6 +10,8 @@ const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
+
+const bonusUsersOn = true // If true, any remaining bonuses will be run, default to true
 const qualificationsOn = false
 const runningLocal = true
 const runningLive = false//ONLY CHANGE IN VIM ON SERVER
@@ -90,11 +92,12 @@ AWS.config = {
   "sslEnabled": 'true'
 };
 
-
 let endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
+let turkSubmitTo = 'https://workersandbox.mturk.com'
 
 if (runningLive) {
   endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
+  turkSubmitTo = 'https://www.mturk.com'
 }
 
 // This initiates the API
@@ -107,27 +110,29 @@ mturk.getAccountBalance((err, data) => {
   else console.log(data);           // successful response
 });
 
-// This will return the HITs you currently have
-// mturk.listHITs({},(err, data) => {
-//   if (err) console.log(err, err.stack);
-//   else     console.log(data);
-// });
-
-// This will find a particular HIT
-// mturk.getHIT({},(err, data) => {
-//   if (err) console.log(err, err.stack);
-//   else     console.log(data);
-// });
-
+// bonus all users in DB who have leftover bonuses
+if (bonusUsersOn){
+  db.users.find({bonus: {$gt: 0} }, (err, usersInDB) => {
+    if (err) {console.log("Err loading users:" + err)}
+    usersInDB.forEach((user) => {
+      var params = { AssignmentId: user.assignmentId, BonusAmount: String(user.bonus), Reason: "Thanks for participating in our HIT!", WorkerId: user.mturkId, UniqueRequestToken: user.id };
+      mturk.sendBonus(params, function(err, data) {
+        if (err) {
+          console.log( user.id + " bonus not processed: " + err)
+        } else {
+          console.log(user.id + " bonused: " + data)
+          db.users.update( {id: user.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)}})
+        }
+      })
+    })
+  })
+}
 
 // direct them to server URL
-
 let taskURL = 'https://bang.dmorina.com/';
 if (runningLocal) {
    taskURL = 'https://localhost:3000/';
 }
-
-
 
 // HIT Parameters
 const taskDuration = 60; // how many minutes - this is a Maximum for the task
@@ -267,6 +272,7 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
 io.on('connection', (socket) => {
     
     let addedUser = false;
+    let taskStarted = false;
 
     socket.on('log', string => { console.log(string); });
 
@@ -353,6 +359,7 @@ io.on('connection', (socket) => {
           'assignmentId': acceptedUser.assignmentId,
           'room': '',
           'rooms':[],
+          'bonus': 0,
           'person': people.pop(),
           'name': socket.username,
           'ready': false,
@@ -408,23 +415,29 @@ io.on('connection', (socket) => {
           }
         }
 
-
         if (addedUser) {
           users.byID(socket.id).active = false //set user to inactive
           users.byID(socket.id).ready = false //set user to not ready
 
           // update DB with change
-          db.users.update({ id: socket.id }, {$set: {active: false}}, {}, (err, numReplaced) => { console.log(err ? "Activity not changed:" + err : "User left " + socket.id) })
+          db.users.update({ id: socket.id }, {$set: {active: false}}, {}, (err, numReplaced) => { console.log(err ? "Activity not changed: " + err : "User left " + socket.id) })
 
-          // users.forEach(user => {
-          //   socket.broadcast.to(user.id).emit('user left', {
-          //     username: idToAlias(user, socket.username),
-          //     numUsers: numUsers(user.room)
-          //     });
-          // })
-
-          // Report rooms' completeness
-          console.log( "Rooms now incomplete:", incompleteRooms() )
+          // Start cancel process
+          console.log("User left, emitting cancel to all users");
+          users.forEach((user) => {
+            let cancelMessage = "This HIT has crashed. Please submit below and we will accept."
+            if (taskStarted) { // Add future bonus pay
+              user.bonus += hourlyWage * duration
+              db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
+              cancelMessage = cancelMessage + " Since the team activity had already started, you will be additionally bonused for the time spent working with the team."
+            }
+            io.in(user.id).emit('finished', {
+                message: cancelMessage,
+                finishingCode: user.id,
+                turkSubmitTo: turkSubmitTo,
+                assignmentId: user.assignmentId
+            })
+          })
         }
     });
 
@@ -463,12 +476,11 @@ io.on('connection', (socket) => {
       else if (task_list[currentActivity] == "finished" || currentActivity > task_list.lenght) {
         // console.log(usersAccepted)
         // console.log(socket.id)
-        submitUser = usersAccepted.find((user) => user.id == socket.id)
 
         io.in(socket.id).emit('finished', {
           message: "Thanks for participating, you're all done!",
           finishingCode: socket.id,
-          turkSubmitTo: submitUser.turkSubmitTo,
+          turkSubmitTo: turkSubmitTo,
           assignmentId: user.assignmentId
         })
       }
@@ -517,6 +529,7 @@ io.on('connection', (socket) => {
       let currentProduct = products[currentRound]
       let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
+      taskStarted = true
       users.forEach(user => {
         if (autocompleteTestOn) {
           let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
