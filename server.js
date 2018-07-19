@@ -616,9 +616,9 @@ io.on('connection', (socket) => {
     // Disconnect leftover users
     Object.keys(io.sockets.sockets).forEach(socketID => {
       console.log("testing this socketID: " + socketID);
-      if (usersAccepted.every(acceptedUser => {acceptedUser.id != socketID})) {
+      if (usersAccepted.every(acceptedUser => {return acceptedUser.id !== socketID})) {
         console.log("this should be disconnected" + socketID)
-        io.sockets.connected[socketId].disconnect();
+        io.sockets.connected[socketID].disconnect();
       }
     });
     // if enough people have accepted, push prompt to start task
