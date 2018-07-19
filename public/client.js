@@ -494,7 +494,6 @@ $(function() {
     $currentInput = $inputMessage.focus();
 
     $inputMessage.keydown(function (event) {
-      console.log("Typing things now!")
       $inputMessage.autocomplete( "option", "source", (request, response) => {
         let terms_typed = request.term.split(" ");
         let currentTerm = terms_typed.pop();

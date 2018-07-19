@@ -3,7 +3,7 @@ const teamSize = 1
 const roundMinutes = 0.5
 
 // Toggles
-const autocompleteTestOn = true //turns on fake team to test autocomplete
+const autocompleteTestOn = false //turns on fake team to test autocomplete
 const starterSurveyOn = false
 const midSurveyOn = true
 const blacklistOn = false
