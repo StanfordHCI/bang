@@ -519,11 +519,6 @@ $(function() {
               current_text.splice(-1, 1)
               let joined_text = current_text.join(" ");
               $("#inputMessage").val(joined_text + " " + matches[0]);
-              console.log($("#inputMessage").val().split(" ").splice(-1, 1))
-              console.log("current_text", current_text)
-              console.log("matches", matches)
-              console.log("wordlength now", wordlength)
-              // response("");
             };
           }
           
