@@ -480,7 +480,7 @@ $(function() {
     log("You will have <strong>10 minutes</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
     log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
     $currentInput = $inputMessage.focus();
-    
+
     notify("Session ready", "Come back and join in!")
 
     //Set up team autocomplete
@@ -528,7 +528,7 @@ $(function() {
         }
     });
 
-        
+
     });
   });
 
