@@ -1,34 +1,36 @@
 //Settings - change for actual deployment
-const teamSize = 2
-const roundMinutes = 5
+const teamSize = 1
+const roundMinutes = .01
 
 // Toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
-const starterSurveyOn = false
+const starterSurveyOn = true
 const midSurveyOn = true
-const blacklistOn = false
+const blacklistOn = true
 const teamfeedbackOn = false
-const checkinOn = true
+const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
 
 const bonusUsersOn = true // If true, any remaining bonuses will be run, default to true
 const qualificationsOn = false
-const runningLocal = false
+const runningLocal = true
 const runningLive = false//ONLY CHANGE IN VIM ON SERVER
 
 // Question Files
-const midsurveyQuestionFile = "midsurvey-q.txt"
-const checkinQuestionFile = "checkin-q.txt"
+const midSurveyFile = "midsurvey-q.txt"
+const checkinFile = "checkin-q.txt"
 const blacklistFile = "blacklist-q.txt"
 const feedbackFile = "feedback-q.txt"
 const starterSurveyFile = "startersurvey-q.txt"
+const postSurveyFile = "postsurvey-q.txt"
 const fs = require('fs')
 const dotenv = require('dotenv').config()
 
 
 // Answer Option Sets
-const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
-const binaryAnswers =['Yes', 'No']
+const answers ={answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio'}
+const binaryAnswers ={answers: ['Yes', 'No'], answerType: 'radio'}
+
 
 // Setup basic express server
 let tools = require('./tools');
@@ -263,29 +265,6 @@ let usersAccepted = [];
 
 app.use(express.static('public'));
 
-// //waiting page
-// app.route('/').get(function(req, res){
-//   app.use(express.static(__dirname + '/public'));
-//   res.sendFile(__dirname + '/public/waiting.html');
-//   fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
-// });
-//
-// //chat page
-// app.route('/chat').get(function(req, res)
-// {
-//   res.sendFile(__dirname + '/public/index.html');
-//   fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
-// });
-
-// app.all('/', function (req, res, next) {
-//  express.static('public');
-//  next()
-// })
-//app.all('/waiting', function(req, res, next) {
-//  express.static('waiting');
-//});
-//app.use('/waiting', express.static('waiting'))
-
 // Adds Batch data for this experiment. unique batchID based on time/date
 db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn,
         'teamfeedbackOn': teamfeedbackOn, 'checkinOn': checkinOn, 'conditions': conditions, 'experimentRound': experimentRound,
@@ -296,7 +275,7 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
 
 // Chatroom
 io.on('connection', (socket) => {
-
+    
     let addedUser = false;
     let taskStarted = false;
 
@@ -474,32 +453,30 @@ io.on('connection', (socket) => {
       console.log ("Activity:", currentActivity, "which is", task_list[currentActivity])
 
       if (task_list[currentActivity] == "starterSurvey") {
-        socket.emit('load starter questions', loadQuestions(starterSurveyFile, {answers: answers, answerType: 'radio', correctAnswer:''}));
-        io.in(user.id).emit("starterSurvey");
+        io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "ready") {
-        if (checkinOn) {io.in(user.id).emit('load checkin', loadQuestions(checkinQuestionFile, {answers: answers, answerType: 'radio', correctAnswer:''}));}
+        if (checkinOn) {
+          io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true});
+        }
         io.in(user.id).emit("echo", "ready");
       }
       else if (task_list[currentActivity] == "midSurvey") {
-        io.in(user.id).emit('load midsurvey', loadQuestions(midsurveyQuestionFile, {answers: answers, answerType: 'radio', correctAnswer:''}));
-        io.in(user.id).emit("midSurvey");
+        io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "teamfeedbackSurvey") {
-        io.in(user.id).emit('load feedback', loadQuestions(feedbackFile, {answers:answers, answerType: 'radio', correctAnswer:''}))
-        io.in(socket.id).emit('teamfeedbackSurvey')
+        io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "blacklistSurvey") {
-        io.in(user.id).emit('load blacklist', loadQuestions(blacklistFile, {answers: getTeamMembers(user), answerType: 'radio', correctAnswer:''}));
-        io.in(socket.id).emit('blacklistSurvey')
+        console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false})
+        io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "postSurvey") { //Launch post survey
           user.ready = false
           let survey = postSurveyGenerator(user)
           user.results.manipulation = survey.correctAnswer
-          io.in(user.id).emit('load postsurvey', {survey})
           db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-          io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
+          io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "finished" || currentActivity > task_list.lenght) {
         // console.log(usersAccepted)
@@ -609,12 +586,19 @@ io.on('connection', (socket) => {
       }
     })
 
+  //if broken, tell users they're done and disconnect their socket
+  socket.on('broken', (data) => {
+        socket.emit('finished', {finishingCode: "broken", turkSubmitTo: turkSubmitTo, assignmentId: data.assignmentId, message: "The task has completed. You will be compensated."})
+        socket.disconnect();
+        console.log("Sockets active: " + Object.keys(io.sockets.sockets));
+  });
+
   //Launch post survey
   // if (currentRound >= numRounds) {
   //   users.forEach(user => {
   //     user.ready = false
   //     let survey = postSurveyGenerator(user)
-  //     io.in(user.id).emit('load postsurvey', {survey})//change to io.on?
+  //     io.in(user.id).emit('load postsurvey')
   //     user.results.manipulation = survey.correctAnswer
   //     db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
   //     io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
@@ -634,8 +618,8 @@ io.on('connection', (socket) => {
     // Disconnect leftover users
     Object.keys(io.sockets.sockets).forEach(socketID => {
       if (usersAccepted.every(acceptedUser => {return acceptedUser.id !== socketID})) {
-        //TODO: tell user that the HIT has been cancelled.
-        io.sockets.connected[socketID].disconnect();
+        console.log("Removing dead socket: " + socketID);
+        io.sockets.connected[socketID].emit('get IDs', 'broken');
       }
     });
     console.log("Sockets active: " + Object.keys(io.sockets.sockets));
@@ -743,6 +727,35 @@ io.on('connection', (socket) => {
 
   });
 
+  //loads qs in text file, returns json array
+  function loadQuestions(questionFile) { 
+    const prefix = questionFile.substr(0, questionFile.indexOf('.'))
+    let questions = []
+    let i = 0
+    fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) {
+      let questionObj = {};
+      i++;
+      questionObj['name'] = prefix + i;
+
+      //each question in the text file should be formatted: ANSWERTAG.QUESTION ex: YN.Are you part of Team Mark?
+      questionObj['question'] = line.substr(line.indexOf('.')+1, line.length);
+      let answerTag = line.substr(0, line.indexOf('.'));
+      if(answerTag === "S1") { // scale 1 radio
+        answerObj = answers;
+      } else if (answerTag === "YN") { // yes no
+        answerObj = binaryAnswers;
+      } else if (answerTag === "TR") { //team radio
+        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio'};
+      } else if (answerTag === "TC") { //team checkbox
+        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox'};
+      } 
+      questionObj['answers'] = answerObj.answers;
+      questionObj['answerType'] = answerObj.answerType;
+      questions.push(questionObj)
+    })
+    return questions
+  }
+
 });
 
 //replaces user.friend aliases with corresponding user IDs
@@ -768,31 +781,6 @@ function idToAlias(user, newString) {
 //returns time since task began
 function getSecondsPassed() {
   return ((new Date()).getTime() - startTime)/1000;
-}
-
-//loads qs in text file, returns json array
-function loadQuestions(questionFile, answerObj) { // may want to change the way this function works, answerObj may be unnecessary
-  const prefix = questionFile.substr(0, questionFile.indexOf('.'))
-  let questions = []
-  let i = 0
-  fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) {
-    let questionObj = {};
-    i++;
-    questionObj['name'] = prefix + i;
-
-    if(line.charAt(line.length-1) === "2") {// if question has binary tag, use binary answers
-      questionObj['question'] = line.substr(0, line.length-1);
-      questionObj['answers'] = binaryAnswers;
-    } else {
-      questionObj['question'] = line;
-      questionObj['answers'] = answerObj.answers;
-    }
-
-    questionObj['correctAnswer'] = answerObj.correctAnswer;
-    questionObj['answerType'] = answerObj.answerType;
-    questions.push(questionObj)
-  })
-  return questions
 }
 
 function replicate(arr, times) {

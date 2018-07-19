@@ -28,7 +28,7 @@ $(function() {
       <div id="{{question.name}}-rb-box" class='rb-box'>
         <template v-for="(index, option) in question.answers" :option="option">
           <label for="{{question.name}}-{{index+1}}" class="rb-tab">
-            <input v-if="question.answerType === 'radio'" type="radio" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" required/>
+            <input v-if="question.answerType === 'radio'" type="radio" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" />
             <input v-if="question.answerType === 'checkbox'" type="checkbox" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" />
             <span class='rb-spot'>{{index+1}}</span>
             <label for='{{question.name}}-{{index+1}}'>{{option}}</label>
@@ -380,60 +380,22 @@ $(function() {
     alert("The experiment is already full. Please return this HIT.")
   });
 
-  socket.on('load checkin', questions => {
+  socket.on('load', data => {
+    let element = data.element;
+    let questions = data.questions;
+
     new Vue({
-      el: '#checkin-questions',
+      el: '#'+element+'-questions',
       data: {
         questions
       }
     });
-  })
 
-  socket.on('load midsurvey', questions => {
-    new Vue({
-      el: '#midsurvey-questions',
-      data: {
-        questions
-      }
-    });
-  })
-
-
-  socket.on('load postsurvey', questions => {
-    new Vue({
-      el: '#postsurvey-questions',
-      data: {
-        questions
-      }
-    });
-  })
-
-  socket.on('load blacklist', questions => {
-    new Vue({
-      el:'#blacklist-questions',
-      data: {
-        questions
-      }
-    })
-  })
-
-  socket.on('load feedback', questions => {
-    new Vue({
-      el:'#feedback-questions',
-      data: {
-        questions
-      }
-    })
-  })
-
-  socket.on('load starter questions', questions => {
-    new Vue({
-      el: '#startersurvey-questions',
-      data: {
-        questions
-      }
-    });
-  })
+    if(!data.interstitial){
+      hideAll();
+      $("#"+data.element).show();
+    } 
+  });
 
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', data => {
@@ -557,6 +519,13 @@ $(function() {
     socket.emit(data)
   })
 
+  socket.on('get IDs', data => {
+    const URLvars = getUrlVars(location.href);
+    console.log('get IDs ran');
+    socket.emit(data,{mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId });
+  })
+
+
   socket.on('starterSurvey',data => {
     hideAll();
     $starterSurvey.show();
@@ -572,37 +541,16 @@ $(function() {
     $('#starterForm')[0].reset();
   })
 
-  socket.on('midSurvey',data => {
-    hideAll();
-    $midSurvey.show();
-
-  })
-
-  socket.on('postSurvey',data => {
-    hideAll();
-    $postSurvey.show();
-  })
-
   $('#postForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
     socket.emit('postSurveySubmit', $('#postForm').serialize()) //submits results alone
     socket.emit('execute experiment')
   })
 
-  socket.on('blacklistSurvey', () => {
-    hideAll();
-    $blacklistSurvey.show();
-  })
-
   $('#blacklistForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
     socket.emit('blacklistSurveySubmit', $('#blacklistForm').serialize()) //submits results alone
     socket.emit('execute experiment')
-  })
-
-  socket.on('teamfeedbackSurvey', () => {
-    hideAll();
-    $teamfeedbackSurvey.show();
   })
 
   $('#teamfeedbackForm').submit( (event) => {
