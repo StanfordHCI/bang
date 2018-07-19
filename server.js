@@ -10,8 +10,8 @@ const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
-const runningLive = false //still need to change the line for endpoint after deploying
-const runningLocal = false
+const runningLive = true //still need to change the line for endpoint after deploying
+const runningLocal = true
 
 // Question Files
 const midsurveyQuestionFile = "midsurvey-q.txt"
@@ -134,6 +134,25 @@ const rewardPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60)).toFi
 let usersAcceptedHIT = 0;
 let numAssignments = teamSize * teamSize;
 
+let QualificationReqs = [
+  {
+    QualificationTypeId:"00000000000000000071",  // US workers only
+    LocaleValues:[{
+      Country:"US",
+    }],
+    Comparator:"In",
+    ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
+  }];
+
+if (runningLive) {
+  QualificationReqs.push({
+    QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
+    Comparator: 'GreaterThan',
+    IntegerValues: [1000],
+    RequiredToPreview: true,
+  })
+}
+
 const params = {
   Title: 'Write online ads by chat/text with group...',
   Description: 'You will work in a small group in a text/chat environment to write ads for new products. This task will take approximately ' + ((roundMinutes * numRounds) + 10)  + ' minutes in length, hourly pay. If you have already completed this task, do not attempt again.',
@@ -143,20 +162,7 @@ const params = {
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
   Keywords: 'ads, writing, copy editing, advertising',
   MaxAssignments: numAssignments,
-  QualificationRequirements: [
-  {
-    QualificationTypeId:"00000000000000000071",  // US workers only
-    LocaleValues:[{
-      Country:"US",
-    }],
-    Comparator:"In",
-    ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
-  }, runningLive ? {
-    QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
-    Comparator: 'GreaterThan',
-    IntegerValues: [1000],
-    RequiredToPreview: true,
-  } : {}],
+  QualificationRequirements: QualificationReqs,
   Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
 };
 
