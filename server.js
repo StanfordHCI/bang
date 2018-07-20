@@ -102,6 +102,15 @@ if (issueBonusesNow){
   })
 }
 
+// Makes sure workers do not repeat
+db.users.find({}, (err, usersInDB) => {
+  if (err) {console.log("Err loading users:" + err)}
+  mturk.assignQualificationToUsers(usersInDB);
+})
+
+// lists users that have done the task before
+mturk.listUsersWithQualification()
+
 if (cleanHITs){
   mturk.expireActiveHits()
 }
