@@ -1,30 +1,44 @@
+require('dotenv').config()
+
 //Settings - change for actual deployment
-const teamSize = 1
-const roundMinutes = 0.01
+const teamSize = process.env.TEAM_SIZE
+const roundMinutes = process.env.ROUND_MINUTES
 
 // Toggles
+const runExperimentNow = true
+const issueBonusesNow = true
+const cleanHITs = false
+
 const autocompleteTestOn = false //turns on fake team to test autocomplete
-const starterSurveyOn = false
-const midSurveyOn = false
-const blacklistOn = false
+const starterSurveyOn = true
+const midSurveyOn = true
+const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
 
+const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
+const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
+
+console.log(runningLive ? "\nRUNNING LIVE\n" : "\nRUNNING SANDBOXED\n");
+console.log(runningLocal ? "Running locally" : "Running remotely");
+
 // Question Files
-const midsurveyQuestionFile = "midsurvey-q.txt"
-const checkinQuestionFile = "checkin-q.txt"
+const fs = require('fs')
+const midSurveyFile = "midsurvey-q.txt"
+const checkinFile = "checkin-q.txt"
 const blacklistFile = "blacklist-q.txt"
 const feedbackFile = "feedback-q.txt"
 const starterSurveyFile = "startersurvey-q.txt"
-const fs = require('fs')
+const postSurveyFile = "postsurvey-q.txt"
 
 // Answer Option Sets
-const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
-const binaryAnswers =['Yes', 'No']
+const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio'}
+const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio'}
 
 // Setup basic express server
 let tools = require('./tools');
+let mturk = require('./mturkTools');
 let express = require('express');
 const app = express();
 const server = require('http').createServer(app);
@@ -44,9 +58,10 @@ Array.prototype.set = function() {
 const currentCondition = "treatment"
 let treatmentNow = false
 
-const conditionSet = [{"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]},
-                      {"control": [2,1,1], "treatment": [2,1,1], "baseline": [1,2,3]},
-                      {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
+const conditionSet = [
+  {"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]},
+  {"control": [2,1,1], "treatment": [2,1,1], "baseline": [1,2,3]},
+  {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
 
 const experimentRoundIndicator = 1
 const conditions = conditionSet[0] // or conditionSet.pick() for ramdomized orderings.
@@ -74,135 +89,33 @@ const Datastore = require('nedb'),
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
 
-// MTurk AWS
-const AWS = require('aws-sdk');
 require('express')().listen(); //Sets to only relaunch with source changes
 
-AWS.config = {
-  "accessKeyId": 'AKIAJV6G2CON2PKCJREA', //process.env.YOUR_ACCESS_ID,
-  "secretAccessKey": 'WOGgQar1egg8i8YszXeMXWFaltIoieQSxH/eQrgB', //process.env.YOUR_SECRET_KEY,
-  "region": 'us-east-1',
-  "sslEnabled": 'true'
-};
-
-const live = false //ONLY CHANGE AFTER TESTING EVERYTHING
-if (live){
-  console.log("RUNNING LIVE");
-  // const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
-} else {
-  console.log("RUNNING SANDBOXED");
-  // const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
+//Mturk Calls
+if (issueBonusesNow){
+  db.users.find({}, (err, usersInDB) => {
+    if (err) {console.log("Err loading users:" + err)}
+    const usersPaid = mturk.payBonuses(usersInDB)
+    usersPaid.forEach((user) => {
+      db.users.update( {id: user.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)}})
+    })
+  })
 }
 
- const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
+// Makes sure workers do not repeat
+db.users.find({}, (err, usersInDB) => {
+  if (err) {console.log("Err loading users:" + err)}
+  mturk.assignQualificationToUsers(usersInDB);
+})
 
-// Uncomment this line to use in production
-//const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
 
-// This initiates the API
-// Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
-const mturk = new AWS.MTurk({ endpoint: endpoint });
+if (cleanHITs){
+  mturk.expireActiveHits()
+}
 
-// This will return $10,000.00 in the MTurk Developer Sandbox
-mturk.getAccountBalance((err, data) => {
-  if (err) console.log(err, err.stack); // an error occurred
-  else console.log(data);           // successful response
-});
-
-// This will return the HITs you currently have
-// mturk.listHITs({},(err, data) => {
-//   if (err) console.log(err, err.stack);
-//   else     console.log(data);
-// });
-
-// This will find a particular HIT
-// mturk.getHIT({},(err, data) => {
-//   if (err) console.log(err, err.stack);
-//   else     console.log(data);
-// });
-
-//const taskURL = 'https://bang.dmorina.com/'  // direct them to server URL
-const taskURL = 'https://localhost:3000/';
-
-// HIT Parameters
-const taskDuration = 60; // how many minutes - this is a Maximum for the task
-const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
-const numPosts = (2 * taskDuration) / timeActive; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
-const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
-const rewardPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60)).toFixed(2);
-let usersAcceptedHIT = 0;
-let numAssignments = teamSize * teamSize;
-
-const params = {
-  Title: 'Write online ads by chat/text with group...',
-  Description: 'You will work in a small group in a text/chat environment to write ads for new products. This task will take approximately ' + ((roundMinutes * numRounds) + 10)  + ' minutes in length, hourly pay. If you have already completed this task, do not attempt again.',
-  AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
-  LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
-  Reward: rewardPrice,
-  AutoApprovalDelayInSeconds: 60*taskDuration*2,
-  Keywords: 'ads, writing, copy editing, advertising',
-  MaxAssignments: numAssignments,
-  QualificationRequirements: [{
-    QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
-    Comparator: 'GreaterThan',
-    IntegerValues: [1000],
-    RequiredToPreview: true,
-  },
-  {
-    QualificationTypeId:"00000000000000000071",  // US workers only
-    LocaleValues:[{
-      Country:"US",
-    }],
-    Comparator:"In",
-    ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
-  }],
-  Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
-};
-
-// creates single HIT
-mturk.createHIT(params,(err, data) => {
-  if (err) console.log(err, err.stack);
-  else     console.log("First HIT posted");
-});
-
-// Blocks users who have already worked with us
-// db.users.find({}, (err, usersInDB) => {
-//   if (err) {console.log("Err loading users:" + err)}
-//   usersInDB.forEach((user) => {
-//     let pastUser = user.mturkId;
-//     if (pastUser){
-//       console.log("Blocking", pastUser);
-
-//       //Block user
-//       mturk.createWorkerBlock({ WorkerId: pastUser, Reason: 'Bang' }, (err, data) => { console.log( err ? "Blocking error: " + err : data) });
-
-//       //Unblock user
-//       // mturk.deleteWorkerBlock({ WorkerId: pastUser, Reason: 'Bang' }, (err, data) => { console.log( err ? "Unblocking error: " + err : data) });
-//     }
-//   })
-// })
-
-// A quick way to check who we've blocked
-// mturk.listWorkerBlocks({},(err,data) => {
-//   if (err) {console.log("Blocking error:", err)}
-//   console.log("Users currently blocked:", data.WorkerBlocks.filter((user) => user.Reason == "Bang").map((user) => {return user.WorkerId}))
-// })
-
-let delay = 1;
-// only continues to post if not enough people accepted HIT
-setTimeout(() => {
-  usersAcceptedHIT = usersAccepted.length;
-  if(usersAcceptedHIT < (teamSize * teamSize)) {
-    numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
-    mturk.createHIT(params,(err, data) => {
-      if (err) console.log(err, err.stack);
-      else     console.log("Another HIT posted");
-    }); 
-    delay++;
-  } else {
-    clearTimeout();
-  }
-}, 1000 * 60 * timeActive * delay)
+if (runExperimentNow){
+  mturk.launchBang(numRounds)
+}
 
 //Add more products
 let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
@@ -213,7 +126,6 @@ let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
                  'url': 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono' }]
 let users = []; //the main local user storage
 let currentRound = 0
-
 let startTime = 0
 
 // Building task list
@@ -245,29 +157,6 @@ let usersAccepted = [];
 
 app.use(express.static('public'));
 
-// //waiting page
-// app.route('/').get(function(req, res){
-//   app.use(express.static(__dirname + '/public'));
-//   res.sendFile(__dirname + '/public/waiting.html');
-//   fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
-// });
-//
-// //chat page
-// app.route('/chat').get(function(req, res)
-// {
-//   res.sendFile(__dirname + '/public/index.html');
-//   fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
-// });
-
-// app.all('/', function (req, res, next) {
-//  express.static('public');
-//  next()
-// })
-//app.all('/waiting', function(req, res, next) {
-//  express.static('waiting');
-//});
-//app.use('/waiting', express.static('waiting'))
-
 // Adds Batch data for this experiment. unique batchID based on time/date
 db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn,
         'teamfeedbackOn': teamfeedbackOn, 'checkinOn': checkinOn, 'conditions': conditions, 'experimentRound': experimentRound,
@@ -279,7 +168,9 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
 // Chatroom
 io.on('connection', (socket) => {
 
-    let addedUser = false;
+    let addedUser = false
+    let taskStarted = false
+    let taskOver = false
 
     socket.on('log', string => { console.log(string); });
 
@@ -366,6 +257,7 @@ io.on('connection', (socket) => {
           'assignmentId': acceptedUser.assignmentId,
           'room': '',
           'rooms':[],
+          'bonus': 0,
           'person': people.pop(),
           'name': socket.username,
           'ready': false,
@@ -410,7 +302,7 @@ io.on('connection', (socket) => {
         // if the user had accepted, removes them from the array of accepted users
         console.log(socket.id)
         if (usersAccepted.find(function(element) {return element.id == socket.id})) {
-          console.log('there was a disconnect');
+          console.log('There was a disconnect');
           usersAccepted = usersAccepted.filter(user => user.id != socket.id);
           console.log(usersAccepted)
           console.log("num users accepted:", usersAccepted.length);
@@ -421,23 +313,32 @@ io.on('connection', (socket) => {
           }
         }
 
-
         if (addedUser) {
           users.byID(socket.id).active = false //set user to inactive
           users.byID(socket.id).ready = false //set user to not ready
 
           // update DB with change
-          db.users.update({ id: socket.id }, {$set: {active: false}}, {}, (err, numReplaced) => { console.log(err ? "Activity not changed:" + err : "User left " + socket.id) })
+          db.users.update({ id: socket.id }, {$set: {active: false}}, {}, (err, numReplaced) => { console.log(err ? "Activity not changed: " + err : "User left " + socket.id) })
 
-          // users.forEach(user => {
-          //   socket.broadcast.to(user.id).emit('user left', {
-          //     username: idToAlias(user, socket.username),
-          //     numUsers: numUsers(user.room)
-          //     });
-          // })
+          if (!taskOver){
+            // Start cancel process
+            console.log("User left, emitting cancel to all users");
+            users.forEach((user) => {
+              let cancelMessage = "This HIT has crashed. Please submit below and we will accept."
 
-          // Report rooms' completeness
-          console.log( "Rooms now incomplete:", incompleteRooms() )
+              if (taskStarted) { // Add future bonus pay
+                user.bonus += mturk.bonusPrice/2
+                db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
+                cancelMessage = cancelMessage + " Since the team activity had already started, you will be additionally bonused for the time spent working with the team."
+              }
+              io.in(user.id).emit('finished', {
+                  message: cancelMessage,
+                  finishingCode: user.id,
+                  turkSubmitTo: mturk.submitTo,
+                  assignmentId: user.assignmentId
+              })
+            })
+          }
         }
     });
 
@@ -448,42 +349,41 @@ io.on('connection', (socket) => {
       console.log ("Activity:", currentActivity, "which is", task_list[currentActivity])
 
       if (task_list[currentActivity] == "starterSurvey") {
-        socket.emit('load starter questions', loadQuestions(starterSurveyFile, {answers: answers, answerType: 'radio', correctAnswer:''}));
-        io.in(user.id).emit("starterSurvey");
+        io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "ready") {
-        if (checkinOn) {io.in(user.id).emit('load checkin', loadQuestions(checkinQuestionFile, {answers: answers, answerType: 'radio', correctAnswer:''}));}
+        if (checkinOn) {
+          io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true});
+        }
         io.in(user.id).emit("echo", "ready");
       }
       else if (task_list[currentActivity] == "midSurvey") {
-        io.in(user.id).emit('load midsurvey', loadQuestions(midsurveyQuestionFile, {answers: answers, answerType: 'radio', correctAnswer:''}));
-        io.in(user.id).emit("midSurvey");
+        io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "teamfeedbackSurvey") {
-        io.in(user.id).emit('load feedback', loadQuestions(feedbackFile, {answers:answers, answerType: 'radio', correctAnswer:''}))
-        io.in(socket.id).emit('teamfeedbackSurvey')
+        io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "blacklistSurvey") {
-        io.in(user.id).emit('load blacklist', loadQuestions(blacklistFile, {answers: getTeamMembers(user), answerType: 'radio', correctAnswer:''}));
-        io.in(socket.id).emit('blacklistSurvey')
+        console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false})
+        io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "postSurvey") { //Launch post survey
-          user.ready = false
           let survey = postSurveyGenerator(user)
           user.results.manipulation = survey.correctAnswer
-          io.in(user.id).emit('load postsurvey', {survey})
           db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-          io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
+          io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "finished" || currentActivity > task_list.lenght) {
-        console.log(usersAccepted)
-        console.log(socket.id)
-        submitUser = usersAccepted.find((user) => user.id == socket.id)
+        user.ready = false
+        taskOver = true
+        user.bonus += mturk.bonusPrice
+        db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
 
         io.in(socket.id).emit('finished', {
+          message: "Thanks for participating, you're all done!",
           finishingCode: socket.id,
-          turkSubmitTo: submitUser.turkSubmitTo,
-          assignmentId: submitUser.assignmentId
+          turkSubmitTo: mturk.submitTo,
+          assignmentId: user.assignmentId
         })
       }
       user.currentActivity += 1
@@ -531,6 +431,7 @@ io.on('connection', (socket) => {
       let currentProduct = products[currentRound]
       let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
+      taskStarted = true
       users.forEach(user => {
         if (autocompleteTestOn) {
           let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
@@ -582,12 +483,19 @@ io.on('connection', (socket) => {
       }
     })
 
+  //if broken, tell users they're done and disconnect their socket
+  socket.on('broken', (data) => {
+        socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has may have had an error. You will be compensated."})
+        socket.disconnect();
+        console.log("Sockets active: " + Object.keys(io.sockets.sockets));
+  });
+
   //Launch post survey
   // if (currentRound >= numRounds) {
   //   users.forEach(user => {
   //     user.ready = false
   //     let survey = postSurveyGenerator(user)
-  //     io.in(user.id).emit('load postsurvey', {survey})//change to io.on?
+  //     io.in(user.id).emit('load postsurvey')
   //     user.results.manipulation = survey.correctAnswer
   //     db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
   //     io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
@@ -602,13 +510,20 @@ io.on('connection', (socket) => {
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
     });
-    console.log(data.turkSubmitTo);
     console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
+    // Disconnect leftover users
+    Object.keys(io.sockets.sockets).forEach(socketID => {
+      if (usersAccepted.every(acceptedUser => {return acceptedUser.id !== socketID})) {
+        console.log("Removing dead socket: " + socketID);
+        io.sockets.connected[socketID].emit('get IDs', 'broken');
+      }
+    });
+    console.log("Sockets active: " + Object.keys(io.sockets.sockets));
     // if enough people have accepted, push prompt to start task
     if(usersAccepted.length >= teamSize ** 2) {
-        let numWaiting = 0;
-        io.sockets.emit('update number waiting', {num: 0});
-      io.sockets.emit('enough people');
+      let numWaiting = 0;
+      io.sockets.emit('update number waiting', {num: 0});
+      usersAccepted.forEach(user => {io.in(user.id).emit('enough people')});
     } else {
       let numWaiting = (teamSize ** 2) - usersAccepted.length;
       io.sockets.emit('update number waiting', {num: numWaiting});
@@ -708,6 +623,35 @@ io.on('connection', (socket) => {
 
   });
 
+  //loads qs in text file, returns json array
+  function loadQuestions(questionFile) {
+    const prefix = questionFile.substr(0, questionFile.indexOf('.'))
+    let questions = []
+    let i = 0
+    fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) {
+      let questionObj = {};
+      i++;
+      questionObj['name'] = prefix + i;
+
+      //each question in the text file should be formatted: ANSWERTAG.QUESTION ex: YN.Are you part of Team Mark?
+      questionObj['question'] = line.substr(line.indexOf('.')+1, line.length);
+      let answerTag = line.substr(0, line.indexOf('.'));
+      if(answerTag === "S1") { // scale 1 radio
+        answerObj = answers;
+      } else if (answerTag === "YN") { // yes no
+        answerObj = binaryAnswers;
+      } else if (answerTag === "TR") { //team radio
+        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio'};
+      } else if (answerTag === "TC") { //team checkbox
+        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox'};
+      }
+      questionObj['answers'] = answerObj.answers;
+      questionObj['answerType'] = answerObj.answerType;
+      questions.push(questionObj)
+    })
+    return questions
+  }
+
 });
 
 //replaces user.friend aliases with corresponding user IDs
@@ -733,31 +677,6 @@ function idToAlias(user, newString) {
 //returns time since task began
 function getSecondsPassed() {
   return ((new Date()).getTime() - startTime)/1000;
-}
-
-//loads qs in text file, returns json array
-function loadQuestions(questionFile, answerObj) { // may want to change the way this function works, answerObj may be unnecessary
-  const prefix = questionFile.substr(0, questionFile.indexOf('.'))
-  let questions = []
-  let i = 0
-  fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) {
-    let questionObj = {};
-    i++;
-    questionObj['name'] = prefix + i;
-
-    if(line.charAt(line.length-1) === "2") {// if question has binary tag, use binary answers
-      questionObj['question'] = line.substr(0, line.length-1);
-      questionObj['answers'] = binaryAnswers;
-    } else {
-      questionObj['question'] = line;
-      questionObj['answers'] = answerObj.answers;
-    }
-
-    questionObj['correctAnswer'] = answerObj.correctAnswer;
-    questionObj['answerType'] = answerObj.answerType;
-    questions.push(questionObj)
-  })
-  return questions
 }
 
 function replicate(arr, times) {
@@ -805,4 +724,3 @@ const postSurveyGenerator = (user) => {
            answerType: 'checkbox',
            correctAnswer: correctAnswer }
 }
-

@@ -29,7 +29,7 @@
       </div>
       <input id="inputMessage" class="inputMessage" placeholder="Type here..." oninput=""/>
     </li>
-    <div class="popup">
+    <div id="checkin" class="popup">
       <form id="checkin-form" class="rb">
         <p>These check-ins are anonymous and will be used by an algorithm to pair you with an optimal team for the next round.</p>
         <div id="checkin-questions" >
@@ -41,7 +41,7 @@
     <li id="holding" class="login page">
       <div class="form">
         <h3 class="title">You're signed in as <b><span id="username"></span></b>.</h3>
-        <p>Loading data. Please do not refresh the page.</p>
+        <p>Waiting for other users to finish. Please do not refresh the page.</p>
       </div>
     </li>
     <li id="preSurvey" class="login page">
@@ -59,7 +59,7 @@
           in the present moment, not how you would like to be in the future.
           There are no incorrect answers nor any personality profile that is
           inherently more desirable than another.</h3>
-        <div id="startersurvey-questions" >
+        <div id="starterSurvey-questions" >
           <question-component v-for="question in questions" :question="question" />
         </div>
         <input type="submit" value="Submit">
@@ -69,7 +69,7 @@
     <li id="midSurvey" class="login page">
       <form id="midForm" >
         <h3 class="intro">Your answers to the following questions will have no impact on your task performance<br>or ability to work with us in the future.</h3>
-        <div id="midsurvey-questions" class="survey-questions">
+        <div id="midSurvey-questions" class="survey-questions">
           <question-component v-for="question in questions" :question="question" />
         </div>
         <input id="submitButton" type="submit" value="Submit">
@@ -78,7 +78,7 @@
 
     <li id="postSurvey" class="login page">
       <form id="postForm">
-        <div id="postsurvey-questions" class='survey-questions'>
+        <div id="postSurvey-questions" class='survey-questions'>
           <question-component v-for="question in questions" :question="question" />
         </div>
        <input type="submit" value="Submit">
@@ -87,7 +87,7 @@
 
     <li id="blacklistSurvey" class="login page">
       <form id="blacklistForm">
-        <div id="blacklist-questions" class='survey-questions'>
+        <div id="blacklistSurvey-questions" class='survey-questions'>
           <question-component v-for="question in questions" :question="question" />
         </div>
         <input type="submit" value="Submit">
@@ -112,7 +112,7 @@
     </li>
 
     <li id="finishing" class="login page">
-      <h3 class="title">Thanks for participating, you're all done!</h3>
+      <h3 class="title" id="finishingMessage"></h3>
       <form name='mturk_form' method='post' id='mturk_form' action=''>
       <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
       <input type='hidden' value='' name='finishingcode' id='finishingcode'/>

@@ -1,16 +1,22 @@
 {
-  "name": "TeamChat",
+  "name": "teamchat",
   "version": "0.1.0",
   "description": "A simple team chat system",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "restart": "pm2 startOrRestart ecosystem.config.js",
+    "deploy": "pm2 deploy ecosystem.config.js production",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "coffeescript": "latest",
+    "dotenv": "^6.0.0",
     "express": "^4.16.3",
+    "mustache": "^2.3.0",
     "nedb": "^1.8.0",
-    "socket.io": "^2.1.1"
+    "socket.io": "^2.1.1",
+    "watson-developer-cloud": "^3.7.0"
   },
   "engines": {
     "node": "8.11.1"
@@ -19,5 +25,18 @@
     "node",
     "research"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "aws-sdk": "^2.275.1",
+    "pm2": "^3.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/StanfordHCI/bang.git"
+  },
+  "author": "",
+  "bugs": {
+    "url": "https://github.com/StanfordHCI/bang/issues"
+  },
+  "homepage": "https://github.com/StanfordHCI/bang#readme"
 }
