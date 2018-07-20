@@ -146,13 +146,11 @@ const launchBang = (numRounds = 3) => {
 
   let delay = 1;
   // only continues to post if not enough people accepted HIT
-
-  let getHitParameters = {
-    HITId: currentHitId
-  }
-
   // Reposts every timeActive(x) number of minutes to keep HIT on top - stops reposting when enough people join
   setTimeout(() => {
+    let getHitParameters = {
+      HITId: currentHitId
+    }
     mturk.getHIT(getHitParameters, function(err, data) {
       if (err) {
         console.log(err, err.stack);
