@@ -57,6 +57,11 @@ for (let [k,chatlog] of map) {
 
 }
 
+
+// TODO: 
+// modify ibm response to include timestamp/user id
+// store response in db
+
 function getToneChat(utterances) {
   let toneChatParams = {
     utterances: utterances
@@ -66,7 +71,7 @@ function getToneChat(utterances) {
     if (error) {
       console.log(error);
     } else {
-      console.log(JSON.stringify(analysis, null, 2));
+      console.log(JSON.stringify(analysis, null, 2));//should store this in db -> analyze/graph
     }
   });
 }
