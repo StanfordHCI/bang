@@ -1,6 +1,7 @@
 //Settings - change for actual deployment
 const teamSize = 1
 const roundMinutes = .01
+require('dotenv').config()
 
 // Toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
@@ -11,21 +12,23 @@ const teamfeedbackOn = false
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
 
-const bonusUsersOn = true // If true, any remaining bonuses will be run, default to true
+const killHITs = true // expires active hits, default to true
+const bonusUsersOn = true // pays remaining bonuses, default to true
 const qualificationsOn = false
-const runningLocal = true
-const runningLive = false//ONLY CHANGE IN VIM ON SERVER
+const runningLocal = process.env.RUNNING_LOCAL
+const runningLive = false //process.env.RUNNING_LIVE //ONLY CHANGE IN VIM ON SERVER
+
+console.log(runningLive == "TRUE" ? "\nRUNNING LIVE\n" : "\nRUNNING SANDBOXED\n");
+console.log(runningLocal == "TRUE" ? "Running locally" : "Running remotely");
 
 // Question Files
+const fs = require('fs')
 const midSurveyFile = "midsurvey-q.txt"
 const checkinFile = "checkin-q.txt"
 const blacklistFile = "blacklist-q.txt"
 const feedbackFile = "feedback-q.txt"
 const starterSurveyFile = "startersurvey-q.txt"
 const postSurveyFile = "postsurvey-q.txt"
-const fs = require('fs')
-require('dotenv').config()
-
 
 // Answer Option Sets
 const answers ={answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio'}
@@ -88,14 +91,11 @@ const AWS = require('aws-sdk');
 require('express')().listen(); //Sets to only relaunch with source changes
 
 AWS.config = {
-  "accessKeyId": process.env.YOUR_ACCESS_ID , //,
-  "secretAccessKey": process.env.secretAccessKey,
+  "accessKeyId": process.env.AWS_ID ,
+  "secretAccessKey": process.env.AWS_KEY,
   "region": "us-east-1",
-  "sslEnabled": true.
-};
-
-console.log("process.env.YOUR_ACCESS_ID", process.env.YOUR_ACCESS_ID)
-console.log("process.env.DB_HOST", process.env.DB_HOST)
+  "sslEnabled": true
+}
 
 let endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 let turkSubmitTo = 'https://workersandbox.mturk.com'
@@ -114,6 +114,26 @@ mturk.getAccountBalance((err, data) => {
   if (err) console.log(err, err.stack); // an error occurred
   else console.log(data);           // successful response
 });
+
+
+if (killHITs){
+  mturk.listHITs({}, (err, data) => {
+    if (err) console.log(err, err.stack);
+    else {
+      data.HITs.map((hit) => {
+        mturk.updateExpirationForHIT({HITId: hit.HITId,ExpireAt:0}, (err, data) => {
+          if (err) { console.log(err, err.stack)
+          } else {console.log("Expired HIT:", hit.HITId)}
+        });
+        // mturk.deleteHIT({HITId: hit.HITId}, (err, data) => {
+        //   if (err) { console.log(err, err.stack)
+        //   } else {console.log("Deleted HIT:", hit.HITId)}
+        // });
+      })
+    }
+  });
+}
+
 
 // bonus all users in DB who have leftover bonuses
 if (bonusUsersOn){
@@ -144,7 +164,8 @@ const taskDuration = 60; // how many minutes - this is a Maximum for the task
 const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
 const numPosts = (2 * taskDuration) / timeActive; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
 const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
-const rewardPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60)).toFixed(2);
+const rewardPrice = .50
+const bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
 let usersAcceptedHIT = 0;
 let numAssignments = teamSize * teamSize;
 let QualificationReqs = [
@@ -167,11 +188,11 @@ if (qualificationsOn) {
 }
 
 const params = {
-  Title: 'Write online ads by chat/text with group...',
-  Description: 'You will work in a small group in a text/chat environment to write ads for new products. This task will take approximately ' + ((roundMinutes * numRounds) + 10)  + ' minutes in length, hourly pay. If you have already completed this task, do not attempt again.',
+  Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour',
+  Description: 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10)  + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
   AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
   LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
-  Reward: rewardPrice,
+  Reward: String(rewardPrice),
   AutoApprovalDelayInSeconds: 60*taskDuration*2,
   Keywords: 'ads, writing, copy editing, advertising',
   MaxAssignments: numAssignments,
@@ -182,7 +203,7 @@ const params = {
 // creates single HIT
 mturk.createHIT(params,(err, data) => {
   if (err) console.log(err, err.stack);
-  else     console.log("First HIT posted");
+  else     console.log("Posted HIT:", data.HIT.HITId);
 });
 
 // Blocks users who have already worked with us
@@ -223,7 +244,7 @@ setTimeout(() => {
     clearTimeout();
   }
 }, 1000 * 60 * timeActive * delay)
-
+-m 
 //Add more products
 let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
                  'url': 'https://www.kickstarter.com/projects/stilform/kosmos-ink' },
@@ -275,7 +296,7 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
 
 // Chatroom
 io.on('connection', (socket) => {
-    
+
     let addedUser = false;
     let taskStarted = false;
 
@@ -432,7 +453,7 @@ io.on('connection', (socket) => {
           users.forEach((user) => {
             let cancelMessage = "This HIT has crashed. Please submit below and we will accept."
             if (taskStarted) { // Add future bonus pay
-              user.bonus += hourlyWage * duration
+              user.bonus += bonusPrice/2
               db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
               cancelMessage = cancelMessage + " Since the team activity had already started, you will be additionally bonused for the time spent working with the team."
             }
@@ -481,6 +502,9 @@ io.on('connection', (socket) => {
       else if (task_list[currentActivity] == "finished" || currentActivity > task_list.lenght) {
         // console.log(usersAccepted)
         // console.log(socket.id)
+
+        user.bonus += bonusPrice
+        db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
 
         io.in(socket.id).emit('finished', {
           message: "Thanks for participating, you're all done!",
@@ -728,7 +752,7 @@ io.on('connection', (socket) => {
   });
 
   //loads qs in text file, returns json array
-  function loadQuestions(questionFile) { 
+  function loadQuestions(questionFile) {
     const prefix = questionFile.substr(0, questionFile.indexOf('.'))
     let questions = []
     let i = 0
@@ -748,7 +772,7 @@ io.on('connection', (socket) => {
         answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio'};
       } else if (answerTag === "TC") { //team checkbox
         answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox'};
-      } 
+      }
       questionObj['answers'] = answerObj.answers;
       questionObj['answerType'] = answerObj.answerType;
       questions.push(questionObj)
