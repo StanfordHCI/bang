@@ -1,9 +1,14 @@
-//Settings - change for actual deployment
-const teamSize = 1
-const roundMinutes = .01
 require('dotenv').config()
 
+//Settings - change for actual deployment
+const teamSize = process.env.TEAM_SIZE
+const roundMinutes = process.env.ROUND_MINUTES
+
 // Toggles
+const runExperimentNow = false
+const issueBonusesNow = false
+const cleanHITs = false
+
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 const starterSurveyOn = true
 const midSurveyOn = true
@@ -12,14 +17,11 @@ const teamfeedbackOn = false
 const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
 
-const killHITs = true // expires active hits, default to true
-const bonusUsersOn = true // pays remaining bonuses, default to true
-const qualificationsOn = false
-const runningLocal = process.env.RUNNING_LOCAL
-const runningLive = false //process.env.RUNNING_LIVE //ONLY CHANGE IN VIM ON SERVER
+const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
+const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
 
-console.log(runningLive == "TRUE" ? "\nRUNNING LIVE\n" : "\nRUNNING SANDBOXED\n");
-console.log(runningLocal == "TRUE" ? "Running locally" : "Running remotely");
+console.log(runningLive ? "\nRUNNING LIVE\n" : "\nRUNNING SANDBOXED\n");
+console.log(runningLocal ? "Running locally" : "Running remotely");
 
 // Question Files
 const fs = require('fs')
@@ -31,12 +33,12 @@ const starterSurveyFile = "startersurvey-q.txt"
 const postSurveyFile = "postsurvey-q.txt"
 
 // Answer Option Sets
-const answers ={answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio'}
-const binaryAnswers ={answers: ['Yes', 'No'], answerType: 'radio'}
-
+const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio'}
+const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio'}
 
 // Setup basic express server
 let tools = require('./tools');
+let mturk = require('./mturkTools');
 let express = require('express');
 const app = express();
 const server = require('http').createServer(app);
@@ -56,9 +58,10 @@ Array.prototype.set = function() {
 const currentCondition = "treatment"
 let treatmentNow = false
 
-const conditionSet = [{"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]},
-                      {"control": [2,1,1], "treatment": [2,1,1], "baseline": [1,2,3]},
-                      {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
+const conditionSet = [
+  {"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]},
+  {"control": [2,1,1], "treatment": [2,1,1], "baseline": [1,2,3]},
+  {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
 
 const experimentRoundIndicator = 1
 const conditions = conditionSet[0] // or conditionSet.pick() for ramdomized orderings.
@@ -86,165 +89,27 @@ const Datastore = require('nedb'),
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
 
-// MTurk AWS
-const AWS = require('aws-sdk');
 require('express')().listen(); //Sets to only relaunch with source changes
 
-AWS.config = {
-  "accessKeyId": process.env.AWS_ID ,
-  "secretAccessKey": process.env.AWS_KEY,
-  "region": "us-east-1",
-  "sslEnabled": true
-}
-
-let endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
-let turkSubmitTo = 'https://workersandbox.mturk.com'
-
-if (runningLive) {
-  endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
-  turkSubmitTo = 'https://www.mturk.com'
-}
-
-// This initiates the API
-// Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
-const mturk = new AWS.MTurk({ endpoint: endpoint });
-
-// This will return $10,000.00 in the MTurk Developer Sandbox
-mturk.getAccountBalance((err, data) => {
-  if (err) console.log(err, err.stack); // an error occurred
-  else console.log(data);           // successful response
-});
-
-
-if (killHITs){
-  mturk.listHITs({}, (err, data) => {
-    if (err) console.log(err, err.stack);
-    else {
-      data.HITs.map((hit) => {
-        mturk.updateExpirationForHIT({HITId: hit.HITId,ExpireAt:0}, (err, data) => {
-          if (err) { console.log(err, err.stack)
-          } else {console.log("Expired HIT:", hit.HITId)}
-        });
-        // mturk.deleteHIT({HITId: hit.HITId}, (err, data) => {
-        //   if (err) { console.log(err, err.stack)
-        //   } else {console.log("Deleted HIT:", hit.HITId)}
-        // });
-      })
-    }
-  });
-}
-
-
-// bonus all users in DB who have leftover bonuses
-if (bonusUsersOn){
-  db.users.find({bonus: {$gt: 0} }, (err, usersInDB) => {
+//Mturk Calls
+if (issueBonusesNow){
+  db.users.find({}, (err, usersInDB) => {
     if (err) {console.log("Err loading users:" + err)}
-    usersInDB.forEach((user) => {
-      var params = { AssignmentId: user.assignmentId, BonusAmount: String(user.bonus), Reason: "Thanks for participating in our HIT!", WorkerId: user.mturkId, UniqueRequestToken: user.id };
-      mturk.sendBonus(params, function(err, data) {
-        if (err) {
-          console.log( user.id + " bonus not processed: " + err)
-        } else {
-          console.log(user.id + " bonused: " + data)
-          db.users.update( {id: user.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)}})
-        }
-      })
+    const usersPaid = mturk.payBonuses(usersInDB)
+    usersPaid.forEach((user) => {
+      db.users.update( {id: user.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)}})
     })
   })
 }
 
-// direct them to server URL
-let taskURL = 'https://bang.dmorina.com/';
-if (runningLocal) {
-   taskURL = 'https://localhost:3000/';
+if (cleanHITs){
+  mturk.expireActiveHits()
 }
 
-// HIT Parameters
-const taskDuration = 60; // how many minutes - this is a Maximum for the task
-const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
-const numPosts = (2 * taskDuration) / timeActive; // How many times do you want the task to be posted? numPosts * timeActive = total time running HITs
-const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
-const rewardPrice = .50
-const bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
-let usersAcceptedHIT = 0;
-let numAssignments = teamSize * teamSize;
-let QualificationReqs = [
-  {
-    QualificationTypeId:"00000000000000000071",  // US workers only
-    LocaleValues:[{
-      Country:"US",
-    }],
-    Comparator:"In",
-    ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
-  }];
-
-if (qualificationsOn) {
-  QualificationReqs.push({
-    QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
-    Comparator: 'GreaterThan',
-    IntegerValues: [1000],
-    RequiredToPreview: true,
-  })
+if (runExperimentNow){
+  mturk.launchBang(numRounds)
 }
 
-const params = {
-  Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour',
-  Description: 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10)  + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
-  AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
-  LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
-  Reward: String(rewardPrice),
-  AutoApprovalDelayInSeconds: 60*taskDuration*2,
-  Keywords: 'ads, writing, copy editing, advertising',
-  MaxAssignments: numAssignments,
-  QualificationRequirements: QualificationReqs,
-  Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
-};
-
-// creates single HIT
-mturk.createHIT(params,(err, data) => {
-  if (err) console.log(err, err.stack);
-  else     console.log("Posted HIT:", data.HIT.HITId);
-});
-
-// Blocks users who have already worked with us
-// db.users.find({}, (err, usersInDB) => {
-//   if (err) {console.log("Err loading users:" + err)}
-//   usersInDB.forEach((user) => {
-//     let pastUser = user.mturkId;
-//     if (pastUser){
-//       console.log("Blocking", pastUser);
-
-//       //Block user
-//       mturk.createWorkerBlock({ WorkerId: pastUser, Reason: 'Bang' }, (err, data) => { console.log( err ? "Blocking error: " + err : data) });
-
-//       //Unblock user
-//       // mturk.deleteWorkerBlock({ WorkerId: pastUser, Reason: 'Bang' }, (err, data) => { console.log( err ? "Unblocking error: " + err : data) });
-//     }
-//   })
-// })
-
-// A quick way to check who we've blocked
-// mturk.listWorkerBlocks({},(err,data) => {
-//   if (err) {console.log("Blocking error:", err)}
-//   console.log("Users currently blocked:", data.WorkerBlocks.filter((user) => user.Reason == "Bang").map((user) => {return user.WorkerId}))
-// })
-
-let delay = 1;
-// only continues to post if not enough people accepted HIT
-setTimeout(() => {
-  usersAcceptedHIT = usersAccepted.length;
-  if(usersAcceptedHIT < (teamSize * teamSize)) {
-    numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
-    mturk.createHIT(params,(err, data) => {
-      if (err) console.log(err, err.stack);
-      else     console.log("Another HIT posted");
-    });
-    delay++;
-  } else {
-    clearTimeout();
-  }
-}, 1000 * 60 * timeActive * delay)
--m 
 //Add more products
 let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
                  'url': 'https://www.kickstarter.com/projects/stilform/kosmos-ink' },
@@ -254,7 +119,6 @@ let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
                  'url': 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono' }]
 let users = []; //the main local user storage
 let currentRound = 0
-
 let startTime = 0
 
 // Building task list
