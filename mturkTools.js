@@ -62,10 +62,10 @@ const expireActiveHits = () => {
   })
 }
 
-let qualificationID = '';
+let qualificationId = '';
 
 if(runningLive) {
-  qualificaitonID = '3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG';
+  qualificaitonId = '3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG';
 }
 
 // Creates a qualification that will be assigned to an individual that accepts the task. That individual will
@@ -78,7 +78,7 @@ if(runningLive) {
 // mturk.createQualificationType(qualificationParams, function(err, data) {
 //   if (err) console.log(err, err.stack); // an error occurred
 //   else     console.log(data);           // successful response
-//   qualificationID = data.QualificationTypeId;
+//   qualificationId = data.QualificationTypeId;
 // });
 
 // creates single HIT
@@ -111,7 +111,7 @@ const launchBang = (numRounds = 3) => {
     })
     if(runningLive) {
       QualificationReqs.push({
-        QualificationTypeId: 'qualificationID',  // have not already completed the HIT
+        QualificationTypeId: qualificationId,  // have not already completed the HIT
         Comparator: 'DoesNotExist',
         ActionsGuarded:"DiscoverPreviewAndAccept"
       })
@@ -120,7 +120,6 @@ const launchBang = (numRounds = 3) => {
 
   const params = {
     Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour',
-   // Title: 'This is another test',
     Description: 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10)  + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
     AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
     LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
@@ -161,7 +160,7 @@ const assignQualificationToUsers = (users) => {
     return user.mturkId
   }).forEach((user) => {
     // // Assigns the qualification to the worker
-    var assignQualificationParams = {QualificationTypeId: qualificationID, WorkerId: user.mturkId, SendNotification: false};
+    var assignQualificationParams = {QualificationTypeId: qualificationId, WorkerId: user.mturkId, SendNotification: false};
     mturk.associateQualificationWithWorker(assignQualificationParams, function(err, data) {
       if (err) console.log(err, err.stack); // an error occurred
       else     console.log(data);           // successful response
@@ -170,7 +169,7 @@ const assignQualificationToUsers = (users) => {
 }
 
 const listUsersWithQualification = () => {
-  var userWithQualificationParams = {QualificationTypeId: qualificationID};
+  var userWithQualificationParams = {QualificationTypeId: qualificationId};
   mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
     else     console.log(data);           // successful response
