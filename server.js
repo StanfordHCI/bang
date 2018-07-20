@@ -568,14 +568,14 @@ io.on('connection', (socket) => {
   // Answer Option Sets - around line 22
   // const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
   function numberToValue(value) {
-    return answers[parseInt(value) - 1];  // index 0
+    return answers.answers[parseInt(value) - 1];  // index 0
   }
 
   // for binary questions
   // Answer Option Sets - around line 22
   // const binaryAnswers = ['Yes', 'No']
   function numberToBinary(value) {
-    return binaryAnswers[parseInt(value) - 1];  // index 0
+    return binaryAnswers.answers[parseInt(value) - 1];  // index 0
   }
 
    // Task after each round - midSurvey - MAIKA
