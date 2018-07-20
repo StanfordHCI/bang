@@ -62,12 +62,12 @@ const expireActiveHits = () => {
   })
 }
 
-// Creates a qualification that will be assigned to an individual that accepts the task. That individual will 
+// Creates a qualification that will be assigned to an individual that accepts the task. That individual will
 // not be able to see it task again.
 // var qualificationParams = {
 //   Description: 'This user has already accepted a HIT for this specific task. We only allow one completion of this task per worker.', /* required */
 //   Name: 'hasNotBanged', /* required */
-//   QualificationTypeStatus: Active, /* required */ 
+//   QualificationTypeStatus: Active, /* required */
 // };
 // mturk.createQualificationType(qualificationParams, function(err, data) {
 //   if (err) console.log(err, err.stack); // an error occurred
@@ -79,7 +79,7 @@ const launchBang = (numRounds = 3) => {
   // HIT Parameters
 
   const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
-  const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
+  const timeActive = 30; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
   const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
   const rewardPrice = .50
   let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
@@ -131,19 +131,19 @@ const launchBang = (numRounds = 3) => {
   let delay = 1;
   // only continues to post if not enough people accepted HIT
 
-  setTimeout(() => {
-    usersAcceptedHIT = usersAccepted.length;
-    if(usersAcceptedHIT < (teamSize * teamSize)) {
-      numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
-      mturk.createHIT(params,(err, data) => {
-        if (err) console.log(err, err.stack);
-        else console.log("HIT expired, and posted", data.HIT.MaxAssignments, "new assignments:", data.HIT.HITId);
-      });
-      delay++;
-    } else {
-      clearTimeout();
-    }
-  }, 1000 * 60 * timeActive * delay)
+  // setTimeout(() => {
+  //   usersAcceptedHIT = usersAccepted.length;
+  //   if(usersAcceptedHIT < (teamSize * teamSize)) {
+  //     numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
+  //     mturk.createHIT(params,(err, data) => {
+  //       if (err) console.log(err, err.stack);
+  //       else console.log("HIT expired, and posted", data.HIT.MaxAssignments, "new assignments:", data.HIT.HITId);
+  //     });
+  //     delay++;
+  //   } else {
+  //     clearTimeout();
+  //   }
+  // }, 1000 * 60 * timeActive * delay)
 }
 
 // assigns a qualification to users who have already completed the task - does not let workers repeat task
@@ -191,7 +191,7 @@ module.exports = {
   expireActiveHits: expireActiveHits,
   getBalance: getBalance,
   launchBang: launchBang,
-  assignQualificationToUsers: assignQualificationToUsers, 
+  assignQualificationToUsers: assignQualificationToUsers,
   listUsersWithQualification: listUsersWithQualification,
   payBonuses: payBonuses,
   bonusPrice: bonusPrice,
