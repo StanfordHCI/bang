@@ -86,7 +86,7 @@ const launchBang = (numRounds = 3) => {
   // HIT Parameters
 
   const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
-  const timeActive = 30; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
+  const timeActive = 0.5; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
   const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
   const rewardPrice = .50
   let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
@@ -118,8 +118,10 @@ const launchBang = (numRounds = 3) => {
     }
   }
 
+  let time = Date.now();
+
   const params = {
-    Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour',
+    Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')',
     Description: 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10)  + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
     AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
     LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
@@ -131,27 +133,48 @@ const launchBang = (numRounds = 3) => {
     Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
   };
 
+  let currentHitId = '';
+
   mturk.createHIT(params,(err, data) => {
-    if (err) console.log(err, err.stack);
-    else console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
+    if (err) {
+      console.log(err, err.stack);
+    } else {
+      console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
+      currentHitId = data.HIT.HITId;
+    }
   });
 
   let delay = 1;
   // only continues to post if not enough people accepted HIT
-
-  // setTimeout(() => {
-  //   usersAcceptedHIT = usersAccepted.length;
-  //   if(usersAcceptedHIT < (teamSize * teamSize)) {
-  //     numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
-  //     mturk.createHIT(params,(err, data) => {
-  //       if (err) console.log(err, err.stack);
-  //       else console.log("HIT expired, and posted", data.HIT.MaxAssignments, "new assignments:", data.HIT.HITId);
-  //     });
-  //     delay++;
-  //   } else {
-  //     clearTimeout();
-  //   }
-  // }, 1000 * 60 * timeActive * delay)
+  // Reposts every timeActive(x) number of minutes to keep HIT on top - stops reposting when enough people join
+  setTimeout(() => {
+    let getHitParameters = {
+      HITId: currentHitId
+    }
+    mturk.getHIT(getHitParameters, function(err, data) {
+      if (err) {
+        console.log(err, err.stack);
+        console.log('error is getHIT')
+      } else {
+        currentHitId = data.HIT.HITId;
+        usersAcceptedHIT = data.HIT.NumberOfAssignmentsPending;
+      }
+    })
+    if(usersAcceptedHIT < (teamSize * teamSize)) {
+      numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
+      mturk.createHIT(params,(err, data) => {
+        if (err) {
+          console.log(err, err.stack);
+        } else {
+          console.log("HIT expired, and posted", data.HIT.MaxAssignments, "new assignments:", data.HIT.HITId);
+          currentHitId = data.HIT.HITId;
+        }
+      });
+      delay++;
+    } else {
+      clearTimeout();
+    }
+   }, 1000 * 60 * timeActive * delay)
 }
 
 // assigns a qualification to users who have already completed the task - does not let workers repeat task
