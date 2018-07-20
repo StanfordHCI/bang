@@ -108,6 +108,8 @@ db.users.find({}, (err, usersInDB) => {
   mturk.assignQualificationToUsers(usersInDB);
 })
 
+// lists users that have done the task before
+mturk.listUsersWithQualification()
 
 if (cleanHITs){
   mturk.expireActiveHits()
