@@ -556,16 +556,16 @@ $(function() {
             }
           }
         );
-
+        
         // Run spell check only if animal name not detected
-        if (fuzzyMatches.length === 1 && fuzzyMatches[0] === undefined) {
+        if (fuzzyMatches[0] === undefined) {
           for (i = 0; i < currentTeam.length; i++) {
             if (fuzzyMatched(currentTeam[i], currentTerm, 0.7)) {
               fuzzyMatches.push(currentTeam[i]);
             }
           }
         }
-        
+
         // if there is only 1 possible match, correct the user
         if (fuzzyMatches.length === 1 && fuzzyMatches[0] !== undefined) {
           let current_text = $("#inputMessage").val().split(" ");
