@@ -86,7 +86,7 @@ const launchBang = (numRounds = 3) => {
   // HIT Parameters
 
   const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
-  const timeActive = 0.5; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
+  const timeActive = 10; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
   const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
   const rewardPrice = .50
   let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
