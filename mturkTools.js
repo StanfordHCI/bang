@@ -107,7 +107,7 @@ const launchBang = (numRounds = 3) => {
 
   mturk.createHIT(params,(err, data) => {
     if (err) console.log(err, err.stack);
-    else console.log("Posted HIT:", data.HIT.HITId);
+    else console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
   });
 
   let delay = 1;
@@ -119,7 +119,7 @@ const launchBang = (numRounds = 3) => {
       numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
       mturk.createHIT(params,(err, data) => {
         if (err) console.log(err, err.stack);
-        else console.log("HIT expired, and posted new HIT:", data.HIT.HITId);
+        else console.log("HIT expired, and posted", data.HIT.MaxAssignments, "new assignments:", data.HIT.HITId);
       });
       delay++;
     } else {
