@@ -489,9 +489,21 @@ $(function() {
     
     notify("Session ready", "Come back and join in!")
 
-    //Set up team autocomplete
+    // Set up team autocomplete
     currentTeam = data.team
     $currentInput = $inputMessage.focus();
+
+    // Build a list of animals in current team
+    randomAnimal = data.randomAnimal;
+    let teamAnimals = {};
+    for (i = 0; i < randomAnimal.length; i++) {
+      for (j = 0; j < currentTeam.length; j++) {
+        if (currentTeam[j].includes(randomAnimal[i])) {
+          teamAnimals[randomAnimal[i]] = currentTeam[j];
+        }
+      }
+    }
+
 
     $inputMessage.keydown(function (event) {
       $inputMessage.autocomplete( "option", "source", (request, response) => {
@@ -509,15 +521,20 @@ $(function() {
           response($.grep( currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); }))
         }
         else if (5 < wordlength) {
-          matcher = new RegExp( ".*" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
-          matches = $.grep( currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); })
+          let matcher = new RegExp( ".*" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
+          let matches = $.grep( currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); })
             if (matches.length === 1 && matches[0] !== undefined
               && event.keyCode !== 8
               && event.keyCode !== $.ui.keyCode.SPACE)  { //do not autocomplete if client backspace-d)
               current_text = $("#inputMessage").val().split(" ");
               current_text.splice(-1, 1)
               let joined_text = current_text.join(" ");
-              $("#inputMessage").val(joined_text + " " + matches[0]);
+              if (current_text[0] === undefined) {
+                $("#inputMessage").val(matches[0]);
+              }
+              else {
+                $("#inputMessage").val(joined_text + " " + matches[0]);
+              }
             };
           }
           
@@ -530,17 +547,36 @@ $(function() {
         let terms_typed = $("#inputMessage").val().split(" ");
         let currentTerm = terms_typed.pop();
         let fuzzyMatches = [];
-        for (i = 0; i < currentTeam.length; i++) {
-          if (fuzzyMatched(currentTeam[i], currentTerm, 0.7)) {
-            fuzzyMatches.push(currentTeam[i]);
+
+        // Match if users only type animal name
+        Object.entries(teamAnimals).forEach(
+          ([key, value]) => {
+            if (fuzzyMatched(key, currentTerm, 0.8)) {
+              fuzzyMatches.push(value);
+            }
+          }
+        );
+
+        // Run spell check only if animal name not detected
+        if (fuzzyMatches.length === 1 && fuzzyMatches[0] === undefined) {
+          for (i = 0; i < currentTeam.length; i++) {
+            if (fuzzyMatched(currentTeam[i], currentTerm, 0.7)) {
+              fuzzyMatches.push(currentTeam[i]);
+            }
           }
         }
+        
         // if there is only 1 possible match, correct the user
         if (fuzzyMatches.length === 1 && fuzzyMatches[0] !== undefined) {
-          current_text = $("#inputMessage").val().split(" ");
+          let current_text = $("#inputMessage").val().split(" ");
           current_text.splice(-1, 1)
           let joined_text = current_text.join(" ");
-          $("#inputMessage").val(joined_text + " " + fuzzyMatches[0]);
+          if (current_text[0] === undefined) {
+            $("#inputMessage").val(fuzzyMatches[0]);
+            }
+            else {
+              $("#inputMessage").val(joined_text + " " + fuzzyMatches[0]);
+          }
         }
       }
     });

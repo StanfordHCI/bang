@@ -60,5 +60,6 @@ module.exports = {
     // nameCount += 1
     // return randomAdjective[randomAdjective.length % nameCount] + randomAnimal[randomAnimal.length % nameCount]
     return randomAdjective.pick() + randomAnimal.pick()
-  }
+  },
+  randomAnimal: randomAnimal
 };

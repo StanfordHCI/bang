@@ -3,12 +3,12 @@ const teamSize = 1
 const roundMinutes = 0.5
 
 // Toggles
-const autocompleteTestOn = false //turns on fake team to test autocomplete
+const autocompleteTestOn = true //turns on fake team to test autocomplete
 const starterSurveyOn = false
 const midSurveyOn = true
 const blacklistOn = false
 const teamfeedbackOn = false
-const checkinOn = true
+const checkinOn = false
 const checkinIntervalMinutes = roundMinutes/30
 const qualificationsOn = false
 const runningLocal = false
@@ -544,7 +544,7 @@ io.on('connection', (socket) => {
         if (autocompleteTestOn) {
           let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
           console.log(teamNames)
-          io.in(user.id).emit('go', {task: taskText, team: teamNames, duration: roundMinutes })
+          io.in(user.id).emit('go', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal })
         } else {
           io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
         }
