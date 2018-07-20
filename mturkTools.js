@@ -4,22 +4,19 @@ const teamSize = process.env.TEAM_SIZE
 const roundMinutes = process.env.ROUND_MINUTES
 
 const AWS = require('aws-sdk');
-
-const killHITs = true // expires active hits, default to true
-const bonusUsersOn = true // pays remaining bonuses, default to true
-const qualificationsOn = false
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
-const runningLive = false //process.env.RUNNING_LIVE //ONLY CHANGE IN VIM ON SERVER
+const runningLive = process.env.RUNNING_LIVE == "TRUE"//ONLY CHANGE IN VIM ON SERVER
+
+const qualificationsOn = runningLive
 
 let endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
-let turkSubmitTo = 'https://workersandbox.mturk.com'
+let submitTo = 'https://workersandbox.mturk.com'
 
 if (runningLive) {
   endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
-  turkSubmitTo = 'https://www.mturk.com'
+  submitTo = 'https://www.mturk.com'
 }
 
-// direct them to server URL
 let taskURL = 'https://bang.dmorina.com/';
 if (runningLocal) {
   taskURL = 'https://localhost:3000/';
@@ -31,6 +28,8 @@ AWS.config = {
   "region": "us-east-1",
   "sslEnabled": true
 }
+
+let bonusPrice = 0
 
 // This initiates the API
 // Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
@@ -64,14 +63,14 @@ const expireActiveHits = () => {
 }
 
 // creates single HIT
-const launchBang = (numRounds) => {
+const launchBang = (numRounds = 3) => {
   // HIT Parameters
 
   const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
   const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
   const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
   const rewardPrice = .50
-  const bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
+  let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
   let usersAcceptedHIT = 0;
   let numAssignments = teamSize * teamSize;
   let QualificationReqs = [
@@ -108,7 +107,7 @@ const launchBang = (numRounds) => {
 
   mturk.createHIT(params,(err, data) => {
     if (err) console.log(err, err.stack);
-    else     console.log("Posted HIT:", data.HIT.HITId);
+    else console.log("Posted HIT:", data.HIT.HITId);
   });
 
   let delay = 1;
@@ -120,7 +119,7 @@ const launchBang = (numRounds) => {
       numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
       mturk.createHIT(params,(err, data) => {
         if (err) console.log(err, err.stack);
-        else     console.log("Another HIT posted");
+        else console.log("HIT expired, and posted new HIT:", data.HIT.HITId);
       });
       delay++;
     } else {
@@ -152,5 +151,7 @@ module.exports = {
   expireActiveHits: expireActiveHits,
   getBalance: getBalance,
   launchBang: launchBang,
-  payBonuses: payBonuses
+  payBonuses: payBonuses,
+  bonusPrice: bonusPrice,
+  submitTo: submitTo
 };

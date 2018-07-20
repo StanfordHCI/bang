@@ -5,9 +5,9 @@ const teamSize = process.env.TEAM_SIZE
 const roundMinutes = process.env.ROUND_MINUTES
 
 // Toggles
-const runExperimentNow = false
-const issueBonusesNow = false
-const cleanHITs = false
+const runExperimentNow = true
+const issueBonusesNow = true
+const cleanHITs = true
 
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 const starterSurveyOn = true
@@ -161,8 +161,9 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
 // Chatroom
 io.on('connection', (socket) => {
 
-    let addedUser = false;
-    let taskStarted = false;
+    let addedUser = false
+    let taskStarted = false
+    let taskOver = false
 
     socket.on('log', string => { console.log(string); });
 
@@ -294,7 +295,7 @@ io.on('connection', (socket) => {
         // if the user had accepted, removes them from the array of accepted users
         console.log(socket.id)
         if (usersAccepted.find(function(element) {return element.id == socket.id})) {
-          console.log('there was a disconnect');
+          console.log('There was a disconnect');
           usersAccepted = usersAccepted.filter(user => user.id != socket.id);
           console.log(usersAccepted)
           console.log("num users accepted:", usersAccepted.length);
@@ -312,22 +313,25 @@ io.on('connection', (socket) => {
           // update DB with change
           db.users.update({ id: socket.id }, {$set: {active: false}}, {}, (err, numReplaced) => { console.log(err ? "Activity not changed: " + err : "User left " + socket.id) })
 
-          // Start cancel process
-          console.log("User left, emitting cancel to all users");
-          users.forEach((user) => {
-            let cancelMessage = "This HIT has crashed. Please submit below and we will accept."
-            if (taskStarted) { // Add future bonus pay
-              user.bonus += bonusPrice/2
-              db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
-              cancelMessage = cancelMessage + " Since the team activity had already started, you will be additionally bonused for the time spent working with the team."
-            }
-            io.in(user.id).emit('finished', {
-                message: cancelMessage,
-                finishingCode: user.id,
-                turkSubmitTo: turkSubmitTo,
-                assignmentId: user.assignmentId
+          if (!taskOver){
+            // Start cancel process
+            console.log("User left, emitting cancel to all users");
+            users.forEach((user) => {
+              let cancelMessage = "This HIT has crashed. Please submit below and we will accept."
+
+              if (taskStarted) { // Add future bonus pay
+                user.bonus += mturk.bonusPrice/2
+                db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
+                cancelMessage = cancelMessage + " Since the team activity had already started, you will be additionally bonused for the time spent working with the team."
+              }
+              io.in(user.id).emit('finished', {
+                  message: cancelMessage,
+                  finishingCode: user.id,
+                  turkSubmitTo: mturk.submitTo,
+                  assignmentId: user.assignmentId
+              })
             })
-          })
+          }
         }
     });
 
@@ -357,23 +361,21 @@ io.on('connection', (socket) => {
         io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "postSurvey") { //Launch post survey
-          user.ready = false
           let survey = postSurveyGenerator(user)
           user.results.manipulation = survey.correctAnswer
           db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
           io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "finished" || currentActivity > task_list.lenght) {
-        // console.log(usersAccepted)
-        // console.log(socket.id)
-
-        user.bonus += bonusPrice
+        user.ready = false
+        taskOver = true
+        user.bonus += mturk.bonusPrice
         db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
 
         io.in(socket.id).emit('finished', {
           message: "Thanks for participating, you're all done!",
           finishingCode: socket.id,
-          turkSubmitTo: turkSubmitTo,
+          turkSubmitTo: mturk.submitTo,
           assignmentId: user.assignmentId
         })
       }
@@ -476,7 +478,7 @@ io.on('connection', (socket) => {
 
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
-        socket.emit('finished', {finishingCode: "broken", turkSubmitTo: turkSubmitTo, assignmentId: data.assignmentId, message: "The task has completed. You will be compensated."})
+        socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has may have had an error. You will be compensated."})
         socket.disconnect();
         console.log("Sockets active: " + Object.keys(io.sockets.sockets));
   });
@@ -501,7 +503,6 @@ io.on('connection', (socket) => {
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
     });
-    console.log(data.turkSubmitTo);
     console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
     // Disconnect leftover users
     Object.keys(io.sockets.sockets).forEach(socketID => {
