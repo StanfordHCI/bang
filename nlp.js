@@ -2,7 +2,7 @@ require('dotenv').config();
 const fs = require('fs')
 const ToneAnalyzer = require('watson-developer-cloud/tone-analyzer/v3');
 
-const tone_analyzer = new ToneAnalyzer({
+const toneAnalyzer = new ToneAnalyzer({
   // TODO: figure out why accessing env file isn't working
   // username: process.env.TONE_ANALYZER_USERNAME,
   // password: process.env.TONE_ANALYZER_PASSWORD,
@@ -18,28 +18,57 @@ const tone_analyzer = new ToneAnalyzer({
 const chatlogFile = '.data/chats'// should change this to access copy of db chats?
 
 let chatlogArr =[]
+// read chat log db into array of json chat message objects
 fs.readFileSync(chatlogFile).toString().split('\n').forEach(function (line) {
   chatlogArr.push(JSON.parse(line));
 })
 
 let map = new Map();
+// map conditions to text with those conditions
 for(let i = 0; i < chatlogArr.length; i++) {
   let chatObj = chatlogArr[i];
-  let logIdObj = JSON.stringify({'batch':chatObj.batch, 'round':chatObj.round, 'room':chatObj.room});
+  let logIdObj;
+  //group chatlogs by conditions 
+  logIdObj = JSON.stringify({'batch':chatObj.batch, 'round':chatObj.round, 'room':chatObj.room});
+  //logIdObj = JSON.stringify({'userID':chatObj.userID});
+  
+  let messageObj = {'user': chatObj.userID, 'text': chatObj.message}
   if(!map.has(logIdObj)) {
-    map.set(logIdObj, chatObj.message);
+    map.set(logIdObj, [messageObj]);
   } else {
-    map.set(logIdObj, map.get(logIdObj) + "\n" + chatObj.message);
+    console.log(map.get(logIdObj))
+    map.get(logIdObj).push(messageObj);
   }
 }
 
-for (let [k,chatlogText] of map) {
-  // let chatlogText = entry.value.map(function(chatObj){
-  //   return chatObj.message;
-  // }).join('\n');
+
+for (let [k,chatlog] of map) {
+  let utterances = [];
+
+
+  let chatlogText = chatlog.map(function(messageObj){
+    utterances.push({'text':messageObj.text, 'user':messageObj.user})
+    return messageObj.text;
+  }).join('\n');
 
   console.log(chatlogText)
-  getTone(chatlogText);
+  //getTone(chatlogText);
+  getToneChat(utterances);
+
+}
+
+function getToneChat(utterances) {
+  let toneChatParams = {
+    utterances: utterances
+  };
+
+  toneAnalyzer.toneChat(toneChatParams, function (error, analysis) {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log(JSON.stringify(analysis, null, 2));
+    }
+  });
 }
 
 function getTone(chatlogText) {
@@ -49,7 +78,7 @@ function getTone(chatlogText) {
     sentences: true
   };
 
-  tone_analyzer.tone(params, function (error, response) {
+  toneAnalyzer.tone(params, function (error, response) {
     if (error) {
       console.log(error);
     } else {
