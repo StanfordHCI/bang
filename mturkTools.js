@@ -119,8 +119,8 @@ const launchBang = (numRounds = 3) => {
   }
 
   const params = {
-   // Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour',
-    Title: 'This is another test',
+    Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour',
+   // Title: 'This is another test',
     Description: 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10)  + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
     AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
     LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
