@@ -62,16 +62,23 @@ const expireActiveHits = () => {
   })
 }
 
+let qualificationID = '';
+
+if(runningLive) {
+  qualificaitonID = '3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG';
+}
+
 // Creates a qualification that will be assigned to an individual that accepts the task. That individual will
-// not be able to see it task again.
+//not be able to see it task again.
 // var qualificationParams = {
 //   Description: 'This user has already accepted a HIT for this specific task. We only allow one completion of this task per worker.', /* required */
-//   Name: 'hasNotBanged', /* required */
-//   QualificationTypeStatus: Active, /* required */
+//   Name: 'hasBanged', /* required */
+//   QualificationTypeStatus: 'Active', /* required */
 // };
 // mturk.createQualificationType(qualificationParams, function(err, data) {
 //   if (err) console.log(err, err.stack); // an error occurred
 //   else     console.log(data);           // successful response
+//   qualificationID = data.QualificationTypeId;
 // });
 
 // creates single HIT
@@ -102,11 +109,13 @@ const launchBang = (numRounds = 3) => {
       IntegerValues: [1000],
       RequiredToPreview: true,
     })
-    QualificationReqs.push({
-      QualificationTypeId: '3R3LL2QS9XIVHNEUY43YRDO592HQG4',  // have not already completed the HIT
-      Comparator: 'DoesNotExist',
-      ActionsGuarded:"DiscoverPreviewAndAccept"
-    })
+    if(runningLive) {
+      QualificationReqs.push({
+        QualificationTypeId: 'qualificationID',  // have not already completed the HIT
+        Comparator: 'DoesNotExist',
+        ActionsGuarded:"DiscoverPreviewAndAccept"
+      })
+    }
   }
 
   const params = {
@@ -152,7 +161,7 @@ const assignQualificationToUsers = (users) => {
     return user.mturkId
   }).forEach((user) => {
     // // Assigns the qualification to the worker
-    var assignQualificationParams = {QualificationTypeId: '3R3LL2QS9XIVHNEUY43YRDO592HQG4', WorkerId: user.mturkId, SendNotification: false};
+    var assignQualificationParams = {QualificationTypeId: qualificationID, WorkerId: user.mturkId, SendNotification: false};
     mturk.associateQualificationWithWorker(assignQualificationParams, function(err, data) {
       if (err) console.log(err, err.stack); // an error occurred
       else     console.log(data);           // successful response
@@ -161,7 +170,7 @@ const assignQualificationToUsers = (users) => {
 }
 
 const listUsersWithQualification = () => {
-  var userWithQualificationParams = {QualificationTypeId: '3R3LL2QS9XIVHNEUY43YRDO592HQG4'};
+  var userWithQualificationParams = {QualificationTypeId: qualificationID};
   mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
     else     console.log(data);           // successful response
