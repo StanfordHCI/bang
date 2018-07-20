@@ -134,6 +134,7 @@ const launchBang = (numRounds = 3) => {
   };
 
   let currentHitId = '';
+  let hitsLeft = teamSize * teamSize;
 
   mturk.createHIT(params,(err, data) => {
     if (err) {
@@ -158,10 +159,11 @@ const launchBang = (numRounds = 3) => {
       } else {
         currentHitId = data.HIT.HITId;
         usersAcceptedHIT = data.HIT.NumberOfAssignmentsPending;
+        hitsLeft = hitsLeft - usersAcceptedHIT;
       }
     })
-    if(usersAcceptedHIT < (teamSize * teamSize)) {
-      numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
+    if(hitsLeft > 0) {
+      numAssignments = (hitsLeft);
       mturk.createHIT(params,(err, data) => {
         if (err) {
           console.log(err, err.stack);
