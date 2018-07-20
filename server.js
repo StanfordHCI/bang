@@ -6,8 +6,8 @@ const roundMinutes = process.env.ROUND_MINUTES
 
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = true
-const cleanHITs = true
+const issueBonusesNow = false
+const cleanHITs = !runExperimentNow
 
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 const starterSurveyOn = true
@@ -101,6 +101,15 @@ if (issueBonusesNow){
     })
   })
 }
+
+// Makes sure workers do not repeat
+// db.users.find({}, (err, usersInDB) => {
+//   if (err) {console.log("Err loading users:" + err)}
+//   mturk.assignQualificationToUsers(usersInDB);
+// })
+
+// lists users that have done the task before
+// mturk.listUsersWithQualification()
 
 if (cleanHITs){
   mturk.expireActiveHits()

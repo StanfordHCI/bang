@@ -62,12 +62,31 @@ const expireActiveHits = () => {
   })
 }
 
+let qualificationId = '';
+
+if(runningLive) {
+  qualificationId = '3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG';
+}
+
+// Creates a qualification that will be assigned to an individual that accepts the task. That individual will
+//not be able to see it task again.
+// var qualificationParams = {
+//   Description: 'This user has already accepted a HIT for this specific task. We only allow one completion of this task per worker.', /* required */
+//   Name: 'hasBanged', /* required */
+//   QualificationTypeStatus: 'Active', /* required */
+// };
+// mturk.createQualificationType(qualificationParams, function(err, data) {
+//   if (err) console.log(err, err.stack); // an error occurred
+//   else     console.log(data);           // successful response
+//   qualificationId = data.QualificationTypeId;
+// });
+
 // creates single HIT
 const launchBang = (numRounds = 3) => {
   // HIT Parameters
 
   const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
-  const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
+  const timeActive = 0.5; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
   const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
   const rewardPrice = .50
   let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
@@ -90,10 +109,19 @@ const launchBang = (numRounds = 3) => {
       IntegerValues: [1000],
       RequiredToPreview: true,
     })
+    if(runningLive) {
+      QualificationReqs.push({
+        QualificationTypeId: qualificationId,  // have not already completed the HIT
+        Comparator: 'DoesNotExist',
+        ActionsGuarded:"DiscoverPreviewAndAccept"
+      })
+    }
   }
 
+  let time = Date.now();
+
   const params = {
-    Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour',
+    Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')',
     Description: 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10)  + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
     AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
     LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
@@ -105,27 +133,72 @@ const launchBang = (numRounds = 3) => {
     Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
   };
 
+  let currentHitId = '';
+  let hitsLeft = teamSize * teamSize;
+
   mturk.createHIT(params,(err, data) => {
-    if (err) console.log(err, err.stack);
-    else console.log("Posted HIT:", data.HIT.HITId);
+    if (err) {
+      console.log(err, err.stack);
+    } else {
+      console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
+      currentHitId = data.HIT.HITId;
+    }
   });
 
   let delay = 1;
   // only continues to post if not enough people accepted HIT
-
+  // Reposts every timeActive(x) number of minutes to keep HIT on top - stops reposting when enough people join
   setTimeout(() => {
-    usersAcceptedHIT = usersAccepted.length;
-    if(usersAcceptedHIT < (teamSize * teamSize)) {
-      numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
+    let getHitParameters = {
+      HITId: currentHitId
+    }
+    mturk.getHIT(getHitParameters, function(err, data) {
+      if (err) {
+        console.log(err, err.stack);
+        console.log('error is getHIT')
+      } else {
+        currentHitId = data.HIT.HITId;
+        usersAcceptedHIT = data.HIT.NumberOfAssignmentsPending;
+        hitsLeft = hitsLeft - usersAcceptedHIT;
+      }
+    })
+    if(hitsLeft > 0) {
+      numAssignments = (hitsLeft);
       mturk.createHIT(params,(err, data) => {
-        if (err) console.log(err, err.stack);
-        else console.log("HIT expired, and posted new HIT:", data.HIT.HITId);
+        if (err) {
+          console.log(err, err.stack);
+        } else {
+          console.log("HIT expired, and posted", data.HIT.MaxAssignments, "new assignments:", data.HIT.HITId);
+          currentHitId = data.HIT.HITId;
+        }
       });
       delay++;
     } else {
       clearTimeout();
     }
-  }, 1000 * 60 * timeActive * delay)
+   }, 1000 * 60 * timeActive * delay)
+}
+
+// assigns a qualification to users who have already completed the task - does not let workers repeat task
+const assignQualificationToUsers = (users) => {
+  users.filter((user) => {
+    return user.mturkId
+  }).forEach((user) => {
+    // // Assigns the qualification to the worker
+    var assignQualificationParams = {QualificationTypeId: qualificationId, WorkerId: user.mturkId, SendNotification: false};
+    mturk.associateQualificationWithWorker(assignQualificationParams, function(err, data) {
+      if (err) console.log(err, err.stack); // an error occurred
+      else     console.log(data);           // successful response
+    });
+  })
+}
+
+const listUsersWithQualification = () => {
+  var userWithQualificationParams = {QualificationTypeId: qualificationId};
+  mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
+    if (err) console.log(err, err.stack); // an error occurred
+    else     console.log(data);           // successful response
+  });
 }
 
 // bonus all users in DB who have leftover bonuses.
@@ -151,6 +224,8 @@ module.exports = {
   expireActiveHits: expireActiveHits,
   getBalance: getBalance,
   launchBang: launchBang,
+  assignQualificationToUsers: assignQualificationToUsers,
+  listUsersWithQualification: listUsersWithQualification,
   payBonuses: payBonuses,
   bonusPrice: bonusPrice,
   submitTo: submitTo
