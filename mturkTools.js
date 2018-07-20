@@ -131,27 +131,38 @@ const launchBang = (numRounds = 3) => {
     Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
   };
 
+  let currentHitId = '';
+
   mturk.createHIT(params,(err, data) => {
     if (err) console.log(err, err.stack);
     else console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
+    currentHitId = data.HIT.HITId;
   });
 
   let delay = 1;
   // only continues to post if not enough people accepted HIT
 
-  // setTimeout(() => {
-  //   usersAcceptedHIT = usersAccepted.length;
-  //   if(usersAcceptedHIT < (teamSize * teamSize)) {
-  //     numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
-  //     mturk.createHIT(params,(err, data) => {
-  //       if (err) console.log(err, err.stack);
-  //       else console.log("HIT expired, and posted", data.HIT.MaxAssignments, "new assignments:", data.HIT.HITId);
-  //     });
-  //     delay++;
-  //   } else {
-  //     clearTimeout();
-  //   }
-  // }, 1000 * 60 * timeActive * delay)
+  const getHitParameters = {
+    HitId: currentHitId
+  }
+
+  // Reposts every x number of minutes to keep HIT on top - stops reposting when enough people join
+  setTimeout(() => {
+    mturk.getHIT(getHitParameters, function(err, data) {
+      usersAcceptedHIT = data.NumberOfAssignmentsPending;
+    })
+    if(usersAcceptedHIT < (teamSize * teamSize)) {
+      numAssignments = ((teamSize * teamSize) - usersAcceptedHIT);
+      mturk.createHIT(params,(err, data) => {
+        if (err) console.log(err, err.stack);
+        else console.log("HIT expired, and posted", data.HIT.MaxAssignments, "new assignments:", data.HIT.HITId);
+        currentHitId = data.HIT.HITId;
+      });
+      delay++;
+    } else {
+      clearTimeout();
+    }
+   }, 1000 * 60 * timeActive * delay)
 }
 
 // assigns a qualification to users who have already completed the task - does not let workers repeat task
