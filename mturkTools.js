@@ -65,7 +65,7 @@ const expireActiveHits = () => {
 let qualificationId = '';
 
 if(runningLive) {
-  qualificaitonId = '3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG';
+  qualificationId = '3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG';
 }
 
 // Creates a qualification that will be assigned to an individual that accepts the task. That individual will
