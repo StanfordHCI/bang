@@ -6,8 +6,8 @@ const roundMinutes = process.env.ROUND_MINUTES
 
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = true
-const cleanHITs = false
+const issueBonusesNow = false
+const cleanHITs = !runExperimentNow
 
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 const starterSurveyOn = true
