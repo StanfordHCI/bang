@@ -27,12 +27,13 @@ console.log(runningLocal ? "Running locally" : "Running remotely");
 
 // Question Files
 const fs = require('fs')
-const midSurveyFile = "midsurvey-q.txt"
-const checkinFile = "checkin-q.txt"
-const blacklistFile = "blacklist-q.txt"
-const feedbackFile = "feedback-q.txt"
-const starterSurveyFile = "startersurvey-q.txt"
-const postSurveyFile = "postsurvey-q.txt"
+const txt = "txt/"
+const midSurveyFile = txt + "midsurvey-q.txt"
+const checkinFile = txt + "checkin-q.txt"
+const blacklistFile = txt + "blacklist-q.txt"
+const feedbackFile = txt + "feedback-q.txt"
+const starterSurveyFile = txt + "startersurvey-q.txt"
+const postSurveyFile = txt + "postsurvey-q.txt"
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio'}
