@@ -118,13 +118,8 @@ if (issueBonusesNow){
 // lists users that have done the task before
 // mturk.listUsersWithQualification()
 
-if (cleanHITs){
-  mturk.expireActiveHits()
-}
-
-if (runExperimentNow){
-  mturk.launchBang(numRounds)
-}
+if (cleanHITs){ mturk.expireActiveHits() }
+if (runExperimentNow){ mturk.launchBang() }
 
 //Add more products
 let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
