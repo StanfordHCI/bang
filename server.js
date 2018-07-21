@@ -7,9 +7,9 @@ const teamSize = process.env.TEAM_SIZE
 const roundMinutes = process.env.ROUND_MINUTES
 
 // Toggles
-const runExperimentNow = true
-const issueBonusesNow = false
-const cleanHITs = !runExperimentNow
+const runExperimentNow = false
+const issueBonusesNow = runningLive
+const cleanHITs = false //!runExperimentNow
 
 const starterSurveyOn = true
 const midSurveyOn = true
@@ -98,10 +98,14 @@ require('express')().listen(); //Sets to only relaunch with source changes
 if (issueBonusesNow){
   db.users.find({}, (err, usersInDB) => {
     if (err) {console.log("Err loading users:" + err)}
-    const usersPaid = mturk.payBonuses(usersInDB)
-    usersPaid.forEach((user) => {
-      db.users.update( {id: user.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)}})
-    })
+    else {
+      console.log("Paying bonuses")
+      const usersPaid = mturk.payBonuses(usersInDB)
+      console.log("Paid:",usersPaid);
+      usersPaid.forEach((user) => {
+        db.users.update( {id: user.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)}})
+      })
+    }
   })
 }
 
