@@ -57,7 +57,6 @@ ul {
 .login.page form, .login.page .form {
   padding: 100px 10% 100px 10%;
   position: absolute;
-  margin: 20px 5px;
   text-align: left;
   background-color: #292942;
   overflow: visible;
@@ -115,7 +114,6 @@ ul {
 .log {
   color: gray;
   font-size: 70%;
-  margin: 20px 5px;
 }
 
 /* Messages */
@@ -357,4 +355,8 @@ input[type="radio"] {
   -ms-transform: scale(1.5); /* IE 9 */
   -webkit-transform: scale(1.5); /* Chrome, Safari, Opera */
   transform: scale(1.5);
+}
+/* quick fix, should reformat margins of all pages */
+#finishingMessage {
+  margin-left: 30px;
 }

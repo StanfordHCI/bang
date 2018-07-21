@@ -486,7 +486,7 @@ $(function() {
     log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
 
     $currentInput = $inputMessage.focus();
-    
+
     notify("Session ready", "Come back and join in!")
 
     // Set up team autocomplete
@@ -503,7 +503,6 @@ $(function() {
         }
       }
     }
-
 
     $inputMessage.keydown(function (event) {
       $inputMessage.autocomplete( "option", "source", (request, response) => {
@@ -537,9 +536,9 @@ $(function() {
               }
             };
           }
-          
 
-          
+
+
       });
 
       // initiate spell check after space is hit
@@ -556,7 +555,7 @@ $(function() {
             }
           }
         );
-        
+
         // Run spell check only if animal name not detected
         if (fuzzyMatches[0] === undefined) {
           for (i = 0; i < currentTeam.length; i++) {
@@ -582,12 +581,12 @@ $(function() {
     });
   });
 
-  // fuzzy Match function 
+  // fuzzy Match function
   function fuzzyMatched (comparer, comparitor, matchCount) {
     let isMatched = false;
     a = comparer.trim().toLowerCase();
     b = comparitor.trim().toLowerCase();
-   
+
     if(a.length == 0) return b.length;
     if(b.length == 0) return a.length;
     let matrix = [];
@@ -603,7 +602,7 @@ $(function() {
     for(j = 0; j <= a.length; j++){
         matrix[0][j] = j;
     }
-    
+
 
     // Fill in the rest of the matrix
     for(i = 1; i <= b.length; i++){
