@@ -565,14 +565,14 @@ io.on('connection', (socket) => {
   }
 
   // for 1-5 scale questions based on:
-  // Answer Option Sets - around line 22
+  // Answer Option Sets - around line 36
   // const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
   function numberToValue(value) {
     return answers.answers[parseInt(value) - 1];  // index 0
   }
 
   // for binary questions
-  // Answer Option Sets - around line 22
+  // Answer Option Sets - around line 36
   // const binaryAnswers = ['Yes', 'No']
   function numberToBinary(value) {
     return binaryAnswers.answers[parseInt(value) - 1];  // index 0
