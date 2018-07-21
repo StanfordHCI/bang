@@ -15,6 +15,7 @@ const midSurveyOn = true
 const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
+const requiredOn = true
 const checkinIntervalMinutes = roundMinutes/30
 
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
@@ -649,6 +650,10 @@ io.on('connection', (socket) => {
       }
       questionObj['answers'] = answerObj.answers;
       questionObj['answerType'] = answerObj.answerType;
+      questionObj['required'] = false
+      if(requiredOn && answerObj.answerType === 'radio') { // only applies to radio buttons in vue template
+        questionObj['required'] = true
+      }
       questions.push(questionObj)
     })
     return questions
