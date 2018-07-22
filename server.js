@@ -1,36 +1,39 @@
 require('dotenv').config()
 
-//Settings - change for actual deployment
+//Environmental settings, set in .env
+const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
+const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
 const teamSize = process.env.TEAM_SIZE
 const roundMinutes = process.env.ROUND_MINUTES
 
 // Toggles
-const runExperimentNow = true
-const issueBonusesNow = false
-const cleanHITs = !runExperimentNow
+const runExperimentNow = false
+const issueBonusesNow = runningLive
+const cleanHITs = false //!runExperimentNow
 
-const autocompleteTestOn = false //turns on fake team to test autocomplete
 const starterSurveyOn = true
 const midSurveyOn = true
 const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
+const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/30
 
-const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
-const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
+//Testing toggles
+const autocompleteTestOn = false //turns on fake team to test autocomplete
 
 console.log(runningLive ? "\nRUNNING LIVE\n" : "\nRUNNING SANDBOXED\n");
 console.log(runningLocal ? "Running locally" : "Running remotely");
 
 // Question Files
 const fs = require('fs')
-const midSurveyFile = "midsurvey-q.txt"
-const checkinFile = "checkin-q.txt"
-const blacklistFile = "blacklist-q.txt"
-const feedbackFile = "feedback-q.txt"
-const starterSurveyFile = "startersurvey-q.txt"
-const postSurveyFile = "postsurvey-q.txt"
+const txt = "txt/"
+const midSurveyFile = txt + "midsurvey-q.txt"
+const checkinFile = txt + "checkin-q.txt"
+const blacklistFile = txt + "blacklist-q.txt"
+const feedbackFile = txt + "feedback-q.txt"
+const starterSurveyFile = txt + "startersurvey-q.txt"
+const postSurveyFile = txt + "postsurvey-q.txt"
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio'}
@@ -95,10 +98,14 @@ require('express')().listen(); //Sets to only relaunch with source changes
 if (issueBonusesNow){
   db.users.find({}, (err, usersInDB) => {
     if (err) {console.log("Err loading users:" + err)}
-    const usersPaid = mturk.payBonuses(usersInDB)
-    usersPaid.forEach((user) => {
-      db.users.update( {id: user.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)}})
-    })
+    else {
+      console.log("Paying bonuses")
+      const usersPaid = mturk.payBonuses(usersInDB)
+      console.log("Paid:",usersPaid);
+      usersPaid.forEach((user) => {
+        db.users.update( {id: user.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)}})
+      })
+    }
   })
 }
 
@@ -111,13 +118,8 @@ if (issueBonusesNow){
 // lists users that have done the task before
 // mturk.listUsersWithQualification()
 
-if (cleanHITs){
-  mturk.expireActiveHits()
-}
-
-if (runExperimentNow){
-  mturk.launchBang(numRounds)
-}
+if (cleanHITs){ mturk.expireActiveHits() }
+if (runExperimentNow){ mturk.launchBang() }
 
 //Add more products
 let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
@@ -649,6 +651,10 @@ io.on('connection', (socket) => {
       }
       questionObj['answers'] = answerObj.answers;
       questionObj['answerType'] = answerObj.answerType;
+      questionObj['required'] = false
+      if(requiredOn && answerObj.answerType === 'radio') { // only applies to radio buttons in vue template
+        questionObj['required'] = true
+      }
       questions.push(questionObj)
     })
     return questions

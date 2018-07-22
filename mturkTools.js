@@ -29,7 +29,14 @@ AWS.config = {
   "sslEnabled": true
 }
 
-let bonusPrice = 0
+const numRounds = 3
+const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
+const timeActive = 10; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
+const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
+const rewardPrice = .50
+let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
+let usersAcceptedHIT = 0;
+let numAssignments = teamSize * teamSize;
 
 // This initiates the API
 // Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
@@ -82,16 +89,8 @@ if(runningLive) {
 // });
 
 // creates single HIT
-const launchBang = (numRounds = 3) => {
+const launchBang = () => {
   // HIT Parameters
-
-  const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
-  const timeActive = 10; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
-  const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
-  const rewardPrice = .50
-  let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
-  let usersAcceptedHIT = 0;
-  let numAssignments = teamSize * teamSize;
   let QualificationReqs = [
     {
       QualificationTypeId:"00000000000000000071",  // US workers only
