@@ -434,17 +434,25 @@ $(function() {
     hideAll();
     $chatPage.show();
     $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
-
-    log(data.task);
-    log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
-
+    setTimeout(()=>{
+      let str = ""
+      for (member of data.team)
+        log(member + ' has entered the chatroom')
+    }, 500)
+    setTimeout(()=>{log(data.task)}, 1000)
+    setTimeout(()=>{log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")}
+      , 1500)
+    
     let durationString = ""
     if (data.duration < 1) { durationString = Math.round(data.duration * 60) + " seconds"
     } else if (data.duration == 1) { durationString = "one minute"
     } else { durationString = data.duration + " minutes" }
-
-    log("You will have <strong>" + durationString + "</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
-    log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
+    setTimeout(() => {    
+      log("You will have <strong>" + durationString + "</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")}
+, 2000)
+    setTimeout(()=>
+      {log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")},
+    2500)
 
     $currentInput = $inputMessage.focus();
 
