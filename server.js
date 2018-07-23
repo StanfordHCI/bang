@@ -3,16 +3,16 @@ require('dotenv').config()
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE=1
-const roundMinutes = process.env.ROUND_MINUTES=1
+const teamSize = process.env.TEAM_SIZE
+const roundMinutes = process.env.ROUND_MINUTES
 
 // Toggles
-const runExperimentNow = false
+const runExperimentNow = true
 const issueBonusesNow = false
 const cleanHITs = false // !runExperimentNow
 const assignQualifications = true
 
-const starterSurveyOn = false
+const starterSurveyOn = true
 const midSurveyOn = true
 const blacklistOn = true
 const teamfeedbackOn = false
