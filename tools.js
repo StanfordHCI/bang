@@ -73,16 +73,7 @@ module.exports = {
           // we could throw an error message?
           animals.splice(animals.indexOf(friends_history[i][1]), 1)
         }
-      }
-
-      console.log("array", [...Array(teamSize).keys()])
-      console.log("names created", [...Array(teamSize).keys()].map(i => {
-        adjective = randomAdjective.pick();
-        animal = animals.pick();
-        animals.splice(animals.indexOf(animal), 1);
-        return [adjective, animal];
-      }))
-    
+      }    
       // Pick from remaining names
       return [...Array(teamSize).keys()].map(i => {
         adjective = randomAdjective.pick();
@@ -91,10 +82,6 @@ module.exports = {
         return [adjective, animal];
       });
     }
-    
-    
-
-    
   },
   randomAnimal: randomAnimal
 };

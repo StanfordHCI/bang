@@ -379,60 +379,23 @@ $(function() {
     alert("The experiment is already full. Please return this HIT.")
   });
 
-  socket.on('load checkin', questions => {
+  socket.on('load', data => {
+    let element = data.element;
+    let questions = data.questions;
+
     new Vue({
-      el: '#checkin-questions',
+      el: '#'+element+'-questions',
       data: {
         questions
       }
     });
-  })
 
-  socket.on('load midsurvey', questions => {
-    new Vue({
-      el: '#midsurvey-questions',
-      data: {
-        questions
-      }
-    });
-  })
+    if(!data.interstitial){
+      hideAll();
+      $("#"+data.element).show();
+    }
+  });
 
-
-  socket.on('load postsurvey', questions => {
-    new Vue({
-      el: '#postsurvey-questions',
-      data: {
-        questions
-      }
-    });
-  })
-
-  socket.on('load blacklist', questions => {
-    new Vue({
-      el:'#blacklist-questions',
-      data: {
-        questions
-      }
-    })
-  })
-
-  socket.on('load feedback', questions => {
-    new Vue({
-      el:'#feedback-questions',
-      data: {
-        questions
-      }
-    })
-  })
-
-  socket.on('load starter questions', questions => {
-    new Vue({
-      el: '#startersurvey-questions',
-      data: {
-        questions
-      }
-    });
-  })
 
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', data => {
@@ -645,6 +608,12 @@ $(function() {
     socket.emit(data)
   })
 
+  socket.on('get IDs', data => {
+    const URLvars = getUrlVars(location.href);
+    console.log('get IDs ran');
+    socket.emit(data,{mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId });
+  })
+
   socket.on('starterSurvey',data => {
     hideAll();
     $starterSurvey.show();
@@ -660,16 +629,7 @@ $(function() {
     $('#starterForm')[0].reset();
   })
 
-  socket.on('midSurvey',data => {
-    hideAll();
-    $midSurvey.show();
-
-  })
-
-  socket.on('postSurvey',data => {
-    hideAll();
-    $postSurvey.show();
-  })
+  
 
   $('#postForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
@@ -677,10 +637,7 @@ $(function() {
     socket.emit('execute experiment')
   })
 
-  socket.on('blacklistSurvey', () => {
-    hideAll();
-    $blacklistSurvey.show();
-  })
+  
 
   $('#blacklistForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
@@ -688,10 +645,7 @@ $(function() {
     socket.emit('execute experiment')
   })
 
-  socket.on('teamfeedbackSurvey', () => {
-    hideAll();
-    $teamfeedbackSurvey.show();
-  })
+  
 
   $('#teamfeedbackForm').submit( (event) => {
     event.preventDefault() //stops page reloading
@@ -710,6 +664,7 @@ $(function() {
   socket.on('finished',data => {
     hideAll();
     $finishingPage.show();
+    document.getElementById("finishingMessage").innerText = data.message
     document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
     document.getElementById("assignmentId").value = data.assignmentId
     finishingcode.value = data.finishingCode
