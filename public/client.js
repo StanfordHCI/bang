@@ -479,7 +479,17 @@ $(function() {
         }
         else if (wordlength <= 5) {
           let matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
-          response($.grep( currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); }))
+          matches = $.grep(currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); });
+          console.log(matches)
+          if (matches[0] !== undefined) {
+            response(matches) 
+          } else {
+            let matches = $.grep(Object.keys(teamAnimals), function( currentTerm ){ return matcher.test( currentTerm ); });
+            // console.log("my matches", matches)
+            // console.log("Yo I'm here", teamAnimals)
+            // console.log("matches map", matches.map(i => {return teamAnimals[i]}))
+            response(matches.map(match => {return teamAnimals[match]}))
+          }
         }
         else if (5 < wordlength) {
           let matcher = new RegExp( ".*" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
