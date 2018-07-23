@@ -26,11 +26,11 @@ $(function() {
     template: `
       <h3>{{question.question}}</h3>
       <div id="{{question.name}}-rb-box" class='rb-box'>
-        <template v-for="(index, option) in question.answers" :option="option">
+        <template v-for="(index, answer) in question.answers" :answer="answer">
           <label for="{{question.name}}-{{index+1}}" class="rb-tab">
-            <input v-bind:type="question.answerType" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" v-bind:required="question.required ? true : false"/>
+            <input v-bind:type="question.answerType" name="{{question.name}}" id="{{question.name}}-{{index+1}}" v-bind:value="question.textValue ? answer : index + 1" v-bind:required="question.required ? true : false"/>
             <span class='rb-spot'>{{index+1}}</span>
-            <label for='{{question.name}}-{{index+1}}'>{{option}}</label>
+            <label for='{{question.name}}-{{index+1}}'>{{answer}}</label>
           </label>
         </template>
       </div>

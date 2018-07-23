@@ -36,8 +36,8 @@ const starterSurveyFile = txt + "startersurvey-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
 
 // Answer Option Sets
-const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio'}
-const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio'}
+const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
+const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
 
 // Setup basic express server
 let tools = require('./tools');
@@ -550,34 +550,18 @@ io.on('connection', (socket) => {
   // parses results from surveys to proper format for JSON file
   function parseResults(data) {
     let surveyResults = data;
+    console.log(surveyResults)
     let parsedResults = surveyResults.split('&');
     let arrayLength = parsedResults.length;
     for(var i = 0; i < arrayLength; i++) {
       console.log(parsedResults[i]);
       let result = parsedResults[i].slice(parsedResults[i].indexOf("=") + 1);
-      let resultValue = numberToValue(result);
       let qIndex = (parsedResults[i].slice(0, parsedResults[i].indexOf("="))).lastIndexOf('q');
       let questionNumber = (parsedResults[i].slice(0, parsedResults[i].indexOf("="))).slice(qIndex + 1);
-      if(questionNumber == "15") {  // because last question is a binary question
-        resultValue = numberToBinary(result);
-      }
-      parsedResults[i] = questionNumber + '=' + resultValue;
+  
+      parsedResults[i] = questionNumber + '=' + result;
     }
     return parsedResults;
-  }
-
-  // for 1-5 scale questions based on:
-  // Answer Option Sets - around line 36
-  // const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
-  function numberToValue(value) {
-    return answers.answers[parseInt(value) - 1];  // index 0
-  }
-
-  // for binary questions
-  // Answer Option Sets - around line 36
-  // const binaryAnswers = ['Yes', 'No']
-  function numberToBinary(value) {
-    return binaryAnswers.answers[parseInt(value) - 1];  // index 0
   }
 
    // Task after each round - midSurvey - MAIKA
@@ -629,7 +613,7 @@ io.on('connection', (socket) => {
 
   //loads qs in text file, returns json array
   function loadQuestions(questionFile) {
-    const prefix = questionFile.substr(0, questionFile.indexOf('.'))
+    const prefix = questionFile.substr(txt.length, questionFile.indexOf('.') - txt.length)
     let questions = []
     let i = 0
     fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) {
@@ -645,12 +629,13 @@ io.on('connection', (socket) => {
       } else if (answerTag === "YN") { // yes no
         answerObj = binaryAnswers;
       } else if (answerTag === "TR") { //team radio
-        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio'};
+        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio', textValue: false};
       } else if (answerTag === "TC") { //team checkbox
-        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox'};
+        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox', textValue: false};
       }
       questionObj['answers'] = answerObj.answers;
       questionObj['answerType'] = answerObj.answerType;
+      questionObj['textValue'] = answerObj.textValue;
       questionObj['required'] = false
       if(requiredOn && answerObj.answerType === 'radio') { // only applies to radio buttons in vue template
         questionObj['required'] = true
