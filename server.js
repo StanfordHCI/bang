@@ -386,7 +386,7 @@ io.on('connection', (socket) => {
           db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
           io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false});
       }
-      else if (task_list[currentActivity] == "finished" || currentActivity > task_list.lenght) {
+      else if (task_list[currentActivity] == "finished" || currentActivity > task_list.length) {
         user.ready = false
         taskOver = true
         user.bonus += mturk.bonusPrice
