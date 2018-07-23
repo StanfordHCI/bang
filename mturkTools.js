@@ -175,7 +175,7 @@ const launchBang = () => {
     } else {
       clearTimeout();
     }
-   }, 1000 * 60 * timeActive * delay)
+   }, 1000 * 60 * timeActive * delay) 
 }
 
 // assigns a qualification to users who have already completed the task - does not let workers repeat task
@@ -184,19 +184,19 @@ const assignQualificationToUsers = (users) => {
     return user.mturkId
   }).forEach((user) => {
     // // Assigns the qualification to the worker
-    var assignQualificationParams = {QualificationTypeId: qualificationId, WorkerId: user.mturkId, SendNotification: false};
+    var assignQualificationParams = {QualificationTypeId: qualificationId, WorkerId: user.mturkId, IntegerValue: 1, SendNotification: false};
     mturk.associateQualificationWithWorker(assignQualificationParams, function(err, data) {
       if (err) console.log(err, err.stack); // an error occurred
       else     console.log(data);           // successful response
     });
   })
-}
+} 
 
 const listUsersWithQualification = () => {
-  var userWithQualificationParams = {QualificationTypeId: qualificationId};
+  var userWithQualificationParams = {QualificationTypeId: qualificationId, MaxResults: 100};
   mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
-    else     console.log(data);           // successful response
+    else console.log(data);         
   });
 }
 

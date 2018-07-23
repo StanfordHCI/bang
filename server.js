@@ -3,13 +3,14 @@ require('dotenv').config()
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE
-const roundMinutes = process.env.ROUND_MINUTES
+const teamSize = 2
+const roundMinutes = 2
 
 // Toggles
 const runExperimentNow = false
 const issueBonusesNow = false
 const cleanHITs = false //!runExperimentNow
+const assignQualifications = true
 
 const starterSurveyOn = false
 const midSurveyOn = true
@@ -20,7 +21,7 @@ const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/30
 
 //Testing toggles
-const autocompleteTestOn = false //turns on fake team to test autocomplete
+const autocompleteTestOn = true //turns on fake team to test autocomplete
 
 console.log(runningLive ? "\nRUNNING LIVE\n" : "\nRUNNING SANDBOXED\n");
 console.log(runningLocal ? "Running locally" : "Running remotely");
@@ -110,13 +111,15 @@ if (issueBonusesNow){
 }
 
 // Makes sure workers do not repeat
-// db.users.find({}, (err, usersInDB) => {
-//   if (err) {console.log("Err loading users:" + err)}
-//   mturk.assignQualificationToUsers(usersInDB);
-// })
+if(runningLive && assignQualifications) {
+  db.users.find({}, (err, usersInDB) => {
+    if (err) {console.log("Err loading users:" + err)}
+    mturk.assignQualificationToUsers(usersInDB);
+  })
 
-// lists users that have done the task before
-// mturk.listUsersWithQualification()
+  // lists users that have done the task before
+  mturk.listUsersWithQualification()
+}
 
 if (cleanHITs){ mturk.expireActiveHits() }
 if (runExperimentNow){ mturk.launchBang() }
