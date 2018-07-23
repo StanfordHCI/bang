@@ -62,6 +62,7 @@ for (let [k,chatlog] of map) {
     key['user'] = messageObj.user;
     key['time'] = messageObj.time;
     key['text'] = messageObj.text;
+    //gets tone of each message
     getTone(key, messageObj.text)
     utterances.push({'text':messageObj.text, 'user':messageObj.user})
     return messageObj.text;
@@ -69,6 +70,7 @@ for (let [k,chatlog] of map) {
 
   //console.log(chatlogText)
 
+  //gets tone of overall document
   //getTone(k, chatlogText)
    
   getToneChat(k, utterances)
