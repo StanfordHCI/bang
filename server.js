@@ -12,7 +12,7 @@ const issueBonusesNow = false
 const cleanHITs = false //!runExperimentNow
 const assignQualifications = true
 
-const starterSurveyOn = true
+const starterSurveyOn = false
 const midSurveyOn = true
 const blacklistOn = true
 const teamfeedbackOn = false
@@ -229,7 +229,8 @@ io.on('connection', (socket) => {
         if (addedUser) {return;}
 
         // we store the username in the socket session for this client
-        socket.username = tools.makeName(); // how they see themselves
+        name_structure = tools.makeName();
+        socket.username = name_structure.username; // how they see themselves
 
         // if (users.length >= population) {
         //     io.in(socket.id).emit('rejected user', {});
@@ -240,7 +241,8 @@ io.on('connection', (socket) => {
 
         io.in(socket.id).emit('accepted user', {name: socket.username});
 
-        users.forEach(user => { user.friends.push({'id': socket.id, 'alias': tools.makeName(), 'tAlias':tools.makeName() }) });
+        // Adding the user to the friends list for all other users
+        users.forEach(user => { user.friends.push({'id': socket.id, 'alias': tools.makeName().username, 'tAlias':tools.makeName().username }) });
 
         // Add friends to DB
         db.users.find({}, (err, usersInDB) => {
@@ -270,8 +272,9 @@ io.on('connection', (socket) => {
           'ready': false,
           'friends': users.map(user => {
             return {'id': user.id,
-                    'alias': tools.makeName(),
-                    'tAlias':tools.makeName() }}),
+                    'alias': tools.makeName().username,
+                    'tAlias':tools.makeName().username }}),
+          'friends_history': [name_structure.parts], // list of aliases to avoid, which includes the user's username
           'active': true,
           'task_list': task_list,
           'currentActivity': 0,
@@ -441,11 +444,30 @@ io.on('connection', (socket) => {
       taskStarted = true
       users.forEach(user => {
         if (autocompleteTestOn) {
-          let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
+          let teamNames = [tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username]
           console.log(teamNames)
-          io.in(user.id).emit('go', {task: taskText, team: teamNames, duration: roundMinutes })
+          io.in(user.id).emit('go', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal })
         } else {
-          io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
+          // Dynamically generate teammate names
+          // even if teamSize = 1 for testing, this still works
+          let team_Aliases = tools.makeName(teamSize - 1, user.friends_history)
+          user.friends_history = user.friends_history.concat(team_Aliases)
+
+          let teamMates = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
+          for (i = 0; i < teamMates.length; i++) {
+            if (treatmentNow) {
+              teamMates[i].tAlias = team_Aliases[i].join("")
+              team_Aliases[i] = team_Aliases[i].join("")
+            } else {
+              teamMates[i].alias = team_Aliases[i].join("")
+              team_Aliases[i] = team_Aliases[i].join("")
+            }
+          }
+
+          team_Aliases.push(user.name) //now push user for autocomplete
+          let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
+          // io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
+          io.in(user.id).emit('go', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal})
         }
       })
 
