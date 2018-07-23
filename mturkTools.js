@@ -219,6 +219,21 @@ const payBonuses = (users) => {
   return successfullyBonusedUsers
 }
 
+const checkBlocks = (removeBlocks = false) => {
+  mturk.listWorkerBlocks({}, (err, data) => {
+    if (err) { console.log(err) } else {
+      console.log("You have the following blocks:",data)
+      if (removeBlocks) { data.WorkerBlocks.forEach((worker) => {
+          mturk.deleteWorkerBlock({WorkerId:worker.WorkerId,Reason:"not needed"}, (err, data) => {
+            if (err) {console.log(err, err.stack)}
+            else { console.log("Removed block on", worker.WorkerId, data) }
+          })
+        })
+      }
+    }
+  })
+}
+
 module.exports = {
   expireActiveHits: expireActiveHits,
   getBalance: getBalance,
@@ -227,5 +242,6 @@ module.exports = {
   listUsersWithQualification: listUsersWithQualification,
   payBonuses: payBonuses,
   bonusPrice: bonusPrice,
-  submitTo: submitTo
+  submitTo: submitTo,
+  checkBlocks: checkBlocks
 };
