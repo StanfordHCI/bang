@@ -162,8 +162,20 @@ const launchBang = () => {
       }
     })
     if(hitsLeft > 0) {
-      numAssignments = (hitsLeft);
-      mturk.createHIT(params,(err, data) => {
+      numAssignments = hitsLeft;
+      const params2 = {
+        Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')',
+        Description: 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10)  + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
+        AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
+        LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
+        Reward: String(rewardPrice),
+        AutoApprovalDelayInSeconds: 60*taskDuration,
+        Keywords: 'ads, writing, copy editing, advertising',
+        MaxAssignments: numAssignments,
+        QualificationRequirements: QualificationReqs,
+        Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
+      };
+      mturk.createHIT(params2,(err, data) => {
         if (err) {
           console.log(err, err.stack);
         } else {
@@ -174,6 +186,7 @@ const launchBang = () => {
       delay++;
     } else {
       clearTimeout();
+      mturk.expireActiveHits();
     }
    }, 1000 * 60 * timeActive * delay)
 }
