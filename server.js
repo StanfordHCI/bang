@@ -10,7 +10,7 @@ const roundMinutes = process.env.ROUND_MINUTES
 const runExperimentNow = true
 const issueBonusesNow = false
 const cleanHITs = false // !runExperimentNow
-const assignQualifications = true
+const assignQualifications = false
 
 const starterSurveyOn = true
 const midSurveyOn = true
