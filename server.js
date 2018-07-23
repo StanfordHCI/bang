@@ -11,6 +11,7 @@ const runExperimentNow = true
 const issueBonusesNow = false
 const cleanHITs = false // !runExperimentNow
 const assignQualifications = false
+const debugMode = !runningLive
 
 const starterSurveyOn = true
 const midSurveyOn = true
@@ -22,6 +23,7 @@ const checkinIntervalMinutes = roundMinutes/30
 
 //Testing toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
+const debugLog = (...args) => {if (debugMode){console.log(...args)}}
 
 console.log(runningLive ? "\nRUNNING LIVE\n" : "\nRUNNING SANDBOXED\n");
 console.log(runningLocal ? "Running locally" : "Running remotely");
@@ -314,7 +316,7 @@ io.on('connection', (socket) => {
         if (usersAccepted.find(function(element) {return element.id == socket.id})) {
           console.log('There was a disconnect');
           usersAccepted = usersAccepted.filter(user => user.id != socket.id);
-          console.log(usersAccepted)
+          debugLog(usersAccepted)
           console.log("num users accepted:", usersAccepted.length);
           if((teamSize ** 2) - usersAccepted.length < 0) {
             io.sockets.emit('update number waiting', {num: 0});
