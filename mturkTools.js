@@ -33,7 +33,7 @@ AWS.config = {
 
 const numRounds = 3
 const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
-const timeActive = 0.5; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
+const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
 const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
 const rewardPrice = .50
 let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
@@ -117,6 +117,23 @@ const createQualification = (name) => {
   });
 }
 
+let currentHitId = '';
+let hitsLeft = numAssignments;
+
+const increaseAssignmentsPending = () => {
+  usersAcceptedHIT = usersAcceptedHIT + 1;
+  hitsLeft = hitsLeft - 1;
+  console.log('users accepted: ', usersAcceptedHIT)
+  console.log('hits left: ', hitsLeft);
+}
+
+const reduceAssignmentsPending = () => {
+  usersAcceptedHIT = usersAcceptedHIT - 1;
+  hitsLeft = hitsLeft + 1;
+  console.log('users accepted: ', usersAcceptedHIT)
+  console.log('hits left: ', hitsLeft);
+}
+
 // creates single HIT
 const launchBang = () => {
   // HIT Parameters
@@ -161,9 +178,6 @@ const launchBang = () => {
     Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
   };
 
-  let currentHitId = '';
-  let hitsLeft = teamSize * teamSize;
-
   mturk.createHIT(params, (err, data) => {
     if (err) {
       console.log(err, err.stack);
@@ -177,20 +191,6 @@ const launchBang = () => {
   // only continues to post if not enough people accepted HIT
   // Reposts every timeActive(x) number of minutes to keep HIT on top - stops reposting when enough people join
   setTimeout(() => {
-    let getHitParameters = {
-      HITId: currentHitId
-    }
-    // mturk.currentHitId.response.group = 'HITAssignmentSummary', - WHAT IS THIS
-    mturk.getHIT(getHitParameters, function(err, data) {
-      if (err) {
-        console.log(err, err.stack);
-        console.log('error is getHIT')
-      } else {
-        currentHitId = data.HIT.HITId;
-        usersAcceptedHIT = data.HIT.NumberOfAssignmentsPending;
-        hitsLeft = hitsLeft - usersAcceptedHIT;
-      }
-    })
     if(hitsLeft > 0) {
       numAssignments = hitsLeft;
       let params2 = {
@@ -206,9 +206,8 @@ const launchBang = () => {
         Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
       };
       mturk.createHIT(params2, (err, data) => {
-        if (err) {
-          console.log(err, err.stack);
-        } else {
+        if (err) console.log(err, err.stack);
+        else {
           console.log("HIT expired, and posted", data.HIT.MaxAssignments, "new assignments:", data.HIT.HITId);
           currentHitId = data.HIT.HITId;
         }
@@ -216,7 +215,6 @@ const launchBang = () => {
       delay++;
     } else {
       clearTimeout();
-      mturk.expireActiveHits();
     }
    }, 1000 * 60 * timeActive * delay)
 }
@@ -288,5 +286,7 @@ module.exports = {
   payBonuses: payBonuses,
   bonusPrice: bonusPrice,
   submitTo: submitTo,
-  checkBlocks: checkBlocks
+  checkBlocks: checkBlocks,
+  increaseAssignmentsPending: increaseAssignmentsPending,
+  reduceAssignmentsPending: reduceAssignmentsPending
 };
