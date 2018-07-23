@@ -1,3 +1,5 @@
+/* Find documentation on all AWS operations here: https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_OperationsArticle.html */
+
 require('dotenv').config()
 
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
@@ -42,6 +44,8 @@ let numAssignments = teamSize * teamSize;
 // Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
 const mturk = new AWS.MTurk({ endpoint: endpoint });
 
+// * getBalance *
+// -------------------------------------------------------------------
 // This will return $10,000.00 in the MTurk Developer Sandbox
 
 const getBalance = () => {
@@ -51,6 +55,7 @@ const getBalance = () => {
   });
 }
 
+// Kills all active HITs
 const expireActiveHits = () => {
   mturk.listHITs({}, (err, data) => {
     if (err) console.log(err, err.stack);
@@ -72,16 +77,33 @@ const expireActiveHits = () => {
 let qualificationId = '';
 
 if(runningLive) {
-  qualificationId = '3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG';
+  qualificationId = '3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG'; // a special qualification for our task
 }
 
+// * createQualification *
+// -------------------------------------------------------------------
 // Creates a qualification that will be assigned to an individual that accepts the task. That individual will
-//not be able to see it task again.
-// var qualificationParams = {
-//   Description: 'This user has already accepted a HIT for this specific task. We only allow one completion of this task per worker.', /* required */
-//   Name: 'hasBanged', /* required */
-//   QualificationTypeStatus: 'Active', /* required */
-// };
+// not be able to see it task again.
+//
+// Utilizes AWS CreateQualificationType operation.
+// Takes a string for the name of the qualification type as parameter.
+// Returns the qualificationTypeId of the newly created qualification.
+
+const createQualification = (data) => {
+  var qualificationParams = {
+    Description: 'This user has already accepted a HIT for this specific task. We only allow one completion of this task per worker.', /* required */
+    Name: data, /* required */
+    QualificationTypeStatus: 'Active', /* required */
+  };
+  mturk.createQualificationType(qualificationParams, function(err, data) {
+    if (err) console.log(err, err.stack); // an error occurred
+    else     console.log(data);           // successful response
+    // qualificationId = data.QualificationTypeId;  // if running HIT immediately
+    return data.QualificationTypeId;
+  });
+}
+
+
 // mturk.createQualificationType(qualificationParams, function(err, data) {
 //   if (err) console.log(err, err.stack); // an error occurred
 //   else     console.log(data);           // successful response
@@ -119,7 +141,7 @@ const launchBang = () => {
 
   let time = Date.now();
 
-  const params = {
+  let params = {
     Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')',
     Description: 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10)  + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
     AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
@@ -163,7 +185,7 @@ const launchBang = () => {
     })
     if(hitsLeft > 0) {
       numAssignments = hitsLeft;
-      const params2 = {
+      let params2 = {
         Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')',
         Description: 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10)  + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
         AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
@@ -248,8 +270,9 @@ const checkBlocks = (removeBlocks = false) => {
 }
 
 module.exports = {
-  expireActiveHits: expireActiveHits,
   getBalance: getBalance,
+  expireActiveHits: expireActiveHits,
+  createQualification: createQualification,
   launchBang: launchBang,
   assignQualificationToUsers: assignQualificationToUsers,
   listUsersWithQualification: listUsersWithQualification,
