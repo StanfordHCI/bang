@@ -11,12 +11,8 @@ const runExperimentNow = false
 const issueBonusesNow = false
 const cleanHITs = false //!runExperimentNow
 
-<<<<<<< HEAD
-const starterSurveyOn = true
-=======
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 const starterSurveyOn = false
->>>>>>> client.js merge conflict fix
 const midSurveyOn = true
 const blacklistOn = true
 const teamfeedbackOn = false
