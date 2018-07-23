@@ -1,11 +1,11 @@
 require('dotenv').config()
 
+const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
+const runningLive = process.env.RUNNING_LIVE == "TRUE"//ONLY CHANGE IN VIM ON SERVER
 const teamSize = process.env.TEAM_SIZE
 const roundMinutes = process.env.ROUND_MINUTES
 
 const AWS = require('aws-sdk');
-const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
-const runningLive = process.env.RUNNING_LIVE == "TRUE"//ONLY CHANGE IN VIM ON SERVER
 
 const qualificationsOn = runningLive
 
@@ -175,7 +175,7 @@ const launchBang = () => {
     } else {
       clearTimeout();
     }
-   }, 1000 * 60 * timeActive * delay) 
+   }, 1000 * 60 * timeActive * delay)
 }
 
 // assigns a qualification to users who have already completed the task - does not let workers repeat task
@@ -190,13 +190,13 @@ const assignQualificationToUsers = (users) => {
       else     console.log(data);           // successful response
     });
   })
-} 
+}
 
 const listUsersWithQualification = () => {
   var userWithQualificationParams = {QualificationTypeId: qualificationId, MaxResults: 100};
   mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
-    else console.log(data);         
+    else console.log(data);
   });
 }
 

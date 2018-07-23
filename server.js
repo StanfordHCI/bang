@@ -3,13 +3,13 @@ require('dotenv').config()
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = 2
-const roundMinutes = 2
+const teamSize = process.env.TEAM_SIZE=1
+const roundMinutes = process.env.ROUND_MINUTES=1
 
 // Toggles
 const runExperimentNow = false
 const issueBonusesNow = false
-const cleanHITs = false //!runExperimentNow
+const cleanHITs = false // !runExperimentNow
 const assignQualifications = true
 
 const starterSurveyOn = false
@@ -21,7 +21,7 @@ const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/30
 
 //Testing toggles
-const autocompleteTestOn = true //turns on fake team to test autocomplete
+const autocompleteTestOn = false //turns on fake team to test autocomplete
 
 console.log(runningLive ? "\nRUNNING LIVE\n" : "\nRUNNING SANDBOXED\n");
 console.log(runningLocal ? "Running locally" : "Running remotely");
@@ -583,7 +583,6 @@ io.on('connection', (socket) => {
       let result = parsedResults[i].slice(parsedResults[i].indexOf("=") + 1);
       let qIndex = (parsedResults[i].slice(0, parsedResults[i].indexOf("="))).lastIndexOf('q');
       let questionNumber = (parsedResults[i].slice(0, parsedResults[i].indexOf("="))).slice(qIndex + 1);
-  
       parsedResults[i] = questionNumber + '=' + result;
     }
     return parsedResults;
