@@ -46,7 +46,8 @@ const mturk = new AWS.MTurk({ endpoint: endpoint });
 
 // * getBalance *
 // -------------------------------------------------------------------
-// This will return $10,000.00 in the MTurk Developer Sandbox
+// Console-logs the balance of the associated account.
+// This will return $10,000.00 in the MTurk Developer Sandbox.
 
 const getBalance = () => {
   mturk.getAccountBalance((err, data) => {
@@ -55,7 +56,11 @@ const getBalance = () => {
   });
 }
 
-// Kills all active HITs
+// * expireActiveHits *
+// -------------------------------------------------------------------
+// Expires all active HITs by updating the time-until-expiration to 0. 
+// Users who have already accepted the HIT should still be able to finish and submit. 
+
 const expireActiveHits = () => {
   mturk.listHITs({}, (err, data) => {
     if (err) console.log(err, err.stack);
@@ -65,13 +70,23 @@ const expireActiveHits = () => {
           if (err) { console.log(err, err.stack)
           } else {console.log("Expired HIT:", hit.HITId)}
         });
-        // mturk.deleteHIT({HITId: hit.HITId}, (err, data) => {
-        //   if (err) { console.log(err, err.stack)
-        //   } else {console.log("Deleted HIT:", hit.HITId)}
-        // });
       })
     }
   })
+}
+
+// * deleteHIT *
+// -------------------------------------------------------------------
+// Disposes of a specified HIT. HITs are automatically deleted after 120 days.
+// Only the requester who created the HIT can delete it. 
+//
+// Takes a string of the HIT ID as a parameter.
+
+const deleteHIT = (theHITId) => {
+   mturk.deleteHIT({HITId: theHITId}, (err, data) => {
+      if (err) console.log(err, err.stack)
+      else console.log("Deleted HIT:", theHITId)
+   });
 }
 
 let qualificationId = '';
@@ -85,14 +100,13 @@ if(runningLive) {
 // Creates a qualification that will be assigned to an individual that accepts the task. That individual will
 // not be able to see it task again.
 //
-// Utilizes AWS CreateQualificationType operation.
 // Takes a string for the name of the qualification type as parameter.
 // Returns the qualificationTypeId of the newly created qualification.
 
-const createQualification = (data) => {
+const createQualification = (name) => {
   var qualificationParams = {
     Description: 'This user has already accepted a HIT for this specific task. We only allow one completion of this task per worker.', /* required */
-    Name: data, /* required */
+    Name: name, /* required */
     QualificationTypeStatus: 'Active', /* required */
   };
   mturk.createQualificationType(qualificationParams, function(err, data) {
@@ -102,13 +116,6 @@ const createQualification = (data) => {
     return data.QualificationTypeId;
   });
 }
-
-
-// mturk.createQualificationType(qualificationParams, function(err, data) {
-//   if (err) console.log(err, err.stack); // an error occurred
-//   else     console.log(data);           // successful response
-//   qualificationId = data.QualificationTypeId;
-// });
 
 // creates single HIT
 const launchBang = () => {
@@ -157,7 +164,7 @@ const launchBang = () => {
   let currentHitId = '';
   let hitsLeft = teamSize * teamSize;
 
-  mturk.createHIT(params,(err, data) => {
+  mturk.createHIT(params, (err, data) => {
     if (err) {
       console.log(err, err.stack);
     } else {
@@ -173,7 +180,7 @@ const launchBang = () => {
     let getHitParameters = {
       HITId: currentHitId
     }
-    mturk.getHIT(getHitParameters, function(err, data) {
+    mturk.getHIT(getHitParameters, currentHitId.response.group = 'HITAssignmentSummary', function(err, data) {
       if (err) {
         console.log(err, err.stack);
         console.log('error is getHIT')
@@ -197,7 +204,7 @@ const launchBang = () => {
         QualificationRequirements: QualificationReqs,
         Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
       };
-      mturk.createHIT(params2,(err, data) => {
+      mturk.createHIT(params2, (err, data) => {
         if (err) {
           console.log(err, err.stack);
         } else {
@@ -272,6 +279,7 @@ const checkBlocks = (removeBlocks = false) => {
 module.exports = {
   getBalance: getBalance,
   expireActiveHits: expireActiveHits,
+  deleteHIT: deleteHIT,
   createQualification: createQualification,
   launchBang: launchBang,
   assignQualificationToUsers: assignQualificationToUsers,
