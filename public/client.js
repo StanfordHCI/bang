@@ -687,6 +687,7 @@ $(function() {
     document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
     document.getElementById("assignmentId").value = data.assignmentId
     finishingcode.value = data.finishingCode
+    socket.disconnect(true);
   })
 });
 
