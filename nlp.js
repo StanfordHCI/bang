@@ -14,6 +14,17 @@ const toneAnalyzer = new ToneAnalyzer({
   version_date: '2017-09-21'
 });
 
+// Setting up DB
+const Datastore = require('nedb'),
+    db = {};
+    //db.users = new Datastore({ filename:'.data/users', autoload: true });
+    db.chats = new Datastore({ filename:'.data/chats', autoload: true });
+    //db.products = new Datastore({ filename:'.data/products', autoload: true });
+    //db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
+    //db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true});
+    db.tone = new Datastore({ filename:'.data/tone', autoload: true});
+    db.tonechat = new Datastore({ filename:'.data/tonechat', autoload: true});
+
 //TODO: make it handle empty line at end of file
 const chatlogFile = '.data/chats'// should change this to access copy of db chats?
 
@@ -24,7 +35,7 @@ fs.readFileSync(chatlogFile).toString().split('\n').forEach(function (line) {
 })
 
 let map = new Map();
-// map conditions to text with those conditions
+// map JSON string with batch, round, room fields to array of message objects with user, time, text fields
 for(let i = 0; i < chatlogArr.length; i++) {
   let chatObj = chatlogArr[i];
   let logIdObj;
@@ -32,7 +43,7 @@ for(let i = 0; i < chatlogArr.length; i++) {
   logIdObj = JSON.stringify({'batch':chatObj.batch, 'round':chatObj.round, 'room':chatObj.room});
   //logIdObj = JSON.stringify({'userID':chatObj.userID});
   
-  let messageObj = {'user': chatObj.userID, 'text': chatObj.message}
+  let messageObj = {'user': chatObj.userID, 'time': chatObj.time, 'text': chatObj.message}//send id and timestamp with message
   if(!map.has(logIdObj)) {
     map.set(logIdObj, [messageObj]);
   } else {
@@ -47,17 +58,33 @@ for (let [k,chatlog] of map) {
 
 
   let chatlogText = chatlog.map(function(messageObj){
+    let key = JSON.parse(k);
+    key['user'] = messageObj.user;
+    key['time'] = messageObj.time;
+    key['text'] = messageObj.text;
+    getTone(key, messageObj.text)
     utterances.push({'text':messageObj.text, 'user':messageObj.user})
     return messageObj.text;
   }).join('\n');
 
-  console.log(chatlogText)
-  //getTone(chatlogText);
-  getToneChat(utterances);
+  //console.log(chatlogText)
 
+  //getTone(k, chatlogText)
+   
+  getToneChat(k, utterances)
+  // console.log(JSON.stringify(toneAnalysis, null, 2));
+  // console.log(JSON.stringify(toneChatAnalysis, null, 2));
+  // db.tone.insert({'runKey': JSON.parse(k), 'toneAnalysis': toneAnalysis, 'toneChatAnalysis': toneChatAnalysis}, (err, inserted) => {
+  //   if(err) console.log("There's a problem adding a message to the DB: ", err);
+  //   else if(inserted) console.log("Tone analysis added to the DB");
+  // });
 }
 
-function getToneChat(utterances) {
+// TODO: 
+// modify ibm response to include timestamp/user id
+// store response in db
+
+function getToneChat(k, utterances) {
   let toneChatParams = {
     utterances: utterances
   };
@@ -66,16 +93,20 @@ function getToneChat(utterances) {
     if (error) {
       console.log(error);
     } else {
-      console.log(JSON.stringify(analysis, null, 2));
+      //console.log(JSON.stringify(analysis, null, 2));//should store this in db -> analyze/graph
+      db.tonechat.insert({'runKey': JSON.parse(k), 'toneChatAnalysis': analysis}, (err, inserted) => {
+        if(err) console.log("There's a problem adding a message to the DB: ", err);
+        else if(inserted) console.log("Tone chat analysis added to the DB");
+      });
     }
   });
 }
 
-function getTone(chatlogText) {
+function getTone(key, chatlogText) {
   let params = {
     tone_input: chatlogText,
     content_type: 'text/plain',
-    sentences: true
+    sentences: false
   };
 
   toneAnalyzer.tone(params, function (error, response) {
@@ -83,15 +114,11 @@ function getTone(chatlogText) {
       console.log(error);
     } else {
       console.log(JSON.stringify(response, null, 2));//should store this in db tone file
+      db.tone.insert({'runKey': key, 'toneAnalysis': response}, (err, inserted) => {
+        if(err) console.log("There's a problem adding a message to the DB: ", err);
+        else if(inserted) console.log("Tone analysis added to the DB");
+      });
     }
   });
 }
 
-// Setting up DB
-// const Datastore = require('nedb'),
-//     db = {};
-//     db.users = new Datastore({ filename:'.data/users', autoload: true });
-//     db.chats = new Datastore({ filename:'.data/chats', autoload: true });
-//     db.products = new Datastore({ filename:'.data/products', autoload: true });
-//     db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
-//     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true});
