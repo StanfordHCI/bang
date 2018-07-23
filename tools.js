@@ -56,9 +56,32 @@ const createTeams = (teamSize, numRounds, people) => {
 module.exports = {
   letters: letters,
   createTeams: createTeams,
-  makeName: () => {
-    // nameCount += 1
-    // return randomAdjective[randomAdjective.length % nameCount] + randomAnimal[randomAnimal.length % nameCount]
-    return randomAdjective.pick() + randomAnimal.pick()
-  }
+  makeName: function(teamSize = null, friends_history = null) {
+    if (!friends_history) {
+      let adjective = randomAdjective.pick() 
+      let animal = randomAnimal.pick()
+      return {username: adjective + animal, parts: [adjective, animal]}
+    } else {
+      // friends history store previously seen names by the user
+      // we want to avoid animal names
+
+      // remove previously seen animal names
+      let animals = randomAnimal.slice();
+      if (teamSize <= animals.length - friends_history.length) { //make sure there's enough adjectives
+        for (i = 0; i < friends_history.length; i++) {
+          // make sure that teamSize * 3rounds < 17 (length of randomAnimals)
+          // we could throw an error message?
+          animals.splice(animals.indexOf(friends_history[i][1]), 1)
+        }
+      }    
+      // Pick from remaining names
+      return [...Array(teamSize).keys()].map(i => {
+        adjective = randomAdjective.pick();
+        animal = animals.pick();
+        animals.splice(animals.indexOf(animal), 1);
+        return [adjective, animal];
+      });
+    }
+  },
+  randomAnimal: randomAnimal
 };
