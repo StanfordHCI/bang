@@ -63,6 +63,7 @@ Array.prototype.set = function() {
 // Setting up variables
 const currentCondition = "treatment"
 let treatmentNow = false
+let firstRun = false;
 
 const conditionSet = [
   {"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]},
@@ -172,6 +173,13 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
         'numRounds': numRounds, 'teamSize': teamSize}, (err, usersAdded) => {
     if(err) console.log("There's a problem adding batch to the DB: ", err);
     else if(usersAdded) console.log("Batch added to the DB");
+    console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
+    if (!firstRun) {
+      Object.keys(io.sockets.sockets).forEach(socketID => {
+        io.sockets.connected[socketID].disconnect(true);
+      })
+      firstRun = true;
+    }
 }); // task_list instead of all of the toggles? (missing checkinOn)
 
 // Chatroom

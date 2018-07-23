@@ -435,16 +435,16 @@ $(function() {
     hideAll();
     $chatPage.show();
     $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
-    
+
     setTimeout(()=>{log(data.task)}, 500)
     setTimeout(()=>{log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")}
       , 1000)
-    
+
     let durationString = ""
     if (data.duration < 1) { durationString = Math.round(data.duration * 60) + " seconds"
     } else if (data.duration == 1) { durationString = "one minute"
     } else { durationString = data.duration + " minutes" }
-    setTimeout(() => {    
+    setTimeout(() => {
       log("You will have <strong>" + durationString + "</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")}
 , 1500)
     setTimeout(()=>
@@ -491,7 +491,7 @@ $(function() {
           matches = $.grep(currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); });
           console.log(matches)
           if (matches[0] !== undefined) {
-            response(matches) 
+            response(matches)
           } else {
             let matches = $.grep(Object.keys(teamAnimals), function( currentTerm ){ return matcher.test( currentTerm ); });
             // console.log("my matches", matches)
@@ -648,7 +648,7 @@ $(function() {
     $('#starterForm')[0].reset();
   })
 
-  
+
 
   $('#postForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
@@ -656,7 +656,7 @@ $(function() {
     socket.emit('execute experiment')
   })
 
-  
+
 
   $('#blacklistForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
@@ -664,7 +664,7 @@ $(function() {
     socket.emit('execute experiment')
   })
 
-  
+
 
   $('#teamfeedbackForm').submit( (event) => {
     event.preventDefault() //stops page reloading
