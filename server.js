@@ -3,8 +3,8 @@ require('dotenv').config()
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE
-const roundMinutes = process.env.ROUND_MINUTES
+const teamSize = 2
+const roundMinutes = 2
 
 // Toggles
 const runExperimentNow = false
@@ -21,7 +21,7 @@ const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/30
 
 //Testing toggles
-const autocompleteTestOn = false //turns on fake team to test autocomplete
+const autocompleteTestOn = true //turns on fake team to test autocomplete
 
 console.log(runningLive ? "\nRUNNING LIVE\n" : "\nRUNNING SANDBOXED\n");
 console.log(runningLocal ? "Running locally" : "Running remotely");
