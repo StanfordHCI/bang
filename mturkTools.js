@@ -1,5 +1,5 @@
 /* Find documentation on all AWS operations here: https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_OperationsArticle.html */
-
+/* For Node: https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html#getHIT-property */
 require('dotenv').config()
 
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
@@ -33,7 +33,7 @@ AWS.config = {
 
 const numRounds = 3
 const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
-const timeActive = 10; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
+const timeActive = 0.5; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
 const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
 const rewardPrice = .50
 let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
@@ -180,7 +180,8 @@ const launchBang = () => {
     let getHitParameters = {
       HITId: currentHitId
     }
-    mturk.getHIT(getHitParameters, currentHitId.response.group = 'HITAssignmentSummary', function(err, data) {
+    // mturk.currentHitId.response.group = 'HITAssignmentSummary', - WHAT IS THIS
+    mturk.getHIT(getHitParameters, function(err, data) {
       if (err) {
         console.log(err, err.stack);
         console.log('error is getHIT')
