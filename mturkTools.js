@@ -186,6 +186,19 @@ const createQualification = (name) => {
   });
 }
 
+// * setAssignmentsPending *
+// -------------------------------------------------------------------
+// Keeps track of how many assignments have been accepted by Turkers - necessary for HIT reposting.
+// Called whenever a user accepts a HIT (server.js)
+
+const setAssignmentsPending = (data) => {
+  usersAcceptedHIT = data
+  hitsLeft = teamSize * teamSize - usersAcceptedHIT
+
+  console.log('users accepted: ', usersAcceptedHIT)
+  console.log('hits left: ', hitsLeft);
+}
+
 // * increaseAssignmentsPending *
 // -------------------------------------------------------------------
 // Keeps track of how many assignments have been accepted by Turkers - necessary for HIT reposting.
@@ -427,6 +440,7 @@ module.exports = {
   createQualification: createQualification,
   increaseAssignmentsPending: increaseAssignmentsPending,
   reduceAssignmentsPending: reduceAssignmentsPending,
+  setAssignmentsPending: setAssignmentsPending,
   assignQualificationToUsers: assignQualificationToUsers,
   disassociateQualification: disassociateQualification,
   listUsersWithQualification: listUsersWithQualification,
