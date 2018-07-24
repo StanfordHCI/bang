@@ -274,7 +274,7 @@ const payBonuses = (users) => {
       WorkerId: u.mturkId,
       UniqueRequestToken: u.id
     }, function(err, data) { if (err) {
-      // console.log("Bonus not processed:",err) 
+      console.log("Bonus not processed:",err) 
     } else {
         successfullyBonusedUsers.push(u)
         console.log("Bonused:",u)

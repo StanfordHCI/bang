@@ -692,12 +692,7 @@ $(function() {
       console.log("I'm crashed o no!")
       let input = document.createElement("textarea");
       let button = document.createElement("button");
-      // input.name = "post";
-      // input.maxLength = "5000";
-      // input.cols = "80";
-      // input.rows = "40";
       $("#submitButton_finish").before(input); //appendChild
-      // $('#mturk_form').append(engagementfeedback);
     }
     socket.disconnect(true);
   })
