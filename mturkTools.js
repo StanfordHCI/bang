@@ -31,14 +31,25 @@ AWS.config = {
   "sslEnabled": true
 }
 
+// Declaration of constants
 const numRounds = 3
 const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
-const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
-const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
-const rewardPrice = .50
+const timeActive = 4; // How long a task stays alive in minutes -  repost same task to assure top of list
+const hourlyWage = 10.50; // changes reward of experiment depending on length 
+const rewardPrice = .50  // amount Turkers will see when initially viewing task
+
+// Declaration of variables
 let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
 let usersAcceptedHIT = 0;
 let numAssignments = teamSize * teamSize;
+
+let currentHitId = '';
+let hitsLeft = numAssignments; // changes when users accept and disconnect (important - don't remove)
+
+let qualificationId = '';
+if(runningLive) {
+  qualificationId = '3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG'; // a special qualification for our task
+}
 
 // This initiates the API
 // Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
@@ -53,6 +64,71 @@ const getBalance = () => {
   mturk.getAccountBalance((err, data) => {
     if (err) console.log(err, err.stack); // an error occurred
     else console.log(data);           // successful response
+  });
+}
+
+// * makeHIT *
+// -------------------------------------------------------------------
+// Creates and posts a HIT. 
+//
+// Requires multiple Parameters.
+// Must manually add Qualification Requirements if desired.
+
+const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, 
+  comparator, qualificationTypeID, actionsGuarded, integer, taskURL) => {
+  let makeHITParams = {
+    Title: title,  // string
+    Description: description, // string
+    AssignmentDurationInSeconds: 60 * assignmentDuration, // number, pass as minutes
+    LifetimeInSeconds: 60 * lifetime,  // number, pass as minutes
+    Reward: String(rewardPrice), // string - ok if passed as number
+    AutoApprovalDelayInSeconds: 60 * autoApprovalDelay, // number, pass as minutes
+    Keywords: keywords, // string
+    MaxAssignments: maxAssignments, // number
+    // QualificationRequirements: [
+    //   {
+    //     Comparator: comparator, // string
+    //     QualificationTypeId: qualificationTypeID, // string
+    //     ActionsGuarded: actionsGuarded, // string
+    //     IntegerValues: [
+    //       integer,
+    //       /* more items */
+    //     ],
+    //     LocaleValues: [
+    //       {
+    //         Country: 'STRING_VALUE', /* required */
+    //         Subdivision: 'STRING_VALUE'
+    //       },
+    //       /* more items */
+    //     ],
+    //     RequiredToPreview: true || false
+    //   },
+    //   /* more items */
+    // ],
+    Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
+  };
+  mturk.createHIT(makeHITParams, (err, data) => {
+    if (err) console.log(err, err.stack);
+    else {
+      console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
+      currentHitId = data.HIT.HITId;
+    }
+  });
+}
+
+// * returnHIT *
+// -------------------------------------------------------------------
+// Retrieves the details of a specified HIT.
+//
+// Takes HIT ID as parameter.
+
+const returnHIT = (hitId, ) => {
+  var returnHITParams = {
+    HITId: hitId /* required */
+  };
+  mturk.getHIT(returnHITParams, function(err, data) {
+    if (err) console.log(err, err.stack); // an error occurred
+    else     console.log(data);           // successful response
   });
 }
 
@@ -89,12 +165,6 @@ const deleteHIT = (theHITId) => {
    });
 }
 
-let qualificationId = '';
-
-if(runningLive) {
-  qualificationId = '3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG'; // a special qualification for our task
-}
-
 // * createQualification *
 // -------------------------------------------------------------------
 // Creates a qualification that will be assigned to an individual that accepts the task. That individual will
@@ -117,8 +187,10 @@ const createQualification = (name) => {
   });
 }
 
-let currentHitId = '';
-let hitsLeft = numAssignments;
+// * increaseAssignmentsPending *
+// -------------------------------------------------------------------
+// Keeps track of how many assignments have been accepted by Turkers - necessary for HIT reposting.
+// Called whenever a user accepts a HIT (server.js)
 
 const increaseAssignmentsPending = () => {
   usersAcceptedHIT = usersAcceptedHIT + 1;
@@ -127,6 +199,11 @@ const increaseAssignmentsPending = () => {
   console.log('hits left: ', hitsLeft);
 }
 
+// * reduceAssignmentsPending *
+// -------------------------------------------------------------------
+// Keeps track of how many assignments have been accepted by Turkers - necessary for HIT reposting.
+// Called whenever a user disconnects (server.js)
+
 const reduceAssignmentsPending = () => {
   usersAcceptedHIT = usersAcceptedHIT - 1;
   hitsLeft = hitsLeft + 1;
@@ -134,7 +211,119 @@ const reduceAssignmentsPending = () => {
   console.log('hits left: ', hitsLeft);
 }
 
-// creates single HIT
+// * assignQualificationToUsers *
+// -------------------------------------------------------------------
+// Assigns a qualification to users who have already completed the task - does not let workers repeat task
+// Takes users in Database as a parameter, fetches mturk Id.
+
+const assignQualificationToUsers = (users) => {
+  users.filter((user) => {
+    return user.mturkId
+  }).forEach((user) => {
+    // // Assigns the qualification to the worker
+    var assignQualificationParams = {QualificationTypeId: qualificationId, WorkerId: user.mturkId, IntegerValue: 1, SendNotification: false};
+    mturk.associateQualificationWithWorker(assignQualificationParams, function(err, data) {
+      if (err) console.log(err, err.stack); // an error occurred
+      else     console.log(data);           // successful response
+    });
+  })
+}
+
+// * disassociateQualification *
+// -------------------------------------------------------------------
+// Revokes a previously assigned qualification from a specified user.
+//
+// Takes the qualification ID, worker ID, and reason as parateters - strings.
+
+const disassociateQualification = (qualificationId, workerId, reason) => {
+  var disassociateQualificationParams = {
+    QualificationTypeId: qualificationId, /* required */ // string
+    WorkerId: workerId, /* required */ // string
+    Reason: reason
+  };
+  mturk.disassociateQualificationFromWorker(disassociateQualificationParams, function(err, data) {
+    if (err) console.log(err, err.stack); // an error occurred
+    else     console.log(data);           // successful response
+  });
+}
+
+// * listUsersWithQualification *
+// -------------------------------------------------------------------
+// Lists MTurk users who have a specific qualification
+
+const listUsersWithQualification = () => {
+  var userWithQualificationParams = {QualificationTypeId: qualificationId, MaxResults: 100};
+  mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
+    if (err) console.log(err, err.stack); // an error occurred
+    else console.log(data);
+  });
+}
+
+// * payBonuses *
+// -------------------------------------------------------------------
+// Bonus all users in DB who have leftover bonuses.
+//
+// Takes users as a parameter.
+// Returns an array of bonused users.
+
+const payBonuses = (users) => {
+  let successfullyBonusedUsers = []
+    users.filter((user) => {
+      return user.assignmentId & (user.bonus != 0) & user.mturkId & user.id
+    }).forEach((user) => {
+      var params = { AssignmentId: user.assignmentId, BonusAmount: String(user.bonus), Reason: "Thanks for participating in our HIT!", WorkerId: user.mturkId, UniqueRequestToken: user.id };
+      mturk.sendBonus(params, function(err, data) {
+        if (err) {
+          console.log( user.id + " bonus not processed: " + err)
+        } else {
+          successfullyBonusedUsers.push(user)
+          console.log(user.id + " bonused: " + data)
+        }
+      })
+    })
+  return successfullyBonusedUsers
+}
+
+// * blockWorker *
+// -------------------------------------------------------------------
+// Blocks a particular worker.
+//
+// Takes workerID and reason as parameters - strings.
+
+const blockWorker = (reason, workerId) => {
+  var blockWorkerParams = {
+    Reason: reason, /* required */ // string
+    WorkerId: workerId /* required */ // string
+  };
+  mturk.createWorkerBlock(blockWorkerParams, function(err, data) {
+    if (err) console.log(err, err.stack); // an error occurred
+    else     console.log(data);           // successful response
+  });
+}
+
+// * checkBlocks *
+// -------------------------------------------------------------------
+// Lists workers that have been blocked. An option to remove all worker blocks.
+
+const checkBlocks = (removeBlocks = false) => {
+  mturk.listWorkerBlocks({}, (err, data) => {
+    if (err) { console.log(err) } else {
+      console.log("You have the following blocks:",data)
+      if (removeBlocks) { data.WorkerBlocks.forEach((worker) => {
+          mturk.deleteWorkerBlock({WorkerId:worker.WorkerId,Reason:"not needed"}, (err, data) => {
+            if (err) {console.log(err, err.stack)}
+            else { console.log("Removed block on", worker.WorkerId, data) }
+          })
+        })
+      }
+    }
+  })
+}
+
+// * launchBang *
+// -------------------------------------------------------------------
+// Launches Scaled-Humanity Fracture experiment
+
 const launchBang = () => {
   // HIT Parameters
   let QualificationReqs = [
@@ -192,6 +381,7 @@ const launchBang = () => {
   // Reposts every timeActive(x) number of minutes to keep HIT on top - stops reposting when enough people join
   setTimeout(() => {
     if(hitsLeft > 0) {
+      time = Date.now();  
       numAssignments = hitsLeft;
       let params2 = {
         Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')',
@@ -219,74 +409,22 @@ const launchBang = () => {
    }, 1000 * 60 * timeActive * delay)
 }
 
-// assigns a qualification to users who have already completed the task - does not let workers repeat task
-const assignQualificationToUsers = (users) => {
-  users.filter((user) => {
-    return user.mturkId
-  }).forEach((user) => {
-    // // Assigns the qualification to the worker
-    var assignQualificationParams = {QualificationTypeId: qualificationId, WorkerId: user.mturkId, IntegerValue: 1, SendNotification: false};
-    mturk.associateQualificationWithWorker(assignQualificationParams, function(err, data) {
-      if (err) console.log(err, err.stack); // an error occurred
-      else     console.log(data);           // successful response
-    });
-  })
-}
-
-const listUsersWithQualification = () => {
-  var userWithQualificationParams = {QualificationTypeId: qualificationId, MaxResults: 100};
-  mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
-    if (err) console.log(err, err.stack); // an error occurred
-    else console.log(data);
-  });
-}
-
-// bonus all users in DB who have leftover bonuses.
-const payBonuses = (users) => {
-  let successfullyBonusedUsers = []
-    users.filter((user) => {
-      return user.assignmentId & (user.bonus != 0) & user.mturkId & user.id
-    }).forEach((user) => {
-      var params = { AssignmentId: user.assignmentId, BonusAmount: String(user.bonus), Reason: "Thanks for participating in our HIT!", WorkerId: user.mturkId, UniqueRequestToken: user.id };
-      mturk.sendBonus(params, function(err, data) {
-        if (err) {
-          console.log( user.id + " bonus not processed: " + err)
-        } else {
-          successfullyBonusedUsers.push(user)
-          console.log(user.id + " bonused: " + data)
-        }
-      })
-    })
-  return successfullyBonusedUsers
-}
-
-const checkBlocks = (removeBlocks = false) => {
-  mturk.listWorkerBlocks({}, (err, data) => {
-    if (err) { console.log(err) } else {
-      console.log("You have the following blocks:",data)
-      if (removeBlocks) { data.WorkerBlocks.forEach((worker) => {
-          mturk.deleteWorkerBlock({WorkerId:worker.WorkerId,Reason:"not needed"}, (err, data) => {
-            if (err) {console.log(err, err.stack)}
-            else { console.log("Removed block on", worker.WorkerId, data) }
-          })
-        })
-      }
-    }
-  })
-}
-
 module.exports = {
   getBalance: getBalance,
+  makeHIT: makeHIT,
+  returnHIT: returnHIT,
   expireActiveHits: expireActiveHits,
   deleteHIT: deleteHIT,
   createQualification: createQualification,
-  launchBang: launchBang,
+  increaseAssignmentsPending: increaseAssignmentsPending,
+  reduceAssignmentsPending: reduceAssignmentsPending,
   assignQualificationToUsers: assignQualificationToUsers,
+  disassociateQualification: disassociateQualification,
   listUsersWithQualification: listUsersWithQualification,
   payBonuses: payBonuses,
   bonusPrice: bonusPrice,
-  submitTo: submitTo,
+  blockWorker: blockWorker,
   checkBlocks: checkBlocks,
-  increaseAssignmentsPending: increaseAssignmentsPending,
-  reduceAssignmentsPending: reduceAssignmentsPending
+  submitTo: submitTo,
+  launchBang: launchBang
 };
