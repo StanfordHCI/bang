@@ -13,10 +13,10 @@ const cleanHITs = false // !runExperimentNow
 const assignQualifications = true
 const debugMode = !runningLive
 
-const starterSurveyOn = true
-const midSurveyOn = true
-const blacklistOn = true
-const teamfeedbackOn = false
+const starterSurveyOn = 0
+const midSurveyOn = 0
+const blacklistOn = 0
+const teamfeedbackOn = 0
 const checkinOn = false
 const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/30
@@ -345,7 +345,11 @@ io.on('connection', (socket) => {
             // Start cancel process
             console.log("User left, emitting cancel to all users");
             users.forEach((user) => {
-              let cancelMessage = "This HIT has crashed. Please submit below and we will accept."
+              let cancelMessage = "This HIT has crashed. Thank you for your time! <br> <br> \
+              Unfortunately, our group task requires a specific number of users to run, \
+              so once a user leaves, our task cannot proceed. To receive payment for \
+              this task, please provide suggestions for how to design our study better \
+              to prevent this issue."
 
               if (taskStarted) { // Add future bonus pay
                 user.bonus += mturk.bonusPrice/2
@@ -356,7 +360,8 @@ io.on('connection', (socket) => {
                   message: cancelMessage,
                   finishingCode: user.id,
                   turkSubmitTo: mturk.submitTo,
-                  assignmentId: user.assignmentId
+                  assignmentId: user.assignmentId,
+                  crashed: true
               })
             })
           }

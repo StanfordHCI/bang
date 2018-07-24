@@ -687,8 +687,22 @@ $(function() {
     document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
     document.getElementById("assignmentId").value = data.assignmentId
     finishingcode.value = data.finishingCode
+    // console.log("Crash value", data.crashed)
+    if (data.crashed) {
+      console.log("I'm crashed o no!")
+      let input = document.createElement("textarea");
+      let button = document.createElement("button");
+      // input.name = "post";
+      // input.maxLength = "5000";
+      // input.cols = "80";
+      // input.rows = "40";
+      $("#submitButton_finish").before(input); //appendChild
+      // $('#mturk_form').append(engagementfeedback);
+    }
     socket.disconnect(true);
   })
+
+
 });
 
 function turkGetParam( name, defaultValue, uri) {

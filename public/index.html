@@ -98,7 +98,7 @@
 
     <li id="teamfeedbackSurvey" class="login page">
       <form id="teamfeedbackForm">
-        <h3 class ='intro'>We're thinking about hiring a manager
+        <h3>We're thinking about hiring a manager
            to lead each team in the future. For this team, provide the manager
            with an anonymous statement about how your team would work together
            on future tasks. Your answers will have no impact on your ability
@@ -106,7 +106,7 @@
         </h3>
         <textarea class="teamfeedbackInput" id="teamfeedbackInput"></textarea>
         <br>
-        <div id="feedback-questions" class='survey-questions'>
+        <div id="teamfeedbackSurvey-questions" class='survey-questions'>
           <question-component v-for="question in questions" :question="question" />
         </div>
         <input type="submit" value="Submit">
@@ -118,7 +118,7 @@
       <h3 class="title" id="finishingMessage"></h3>
       <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
       <input type='hidden' value='' name='finishingcode' id='finishingcode'/>
-      <p><input type='submit' id='submitButton' value='Submit' /></p>
+      <p><input type='submit' id='submitButton_finish' value='Submit' /></p>
       </form>
       <!-- <p style="color: white;">Paste <strong><span id="finishingcode"></span></strong> into the MTurk task to receive payment.</p> -->
     </li>
