@@ -245,15 +245,16 @@ const listUsersWithQualification = () => {
 const payBonuses = (users) => {
   console.log(users.filter(u => u.bonus != 0).map(u => u.bonus));
   let successfullyBonusedUsers = []
-  users.filter(u => u.bonus != 0).forEach((user) => {
-    console.log(user);
-    var params = { AssignmentId: user.assignmentId, BonusAmount: String(user.bonus), Reason: "Thanks for participating in our HIT!", WorkerId: user.mturkId, UniqueRequestToken: user.id };
-    mturk.sendBonus(params, function(err, data) {
-      if (err) {
-        console.log("Bonus not processed:",err)
-      } else {
-        successfullyBonusedUsers.push(user)
-        console.log("Bonused:",data)
+  users.filter(u => u.bonus != 0).forEach((u) => {
+    mturk.sendBonus({
+      AssignmentId: u.assignmentId,
+      BonusAmount: String(u.bonus),
+      Reason: "Thanks for participating in our HIT!",
+      WorkerId: u.mturkId,
+      UniqueRequestToken: u.id
+    }, function(err, data) { if (err) {console.log("Bonus not processed:",err)} else {
+        successfullyBonusedUsers.push(u)
+        console.log("Bonused:",u)
       }
     })
   })

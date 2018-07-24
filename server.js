@@ -104,10 +104,8 @@ if (issueBonusesNow){
     if (err) {console.log("Err loading users:" + err)}
     else {
       console.log("Paying bonuses")
-      const usersPaid = mturk.payBonuses(usersInDB)
-      console.log("Paid:",usersPaid);
-      usersPaid.forEach((user) => {
-        db.users.update( {id: user.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)}})
+      mturk.payBonuses(usersInDB).forEach((u) => {
+        db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)}})
       })
     }
   })
