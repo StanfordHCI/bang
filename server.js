@@ -7,16 +7,16 @@ const teamSize = process.env.TEAM_SIZE
 const roundMinutes = process.env.ROUND_MINUTES
 
 // Toggles
-const runExperimentNow = false
+const runExperimentNow = true
 const issueBonusesNow = true
 const cleanHITs = false // !runExperimentNow
 const assignQualifications = true
 const debugMode = !runningLive
 
-const starterSurveyOn = 0
-const midSurveyOn = 0
-const blacklistOn = 0
-const teamfeedbackOn = 0
+const starterSurveyOn = false
+const midSurveyOn = true
+const blacklistOn = true
+const teamfeedbackOn = false
 const checkinOn = false
 const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/30
@@ -319,7 +319,7 @@ io.on('connection', (socket) => {
 
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
-        mturk.reduceAssignmentsPending();
+        // mturk.reduceAssignmentsPending();
         // if the user had accepted, removes them from the array of accepted users
         console.log(socket.id)
         if (usersAccepted.find(function(element) {return element.id == socket.id})) {
@@ -332,6 +332,8 @@ io.on('connection', (socket) => {
           } else {
             io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersAccepted.length});
           }
+
+          mturk.setAssignmentsPending(usersAccepted.length)
         }
 
         if (addedUser) {
@@ -548,7 +550,7 @@ io.on('connection', (socket) => {
   // }
   //if the user has accepted the HIT, add the user to the array usersAccepted
   socket.on('accepted HIT', (data) => {
-    mturk.increaseAssignmentsPending();
+    // mturk.increaseAssignmentsPending();
     usersAccepted.push({
       "id": socket.id,
       "mturkId": data.mturkId,
@@ -556,6 +558,7 @@ io.on('connection', (socket) => {
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
     });
+    mturk.setAssignmentsPending(usersAccepted.length)
     console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
     // Disconnect leftover users
     Object.keys(io.sockets.sockets).forEach(socketID => {

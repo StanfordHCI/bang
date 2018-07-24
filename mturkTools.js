@@ -10,6 +10,7 @@ const roundMinutes = process.env.ROUND_MINUTES
 const AWS = require('aws-sdk');
 
 const qualificationsOn = runningLive
+const runningDelayed = true
 
 let endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 let submitTo = 'https://workersandbox.mturk.com'
@@ -185,6 +186,19 @@ const createQualification = (name) => {
   });
 }
 
+// * setAssignmentsPending *
+// -------------------------------------------------------------------
+// Keeps track of how many assignments have been accepted by Turkers - necessary for HIT reposting.
+// Called whenever a user accepts a HIT (server.js)
+
+const setAssignmentsPending = (data) => {
+  usersAcceptedHIT = data
+  hitsLeft = teamSize * teamSize - usersAcceptedHIT
+
+  console.log('users accepted: ', usersAcceptedHIT)
+  console.log('hits left: ', hitsLeft);
+}
+
 // * increaseAssignmentsPending *
 // -------------------------------------------------------------------
 // Keeps track of how many assignments have been accepted by Turkers - necessary for HIT reposting.
@@ -273,9 +287,10 @@ const payBonuses = (users) => {
       Reason: "Thanks for participating in our HIT!",
       WorkerId: u.mturkId,
       UniqueRequestToken: u.id
-    }, function(err, data) { if (err) {
-      console.log("Bonus not processed:",err) 
-    } else {
+    }, function(err, data) { 
+      if (err) {
+       // console.log("Bonus not processed:",err) 
+      } else {
         successfullyBonusedUsers.push(u)
         console.log("Bonused:",u)
       }
@@ -338,7 +353,7 @@ const launchBang = () => {
 
   if (qualificationsOn) {
     QualificationReqs.push({
-      QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
+      QualificationTypeId: '00000000000000000040',  // more than 1000 HITs
       Comparator: 'GreaterThan',
       IntegerValues: [1000],
       RequiredToPreview: true,
@@ -347,6 +362,13 @@ const launchBang = () => {
       QualificationReqs.push({
         QualificationTypeId: qualificationId,  // have not already completed the HIT
         Comparator: 'DoesNotExist',
+        ActionsGuarded:"DiscoverPreviewAndAccept"
+      })
+    }
+    if(runningDelayed) {
+      QualificationReqs.push({
+        QualificationTypeId: "3H3KEN1OLSVM98I05ACTNWVOM3JBI9",
+        Comparator: 'Exists',
         ActionsGuarded:"DiscoverPreviewAndAccept"
       })
     }
@@ -418,6 +440,7 @@ module.exports = {
   createQualification: createQualification,
   increaseAssignmentsPending: increaseAssignmentsPending,
   reduceAssignmentsPending: reduceAssignmentsPending,
+  setAssignmentsPending: setAssignmentsPending,
   assignQualificationToUsers: assignQualificationToUsers,
   disassociateQualification: disassociateQualification,
   listUsersWithQualification: listUsersWithQualification,
