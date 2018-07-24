@@ -7,10 +7,10 @@ const teamSize = process.env.TEAM_SIZE
 const roundMinutes = process.env.ROUND_MINUTES
 
 // Toggles
-const runExperimentNow = true
+const runExperimentNow = false
 const issueBonusesNow = true
-const cleanHITs = true // !runExperimentNow
-const assignQualifications = true
+const cleanHITs = false // !runExperimentNow
+const assignQualifications = false
 const debugMode = !runningLive
 
 const starterSurveyOn = true

@@ -34,8 +34,8 @@ AWS.config = {
 const numRounds = 3
 const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
 const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
-const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
-const rewardPrice = .50
+const hourlyWage = 12.50; // changes reward of experiment depending on length - change to 6?
+const rewardPrice = .60
 let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
 let usersAcceptedHIT = 0;
 let numAssignments = teamSize * teamSize;
@@ -58,8 +58,8 @@ const getBalance = () => {
 
 // * expireActiveHits *
 // -------------------------------------------------------------------
-// Expires all active HITs by updating the time-until-expiration to 0. 
-// Users who have already accepted the HIT should still be able to finish and submit. 
+// Expires all active HITs by updating the time-until-expiration to 0.
+// Users who have already accepted the HIT should still be able to finish and submit.
 
 const expireActiveHits = () => {
   mturk.listHITs({}, (err, data) => {
@@ -78,7 +78,7 @@ const expireActiveHits = () => {
 // * deleteHIT *
 // -------------------------------------------------------------------
 // Disposes of a specified HIT. HITs are automatically deleted after 120 days.
-// Only the requester who created the HIT can delete it. 
+// Only the requester who created the HIT can delete it.
 //
 // Takes a string of the HIT ID as a parameter.
 
@@ -243,20 +243,20 @@ const listUsersWithQualification = () => {
 
 // bonus all users in DB who have leftover bonuses.
 const payBonuses = (users) => {
+  console.log(users.filter(u => u.bonus != 0).map(u => u.bonus));
   let successfullyBonusedUsers = []
-    users.filter((user) => {
-      return user.assignmentId & (user.bonus != 0) & user.mturkId & user.id
-    }).forEach((user) => {
-      var params = { AssignmentId: user.assignmentId, BonusAmount: String(user.bonus), Reason: "Thanks for participating in our HIT!", WorkerId: user.mturkId, UniqueRequestToken: user.id };
-      mturk.sendBonus(params, function(err, data) {
-        if (err) {
-          console.log( user.id + " bonus not processed: " + err)
-        } else {
-          successfullyBonusedUsers.push(user)
-          console.log(user.id + " bonused: " + data)
-        }
-      })
+  users.filter(u => u.bonus != 0).forEach((user) => {
+    console.log(user);
+    var params = { AssignmentId: user.assignmentId, BonusAmount: String(user.bonus), Reason: "Thanks for participating in our HIT!", WorkerId: user.mturkId, UniqueRequestToken: user.id };
+    mturk.sendBonus(params, function(err, data) {
+      if (err) {
+        console.log("Bonus not processed:",err)
+      } else {
+        successfullyBonusedUsers.push(user)
+        console.log("Bonused:",data)
+      }
     })
+  })
   return successfullyBonusedUsers
 }
 
