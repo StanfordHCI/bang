@@ -34,11 +34,9 @@ AWS.config = {
 // Declaration of constants
 const numRounds = 3
 const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
-const timeActive = 4; // How long a task stays alive in minutes -  repost same task to assure top of list
-const hourlyWage = 10.50; // changes reward of experiment depending on length 
-const rewardPrice = .50  // amount Turkers will see when initially viewing task
-
-// Declaration of variables
+const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
+const hourlyWage = 12.50; // changes reward of experiment depending on length - change to 6?
+const rewardPrice = .60
 let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
 let usersAcceptedHIT = 0;
 let numAssignments = teamSize * teamSize;
@@ -69,12 +67,12 @@ const getBalance = () => {
 
 // * makeHIT *
 // -------------------------------------------------------------------
-// Creates and posts a HIT. 
+// Creates and posts a HIT.
 //
 // Requires multiple Parameters.
 // Must manually add Qualification Requirements if desired.
 
-const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, 
+const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments,
   comparator, qualificationTypeID, actionsGuarded, integer, taskURL) => {
   let makeHITParams = {
     Title: title,  // string
@@ -134,8 +132,8 @@ const returnHIT = (hitId, ) => {
 
 // * expireActiveHits *
 // -------------------------------------------------------------------
-// Expires all active HITs by updating the time-until-expiration to 0. 
-// Users who have already accepted the HIT should still be able to finish and submit. 
+// Expires all active HITs by updating the time-until-expiration to 0.
+// Users who have already accepted the HIT should still be able to finish and submit.
 
 const expireActiveHits = () => {
   mturk.listHITs({}, (err, data) => {
@@ -154,7 +152,7 @@ const expireActiveHits = () => {
 // * deleteHIT *
 // -------------------------------------------------------------------
 // Disposes of a specified HIT. HITs are automatically deleted after 120 days.
-// Only the requester who created the HIT can delete it. 
+// Only the requester who created the HIT can delete it.
 //
 // Takes a string of the HIT ID as a parameter.
 
@@ -268,19 +266,19 @@ const listUsersWithQualification = () => {
 
 const payBonuses = (users) => {
   let successfullyBonusedUsers = []
-    users.filter((user) => {
-      return user.assignmentId & (user.bonus != 0) & user.mturkId & user.id
-    }).forEach((user) => {
-      var params = { AssignmentId: user.assignmentId, BonusAmount: String(user.bonus), Reason: "Thanks for participating in our HIT!", WorkerId: user.mturkId, UniqueRequestToken: user.id };
-      mturk.sendBonus(params, function(err, data) {
-        if (err) {
-          console.log( user.id + " bonus not processed: " + err)
-        } else {
-          successfullyBonusedUsers.push(user)
-          console.log(user.id + " bonused: " + data)
-        }
-      })
+  users.filter(u => u.bonus != 0).forEach((u) => {
+    mturk.sendBonus({
+      AssignmentId: u.assignmentId,
+      BonusAmount: String(u.bonus),
+      Reason: "Thanks for participating in our HIT!",
+      WorkerId: u.mturkId,
+      UniqueRequestToken: u.id
+    }, function(err, data) { if (err) {console.log("Bonus not processed:",err) } else {
+        successfullyBonusedUsers.push(u)
+        console.log("Bonused:",u)
+      }
     })
+  })
   return successfullyBonusedUsers
 }
 
@@ -381,7 +379,7 @@ const launchBang = () => {
   // Reposts every timeActive(x) number of minutes to keep HIT on top - stops reposting when enough people join
   setTimeout(() => {
     if(hitsLeft > 0) {
-      time = Date.now();  
+      time = Date.now();
       numAssignments = hitsLeft;
       let params2 = {
         Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')',
