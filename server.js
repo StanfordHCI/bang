@@ -10,7 +10,7 @@ const roundMinutes = process.env.ROUND_MINUTES
 const runExperimentNow = false
 const issueBonusesNow = true
 const cleanHITs = false // !runExperimentNow
-const assignQualifications = false
+const assignQualifications = true
 const debugMode = !runningLive
 
 const starterSurveyOn = true
@@ -104,8 +104,7 @@ if (issueBonusesNow){
     if (err) {console.log("Err loading users:" + err)}
     else {
       console.log("Paying bonuses")
-      mturk.payBonuses(usersInDB).forEach((u) => {
-        db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)}})
+      mturk.payBonuses(usersInDB) //.forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)}})
       })
     }
   })
