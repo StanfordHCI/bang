@@ -683,7 +683,7 @@ $(function() {
   socket.on('finished',data => {
     hideAll();
     $finishingPage.show();
-    document.getElementById("finishingMessage").innerText = data.message
+    document.getElementById("finishingMessage").innerHTML = data.message
     document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
     document.getElementById("assignmentId").value = data.assignmentId
     finishingcode.value = data.finishingCode
