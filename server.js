@@ -526,7 +526,7 @@ io.on('connection', (socket) => {
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
         socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has may have had an error. You will be compensated."})
-        socket.disconnect();
+        // socket.disconnect();
         console.log("Sockets active: " + Object.keys(io.sockets.sockets));
   });
 
