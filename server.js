@@ -104,8 +104,10 @@ if (issueBonusesNow){
     if (err) {console.log("Err loading users:" + err)}
     else {
       console.log("Paying bonuses")
-      mturk.payBonuses(usersInDB).forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)}})
-      //Only use to clear all. usersInDB.forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)}})
+      mturk.payBonuses(usersInDB).forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
+
+      //Only use to clear all.
+      //usersInDB.forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
       })
     }
   })
