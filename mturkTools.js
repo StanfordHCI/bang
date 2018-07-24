@@ -273,7 +273,10 @@ const payBonuses = (users) => {
       Reason: "Thanks for participating in our HIT!",
       WorkerId: u.mturkId,
       UniqueRequestToken: u.id
-    }, function(err, data) { if (err) {console.log("Bonus not processed:",err) } else {
+    }, function(err, data) { 
+      if (err) {
+       // console.log("Bonus not processed:",err) 
+      } else {
         successfullyBonusedUsers.push(u)
         console.log("Bonused:",u)
       }
@@ -336,7 +339,7 @@ const launchBang = () => {
 
   if (qualificationsOn) {
     QualificationReqs.push({
-      QualificationTypeId: '00000000000000000040 ',  // more than 1000 HITs
+      QualificationTypeId: '00000000000000000040',  // more than 1000 HITs
       Comparator: 'GreaterThan',
       IntegerValues: [1000],
       RequiredToPreview: true,
