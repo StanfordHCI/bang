@@ -10,6 +10,7 @@ const roundMinutes = process.env.ROUND_MINUTES
 const AWS = require('aws-sdk');
 
 const qualificationsOn = runningLive
+const runningDelayed = true
 
 let endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 let submitTo = 'https://workersandbox.mturk.com'
@@ -345,6 +346,13 @@ const launchBang = () => {
       QualificationReqs.push({
         QualificationTypeId: qualificationId,  // have not already completed the HIT
         Comparator: 'DoesNotExist',
+        ActionsGuarded:"DiscoverPreviewAndAccept"
+      })
+    }
+    if(runningDelayed) {
+      QualificationReqs.push({
+        QualificationTypeId: "3H3KEN1OLSVM98I05ACTNWVOM3JBI9",
+        Comparator: 'Exists',
         ActionsGuarded:"DiscoverPreviewAndAccept"
       })
     }
