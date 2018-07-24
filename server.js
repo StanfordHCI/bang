@@ -176,7 +176,7 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
     console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
     if (!firstRun) {
       Object.keys(io.sockets.sockets).forEach(socketID => {
-        io.sockets.connected[socketID].disconnect(true);
+        io.in(socketID).disconnect(true);
       })
       firstRun = true;
     }
@@ -556,7 +556,7 @@ io.on('connection', (socket) => {
     Object.keys(io.sockets.sockets).forEach(socketID => {
       if (usersAccepted.every(acceptedUser => {return acceptedUser.id !== socketID})) {
         console.log("Removing dead socket: " + socketID);
-        io.sockets.connected[socketID].emit('get IDs', 'broken');
+        io.in(socketID).emit('get IDs', 'broken');
       }
     });
     console.log("Sockets active: " + Object.keys(io.sockets.sockets));
