@@ -62,6 +62,7 @@ for (let [k,chatlog] of map) {
     key['user'] = messageObj.user;
     key['time'] = messageObj.time;
     key['text'] = messageObj.text;
+    //gets tone of each message
     getTone(key, messageObj.text)
     utterances.push({'text':messageObj.text, 'user':messageObj.user})
     return messageObj.text;
@@ -69,9 +70,10 @@ for (let [k,chatlog] of map) {
 
   //console.log(chatlogText)
 
+  //gets tone of overall document
   //getTone(k, chatlogText)
    
-  getToneChat(k, utterances)
+  //getToneChat(k, utterances) //does not store timestamp/user id with tone analysis response
   // console.log(JSON.stringify(toneAnalysis, null, 2));
   // console.log(JSON.stringify(toneChatAnalysis, null, 2));
   // db.tone.insert({'runKey': JSON.parse(k), 'toneAnalysis': toneAnalysis, 'toneChatAnalysis': toneChatAnalysis}, (err, inserted) => {
