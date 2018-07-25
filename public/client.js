@@ -500,14 +500,10 @@ $(function() {
         else if (wordlength <= 5) {
           let matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
           matches = $.grep(currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); });
-          console.log(matches)
           if (matches[0] !== undefined) {
             response(matches)
           } else {
             let matches = $.grep(Object.keys(teamAnimals), function( currentTerm ){ return matcher.test( currentTerm ); });
-            // console.log("my matches", matches)
-            // console.log("Yo I'm here", teamAnimals)
-            // console.log("matches map", matches.map(i => {return teamAnimals[i]}))
             response(matches.map(match => {return teamAnimals[match]}))
           }
         }
@@ -717,13 +713,11 @@ $(function() {
   })
 
   $('#mturk_form').submit( (event) => {
-    console.log("pressed submit");
     socket.emit('mturk_formSubmit', $('#engagementfeedbackInput').val())
   })
 
   $('#leave-hit-form').submit( (event) => { //watches form element
     if ($('#leave-hit-form').serialize() === "leave-hit-q1=1") { //only if user chooses to leave
-      console.log("I'm disconnecting", )
       hideAll();
       $finishingPage.show();
       document.getElementById("finishingMessage").innerText = "You have terminated your HIT. Thank you for your time."
