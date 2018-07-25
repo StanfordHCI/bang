@@ -7,7 +7,7 @@ const teamSize = process.env.TEAM_SIZE
 const roundMinutes = process.env.ROUND_MINUTES = 5
 
 // Toggles
-const runExperimentNow = false
+const runExperimentNow = true
 const issueBonusesNow = true
 const cleanHITs = false // !runExperimentNow
 const assignQualifications = true
@@ -334,6 +334,8 @@ io.on('connection', (socket) => {
           } else {
             io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersAccepted.length});
           }
+
+          mturk.setAssignmentsPending(usersAccepted.length)
         }
         console.log("addedUser", addedUser)
         console.log("taskOver", taskOver)
@@ -547,7 +549,7 @@ io.on('connection', (socket) => {
   // }
   //if the user has accepted the HIT, add the user to the array usersAccepted
   socket.on('accepted HIT', (data) => {
-    mturk.increaseAssignmentsPending();
+    // mturk.increaseAssignmentsPending();
     usersAccepted.push({
       "id": socket.id,
       "mturkId": data.mturkId,
@@ -555,6 +557,7 @@ io.on('connection', (socket) => {
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
     });
+    mturk.setAssignmentsPending(usersAccepted.length)
     console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
     // Disconnect leftover users
     Object.keys(io.sockets.sockets).forEach(socketID => {
