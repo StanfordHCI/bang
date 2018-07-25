@@ -691,7 +691,7 @@ $(function() {
     if (data.crashed) {
       console.log("I'm crashed o no!")
       let input = document.createElement("textarea");
-      let button = document.createElement("button");
+      input.name = "feedback"
       $("#submitButton_finish").before(input); //appendChild
     }
     socket.disconnect(true);

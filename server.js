@@ -347,16 +347,18 @@ io.on('connection', (socket) => {
             // Start cancel process
             console.log("User left, emitting cancel to all users");
             users.forEach((user) => {
-              let cancelMessage = "This HIT has crashed. Thank you for your time! <br> <br> \
+              let cancelMessage = "<strong>Someone left the task</strong><br> <br> \
               Unfortunately, our group task requires a specific number of users to run, \
-              so once a user leaves, our task cannot proceed. To receive payment for \
-              this task, please provide suggestions for how to design our study better \
-              to prevent this issue."
-
+              so once a user leaves, our task cannot proceed. <br><br> \
+              To complete the task, please provide suggestions of ways to \
+              prevent people leaving in future runs of the study. <br><br> \
+              Since the team activity had already started, you will be additionally \
+              bonused for the time spent working with the team."
               if (taskStarted) { // Add future bonus pay
+                // cancelMessage += "<br>Since the team activity had already started, you will be additionally bonused for the time spent working with the team."
+
                 user.bonus += mturk.bonusPrice/2
                 db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
-                cancelMessage = cancelMessage + " Since the team activity had already started, you will be additionally bonused for the time spent working with the team."
               }
               io.in(user.id).emit('finished', {
                   message: cancelMessage,
