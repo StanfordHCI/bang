@@ -3,7 +3,7 @@ require('dotenv').config()
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE = 1
+const teamSize = process.env.TEAM_SIZE = 2
 const roundMinutes = process.env.ROUND_MINUTES = 2
 
 // Toggles
@@ -194,6 +194,7 @@ io.on('connection', (socket) => {
     //Chat engine
     // when the client emits 'new message', this listens and executes
     socket.on('new message', function (message) {
+
         // we tell the client to execute 'new message'
         console.log("received:", socket.username, message);
         let cleanMessage = message;
@@ -544,6 +545,7 @@ io.on('connection', (socket) => {
   //   })
   // }
   //if the user has accepted the HIT, add the user to the array usersAccepted
+
   socket.on('accepted HIT', (data) => {
     // mturk.increaseAssignmentsPending();
     usersAccepted.push({
@@ -551,7 +553,10 @@ io.on('connection', (socket) => {
       "mturkId": data.mturkId,
       "id": String(socket.id),
       "turkSubmitTo": data.turkSubmitTo,
-      "assignmentId": data.assignmentId
+      "assignmentId": data.assignmentId,
+      "timeAdded": data.timeAdded,
+      "timeLastActivity": data.timeAdded,
+      "waiting": false
     });
     mturk.setAssignmentsPending(usersAccepted.length)
     console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
@@ -563,15 +568,34 @@ io.on('connection', (socket) => {
       }
     });
     console.log("Sockets active: " + Object.keys(io.sockets.sockets));
+    checkUsersAccepted(usersAccepted);
+  });
+
+  function checkUsersAccepted(usersAccepted) {
+    usersAccepted.forEach(user => {
+      if ((Date.now() - user.timeAdded)/1000 > 20 && (Date.now() - user.timeLastActivity)/1000 < 20) {
+        user.waiting = true;
+      }
+    });
     // if enough people have accepted, push prompt to start task
-    if(usersAccepted.length >= teamSize ** 2) {
-      let numWaiting = 0;
+
+    if(usersAccepted.filter(user => user.waiting === true).length >= teamSize ** 2) {
       io.sockets.emit('update number waiting', {num: 0});
-      usersAccepted.forEach(user => {io.in(user.id).emit('enough people')});
+      let numEmits = 0;
+      usersWaiting = usersAccepted.filter(user => user.waiting === true);
+      for (var i = 0; i < teamSize ** 2; i++) {
+        io.in(usersWaiting[i].id).emit('enough people');
+        console.log('it worked');
+      };
     } else {
       let numWaiting = (teamSize ** 2) - usersAccepted.length;
       io.sockets.emit('update number waiting', {num: numWaiting});
     }
+  }
+
+  socket.on('accepted user chatted', (data) => {
+    usersAccepted.filter(user => user.id === io.in(socket.id)).forEach(user => {user.timeLastActivity = data.time});
+    checkUsersAccepted(usersAccepted);
   });
 
   // Starter task
