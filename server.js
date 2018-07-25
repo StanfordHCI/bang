@@ -6,6 +6,10 @@ const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
 const teamSize = process.env.TEAM_SIZE = 2
 const roundMinutes = process.env.ROUND_MINUTES = 2
 
+//Parameters for waiting qualifications
+const secondsToWait = 40
+const secondsSinceResponse = 20
+
 // Toggles
 const runExperimentNow = true
 const issueBonusesNow = true
@@ -183,7 +187,7 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
     console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
     if (!firstRun) {
       Object.keys(io.sockets.sockets).forEach(socketID => {
-        io.in(socketID).disconnect(true);
+        io.in(socketID).disconnect(true); //TODO fix this line
       })
       firstRun = true;
     }
@@ -632,12 +636,22 @@ io.on('connection', (socket) => {
 
   function checkUsersAccepted(usersAccepted) {
     usersAccepted.forEach(user => {
-      if ((Date.now() - user.timeAdded)/1000 > 20 && (Date.now() - user.timeLastActivity)/1000 < 20) {
+      if ((Date.now() - user.timeAdded)/1000 > secondsToWait && (Date.now() - user.timeLastActivity)/1000 < secondsSinceResponse) {
         user.waiting = true;
+      } else {
+        user.waiting = false;
       }
     });
-    // if enough people have accepted, push prompt to start task
+    console.log("test");
+    for (var i = 0; i < usersAccepted.length; i++) {
+      console.log(usersAccepted[i].timeAdded);
+      console.log(usersAccepted[i].timeLastActivity);
+      console.log(usersAccepted[i].waiting);
+    };
 
+
+
+    // if enough people have accepted, push prompt to start task
     if(usersAccepted.filter(user => user.waiting === true).length >= teamSize ** 2) {
       io.sockets.emit('update number waiting', {num: 0});
       let numEmits = 0;
@@ -653,7 +667,7 @@ io.on('connection', (socket) => {
   }
 
   socket.on('accepted user chatted', (data) => {
-    usersAccepted.filter(user => user.id === io.in(socket.id)).forEach(user => {user.timeLastActivity = data.time});
+    usersAccepted.filter(user => user.id === socket.id).forEach(user => {user.timeLastActivity = data.time});
     checkUsersAccepted(usersAccepted);
   });
 
