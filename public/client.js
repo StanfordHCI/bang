@@ -22,7 +22,7 @@ $(function() {
   const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
   const $finishingPage = $('#finishing'); // The finishing page
 
-  const botUsername = 'conventionalBot'
+  const botUsername = 'helperBot'
   Vue.component('question-component', {
     template: `
       <h3>{{question.question}}</h3>
@@ -68,6 +68,7 @@ $(function() {
 
   const socket = io();
 
+  let taskStarted = false;
   hideAll();
 
   //Check if user has accepted based on URL. Store URL variables.
@@ -79,7 +80,7 @@ $(function() {
     setUsername()
     $chatPage.show()
 
-    addChatMessage({username: botUsername, message: "Hi, I'm WelcomeBot, welcome to our HIT!"})
+    addChatMessage({username: botUsername, message: "Hi, I'm helperBot, welcome to our HIT!"})
     setTimeout(()=> {
       addChatMessage({username: botUsername, message: "For this first task, I'll ask you a series of questions while we wait for enough users to begin our group ad writing tasks! Please answer the following questions so we can test our chat room before our group activity. "})
     }, 1000*1)
@@ -136,7 +137,8 @@ $(function() {
       $inputMessage.val('');
       addChatMessage({ username: username, message: message });
       // tell server to execute 'new message' and send along one parameter
-      socket.emit('new message', message);
+      if(taskStarted)
+        socket.emit('new message', message);
     }
   }
 
@@ -342,6 +344,7 @@ $(function() {
     addChatMessage({username:botUsername, message:"Moving you to another chatroom to begin the next task"})
     setTimeout(()=> {
       socket.emit('execute experiment')
+      taskStarted = true;
     }, 1000*5)
     //$('.chatLink').show();
   });
