@@ -84,6 +84,13 @@ $(function() {
     setTimeout(()=> {
       addChatMessage({username: botUsername, message: "For this first task, I'll ask you a series of questions while we wait for enough users to begin our group ad writing tasks! Please answer the following questions so we can test our chat room before our group activity. "})
     }, 1000*1)
+
+    //read q
+    //ask q
+    //when input str length changes settime
+    //after x seconds loop
+
+
   }
 
   // Get permission to notify
@@ -139,7 +146,6 @@ $(function() {
       // tell server to execute 'new message' and send along one parameter
       if(taskStarted)
         socket.emit('new message', message);
-      socket.emit('new message', message);
       socket.emit('accepted user chatted', {time: Date.now()});
     }
   }
