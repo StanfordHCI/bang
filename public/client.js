@@ -684,19 +684,26 @@ $(function() {
     hideAll();
     $finishingPage.show();
     document.getElementById("finishingMessage").innerHTML = data.message
-    document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
-    document.getElementById("assignmentId").value = data.assignmentId
+    // document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
+    // document.getElementById("assignmentId").value = data.assignmentId
     finishingcode.value = data.finishingCode
-    // console.log("Crash value", data.crashed)
     if (data.crashed) {
-      console.log("I'm crashed o no!")
       let input = document.createElement("textarea");
-      input.name = "feedback"
+      input.id = "engagementfeedbackInput"
       $("#submitButton_finish").before(input); //appendChild
     }
-    socket.disconnect(true);
+    // socket.disconnect(true);
   })
 
+  $('#mturk_form').submit( (event) => {
+    console.log("pressed submit");
+    socket.emit('mturk_formSubmit', $('#engagementfeedbackInput').val())
+    // socket.emit('mturk_formSubmit')
+    // $teamfeedbackSurvey.hide()
+    // $holdingPage.show()
+    // $('#teamfeedbackForm')[0].reset();
+    // socket.emit('execute experiment')
+  })
 
 });
 

@@ -107,10 +107,10 @@ if (issueBonusesNow){
       mturk.payBonuses(usersInDB).forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
 
       //Only use to clear all.
-      //usersInDB.forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
+      usersInDB.forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
       })
     }
-  })
+  )
 }
 
 // Makes sure workers do not repeat
@@ -295,7 +295,8 @@ io.on('connection', (socket) => {
             'starterCheck':[],
             'viabilityCheck':[],
             'manipulationCheck':'',
-            'blacklistCheck':''
+            'blacklistCheck':'',
+            'engagementFeedback': ''
           }
         };
 
@@ -634,6 +635,14 @@ io.on('connection', (socket) => {
       if(err) console.log("There's a problem adding TeamFeedback to the DB: ", err);
       else if(usersAdded) console.log("TeamFeedback added to the DB");
     });
+  });
+  
+  socket.on('mturk_formSubmit', (data) => {
+    let user = users.byID(socket.id)
+    let currentRoom = user.room
+    user.results.engagementFeedback = data
+    console.log(user.name, "submitted engagement survey:", user.results.engagementFeedback);
+    db.users.update({ id: socket.id }, {$set: {"results.engagementFeedback": user.results.engagementFeedback}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored engagement Feedback: " + user.name) })
   });
 
   socket.on('postSurveySubmit', (data) => {
