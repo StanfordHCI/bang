@@ -43,7 +43,7 @@ const leaveHitFile = txt + "leave-hit-q.txt"
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
 const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
-const leaveHitAnswers = {answers: ['Yes, terminate the entire task', 'No, finish the task and receive my bonus'], answerType: 'radio', textValue: false}
+const leaveHitAnswers = {answers: ['End Task and Send Feedback', 'Return to Task'], answerType: 'radio', textValue: false}
 
 // Setup basic express server
 let tools = require('./tools');

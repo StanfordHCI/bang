@@ -106,6 +106,7 @@ ul {
 
 
 
+
 .login.page .title {
   font-size: 200%;
   display: inline-block;
@@ -237,6 +238,19 @@ ul {
 
 .popup-questions {
   text-align: center;
+}
+
+#leavetaskfeedbackInput {
+  background-color: transparent;
+  border: 2px solid #fff;
+  outline: none;
+  padding-bottom: 15px;
+  width: 100%;
+  color: black;
+  font-size:15pt;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 input[type='radio']:checked+.rb-spot, input[type='checkbox']:checked+.rb-spot{

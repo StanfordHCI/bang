@@ -32,9 +32,14 @@
       </div>  
       <div id="leave-hit-popup" class="popup" >
         <form id="leave-hit-form" class="rb">
-          <p>This is a group task that requires a specific number of users; 
-            if you leave now, you won't receive payment and other users won't 
-            be able to proceed with the task.</p>        
+          <p>This is a group task that requires a specific number of users. 
+            If you leave now, you won't receive payment and other users won't 
+            be able to proceed with the task. 
+            
+            <br><br>You may leave now by closing 
+            the HIT window. In the textbox, you can send us feedback on how to keep you next time.
+          </p>        
+          <textarea id="leavetaskfeedbackInput"></textarea>
           <div id="leave-hit-questions" class="popup-questions">
             <question-component v-for="question in questions" :question="question" />
           </div>

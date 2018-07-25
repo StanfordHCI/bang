@@ -306,6 +306,9 @@ $(function() {
 
   $leaveHitButton.click((event) => {
     $leaveHitPopup.show();
+    $currentInput = $("#leavetaskfeedbackInput").focus();
+    // $("#leavetaskfeedbackInput").focus();
+    $currentInput.focus();
   })
 
   //Simple autocomplete
@@ -652,8 +655,8 @@ $(function() {
     if (selectedValue == 1) {
       hideAll();
       $finishingPage.show();
-      document.getElementById("finishingMessage").innerText = "You have terminated your HIT. Thank you for your time."
-      socket.close(); // 
+      document.getElementById("finishingMessage").innerHTML = "You terminated the HIT. Thank you for your time."
+      socket.close();
     } else {
       $leaveHitPopup.hide();
     }
