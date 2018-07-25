@@ -109,7 +109,7 @@ if (issueBonusesNow){
       mturk.payBonuses(usersInDB).forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
 
       //Only use to clear all.
-      //usersInDB.forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
+      // usersInDB.forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
       })
     }
   })
@@ -302,7 +302,8 @@ io.on('connection', (socket) => {
             'starterCheck':[],
             'viabilityCheck':[],
             'manipulationCheck':'',
-            'blacklistCheck':''
+            'blacklistCheck':'',
+            'engagementFeedback': ''
           }
         };
 
@@ -364,8 +365,13 @@ io.on('connection', (socket) => {
             }
 
             users.forEach((user) => {
-              let cancelMessage = "This HIT has crashed. Please submit below and we will accept."
-
+              let cancelMessage = "<strong>Someone left the task</strong><br> <br> \
+              Unfortunately, our group task requires a specific number of users to run, \
+              so once a user leaves, our task cannot proceed. <br><br> \
+              To complete the task, please provide suggestions of ways to \
+              prevent people leaving in future runs of the study. <br><br> \
+              Since the team activity had already started, you will be additionally \
+              bonused for the time spent working with the team."
               if (taskStarted) { // Add future bonus pay
                 if(timeCheckOn) {
                   mturk.updatePayment(totalTime);
@@ -374,13 +380,13 @@ io.on('connection', (socket) => {
                   user.bonus += mturk.bonusPrice/2
                 }
                 db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
-                cancelMessage = cancelMessage + " Since the team activity had already started, you will be additionally bonused for the time spent working with the team."
               }
               io.in(user.id).emit('finished', {
                   message: cancelMessage,
                   finishingCode: user.id,
                   turkSubmitTo: mturk.submitTo,
-                  assignmentId: user.assignmentId
+                  assignmentId: user.assignmentId,
+                  crashed: true
               })
             })
           }
@@ -680,6 +686,14 @@ io.on('connection', (socket) => {
       if(err) console.log("There's a problem adding TeamFeedback to the DB: ", err);
       else if(usersAdded) console.log("TeamFeedback added to the DB");
     });
+  });
+  
+  socket.on('mturk_formSubmit', (data) => {
+    let user = users.byID(socket.id)
+    let currentRoom = user.room
+    user.results.engagementFeedback = data
+    console.log(user.name, "submitted engagement survey:", user.results.engagementFeedback);
+    db.users.update({ id: socket.id }, {$set: {"results.engagementFeedback": user.results.engagementFeedback}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored engagement Feedback: " + user.name) })
   });
 
   socket.on('postSurveySubmit', (data) => {
