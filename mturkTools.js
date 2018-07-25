@@ -54,6 +54,16 @@ if(runningLive) {
 // Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
 const mturk = new AWS.MTurk({ endpoint: endpoint });
 
+// * updatePayment *
+// -------------------------------------------------------------------
+// Changes the bonusPrice depending on the total time Turker has spent on the task.
+//
+// Takes a number as a parameter.
+
+const updatePayment = (totalTime) => {
+  bonusPrice = (hourlyWage * (totalTime / 60) - rewardPrice).toFixed(2);
+}
+
 // * getBalance *
 // -------------------------------------------------------------------
 // Console-logs the balance of the associated account.
@@ -432,6 +442,7 @@ const launchBang = () => {
 }
 
 module.exports = {
+  updatePayment: updatePayment,
   getBalance: getBalance,
   makeHIT: makeHIT,
   returnHIT: returnHIT,

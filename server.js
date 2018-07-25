@@ -18,6 +18,7 @@ const midSurveyOn = true
 const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
+const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
 const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/30
 
@@ -95,6 +96,7 @@ const Datastore = require('nedb'),
     db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true});
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
+    db.time = new Datastore({ filename:'.data/time/', autoload: true}); // store duration of tasks
 
 require('express')().listen(); //Sets to only relaunch with source changes
 
@@ -346,10 +348,22 @@ io.on('connection', (socket) => {
           if (!taskOver){
             // Start cancel process
             console.log("User left, emitting cancel to all users");
+
+            let totalTime = getSecondsPassed();
+
+            if(timeCheckOn) {
+              db.time.insert({totalTaskTime: totalTime}, (err, timeAdded) => {
+                if(err) console.log("There's a problem adding total time to the DB: ", err);
+                else if(timeAdded) console.log("Total time added to the DB");
+              })
+            }
+
             users.forEach((user) => {
               let cancelMessage = "This HIT has crashed. Please submit below and we will accept."
 
               if (taskStarted) { // Add future bonus pay
+                // mturk.updatePayment(totalTime);
+                // user.bonus += mturk.bonusPrice
                 user.bonus += mturk.bonusPrice/2
                 db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
                 cancelMessage = cancelMessage + " Since the team activity had already started, you will be additionally bonused for the time spent working with the team."
@@ -365,6 +379,21 @@ io.on('connection', (socket) => {
         }
     });
 
+    let taskStartTime = getSecondsPassed(); // reset for each start of new task
+    let taskEndTime = 0;
+    let taskTime = 0;
+
+    const midSurveyOn = true
+    const blacklistOn = true
+    const teamfeedbackOn = false
+
+    if(timeCheckOn) {
+      db.time.insert({totalTaskTime: totalTime}, (err, timeAdded) => {
+        if(err) console.log("There's a problem adding total time to the DB: ", err);
+        else if(timeAdded) console.log("Total time added to the DB");
+      })
+    }
+
     socket.on("execute experiment", (data) => {
       let user = users.byID(socket.id)
       let currentActivity = user.currentActivity;
@@ -373,30 +402,114 @@ io.on('connection', (socket) => {
 
       if (task_list[currentActivity] == "starterSurvey") {
         io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false});
+        taskStartTime = getSecondsPassed();
       }
       else if (task_list[currentActivity] == "ready") {
+        if(starterSurveyOn && timeCheckOn) {
+          taskEndTime = getSecondsPassed();
+          taskTime = taskStartTime - taskEndTime;
+          db.time.insert({starterSurveyTime: taskTime}, (err, timeAdded) => {
+            if(err) console.log("There's a problem adding starterSurvey time to the DB: ", err);
+            else if(timeAdded) console.log("starterSurvey time added to the DB");
+          })
+        }
+        taskStartTime = getSecondsPassed();
         if (checkinOn) {
           io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true});
         }
         io.in(user.id).emit("echo", "ready");
       }
       else if (task_list[currentActivity] == "midSurvey") {
+        if(timeCheckOn) {
+          taskEndTime = getSecondsPassed();
+          taskTime = taskStartTime - taskEndTime;
+          db.time.insert({roundTime: taskTime}, (err, timeAdded) => {
+            if(err) console.log("There's a problem adding round time to the DB: ", err);
+            else if(timeAdded) console.log("round time added to the DB");
+          })
+        }
+        taskStartTime = getSecondsPassed();
         io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "teamfeedbackSurvey") {
+        taskEndTime = getSecondsPassed();
+        taskTime = taskStartTime - taskEndTime;
+        if(midSurveyOn && timeCheckOn) {
+          db.time.insert({midSurveyTime: taskTime}, (err, timeAdded) => {
+            if(err) console.log("There's a problem adding midSurvey time to the DB: ", err);
+            else if(timeAdded) console.log("midSurvey time added to the DB");
+          })
+        } else if(timeCheckOn) {
+          db.time.insert({roundTime: taskTime}, (err, timeAdded) => {
+            if(err) console.log("There's a problem adding round time to the DB: ", err);
+            else if(timeAdded) console.log("round time added to the DB");
+          })
+        }
+        taskStartTime = getSecondsPassed();
         io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "blacklistSurvey") {
+        taskEndTime = getSecondsPassed();
+        taskTime = taskStartTime - taskEndTime;
+        if(teamfeedbackOn && timeCheckOn) {
+          db.time.insert({teamfeedbackSurveyTime: taskTime}, (err, timeAdded) => {
+            if(err) console.log("There's a problem adding teamfeedbackSurvey time to the DB: ", err);
+            else if(timeAdded) console.log("teamfeedbackSurvey time added to the DB");
+          })
+        } else if(midSurveyOn && timeCheckOn) {
+          db.time.insert({midSurveyTime: taskTime}, (err, timeAdded) => {
+            if(err) console.log("There's a problem adding midSurvey time to the DB: ", err);
+            else if(timeAdded) console.log("midSurvey time added to the DB");
+          })
+        } else if(timeCheckOn) {
+          db.time.insert({roundTime: taskTime}, (err, timeAdded) => {
+            if(err) console.log("There's a problem adding round time to the DB: ", err);
+            else if(timeAdded) console.log("round time added to the DB");
+          })
+        }
+        taskStartTime = getSecondsPassed();
         console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false})
         io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "postSurvey") { //Launch post survey
-          let survey = postSurveyGenerator(user)
-          user.results.manipulation = survey.correctAnswer
-          db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-          io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false});
+        taskEndTime = getSecondsPassed();
+        taskTime = taskStartTime - taskEndTime;
+        if(blacklistOn && timeCheckOn) {
+          db.time.insert({blacklistSurveyTime: taskTime}, (err, timeAdded) => {
+            if(err) console.log("There's a problem adding blacklistSurvey time to the DB: ", err);
+            else if(timeAdded) console.log("blacklistSurvey time added to the DB");
+          })
+        } else if(teamfeedbackOn && timeCheckOn) {
+          db.time.insert({teamfeedbackSurveyTime: taskTime}, (err, timeAdded) => {
+            if(err) console.log("There's a problem adding teamfeedbackSurvey time to the DB: ", err);
+            else if(timeAdded) console.log("teamfeedbackSurvey time added to the DB");
+          })
+        } else if(midSurveyOn && timeCheckOn) {
+          db.time.insert({midSurveyTime: taskTime}, (err, timeAdded) => {
+            if(err) console.log("There's a problem adding midSurvey time to the DB: ", err);
+            else if(timeAdded) console.log("midSurvey time added to the DB");
+          })
+        } else if(timeCheckOn) {
+          db.time.insert({roundTime: taskTime}, (err, timeAdded) => {
+            if(err) console.log("There's a problem adding round time to the DB: ", err);
+            else if(timeAdded) console.log("round time added to the DB");
+          })
+        }
+        taskStartTime = getSecondsPassed();
+        let survey = postSurveyGenerator(user)
+        user.results.manipulation = survey.correctAnswer
+        db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+        io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "finished" || currentActivity > task_list.length) {
+        taskEndTime = getSecondsPassed();
+        taskTime = taskStartTime - taskEndTime;
+        if(timeCheckOn) {
+          db.time.insert({postSurveyTime: taskTime}, (err, timeAdded) => {
+            if(err) console.log("There's a problem adding postSurvey time to the DB: ", err);
+            else if(timeAdded) console.log("postSurvey time added to the DB");
+          })
+        }
         user.ready = false
         taskOver = true
         user.bonus += mturk.bonusPrice
