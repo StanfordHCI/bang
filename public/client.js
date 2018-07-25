@@ -79,7 +79,7 @@ $(function() {
     $chatPage.show()
     setTimeout(()=>{
       socket.emit('execute experiment')
-    }, 1000*60)
+    }, 1000*10)
   }
 
   // Get permission to notify
@@ -435,6 +435,8 @@ $(function() {
 
   socket.on('go', data => {
     document.getElementById("inputMessage").value = '' //clear chat in new round
+    messagesSafe.innerHTML = '';
+
     hideAll();
     $chatPage.show();
     $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
@@ -614,7 +616,7 @@ $(function() {
     // log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
       hideAll();
       $holdingPage.show();
-      messagesSafe.innerHTML = '';
+      // messagesSafe.innerHTML = '';
       $inputMessage.unbind("keydown")
       socket.emit('execute experiment')
   });
