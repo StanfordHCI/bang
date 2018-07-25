@@ -18,7 +18,7 @@ const randomAdjective = 'new small young little likely nice cultured snappy spry
 let nameCount = 2
 
 const createTeams = (teamSize, numRounds, people) => {
-    console.log(people.length != teamSize **2 ? "Wrong number of people" : "Building teams")
+    console.log(people.length != teamSize **2 ? "Can't create teams. Wrong number of people" : "Building teams")
     console.log(teamSize > numRounds+1 ? "Error" : "")
     const teamNames = letters.slice(0,teamSize)
 
@@ -58,7 +58,7 @@ module.exports = {
   createTeams: createTeams,
   makeName: function(teamSize = null, friends_history = null) {
     if (!friends_history) {
-      let adjective = randomAdjective.pick() 
+      let adjective = randomAdjective.pick()
       let animal = randomAnimal.pick()
       return {username: adjective + animal, parts: [adjective, animal]}
     } else {
@@ -73,7 +73,7 @@ module.exports = {
           // we could throw an error message?
           animals.splice(animals.indexOf(friends_history[i][1]), 1)
         }
-      }    
+      }
       // Pick from remaining names
       return [...Array(teamSize).keys()].map(i => {
         adjective = randomAdjective.pick();

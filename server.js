@@ -9,7 +9,7 @@ const roundMinutes = process.env.ROUND_MINUTES = 2
 // Toggles
 const runExperimentNow = true
 const issueBonusesNow = true
-const cleanHITs = false // !runExperimentNow
+const cleanHITs = true
 const assignQualifications = true
 const debugMode = !runningLive
 
@@ -18,6 +18,7 @@ const midSurveyOn = true
 const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
+const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
 const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/30
 
@@ -95,6 +96,7 @@ const Datastore = require('nedb'),
     db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true});
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
+    db.time = new Datastore({ filename:'.data/time', autoload: true}); // store duration of tasks
 
 require('express')().listen(); //Sets to only relaunch with source changes
 
@@ -107,7 +109,7 @@ if (issueBonusesNow){
       mturk.payBonuses(usersInDB).forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
 
       //Only use to clear all.
-      //usersInDB.forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
+      // usersInDB.forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
       })
     }
   })
@@ -137,6 +139,11 @@ let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
 let users = []; //the main local user storage
 let currentRound = 0
 let startTime = 0
+
+// keeping track of time
+let taskStartTime = getSecondsPassed(); // reset for each start of new task
+let taskEndTime = 0;
+let taskTime = 0;
 
 // Building task list
 let task_list = []
@@ -295,7 +302,8 @@ io.on('connection', (socket) => {
             'starterCheck':[],
             'viabilityCheck':[],
             'manipulationCheck':'',
-            'blacklistCheck':''
+            'blacklistCheck':'',
+            'engagementFeedback': ''
           }
         };
 
@@ -346,19 +354,39 @@ io.on('connection', (socket) => {
           if (!taskOver){
             // Start cancel process
             console.log("User left, emitting cancel to all users");
-            users.forEach((user) => {
-              let cancelMessage = "This HIT has crashed. Please submit below and we will accept."
 
+            let totalTime = getSecondsPassed();
+
+            if(timeCheckOn) {
+              db.time.insert({totalTaskTime: totalTime}, (err, timeAdded) => {
+                if(err) console.log("There's a problem adding total time to the DB: ", err);
+                else if(timeAdded) console.log("Total time added to the DB");
+              })
+            }
+
+            users.forEach((user) => {
+              let cancelMessage = "<strong>Someone left the task</strong><br> <br> \
+              Unfortunately, our group task requires a specific number of users to run, \
+              so once a user leaves, our task cannot proceed. <br><br> \
+              To complete the task, please provide suggestions of ways to \
+              prevent people leaving in future runs of the study. <br><br> \
+              Since the team activity had already started, you will be additionally \
+              bonused for the time spent working with the team."
               if (taskStarted) { // Add future bonus pay
-                user.bonus += mturk.bonusPrice/2
+                if(timeCheckOn) {
+                  mturk.updatePayment(totalTime);
+                  user.bonus += mturk.bonusPrice
+                } else {
+                  user.bonus += mturk.bonusPrice/2
+                }
                 db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
-                cancelMessage = cancelMessage + " Since the team activity had already started, you will be additionally bonused for the time spent working with the team."
               }
               io.in(user.id).emit('finished', {
                   message: cancelMessage,
                   finishingCode: user.id,
                   turkSubmitTo: mturk.submitTo,
-                  assignmentId: user.assignmentId
+                  assignmentId: user.assignmentId,
+                  crashed: true
               })
             })
           }
@@ -373,30 +401,61 @@ io.on('connection', (socket) => {
 
       if (task_list[currentActivity] == "starterSurvey") {
         io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false});
+        taskStartTime = getSecondsPassed();
       }
       else if (task_list[currentActivity] == "ready") {
+        if(starterSurveyOn && timeCheckOn) {
+          recordTime("starterSurvey");
+        }
         if (checkinOn) {
           io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true});
         }
         io.in(user.id).emit("echo", "ready");
       }
       else if (task_list[currentActivity] == "midSurvey") {
+        if(timeCheckOn) {
+          recordTime("round");
+        }
         io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "teamfeedbackSurvey") {
+        if(midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if(timeCheckOn) {
+          recordTime("round");
+        }
         io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "blacklistSurvey") {
+        if(teamfeedbackOn && timeCheckOn) {
+          recordTime("teamfeedbackSurvey");
+        } else if(midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if(timeCheckOn) {
+          recordTime("round");
+        }
         console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false})
         io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "postSurvey") { //Launch post survey
-          let survey = postSurveyGenerator(user)
-          user.results.manipulation = survey.correctAnswer
-          db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-          io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false});
+        if(blacklistOn && timeCheckOn) {
+          recordTime("blacklistSurvey");
+        } else if(teamfeedbackOn && timeCheckOn) {
+          recordTime("teamfeedbackSurvey");
+        } else if(midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if(timeCheckOn) {
+          recordTime("round");
+        }
+        let survey = postSurveyGenerator(user)
+        user.results.manipulation = survey.correctAnswer
+        db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+        io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "finished" || currentActivity > task_list.length) {
+        if(timeCheckOn) {
+          recordTime("postSurvey");
+        }
         user.ready = false
         taskOver = true
         user.bonus += mturk.bonusPrice
@@ -629,6 +688,14 @@ io.on('connection', (socket) => {
     });
   });
 
+  socket.on('mturk_formSubmit', (data) => {
+    let user = users.byID(socket.id)
+    let currentRoom = user.room
+    user.results.engagementFeedback = data
+    console.log(user.name, "submitted engagement survey:", user.results.engagementFeedback);
+    db.users.update({ id: socket.id }, {$set: {"results.engagementFeedback": user.results.engagementFeedback}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored engagement Feedback: " + user.name) })
+  });
+
   socket.on('postSurveySubmit', (data) => {
     let user = users.byID(socket.id)
     //in the future this could be checked.
@@ -718,6 +785,17 @@ function replicate(arr, times) {
   for (let i=0; i<rl; i++)
       res[i] = arr[i % al];
   return res;
+}
+
+// records length of each task
+const recordTime = (event) => {
+  taskEndTime = getSecondsPassed();
+  taskTime = taskStartTime - taskEndTime;
+  db.time.insert({event: taskTime}, (err, timeAdded) => {
+    if(err) console.log("There's a problem adding", event, "time to the DB: ", err);
+    else if(timeAdded) console.log(event, "time added to the DB");
+  })
+  taskStartTime = getSecondsPassed();
 }
 
 //returns number of users in a room: room -> int
