@@ -76,7 +76,7 @@ $(function() {
   if (URLvars.assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
     $lockPage.show(); //prompt user to accept HIT
   } else { // tell the server that the user has accepted the HIT - server then adds this worker to array of accepted workers
-    socket.emit('accepted HIT',{ mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId });
+    socket.emit('accepted HIT',{ mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId, timeAdded: (new Date()).getTime()});
     setUsername()
     $chatPage.show()
 
@@ -139,6 +139,8 @@ $(function() {
       // tell server to execute 'new message' and send along one parameter
       if(taskStarted)
         socket.emit('new message', message);
+      socket.emit('new message', message);
+      socket.emit('accepted user chatted', {time: Date.now()});
     }
   }
 
