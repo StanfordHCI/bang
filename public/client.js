@@ -707,9 +707,11 @@ $(function() {
     document.getElementById("assignmentId").value = data.assignmentId
     finishingcode.value = data.finishingCode
     if (data.crashed) {
-      let input = document.createElement("textarea");
-      input.id = "engagementfeedbackInput"
-      $("#submitButton_finish").before(input); //appendChild
+      if ($('#engagementfeedbackInput').length === 0) { //make sure element hasn't been already created
+        let input = document.createElement("textarea");
+        input.id = "engagementfeedbackInput"
+        $("#submitButton_finish").before(input); //appendChild
+      }
     }
     // socket.disconnect(true);
   })
@@ -720,7 +722,7 @@ $(function() {
   })
 
   $('#leave-hit-form').submit( (event) => { //watches form element
-    if ($('#leave-hit-form').serialize() === "leave-hit-q1=1") {
+    if ($('#leave-hit-form').serialize() === "leave-hit-q1=1") { //only if user chooses to leave
       console.log("I'm disconnecting", )
       hideAll();
       $finishingPage.show();
