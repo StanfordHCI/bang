@@ -383,10 +383,6 @@ io.on('connection', (socket) => {
     let taskEndTime = 0;
     let taskTime = 0;
 
-    const midSurveyOn = true
-    const blacklistOn = true
-    const teamfeedbackOn = false
-
     if(timeCheckOn) {
       db.time.insert({totalTaskTime: totalTime}, (err, timeAdded) => {
         if(err) console.log("There's a problem adding total time to the DB: ", err);
