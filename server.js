@@ -9,7 +9,7 @@ const roundMinutes = process.env.ROUND_MINUTES = 5
 // Toggles
 const runExperimentNow = true
 const issueBonusesNow = true
-const cleanHITs = false // !runExperimentNow
+const cleanHITs = true
 const assignQualifications = true
 const debugMode = !runningLive
 
