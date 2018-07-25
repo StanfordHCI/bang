@@ -10,7 +10,7 @@ const roundMinutes = process.env.ROUND_MINUTES
 const AWS = require('aws-sdk');
 
 const qualificationsOn = runningLive
-const runningDelayed = true
+const runningDelayed = false
 
 let endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 let submitTo = 'https://workersandbox.mturk.com'
@@ -300,9 +300,9 @@ const payBonuses = (users) => {
       Reason: "Thanks for participating in our HIT!",
       WorkerId: u.mturkId,
       UniqueRequestToken: u.id
-    }, function(err, data) { 
+    }, function(err, data) {
       if (err) {
-       // console.log("Bonus not processed:",err) 
+       // console.log("Bonus not processed:",err)
       } else {
         successfullyBonusedUsers.push(u)
         console.log("Bonused:",u)
