@@ -189,7 +189,7 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
     console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
     if (!firstRun) {
       Object.keys(io.sockets.sockets).forEach(socketID => {
-        io.in(socketID).disconnect(true); //TODO fix this line
+        io.sockets.sockets[socketID].disconnect(); //TODO fix this line
       })
       firstRun = true;
     }
