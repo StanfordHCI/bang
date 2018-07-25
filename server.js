@@ -345,8 +345,7 @@ io.on('connection', (socket) => {
 
           mturk.setAssignmentsPending(usersAccepted.length)
         }
-        console.log("addedUser", addedUser)
-        console.log("taskOver", taskOver)
+
         if (addedUser) {
           users.byID(socket.id).active = false //set user to inactive
           users.byID(socket.id).ready = false //set user to not ready
