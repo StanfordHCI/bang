@@ -698,11 +698,6 @@ $(function() {
   $('#mturk_form').submit( (event) => {
     console.log("pressed submit");
     socket.emit('mturk_formSubmit', $('#engagementfeedbackInput').val())
-    // socket.emit('mturk_formSubmit')
-    // $teamfeedbackSurvey.hide()
-    // $holdingPage.show()
-    // $('#teamfeedbackForm')[0].reset();
-    // socket.emit('execute experiment')
   })
 
 });
