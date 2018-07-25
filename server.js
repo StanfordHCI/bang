@@ -3,7 +3,7 @@ require('dotenv').config()
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE = 1
+const teamSize = process.env.TEAM_SIZE
 const roundMinutes = process.env.ROUND_MINUTES = 5
 
 // Toggles
@@ -22,7 +22,7 @@ const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/30
 
 //Testing toggles
-const autocompleteTestOn = true //turns on fake team to test autocomplete
+const autocompleteTestOn = false //turns on fake team to test autocomplete
 const debugLog = (...args) => {if (debugMode){console.log(...args)}}
 
 console.log(runningLive ? "\nRUNNING LIVE\n" : "\nRUNNING SANDBOXED\n");
@@ -321,9 +321,9 @@ io.on('connection', (socket) => {
 
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
-        mturk.reduceAssignmentsPending();
+        // mturk.reduceAssignmentsPending();
         // if the user had accepted, removes them from the array of accepted users
-        console.log(socket.id)
+        console.log("Socket disconecting is", socket.id)
         if (usersAccepted.find(function(element) {return element.id == socket.id})) {
           console.log('There was a disconnect');
           usersAccepted = usersAccepted.filter(user => user.id != socket.id);
@@ -335,7 +335,8 @@ io.on('connection', (socket) => {
             io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersAccepted.length});
           }
         }
-
+        console.log("addedUser", addedUser)
+        console.log("taskOver", taskOver)
         if (addedUser) {
           users.byID(socket.id).active = false //set user to inactive
           users.byID(socket.id).ready = false //set user to not ready

@@ -79,7 +79,6 @@ $(function() {
   if (URLvars.assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
     $lockPage.show(); //prompt user to accept HIT
   } else { // tell the server that the user has accepted the HIT - server then adds this worker to array of accepted workers
-
     $waitingPage.show();
     socket.emit('accepted HIT',{ mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId });
   }
@@ -708,6 +707,16 @@ $(function() {
     document.getElementById("assignmentId").value = data.assignmentId
     finishingcode.value = data.finishingCode
     socket.disconnect(true);
+  })
+
+  $('#leave-hit-form').submit( (event) => { //watches form element
+    if ($('#leave-hit-form').serialize() === "leave-hit-q1=1") {
+      console.log("I'm disconnecting", )
+      hideAll();
+      $finishingPage.show();
+      document.getElementById("finishingMessage").innerText = "You have terminated your HIT. Thank you for your time."
+      socket.close(); // 
+    }
   })
 });
 
