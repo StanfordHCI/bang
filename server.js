@@ -199,6 +199,7 @@ io.on('connection', (socket) => {
     let addedUser = false
     let taskStarted = false
     let taskOver = false
+    let enoughPeople = false
 
     socket.on('log', string => { console.log(string); });
 
@@ -356,7 +357,7 @@ io.on('connection', (socket) => {
           // update DB with change
           db.users.update({ id: socket.id }, {$set: {active: false}}, {}, (err, numReplaced) => { console.log(err ? "Activity not changed: " + err : "User left " + socket.id) })
 
-          if (!taskOver){
+          if (taskStarted || enoughPeople){
             // Start cancel process
             console.log("User left, emitting cancel to all users");
 
@@ -642,23 +643,19 @@ io.on('connection', (socket) => {
         user.waiting = false;
       }
     });
-    console.log("test");
+
+    //for debugging
     for (var i = 0; i < usersAccepted.length; i++) {
-      console.log(usersAccepted[i].timeAdded);
-      console.log(usersAccepted[i].timeLastActivity);
-      console.log(usersAccepted[i].waiting);
+      console.log(String(usersAccepted[i].waiting) + String(usersAccepted[i].timeAdded) + String(usersAccepted[i].timeLastActivity));
     };
-
-
 
     // if enough people have accepted, push prompt to start task
     if(usersAccepted.filter(user => user.waiting === true).length >= teamSize ** 2) {
       io.sockets.emit('update number waiting', {num: 0});
-      let numEmits = 0;
       usersWaiting = usersAccepted.filter(user => user.waiting === true);
+      enoughPeople = true;
       for (var i = 0; i < teamSize ** 2; i++) {
         io.in(usersWaiting[i].id).emit('enough people');
-        console.log('it worked');
       };
     } else {
       let numWaiting = (teamSize ** 2) - usersAccepted.length;
