@@ -9,6 +9,8 @@ const roundMinutes = process.env.ROUND_MINUTES = 2
 //Parameters for waiting qualifications
 const secondsToWait = 40
 const secondsSinceResponse = 20
+const secondsToHold1 = 720 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
+const secondsToHold2 = 60 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 
 // Toggles
 const runExperimentNow = true
@@ -592,7 +594,7 @@ io.on('connection', (socket) => {
 
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
-        socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has may have had an error. You will be compensated."})
+        socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has completed prematurely. Press the submit button below and you will be compensated properly."})
         // socket.disconnect();
         console.log("Sockets active: " + Object.keys(io.sockets.sockets));
   });
@@ -641,6 +643,9 @@ io.on('connection', (socket) => {
         user.waiting = true;
       } else {
         user.waiting = false;
+      }
+      if ((Date.now() - user.timeAdded)/1000 > secondsToHold1 || (Date.now() - user.timeLastActivity)/1000 > secondsToHold2) {
+        io.in(user.id).emit('get IDs', 'broken');
       }
     });
 
