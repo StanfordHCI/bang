@@ -383,13 +383,6 @@ io.on('connection', (socket) => {
     let taskEndTime = 0;
     let taskTime = 0;
 
-    if(timeCheckOn) {
-      db.time.insert({totalTaskTime: totalTime}, (err, timeAdded) => {
-        if(err) console.log("There's a problem adding total time to the DB: ", err);
-        else if(timeAdded) console.log("Total time added to the DB");
-      })
-    }
-
     socket.on("execute experiment", (data) => {
       let user = users.byID(socket.id)
       let currentActivity = user.currentActivity;
