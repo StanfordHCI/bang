@@ -683,12 +683,23 @@ $(function() {
   socket.on('finished',data => {
     hideAll();
     $finishingPage.show();
-    document.getElementById("finishingMessage").innerText = data.message
+    document.getElementById("finishingMessage").innerHTML = data.message
     document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
     document.getElementById("assignmentId").value = data.assignmentId
     finishingcode.value = data.finishingCode
-    socket.disconnect(true);
+    if (data.crashed) {
+      let input = document.createElement("textarea");
+      input.id = "engagementfeedbackInput"
+      $("#submitButton_finish").before(input); //appendChild
+    }
+    // socket.disconnect(true);
   })
+
+  $('#mturk_form').submit( (event) => {
+    console.log("pressed submit");
+    socket.emit('mturk_formSubmit', $('#engagementfeedbackInput').val())
+  })
+
 });
 
 function turkGetParam( name, defaultValue, uri) {
