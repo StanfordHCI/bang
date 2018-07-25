@@ -74,9 +74,12 @@ $(function() {
   if (URLvars.assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
     $lockPage.show(); //prompt user to accept HIT
   } else { // tell the server that the user has accepted the HIT - server then adds this worker to array of accepted workers
-
-    $waitingPage.show();
     socket.emit('accepted HIT',{ mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId });
+    setUsername()
+    $chatPage.show()
+    setTimeout(()=>{
+      socket.emit('execute experiment')
+    }, 1000*60)
   }
 
   // Get permission to notify
@@ -115,10 +118,9 @@ $(function() {
 
   // Sets the client's username
   function setUsername () {
-    hideAll();
-    $holdingPage.show();
+    //hideAll();
+    //$holdingPage.show();
     socket.emit('add user');
-    socket.emit('execute experiment')
   }
 
   // Sends a chat message
@@ -259,6 +261,7 @@ $(function() {
   $chatLink.click((event) => {
     event.preventDefault()
     setUsername()
+    socket.emit('execute experiment')
   })
 
   // Keyboard events
@@ -275,7 +278,7 @@ $(function() {
         sendMessage();
         socket.emit('stop typing');
         typing = false;
-      } else { setUsername() }
+      } //else { setUsername() }
     }
     if (event.keyCode === $.ui.keyCode.TAB) {
       //&& $inputMessage.autocomplete("instance").menu.active as a poteantial second condition
