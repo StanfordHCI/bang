@@ -684,8 +684,8 @@ $(function() {
     hideAll();
     $finishingPage.show();
     document.getElementById("finishingMessage").innerHTML = data.message
-    // document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
-    // document.getElementById("assignmentId").value = data.assignmentId
+    document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
+    document.getElementById("assignmentId").value = data.assignmentId
     finishingcode.value = data.finishingCode
     if (data.crashed) {
       let input = document.createElement("textarea");
