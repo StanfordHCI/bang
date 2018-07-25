@@ -644,7 +644,9 @@ io.on('connection', (socket) => {
       } else {
         user.waiting = false;
       }
-      if ((Date.now() - user.timeAdded)/1000 > secondsToHold1 || (Date.now() - user.timeLastActivity)/1000 > secondsToHold2) {
+      usersWaiting = usersAccepted.filter(user => user.waiting === true);
+      weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - usersWaiting.length))
+      if ((Date.now() - user.timeAdded)/1000 > weightedHoldingSeconds || (Date.now() - user.timeLastActivity)/1000 > secondsToHold2) {
         io.in(user.id).emit('get IDs', 'broken');
       }
     });
