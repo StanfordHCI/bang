@@ -26,6 +26,22 @@
     </li>
 
     <li id="chat" class="chat page">
+      <div class="header">
+        <h3 id="header-text">Team</h3> <p id="header-text-2"></p>
+        <button type="button" id="leave-hit-button">Leave HIT</button>
+      </div>  
+      <div id="leave-hit-popup" class="popup" >
+        <form id="leave-hit-form" class="rb">
+          <p>This is a group task that requires a specific number of users; 
+            if you leave now, you won't receive payment and other users won't 
+            be able to proceed with the task.</p>        
+          <div id="leave-hit-questions" class="popup-questions">
+            <question-component v-for="question in questions" :question="question" />
+          </div>
+        <input id="leave-hit-submit" type="submit" value="Submit">
+      </form>
+        
+      </div>
       <div class="chatArea">
         <ul class="messages"></ul>
       </div>
@@ -34,7 +50,7 @@
     <div id="checkin" class="popup">
       <form id="checkin-form" class="rb">
         <p>These check-ins are anonymous and will be used by an algorithm to pair you with an optimal team for the next round.</p>
-        <div id="checkin-questions" >
+        <div id="checkin-questions" class="popup-questions">
           <question-component v-for="question in questions" :question="question" />
         </div>
         <input id="checkin-submit" type="submit" value="Submit">

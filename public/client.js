@@ -6,7 +6,11 @@ $(function() {
   const $window = $(window);
   const $messages = $('.messages'); // Messages area
   const $inputMessage = $('.inputMessage'); // Input message input box
-  const $checkinPopup = $('.popup');
+  const $checkinPopup = $('#checkin');
+  const $headerBar = $('.header')
+  const $headerText = $('#header-text')
+  const $leaveHitButton = $('#leave-hit-button')
+  const $leaveHitPopup = $('#leave-hit-popup')
 
   const $chatLink = $('#chatLink');
 
@@ -42,6 +46,7 @@ $(function() {
 
   const hideAll = () => {
     $checkinPopup.hide();
+    $leaveHitPopup.hide()
     $lockPage.hide();
     $waitingPage.hide();
     $chatPage.hide();
@@ -74,7 +79,6 @@ $(function() {
   if (URLvars.assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
     $lockPage.show(); //prompt user to accept HIT
   } else { // tell the server that the user has accepted the HIT - server then adds this worker to array of accepted workers
-
     $waitingPage.show();
     socket.emit('accepted HIT',{ mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId });
   }
@@ -300,6 +304,10 @@ $(function() {
     $('#midForm')[0].reset();
   })
 
+  $leaveHitButton.click((event) => {
+    $leaveHitPopup.show();
+  })
+
   //Simple autocomplete
   $inputMessage.autocomplete({
     source: ["test"],
@@ -404,7 +412,7 @@ $(function() {
 
   // whenever the server emits 'checkin pop up', show checkin popup
   socket.on('checkin popup', data => {
-    $('.popup').show();
+    $checkinPopup.show();
   });
 
   // Whenever the server emits 'user joined', log it in the chat body
@@ -434,27 +442,30 @@ $(function() {
     document.getElementById("inputMessage").value = '' //clear chat in new round
     hideAll();
     $chatPage.show();
+    let teamStr = ""
+    for(member of data.team) teamStr += member + ", "
+    console.log(teamStr)
+    teamStr = teamStr.substr(0, teamStr.length - 2)
+    $headerText.html("Team " + data.round + ": " + teamStr);
     $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
 
-    setTimeout(()=>{log(data.task)}, 500)
-    setTimeout(()=>{log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")}
-      , 1000)
+    setTimeout(()=>{
+      log(data.task)
+      log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
+      let durationString = ""
+      if (data.duration < 1) { durationString = Math.round(data.duration * 60) + " seconds"
+      } else if (data.duration == 1) { durationString = "one minute"
+      } else { durationString = data.duration + " minutes" }
+      log("You will have <strong>" + durationString + "</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
+      log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
 
-    let durationString = ""
-    if (data.duration < 1) { durationString = Math.round(data.duration * 60) + " seconds"
-    } else if (data.duration == 1) { durationString = "one minute"
-    } else { durationString = data.duration + " minutes" }
-    setTimeout(() => {
-      log("You will have <strong>" + durationString + "</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")}
-, 1500)
-    setTimeout(()=>
-      {log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")},
-    2000)
+    }, 500)
+
     setTimeout(()=>{
       let str = ""
       for (member of data.team)
         addChatMessage({username:member, message:'has entered the chatroom'})
-    }, 2500)
+    }, 1000)
 
     $currentInput = $inputMessage.focus();
 
@@ -639,6 +650,16 @@ $(function() {
 
   })
 
+  $('#leave-hit-form').submit((event) => {
+    event.preventDefault() //stops page reloading
+    let selectedValue = $('input[name=leave-hit-q1]:checked').val();
+    if (selectedValue === 1) {
+      //NIK CODE
+    } else {
+      $leaveHitPopup.hide();
+    }
+  })
+
   $('#starterForm').submit( (event) => {
     event.preventDefault() //stops page reloading
     socket.emit('starterSurveySubmit', $('#starterForm').serialize()) //submits results alone
@@ -647,8 +668,6 @@ $(function() {
     $holdingPage.show()
     $('#starterForm')[0].reset();
   })
-
-
 
   $('#postForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
@@ -698,6 +717,16 @@ $(function() {
   $('#mturk_form').submit( (event) => {
     console.log("pressed submit");
     socket.emit('mturk_formSubmit', $('#engagementfeedbackInput').val())
+  })
+
+  $('#leave-hit-form').submit( (event) => { //watches form element
+    if ($('#leave-hit-form').serialize() === "leave-hit-q1=1") {
+      console.log("I'm disconnecting", )
+      hideAll();
+      $finishingPage.show();
+      document.getElementById("finishingMessage").innerText = "You have terminated your HIT. Thank you for your time."
+      socket.close(); // 
+    }
   })
 
 });

@@ -4,7 +4,7 @@ require('dotenv').config()
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
 const teamSize = process.env.TEAM_SIZE
-const roundMinutes = process.env.ROUND_MINUTES
+const roundMinutes = process.env.ROUND_MINUTES = 5
 
 // Toggles
 const runExperimentNow = true
@@ -38,10 +38,12 @@ const blacklistFile = txt + "blacklist-q.txt"
 const feedbackFile = txt + "feedback-q.txt"
 const starterSurveyFile = txt + "startersurvey-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
+const leaveHitFile = txt + "leave-hit-q.txt"
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
 const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
+const leaveHitAnswers = {answers: ['Yes, terminate the entire task', 'No, finish the task and receive my bonus'], answerType: 'radio', textValue: false}
 
 // Setup basic express server
 let tools = require('./tools');
@@ -329,7 +331,7 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         // mturk.reduceAssignmentsPending();
         // if the user had accepted, removes them from the array of accepted users
-        console.log(socket.id)
+        console.log("Socket disconecting is", socket.id)
         if (usersAccepted.find(function(element) {return element.id == socket.id})) {
           console.log('There was a disconnect');
           usersAccepted = usersAccepted.filter(user => user.id != socket.id);
@@ -343,7 +345,8 @@ io.on('connection', (socket) => {
 
           mturk.setAssignmentsPending(usersAccepted.length)
         }
-
+        console.log("addedUser", addedUser)
+        console.log("taskOver", taskOver)
         if (addedUser) {
           users.byID(socket.id).active = false //set user to inactive
           users.byID(socket.id).ready = false //set user to not ready
@@ -410,6 +413,7 @@ io.on('connection', (socket) => {
         if (checkinOn) {
           io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true});
         }
+        io.in(user.id).emit("load", {element: 'leave-hit', questions: loadQuestions(leaveHitFile), interstitial: true})
         io.in(user.id).emit("echo", "ready");
       }
       else if (task_list[currentActivity] == "midSurvey") {
@@ -518,7 +522,7 @@ io.on('connection', (socket) => {
         if (autocompleteTestOn) {
           let teamNames = [tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username]
           console.log(teamNames)
-          io.in(user.id).emit('go', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal })
+          io.in(user.id).emit('go', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//rounds are 0 indexed
         } else {
           // Dynamically generate teammate names
           // even if teamSize = 1 for testing, this still works
@@ -539,7 +543,7 @@ io.on('connection', (socket) => {
           team_Aliases.push(user.name) //now push user for autocomplete
           let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
           // io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
-          io.in(user.id).emit('go', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal})
+          io.in(user.id).emit('go', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//round 0 indexed
         }
       })
 
@@ -738,6 +742,8 @@ io.on('connection', (socket) => {
         answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio', textValue: false};
       } else if (answerTag === "TC") { //team checkbox
         answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox', textValue: false};
+      } else if (answerTag === "LH") { //leave hit yn
+        answerObj = leaveHitAnswers;
       }
       questionObj['answers'] = answerObj.answers;
       questionObj['answerType'] = answerObj.answerType;
