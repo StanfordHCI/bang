@@ -22,6 +22,7 @@ $(function() {
   const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
   const $finishingPage = $('#finishing'); // The finishing page
 
+  const botUsername = 'conventionalBot'
   Vue.component('question-component', {
     template: `
       <h3>{{question.question}}</h3>
@@ -77,9 +78,11 @@ $(function() {
     socket.emit('accepted HIT',{ mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId });
     setUsername()
     $chatPage.show()
-    setTimeout(()=>{
-      socket.emit('execute experiment')
-    }, 1000*10)
+
+    addChatMessage({username: botUsername, message: "Hi, I'm WelcomeBot, welcome to our HIT!"})
+    setTimeout(()=> {
+      addChatMessage({username: botUsername, message: "For this first task, I'll ask you a series of questions while we wait for enough users to begin our group ad writing tasks! Please answer the following questions so we can test our chat room before our group activity. "})
+    }, 1000*1)
   }
 
   // Get permission to notify
@@ -335,8 +338,12 @@ $(function() {
 
   //if there are enough workers who have accepted the task, show link to chat page
   socket.on('enough people', data => {
-    notify("There's enough people!", "Come and get started with the activity.")
-    $('.chatLink').show();
+    notify("Moving you to another chatroom.", "Come and get started with the activity.")
+    addChatMessage({username:botUsername, message:"Moving you to another chatroom to begin the next task"})
+    setTimeout(()=> {
+      socket.emit('execute experiment')
+    }, 1000*5)
+    //$('.chatLink').show();
   });
 
   //checks if the user actually accepted or if they are previewing the task
