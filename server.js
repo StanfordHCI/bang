@@ -96,7 +96,7 @@ const Datastore = require('nedb'),
     db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true});
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
-    db.time = new Datastore({ filename:'.data/time/', autoload: true}); // store duration of tasks
+    db.time = new Datastore({ filename:'.data/time', autoload: true}); // store duration of tasks
 
 require('express')().listen(); //Sets to only relaunch with source changes
 
@@ -375,7 +375,7 @@ io.on('connection', (socket) => {
               if (taskStarted) { // Add future bonus pay
                 if(timeCheckOn) {
                   mturk.updatePayment(totalTime);
-                  user.bonus += mturk.bonusPrice   
+                  user.bonus += mturk.bonusPrice
                 } else {
                   user.bonus += mturk.bonusPrice/2
                 }
@@ -687,7 +687,7 @@ io.on('connection', (socket) => {
       else if(usersAdded) console.log("TeamFeedback added to the DB");
     });
   });
-  
+
   socket.on('mturk_formSubmit', (data) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
