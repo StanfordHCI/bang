@@ -362,9 +362,12 @@ io.on('connection', (socket) => {
               let cancelMessage = "This HIT has crashed. Please submit below and we will accept."
 
               if (taskStarted) { // Add future bonus pay
-                // mturk.updatePayment(totalTime);
-                // user.bonus += mturk.bonusPrice
-                user.bonus += mturk.bonusPrice/2
+                if(timeCheckOn) {
+                  mturk.updatePayment(totalTime);
+                  user.bonus += mturk.bonusPrice   
+                } else {
+                  user.bonus += mturk.bonusPrice/2
+                }
                 db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
                 cancelMessage = cancelMessage + " Since the team activity had already started, you will be additionally bonused for the time spent working with the team."
               }
