@@ -62,6 +62,9 @@ const mturk = new AWS.MTurk({ endpoint: endpoint });
 
 const updatePayment = (totalTime) => {
   bonusPrice = (hourlyWage * (totalTime / 60) - rewardPrice).toFixed(2);
+  if(bonusPrice < 0) {
+    bonusPrice = 0;
+  }
 }
 
 // * getBalance *
