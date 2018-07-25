@@ -91,7 +91,7 @@ ul {
   color:white;
 }
 
-.login.page form .teamfeedbackInput {
+.login.page form textarea {
   background-color: transparent;
   border: 2px solid #fff;
   outline: none;
@@ -99,7 +99,12 @@ ul {
   width: 60%;
   color: white;
   font-size:15pt;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
+
+
 
 .login.page .title {
   font-size: 200%;
