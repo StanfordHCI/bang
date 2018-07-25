@@ -8,11 +8,12 @@ const roundMinutes = process.env.ROUND_MINUTES
 
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = false
+const issueBonusesNow = true
 const cleanHITs = false // !runExperimentNow
-const assignQualifications = false
+const assignQualifications = true
+const debugMode = !runningLive
 
-const starterSurveyOn = true
+const starterSurveyOn = false
 const midSurveyOn = true
 const blacklistOn = true
 const teamfeedbackOn = false
@@ -22,6 +23,7 @@ const checkinIntervalMinutes = roundMinutes/30
 
 //Testing toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
+const debugLog = (...args) => {if (debugMode){console.log(...args)}}
 
 console.log(runningLive ? "\nRUNNING LIVE\n" : "\nRUNNING SANDBOXED\n");
 console.log(runningLocal ? "Running locally" : "Running remotely");
@@ -61,6 +63,7 @@ Array.prototype.set = function() {
 // Setting up variables
 const currentCondition = "treatment"
 let treatmentNow = false
+let firstRun = false;
 
 const conditionSet = [
   {"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]},
@@ -101,10 +104,10 @@ if (issueBonusesNow){
     if (err) {console.log("Err loading users:" + err)}
     else {
       console.log("Paying bonuses")
-      const usersPaid = mturk.payBonuses(usersInDB)
-      console.log("Paid:",usersPaid);
-      usersPaid.forEach((user) => {
-        db.users.update( {id: user.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)}})
+      mturk.payBonuses(usersInDB).forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
+
+      //Only use to clear all.
+      //usersInDB.forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
       })
     }
   })
@@ -170,6 +173,13 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
         'numRounds': numRounds, 'teamSize': teamSize}, (err, usersAdded) => {
     if(err) console.log("There's a problem adding batch to the DB: ", err);
     else if(usersAdded) console.log("Batch added to the DB");
+    console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
+    if (!firstRun) {
+      Object.keys(io.sockets.sockets).forEach(socketID => {
+        io.in(socketID).disconnect(true);
+      })
+      firstRun = true;
+    }
 }); // task_list instead of all of the toggles? (missing checkinOn)
 
 // Chatroom
@@ -309,18 +319,21 @@ io.on('connection', (socket) => {
 
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
+        // mturk.reduceAssignmentsPending();
         // if the user had accepted, removes them from the array of accepted users
         console.log(socket.id)
         if (usersAccepted.find(function(element) {return element.id == socket.id})) {
           console.log('There was a disconnect');
           usersAccepted = usersAccepted.filter(user => user.id != socket.id);
-          console.log(usersAccepted)
+          debugLog(usersAccepted)
           console.log("num users accepted:", usersAccepted.length);
           if((teamSize ** 2) - usersAccepted.length < 0) {
             io.sockets.emit('update number waiting', {num: 0});
           } else {
             io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersAccepted.length});
           }
+
+          mturk.setAssignmentsPending(usersAccepted.length)
         }
 
         if (addedUser) {
@@ -383,7 +396,7 @@ io.on('connection', (socket) => {
           db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
           io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false});
       }
-      else if (task_list[currentActivity] == "finished" || currentActivity > task_list.lenght) {
+      else if (task_list[currentActivity] == "finished" || currentActivity > task_list.length) {
         user.ready = false
         taskOver = true
         user.bonus += mturk.bonusPrice
@@ -515,7 +528,7 @@ io.on('connection', (socket) => {
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
         socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has may have had an error. You will be compensated."})
-        socket.disconnect();
+        // socket.disconnect();
         console.log("Sockets active: " + Object.keys(io.sockets.sockets));
   });
 
@@ -532,6 +545,7 @@ io.on('connection', (socket) => {
   // }
   //if the user has accepted the HIT, add the user to the array usersAccepted
   socket.on('accepted HIT', (data) => {
+    // mturk.increaseAssignmentsPending();
     usersAccepted.push({
       "id": socket.id,
       "mturkId": data.mturkId,
@@ -539,12 +553,13 @@ io.on('connection', (socket) => {
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
     });
+    mturk.setAssignmentsPending(usersAccepted.length)
     console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
     // Disconnect leftover users
     Object.keys(io.sockets.sockets).forEach(socketID => {
       if (usersAccepted.every(acceptedUser => {return acceptedUser.id !== socketID})) {
         console.log("Removing dead socket: " + socketID);
-        io.sockets.connected[socketID].emit('get IDs', 'broken');
+        io.in(socketID).emit('get IDs', 'broken');
       }
     });
     console.log("Sockets active: " + Object.keys(io.sockets.sockets));
