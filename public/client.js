@@ -650,7 +650,10 @@ $(function() {
     event.preventDefault() //stops page reloading
     let selectedValue = $('input[name=leave-hit-q1]:checked').val();
     if (selectedValue === 1) {
-      //NIK CODE
+      hideAll();
+      $finishingPage.show();
+      document.getElementById("finishingMessage").innerText = "You have terminated your HIT. Thank you for your time."
+      socket.close(); // 
     } else {
       $leaveHitPopup.hide();
     }
@@ -716,14 +719,7 @@ $(function() {
     socket.emit('mturk_formSubmit', $('#engagementfeedbackInput').val())
   })
 
-  $('#leave-hit-form').submit( (event) => { //watches form element
-    if ($('#leave-hit-form').serialize() === "leave-hit-q1=1") { //only if user chooses to leave
-      hideAll();
-      $finishingPage.show();
-      document.getElementById("finishingMessage").innerText = "You have terminated your HIT. Thank you for your time."
-      socket.close(); // 
-    }
-  })
+
 
 });
 
