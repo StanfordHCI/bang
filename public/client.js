@@ -649,7 +649,7 @@ $(function() {
   $('#leave-hit-form').submit((event) => {
     event.preventDefault() //stops page reloading
     let selectedValue = $('input[name=leave-hit-q1]:checked').val();
-    if (selectedValue === 1) {
+    if (selectedValue == 1) {
       hideAll();
       $finishingPage.show();
       document.getElementById("finishingMessage").innerText = "You have terminated your HIT. Thank you for your time."
@@ -708,7 +708,8 @@ $(function() {
     if (data.crashed) {
       if ($('#engagementfeedbackInput').length === 0) { //make sure element hasn't been already created
         let input = document.createElement("textarea");
-        input.id = "engagementfeedbackInput"
+        input.id = "engagementfeedbackInput";
+        input.required = true;
         $("#submitButton_finish").before(input); //appendChild
       }
     }
