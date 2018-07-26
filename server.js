@@ -367,7 +367,7 @@ io.on('connection', (socket) => {
             }
 
             users.forEach((user) => {
-              let cancelMessage = "<strong>Someone left the task</strong><br> <br> \
+              let cancelMessage = "<strong>Someone left the task.</strong><br> <br> \
               Unfortunately, our group task requires a specific number of users to run, \
               so once a user leaves, our task cannot proceed. <br><br> \
               To complete the task, please provide suggestions of ways to \
