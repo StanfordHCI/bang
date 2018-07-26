@@ -372,8 +372,8 @@ $(function() {
 
   //if there are enough workers who have accepted the task, show link to chat page
   socket.on('enough people', data => {
-    inputMessage.off('keyup')
-    inputMessage.off('keydown')
+    $inputMessage.off('keyup')
+    $inputMessage.off('keydown')
     notify("Moving you to another chatroom.", "Come and get started with the activity.")
     addChatMessage({username:botUsername, message:"Please wait a few seconds while we move you to another chatroom to begin the next task"})
     setTimeout(()=> {
@@ -478,7 +478,7 @@ $(function() {
   });
 
   socket.on('go', data => {
-    document.getElementById("inputMessage").value = '' //clear chat in new round
+    $inputMessage.value = '' //clear chat in new round
     messagesSafe.innerHTML = '';
 
     hideAll();
