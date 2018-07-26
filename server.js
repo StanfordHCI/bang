@@ -42,6 +42,7 @@ const blacklistFile = txt + "blacklist-q.txt"
 const feedbackFile = txt + "feedback-q.txt"
 const starterSurveyFile = txt + "startersurvey-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
+const botFile = txt + 'botquestions.txt'
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
@@ -244,6 +245,10 @@ io.on('connection', (socket) => {
           else if(usersAdded) console.log("Checkin added to the DB");
         });
     });
+
+    socket.on('load bot qs', () => {
+      io.in(socket.id).emit('chatbot', loadQuestions(botFile))
+    })
 
     //Login
     // when the client emits 'add user', this listens and executes
@@ -776,7 +781,10 @@ io.on('connection', (socket) => {
         answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio', textValue: false};
       } else if (answerTag === "TC") { //team checkbox
         answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox', textValue: false};
+      } else {//chatbot qs
+        answerObj={}
       }
+      
       questionObj['answers'] = answerObj.answers;
       questionObj['answerType'] = answerObj.answerType;
       questionObj['textValue'] = answerObj.textValue;

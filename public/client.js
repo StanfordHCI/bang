@@ -80,15 +80,12 @@ $(function() {
     setUsername()
     $chatPage.show()
 
-    addChatMessage({username: botUsername, message: "Hi, I'm helperBot, welcome to our HIT!"})
+    addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername +", welcome to our HIT!"})
     setTimeout(()=> {
       addChatMessage({username: botUsername, message: "For this first task, I'll ask you a series of questions while we wait for enough users to begin our group ad writing tasks! Please answer the following questions so we can test our chat room before our group activity. "})
     }, 1000*1)
 
-    //read q
-    //ask q
-    //when input str length changes settime
-    //after x seconds loop
+    socket.emit('load bot qs')
 
 
   }
@@ -342,12 +339,40 @@ $(function() {
   $inputMessage.click(function () {
     $inputMessage.focus();
   });
-
+    
+    
 
   // Socket events
 
+  socket.on('chatbot', data => {
+    const questions = data 
+    let index = 0;
+    let typingTimer;                
+    let doneTypingInterval = 3000;  //time in ms, 5 second for example
+
+    //on keyup, start the countdown
+    $inputMessage.on('keyup', function () {
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(doneTyping, doneTypingInterval);
+    });
+
+    //on keydown, clear the countdown 
+    $inputMessage.on('keydown', function () {
+      clearTimeout(typingTimer);
+    });
+
+    //user is "finished typing," do something
+    function doneTyping () {
+      let q = questions[index].question
+      addChatMessage({username:botUsername, message:q})
+      index++
+    }
+  })
+
   //if there are enough workers who have accepted the task, show link to chat page
   socket.on('enough people', data => {
+    inputMessage.off('keyup')
+    inputMessage.off('keydown')
     notify("Moving you to another chatroom.", "Come and get started with the activity.")
     addChatMessage({username:botUsername, message:"Moving you to another chatroom to begin the next task"})
     setTimeout(()=> {
