@@ -368,9 +368,13 @@ $(function() {
     function askQuestion () {
       console.log(index)
       if(preChat){
-        let q = questions[index].question
-        addChatMessage({username:botUsername, message:q})
-        index++
+        if(index < questions.length) {
+          let q = questions[index].question
+          addChatMessage({username:botUsername, message:q})
+          index++
+        } else {
+          addChatMessage({username:botUsername, message:'You\'ve answered all my questions! Hang tight while we set up the next task.'})
+        }
       } else {
         $inputMessage.off('keyup')
         $inputMessage.off('keydown')
