@@ -33,10 +33,19 @@
             and be bonused.
           </p>        
           <textarea id="leavetaskfeedbackInput"></textarea>
-          <div id="leave-hit-questions" class="popup-questions">
+          <!-- <div id="leave-hit-questions" class="popup-questions">
             <question-component v-for="question in questions" :question="question" />
-          </div>
-        <input id="leave-hit-submit" type="submit" value="Submit">
+          </div> -->
+        <div class="two-buttons">
+            <div class="submit-buttons">
+                <input id="leave-hit-submit" type="submit" value="End Task and Send Feedback">
+            </div>
+            <div class="submit-buttons">
+              <input id="return-task-submit" type="submit" value="Return to Task">
+            </div>
+        </div>
+        
+        
       </form>
       </div>
     </li>

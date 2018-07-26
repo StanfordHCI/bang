@@ -241,6 +241,15 @@ ul {
   text-align: center;
 }
 
+.two-buttons {
+  display: flex;
+}
+ 
+.submit-buttons {
+  display: inline-block;
+  width: 100%;
+}
+
 #leavetaskfeedbackInput {
   background-color: transparent;
   border: 2px solid #fff;
@@ -294,10 +303,8 @@ input[type="radio"], input[type="checkbox"] {
 
 button, input[type='submit'] {
   display: block;
-  /* display: inline-block; */
-  width: 80%;
   padding: 1em;
-  max-width: 220px;
+  width: max-content;
   font-size: .9em;
   color: #D42D78;
   text-decoration: none;

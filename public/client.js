@@ -654,25 +654,41 @@ $(function() {
 
   })
 
-  $('#leave-hit-form').submit((event) => {
+  $("#leave-hit-submit").click((event) => {
+    console.log("Hi leave-hit-submit was clicked")
     event.preventDefault() //stops page reloading
-    let selectedValue = $('input[name=leave-hit-q1]:checked').val();
-    if (selectedValue == 1) {
-      let feedbackMessage = $('#leavetaskfeedbackInput').val();
-      if (feedbackMessage.length > 10) {
-        hideAll();
-        $finishingPage.show();
-        document.getElementById("finishingMessage").innerHTML = "You terminated the HIT. Thank you for your time."
-        socket.emit('mturk_formSubmit', feedbackMessage)
-        socket.close();
-      }
-    } else {
-      $leaveHitPopup.hide();
-      $currentInput = $inputMessage.focus();
-      $currentInput.focus();
+    let feedbackMessage = $('#leavetaskfeedbackInput').val();
+    if (feedbackMessage.length > 10) {
+      hideAll();
+      $finishingPage.show();
+      document.getElementById("finishingMessage").innerHTML = "You terminated the HIT. Thank you for your time."
+      socket.emit('mturk_formSubmit', feedbackMessage)
+      socket.close();
+      $('#leave-hit-form')[0].reset();
     }
+  })
+
+  $("#return-task-submit").click((event) => {
+    console.log("Hi return-task-submit was clicked")
+    event.preventDefault() //stops page reloading
+    $leaveHitPopup.hide();
+    $currentInput = $inputMessage.focus();
+    $currentInput.focus();
     $('#leave-hit-form')[0].reset();
   })
+
+  // $('#leave-hit-form').submit((event) => {
+  //   event.preventDefault() //stops page reloading
+  //   let selectedValue = $('input[name=leave-hit-q1]:checked').val();
+  //   if (selectedValue == 1) {
+      
+  //   } else {
+  //     $leaveHitPopup.hide();
+  //     $currentInput = $inputMessage.focus();
+  //     $currentInput.focus();
+  //   }
+    
+  // })
 
   $('#starterForm').submit( (event) => {
     event.preventDefault() //stops page reloading
