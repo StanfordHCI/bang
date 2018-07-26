@@ -7,8 +7,10 @@ const teamSize = process.env.TEAM_SIZE = 2
 const roundMinutes = process.env.ROUND_MINUTES = 2
 
 //Parameters for waiting qualifications
-const secondsToWait = 40
-const secondsSinceResponse = 20
+const secondsToWait = 30 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+const secondsSinceResponse = 20 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
+const secondsToHold1 = 720 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
+const secondsToHold2 = 60 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 
 // Toggles
 const runExperimentNow = true
@@ -188,7 +190,7 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
     console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
     if (!firstRun) {
       Object.keys(io.sockets.sockets).forEach(socketID => {
-        io.in(socketID).disconnect(true); //TODO fix this line
+        io.sockets.sockets[socketID].disconnect(); //TODO fix this line
       })
       firstRun = true;
     }
@@ -200,6 +202,7 @@ io.on('connection', (socket) => {
     let addedUser = false
     let taskStarted = false
     let taskOver = false
+    let enoughPeople = false
 
     socket.on('log', string => { console.log(string); });
 
@@ -361,7 +364,7 @@ io.on('connection', (socket) => {
           // update DB with change
           db.users.update({ id: socket.id }, {$set: {active: false}}, {}, (err, numReplaced) => { console.log(err ? "Activity not changed: " + err : "User left " + socket.id) })
 
-          if (!taskOver){
+          if (taskStarted || enoughPeople){
             // Start cancel process
             console.log("User left, emitting cancel to all users");
 
@@ -596,7 +599,7 @@ io.on('connection', (socket) => {
 
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
-        socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has may have had an error. You will be compensated."})
+        socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has completed prematurely. Press the submit button below and you will be compensated properly."})
         // socket.disconnect();
         console.log("Sockets active: " + Object.keys(io.sockets.sockets));
   });
@@ -646,24 +649,25 @@ io.on('connection', (socket) => {
       } else {
         user.waiting = false;
       }
+      usersWaiting = usersAccepted.filter(user => user.waiting === true);
+      weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - usersWaiting.length))
+      if ((Date.now() - user.timeAdded)/1000 > weightedHoldingSeconds || (Date.now() - user.timeLastActivity)/1000 > secondsToHold2) {
+        io.in(user.id).emit('get IDs', 'broken');
+      }
     });
-    console.log("test");
+
+    //for debugging
     for (var i = 0; i < usersAccepted.length; i++) {
-      console.log(usersAccepted[i].timeAdded);
-      console.log(usersAccepted[i].timeLastActivity);
-      console.log(usersAccepted[i].waiting);
+      console.log(String(usersAccepted[i].waiting) + String(usersAccepted[i].timeAdded) + String(usersAccepted[i].timeLastActivity));
     };
-
-
 
     // if enough people have accepted, push prompt to start task
     if(usersAccepted.filter(user => user.waiting === true).length >= teamSize ** 2) {
       io.sockets.emit('update number waiting', {num: 0});
-      let numEmits = 0;
       usersWaiting = usersAccepted.filter(user => user.waiting === true);
+      enoughPeople = true;
       for (var i = 0; i < teamSize ** 2; i++) {
         io.in(usersWaiting[i].id).emit('enough people');
-        console.log('it worked');
       };
     } else {
       let numWaiting = (teamSize ** 2) - usersAccepted.length;
