@@ -83,11 +83,11 @@ $(function() {
     addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername +", welcome to our HIT!"})
     setTimeout(()=> {
       addChatMessage({username: botUsername, message: "For this first task, I'll ask you a series of questions while we wait for enough users to begin our group ad writing tasks! Please answer the following questions so we can test our chat room before our group activity. "})
-    }, 1000*1)
-
-    socket.emit('load bot qs')
-
-
+      setTimeout(() => {
+        socket.emit('load bot qs')  
+      }, 1000*1)
+      
+    }, 1000*.5)
   }
 
   // Get permission to notify
@@ -349,11 +349,12 @@ $(function() {
     let index = 0;
     let typingTimer;                
     let doneTypingInterval = 3000;  //time in ms, 5 second for example
+    askQuestion()//ask first q right away
 
     //on keyup, start the countdown
     $inputMessage.on('keyup', function () {
       clearTimeout(typingTimer);
-      typingTimer = setTimeout(doneTyping, doneTypingInterval);
+      typingTimer = setTimeout(askQuestion, doneTypingInterval);
     });
 
     //on keydown, clear the countdown 
@@ -362,7 +363,7 @@ $(function() {
     });
 
     //user is "finished typing," do something
-    function doneTyping () {
+    function askQuestion () {
       let q = questions[index].question
       addChatMessage({username:botUsername, message:q})
       index++
@@ -374,7 +375,7 @@ $(function() {
     inputMessage.off('keyup')
     inputMessage.off('keydown')
     notify("Moving you to another chatroom.", "Come and get started with the activity.")
-    addChatMessage({username:botUsername, message:"Moving you to another chatroom to begin the next task"})
+    addChatMessage({username:botUsername, message:"Please wait a few seconds while we move you to another chatroom to begin the next task"})
     setTimeout(()=> {
       socket.emit('execute experiment')
       taskStarted = true;
