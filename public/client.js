@@ -69,6 +69,7 @@ $(function() {
   const socket = io();
 
   let preChat = true;
+  let answered = false;
   hideAll();
 
   //Check if user has accepted based on URL. Store URL variables.
@@ -142,6 +143,7 @@ $(function() {
       addChatMessage({ username: username, message: message });
       // tell server to execute 'new message' and send along one parameter
       if(preChat) {
+        answered = true;
         socket.emit('accepted user chatted', {time: Date.now()});
       } else {
         socket.emit('new message', message);
@@ -351,6 +353,7 @@ $(function() {
     let index = 0;
     let typingTimer;                
     let doneTypingInterval = 3000;  
+    answered =true
     askQuestion()//ask first q right away
 
     //on keyup, start the countdown
@@ -368,12 +371,16 @@ $(function() {
     function askQuestion () {
       console.log(index)
       if(preChat){
-        if(index < questions.length) {
-          let q = questions[index].question
-          addChatMessage({username:botUsername, message:q})
-          index++
-        } else {
-          addChatMessage({username:botUsername, message:'You\'ve answered all my questions! Hang tight while we set up the next task.'})
+        if(answered){
+          answered = false;
+
+          if(index < questions.length) {
+            let q = questions[index].question
+            addChatMessage({username:botUsername, message:q})
+            index++
+          } else {
+            addChatMessage({username:botUsername, message:'You\'ve answered all my questions! Hang tight while we set up the next task.'})
+          }
         }
       } else {
         $inputMessage.off('keyup')
