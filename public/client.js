@@ -307,7 +307,6 @@ $(function() {
   $leaveHitButton.click((event) => {
     $leaveHitPopup.show();
     $currentInput = $("#leavetaskfeedbackInput").focus();
-    // $("#leavetaskfeedbackInput").focus();
     $currentInput.focus();
   })
 
@@ -656,9 +655,12 @@ $(function() {
       hideAll();
       $finishingPage.show();
       document.getElementById("finishingMessage").innerHTML = "You terminated the HIT. Thank you for your time."
+      socket.emit('mturk_formSubmit', $('#leavetaskfeedbackInput').val())
       socket.close();
     } else {
       $leaveHitPopup.hide();
+      $currentInput = $inputMessage.focus();
+      $currentInput.focus();
     }
   })
 
