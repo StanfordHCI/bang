@@ -655,7 +655,6 @@ $(function() {
   })
 
   $("#leave-hit-submit").click((event) => {
-    console.log("Hi leave-hit-submit was clicked")
     event.preventDefault() //stops page reloading
     let feedbackMessage = $('#leavetaskfeedbackInput').val();
     if (feedbackMessage.length > 10) {
@@ -669,7 +668,6 @@ $(function() {
   })
 
   $("#return-task-submit").click((event) => {
-    console.log("Hi return-task-submit was clicked")
     event.preventDefault() //stops page reloading
     $leaveHitPopup.hide();
     $currentInput = $inputMessage.focus();
