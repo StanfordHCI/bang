@@ -15,6 +15,31 @@
 <body>
   <ul class="pages">
     <li id="lockPage" class="lockPage page white"><h3 class="title">Please accept the hit to see instructions.</h3></li>
+    
+    <li id="headerbarPage">
+    <div class="header">
+      <h3 id="header-text">Team</h3> <p id="header-text-2"></p>
+      <button type="button" id="leave-hit-button">Leave HIT</button>
+    </div>  
+      <div id="leave-hit-popup" class="popup" >
+        <form id="leave-hit-form" class="rb">
+          <p><strong>Leaving now will terminate the task for other users. </strong><br><br>
+
+            You may leave by returning the hit or closing the window. <br><br>
+
+            Provide feedback on what we could do to keep you in the task in the future 
+            to submit the hit for the base rate. <br><br>
+            Alternatively, you can click "Return to Task" below to finish the task
+            and be bonused.
+          </p>        
+          <textarea id="leavetaskfeedbackInput"></textarea>
+          <div id="leave-hit-questions" class="popup-questions">
+            <question-component v-for="question in questions" :question="question" />
+          </div>
+        <input id="leave-hit-submit" type="submit" value="Submit">
+      </form>
+      </div>
+    </li>
 
     <li id="waiting" class="waiting page white">
         <h3 class="title">Waiting room</h3>
@@ -26,27 +51,7 @@
     </li>
 
     <li id="chat" class="chat page">
-      <div class="header">
-        <h3 id="header-text">Team</h3> <p id="header-text-2"></p>
-        <button type="button" id="leave-hit-button">Leave HIT</button>
-      </div>  
-      <div id="leave-hit-popup" class="popup" >
-        <form id="leave-hit-form" class="rb">
-          <p>This is a group task that requires a specific number of users. 
-            If you leave now, you won't receive payment and other users won't 
-            be able to proceed with the task. 
-            
-            <br><br>You may leave now by closing 
-            the HIT window. In the textbox, you can send us feedback on how to keep you next time.
-          </p>        
-          <textarea id="leavetaskfeedbackInput"></textarea>
-          <div id="leave-hit-questions" class="popup-questions">
-            <question-component v-for="question in questions" :question="question" />
-          </div>
-        <input id="leave-hit-submit" type="submit" value="Submit">
-      </form>
-        
-      </div>
+      
       <div class="chatArea">
         <ul class="messages"></ul>
       </div>

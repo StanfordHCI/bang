@@ -13,7 +13,7 @@ $(function() {
   const $leaveHitPopup = $('#leave-hit-popup')
 
   const $chatLink = $('#chatLink');
-
+  const $headerbarPage = $('#headerbarPage'); // The finishing page
   const $lockPage = $('#lockPage'); // The page shown before acceptance
   const $waitingPage = $('#waiting'); // The waiting page
   const $chatPage = $('#chat'); // The chatroom page
@@ -25,6 +25,7 @@ $(function() {
   const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
   const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
   const $finishingPage = $('#finishing'); // The finishing page
+
 
   Vue.component('question-component', {
     template: `
@@ -45,6 +46,7 @@ $(function() {
   });
 
   const hideAll = () => {
+    $headerbarPage.hide()
     $checkinPopup.hide();
     $leaveHitPopup.hide()
     $lockPage.hide();
@@ -403,6 +405,9 @@ $(function() {
     if(!data.interstitial){
       hideAll();
       $("#"+data.element).show();
+      if (data.showHeaderBar) {
+        $headerbarPage.show()
+      }
     }
   });
 
@@ -444,6 +449,7 @@ $(function() {
     document.getElementById("inputMessage").value = '' //clear chat in new round
     hideAll();
     $chatPage.show();
+    $headerbarPage.show();
     let teamStr = ""
     for(member of data.team) teamStr += member + ", "
     console.log(teamStr)
@@ -652,16 +658,20 @@ $(function() {
     event.preventDefault() //stops page reloading
     let selectedValue = $('input[name=leave-hit-q1]:checked').val();
     if (selectedValue == 1) {
-      hideAll();
-      $finishingPage.show();
-      document.getElementById("finishingMessage").innerHTML = "You terminated the HIT. Thank you for your time."
-      socket.emit('mturk_formSubmit', $('#leavetaskfeedbackInput').val())
-      socket.close();
+      let feedbackMessage = $('#leavetaskfeedbackInput').val();
+      if (feedbackMessage.length > 10) {
+        hideAll();
+        $finishingPage.show();
+        document.getElementById("finishingMessage").innerHTML = "You terminated the HIT. Thank you for your time."
+        socket.emit('mturk_formSubmit', feedbackMessage)
+        socket.close();
+      }
     } else {
       $leaveHitPopup.hide();
       $currentInput = $inputMessage.focus();
       $currentInput.focus();
     }
+    $('#leave-hit-form')[0].reset();
   })
 
   $('#starterForm').submit( (event) => {

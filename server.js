@@ -4,7 +4,7 @@ require('dotenv').config()
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
 const teamSize = process.env.TEAM_SIZE
-const roundMinutes = process.env.ROUND_MINUTES = 5
+const roundMinutes = process.env.ROUND_MINUTES = 0.1
 
 // Toggles
 const runExperimentNow = true
@@ -16,7 +16,7 @@ const debugMode = !runningLive
 const starterSurveyOn = false
 const midSurveyOn = true
 const blacklistOn = true
-const teamfeedbackOn = false
+const teamfeedbackOn = true
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
 const requiredOn = runningLive
@@ -402,7 +402,7 @@ io.on('connection', (socket) => {
       console.log ("Activity:", currentActivity, "which is", task_list[currentActivity])
 
       if (task_list[currentActivity] == "starterSurvey") {
-        io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false});
+        io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false, showHeaderBar: false});
         taskStartTime = getSecondsPassed();
       }
       else if (task_list[currentActivity] == "ready") {
@@ -410,16 +410,16 @@ io.on('connection', (socket) => {
           recordTime("starterSurvey");
         }
         if (checkinOn) {
-          io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true});
+          io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true, showHeaderBar: true});
         }
-        io.in(user.id).emit("load", {element: 'leave-hit', questions: loadQuestions(leaveHitFile), interstitial: true})
+        io.in(user.id).emit("load", {element: 'leave-hit', questions: loadQuestions(leaveHitFile), interstitial: true, showHeaderBar: true})
         io.in(user.id).emit("echo", "ready");
       }
       else if (task_list[currentActivity] == "midSurvey") {
         if(timeCheckOn) {
           recordTime("round");
         }
-        io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false});
+        io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false, showHeaderBar: true});
       }
       else if (task_list[currentActivity] == "teamfeedbackSurvey") {
         if(midSurveyOn && timeCheckOn) {
@@ -427,7 +427,7 @@ io.on('connection', (socket) => {
         } else if(timeCheckOn) {
           recordTime("round");
         }
-        io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false});
+        io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false, showHeaderBar: true});
       }
       else if (task_list[currentActivity] == "blacklistSurvey") {
         if(teamfeedbackOn && timeCheckOn) {
@@ -437,8 +437,8 @@ io.on('connection', (socket) => {
         } else if(timeCheckOn) {
           recordTime("round");
         }
-        console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false})
-        io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false});
+        console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false})
+        io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false});
       }
       else if (task_list[currentActivity] == "postSurvey") { //Launch post survey
         if(blacklistOn && timeCheckOn) {
@@ -453,7 +453,7 @@ io.on('connection', (socket) => {
         let survey = postSurveyGenerator(user)
         user.results.manipulation = survey.correctAnswer
         db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-        io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false});
+        io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false, showHeaderBar: false});
       }
       else if (task_list[currentActivity] == "finished" || currentActivity > task_list.length) {
         if(timeCheckOn) {
