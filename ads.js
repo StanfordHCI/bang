@@ -12,12 +12,11 @@ const py = (func="", args="") => {
 
 // 1st argument is funciton
 // if makeAd:
-// 2nd argument is nubmer of ads
-// 3rd argument is 
-// 4th argument is headlinePart1
-// 5th argument is headlinePart2
-// 6th argument is description
-// 7th argument is finalURL
+// 2nd argument is nubmer of ads  // number
+// 3rd argument is headlinePart1  // string
+// 4th argument is headlinePart2  // string
+// 5th argument is description  // string
+// 6th argument is finalURL // sends them directly to the product
 
 const makeAd = () => {
   py("makeAd")

@@ -7,7 +7,11 @@ print("THIS IS WORKING")
 
 adwords_client = adwords.AdWordsClient.LoadFromStorage()
 ad_group_id = 'INSERT_AD_GROUP_ID_HERE'
-NUMBER_OF_ADS = sys.argv[2]  # make this a passed parameter
+NUMBER_OF_ADS = sys.argv[2]  
+headline_part_1 = sys.argv[3]
+headline_part_2 = sys.argv[4]
+description = sys.argv[5]
+finalURL = sys.argv[6]
 
 # Creates an ad group
 def makeAd():
@@ -24,11 +28,10 @@ def makeAd():
                 'adGroupId': ad_group_id,
                 'ad': {
                     'xsi_type': 'ExpandedTextAd',
-                    'headlinePart1': ('Cruise #%s to Mars'
-                                        % str(uuid.uuid4())[:8]),
-                    'headlinePart2': 'Best Space Cruise Line',
-                    'description': 'Buy your tickets now!',
-                    'finalUrls': ['http://www.example.com/%s' % i],
+                    'headlinePart1': headline_part_1,
+                    'headlinePart2': headline_part_2,
+                    'description': description,
+                    'finalUrls': ['finalURL%s' % i],
                 },
             }
         } for i in range(NUMBER_OF_ADS)
@@ -64,6 +67,7 @@ def killAd():
 
 def checkAd():
     print ("this is check ad")
+    print ("nothing here yet")
 
 # map the inputs to the function blocks
 options = {0: makeAd,
@@ -85,19 +89,5 @@ options[number]()
 
 sys.stdout.flush()
 
-
-
 # Set up... 
 # https://github.com/googleads/googleads-python-lib
-
-
-
-# Make an ad group
-# Kill an ad group
-# Check up on an ad group
-
-
-# if __name__ == '__main__':
-#   # Initialize client object.
-#   adwords_client = adwords.AdWordsClient.LoadFromStorage()
-#   main(sys.argv[1], adwords_client, AD_GROUP_ID)  
