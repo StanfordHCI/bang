@@ -669,6 +669,22 @@ io.on('connection', (socket) => {
       for (var i = 0; i < teamSize ** 2; i++) {
         io.in(usersWaiting[i].id).emit('enough people');
       };
+      //send rest of users to finished
+      // for (var i = teamSize**2; i < usersAccepted.length; i++) {
+      //   if(usersWaiting[i] !== null) {
+      //     io.in(usersWaiting[i].id).emit('finished');
+      //   }
+      // }
+      usersAccepted.forEach(user => {
+        if(!usersWaiting.includes(user)) {
+          io.in(user.id).emit('finished', {
+          message: "Thanks for participating, you're all done!",
+          finishingCode: socket.id,
+          turkSubmitTo: mturk.submitTo,
+          assignmentId: user.assignmentId
+        });
+        }
+      })
       enoughPeople = true;
     } else {
       let numWaiting = (teamSize ** 2) - usersAccepted.length;
