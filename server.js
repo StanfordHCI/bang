@@ -643,7 +643,8 @@ io.on('connection', (socket) => {
   });
 
   function checkUsersAccepted(usersAccepted) {
-    usersAccepted.forEach(user => {
+    if (!enoughPeople) {
+      usersAccepted.forEach(user => {
       if ((Date.now() - user.timeAdded)/1000 > secondsToWait && (Date.now() - user.timeLastActivity)/1000 < secondsSinceResponse) {
         user.waiting = true;
       } else {
@@ -665,13 +666,14 @@ io.on('connection', (socket) => {
     if(usersAccepted.filter(user => user.waiting === true).length >= teamSize ** 2) {
       io.sockets.emit('update number waiting', {num: 0});
       usersWaiting = usersAccepted.filter(user => user.waiting === true);
-      enoughPeople = true;
       for (var i = 0; i < teamSize ** 2; i++) {
         io.in(usersWaiting[i].id).emit('enough people');
       };
+      enoughPeople = true;
     } else {
       let numWaiting = (teamSize ** 2) - usersAccepted.length;
       io.sockets.emit('update number waiting', {num: numWaiting});
+    }
     }
   }
 
