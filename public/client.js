@@ -5,7 +5,7 @@ $(function() {
   // Initialize variables
   const $window = $(window);
   const $messages = $('.messages'); // Messages area
-  const $inputMessage = $('.inputMessage'); // Input message input box
+  const $inputMessage = $('#inputMessage'); // Input message input box
   const $checkinPopup = $('.popup');
 
   const $chatLink = $('#chatLink');
