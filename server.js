@@ -4,7 +4,7 @@ require('dotenv').config()
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
 const teamSize = process.env.TEAM_SIZE = 2
-const roundMinutes = process.env.ROUND_MINUTES = 2
+const roundMinutes = 2
 
 //Parameters for waiting qualifications
 const secondsToWait = 30 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
@@ -146,6 +146,7 @@ let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
 let users = []; //the main local user storage
 let currentRound = 0
 let startTime = 0
+let enoughPeople = false
 
 // keeping track of time
 let taskStartTime = getSecondsPassed(); // reset for each start of new task
@@ -198,11 +199,11 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
 
 // Chatroom
 io.on('connection', (socket) => {
-
+    //NOTE: THIS fxn is called multiple times so these conditions will be set multiple times
     let addedUser = false
     let taskStarted = false
     let taskOver = false
-    let enoughPeople = false
+    // let enoughPeople = false
 
     socket.on('log', string => { console.log(string); });
 
@@ -666,10 +667,11 @@ io.on('connection', (socket) => {
     if(usersAccepted.filter(user => user.waiting === true).length >= teamSize ** 2) {
       io.sockets.emit('update number waiting', {num: 0});
       usersWaiting = usersAccepted.filter(user => user.waiting === true);
+      enoughPeople = true;
       for (var i = 0; i < teamSize ** 2; i++) {
         io.in(usersWaiting[i].id).emit('enough people');
       };
-      enoughPeople = true;
+      
     } else {
       let numWaiting = (teamSize ** 2) - usersAccepted.length;
       io.sockets.emit('update number waiting', {num: numWaiting});

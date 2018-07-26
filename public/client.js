@@ -68,7 +68,7 @@ $(function() {
 
   const socket = io();
 
-  let taskStarted = false;
+  let preChat = true;
   hideAll();
 
   //Check if user has accepted based on URL. Store URL variables.
@@ -141,9 +141,11 @@ $(function() {
       $inputMessage.val('');
       addChatMessage({ username: username, message: message });
       // tell server to execute 'new message' and send along one parameter
-      if(taskStarted)
+      if(preChat) {
+        socket.emit('accepted user chatted', {time: Date.now()});
+      } else {
         socket.emit('new message', message);
-      socket.emit('accepted user chatted', {time: Date.now()});
+      }
     }
   }
 
@@ -348,7 +350,7 @@ $(function() {
     const questions = data 
     let index = 0;
     let typingTimer;                
-    let doneTypingInterval = 3000;  //time in ms, 5 second for example
+    let doneTypingInterval = 3000;  
     askQuestion()//ask first q right away
 
     //on keyup, start the countdown
@@ -364,23 +366,31 @@ $(function() {
 
     //user is "finished typing," do something
     function askQuestion () {
-      let q = questions[index].question
-      addChatMessage({username:botUsername, message:q})
-      index++
+      console.log(index)
+      if(preChat){
+        let q = questions[index].question
+        addChatMessage({username:botUsername, message:q})
+        index++
+      } else {
+        $inputMessage.off('keyup')
+        $inputMessage.off('keydown')
+      }
     }
   })
 
   //if there are enough workers who have accepted the task, show link to chat page
   socket.on('enough people', data => {
-    $inputMessage.off('keyup')
-    $inputMessage.off('keydown')
-    notify("Moving you to another chatroom.", "Come and get started with the activity.")
-    addChatMessage({username:botUsername, message:"Please wait a few seconds while we move you to another chatroom to begin the next task"})
-    setTimeout(()=> {
-      socket.emit('execute experiment')
-      taskStarted = true;
-    }, 1000*5)
-    //$('.chatLink').show();
+    console.log('ENOUGH PEOPLE CALLED ')
+    if(preChat) {
+      $inputMessage.off('keyup')
+      $inputMessage.off('keydown')
+      notify("Moving you to another chatroom.", "Come and get started with the activity.")
+      addChatMessage({username:botUsername, message:"Please wait a few seconds while we move you to another chatroom to begin the next task"})
+      setTimeout(()=> {
+        socket.emit('execute experiment')
+        preChat = false;
+      }, 1000*5)
+    }
   });
 
   //checks if the user actually accepted or if they are previewing the task
@@ -538,7 +548,7 @@ $(function() {
         else if (wordlength <= 5) {
           let matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
           matches = $.grep(currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); });
-          console.log(matches)
+          //console.log(matches)
           if (matches[0] !== undefined) {
             response(matches)
           } else {
