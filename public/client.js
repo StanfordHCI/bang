@@ -468,7 +468,12 @@ $(function() {
       } else { durationString = data.duration + " minutes" }
       log("You will have <strong>" + durationString + "</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
       log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
-
+      log("<br>For example, here are text advertisements for a golf club called Renaissance: <br>\
+      <ul style='list-style-type:disc'> \
+        <li><strong>An empowering modern club</strong><br></li> \
+        <li><strong>A private club with reach</strong><br></li> \
+        <li><strong>Don't Wait. Discover Renaissance Today</strong></li> \
+      </ul>")
     }, 500)
 
     setTimeout(()=>{
