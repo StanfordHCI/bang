@@ -4,7 +4,7 @@ require('dotenv').config()
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
 const teamSize = process.env.TEAM_SIZE
-const roundMinutes = process.env.ROUND_MINUTES = 1
+const roundMinutes = process.env.ROUND_MINUTES = 0.1
 
 // Toggles
 const runExperimentNow = true
