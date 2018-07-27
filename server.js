@@ -4,7 +4,7 @@ require('dotenv').config()
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
 const teamSize = process.env.TEAM_SIZE
-const roundMinutes = process.env.ROUND_MINUTES
+const roundMinutes = process.env.ROUND_MINUTES = 0.1
 
 // Toggles
 const runExperimentNow = true
@@ -16,7 +16,7 @@ const debugMode = !runningLive
 const starterSurveyOn = false
 const midSurveyOn = true
 const blacklistOn = true
-const teamfeedbackOn = false
+const teamfeedbackOn = true
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
 const requiredOn = runningLive
@@ -38,10 +38,12 @@ const blacklistFile = txt + "blacklist-q.txt"
 const feedbackFile = txt + "feedback-q.txt"
 const starterSurveyFile = txt + "startersurvey-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
+const leaveHitFile = txt + "leave-hit-q.txt"
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
 const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
+const leaveHitAnswers = {answers: ['End Task and Send Feedback', 'Return to Task'], answerType: 'radio', textValue: false}
 
 // Setup basic express server
 let tools = require('./tools');
@@ -183,7 +185,7 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
     console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
     if (!firstRun) {
       Object.keys(io.sockets.sockets).forEach(socketID => {
-        io.in(socketID).disconnect(true);
+        io.sockets.sockets[socketID].disconnect(true);
       })
       firstRun = true;
     }
@@ -329,7 +331,7 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         // mturk.reduceAssignmentsPending();
         // if the user had accepted, removes them from the array of accepted users
-        console.log(socket.id)
+        console.log("Socket disconecting is", socket.id)
         if (usersAccepted.find(function(element) {return element.id == socket.id})) {
           console.log('There was a disconnect');
           usersAccepted = usersAccepted.filter(user => user.id != socket.id);
@@ -364,8 +366,8 @@ io.on('connection', (socket) => {
               })
             }
 
-            users.forEach((user) => {
-              let cancelMessage = "<strong>Someone left the task</strong><br> <br> \
+            users.filter(u => u.id != socket.id).forEach((user) => {
+              let cancelMessage = "<strong>Someone left the task.</strong><br> <br> \
               Unfortunately, our group task requires a specific number of users to run, \
               so once a user leaves, our task cannot proceed. <br><br> \
               To complete the task, please provide suggestions of ways to \
@@ -400,7 +402,7 @@ io.on('connection', (socket) => {
       console.log ("Activity:", currentActivity, "which is", task_list[currentActivity])
 
       if (task_list[currentActivity] == "starterSurvey") {
-        io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false});
+        io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false, showHeaderBar: false});
         taskStartTime = getSecondsPassed();
       }
       else if (task_list[currentActivity] == "ready") {
@@ -408,15 +410,16 @@ io.on('connection', (socket) => {
           recordTime("starterSurvey");
         }
         if (checkinOn) {
-          io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true});
+          io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true, showHeaderBar: true});
         }
+        io.in(user.id).emit("load", {element: 'leave-hit', questions: loadQuestions(leaveHitFile), interstitial: true, showHeaderBar: true})
         io.in(user.id).emit("echo", "ready");
       }
       else if (task_list[currentActivity] == "midSurvey") {
         if(timeCheckOn) {
           recordTime("round");
         }
-        io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false});
+        io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false, showHeaderBar: true});
       }
       else if (task_list[currentActivity] == "teamfeedbackSurvey") {
         if(midSurveyOn && timeCheckOn) {
@@ -424,7 +427,7 @@ io.on('connection', (socket) => {
         } else if(timeCheckOn) {
           recordTime("round");
         }
-        io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false});
+        io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false, showHeaderBar: true});
       }
       else if (task_list[currentActivity] == "blacklistSurvey") {
         if(teamfeedbackOn && timeCheckOn) {
@@ -434,8 +437,8 @@ io.on('connection', (socket) => {
         } else if(timeCheckOn) {
           recordTime("round");
         }
-        console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false})
-        io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false});
+        console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false})
+        io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false});
       }
       else if (task_list[currentActivity] == "postSurvey") { //Launch post survey
         if(blacklistOn && timeCheckOn) {
@@ -450,7 +453,7 @@ io.on('connection', (socket) => {
         let survey = postSurveyGenerator(user)
         user.results.manipulation = survey.correctAnswer
         db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-        io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false});
+        io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false, showHeaderBar: false});
       }
       else if (task_list[currentActivity] == "finished" || currentActivity > task_list.length) {
         if(timeCheckOn) {
@@ -518,7 +521,7 @@ io.on('connection', (socket) => {
         if (autocompleteTestOn) {
           let teamNames = [tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username]
           console.log(teamNames)
-          io.in(user.id).emit('go', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal })
+          io.in(user.id).emit('go', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//rounds are 0 indexed
         } else {
           // Dynamically generate teammate names
           // even if teamSize = 1 for testing, this still works
@@ -539,7 +542,7 @@ io.on('connection', (socket) => {
           team_Aliases.push(user.name) //now push user for autocomplete
           let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
           // io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
-          io.in(user.id).emit('go', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal})
+          io.in(user.id).emit('go', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//round 0 indexed
         }
       })
 
@@ -738,6 +741,8 @@ io.on('connection', (socket) => {
         answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio', textValue: false};
       } else if (answerTag === "TC") { //team checkbox
         answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox', textValue: false};
+      } else if (answerTag === "LH") { //leave hit yn
+        answerObj = leaveHitAnswers;
       }
       questionObj['answers'] = answerObj.answers;
       questionObj['answerType'] = answerObj.answerType;
