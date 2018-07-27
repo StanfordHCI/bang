@@ -3,14 +3,14 @@ require('dotenv').config()
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE = 2
-const roundMinutes = 2
+const teamSize = process.env.TEAM_SIZE = 1
+const roundMinutes = .1
 
 //Parameters for waiting qualifications
 const secondsToWait = 30 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
 const secondsSinceResponse = 20 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
 const secondsToHold1 = 720 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
-const secondsToHold2 = 60 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
+const secondsToHold2 = 420 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 
 // Toggles
 const runExperimentNow = true
@@ -672,6 +672,7 @@ io.on('connection', (socket) => {
         io.in(usersWaiting[i].id).emit('enough people');
       };
       
+
       //send rest of users to finished
       // for (var i = teamSize**2; i < usersAccepted.length; i++) {
       //   if(usersWaiting[i] !== null) {
