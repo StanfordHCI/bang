@@ -282,7 +282,7 @@ $(function() {
   $window.keydown(event => {
     // Auto-focus the current input when a key is typed
     if (!(event.ctrlKey || event.metaKey || event.altKey)) {
-      $currentInput.focus();
+        $currentInput.focus();
       // forcedComplete($currentInput)
     }
 
@@ -352,7 +352,7 @@ $(function() {
     const questions = data 
     let index = 0;
     let typingTimer;                
-    let doneTypingInterval = 3000;  
+    let doneTypingInterval = 1000;  
     answered =true
     askQuestion()//ask first q right away
 
