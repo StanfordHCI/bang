@@ -67,6 +67,7 @@ $(function() {
   let messagesSafe = document.getElementsByClassName('messages')[0];
   let finishingcode = document.getElementById('finishingcode');
   let usersWaiting = document.getElementById('numberwaiting');
+  let mturkVariables
 
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
   const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
@@ -82,14 +83,15 @@ $(function() {
     $lockPage.show(); //prompt user to accept HIT
   } else { // tell the server that the user has accepted the HIT - server then adds this worker to array of accepted workers
     $waitingPage.show();
-    socket.emit('accepted HIT',{ mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId });
+    mturkVariables = { mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId }
+    socket.emit('accepted HIT',mturkVariables);
   }
 
   // Get permission to notify
   Notification.requestPermission()
 
   // Prompt for setting a username
-  let username;
+  let username
   let connected = false;
   let typing = false;
   let lastTypingTime;
@@ -661,6 +663,9 @@ $(function() {
       hideAll();
       $finishingPage.show();
       document.getElementById("finishingMessage").innerHTML = "You terminated the HIT. Thank you for your time."
+      document.getElementById("mturk_form").action = mturkVariables.turkSubmitTo + "/mturk/externalSubmit"
+      document.getElementById("assignmentId").value = mturkVariables.assignmentId
+      finishingcode.value = "LeftHi"
       socket.emit('mturk_formSubmit', feedbackMessage)
       socket.close();
       $('#leave-hit-form')[0].reset();
@@ -679,13 +684,13 @@ $(function() {
   //   event.preventDefault() //stops page reloading
   //   let selectedValue = $('input[name=leave-hit-q1]:checked').val();
   //   if (selectedValue == 1) {
-      
+
   //   } else {
   //     $leaveHitPopup.hide();
   //     $currentInput = $inputMessage.focus();
   //     $currentInput.focus();
   //   }
-    
+
   // })
 
   $('#starterForm').submit( (event) => {
