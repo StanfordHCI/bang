@@ -3,7 +3,7 @@ require('dotenv').config()
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE 
+const teamSize = process.env.TEAM_SIZE
 const roundMinutes = process.env.ROUND_MINUTES = 0.1
 
 // Toggles
@@ -366,7 +366,7 @@ io.on('connection', (socket) => {
               })
             }
 
-            users.forEach((user) => {
+            users.filter(u => u.id != socket.id).forEach((user) => {
               let cancelMessage = "<strong>Someone left the task.</strong><br> <br> \
               Unfortunately, our group task requires a specific number of users to run, \
               so once a user leaves, our task cannot proceed. <br><br> \
