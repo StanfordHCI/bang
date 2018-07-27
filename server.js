@@ -7,20 +7,24 @@ const teamSize = process.env.TEAM_SIZE
 const roundMinutes = process.env.ROUND_MINUTES
 
 // Toggles
-const runExperimentNow = false
-const issueBonusesNow = runningLive
-const cleanHITs = false //!runExperimentNow
+const runExperimentNow = true
+const issueBonusesNow = true
+const cleanHITs = true
+const assignQualifications = true
+const debugMode = !runningLive
 
-const starterSurveyOn = true
+const starterSurveyOn = false
 const midSurveyOn = true
 const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
+const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
 const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/30
 
 //Testing toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
+const debugLog = (...args) => {if (debugMode){console.log(...args)}}
 
 console.log(runningLive ? "\nRUNNING LIVE\n" : "\nRUNNING SANDBOXED\n");
 console.log(runningLocal ? "Running locally" : "Running remotely");
@@ -36,8 +40,8 @@ const starterSurveyFile = txt + "startersurvey-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
 
 // Answer Option Sets
-const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio'}
-const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio'}
+const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
+const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
 
 // Setup basic express server
 let tools = require('./tools');
@@ -60,6 +64,7 @@ Array.prototype.set = function() {
 // Setting up variables
 const currentCondition = "treatment"
 let treatmentNow = false
+let firstRun = false;
 
 const conditionSet = [
   {"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]},
@@ -91,6 +96,7 @@ const Datastore = require('nedb'),
     db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true});
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
+    db.time = new Datastore({ filename:'.data/time', autoload: true}); // store duration of tasks
 
 require('express')().listen(); //Sets to only relaunch with source changes
 
@@ -100,23 +106,25 @@ if (issueBonusesNow){
     if (err) {console.log("Err loading users:" + err)}
     else {
       console.log("Paying bonuses")
-      const usersPaid = mturk.payBonuses(usersInDB)
-      console.log("Paid:",usersPaid);
-      usersPaid.forEach((user) => {
-        db.users.update( {id: user.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)}})
+      mturk.payBonuses(usersInDB).forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
+
+      //Only use to clear all.
+      // usersInDB.forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
       })
     }
   })
 }
 
 // Makes sure workers do not repeat
-// db.users.find({}, (err, usersInDB) => {
-//   if (err) {console.log("Err loading users:" + err)}
-//   mturk.assignQualificationToUsers(usersInDB);
-// })
+if(runningLive && assignQualifications) {
+  db.users.find({}, (err, usersInDB) => {
+    if (err) {console.log("Err loading users:" + err)}
+    mturk.assignQualificationToUsers(usersInDB);
+  })
 
-// lists users that have done the task before
-// mturk.listUsersWithQualification()
+  // lists users that have done the task before
+  mturk.listUsersWithQualification()
+}
 
 if (cleanHITs){ mturk.expireActiveHits() }
 if (runExperimentNow){ mturk.launchBang() }
@@ -131,6 +139,11 @@ let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
 let users = []; //the main local user storage
 let currentRound = 0
 let startTime = 0
+
+// keeping track of time
+let taskStartTime = getSecondsPassed(); // reset for each start of new task
+let taskEndTime = 0;
+let taskTime = 0;
 
 // Building task list
 let task_list = []
@@ -167,6 +180,13 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
         'numRounds': numRounds, 'teamSize': teamSize}, (err, usersAdded) => {
     if(err) console.log("There's a problem adding batch to the DB: ", err);
     else if(usersAdded) console.log("Batch added to the DB");
+    console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
+    if (!firstRun) {
+      Object.keys(io.sockets.sockets).forEach(socketID => {
+        io.in(socketID).disconnect(true);
+      })
+      firstRun = true;
+    }
 }); // task_list instead of all of the toggles? (missing checkinOn)
 
 // Chatroom
@@ -226,7 +246,8 @@ io.on('connection', (socket) => {
         if (addedUser) {return;}
 
         // we store the username in the socket session for this client
-        socket.username = tools.makeName(); // how they see themselves
+        name_structure = tools.makeName();
+        socket.username = name_structure.username; // how they see themselves
 
         // if (users.length >= population) {
         //     io.in(socket.id).emit('rejected user', {});
@@ -237,7 +258,8 @@ io.on('connection', (socket) => {
 
         io.in(socket.id).emit('accepted user', {name: socket.username});
 
-        users.forEach(user => { user.friends.push({'id': socket.id, 'alias': tools.makeName(), 'tAlias':tools.makeName() }) });
+        // Adding the user to the friends list for all other users
+        users.forEach(user => { user.friends.push({'id': socket.id, 'alias': tools.makeName().username, 'tAlias':tools.makeName().username }) });
 
         // Add friends to DB
         db.users.find({}, (err, usersInDB) => {
@@ -267,8 +289,9 @@ io.on('connection', (socket) => {
           'ready': false,
           'friends': users.map(user => {
             return {'id': user.id,
-                    'alias': tools.makeName(),
-                    'tAlias':tools.makeName() }}),
+                    'alias': tools.makeName().username,
+                    'tAlias':tools.makeName().username }}),
+          'friends_history': [name_structure.parts], // list of aliases to avoid, which includes the user's username
           'active': true,
           'task_list': task_list,
           'currentActivity': 0,
@@ -279,7 +302,8 @@ io.on('connection', (socket) => {
             'starterCheck':[],
             'viabilityCheck':[],
             'manipulationCheck':'',
-            'blacklistCheck':''
+            'blacklistCheck':'',
+            'engagementFeedback': ''
           }
         };
 
@@ -303,18 +327,21 @@ io.on('connection', (socket) => {
 
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
+        // mturk.reduceAssignmentsPending();
         // if the user had accepted, removes them from the array of accepted users
         console.log(socket.id)
         if (usersAccepted.find(function(element) {return element.id == socket.id})) {
           console.log('There was a disconnect');
           usersAccepted = usersAccepted.filter(user => user.id != socket.id);
-          console.log(usersAccepted)
+          debugLog(usersAccepted)
           console.log("num users accepted:", usersAccepted.length);
           if((teamSize ** 2) - usersAccepted.length < 0) {
             io.sockets.emit('update number waiting', {num: 0});
           } else {
             io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersAccepted.length});
           }
+
+          mturk.setAssignmentsPending(usersAccepted.length)
         }
 
         if (addedUser) {
@@ -327,19 +354,39 @@ io.on('connection', (socket) => {
           if (!taskOver){
             // Start cancel process
             console.log("User left, emitting cancel to all users");
-            users.forEach((user) => {
-              let cancelMessage = "This HIT has crashed. Please submit below and we will accept."
 
+            let totalTime = getSecondsPassed();
+
+            if(timeCheckOn) {
+              db.time.insert({totalTaskTime: totalTime}, (err, timeAdded) => {
+                if(err) console.log("There's a problem adding total time to the DB: ", err);
+                else if(timeAdded) console.log("Total time added to the DB");
+              })
+            }
+
+            users.forEach((user) => {
+              let cancelMessage = "<strong>Someone left the task</strong><br> <br> \
+              Unfortunately, our group task requires a specific number of users to run, \
+              so once a user leaves, our task cannot proceed. <br><br> \
+              To complete the task, please provide suggestions of ways to \
+              prevent people leaving in future runs of the study. <br><br> \
+              Since the team activity had already started, you will be additionally \
+              bonused for the time spent working with the team."
               if (taskStarted) { // Add future bonus pay
-                user.bonus += mturk.bonusPrice/2
+                if(timeCheckOn) {
+                  mturk.updatePayment(totalTime);
+                  user.bonus += mturk.bonusPrice
+                } else {
+                  user.bonus += mturk.bonusPrice/2
+                }
                 db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
-                cancelMessage = cancelMessage + " Since the team activity had already started, you will be additionally bonused for the time spent working with the team."
               }
               io.in(user.id).emit('finished', {
                   message: cancelMessage,
                   finishingCode: user.id,
                   turkSubmitTo: mturk.submitTo,
-                  assignmentId: user.assignmentId
+                  assignmentId: user.assignmentId,
+                  crashed: true
               })
             })
           }
@@ -354,30 +401,61 @@ io.on('connection', (socket) => {
 
       if (task_list[currentActivity] == "starterSurvey") {
         io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false});
+        taskStartTime = getSecondsPassed();
       }
       else if (task_list[currentActivity] == "ready") {
+        if(starterSurveyOn && timeCheckOn) {
+          recordTime("starterSurvey");
+        }
         if (checkinOn) {
           io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true});
         }
         io.in(user.id).emit("echo", "ready");
       }
       else if (task_list[currentActivity] == "midSurvey") {
+        if(timeCheckOn) {
+          recordTime("round");
+        }
         io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "teamfeedbackSurvey") {
+        if(midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if(timeCheckOn) {
+          recordTime("round");
+        }
         io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "blacklistSurvey") {
+        if(teamfeedbackOn && timeCheckOn) {
+          recordTime("teamfeedbackSurvey");
+        } else if(midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if(timeCheckOn) {
+          recordTime("round");
+        }
         console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false})
         io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false});
       }
       else if (task_list[currentActivity] == "postSurvey") { //Launch post survey
-          let survey = postSurveyGenerator(user)
-          user.results.manipulation = survey.correctAnswer
-          db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-          io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false});
+        if(blacklistOn && timeCheckOn) {
+          recordTime("blacklistSurvey");
+        } else if(teamfeedbackOn && timeCheckOn) {
+          recordTime("teamfeedbackSurvey");
+        } else if(midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if(timeCheckOn) {
+          recordTime("round");
+        }
+        let survey = postSurveyGenerator(user)
+        user.results.manipulation = survey.correctAnswer
+        db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+        io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false});
       }
-      else if (task_list[currentActivity] == "finished" || currentActivity > task_list.lenght) {
+      else if (task_list[currentActivity] == "finished" || currentActivity > task_list.length) {
+        if(timeCheckOn) {
+          recordTime("postSurvey");
+        }
         user.ready = false
         taskOver = true
         user.bonus += mturk.bonusPrice
@@ -438,11 +516,30 @@ io.on('connection', (socket) => {
       taskStarted = true
       users.forEach(user => {
         if (autocompleteTestOn) {
-          let teamNames = [tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName(), tools.makeName()]
+          let teamNames = [tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username]
           console.log(teamNames)
-          io.in(user.id).emit('go', {task: taskText, team: teamNames, duration: roundMinutes })
+          io.in(user.id).emit('go', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal })
         } else {
-          io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
+          // Dynamically generate teammate names
+          // even if teamSize = 1 for testing, this still works
+          let team_Aliases = tools.makeName(teamSize - 1, user.friends_history)
+          user.friends_history = user.friends_history.concat(team_Aliases)
+
+          let teamMates = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
+          for (i = 0; i < teamMates.length; i++) {
+            if (treatmentNow) {
+              teamMates[i].tAlias = team_Aliases[i].join("")
+              team_Aliases[i] = team_Aliases[i].join("")
+            } else {
+              teamMates[i].alias = team_Aliases[i].join("")
+              team_Aliases[i] = team_Aliases[i].join("")
+            }
+          }
+
+          team_Aliases.push(user.name) //now push user for autocomplete
+          let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
+          // io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
+          io.in(user.id).emit('go', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal})
         }
       })
 
@@ -490,7 +587,7 @@ io.on('connection', (socket) => {
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
         socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has may have had an error. You will be compensated."})
-        socket.disconnect();
+        // socket.disconnect();
         console.log("Sockets active: " + Object.keys(io.sockets.sockets));
   });
 
@@ -507,6 +604,7 @@ io.on('connection', (socket) => {
   // }
   //if the user has accepted the HIT, add the user to the array usersAccepted
   socket.on('accepted HIT', (data) => {
+    // mturk.increaseAssignmentsPending();
     usersAccepted.push({
       "id": socket.id,
       "mturkId": data.mturkId,
@@ -514,12 +612,13 @@ io.on('connection', (socket) => {
       "turkSubmitTo": data.turkSubmitTo,
       "assignmentId": data.assignmentId
     });
+    mturk.setAssignmentsPending(usersAccepted.length)
     console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
     // Disconnect leftover users
     Object.keys(io.sockets.sockets).forEach(socketID => {
       if (usersAccepted.every(acceptedUser => {return acceptedUser.id !== socketID})) {
         console.log("Removing dead socket: " + socketID);
-        io.sockets.connected[socketID].emit('get IDs', 'broken');
+        io.in(socketID).emit('get IDs', 'broken');
       }
     });
     console.log("Sockets active: " + Object.keys(io.sockets.sockets));
@@ -550,34 +649,17 @@ io.on('connection', (socket) => {
   // parses results from surveys to proper format for JSON file
   function parseResults(data) {
     let surveyResults = data;
+    console.log(surveyResults)
     let parsedResults = surveyResults.split('&');
     let arrayLength = parsedResults.length;
     for(var i = 0; i < arrayLength; i++) {
       console.log(parsedResults[i]);
       let result = parsedResults[i].slice(parsedResults[i].indexOf("=") + 1);
-      let resultValue = numberToValue(result);
       let qIndex = (parsedResults[i].slice(0, parsedResults[i].indexOf("="))).lastIndexOf('q');
       let questionNumber = (parsedResults[i].slice(0, parsedResults[i].indexOf("="))).slice(qIndex + 1);
-      if(questionNumber == "15") {  // because last question is a binary question
-        resultValue = numberToBinary(result);
-      }
-      parsedResults[i] = questionNumber + '=' + resultValue;
+      parsedResults[i] = questionNumber + '=' + result;
     }
     return parsedResults;
-  }
-
-  // for 1-5 scale questions based on:
-  // Answer Option Sets - around line 36
-  // const answers =['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']
-  function numberToValue(value) {
-    return answers.answers[parseInt(value) - 1];  // index 0
-  }
-
-  // for binary questions
-  // Answer Option Sets - around line 36
-  // const binaryAnswers = ['Yes', 'No']
-  function numberToBinary(value) {
-    return binaryAnswers.answers[parseInt(value) - 1];  // index 0
   }
 
    // Task after each round - midSurvey - MAIKA
@@ -606,6 +688,14 @@ io.on('connection', (socket) => {
     });
   });
 
+  socket.on('mturk_formSubmit', (data) => {
+    let user = users.byID(socket.id)
+    let currentRoom = user.room
+    user.results.engagementFeedback = data
+    console.log(user.name, "submitted engagement survey:", user.results.engagementFeedback);
+    db.users.update({ id: socket.id }, {$set: {"results.engagementFeedback": user.results.engagementFeedback}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored engagement Feedback: " + user.name) })
+  });
+
   socket.on('postSurveySubmit', (data) => {
     let user = users.byID(socket.id)
     //in the future this could be checked.
@@ -629,7 +719,7 @@ io.on('connection', (socket) => {
 
   //loads qs in text file, returns json array
   function loadQuestions(questionFile) {
-    const prefix = questionFile.substr(0, questionFile.indexOf('.'))
+    const prefix = questionFile.substr(txt.length, questionFile.indexOf('.') - txt.length)
     let questions = []
     let i = 0
     fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) {
@@ -645,12 +735,13 @@ io.on('connection', (socket) => {
       } else if (answerTag === "YN") { // yes no
         answerObj = binaryAnswers;
       } else if (answerTag === "TR") { //team radio
-        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio'};
+        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio', textValue: false};
       } else if (answerTag === "TC") { //team checkbox
-        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox'};
+        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox', textValue: false};
       }
       questionObj['answers'] = answerObj.answers;
       questionObj['answerType'] = answerObj.answerType;
+      questionObj['textValue'] = answerObj.textValue;
       questionObj['required'] = false
       if(requiredOn && answerObj.answerType === 'radio') { // only applies to radio buttons in vue template
         questionObj['required'] = true
@@ -694,6 +785,17 @@ function replicate(arr, times) {
   for (let i=0; i<rl; i++)
       res[i] = arr[i % al];
   return res;
+}
+
+// records length of each task
+const recordTime = (event) => {
+  taskEndTime = getSecondsPassed();
+  taskTime = taskStartTime - taskEndTime;
+  db.time.insert({event: taskTime}, (err, timeAdded) => {
+    if(err) console.log("There's a problem adding", event, "time to the DB: ", err);
+    else if(timeAdded) console.log(event, "time added to the DB");
+  })
+  taskStartTime = getSecondsPassed();
 }
 
 //returns number of users in a room: room -> int

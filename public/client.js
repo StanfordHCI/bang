@@ -26,11 +26,11 @@ $(function() {
     template: `
       <h3>{{question.question}}</h3>
       <div id="{{question.name}}-rb-box" class='rb-box'>
-        <template v-for="(index, option) in question.answers" :option="option">
+        <template v-for="(index, answer) in question.answers" :answer="answer">
           <label for="{{question.name}}-{{index+1}}" class="rb-tab">
-            <input v-bind:type="question.answerType" name="{{question.name}}" id="{{question.name}}-{{index+1}}" value="{{index+1}}" v-bind:required="question.required ? true : false"/>
+            <input v-bind:type="question.answerType" name="{{question.name}}" id="{{question.name}}-{{index+1}}" v-bind:value="question.textValue ? answer : index + 1" v-bind:required="question.required ? true : false"/>
             <span class='rb-spot'>{{index+1}}</span>
-            <label for='{{question.name}}-{{index+1}}'>{{option}}</label>
+            <label for='{{question.name}}-{{index+1}}'>{{answer}}</label>
           </label>
         </template>
       </div>
@@ -396,6 +396,7 @@ $(function() {
     }
   });
 
+
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', data => {
     addChatMessage(data);
@@ -435,36 +436,51 @@ $(function() {
     $chatPage.show();
     $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
 
-    log(data.task);
-    log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
+    setTimeout(()=>{log(data.task)}, 500)
+    setTimeout(()=>{log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")}
+      , 1000)
 
     let durationString = ""
     if (data.duration < 1) { durationString = Math.round(data.duration * 60) + " seconds"
     } else if (data.duration == 1) { durationString = "one minute"
     } else { durationString = data.duration + " minutes" }
-
-    log("You will have <strong>" + durationString + "</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
-    log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
+    setTimeout(() => {
+      log("You will have <strong>" + durationString + "</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")}
+, 1500)
+    setTimeout(()=>
+      {log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")},
+    2000)
+    setTimeout(()=>{
+      let str = ""
+      for (member of data.team)
+        addChatMessage({username:member, message:'has entered the chatroom'})
+    }, 2500)
 
     $currentInput = $inputMessage.focus();
 
     notify("Session ready", "Come back and join in!")
 
-    //Set up team autocomplete
+    // Set up team autocomplete
     currentTeam = data.team
     $currentInput = $inputMessage.focus();
 
-    // Do I spawn a ton of keypress watchers after each go
+    // Build a list of animals in current team
+    randomAnimal = data.randomAnimal;
+    let teamAnimals = {};
+    for (i = 0; i < randomAnimal.length; i++) {
+      for (j = 0; j < currentTeam.length; j++) {
+        if (currentTeam[j].includes(randomAnimal[i])) {
+          teamAnimals[randomAnimal[i]] = currentTeam[j];
+        }
+      }
+    }
+
     $inputMessage.keydown(function (event) {
       $inputMessage.autocomplete( "option", "source", (request, response) => {
         let terms_typed = request.term.split(" ");
-        let currentTerm = terms_typed.pop()
+        let currentTerm = terms_typed.pop();
         let wordlength = currentTerm.length;
 
-        // console.log("request", request)
-        // console.log("currentTerm", currentTerm)
-        // console.log("currentTeam", currentTeam)
-        // console.log("wordlength", wordlength)
 
         if (wordlength < 2){
           response("")
@@ -472,38 +488,131 @@ $(function() {
         }
         else if (wordlength <= 5) {
           let matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
-          response($.grep( currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); }))
+          matches = $.grep(currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); });
+          console.log(matches)
+          if (matches[0] !== undefined) {
+            response(matches)
+          } else {
+            let matches = $.grep(Object.keys(teamAnimals), function( currentTerm ){ return matcher.test( currentTerm ); });
+            // console.log("my matches", matches)
+            // console.log("Yo I'm here", teamAnimals)
+            // console.log("matches map", matches.map(i => {return teamAnimals[i]}))
+            response(matches.map(match => {return teamAnimals[match]}))
+          }
         }
         else if (5 < wordlength) {
-          matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
-          matches = $.grep( currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); })
+          let matcher = new RegExp( ".*" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
+          let matches = $.grep( currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); })
             if (matches.length === 1 && matches[0] !== undefined
-              && event.keyCode !== 8 //do not autocomplete if client backspace-d
-              && event.keyCode !== $.ui.keyCode.SPACE) {
-              $inputMessage.autocomplete("close")
+              && event.keyCode !== 8
+              && event.keyCode !== $.ui.keyCode.SPACE)  { //do not autocomplete if client backspace-d)
               current_text = $("#inputMessage").val().split(" ");
               current_text.splice(-1, 1)
               let joined_text = current_text.join(" ");
-              $("#inputMessage").val(joined_text + " " + matches[0]);
-              // console.log($("#inputMessage").val().split(" ").splice(-1, 1))
-              // console.log("current_text", current_text)
-              // console.log("matches", matches)
-              // console.log("wordlength now", wordlength)
-              response("");
-              return;
+              if (current_text[0] === undefined) {
+                $("#inputMessage").val(matches[0]);
+              }
+              else {
+                $("#inputMessage").val(joined_text + " " + matches[0]);
+              }
             };
+          }
+
+
+
+      });
+
+      // initiate spell check after space is hit
+      if (event.keyCode === $.ui.keyCode.SPACE) {
+        let terms_typed = $("#inputMessage").val().split(" ");
+        let currentTerm = terms_typed.pop();
+        let fuzzyMatches = [];
+
+        // Match if users only type animal name
+        Object.entries(teamAnimals).forEach(
+          ([key, value]) => {
+            if (fuzzyMatched(key, currentTerm, 0.8)) {
+              fuzzyMatches.push(value);
+            }
+          }
+        );
+
+        // Run spell check only if animal name not detected
+        if (fuzzyMatches[0] === undefined) {
+          for (i = 0; i < currentTeam.length; i++) {
+            if (fuzzyMatched(currentTeam[i], currentTerm, 0.7)) {
+              fuzzyMatches.push(currentTeam[i]);
+            }
+          }
         }
-    });
 
-
+        // if there is only 1 possible match, correct the user
+        if (fuzzyMatches.length === 1 && fuzzyMatches[0] !== undefined) {
+          let current_text = $("#inputMessage").val().split(" ");
+          current_text.splice(-1, 1)
+          let joined_text = current_text.join(" ");
+          if (current_text[0] === undefined) {
+            $("#inputMessage").val(fuzzyMatches[0]);
+            }
+            else {
+              $("#inputMessage").val(joined_text + " " + fuzzyMatches[0]);
+          }
+        }
+      }
     });
   });
+
+  // fuzzy Match function
+  function fuzzyMatched (comparer, comparitor, matchCount) {
+    let isMatched = false;
+    a = comparer.trim().toLowerCase();
+    b = comparitor.trim().toLowerCase();
+
+    if(a.length == 0) return b.length;
+    if(b.length == 0) return a.length;
+    let matrix = [];
+
+    // increment along the first column of each row
+    let i;
+    for(i = 0; i <= b.length; i++){
+        matrix[i] = [i];
+    }
+
+    // increment each column in the first row
+    let j;
+    for(j = 0; j <= a.length; j++){
+        matrix[0][j] = j;
+    }
+
+
+    // Fill in the rest of the matrix
+    for(i = 1; i <= b.length; i++){
+        for(j = 1; j <= a.length; j++){
+            if(b.charAt(i-1) == a.charAt(j-1)){
+                matrix[i][j] = matrix[i-1][j-1];
+            } else {
+                matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, // substitution
+                                        Math.min(matrix[i][j-1] + 1, // insertion
+                                                matrix[i-1][j] + 1)); // deletion
+            }
+        }
+    }
+
+    let fuzzyDistance = matrix[b.length][a.length];
+    let cLength = Math.max(a.length, b.length);
+    let score = 1.0 - (fuzzyDistance / cLength);
+    if (score > matchCount)
+        isMatched = true;
+
+    return isMatched;
+  }
 
   socket.on('stop', data => {
     // log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
       hideAll();
       $holdingPage.show();
       messagesSafe.innerHTML = '';
+      $inputMessage.unbind("keydown")
       socket.emit('execute experiment')
   });
 
@@ -524,7 +633,6 @@ $(function() {
     socket.emit(data,{mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId });
   })
 
-
   socket.on('starterSurvey',data => {
     hideAll();
     $starterSurvey.show();
@@ -540,17 +648,23 @@ $(function() {
     $('#starterForm')[0].reset();
   })
 
+
+
   $('#postForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
     socket.emit('postSurveySubmit', $('#postForm').serialize()) //submits results alone
     socket.emit('execute experiment')
   })
 
+
+
   $('#blacklistForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
     socket.emit('blacklistSurveySubmit', $('#blacklistForm').serialize()) //submits results alone
     socket.emit('execute experiment')
   })
+
+
 
   $('#teamfeedbackForm').submit( (event) => {
     event.preventDefault() //stops page reloading
@@ -569,11 +683,23 @@ $(function() {
   socket.on('finished',data => {
     hideAll();
     $finishingPage.show();
-    document.getElementById("finishingMessage").innerText = data.message
+    document.getElementById("finishingMessage").innerHTML = data.message
     document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
     document.getElementById("assignmentId").value = data.assignmentId
     finishingcode.value = data.finishingCode
+    if (data.crashed) {
+      let input = document.createElement("textarea");
+      input.id = "engagementfeedbackInput"
+      $("#submitButton_finish").before(input); //appendChild
+    }
+    // socket.disconnect(true);
   })
+
+  $('#mturk_form').submit( (event) => {
+    console.log("pressed submit");
+    socket.emit('mturk_formSubmit', $('#engagementfeedbackInput').val())
+  })
+
 });
 
 function turkGetParam( name, defaultValue, uri) {

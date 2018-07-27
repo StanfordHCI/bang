@@ -19,6 +19,7 @@
     <li id="waiting" class="waiting page white">
         <h3 class="title">Waiting room</h3>
         <p style="color: black;">Waiting on <strong><span id="numberwaiting"></span></strong> more MTurk users to accept the task.</p>
+        <p style="color: black;">Only wait if you can complete the entire study. We will pay a bonus based on how much time you spend working on the task. We aim to pay at a rate of aproximately $10.50 per hour.</p>
         <p style="color: black;">Once enough people have accepted, you will be able to begin the task.</p>
         <p style="color: black;">You will receive a browser notification when we are ready. If there are never enough people we will automatically submit and accept for the base rate.</p>
         <button type="button" id="chatLink" class="chatLink">Click here begin the task</button>
@@ -42,7 +43,7 @@
     <li id="holding" class="login page">
       <div class="form">
         <h3 class="title">You're signed in as <b><span id="username"></span></b>.</h3>
-        <p>Waiting for other users to finish. Please do not refresh the page.</p>
+        <p>Almost ready! Hang tight while we set things up.</p>
       </div>
     </li>
     <li id="preSurvey" class="login page">
@@ -97,7 +98,7 @@
 
     <li id="teamfeedbackSurvey" class="login page">
       <form id="teamfeedbackForm">
-        <h3 class ='intro'>We're thinking about hiring a manager
+        <h3>We're thinking about hiring a manager
            to lead each team in the future. For this team, provide the manager
            with an anonymous statement about how your team would work together
            on future tasks. Your answers will have no impact on your ability
@@ -105,7 +106,7 @@
         </h3>
         <textarea class="teamfeedbackInput" id="teamfeedbackInput"></textarea>
         <br>
-        <div id="feedback-questions" class='survey-questions'>
+        <div id="teamfeedbackSurvey-questions" class='survey-questions'>
           <question-component v-for="question in questions" :question="question" />
         </div>
         <input type="submit" value="Submit">
@@ -113,11 +114,11 @@
     </li>
 
     <li id="finishing" class="login page">
-      <h3 class="title" id="finishingMessage"></h3>
       <form name='mturk_form' method='post' id='mturk_form' action=''>
+      <h3 class="title" id="finishingMessage"></h3>
       <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
       <input type='hidden' value='' name='finishingcode' id='finishingcode'/>
-      <p><input type='submit' id='submitButton' value='Submit' /></p>
+      <input type="submit" id="submitButton_finish" value="Submit" />
       </form>
       <!-- <p style="color: white;">Paste <strong><span id="finishingcode"></span></strong> into the MTurk task to receive payment.</p> -->
     </li>
