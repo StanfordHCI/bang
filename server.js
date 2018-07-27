@@ -409,6 +409,7 @@ io.on('connection', (socket) => {
 
     socket.on("execute experiment", (data) => {
       let user = users.byID(socket.id)
+      console.log("EXECUTE THE PRISONERS" + socket.id)
       let currentActivity = user.currentActivity;
       let task_list = user.task_list;
       console.log ("Activity:", currentActivity, "which is", task_list[currentActivity])
@@ -668,6 +669,24 @@ io.on('connection', (socket) => {
       io.sockets.emit('update number waiting', {num: 0});
       usersWaiting = usersAccepted.filter(user => user.waiting === true);
       enoughPeople = true;
+      usersAccepted.forEach(user => {
+      // console.log("some users not ready", users.filter(user => !user.ready).map(user => user.name))
+        // if(!usersWaiting.includes(user)) {
+        //   for (var i = 0; i < users.length; i++) {
+        //     if(users[i].id === user.id) {
+        //       users.splice(i);
+        //     }
+        //   }
+        // }
+          if(usersWaiting.every(user2 => user.id !== user2.id)) {
+            io.in(user.id).emit('finished', {
+              message: "Thanks for participating, you're all done!",
+              finishingCode: socket.id,
+              turkSubmitTo: mturk.submitTo,
+              assignmentId: user.assignmentId
+            });
+          };
+      });
       for (var i = 0; i < teamSize ** 2; i++) {
         io.in(usersWaiting[i].id).emit('enough people');
       };
@@ -678,17 +697,6 @@ io.on('connection', (socket) => {
       //     io.in(usersWaiting[i].id).emit('finished');
       //   }
       // }
-      usersAccepted.forEach(user => {
-        if(!usersWaiting.includes(user)) {
-          io.in(user.id).emit('finished', {
-          message: "Thanks for participating, you're all done!",
-          finishingCode: socket.id,
-          turkSubmitTo: mturk.submitTo,
-          assignmentId: user.assignmentId
-        });
-        }
-      })
-      enoughPeople = true;
     } else {
       let numWaiting = (teamSize ** 2) - usersAccepted.length;
       io.sockets.emit('update number waiting', {num: numWaiting});
