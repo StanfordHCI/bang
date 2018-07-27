@@ -6,7 +6,7 @@ Bang deploys on MTurk, scales from 1 to 16 simultaneous participants, and includ
 ## How to bang
 To run, clone, run `npm install` in the github directory, and add an `.env` file based on the following:
 
-```shell
+```PowerShell
 AWS_ID=YOUR_AWS_MTURK_ID
 AWS_KEY=YOUR_AWS_MTURK_KEY
 
