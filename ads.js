@@ -30,7 +30,7 @@ const checkAd = () => {
   py("checkAd")
 }
 
-py("makeAd")
+py("makeAd", 1, "Testing testing, read all about it!", "team Mark wins again.", "What a good ad this is.", "https://www.google.com/")
 // console.log(["hi","bye"].map(py))
 
 module.exports = {
@@ -40,3 +40,23 @@ module.exports = {
   getBalance: "THIS",
   launchBang: "That"
 };
+
+
+// async code
+
+// function resolveAfter2Seconds() {
+//   return new Promise(resolve => {
+//     setTimeout(() => {
+//       resolve('resolved');
+//     }, 2000);
+//   });
+// }
+
+// async function asyncCall() {
+//   console.log('calling');
+//   var result = await resolveAfter2Seconds();
+//   console.log(result);
+//   // expected output: "resolved"
+// }
+
+// asyncCall();

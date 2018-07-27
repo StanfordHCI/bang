@@ -5,9 +5,9 @@ from googleads import adwords
 print("THIS IS WORKING")
 # print(sys.argv[1])
 
-adwords_client = adwords.AdWordsClient.LoadFromStorage()
-ad_group_id = 'INSERT_AD_GROUP_ID_HERE'
-NUMBER_OF_ADS = sys.argv[2]  
+adwords_client = adwords.AdWordsClient.LoadFromStorage('~/Scaled-Humanity/ads-integration/googleads.yaml')
+ad_group_id = '55035088222'
+NUMBER_OF_ADS = sys.argv[2] # should be 1
 headline_part_1 = sys.argv[3]
 headline_part_2 = sys.argv[4]
 description = sys.argv[5]
@@ -15,7 +15,7 @@ finalURL = sys.argv[6]
 
 # Creates an ad group
 def makeAd():
-    print("this is make ad")
+    print("making an ad")
 
     # Initialize appropriate service.
     ad_group_ad_service = adwords_client.GetService('AdGroupAdService', version='v201806')
@@ -31,10 +31,10 @@ def makeAd():
                     'headlinePart1': headline_part_1,
                     'headlinePart2': headline_part_2,
                     'description': description,
-                    'finalUrls': ['finalURL%s' % i],
+                    'finalUrls': [finalURL],
                 },
             }
-        } for i in range(NUMBER_OF_ADS)
+        }
     ]
     ads = ad_group_ad_service.mutate(operations)
 
@@ -48,7 +48,7 @@ def makeAd():
 
 # Kills an ad group by setting the status to 'REMOVED'.
 def killAd():
-    print ("this is kill ad")
+    print ("killing an ad")
     # Initialize appropriate service.
     ad_group_service = adwords_client.GetService('AdGroupService', version='v201806')
     # Construct operations and delete ad group.
@@ -66,7 +66,7 @@ def killAd():
          % (ad_group['name'], ad_group['id']))
 
 def checkAd():
-    print ("this is check ad")
+    print ("checking an ad")
     print ("nothing here yet")
 
 # map the inputs to the function blocks
