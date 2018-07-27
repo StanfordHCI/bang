@@ -554,6 +554,11 @@ $(function() {
           }
         );
 
+        // Quick typists catch
+        if (fuzzyMatches[0] === undefined) {
+          fuzzyMatches = currentTeam.filter(member => (currentTerm.indexOf(member) >= 0))
+        }
+
         // Run spell check only if animal name not detected
         if (fuzzyMatches[0] === undefined) {
           for (i = 0; i < currentTeam.length; i++) {
