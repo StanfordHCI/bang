@@ -3,11 +3,11 @@ require('dotenv').config()
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE = 1
-const roundMinutes = .1
+const teamSize = process.env.TEAM_SIZE = 2
+const roundMinutes = 2
 
 //Parameters for waiting qualifications
-const secondsToWait = 30 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+const secondsToWait = 20 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
 const secondsSinceResponse = 20 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
 const secondsToHold1 = 720 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
 const secondsToHold2 = 420 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
@@ -426,6 +426,7 @@ io.on('connection', (socket) => {
           io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true});
         }
         io.in(user.id).emit("echo", "ready");
+
       }
       else if (task_list[currentActivity] == "midSurvey") {
         if(timeCheckOn) {
@@ -504,8 +505,8 @@ io.on('connection', (socket) => {
       if (users.length != teamSize ** 2) {
         console.log("Need",teamSize ** 2 - users.length,"more users.")
         return
-      }
-
+      } 
+      
       console.log('all users ready -> starting experiment');
       //do we have more experiments to run? if not, finish
 
@@ -540,7 +541,7 @@ io.on('connection', (socket) => {
           let team_Aliases = tools.makeName(teamSize - 1, user.friends_history)
           user.friends_history = user.friends_history.concat(team_Aliases)
 
-          let teamMates = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
+          let teamMates = user.friends.filter(friend => { return (users.byID(friend.id)) && (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
           for (i = 0; i < teamMates.length; i++) {
             if (treatmentNow) {
               teamMates[i].tAlias = team_Aliases[i].join("")
@@ -552,7 +553,7 @@ io.on('connection', (socket) => {
           }
 
           team_Aliases.push(user.name) //now push user for autocomplete
-          let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
+          //let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
           // io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
           io.in(user.id).emit('go', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal})
         }
@@ -665,11 +666,23 @@ io.on('connection', (socket) => {
     };
 
     // if enough people have accepted, push prompt to start task
-    if(usersAccepted.filter(user => user.waiting === true).length >= teamSize ** 2) {
-      io.sockets.emit('update number waiting', {num: 0});
-      usersWaiting = usersAccepted.filter(user => user.waiting === true);
+    usersWaiting = usersAccepted.filter(user => user.waiting === true);
+    if(usersWaiting.length >= teamSize ** 2) {//if waiting users is >= required amount
+      //io.sockets.emit('update number waiting', {num: 0});
       enoughPeople = true;
-      usersAccepted.forEach(user => {
+      let usersNeeded = teamSize **2;
+      users.forEach((user, index) => {//for every user
+        if(usersWaiting.every(user2 => user.id !== user2.id) || usersNeeded <= 0) {//if that user that is not a waiting user or is extra
+          users.splice(index)
+          io.in(user.id).emit('finished', {
+            message: "Thanks for participating, you're all done!",
+            finishingCode: socket.id,
+            turkSubmitTo: mturk.submitTo,
+            assignmentId: user.assignmentId
+          });
+        } else { //found a valid user
+          usersNeeded--;
+        } 
       // console.log("some users not ready", users.filter(user => !user.ready).map(user => user.name))
         // if(!usersWaiting.includes(user)) {
         //   for (var i = 0; i < users.length; i++) {
@@ -678,17 +691,10 @@ io.on('connection', (socket) => {
         //     }
         //   }
         // }
-          if(usersWaiting.every(user2 => user.id !== user2.id)) {
-            io.in(user.id).emit('finished', {
-              message: "Thanks for participating, you're all done!",
-              finishingCode: socket.id,
-              turkSubmitTo: mturk.submitTo,
-              assignmentId: user.assignmentId
-            });
-          };
       });
+
       for (var i = 0; i < teamSize ** 2; i++) {
-        io.in(usersWaiting[i].id).emit('enough people');
+        io.in(users[i].id).emit('enough people');
       };
       
 
