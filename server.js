@@ -805,8 +805,8 @@ io.on('connection', (socket) => {
       questionObj['name'] = prefix + i;
 
       //each question in the text file should be formatted: ANSWERTAG.QUESTION ex: YN.Are you part of Team Mark?
-      questionObj['question'] = line.substr(line.indexOf('.')+1, line.length);
-      let answerTag = line.substr(0, line.indexOf('.'));
+      questionObj['question'] = line.substr(line.indexOf('|')+1, line.length);
+      let answerTag = line.substr(0, line.indexOf('|'));
       if(answerTag === "S1") { // scale 1 radio
         answerObj = answers;
       } else if (answerTag === "YN") { // yes no

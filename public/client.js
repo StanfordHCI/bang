@@ -522,8 +522,9 @@ $(function() {
     2000)
     setTimeout(()=>{
       let str = ""
-      for (member of data.team)
+      for (member of data.team){
         addChatMessage({username:member, message:'has entered the chatroom'})
+      }
     }, 2500)
 
     $currentInput = $inputMessage.focus();
