@@ -4,19 +4,24 @@ require('dotenv').config()
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
 const teamSize = process.env.TEAM_SIZE
-const roundMinutes = process.env.ROUND_MINUTES = 0.1
+const roundMinutes = process.env.ROUND_MINUTES
 
 // Toggles
 const runExperimentNow = true
 const issueBonusesNow = true
-const cleanHITs = true
-const assignQualifications = true
+const cleanHITs = false
+const assignQualifications = false
 const debugMode = !runningLive
 
+const suddenDeath = false
+
+const randomCondition = false
+const randomRoundOrder = false
+
 const starterSurveyOn = false
-const midSurveyOn = true
-const blacklistOn = true
-const teamfeedbackOn = true
+const midSurveyOn = false
+const blacklistOn = false
+const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
 const requiredOn = runningLive
@@ -63,19 +68,21 @@ Array.prototype.set = function() {
   return setArray
 };
 
-// Setting up variables
-const currentCondition = "treatment"
+// Experiment variables
+const conditionsAvailalbe = ['control','treatment','baseline']
+const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
 let treatmentNow = false
 let firstRun = false;
 
-const conditionSet = [
+const roundOrdering = [
   {"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]},
   {"control": [2,1,1], "treatment": [2,1,1], "baseline": [1,2,3]},
   {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
 
 const experimentRoundIndicator = 1
-const conditions = conditionSet[0] // or conditionSet.pick() for ramdomized orderings.
+const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
 const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
+console.log(currentCondition,'with',conditions[currentCondition]);
 const numRounds = conditions.baseline.length
 
 const numberOfRooms = teamSize * numRounds
@@ -100,32 +107,30 @@ const Datastore = require('nedb'),
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
     db.time = new Datastore({ filename:'.data/time', autoload: true}); // store duration of tasks
 
+const updateUserInDB = (user,feild,value) => { db.users.update(
+  {id: user.id}, {$set: {feild: value}}, {},
+  err => console.log(err ? "Err recording "+feild+": "+err : "Updated "+feild+" "+user.id+"\n"+value+"\n")
+)}
+
 require('express')().listen(); //Sets to only relaunch with source changes
 
 //Mturk Calls
-if (issueBonusesNow){
+if (runningLive){
   db.users.find({}, (err, usersInDB) => {
-    if (err) {console.log("Err loading users:" + err)}
-    else {
-      console.log("Paying bonuses")
-      mturk.payBonuses(usersInDB).forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
-
-      //Only use to clear all.
-      // usersInDB.forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
-      })
+    if (err) {console.log("Err loading users for background tasks:" + err)} else {
+      if (issueBonusesNow) {
+        mturk.payBonuses(usersInDB).forEach(u => updateUserInDB(u,'bonus',0))
+        // usersInDB.forEach(u => updateUserInDB(u,'bonus',0)) Clears all stored bonuses
+      }
+      if (assignQualifications) {
+        db.users.find({}, (err, usersInDB) => {
+          if (err) {console.log("Err loading users:" + err)}
+          mturk.assignQualificationToUsers(usersInDB);
+        })
+        mturk.listUsersWithQualification()
+      }
     }
   })
-}
-
-// Makes sure workers do not repeat
-if(runningLive && assignQualifications) {
-  db.users.find({}, (err, usersInDB) => {
-    if (err) {console.log("Err loading users:" + err)}
-    mturk.assignQualificationToUsers(usersInDB);
-  })
-
-  // lists users that have done the task before
-  mturk.listUsersWithQualification()
 }
 
 if (cleanHITs){ mturk.expireActiveHits() }
@@ -200,36 +205,23 @@ io.on('connection', (socket) => {
 
     socket.on('log', string => { console.log(string); });
 
-    //Chat engine
-    // when the client emits 'new message', this listens and executes
+    //Route messages
     socket.on('new message', function (message) {
-        // we tell the client to execute 'new message'
-        console.log("received:", socket.username, message);
-        let cleanMessage = message;
-        users.forEach(user => {
-            cleanMessage = aliasToID(user, cleanMessage)
+      user = users.byID(socket.id)
+      let cleanMessage = message;
+      users.forEach(u => { cleanMessage = aliasToID(u, cleanMessage) });
+
+      db.chats.insert({'room':user.room,'userID':socket.id, 'message': cleanMessage, 'time': getSecondsPassed(), 'batch': batchID, 'round': currentRound}, (err, usersAdded) => {
+        if(err) console.log("Error storing message:", err)
+        else console.log("Message in", user.room, "from",user.name +":" ,cleanMessage)
+      });
+
+      users.filter(f => f.room == user.room).forEach(f => {
+        socket.broadcast.to(f.id).emit('new message', {
+          username: idToAlias(f, String(socket.id)),
+          message: idToAlias(f, cleanMessage)
         });
-
-        console.log("converted to:", cleanMessage);
-
-        let currentRoom = users.byID(socket.id).room
-
-        let timeStamp = getSecondsPassed();
-
-        db.chats.insert({'room':currentRoom,'userID':socket.id, 'message': message, 'time': timeStamp, 'batch': batchID, 'round': currentRound}, (err, usersAdded) => {
-          if(err) console.log("There's a problem adding a message to the DB: ", err);
-          else if(usersAdded) console.log("Message added to the DB");
-        });
-
-        users.filter(user => user.room == currentRoom).forEach(user => {
-            let customMessage = idToAlias(user, cleanMessage);
-            console.log("Sending:",customMessage)
-            socket.broadcast.to(user.id).emit('new message', {
-                username: idToAlias(user, String(socket.id)),
-                message: customMessage
-            });
-            console.log('new message', user.room, user.name, customMessage)
-        });
+      });
     });
 
     //when the client emits 'new checkin', this listens and executes
@@ -238,7 +230,7 @@ io.on('connection', (socket) => {
       let currentRoom = users.byID(socket.id).room;
       db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': value, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
           if(err) console.log("There's a problem adding a checkin to the DB: ", err);
-          else if(usersAdded) console.log("Checkin added to the DB");
+          else console.log("Checkin added to the DB");
         });
     });
 
@@ -271,7 +263,7 @@ io.on('connection', (socket) => {
             let localUser = users.byID(user.id)
             if (localUser){
               user.friends = localUser.friends
-              db.users.update( {id: user.id}, {$set: {friends: user.friends}}, {}, (err) => { if (err) { console.log("Err adding friends:" + err)}})
+              updateUserInDB(user,'friends',user.friends)
             }
           })
         })
@@ -348,11 +340,14 @@ io.on('connection', (socket) => {
         if (addedUser) {
           users.byID(socket.id).active = false //set user to inactive
           users.byID(socket.id).ready = false //set user to not ready
+          if (!suddenDeath) {users.byID(socket.id).ready = true}
 
           // update DB with change
-          db.users.update({ id: socket.id }, {$set: {active: false}}, {}, (err, numReplaced) => { console.log(err ? "Activity not changed: " + err : "User left " + socket.id) })
+          updateUserInDB(socket,'active',false)
 
-          if (!taskOver){
+          if (!taskOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
+
+          if (!taskOver && suddenDeath){
             // Start cancel process
             console.log("User left, emitting cancel to all users");
 
@@ -380,7 +375,7 @@ io.on('connection', (socket) => {
                 } else {
                   user.bonus += mturk.bonusPrice/2
                 }
-                db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
+                updateUserInDB(user,'bonus',user.bonus)
               }
               io.in(user.id).emit('finished', {
                   message: cancelMessage,
@@ -429,6 +424,7 @@ io.on('connection', (socket) => {
         io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false, showHeaderBar: true});
       }
       else if (task_list[currentActivity] == "blacklistSurvey") {
+        taskOver = true
         if(teamfeedbackOn && timeCheckOn) {
           recordTime("teamfeedbackSurvey");
         } else if(midSurveyOn && timeCheckOn) {
@@ -451,17 +447,15 @@ io.on('connection', (socket) => {
         }
         let survey = postSurveyGenerator(user)
         user.results.manipulation = survey.correctAnswer
-        db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+        updateUserInDB(user,'results.manipulation',user.results.manipulation)
         io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false, showHeaderBar: false});
       }
       else if (task_list[currentActivity] == "finished" || currentActivity > task_list.length) {
         if(timeCheckOn) {
           recordTime("postSurvey");
         }
-        user.ready = false
-        taskOver = true
         user.bonus += mturk.bonusPrice
-        db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
+        updateUserInDB(user,"bonus",user.bonus)
 
         io.in(socket.id).emit('finished', {
           message: "Thanks for participating, you're all done!",
@@ -481,10 +475,11 @@ io.on('connection', (socket) => {
       users.byID(socket.id).ready = true;
       console.log(socket.username, 'is ready');
 
-      //are we ready to go? if not return empty
-      if (users.filter(user => !user.ready).length) {
-        console.log("some users not ready", users.filter(user => !user.ready).map(user => user.name))
-        return } //are all users ready?
+      if (users.filter(u => !u.ready).length) {
+        console.log("some users not ready", users.filter(u => !u.ready).map(u => u.name))
+        return
+      }
+
       // if (incompleteRooms().length) {
       //   console.log("Some rooms empty:",incompleteRooms())
       //   return } //are all rooms assigned
@@ -503,11 +498,12 @@ io.on('connection', (socket) => {
 
       // assign rooms to peple and reset.
       Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
-        users.filter(user => room.includes(user.person)).forEach(user => {
-          user.room = roomName
-          user.rooms.push(roomName)
-          user.ready = false; //return users to unready state
-          console.log(user.name, '-> room', user.room);
+        users.filter(u => room.includes(u.person)).forEach(u => {
+          u.room = roomName
+          u.rooms.push(roomName)
+          u.ready = false //return users to unready state
+          if (!suddenDeath && !u.active) {u.ready = true}
+          console.log(u.name, '-> room', u.room);
         })
       })
 
@@ -589,22 +585,9 @@ io.on('connection', (socket) => {
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
         socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has may have had an error. You will be compensated."})
-        // socket.disconnect();
         console.log("Sockets active: " + Object.keys(io.sockets.sockets));
   });
 
-  //Launch post survey
-  // if (currentRound >= numRounds) {
-  //   users.forEach(user => {
-  //     user.ready = false
-  //     let survey = postSurveyGenerator(user)
-  //     io.in(user.id).emit('load postsurvey')
-  //     user.results.manipulation = survey.correctAnswer
-  //     db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-  //     io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
-  //   })
-  // }
-  //if the user has accepted the HIT, add the user to the array usersAccepted
   socket.on('accepted HIT', (data) => {
     usersAccepted.push({
       "id": socket.id,
@@ -614,7 +597,8 @@ io.on('connection', (socket) => {
       "assignmentId": data.assignmentId
     });
     mturk.setAssignmentsPending(usersAccepted.length)
-    console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
+    debugLog(usersAccepted,"users accepted currently: " + usersAccepted.length )
+
     // Disconnect leftover users
     Object.keys(io.sockets.sockets).forEach(socketID => {
       if (usersAccepted.every(acceptedUser => {return acceptedUser.id !== socketID})) {
@@ -691,23 +675,18 @@ io.on('connection', (socket) => {
 
   socket.on('mturk_formSubmit', (data) => {
     let user = users.byID(socket.id)
-    let currentRoom = user.room
     user.results.engagementFeedback = data
-    console.log(user.name, "submitted engagement survey:", user.results.engagementFeedback);
-    db.users.update({ id: socket.id }, {$set: {"results.engagementFeedback": user.results.engagementFeedback}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored engagement Feedback: " + user.name) })
+    updateUserInDB(socket,"results.engagementFeedback",data)
   });
 
   socket.on('postSurveySubmit', (data) => {
     let user = users.byID(socket.id)
-    //in the future this could be checked.
-    user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
-    console.log(user.name, "submitted survey:", user.results.manipulationCheck);
-    db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+    user.results.manipulationCheck = data
+    updateUserInDB(socket,"results.manipulationCheck",data)
   })
 
   socket.on('blacklistSurveySubmit', (data) => {
     let user = users.byID(socket.id)
-    //in the future this could be checked.
     user.results.blacklistCheck = data //(user.results.manipulation == data) ? true : false
     // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
     console.log(user.name, "submitted blacklist survey:", data);
