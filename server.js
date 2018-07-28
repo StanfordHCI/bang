@@ -245,7 +245,7 @@ io.on('connection', (socket) => {
     //Login
     // when the client emits 'add user', this listens and executes
     socket.on('add user', function (data) {
-        if (addedUser) {return;}
+        if (addedUser) {return}
 
         // we store the username in the socket session for this client
         name_structure = tools.makeName();
