@@ -212,31 +212,6 @@ const createQualification = (name) => {
 const setAssignmentsPending = (data) => {
   usersAcceptedHIT = data
   hitsLeft = teamSize * teamSize - usersAcceptedHIT
-
-  console.log('users accepted: ', usersAcceptedHIT)
-  console.log('hits left: ', hitsLeft);
-}
-
-// * increaseAssignmentsPending *
-// -------------------------------------------------------------------
-// Keeps track of how many assignments have been accepted by Turkers - necessary for HIT reposting.
-// Called whenever a user accepts a HIT (server.js)
-
-const increaseAssignmentsPending = () => {
-  usersAcceptedHIT = usersAcceptedHIT + 1;
-  hitsLeft = hitsLeft - 1;
-  console.log('users accepted: ', usersAcceptedHIT)
-  console.log('hits left: ', hitsLeft);
-}
-
-// * reduceAssignmentsPending *
-// -------------------------------------------------------------------
-// Keeps track of how many assignments have been accepted by Turkers - necessary for HIT reposting.
-// Called whenever a user disconnects (server.js)
-
-const reduceAssignmentsPending = () => {
-  usersAcceptedHIT = usersAcceptedHIT - 1;
-  hitsLeft = hitsLeft + 1;
   console.log('users accepted: ', usersAcceptedHIT)
   console.log('hits left: ', hitsLeft);
 }
@@ -456,8 +431,6 @@ module.exports = {
   expireActiveHits: expireActiveHits,
   deleteHIT: deleteHIT,
   createQualification: createQualification,
-  increaseAssignmentsPending: increaseAssignmentsPending,
-  reduceAssignmentsPending: reduceAssignmentsPending,
   setAssignmentsPending: setAssignmentsPending,
   assignQualificationToUsers: assignQualificationToUsers,
   disassociateQualification: disassociateQualification,

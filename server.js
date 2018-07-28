@@ -329,7 +329,6 @@ io.on('connection', (socket) => {
 
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
-        // mturk.reduceAssignmentsPending();
         // if the user had accepted, removes them from the array of accepted users
         console.log("Socket disconecting is", socket.id)
         if (usersAccepted.find(function(element) {return element.id == socket.id})) {
@@ -607,7 +606,6 @@ io.on('connection', (socket) => {
   // }
   //if the user has accepted the HIT, add the user to the array usersAccepted
   socket.on('accepted HIT', (data) => {
-    // mturk.increaseAssignmentsPending();
     usersAccepted.push({
       "id": socket.id,
       "mturkId": data.mturkId,
