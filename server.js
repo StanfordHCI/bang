@@ -297,7 +297,9 @@ io.on('connection', (socket) => {
             'viabilityCheck':[],
             'manipulationCheck':'',
             'blacklistCheck':'',
-            'engagementFeedback': ''
+            'engagementFeedback': '',
+            'teamfracture':'',
+            'teamfeedback':''
           }
         };
 
