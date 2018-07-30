@@ -93,6 +93,7 @@ $(function() {
     setUsername()
     $chatPage.show()
     $headerbarPage.show()
+    $leaveHitButton.hide()
     addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername +", welcome to our HIT!"})
     setTimeout(()=> {
       addChatMessage({username: botUsername, message: "For this first task, I'll ask you a series of questions while we wait for enough users to begin our group ad writing tasks! Please answer the following questions so we can test our chat room before our group activity. "})
@@ -490,6 +491,7 @@ $(function() {
       $("#"+data.element).show();
       if (data.showHeaderBar) {
         $headerbarPage.show()
+
       }
     }
   });
@@ -535,6 +537,7 @@ $(function() {
     hideAll();
     $chatPage.show();
     $headerbarPage.show();
+    $leaveHitButton.show()
     let teamStr = ""
     for(member of data.team) teamStr += member + ", "
     console.log(teamStr)
