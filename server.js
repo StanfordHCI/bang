@@ -3,14 +3,14 @@ require('dotenv').config()
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE = 2
-const roundMinutes = 2
+const teamSize = process.env.TEAM_SIZE
+const roundMinutes = process.env.ROUND_MINUTES
 
 //Parameters for waiting qualifications
-const secondsToWait = 20 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+const secondsToWait = 120 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
 const secondsSinceResponse = 20 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
 const secondsToHold1 = 720 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
-const secondsToHold2 = 420 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
+const secondsToHold2 = 60 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 
 // Toggles
 const runExperimentNow = true
@@ -24,9 +24,9 @@ const suddenDeath = false
 const randomCondition = false
 const randomRoundOrder = false
 
-const psychologicalSafetyOn = true
+const psychologicalSafetyOn = false
 const starterSurveyOn = false
-const midSurveyOn = false
+const midSurveyOn = true
 const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
