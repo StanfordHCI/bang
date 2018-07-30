@@ -7,10 +7,10 @@ $(function() {
   const $messages = $('.messages'); // Messages area
   const $inputMessage = $('.inputMessage'); // Input message input box
   const $checkinPopup = $('#checkin');
-  const $headerBar = $('.header')
-  const $headerText = $('#header-text')
-  const $leaveHitButton = $('#leave-hit-button')
-  const $leaveHitPopup = $('#leave-hit-popup')
+  const $headerBar = $('.header');
+  const $headerText = $('#header-text');
+  const $leaveHitButton = $('#leave-hit-button');
+  const $leaveHitPopup = $('#leave-hit-popup');
 
   const $chatLink = $('#chatLink');
   const $headerbarPage = $('#headerbarPage'); // The finishing page
@@ -49,7 +49,7 @@ $(function() {
   const hideAll = () => {
     $headerbarPage.hide()
     $checkinPopup.hide();
-    $leaveHitPopup.hide()
+    $leaveHitPopup.hide();
     $lockPage.hide();
     $waitingPage.hide();
     $chatPage.hide();
@@ -63,13 +63,13 @@ $(function() {
     $teamfeedbackSurvey.hide();
     $finishingPage.hide();
     $chatLink.hide();
-  }
+  };
 
   let holdingUsername = document.getElementById('username');
   let messagesSafe = document.getElementsByClassName('messages')[0];
   let finishingcode = document.getElementById('finishingcode');
   let usersWaiting = document.getElementById('numberwaiting');
-  let mturkVariables
+  let mturkVariables;
 
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
   const $psychologicalSafetyQuestions = $('.psychologicalSafetyQuestions'); //pre survey
@@ -598,6 +598,15 @@ $(function() {
           }
         }
       }
+
+      let currentInput = $("#inputMessage").val();
+      if (currentInput[0] == "!") {
+        let characterCount = currentInput.length;
+        document.getElementById("character-count").innerHTML = characterCount - 1; //excluding the !
+      } else {
+        document.getElementById("character-count").innerHTML = 0; //excluding the !
+      }
+      
     });
   });
 
@@ -658,7 +667,7 @@ $(function() {
   socket.on('timer',data => {
     log("You're about <strong>90% done with this session</strong>. Enter your final result now.")
     log("Remember, it needs to be <strong>maximum 30 characters long</strong>.")
-    log("To indicate your final result, <strong>start the line with am exclamation mark (i.e., '!')</strong>. We will not count that character toward your length limit.")
+    log("To indicate your final result, <strong>start the line with an exclamation mark (i.e., '!')</strong>. We will not count that character toward your length limit.")
     log("<br>If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat.")
   });
 
@@ -808,3 +817,8 @@ const decodeURL = (toDecode) => {
   var encoded = toDecode;
   return unescape(encoded.replace(/\+/g,  " "));
 }
+
+window.onbeforeunload = function(){
+  return 'Are you sure you want to leave?';
+};
+

@@ -38,11 +38,30 @@ ul {
   -moz-box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
   box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
   z-index: 999;
+  display: flex;
 }
 
-.header h3 {
+#character-counter-div { 
+  flex: 0 1 35%;
+  position: relative;
+}
+#header-text-div {
+  flex: 1;
+}
+
+
+#header-text {
   color: white;
   text-align: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#character-counter {
+  color: white;
+  text-align: left;
+  text-indent: 20px;
 }
 
 #leave-hit-button {
@@ -54,6 +73,10 @@ ul {
   width: max-content;
 }
 
+#character-count {
+  color: white;
+  text-align: left;
+}
 
 /* Pages */
 
