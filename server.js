@@ -349,6 +349,8 @@ io.on('connection', (socket) => {
         if (usersAccepted.find(function(element) {return element.id == socket.id})) {
           console.log('There was a disconnect');
           usersAccepted = usersAccepted.filter(user => user.id != socket.id);
+          people.push(users.byID(socket.id).person)
+
           debugLog(usersAccepted)
           console.log("num users accepted:", usersAccepted.length);
           if((teamSize ** 2) - usersAccepted.length < 0) {
@@ -411,6 +413,8 @@ io.on('connection', (socket) => {
             })
           }
         }
+        users = users.filter(user => user.id != socket.id);
+
     });
 
     socket.on("execute experiment", (data) => {
