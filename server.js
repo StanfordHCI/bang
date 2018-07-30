@@ -446,7 +446,8 @@ io.on('connection', (socket) => {
           recordTime("midSurvey");
         } else if(timeCheckOn) {
           recordTime("round");
-        }
+        } else if(psychologicalSafetyOn) { 
+          recordTime("psychologicalSafety")}
         console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false})
         io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false});
       }
