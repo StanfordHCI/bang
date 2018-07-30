@@ -669,7 +669,7 @@ io.on('connection', (socket) => {
 
     //for debugging
     for (var i = 0; i < usersAccepted.length; i++) {
-      console.log("User", i, "is ready:", String(usersAccepted[i].timeLastActivity));
+      console.log("User", i, "is ready:", String(usersAccepted[i].waiting));
     };
 
     // if enough people have accepted, push prompt to start task
