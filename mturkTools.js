@@ -123,7 +123,6 @@ const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoA
     Question: externalHIT(taskURL)
   };
 
-
   mturk.createHIT(makeHITParams, (err, data) => {
     if (err) console.log(err, err.stack);
     else {
@@ -139,7 +138,7 @@ const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoA
 //
 // Takes HIT ID as parameter.
 
-const returnHIT = (hitId, ) => {
+const returnHIT = (hitId) => {
   var returnHITParams = {
     HITId: hitId /* required */
   };
@@ -153,19 +152,14 @@ const returnHIT = (hitId, ) => {
 // -------------------------------------------------------------------
 // Expires all active HITs by updating the time-until-expiration to 0.
 // Users who have already accepted the HIT should still be able to finish and submit.
+//
+// Takes a HIT ID as a parameter
 
-const expireActiveHits = () => {
-  mturk.listHITs({}, (err, data) => {
-    if (err) console.log(err, err.stack);
-    else {
-      data.HITs.map((hit) => {
-        mturk.updateExpirationForHIT({HITId: hit.HITId,ExpireAt:0}, (err, data) => {
-          if (err) { console.log(err, err.stack)
-          } else {console.log("Expired HIT:", hit.HITId)}
-        });
-      })
-    }
-  })
+const expireActiveHits = (HIT) => {
+  mturk.updateExpirationForHIT({HITId: HIT,ExpireAt:0}, (err, data) => {
+    if (err) { console.log(err, err.stack)
+    } else {console.log("Expired HIT:", HIT)}
+  });
 }
 
 // * deleteHIT *
@@ -328,6 +322,14 @@ const checkBlocks = (removeBlocks = false) => {
   })
 }
 
+// * returnCurrentHIT *
+// -------------------------------------------------------------------
+// Returns the current active HIT ID
+
+const returnCurrentHIT = () => {
+  return currentHitId;
+}
+
 // * launchBang *
 // -------------------------------------------------------------------
 // Launches Scaled-Humanity Fracture experiment
@@ -439,6 +441,7 @@ module.exports = {
   bonusPrice: bonusPrice,
   blockWorker: blockWorker,
   checkBlocks: checkBlocks,
+  returnCurrentHIT: returnCurrentHIT,
   submitTo: submitTo,
   launchBang: launchBang
 };
