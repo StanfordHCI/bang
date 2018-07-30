@@ -22,6 +22,7 @@ $(function() {
   const $starterSurvey = $('#starterSurvey'); // The starterSurvey page
   const $midSurvey = $('#midSurvey'); // the midSurvey page
   const $psychologicalSafety = $('#psychologicalSafety'); // the psych safety page
+  const $statusCharacteristics= $('#statusCharacteristics'); // Feedback for team page
   const $postSurvey = $('#postSurvey'); // The postSurvey page
   const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
   const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
@@ -30,7 +31,7 @@ $(function() {
 
   Vue.component('question-component', {
     template: `
-      <h3>{{question.question}}</h3>
+      <h3><span v-html="question.question"></span></h3>
       <div id="{{question.name}}-rb-box" class='rb-box'>
         <template v-for="(index, answer) in question.answers" :answer="answer">
           <label for="{{question.name}}-{{index+1}}" class="rb-tab">
@@ -58,6 +59,7 @@ $(function() {
     $starterSurvey.hide();
     $midSurvey.hide();
     $psychologicalSafety.hide();
+    $statusCharacteristics.hide(); 
     $postSurvey.hide();
     $blacklistSurvey.hide();
     $teamfeedbackSurvey.hide();
@@ -72,7 +74,8 @@ $(function() {
   let mturkVariables
 
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
-  const $psychologicalSafetyQuestions = $('.psychologicalSafetyQuestions'); //pre survey
+  const $psychologicalSafetyQuestions = $('.psychologicalSafetyQuestions'); //psych safety questions 
+  const $statusCharacteristicsQuestions = $('.statusCharacteristicsQuestions'); // status characteristics questions 
   const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
 
@@ -318,6 +321,15 @@ $(function() {
     $psychologicalSafety.hide()
     $holdingPage.show()
     $('#psychologicalSafety-form')[0].reset();
+  })
+
+  $('#statusCharacteristics').submit( (event) => {
+    event.preventDefault() //stops page reloading
+    socket.emit('statusCharacteristicsSubmit', $('#statusCharacteristics-form').serialize()) //submits results alone
+    socket.emit('execute experiment')
+    $statusCharacteristics.hide()
+    $holdingPage.show()
+    $('#statusCharacteristics-form')[0].reset();
   })
 
   $leaveHitButton.click((event) => {

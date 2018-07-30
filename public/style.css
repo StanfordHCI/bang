@@ -195,7 +195,7 @@ ul {
 .rb-box {
   display: flex;
   justify-content: space-between;
-  width: max-content;
+  /*width: max-content;*/
   padding: 16px;
   background: rgba(255,255,255,.03);
   border-radius: .3em;

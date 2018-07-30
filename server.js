@@ -12,13 +12,11 @@ const issueBonusesNow = true
 const cleanHITs = false
 const assignQualifications = false
 const debugMode = !runningLive
-
 const suddenDeath = false
-
 const randomCondition = false
 const randomRoundOrder = false
-
-const psychologicalSafetyOn = true
+const statusCharacteristicsOn = true
+const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = false
 const blacklistOn = false
@@ -44,11 +42,13 @@ const checkinFile = txt + "checkin-q.txt"
 const blacklistFile = txt + "blacklist-q.txt"
 const feedbackFile = txt + "feedback-q.txt"
 const starterSurveyFile = txt + "startersurvey-q.txt"
+const statusCharacteristicsFile = txt + "statusCharacteristics-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
 const leaveHitFile = txt + "leave-hit-q.txt"
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
+const answers2 = {answers: ['', '', '', '', '', ''], answerType: 'radio', textValue: true}
 const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
 const leaveHitAnswers = {answers: ['End Task and Send Feedback', 'Return to Task'], answerType: 'radio', textValue: false}
 
@@ -105,6 +105,7 @@ const Datastore = require('nedb'),
     db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
     db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true});
     db.psychologicalSafety = new Datastore({ filename:'.data/psychologicalSafety', autoload: true}); // to store psychological safety results
+    db.statusCharacteristics = new Datastore({ filename:'.data/statusCharacteristics', autoload: true}); // to store status characteristics
     db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true});
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
@@ -170,6 +171,9 @@ if (psychologicalSafetyOn) {
 }
 if (teamfeedbackOn) {
   task_loop.push("teamfeedbackSurvey")
+}
+if (statusCharacteristicsOn) {
+  task_loop.push("statusCharacteristics")
 }
 task_loop = replicate(task_loop, numRounds)
 task_list= task_list.concat(task_loop)
@@ -302,6 +306,7 @@ io.on('connection', (socket) => {
             'starterCheck':[],
             'viabilityCheck':[],
             'psychologicalSafety':[],
+            'statusCharacteristics':[],
             'manipulationCheck':'',
             'blacklistCheck':'',
             'engagementFeedback': '',
@@ -430,6 +435,12 @@ io.on('connection', (socket) => {
         }
         io.in(user.id).emit("load", {element: 'psychologicalSafety', questions: loadQuestions(psychologicalSafetyFile), interstitial: false, showHeaderBar: true});
       }
+       else if (task_list[currentActivity] == "statusCharacteristics") {
+        if(timeCheckOn) {
+          recordTime("round");
+        }
+        io.in(user.id).emit("load", {element: 'statusCharacteristics', questions: loadQuestions(statusCharacteristicsFile), interstitial: false, showHeaderBar: true});
+      }
       else if (task_list[currentActivity] == "teamfeedbackSurvey") {
         if(midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
@@ -447,10 +458,14 @@ io.on('connection', (socket) => {
         } else if(timeCheckOn) {
           recordTime("round");
         } else if(psychologicalSafetyOn) {
-          recordTime("psychologicalSafety")}
+          recordTime("psychologicalSafety")
+       } else if(statusCharacteristicsOn) {
+          recordTime("statusCharacteristics")
+        }
         console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false})
         io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false});
       }
+
       else if (task_list[currentActivity] == "postSurvey") { //Launch post survey
         if(blacklistOn && timeCheckOn) {
           recordTime("blacklistSurvey");
@@ -572,7 +587,7 @@ io.on('connection', (socket) => {
         //Done with round
         setTimeout(() => {
           console.log('done with round', currentRound);
-          users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
+          users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (statusCharacteristicsOn || midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
           currentRound += 1 // guard to only do this when a round is actually done.
           console.log(currentRound, "out of", numRounds)
         }, 1000 * 60 * 0.1 * roundMinutes)
@@ -688,6 +703,18 @@ io.on('connection', (socket) => {
     });
   });
 
+     socket.on('statusCharacteristicsSubmit', (data) => {
+    let user = users.byID(socket.id)
+    let currentRoom = user.room
+    let statusCharacteristicsResults = parseResults(data);
+    user.results.statusCharacteristics = statusCharacteristicsResults;
+    console.log(user.name, "submitted survey:", user.results.statusCharacteristics);
+    db.statusCharacteristics.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'statusCharacteristics': user.results.psychologicalSafety, 'batch':batchID}, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding statusCharacteristics to the DB: ", err);
+      else if(usersAdded) console.log("statusCharacteristics added to the DB");
+    });
+  });
+
   socket.on('teamfeedbackSurveySubmit', (data) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
@@ -734,12 +761,13 @@ io.on('connection', (socket) => {
       let questionObj = {};
       i++;
       questionObj['name'] = prefix + i;
-
       //each question in the text file should be formatted: ANSWERTAG.QUESTION ex: YN.Are you part of Team Mark?
       questionObj['question'] = line.substr(line.indexOf('.')+1, line.length);
       let answerTag = line.substr(0, line.indexOf('.'));
       if(answerTag === "S1") { // scale 1 radio
         answerObj = answers;
+      } else if (answerTag === "S2") { // 1-6 scale 
+        answerObj = answers2;
       } else if (answerTag === "YN") { // yes no
         answerObj = binaryAnswers;
       } else if (answerTag === "TR") { //team radio
@@ -748,7 +776,12 @@ io.on('connection', (socket) => {
         answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox', textValue: false};
       } else if (answerTag === "LH") { //leave hit yn
         answerObj = leaveHitAnswers;
-      }
+      } else {
+        console.log("Answer tag not found",answerTag)
+        console.log("Try removing blank lines from question file")
+        answerObj = undefined
+    }
+
       questionObj['answers'] = answerObj.answers;
       questionObj['answerType'] = answerObj.answerType;
       questionObj['textValue'] = answerObj.textValue;
