@@ -531,10 +531,11 @@ io.on('connection', (socket) => {
 
       treatmentNow = (currentCondition == "treatment" && currentRound == experimentRound)
       const conditionRound = conditions[currentCondition][currentRound] - 1
+
+      // assign rooms to people and reset.
       users.forEach(u => {
         u.person = people.pop();
       })
-      // assign rooms to peple and reset.
       Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
         users.filter(u => room.includes(u.person)).forEach(u => {
           u.room = roomName
@@ -677,9 +678,14 @@ io.on('connection', (socket) => {
       //io.sockets.emit('update number waiting', {num: 0});
       enoughPeople = true;
       let usersNeeded = teamSize **2;
-      users.forEach((user, index) => {//for every user
+      console.log('num of users is ' + users.length)
+      //users.forEach((user, index) => {//for every user
+      for (let index = users.length - 1; index >= 0; index -= 1) {
+        user = users[index]
+        console.log(user.name + ' is index ' + index + ' users needed: ' + usersNeeded)
         if(usersWaiting.every(user2 => user.id !== user2.id) || usersNeeded <= 0) {//if that user that is not a waiting user or is extra
           users.splice(index)
+          console.log('emit finish to '+ user.name)
           io.in(user.id).emit('finished', {
             message: "Thanks for participating, you're all done!",
             finishingCode: socket.id,
@@ -697,7 +703,7 @@ io.on('connection', (socket) => {
         //     }
         //   }
         // }
-      });
+      };
 
       for (var i = 0; i < teamSize ** 2; i++) {
         io.in(users[i].id).emit('enough people');
