@@ -6,10 +6,14 @@ $(function() {
   const $window = $(window);
   const $messages = $('.messages'); // Messages area
   const $inputMessage = $('.inputMessage'); // Input message input box
-  const $checkinPopup = $('.popup');
+  const $checkinPopup = $('#checkin');
+  const $headerBar = $('.header')
+  const $headerText = $('#header-text')
+  const $leaveHitButton = $('#leave-hit-button')
+  const $leaveHitPopup = $('#leave-hit-popup')
 
   const $chatLink = $('#chatLink');
-
+  const $headerbarPage = $('#headerbarPage'); // The finishing page
   const $lockPage = $('#lockPage'); // The page shown before acceptance
   const $waitingPage = $('#waiting'); // The waiting page
   const $chatPage = $('#chat'); // The chatroom page
@@ -17,10 +21,12 @@ $(function() {
   const $preSurvey = $('#preSurvey'); // The preSurvey page
   const $starterSurvey = $('#starterSurvey'); // The starterSurvey page
   const $midSurvey = $('#midSurvey'); // the midSurvey page
+  const $psychologicalSafety = $('#psychologicalSafety'); // the psych safety page
   const $postSurvey = $('#postSurvey'); // The postSurvey page
   const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
   const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
   const $finishingPage = $('#finishing'); // The finishing page
+
 
   Vue.component('question-component', {
     template: `
@@ -41,7 +47,9 @@ $(function() {
   });
 
   const hideAll = () => {
+    $headerbarPage.hide()
     $checkinPopup.hide();
+    $leaveHitPopup.hide()
     $lockPage.hide();
     $waitingPage.hide();
     $chatPage.hide();
@@ -49,6 +57,7 @@ $(function() {
     $preSurvey.hide();
     $starterSurvey.hide();
     $midSurvey.hide();
+    $psychologicalSafety.hide();
     $postSurvey.hide();
     $blacklistSurvey.hide();
     $teamfeedbackSurvey.hide();
@@ -60,8 +69,10 @@ $(function() {
   let messagesSafe = document.getElementsByClassName('messages')[0];
   let finishingcode = document.getElementById('finishingcode');
   let usersWaiting = document.getElementById('numberwaiting');
+  let mturkVariables
 
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
+  const $psychologicalSafetyQuestions = $('.psychologicalSafetyQuestions'); //pre survey
   const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
 
@@ -74,16 +85,16 @@ $(function() {
   if (URLvars.assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
     $lockPage.show(); //prompt user to accept HIT
   } else { // tell the server that the user has accepted the HIT - server then adds this worker to array of accepted workers
-
     $waitingPage.show();
-    socket.emit('accepted HIT',{ mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId });
+    mturkVariables = { mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId }
+    socket.emit('accepted HIT',mturkVariables);
   }
 
   // Get permission to notify
   Notification.requestPermission()
 
   // Prompt for setting a username
-  let username;
+  let username
   let connected = false;
   let typing = false;
   let lastTypingTime;
@@ -300,6 +311,21 @@ $(function() {
     $('#midForm')[0].reset();
   })
 
+  $('#psychologicalSafety').submit( (event) => {
+    event.preventDefault() //stops page reloading
+    socket.emit('psychologicalSafetySubmit', $('#psychologicalSafety-form').serialize()) //submits results alone
+    socket.emit('execute experiment')
+    $psychologicalSafety.hide()
+    $holdingPage.show()
+    $('#psychologicalSafety-form')[0].reset();
+  })
+
+  $leaveHitButton.click((event) => {
+    $leaveHitPopup.show();
+    $currentInput = $("#leavetaskfeedbackInput").focus();
+    $currentInput.focus();
+  })
+
   //Simple autocomplete
   $inputMessage.autocomplete({
     source: ["test"],
@@ -393,6 +419,9 @@ $(function() {
     if(!data.interstitial){
       hideAll();
       $("#"+data.element).show();
+      if (data.showHeaderBar) {
+        $headerbarPage.show()
+      }
     }
   });
 
@@ -404,7 +433,7 @@ $(function() {
 
   // whenever the server emits 'checkin pop up', show checkin popup
   socket.on('checkin popup', data => {
-    $('.popup').show();
+    $checkinPopup.show();
   });
 
   // Whenever the server emits 'user joined', log it in the chat body
@@ -434,27 +463,36 @@ $(function() {
     document.getElementById("inputMessage").value = '' //clear chat in new round
     hideAll();
     $chatPage.show();
+    $headerbarPage.show();
+    let teamStr = ""
+    for(member of data.team) teamStr += member + ", "
+    console.log(teamStr)
+    teamStr = teamStr.substr(0, teamStr.length - 2)
+    $headerText.html("Team " + data.round + ": " + teamStr);
     $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
 
-    setTimeout(()=>{log(data.task)}, 500)
-    setTimeout(()=>{log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")}
-      , 1000)
+    setTimeout(()=>{
+      log(data.task)
+      log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
+      let durationString = ""
+      if (data.duration < 1) { durationString = Math.round(data.duration * 60) + " seconds"
+      } else if (data.duration == 1) { durationString = "one minute"
+      } else { durationString = data.duration + " minutes" }
+      log("You will have <strong>" + durationString + "</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
+      log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
+      log("<br>For example, here are text advertisements for a golf club called Renaissance: <br>\
+      <ul style='list-style-type:disc'> \
+        <li><strong>An empowering modern club</strong><br></li> \
+        <li><strong>A private club with reach</strong><br></li> \
+        <li><strong>Don't Wait. Discover Renaissance Today</strong></li> \
+      </ul>")
+    }, 500)
 
-    let durationString = ""
-    if (data.duration < 1) { durationString = Math.round(data.duration * 60) + " seconds"
-    } else if (data.duration == 1) { durationString = "one minute"
-    } else { durationString = data.duration + " minutes" }
-    setTimeout(() => {
-      log("You will have <strong>" + durationString + "</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")}
-, 1500)
-    setTimeout(()=>
-      {log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")},
-    2000)
     setTimeout(()=>{
       let str = ""
       for (member of data.team)
         addChatMessage({username:member, message:'has entered the chatroom'})
-    }, 2500)
+    }, 1000)
 
     $currentInput = $inputMessage.focus();
 
@@ -489,14 +527,10 @@ $(function() {
         else if (wordlength <= 5) {
           let matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( currentTerm ), "i" );
           matches = $.grep(currentTeam, function( currentTerm ){ return matcher.test( currentTerm ); });
-          console.log(matches)
           if (matches[0] !== undefined) {
             response(matches)
           } else {
             let matches = $.grep(Object.keys(teamAnimals), function( currentTerm ){ return matcher.test( currentTerm ); });
-            // console.log("my matches", matches)
-            // console.log("Yo I'm here", teamAnimals)
-            // console.log("matches map", matches.map(i => {return teamAnimals[i]}))
             response(matches.map(match => {return teamAnimals[match]}))
           }
         }
@@ -536,6 +570,11 @@ $(function() {
             }
           }
         );
+
+        // Quick typists catch
+        if (fuzzyMatches[0] === undefined) {
+          fuzzyMatches = currentTeam.filter(member => (currentTerm.indexOf(member) >= 0))
+        }
 
         // Run spell check only if animal name not detected
         if (fuzzyMatches[0] === undefined) {
@@ -639,6 +678,43 @@ $(function() {
 
   })
 
+  $("#leave-hit-submit").click((event) => {
+    event.preventDefault() //stops page reloading
+    let feedbackMessage = $('#leavetaskfeedbackInput').val();
+    if (feedbackMessage.length > 10) {
+      hideAll();
+      $finishingPage.show();
+      document.getElementById("finishingMessage").innerHTML = "You terminated the HIT. Thank you for your time."
+      document.getElementById("mturk_form").action = mturkVariables.turkSubmitTo + "/mturk/externalSubmit"
+      document.getElementById("assignmentId").value = mturkVariables.assignmentId
+      finishingcode.value = "LeftHi"
+      socket.emit('mturk_formSubmit', feedbackMessage)
+      socket.close();
+      $('#leave-hit-form')[0].reset();
+    }
+  })
+
+  $("#return-task-submit").click((event) => {
+    event.preventDefault() //stops page reloading
+    $leaveHitPopup.hide();
+    $currentInput = $inputMessage.focus();
+    $currentInput.focus();
+    $('#leave-hit-form')[0].reset();
+  })
+
+  // $('#leave-hit-form').submit((event) => {
+  //   event.preventDefault() //stops page reloading
+  //   let selectedValue = $('input[name=leave-hit-q1]:checked').val();
+  //   if (selectedValue == 1) {
+
+  //   } else {
+  //     $leaveHitPopup.hide();
+  //     $currentInput = $inputMessage.focus();
+  //     $currentInput.focus();
+  //   }
+
+  // })
+
   $('#starterForm').submit( (event) => {
     event.preventDefault() //stops page reloading
     socket.emit('starterSurveySubmit', $('#starterForm').serialize()) //submits results alone
@@ -647,8 +723,6 @@ $(function() {
     $holdingPage.show()
     $('#starterForm')[0].reset();
   })
-
-
 
   $('#postForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
@@ -688,17 +762,21 @@ $(function() {
     document.getElementById("assignmentId").value = data.assignmentId
     finishingcode.value = data.finishingCode
     if (data.crashed) {
-      let input = document.createElement("textarea");
-      input.id = "engagementfeedbackInput"
-      $("#submitButton_finish").before(input); //appendChild
+      if ($('#engagementfeedbackInput').length === 0) { //make sure element hasn't been already created
+        let input = document.createElement("textarea");
+        input.id = "engagementfeedbackInput";
+        input.required = true;
+        $("#submitButton_finish").before(input); //appendChild
+      }
     }
     // socket.disconnect(true);
   })
 
   $('#mturk_form').submit( (event) => {
-    console.log("pressed submit");
     socket.emit('mturk_formSubmit', $('#engagementfeedbackInput').val())
   })
+
+
 
 });
 

@@ -9,13 +9,19 @@ const roundMinutes = process.env.ROUND_MINUTES
 // Toggles
 const runExperimentNow = true
 const issueBonusesNow = true
-const cleanHITs = true
-const assignQualifications = true
+const cleanHITs = false
+const assignQualifications = false
 const debugMode = !runningLive
 
+const suddenDeath = false
+
+const randomCondition = false
+const randomRoundOrder = false
+
+const psychologicalSafetyOn = true
 const starterSurveyOn = false
-const midSurveyOn = true
-const blacklistOn = true
+const midSurveyOn = false
+const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
@@ -33,15 +39,18 @@ console.log(runningLocal ? "Running locally" : "Running remotely");
 const fs = require('fs')
 const txt = "txt/"
 const midSurveyFile = txt + "midsurvey-q.txt"
+const psychologicalSafetyFile = txt + "psychologicalsafety-q.txt"
 const checkinFile = txt + "checkin-q.txt"
 const blacklistFile = txt + "blacklist-q.txt"
 const feedbackFile = txt + "feedback-q.txt"
 const starterSurveyFile = txt + "startersurvey-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
+const leaveHitFile = txt + "leave-hit-q.txt"
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
 const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
+const leaveHitAnswers = {answers: ['End Task and Send Feedback', 'Return to Task'], answerType: 'radio', textValue: false}
 
 // Setup basic express server
 let tools = require('./tools');
@@ -61,19 +70,21 @@ Array.prototype.set = function() {
   return setArray
 };
 
-// Setting up variables
-const currentCondition = "treatment"
+// Experiment variables
+const conditionsAvailalbe = ['control','treatment','baseline']
+const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
 let treatmentNow = false
 let firstRun = false;
 
-const conditionSet = [
+const roundOrdering = [
   {"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]},
   {"control": [2,1,1], "treatment": [2,1,1], "baseline": [1,2,3]},
   {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
 
 const experimentRoundIndicator = 1
-const conditions = conditionSet[0] // or conditionSet.pick() for ramdomized orderings.
+const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
 const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
+console.log(currentCondition,'with',conditions[currentCondition]);
 const numRounds = conditions.baseline.length
 
 const numberOfRooms = teamSize * numRounds
@@ -93,37 +104,36 @@ const Datastore = require('nedb'),
     db.products = new Datastore({ filename:'.data/products', autoload: true });
     db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
     db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true});
+    db.psychologicalSafety = new Datastore({ filename:'.data/psychologicalSafety', autoload: true}); // to store psychological safety results
     db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true});
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
     db.time = new Datastore({ filename:'.data/time', autoload: true}); // store duration of tasks
 
+const updateUserInDB = (user,feild,value) => { db.users.update(
+  {id: user.id}, {$set: {feild: value}}, {},
+  err => console.log(err ? "Err recording "+feild+": "+err : "Updated "+feild+" "+user.id+"\n"+value+"\n")
+)}
+
 require('express')().listen(); //Sets to only relaunch with source changes
 
 //Mturk Calls
-if (issueBonusesNow){
+if (runningLive){
   db.users.find({}, (err, usersInDB) => {
-    if (err) {console.log("Err loading users:" + err)}
-    else {
-      console.log("Paying bonuses")
-      mturk.payBonuses(usersInDB).forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
-
-      //Only use to clear all.
-      // usersInDB.forEach((u) => { db.users.update( {id: u.id}, {$set: {bonus: 0}}, {}, (err) => { if (err) { console.log("Err recording bonus:" + err)} else {"Updated bonus",u.id}})
-      })
+    if (err) {console.log("Err loading users for background tasks:" + err)} else {
+      if (issueBonusesNow) {
+        mturk.payBonuses(usersInDB).forEach(u => updateUserInDB(u,'bonus',0))
+        // usersInDB.forEach(u => updateUserInDB(u,'bonus',0)) Clears all stored bonuses
+      }
+      if (assignQualifications) {
+        db.users.find({}, (err, usersInDB) => {
+          if (err) {console.log("Err loading users:" + err)}
+          mturk.assignQualificationToUsers(usersInDB);
+        })
+        mturk.listUsersWithQualification()
+      }
     }
   })
-}
-
-// Makes sure workers do not repeat
-if(runningLive && assignQualifications) {
-  db.users.find({}, (err, usersInDB) => {
-    if (err) {console.log("Err loading users:" + err)}
-    mturk.assignQualificationToUsers(usersInDB);
-  })
-
-  // lists users that have done the task before
-  mturk.listUsersWithQualification()
 }
 
 if (cleanHITs){ mturk.expireActiveHits() }
@@ -155,6 +165,9 @@ task_loop.push("ready")
 if (midSurveyOn) {
   task_loop.push("midSurvey")
 }
+if (psychologicalSafetyOn) {
+  task_loop.push("psychologicalSafety")
+}
 if (teamfeedbackOn) {
   task_loop.push("teamfeedbackSurvey")
 }
@@ -176,14 +189,14 @@ app.use(express.static('public'));
 
 // Adds Batch data for this experiment. unique batchID based on time/date
 db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn,
-        'teamfeedbackOn': teamfeedbackOn, 'checkinOn': checkinOn, 'conditions': conditions, 'experimentRound': experimentRound,
+        'teamfeedbackOn': teamfeedbackOn, 'psychologicalSafetyOn' : psychologicalSafetyOn, 'checkinOn': checkinOn, 'conditions': conditions, 'experimentRound': experimentRound,
         'numRounds': numRounds, 'teamSize': teamSize}, (err, usersAdded) => {
     if(err) console.log("There's a problem adding batch to the DB: ", err);
     else if(usersAdded) console.log("Batch added to the DB");
     console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
     if (!firstRun) {
       Object.keys(io.sockets.sockets).forEach(socketID => {
-        io.in(socketID).disconnect(true);
+        io.sockets.sockets[socketID].disconnect(true);
       })
       firstRun = true;
     }
@@ -198,36 +211,23 @@ io.on('connection', (socket) => {
 
     socket.on('log', string => { console.log(string); });
 
-    //Chat engine
-    // when the client emits 'new message', this listens and executes
+    //Route messages
     socket.on('new message', function (message) {
-        // we tell the client to execute 'new message'
-        console.log("received:", socket.username, message);
-        let cleanMessage = message;
-        users.forEach(user => {
-            cleanMessage = aliasToID(user, cleanMessage)
+      user = users.byID(socket.id)
+      let cleanMessage = message;
+      users.forEach(u => { cleanMessage = aliasToID(u, cleanMessage) });
+
+      db.chats.insert({'room':user.room,'userID':socket.id, 'message': cleanMessage, 'time': getSecondsPassed(), 'batch': batchID, 'round': currentRound}, (err, usersAdded) => {
+        if(err) console.log("Error storing message:", err)
+        else console.log("Message in", user.room, "from",user.name +":" ,cleanMessage)
+      });
+
+      users.filter(f => f.room == user.room).forEach(f => {
+        socket.broadcast.to(f.id).emit('new message', {
+          username: idToAlias(f, String(socket.id)),
+          message: idToAlias(f, cleanMessage)
         });
-
-        console.log("converted to:", cleanMessage);
-
-        let currentRoom = users.byID(socket.id).room
-
-        let timeStamp = getSecondsPassed();
-
-        db.chats.insert({'room':currentRoom,'userID':socket.id, 'message': message, 'time': timeStamp, 'batch': batchID, 'round': currentRound}, (err, usersAdded) => {
-          if(err) console.log("There's a problem adding a message to the DB: ", err);
-          else if(usersAdded) console.log("Message added to the DB");
-        });
-
-        users.filter(user => user.room == currentRoom).forEach(user => {
-            let customMessage = idToAlias(user, cleanMessage);
-            console.log("Sending:",customMessage)
-            socket.broadcast.to(user.id).emit('new message', {
-                username: idToAlias(user, String(socket.id)),
-                message: customMessage
-            });
-            console.log('new message', user.room, user.name, customMessage)
-        });
+      });
     });
 
     //when the client emits 'new checkin', this listens and executes
@@ -236,14 +236,14 @@ io.on('connection', (socket) => {
       let currentRoom = users.byID(socket.id).room;
       db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': value, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
           if(err) console.log("There's a problem adding a checkin to the DB: ", err);
-          else if(usersAdded) console.log("Checkin added to the DB");
+          else console.log("Checkin added to the DB");
         });
     });
 
     //Login
     // when the client emits 'add user', this listens and executes
     socket.on('add user', function (data) {
-        if (addedUser) {return;}
+        if (addedUser) {return}
 
         // we store the username in the socket session for this client
         name_structure = tools.makeName();
@@ -269,7 +269,7 @@ io.on('connection', (socket) => {
             let localUser = users.byID(user.id)
             if (localUser){
               user.friends = localUser.friends
-              db.users.update( {id: user.id}, {$set: {friends: user.friends}}, {}, (err) => { if (err) { console.log("Err adding friends:" + err)}})
+              updateUserInDB(user,'friends',user.friends)
             }
           })
         })
@@ -301,9 +301,12 @@ io.on('connection', (socket) => {
             'manipulation':[],
             'starterCheck':[],
             'viabilityCheck':[],
+            'psychologicalSafety':[],
             'manipulationCheck':'',
             'blacklistCheck':'',
-            'engagementFeedback': ''
+            'engagementFeedback': '',
+            'teamfracture':'',
+            'teamfeedback':''
           }
         };
 
@@ -327,9 +330,8 @@ io.on('connection', (socket) => {
 
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
-        // mturk.reduceAssignmentsPending();
         // if the user had accepted, removes them from the array of accepted users
-        console.log(socket.id)
+        console.log("Socket disconecting is", socket.id)
         if (usersAccepted.find(function(element) {return element.id == socket.id})) {
           console.log('There was a disconnect');
           usersAccepted = usersAccepted.filter(user => user.id != socket.id);
@@ -347,11 +349,14 @@ io.on('connection', (socket) => {
         if (addedUser) {
           users.byID(socket.id).active = false //set user to inactive
           users.byID(socket.id).ready = false //set user to not ready
+          if (!suddenDeath) {users.byID(socket.id).ready = true}
 
           // update DB with change
-          db.users.update({ id: socket.id }, {$set: {active: false}}, {}, (err, numReplaced) => { console.log(err ? "Activity not changed: " + err : "User left " + socket.id) })
+          updateUserInDB(socket,'active',false)
 
-          if (!taskOver){
+          if (!taskOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
+
+          if (!taskOver && suddenDeath){
             // Start cancel process
             console.log("User left, emitting cancel to all users");
 
@@ -364,8 +369,8 @@ io.on('connection', (socket) => {
               })
             }
 
-            users.forEach((user) => {
-              let cancelMessage = "<strong>Someone left the task</strong><br> <br> \
+            users.filter(u => u.id != socket.id).forEach((user) => {
+              let cancelMessage = "<strong>Someone left the task.</strong><br> <br> \
               Unfortunately, our group task requires a specific number of users to run, \
               so once a user leaves, our task cannot proceed. <br><br> \
               To complete the task, please provide suggestions of ways to \
@@ -379,7 +384,7 @@ io.on('connection', (socket) => {
                 } else {
                   user.bonus += mturk.bonusPrice/2
                 }
-                db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
+                updateUserInDB(user,'bonus',user.bonus)
               }
               io.in(user.id).emit('finished', {
                   message: cancelMessage,
@@ -400,7 +405,7 @@ io.on('connection', (socket) => {
       console.log ("Activity:", currentActivity, "which is", task_list[currentActivity])
 
       if (task_list[currentActivity] == "starterSurvey") {
-        io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false});
+        io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false, showHeaderBar: false});
         taskStartTime = getSecondsPassed();
       }
       else if (task_list[currentActivity] == "ready") {
@@ -408,15 +413,22 @@ io.on('connection', (socket) => {
           recordTime("starterSurvey");
         }
         if (checkinOn) {
-          io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true});
+          io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true, showHeaderBar: true});
         }
+        io.in(user.id).emit("load", {element: 'leave-hit', questions: loadQuestions(leaveHitFile), interstitial: true, showHeaderBar: true})
         io.in(user.id).emit("echo", "ready");
       }
       else if (task_list[currentActivity] == "midSurvey") {
         if(timeCheckOn) {
           recordTime("round");
         }
-        io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false});
+        io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false, showHeaderBar: true});
+      }
+       else if (task_list[currentActivity] == "psychologicalSafety") {
+        if(timeCheckOn) {
+          recordTime("round");
+        }
+        io.in(user.id).emit("load", {element: 'psychologicalSafety', questions: loadQuestions(psychologicalSafetyFile), interstitial: false, showHeaderBar: true});
       }
       else if (task_list[currentActivity] == "teamfeedbackSurvey") {
         if(midSurveyOn && timeCheckOn) {
@@ -424,18 +436,20 @@ io.on('connection', (socket) => {
         } else if(timeCheckOn) {
           recordTime("round");
         }
-        io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false});
+        io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false, showHeaderBar: true});
       }
       else if (task_list[currentActivity] == "blacklistSurvey") {
+        taskOver = true
         if(teamfeedbackOn && timeCheckOn) {
           recordTime("teamfeedbackSurvey");
         } else if(midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
         } else if(timeCheckOn) {
           recordTime("round");
-        }
-        console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false})
-        io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false});
+        } else if(psychologicalSafetyOn) {
+          recordTime("psychologicalSafety")}
+        console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false})
+        io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false});
       }
       else if (task_list[currentActivity] == "postSurvey") { //Launch post survey
         if(blacklistOn && timeCheckOn) {
@@ -449,17 +463,15 @@ io.on('connection', (socket) => {
         }
         let survey = postSurveyGenerator(user)
         user.results.manipulation = survey.correctAnswer
-        db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-        io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false});
+        updateUserInDB(user,'results.manipulation',user.results.manipulation)
+        io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false, showHeaderBar: false});
       }
       else if (task_list[currentActivity] == "finished" || currentActivity > task_list.length) {
         if(timeCheckOn) {
           recordTime("postSurvey");
         }
-        user.ready = false
-        taskOver = true
         user.bonus += mturk.bonusPrice
-        db.users.update({ id: user.id }, {$set: {bonus: user.bonus}}, {}, (err, numReplaced) => { console.log(err ? "Bonus not recorded: " + err : "Bonus recorded: " + socket.id) })
+        updateUserInDB(user,"bonus",user.bonus)
 
         io.in(socket.id).emit('finished', {
           message: "Thanks for participating, you're all done!",
@@ -479,10 +491,11 @@ io.on('connection', (socket) => {
       users.byID(socket.id).ready = true;
       console.log(socket.username, 'is ready');
 
-      //are we ready to go? if not return empty
-      if (users.filter(user => !user.ready).length) {
-        console.log("some users not ready", users.filter(user => !user.ready).map(user => user.name))
-        return } //are all users ready?
+      if (users.filter(u => !u.ready).length) {
+        console.log("some users not ready", users.filter(u => !u.ready).map(u => u.name))
+        return
+      }
+
       // if (incompleteRooms().length) {
       //   console.log("Some rooms empty:",incompleteRooms())
       //   return } //are all rooms assigned
@@ -501,11 +514,12 @@ io.on('connection', (socket) => {
 
       // assign rooms to peple and reset.
       Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
-        users.filter(user => room.includes(user.person)).forEach(user => {
-          user.room = roomName
-          user.rooms.push(roomName)
-          user.ready = false; //return users to unready state
-          console.log(user.name, '-> room', user.room);
+        users.filter(u => room.includes(u.person)).forEach(u => {
+          u.room = roomName
+          u.rooms.push(roomName)
+          u.ready = false //return users to unready state
+          if (!suddenDeath && !u.active) {u.ready = true}
+          console.log(u.name, '-> room', u.room);
         })
       })
 
@@ -518,7 +532,7 @@ io.on('connection', (socket) => {
         if (autocompleteTestOn) {
           let teamNames = [tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username]
           console.log(teamNames)
-          io.in(user.id).emit('go', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal })
+          io.in(user.id).emit('go', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//rounds are 0 indexed
         } else {
           // Dynamically generate teammate names
           // even if teamSize = 1 for testing, this still works
@@ -539,7 +553,7 @@ io.on('connection', (socket) => {
           team_Aliases.push(user.name) //now push user for autocomplete
           let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
           // io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
-          io.in(user.id).emit('go', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal})
+          io.in(user.id).emit('go', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//round 0 indexed
         }
       })
 
@@ -558,7 +572,7 @@ io.on('connection', (socket) => {
         //Done with round
         setTimeout(() => {
           console.log('done with round', currentRound);
-          users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn)}) });
+          users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
           currentRound += 1 // guard to only do this when a round is actually done.
           console.log(currentRound, "out of", numRounds)
         }, 1000 * 60 * 0.1 * roundMinutes)
@@ -587,24 +601,10 @@ io.on('connection', (socket) => {
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
         socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has may have had an error. You will be compensated."})
-        // socket.disconnect();
         console.log("Sockets active: " + Object.keys(io.sockets.sockets));
   });
 
-  //Launch post survey
-  // if (currentRound >= numRounds) {
-  //   users.forEach(user => {
-  //     user.ready = false
-  //     let survey = postSurveyGenerator(user)
-  //     io.in(user.id).emit('load postsurvey')
-  //     user.results.manipulation = survey.correctAnswer
-  //     db.users.update({ id: socket.id }, {$set: {"results.manipulation": user.results.manipulation}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
-  //     io.in(user.id).emit('postSurvey', {questions: survey.questions, answers:survey.answers})
-  //   })
-  // }
-  //if the user has accepted the HIT, add the user to the array usersAccepted
   socket.on('accepted HIT', (data) => {
-    // mturk.increaseAssignmentsPending();
     usersAccepted.push({
       "id": socket.id,
       "mturkId": data.mturkId,
@@ -613,7 +613,8 @@ io.on('connection', (socket) => {
       "assignmentId": data.assignmentId
     });
     mturk.setAssignmentsPending(usersAccepted.length)
-    console.log(usersAccepted,"users accepted currently: " + usersAccepted.length ); //for debugging purposes
+    debugLog(usersAccepted,"users accepted currently: " + usersAccepted.length )
+
     // Disconnect leftover users
     Object.keys(io.sockets.sockets).forEach(socketID => {
       if (usersAccepted.every(acceptedUser => {return acceptedUser.id !== socketID})) {
@@ -675,6 +676,18 @@ io.on('connection', (socket) => {
     });
   });
 
+    socket.on('psychologicalSafetySubmit', (data) => {
+    let user = users.byID(socket.id)
+    let currentRoom = user.room
+    let psychologicalSafetyResults = parseResults(data);
+    user.results.psychologicalSafety = psychologicalSafetyResults;
+    console.log(user.name, "submitted survey:", user.results.psychologicalSafety);
+    db.psychologicalSafety.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'psychologicalSafety': user.results.psychologicalSafety, 'batch':batchID}, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding psychologicalSafety to the DB: ", err);
+      else if(usersAdded) console.log("psychologicalSafety added to the DB");
+    });
+  });
+
   socket.on('teamfeedbackSurveySubmit', (data) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
@@ -690,23 +703,18 @@ io.on('connection', (socket) => {
 
   socket.on('mturk_formSubmit', (data) => {
     let user = users.byID(socket.id)
-    let currentRoom = user.room
     user.results.engagementFeedback = data
-    console.log(user.name, "submitted engagement survey:", user.results.engagementFeedback);
-    db.users.update({ id: socket.id }, {$set: {"results.engagementFeedback": user.results.engagementFeedback}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored engagement Feedback: " + user.name) })
+    updateUserInDB(socket,"results.engagementFeedback",data)
   });
 
   socket.on('postSurveySubmit', (data) => {
     let user = users.byID(socket.id)
-    //in the future this could be checked.
-    user.results.manipulationCheck = data //(user.results.manipulation == data) ? true : false
-    console.log(user.name, "submitted survey:", user.results.manipulationCheck);
-    db.users.update({ id: socket.id }, {$set: {"results.manipulationCheck": user.results.manipulationCheck}}, {}, (err, numReplaced) => { console.log(err ? err : "Stored manipulation: " + user.name) })
+    user.results.manipulationCheck = data
+    updateUserInDB(socket,"results.manipulationCheck",data)
   })
 
   socket.on('blacklistSurveySubmit', (data) => {
     let user = users.byID(socket.id)
-    //in the future this could be checked.
     user.results.blacklistCheck = data //(user.results.manipulation == data) ? true : false
     // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
     console.log(user.name, "submitted blacklist survey:", data);
@@ -722,7 +730,7 @@ io.on('connection', (socket) => {
     const prefix = questionFile.substr(txt.length, questionFile.indexOf('.') - txt.length)
     let questions = []
     let i = 0
-    fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) {
+    fs.readFileSync(questionFile).toString().split('\n').filter(n => n.length != 0 ).forEach(function (line) {
       let questionObj = {};
       i++;
       questionObj['name'] = prefix + i;
@@ -738,6 +746,8 @@ io.on('connection', (socket) => {
         answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio', textValue: false};
       } else if (answerTag === "TC") { //team checkbox
         answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox', textValue: false};
+      } else if (answerTag === "LH") { //leave hit yn
+        answerObj = leaveHitAnswers;
       }
       questionObj['answers'] = answerObj.answers;
       questionObj['answerType'] = answerObj.answerType;

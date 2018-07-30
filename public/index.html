@@ -16,6 +16,40 @@
   <ul class="pages">
     <li id="lockPage" class="lockPage page white"><h3 class="title">Please accept the hit to see instructions.</h3></li>
 
+    <li id="headerbarPage">
+    <div class="header">
+      <h3 id="header-text">Team</h3> <p id="header-text-2"></p>
+      <button type="button" id="leave-hit-button">Leave HIT</button>
+    </div>
+      <div id="leave-hit-popup" class="popup">
+        <form id="leave-hit-form" class="rb">
+          <p><strong>Leaving now will terminate the task for other users. </strong><br><br>
+
+            You may leave by returning the hit or closing the window. <br><br>
+
+            Provide feedback on what we could do to keep you in the task in the future
+            to submit the hit for the base rate. <br><br>
+            Alternatively, you can click "Return to Task" below to finish the task
+            and be bonused.
+          </p>
+          <textarea id="leavetaskfeedbackInput"></textarea>
+          <!-- <div id="leave-hit-questions" class="popup-questions">
+            <question-component v-for="question in questions" :question="question" />
+          </div> -->
+        <div class="two-buttons">
+            <div class="submit-buttons">
+                <input id="leave-hit-submit" type="submit" value="End Task and Send Feedback">
+            </div>
+            <div class="submit-buttons">
+              <input id="return-task-submit" type="submit" value="Return to Task">
+            </div>
+        </div>
+
+
+      </form>
+      </div>
+    </li>
+
     <li id="waiting" class="waiting page white">
         <h3 class="title">Waiting room</h3>
         <p style="color: black;">Waiting on <strong><span id="numberwaiting"></span></strong> more MTurk users to accept the task.</p>
@@ -26,6 +60,7 @@
     </li>
 
     <li id="chat" class="chat page">
+
       <div class="chatArea">
         <ul class="messages"></ul>
       </div>
@@ -34,7 +69,7 @@
     <div id="checkin" class="popup">
       <form id="checkin-form" class="rb">
         <p>These check-ins are anonymous and will be used by an algorithm to pair you with an optimal team for the next round.</p>
-        <div id="checkin-questions" >
+        <div id="checkin-questions" class="popup-questions">
           <question-component v-for="question in questions" :question="question" />
         </div>
         <input id="checkin-submit" type="submit" value="Submit">
@@ -70,13 +105,25 @@
 
     <li id="midSurvey" class="login page">
       <form id="midForm" >
-        <h3 class="intro">Your answers to the following questions will have no impact on your task performance<br>or ability to work with us in the future.</h3>
+        <h3 class="intro">Please thoughtfully answer the following questions about your last team.
+          Your answers will have no impact on your task performance or ability to work with us in the future.</h3>
         <div id="midSurvey-questions" class="survey-questions">
           <question-component v-for="question in questions" :question="question" />
         </div>
         <input id="submitButton" type="submit" value="Submit">
       </form>
     </li>
+
+    <li id="psychologicalSafety" class="login page">
+    <form id="psychologicalSafety-form" >
+      <h3 class="intro">Please thoughtfully answer the following questions about your last team.
+        Your answers will have no impact on your task performance or ability to work with us in the future.</h3>
+      <div id="psychologicalSafety-questions" class="survey-questions">
+        <question-component v-for="question in questions" :question="question" />
+      </div>
+      <input id="submitButton" type="submit" value="Submit">
+    </form>
+  </li>
 
     <li id="postSurvey" class="login page">
       <form id="postForm">
