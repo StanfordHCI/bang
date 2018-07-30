@@ -18,7 +18,7 @@ const suddenDeath = false
 const randomCondition = false
 const randomRoundOrder = false
 
-const psychologicalSafety = true
+const psychologicalSafetyOn = true
 const starterSurveyOn = false
 const midSurveyOn = false
 const blacklistOn = false
