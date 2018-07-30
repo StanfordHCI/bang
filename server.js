@@ -683,17 +683,16 @@ io.on('connection', (socket) => {
 
   //loads qs in text file, returns json array
   function loadQuestions(activity) {
-
     let questions = []
     let i = 0
-    fs.readFileSync("txt/" + activity + "-q.txt").toString().split('\n').filter(n => n.length != 0 ).forEach((line) => {
+    fs.readFileSync("txt/" + activity + "-q.txt").toString().split('\n').filter(n => n.length != 0 ).forEach((line,index) => {
       let questionObj = {};
-      i++;
-      questionObj['name'] = activity + i;
+      questionObj['name'] = activity + (index + 1);
 
       //each question in the text file should be formatted: ANSWERTAG.QUESTION ex: YN.Are you part of Team Mark?
       questionObj['question'] = line.substr(line.indexOf('.')+1, line.length);
       let answerTag = line.substr(0, line.indexOf('.'));
+
       if(answerTag === "S1") { // scale 1 radio
         answerObj = answers;
       } else if (answerTag === "YN") { // yes no
