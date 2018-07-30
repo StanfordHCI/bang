@@ -307,7 +307,6 @@ io.on('connection', (socket) => {
             'engagementFeedback': '',
             'teamfracture':'',
             'teamfeedback':'',
-            '':'',
           }
         };
 
