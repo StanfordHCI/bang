@@ -92,7 +92,7 @@ $(function() {
     socket.emit('accepted HIT',{ mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId, timeAdded: (new Date()).getTime()});
     setUsername()
     $chatPage.show()
-
+    $headerbarPage.show()
     addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername +", welcome to our HIT!"})
     setTimeout(()=> {
       addChatMessage({username: botUsername, message: "For this first task, I'll ask you a series of questions while we wait for enough users to begin our group ad writing tasks! Please answer the following questions so we can test our chat room before our group activity. "})
