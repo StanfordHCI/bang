@@ -18,6 +18,7 @@ const suddenDeath = false
 const randomCondition = false
 const randomRoundOrder = false
 
+const psychologicalSafetyOn = true
 const starterSurveyOn = false
 const midSurveyOn = false
 const blacklistOn = false
@@ -38,6 +39,7 @@ console.log(runningLocal ? "Running locally" : "Running remotely");
 const fs = require('fs')
 const txt = "txt/"
 const midSurveyFile = txt + "midsurvey-q.txt"
+const psychologicalSafetyFile = txt + "psychologicalsafety-q.txt"
 const checkinFile = txt + "checkin-q.txt"
 const blacklistFile = txt + "blacklist-q.txt"
 const feedbackFile = txt + "feedback-q.txt"
@@ -102,6 +104,7 @@ const Datastore = require('nedb'),
     db.products = new Datastore({ filename:'.data/products', autoload: true });
     db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
     db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true});
+    db.psychologicalSafety = new Datastore({ filename:'.data/psychologicalSafety', autoload: true}); // to store psychological safety results
     db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true});
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
@@ -162,6 +165,9 @@ task_loop.push("ready")
 if (midSurveyOn) {
   task_loop.push("midSurvey")
 }
+if (psychologicalSafetyOn) {
+  task_loop.push("psychologicalSafety")
+}
 if (teamfeedbackOn) {
   task_loop.push("teamfeedbackSurvey")
 }
@@ -183,7 +189,7 @@ app.use(express.static('public'));
 
 // Adds Batch data for this experiment. unique batchID based on time/date
 db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn,
-        'teamfeedbackOn': teamfeedbackOn, 'checkinOn': checkinOn, 'conditions': conditions, 'experimentRound': experimentRound,
+        'teamfeedbackOn': teamfeedbackOn, 'psychologicalSafetyOn' : psychologicalSafetyOn, 'checkinOn': checkinOn, 'conditions': conditions, 'experimentRound': experimentRound,
         'numRounds': numRounds, 'teamSize': teamSize}, (err, usersAdded) => {
     if(err) console.log("There's a problem adding batch to the DB: ", err);
     else if(usersAdded) console.log("Batch added to the DB");
@@ -295,6 +301,7 @@ io.on('connection', (socket) => {
             'manipulation':[],
             'starterCheck':[],
             'viabilityCheck':[],
+            'psychologicalSafety':[],
             'manipulationCheck':'',
             'blacklistCheck':'',
             'engagementFeedback': '',
@@ -417,6 +424,12 @@ io.on('connection', (socket) => {
         }
         io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false, showHeaderBar: true});
       }
+       else if (task_list[currentActivity] == "psychologicalSafety") {
+        if(timeCheckOn) {
+          recordTime("round");
+        }
+        io.in(user.id).emit("load", {element: 'psychologicalSafety', questions: loadQuestions(psychologicalSafetyFile), interstitial: false, showHeaderBar: true});
+      }
       else if (task_list[currentActivity] == "teamfeedbackSurvey") {
         if(midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
@@ -433,7 +446,8 @@ io.on('connection', (socket) => {
           recordTime("midSurvey");
         } else if(timeCheckOn) {
           recordTime("round");
-        }
+        } else if(psychologicalSafetyOn) {
+          recordTime("psychologicalSafety")}
         console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false})
         io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false});
       }
@@ -558,7 +572,7 @@ io.on('connection', (socket) => {
         //Done with round
         setTimeout(() => {
           console.log('done with round', currentRound);
-          users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn)}) });
+          users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
           currentRound += 1 // guard to only do this when a round is actually done.
           console.log(currentRound, "out of", numRounds)
         }, 1000 * 60 * 0.1 * roundMinutes)
@@ -662,6 +676,18 @@ io.on('connection', (socket) => {
     });
   });
 
+    socket.on('psychologicalSafetySubmit', (data) => {
+    let user = users.byID(socket.id)
+    let currentRoom = user.room
+    let psychologicalSafetyResults = parseResults(data);
+    user.results.psychologicalSafety = psychologicalSafetyResults;
+    console.log(user.name, "submitted survey:", user.results.psychologicalSafety);
+    db.psychologicalSafety.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'psychologicalSafety': user.results.psychologicalSafety, 'batch':batchID}, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding psychologicalSafety to the DB: ", err);
+      else if(usersAdded) console.log("psychologicalSafety added to the DB");
+    });
+  });
+
   socket.on('teamfeedbackSurveySubmit', (data) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
@@ -704,7 +730,7 @@ io.on('connection', (socket) => {
     const prefix = questionFile.substr(txt.length, questionFile.indexOf('.') - txt.length)
     let questions = []
     let i = 0
-    fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) {
+    fs.readFileSync(questionFile).toString().split('\n').filter(n => n.length != 0 ).forEach(function (line) {
       let questionObj = {};
       i++;
       questionObj['name'] = prefix + i;
