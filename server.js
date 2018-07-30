@@ -682,10 +682,8 @@ io.on('connection', (socket) => {
       //users.forEach((user, index) => {//for every user
       for (let index = users.length - 1; index >= 0; index -= 1) {
         user = users[index]
-        console.log(user.name + ' is index ' + index + ' users needed: ' + usersNeeded)
         if(usersWaiting.every(user2 => user.id !== user2.id) || usersNeeded <= 0) {//if that user that is not a waiting user or is extra
           users.splice(index)
-          console.log('emit finish to '+ user.name)
           io.in(user.id).emit('finished', {
             message: "Thanks for participating, you're all done!",
             finishingCode: socket.id,
