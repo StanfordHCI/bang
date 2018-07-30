@@ -302,6 +302,7 @@ io.on('connection', (socket) => {
             'manipulation':[],
             'starterCheck':[],
             'viabilityCheck':[],
+            'psychologicalSafety':[],
             'manipulationCheck':'',
             'blacklistCheck':'',
             'engagementFeedback': '',
@@ -446,7 +447,7 @@ io.on('connection', (socket) => {
           recordTime("midSurvey");
         } else if(timeCheckOn) {
           recordTime("round");
-        } else if(psychologicalSafetyOn) { 
+        } else if(psychologicalSafetyOn) {
           recordTime("psychologicalSafety")}
         console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false})
         io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false});
@@ -572,7 +573,7 @@ io.on('connection', (socket) => {
         //Done with round
         setTimeout(() => {
           console.log('done with round', currentRound);
-          users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn) || psychologicalSafetyOn}) });
+          users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
           currentRound += 1 // guard to only do this when a round is actually done.
           console.log(currentRound, "out of", numRounds)
         }, 1000 * 60 * 0.1 * roundMinutes)
@@ -680,9 +681,9 @@ io.on('connection', (socket) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
     let psychologicalSafetyResults = parseResults(data);
-    user.results.viabilityCheck = psychologicalSafetyResults;
-    console.log(user.name, "submitted survey:", user.results.viabilityCheck);
-    db.psychologicalSafety.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'psychologicalSafety': user.results.viabilityCheck, 'batch':batchID}, (err, usersAdded) => {
+    user.results.psychologicalSafety = psychologicalSafetyResults;
+    console.log(user.name, "submitted survey:", user.results.psychologicalSafety);
+    db.psychologicalSafety.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'psychologicalSafety': user.results.psychologicalSafety, 'batch':batchID}, (err, usersAdded) => {
       if(err) console.log("There's a problem adding psychologicalSafety to the DB: ", err);
       else if(usersAdded) console.log("psychologicalSafety added to the DB");
     });
@@ -730,7 +731,7 @@ io.on('connection', (socket) => {
     const prefix = questionFile.substr(txt.length, questionFile.indexOf('.') - txt.length)
     let questions = []
     let i = 0
-    fs.readFileSync(questionFile).toString().split('\n').forEach(function (line) {
+    fs.readFileSync(questionFile).toString().split('\n').filter(n => n.length != 0 ).forEach(function (line) {
       let questionObj = {};
       i++;
       questionObj['name'] = prefix + i;

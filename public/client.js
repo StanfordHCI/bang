@@ -313,11 +313,11 @@ $(function() {
 
   $('#psychologicalSafety').submit( (event) => {
     event.preventDefault() //stops page reloading
-    socket.emit('psychologicalSubmit', $('#psychologicalSafety').serialize()) //submits results alone
+    socket.emit('psychologicalSafetySubmit', $('#psychologicalSafety-form').serialize()) //submits results alone
     socket.emit('execute experiment')
     $psychologicalSafety.hide()
     $holdingPage.show()
-    $('#midForm')[0].reset();
+    $('#psychologicalSafety-form')[0].reset();
   })
 
   $leaveHitButton.click((event) => {
