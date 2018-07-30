@@ -680,7 +680,7 @@ io.on('connection', (socket) => {
       let usersNeeded = teamSize **2;
       console.log('num of users is ' + users.length)
       //users.forEach((user, index) => {//for every user
-      console.log(users);
+      // console.log(users);
       for (let index = users.length - 1; index >= 0; index -= 1) {
         user = users[index]
         if(usersWaiting.every(user2 => user.id !== user2.id) || usersNeeded <= 0) {//if that user that is not a waiting user or is extra
@@ -694,7 +694,7 @@ io.on('connection', (socket) => {
         } else { //found a valid user
           usersNeeded--;
         } 
-        console.log(users);
+        // console.log(users);
       // console.log("some users not ready", users.filter(user => !user.ready).map(user => user.name))
         // if(!usersWaiting.includes(user)) {
         //   for (var i = 0; i < users.length; i++) {
@@ -706,8 +706,8 @@ io.on('connection', (socket) => {
       };
 
       for (var i = 0; i < teamSize ** 2; i++) {
-        console.log(i);
-        console.log(users)
+        // console.log(i);
+        // console.log(users)
         io.in(users[i].id).emit('enough people');
       };
       
