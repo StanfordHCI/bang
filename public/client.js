@@ -428,7 +428,7 @@ $(function() {
       setTimeout(()=> {
         socket.emit('execute experiment')
         preChat = false;
-      }, 1000*5)
+      }, 1000*2)
     }
   });
 
