@@ -32,7 +32,7 @@ AWS.config = {
   "sslEnabled": true
 }
 
-// Declaration of constants
+// Declaration of variables
 const numRounds = 3
 const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
 const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
@@ -49,6 +49,9 @@ let qualificationId = '';
 if(runningLive) {
   qualificationId = '3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG'; // a special qualification for our task
 }
+
+// Makes the MTurk externalHIT object, defaults to 700 px tall.
+const externalHIT = (taskURL, height = 700) => '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>' + height + '</FrameHeight></ExternalQuestion>'
 
 // This initiates the API
 // Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
@@ -117,8 +120,10 @@ const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoA
     //   },
     //   /* more items */
     // ],
-    Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
+    Question: externalHIT(taskURL)
   };
+
+
   mturk.createHIT(makeHITParams, (err, data) => {
     if (err) console.log(err, err.stack);
     else {
@@ -207,31 +212,6 @@ const createQualification = (name) => {
 const setAssignmentsPending = (data) => {
   usersAcceptedHIT = data
   hitsLeft = teamSize * teamSize - usersAcceptedHIT
-
-  console.log('users accepted: ', usersAcceptedHIT)
-  console.log('hits left: ', hitsLeft);
-}
-
-// * increaseAssignmentsPending *
-// -------------------------------------------------------------------
-// Keeps track of how many assignments have been accepted by Turkers - necessary for HIT reposting.
-// Called whenever a user accepts a HIT (server.js)
-
-const increaseAssignmentsPending = () => {
-  usersAcceptedHIT = usersAcceptedHIT + 1;
-  hitsLeft = hitsLeft - 1;
-  console.log('users accepted: ', usersAcceptedHIT)
-  console.log('hits left: ', hitsLeft);
-}
-
-// * reduceAssignmentsPending *
-// -------------------------------------------------------------------
-// Keeps track of how many assignments have been accepted by Turkers - necessary for HIT reposting.
-// Called whenever a user disconnects (server.js)
-
-const reduceAssignmentsPending = () => {
-  usersAcceptedHIT = usersAcceptedHIT - 1;
-  hitsLeft = hitsLeft + 1;
   console.log('users accepted: ', usersAcceptedHIT)
   console.log('hits left: ', hitsLeft);
 }
@@ -399,7 +379,7 @@ const launchBang = () => {
     Keywords: 'ads, writing, copy editing, advertising',
     MaxAssignments: numAssignments,
     QualificationRequirements: QualificationReqs,
-    Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
+    Question: externalHIT(taskURL)
   };
 
   mturk.createHIT(params, (err, data) => {
@@ -428,8 +408,7 @@ const launchBang = () => {
         Keywords: 'ads, writing, copy editing, advertising',
         MaxAssignments: numAssignments,
         QualificationRequirements: QualificationReqs,
-        Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
-      };
+        Question: externalHIT(taskURL)      };
       mturk.createHIT(params2, (err, data) => {
         if (err) console.log(err, err.stack);
         else {
@@ -452,8 +431,6 @@ module.exports = {
   expireActiveHits: expireActiveHits,
   deleteHIT: deleteHIT,
   createQualification: createQualification,
-  increaseAssignmentsPending: increaseAssignmentsPending,
-  reduceAssignmentsPending: reduceAssignmentsPending,
   setAssignmentsPending: setAssignmentsPending,
   assignQualificationToUsers: assignQualificationToUsers,
   disassociateQualification: disassociateQualification,
