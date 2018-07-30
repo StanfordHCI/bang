@@ -298,7 +298,7 @@ io.on('connection', (socket) => {
           'room': '',
           'rooms':[],
           'bonus': 0,
-          'person': people.pop(),
+          'person': '',
           'name': socket.username,
           'ready': false,
           'friends': users.map(user => {
@@ -349,7 +349,7 @@ io.on('connection', (socket) => {
         if (usersAccepted.find(function(element) {return element.id == socket.id})) {
           console.log('There was a disconnect');
           usersAccepted = usersAccepted.filter(user => user.id != socket.id);
-          people.push(users.byID(socket.id).person)
+          people.push(users.byID(socket.id).person)//puts person back in person array to be available for actual users
 
           debugLog(usersAccepted)
           console.log("num users accepted:", usersAccepted.length);
@@ -532,7 +532,10 @@ io.on('connection', (socket) => {
 
       treatmentNow = (currentCondition == "treatment" && currentRound == experimentRound)
       const conditionRound = conditions[currentCondition][currentRound] - 1
-
+      users.forEach(u => {
+        console.log('username test is ' + u.username)
+        u.person = people.pop();
+      })
       // assign rooms to peple and reset.
       Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
         users.filter(u => room.includes(u.person)).forEach(u => {
