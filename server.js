@@ -110,7 +110,6 @@ const Datastore = require('nedb'),
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
     db.time = new Datastore({ filename:'.data/time', autoload: true}); // store duration of tasks
 
-
 const updateUserInDB = (user,feild,value) => { db.users.update(
   {id: user.id}, {$set: {feild: value}}, {},
   err => console.log(err ? "Err recording "+feild+": "+err : "Updated "+feild+" "+user.id+"\n"+value+"\n")

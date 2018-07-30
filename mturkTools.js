@@ -408,7 +408,8 @@ const launchBang = () => {
         Keywords: 'ads, writing, copy editing, advertising',
         MaxAssignments: numAssignments,
         QualificationRequirements: QualificationReqs,
-        Question: externalHIT(taskURL)      };
+        Question: externalHIT(taskURL)
+      };
       mturk.createHIT(params2, (err, data) => {
         if (err) console.log(err, err.stack);
         else {
