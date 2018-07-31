@@ -40,7 +40,7 @@ const hourlyWage = 12.50; // changes reward of experiment depending on length - 
 const rewardPrice = .60
 let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
 let usersAcceptedHIT = 0;
-let numAssignments = teamSize * teamSize;
+let numAssignments = (teamSize * teamSize) + teamSize; // over-recruit
 
 let currentHitId = '';
 let hitsLeft = numAssignments; // changes when users accept and disconnect (important - don't remove)
