@@ -858,7 +858,7 @@ function getSecondsPassed() {
 }
 
 //repeates an array times
-function repeatArray(A, t) {return t == 1 ? A : A.concat(repeatArray(A,t-1))}
+function repeatArray(A, t) {return t <= 1 ? A : A.concat(repeatArray(A,t-1))}
 
 // records length of each task
 const recordTime = (event) => {
