@@ -47,9 +47,9 @@ const postSurveyFile = txt + "postsurvey-q.txt"
 const leaveHitFile = txt + "leave-hit-q.txt"
 
 // Answer Option Sets
-const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
-const answers2 = {answers: ['', '', '', '', '', ''], answerType: 'radio', textValue: true}
-const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
+const agreementScale = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
+const extremeScale = {answers: ['', '', '', '', '', ''], answerType: 'radio', textValue: true}
+const binaryScale = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
 const leaveHitAnswers = {answers: ['End Task and Send Feedback', 'Return to Task'], answerType: 'radio', textValue: false}
 
 // Setup basic express server
@@ -139,7 +139,7 @@ if (runningLive){
 }
 
 // expires HITs left in the DB
-if (cleanHITs){ 
+if (cleanHITs){
   db.ourHITs.find({}, (err, HITsInDB) => {
     if (err) {console.log("Err loading HITS for expiration:" + err)} else {
       HITsInDB.forEach((HIT) => {
@@ -798,11 +798,11 @@ io.on('connection', (socket) => {
       questionObj['question'] = line.substr(line.indexOf('.')+1, line.length);
       let answerTag = line.substr(0, line.indexOf('.'));
       if(answerTag === "S1") { // scale 1 radio
-        answerObj = answers;
-      } else if (answerTag === "S2") { // 1-6 scale 
-        answerObj = answers2;
+        answerObj = agreementScale;
+      } else if (answerTag === "S2") { // 1-6 scale
+        answerObj = extremeScale;
       } else if (answerTag === "YN") { // yes no
-        answerObj = binaryAnswers;
+        answerObj = binaryScale;
       } else if (answerTag === "TR") { //team radio
         answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio', textValue: false};
       } else if (answerTag === "TC") { //team checkbox

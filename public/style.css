@@ -30,9 +30,9 @@ ul {
 .header {
   overflow: hidden;
   background-color: #333;
-  position: fixed; 
-  top: 0; 
-  width: 100%; 
+  position: fixed;
+  top: 0;
+  width: 100%;
   height: 60px;
   -webkit-box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
   -moz-box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
@@ -105,9 +105,6 @@ ul {
   margin-right: auto;
 }
 
-
-
-
 .login.page .title {
   font-size: 200%;
   display: inline-block;
@@ -174,7 +171,7 @@ ul {
 .chatArea {
   float: left;
   height: 100%;
-  width:  100%; 
+  width:  100%;
   padding: 60px 0;
 }
 
@@ -244,7 +241,7 @@ ul {
 .two-buttons {
   display: flex;
 }
- 
+
 .submit-buttons {
   display: inline-block;
   width: 100%;
