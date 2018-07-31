@@ -3,11 +3,11 @@ require('dotenv').config()
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE
-const roundMinutes = process.env.ROUND_MINUTES
+const teamSize = process.env.TEAM_SIZE = 2
+const roundMinutes = process.env.ROUND_MINUTES = 1
 
 //Parameters for waiting qualifications
-const secondsToWait = 120 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+const secondsToWait = 20 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
 const secondsSinceResponse = 20 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
 const secondsToHold1 = 720 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
 const secondsToHold2 = 60 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
@@ -116,6 +116,7 @@ const Datastore = require('nedb'),
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
     db.time = new Datastore({ filename:'.data/time', autoload: true}); // store duration of tasks
+    db.leavingMessage = new Datastore({filename: '.data/leavingMessage', autoload: true})
 
 
 const updateUserInDB = (user,feild,value) => { db.users.update(
@@ -361,7 +362,7 @@ io.on('connection', (socket) => {
           mturk.setAssignmentsPending(usersAccepted.length)
         }
 
-        if (addedUser) {
+        if (addedUser && !users.every(user => socket.id !== user.id)) {
           users.byID(socket.id).active = false //set user to inactive
           users.byID(socket.id).ready = false //set user to not ready
           if (!suddenDeath) {users.byID(socket.id).ready = true}
@@ -798,9 +799,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('mturk_formSubmit', (data) => {
-    let user = users.byID(socket.id)
-    user.results.engagementFeedback = data
-    updateUserInDB(socket,"results.engagementFeedback",data)
+    // let user = users.byID(socket.id)
+    // user.results.engagementFeedback = data
+    // updateUserInDB(socket,"results.engagementFeedback",data)
+        // db.blacklist.insert({'userID':socket.id, 'name':user.name, 'midSurvey': user.results.blacklistCheck, 'batch':batchID}, (err, usersAdded) => {
+    db.leavingMessage.insert({'userID': socket.id, 'Message': data});
   });
 
   socket.on('postSurveySubmit', (data) => {

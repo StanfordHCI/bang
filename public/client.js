@@ -758,7 +758,7 @@ $(function() {
   $("#leave-hit-submit").click((event) => {
     event.preventDefault() //stops page reloading
     let feedbackMessage = $('#leavetaskfeedbackInput').val();
-    if (feedbackMessage.length > 10) {
+    if (feedbackMessage.length > 1) {
       hideAll();
       $finishingPage.show();
       document.getElementById("finishingMessage").innerHTML = "You terminated the HIT. Thank you for your time."
