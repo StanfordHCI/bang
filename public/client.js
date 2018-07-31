@@ -96,7 +96,7 @@ $(function() {
     $leaveHitButton.hide()
     addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername +", welcome to our HIT!"})
     setTimeout(()=> {
-      addChatMessage({username: botUsername, message: "For this first task, I'll ask you a series of questions while we wait for enough users to begin our group ad writing tasks! Please answer the following questions so we can test our chat room before our group activity. "})
+      addChatMessage({username: botUsername, message: "For this first task, I need you to answer a sequence of questions. Thanks for cooperating!"})
       setTimeout(() => {
         socket.emit('load bot qs')  
       }, 1000*1)
