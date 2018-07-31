@@ -689,9 +689,9 @@ io.on('connection', (socket) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
     let groupPerformanceResults = parseResults(data);
-    user.results.viabilityCheck = groupPerformanceResults;
-    console.log(user.name, "submitted survey:", user.results.viabilityCheck);
-    db.groupPerformance.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'groupPerformance': user.results.viabilityCheck, 'batch':batchID}, (err, usersAdded) => {
+    user.results.groupPerformance = groupPerformanceResults;
+    console.log(user.name, "submitted survey:", user.results.groupPerformance);
+    db.groupPerformance.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'groupPerformance': user.results.groupPerformance, 'batch':batchID}, (err, usersAdded) => {
       if(err) console.log("There's a problem adding groupPerformance to the DB: ", err);
       else if(usersAdded) console.log("groupPerformance added to the DB");
     });

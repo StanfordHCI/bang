@@ -11,7 +11,6 @@ $(function() {
   const $headerText = $('#header-text')
   const $leaveHitButton = $('#leave-hit-button')
   const $leaveHitPopup = $('#leave-hit-popup')
-
   const $chatLink = $('#chatLink');
   const $headerbarPage = $('#headerbarPage'); // The finishing page
   const $lockPage = $('#lockPage'); // The page shown before acceptance
