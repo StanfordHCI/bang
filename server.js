@@ -8,8 +8,8 @@ const roundMinutes = process.env.ROUND_MINUTES
 
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = true
-const cleanHITs = true
+const issueBonusesNow = false
+const cleanHITs = false
 const assignQualifications = false
 const debugMode = !runningLive
 const suddenDeath = false
@@ -184,9 +184,11 @@ if (teamfeedbackOn) {
   task_loop.push("teamfeedbackSurvey")
 }
 if (statusCharacteristicsOn) {
-  task_loop.push("statusCharacteristics")
+  task_loop = task_loop.concat(
+    repeatArray(["statusCharacteristics"],teamSize-1)
+    .map((i,j) => i+ " " +j))
 }
-task_loop = replicate(task_loop, numRounds)
+task_loop = repeatArray(task_loop, numRounds)
 task_list= task_list.concat(task_loop)
 if (blacklistOn) {
   task_list.push("blacklistSurvey")
@@ -434,13 +436,14 @@ io.on('connection', (socket) => {
       let user = users.byID(socket.id)
       let currentActivity = user.currentActivity;
       let task_list = user.task_list;
-      console.log ("Activity:", currentActivity, "which is", task_list[currentActivity])
+      let currentTask = task_list[currentActivity]
+      console.log ("Activity:", currentActivity, "which is", currentTask)
 
-      if (task_list[currentActivity] == "starterSurvey") {
+      if (currentTask == "starterSurvey") {
         io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false, showHeaderBar: false});
         taskStartTime = getSecondsPassed();
       }
-      else if (task_list[currentActivity] == "ready") {
+      else if (currentTask == "ready") {
         if(starterSurveyOn && timeCheckOn) {
           recordTime("starterSurvey");
         }
@@ -450,25 +453,25 @@ io.on('connection', (socket) => {
         io.in(user.id).emit("load", {element: 'leave-hit', questions: loadQuestions(leaveHitFile), interstitial: true, showHeaderBar: true})
         io.in(user.id).emit("echo", "ready");
       }
-      else if (task_list[currentActivity] == "midSurvey") {
+      else if (currentTask == "midSurvey") {
         if(timeCheckOn) {
           recordTime("round");
         }
         io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false, showHeaderBar: true});
       }
-       else if (task_list[currentActivity] == "psychologicalSafety") {
+       else if (currentTask == "psychologicalSafety") {
         if(timeCheckOn) {
           recordTime("round");
         }
         io.in(user.id).emit("load", {element: 'psychologicalSafety', questions: loadQuestions(psychologicalSafetyFile), interstitial: false, showHeaderBar: true});
       }
-       else if (task_list[currentActivity] == "statusCharacteristics") {
-        if(timeCheckOn) {
-          recordTime("round");
-        }
+       else if (currentTask.includes("statusCharacteristics")) {
+        if(timeCheckOn) { recordTime("round") }
+        let currentMember = getTeamMembers(user,false).pop().filter(i => i.name != user.name)[currentTask.split(" ")[1]]
+        console.log(user.name, user.friends.find(f => f.id == currentMember.id).alias)
         io.in(user.id).emit("load", {element: 'statusCharacteristics', questions: loadQuestions(statusCharacteristicsFile), interstitial: false, showHeaderBar: true});
       }
-      else if (task_list[currentActivity] == "teamfeedbackSurvey") {
+      else if (currentTask == "teamfeedbackSurvey") {
         if(midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
         } else if(timeCheckOn) {
@@ -476,7 +479,7 @@ io.on('connection', (socket) => {
         }
         io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false, showHeaderBar: true});
       }
-      else if (task_list[currentActivity] == "blacklistSurvey") {
+      else if (currentTask == "blacklistSurvey") {
         taskOver = true
         if(teamfeedbackOn && timeCheckOn) {
           recordTime("teamfeedbackSurvey");
@@ -493,7 +496,7 @@ io.on('connection', (socket) => {
         io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false});
       }
 
-      else if (task_list[currentActivity] == "postSurvey") { //Launch post survey
+      else if (currentTask == "postSurvey") { //Launch post survey
         if(blacklistOn && timeCheckOn) {
           recordTime("blacklistSurvey");
         } else if(teamfeedbackOn && timeCheckOn) {
@@ -508,7 +511,7 @@ io.on('connection', (socket) => {
         updateUserInDB(user,'results.manipulation',user.results.manipulation)
         io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false, showHeaderBar: false});
       }
-      else if (task_list[currentActivity] == "finished" || currentActivity > task_list.length) {
+      else if (currentTask == "finished" || currentActivity > task_list.length) {
         if(timeCheckOn) {
           recordTime("postSurvey");
         }
@@ -854,14 +857,8 @@ function getSecondsPassed() {
   return ((new Date()).getTime() - startTime)/1000;
 }
 
-function replicate(arr, times) {
-  let al = arr.length,
-      rl = al*times,
-      res = new Array(rl);
-  for (let i=0; i<rl; i++)
-      res[i] = arr[i % al];
-  return res;
-}
+//repeates an array times
+function repeatArray(A, t) {return t == 1 ? A : A.concat(repeatArray(A,t-1))}
 
 // records length of each task
 const recordTime = (event) => {
@@ -881,7 +878,7 @@ const numUsers = room => users.filter(user => user.room === room).length
 const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize)
 const assignRoom = () => incompleteRooms().pick()
 
-const getTeamMembers = (user) => {
+const getTeamMembers = (user, string=true) => {
   // Makes a list of teams this user has worked with
   const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
 
@@ -892,7 +889,7 @@ const getTeamMembers = (user) => {
     if (name == user.name) {name = "you"}
     return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
   },""))
-  return answers;
+  return string ? answers : roomTeams
 }
 // This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
 const postSurveyGenerator = (user) => {
