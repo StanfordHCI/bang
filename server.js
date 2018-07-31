@@ -373,7 +373,7 @@ io.on('connection', (socket) => {
 
           if (!taskOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
-          if (!taskOver && suddenDeath){
+          if (!taskOver && suddenDeath && !taskStarted){
             // Start cancel process
             console.log("User left, emitting cancel to all users");
 
