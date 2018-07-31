@@ -12,12 +12,10 @@ const issueBonusesNow = true
 const cleanHITs = false
 const assignQualifications = false
 const debugMode = !runningLive
-
 const suddenDeath = false
-
 const randomCondition = false
 const randomRoundOrder = false
-
+const groupPerformanceOn = true
 const psychologicalSafetyOn = true
 const starterSurveyOn = false
 const midSurveyOn = false
@@ -46,6 +44,7 @@ const feedbackFile = txt + "feedback-q.txt"
 const starterSurveyFile = txt + "startersurvey-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
 const leaveHitFile = txt + "leave-hit-q.txt"
+const groupPerformanceFile = txt + "groupPerformance-q.txt" 
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
@@ -105,6 +104,7 @@ const Datastore = require('nedb'),
     db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
     db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true});
     db.psychologicalSafety = new Datastore({ filename:'.data/psychologicalSafety', autoload: true}); // to store psychological safety results
+    db.groupPerformance = new Datastore({ filename:'.data/groupPerformance', autoload: true}); // to store group performance results
     db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true});
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
@@ -171,6 +171,9 @@ if (psychologicalSafetyOn) {
 if (teamfeedbackOn) {
   task_loop.push("teamfeedbackSurvey")
 }
+if (groupPerformanceOn) {
+  task_loop.push("groupPerformance")
+}
 task_loop = replicate(task_loop, numRounds)
 task_list= task_list.concat(task_loop)
 if (blacklistOn) {
@@ -189,7 +192,7 @@ app.use(express.static('public'));
 
 // Adds Batch data for this experiment. unique batchID based on time/date
 db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn,
-        'teamfeedbackOn': teamfeedbackOn, 'psychologicalSafetyOn' : psychologicalSafetyOn, 'checkinOn': checkinOn, 'conditions': conditions, 'experimentRound': experimentRound,
+        'teamfeedbackOn': teamfeedbackOn, 'groupPerformanceOn': groupPerformanceOn, 'psychologicalSafetyOn' : psychologicalSafetyOn, 'checkinOn': checkinOn, 'conditions': conditions, 'experimentRound': experimentRound,
         'numRounds': numRounds, 'teamSize': teamSize}, (err, usersAdded) => {
     if(err) console.log("There's a problem adding batch to the DB: ", err);
     else if(usersAdded) console.log("Batch added to the DB");
@@ -424,6 +427,12 @@ io.on('connection', (socket) => {
         }
         io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false, showHeaderBar: true});
       }
+      else if (task_list[currentActivity] == "groupPerformance") {
+        if(timeCheckOn) {
+          recordTime("round");
+        }
+        io.in(user.id).emit("load", {element: 'groupPerformance', questions: loadQuestions(groupPerformanceFile), interstitial: false, showHeaderBar: true});
+      }
        else if (task_list[currentActivity] == "psychologicalSafety") {
         if(timeCheckOn) {
           recordTime("round");
@@ -572,7 +581,7 @@ io.on('connection', (socket) => {
         //Done with round
         setTimeout(() => {
           console.log('done with round', currentRound);
-          users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
+          users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (groupPerformanceOn || midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
           currentRound += 1 // guard to only do this when a round is actually done.
           console.log(currentRound, "out of", numRounds)
         }, 1000 * 60 * 0.1 * roundMinutes)
@@ -673,6 +682,18 @@ io.on('connection', (socket) => {
     db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'midSurvey': user.results.viabilityCheck, 'batch':batchID}, (err, usersAdded) => {
       if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
       else if(usersAdded) console.log("MidSurvey added to the DB");
+    });
+  });
+
+   socket.on('groupPerformanceSubmit', (data) => {
+    let user = users.byID(socket.id)
+    let currentRoom = user.room
+    let groupPerformanceResults = parseResults(data);
+    user.results.viabilityCheck = groupPerformanceResults;
+    console.log(user.name, "submitted survey:", user.results.viabilityCheck);
+    db.groupPerformance.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'groupPerformance': user.results.viabilityCheck, 'batch':batchID}, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding groupPerformance to the DB: ", err);
+      else if(usersAdded) console.log("groupPerformance added to the DB");
     });
   });
 
