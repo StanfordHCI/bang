@@ -9,7 +9,7 @@ const roundMinutes = process.env.ROUND_MINUTES
 // Toggles
 const runExperimentNow = true
 const issueBonusesNow = true
-const cleanHITs = false
+const cleanHITs = true
 const assignQualifications = false
 const debugMode = !runningLive
 const suddenDeath = false
@@ -110,6 +110,7 @@ const Datastore = require('nedb'),
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
     db.time = new Datastore({ filename:'.data/time', autoload: true}); // store duration of tasks
+    db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true}); // separate fracture HITs from other HCI hits
 
 const updateUserInDB = (user,feild,value) => { db.users.update(
   {id: user.id}, {$set: {feild: value}}, {},
@@ -137,7 +138,17 @@ if (runningLive){
   })
 }
 
-if (cleanHITs){ mturk.expireActiveHits() }
+// expires HITs left in the DB
+if (cleanHITs){ 
+  db.ourHITs.find({}, (err, HITsInDB) => {
+    if (err) {console.log("Err loading HITS for expiration:" + err)} else {
+      HITsInDB.forEach((HIT) => {
+        let currentHIT = HIT.currentHIT;
+        mturk.expireActiveHits(currentHIT);
+      })
+    }
+  })
+}
 if (runExperimentNow){ mturk.launchBang() }
 
 //Add more products
@@ -205,6 +216,15 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
       firstRun = true;
     }
 }); // task_list instead of all of the toggles? (missing checkinOn)
+
+// Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
+setTimeout(() => {
+  let currentHIT = mturk.returnCurrentHIT();
+  db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+    if(err) console.log("There's a problem adding HIT to the DB: ", err);
+    else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+  })
+}, 1000 * 12)
 
 // Chatroom
 io.on('connection', (socket) => {
@@ -363,6 +383,13 @@ io.on('connection', (socket) => {
 
           if (!taskOver && suddenDeath){
             // Start cancel process
+
+            let currentHIT = mturk.returnCurrentHIT();
+            db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+              if(err) console.log("There's a problem adding HIT to the DB: ", err);
+              else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+            })
+
             console.log("User left, emitting cancel to all users");
 
             let totalTime = getSecondsPassed();
@@ -487,6 +514,12 @@ io.on('connection', (socket) => {
         }
         user.bonus += mturk.bonusPrice
         updateUserInDB(user,"bonus",user.bonus)
+
+        let currentHIT = mturk.returnCurrentHIT();
+        db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+          if(err) console.log("There's a problem adding HIT to the DB: ", err);
+          else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+        })
 
         io.in(socket.id).emit('finished', {
           message: "Thanks for participating, you're all done!",
