@@ -857,7 +857,7 @@ function getSecondsPassed() {
   return ((new Date()).getTime() - startTime)/1000;
 }
 
-//repeates an array times
+//repeats an array times
 function repeatArray(A, t) {return t <= 1 ? A : A.concat(repeatArray(A,t-1))}
 
 // records length of each task

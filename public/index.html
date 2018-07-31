@@ -127,8 +127,10 @@
 
   <li id="statusCharacteristics" class="login page">
     <form id="statusCharacteristics-form" >
-      <h3 class="intro">Please thoughtfully rate rate your team members on the following characteristics; select your 
-      rating based on where each member falls within the two anchor characteristics. Your answers will have no impact on your task performance or ability to work with us in the future.</h3>
+      <h3 class="intro">Please thoughtfully rate your team members on the following characteristics. 
+        
+      Select your rating based on where each member falls within the two anchor characteristics. <br><br>
+      Your answers will have no impact on your task performance or ability to work with us in the future.</h3>
       <div id="statusCharacteristics-questions" class="survey-questions">
         <question-component v-for="question in questions" :question="question" />
       </div>
