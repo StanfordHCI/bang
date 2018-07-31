@@ -37,15 +37,7 @@ console.log(runningLocal ? "Running locally" : "Running remotely");
 
 // Question Files
 const fs = require('fs')
-const txt = "txt/"
-const midSurveyFile = txt + "midsurvey-q.txt"
-const psychologicalSafetyFile = txt + "psychologicalsafety-q.txt"
-const checkinFile = txt + "checkin-q.txt"
-const blacklistFile = txt + "blacklist-q.txt"
-const feedbackFile = txt + "feedback-q.txt"
-const starterSurveyFile = txt + "startersurvey-q.txt"
-const postSurveyFile = txt + "postsurvey-q.txt"
-const leaveHitFile = txt + "leave-hit-q.txt"
+const txtPath = "txt/"
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
@@ -685,7 +677,7 @@ io.on('connection', (socket) => {
   function loadQuestions(activity) {
     let questions = []
     let i = 0
-    fs.readFileSync("txt/" + activity + "-q.txt").toString().split('\n').filter(n => n.length != 0 ).forEach((line,index) => {
+    fs.readFileSync(txtPath + activity + ".txt").toString().split('\n').filter(n => n.length != 0 ).forEach((line,index) => {
       let questionObj = {};
       questionObj['name'] = activity + (index + 1);
 
