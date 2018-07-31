@@ -22,6 +22,7 @@ $(function() {
   const $starterSurvey = $('#starterSurvey'); // The starterSurvey page
   const $midSurvey = $('#midSurvey'); // the midSurvey page
   const $psychologicalSafety = $('#psychologicalSafety'); // the psych safety page
+  const $groupPerformance = $('#groupPerformance'); // the psych safety page
   const $postSurvey = $('#postSurvey'); // The postSurvey page
   const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
   const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
@@ -58,6 +59,7 @@ $(function() {
     $starterSurvey.hide();
     $midSurvey.hide();
     $psychologicalSafety.hide();
+    $groupPerformance.hide(); 
     $postSurvey.hide();
     $blacklistSurvey.hide();
     $teamfeedbackSurvey.hide();
@@ -73,6 +75,7 @@ $(function() {
 
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
   const $psychologicalSafetyQuestions = $('.psychologicalSafetyQuestions'); //pre survey
+  const $groupPerformanceQuestions = $('.groupPerformanceQuestions'); //pre survey
   const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
 
@@ -318,6 +321,16 @@ $(function() {
     $psychologicalSafety.hide()
     $holdingPage.show()
     $('#psychologicalSafety-form')[0].reset();
+  })
+
+
+  $('#groupPerformance').submit( (event) => {
+    event.preventDefault() //stops page reloading
+    socket.emit('groupPerformanceSubmit', $('#groupPerformance-form').serialize()) //submits results alone
+    socket.emit('execute experiment')
+    $groupPerformance.hide()
+    $holdingPage.show()
+    $('#groupPerformance-form')[0].reset();
   })
 
   $leaveHitButton.click((event) => {

@@ -17,8 +17,8 @@ const suddenDeath = false
 
 const randomCondition = false
 const randomRoundOrder = false
-
-const psychologicalSafetyOn = true
+const psychologicalSafetyOn = false
+const groupPerformanceOn = true
 const starterSurveyOn = false
 const midSurveyOn = false
 const blacklistOn = false
@@ -46,10 +46,13 @@ const feedbackFile = txt + "feedback-q.txt"
 const starterSurveyFile = txt + "startersurvey-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
 const leaveHitFile = txt + "leave-hit-q.txt"
+const groupPerformanceFile = txt + "groupPerformance-q.txt"
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
 const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
+const answers3 = {answers: ['far below average', 'below average', 'slightly below average','average','slightly above average', 'above average', 'far above average'
+], answerType: 'radio', textValue: true}
 const leaveHitAnswers = {answers: ['End Task and Send Feedback', 'Return to Task'], answerType: 'radio', textValue: false}
 
 // Setup basic express server
@@ -104,7 +107,8 @@ const Datastore = require('nedb'),
     db.products = new Datastore({ filename:'.data/products', autoload: true });
     db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
     db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true});
-    db.psychologicalSafety = new Datastore({ filename:'.data/psychologicalSafety', autoload: true}); // to store psychological safety results
+    db.psychologicalSafety = new Datastore({ filename:'.data/psychologicalSafety', autoload: true}); 
+    db.groupPerformance = new Datastore({ filename:'.data/groupPerformance', autoload: true}); // to store psychological safety results
     db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true});
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
@@ -179,6 +183,9 @@ if (midSurveyOn) {
 if (psychologicalSafetyOn) {
   task_loop.push("psychologicalSafety")
 }
+if (groupPerformanceOn) {
+  task_loop.push("groupPerformance")
+}
 if (teamfeedbackOn) {
   task_loop.push("teamfeedbackSurvey")
 }
@@ -200,7 +207,7 @@ app.use(express.static('public'));
 
 // Adds Batch data for this experiment. unique batchID based on time/date
 db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn,
-        'teamfeedbackOn': teamfeedbackOn, 'psychologicalSafetyOn' : psychologicalSafetyOn, 'checkinOn': checkinOn, 'conditions': conditions, 'experimentRound': experimentRound,
+        'teamfeedbackOn': teamfeedbackOn, 'groupPerformanceOn' : groupPerformanceOn, 'psychologicalSafetyOn' : psychologicalSafetyOn, 'checkinOn': checkinOn, 'conditions': conditions, 'experimentRound': experimentRound,
         'numRounds': numRounds, 'teamSize': teamSize}, (err, usersAdded) => {
     if(err) console.log("There's a problem adding batch to the DB: ", err);
     else if(usersAdded) console.log("Batch added to the DB");
@@ -322,6 +329,7 @@ io.on('connection', (socket) => {
             'starterCheck':[],
             'viabilityCheck':[],
             'psychologicalSafety':[],
+            'groupPerformance':[],
             'manipulationCheck':'',
             'blacklistCheck':'',
             'engagementFeedback': '',
@@ -457,6 +465,14 @@ io.on('connection', (socket) => {
         }
         io.in(user.id).emit("load", {element: 'psychologicalSafety', questions: loadQuestions(psychologicalSafetyFile), interstitial: false, showHeaderBar: true});
       }
+      else if (task_list[currentActivity] == "groupPerformance") {
+        if(timeCheckOn) {
+          recordTime("round");
+        }
+        io.in(user.id).emit("load", {element: 'groupPerformance', questions: loadQuestions(groupPerformanceFile), interstitial: false, showHeaderBar: true});
+      }
+
+
       else if (task_list[currentActivity] == "teamfeedbackSurvey") {
         if(midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
@@ -474,7 +490,11 @@ io.on('connection', (socket) => {
         } else if(timeCheckOn) {
           recordTime("round");
         } else if(psychologicalSafetyOn) {
-          recordTime("psychologicalSafety")}
+          recordTime("psychologicalSafety")
+        } else if(groupPerformanceOn) {
+          recordTime("groupPerformance")
+        }
+
         console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false})
         io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false});
       }
@@ -605,7 +625,7 @@ io.on('connection', (socket) => {
         //Done with round
         setTimeout(() => {
           console.log('done with round', currentRound);
-          users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
+          users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (groupPerformanceOn || midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
           currentRound += 1 // guard to only do this when a round is actually done.
           console.log(currentRound, "out of", numRounds)
         }, 1000 * 60 * 0.1 * roundMinutes)
@@ -721,6 +741,18 @@ io.on('connection', (socket) => {
     });
   });
 
+    socket.on('groupPerformanceSubmit', (data) => {
+    let user = users.byID(socket.id)
+    let currentRoom = user.room
+    let groupPerformanceResults = parseResults(data);
+    user.results.groupPerformance= groupPerformanceResults;
+    console.log(user.name, "submitted survey:", user.results.groupPerformance);
+    db.groupPerformance.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'groupPerformance': user.results.groupPerformance, 'batch':batchID}, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding groupPerformance to the DB: ", err);
+      else if(usersAdded) console.log("groupPerformance added to the DB");
+    });
+  });
+
   socket.on('teamfeedbackSurveySubmit', (data) => {
     let user = users.byID(socket.id)
     let currentRoom = user.room
@@ -781,7 +813,10 @@ io.on('connection', (socket) => {
         answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox', textValue: false};
       } else if (answerTag === "LH") { //leave hit yn
         answerObj = leaveHitAnswers;
+      } else if (answerTag === "S3") { //leave hit yn
+        answerObj = answers3;
       }
+
       questionObj['answers'] = answerObj.answers;
       questionObj['answerType'] = answerObj.answerType;
       questionObj['textValue'] = answerObj.textValue;
