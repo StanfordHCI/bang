@@ -105,16 +105,13 @@ ul {
   margin-right: auto;
 }
 
-
-
-
 .login.page .title {
   font-size: 200%;
   display: inline-block;
 }
 
 .login.page .intro {
-  font-size: 100%;
+  font-size: 120%;
 }
 
 .login.page .usernameInput {
@@ -206,7 +203,7 @@ ul {
   display: inline-block;
   position: relative;
   float: left;
-  min-width: 100px;
+  min-width: 130px;
   margin: 5px;
 }
 
@@ -284,7 +281,7 @@ input[type='radio']:checked~label, input[type='checkbox']:checked~label {
 .rb-spot + label {
   position: relative;
   display: inherit;
-  font-size:.8em;
+  font-size:.9em;
   transform: translate(0, 25%);
 }
 
