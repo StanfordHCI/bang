@@ -1,0 +1,10 @@
+S2. Respected <span style="float:right;">Not respected</span>
+S2. Inconsiderate <span style="float:right;">Considerate</span>
+S2. Unlikable <span style="float:right;">Likable</span>
+S2. Power <span style="float:right;">Powerless</span>
+S2. Low status <span style="float:right;">High status</span>
+S2. Leader <span style="float:right;">Follower</span>
+S2. Competent <span style="float:right;">Incompetent</span>
+S2. Knowledgeable <span style="float:right;">Unknowledgeable</span>
+S2. Incapable <span style="float:right;">Capable</span>
+S2. Cooperative <span style="float:right;">Uncooperative</span>
