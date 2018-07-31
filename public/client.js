@@ -158,6 +158,7 @@ $(function() {
       if(preChat) {
         answered = true;
         socket.emit('accepted user chatted', {time: Date.now()});
+        socket.emit('log', holdingUsername.innerText+ ': ' + message);
       } else {
         socket.emit('new message', message);
       }
