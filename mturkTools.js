@@ -4,6 +4,7 @@ require('dotenv').config()
 
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE"//ONLY CHANGE IN VIM ON SERVER
+const noUSA = false; // if true, turkers in the USA will not be able to see the HIT
 const teamSize = process.env.TEAM_SIZE
 const roundMinutes = process.env.ROUND_MINUTES
 
@@ -337,15 +338,30 @@ const returnCurrentHIT = () => {
 
 const launchBang = () => {
   // HIT Parameters
-  let QualificationReqs = [
-    {
-      QualificationTypeId:"00000000000000000071",  // US workers only
-      LocaleValues:[{
-        Country:"US",
-      }],
-      Comparator:"In",
-      ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
+
+  let qualificationReqs = [{}];
+
+  if(noUSA) {
+    QualificationReqs = [
+      {
+        QualificationTypeId:"00000000000000000071",  // non-US workers only
+        LocaleValues:[{
+          Country:"US",
+        }],
+        Comparator:"NotIn",
+        ActionsGuarded:"DiscoverPreviewAndAccept"  // only users outside of the US can see the HIT
+      }];
+  } else {
+    QualificationReqs = [
+      {
+        QualificationTypeId:"00000000000000000071",  // US workers only
+        LocaleValues:[{
+          Country:"US",
+        }],
+        Comparator:"In",
+        ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
     }];
+  }
 
   if (qualificationsOn) {
     QualificationReqs.push({
