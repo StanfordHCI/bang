@@ -8,8 +8,8 @@ const roundMinutes = process.env.ROUND_MINUTES
 
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = true
-const cleanHITs = true
+const issueBonusesNow = false
+const cleanHITs = false
 const assignQualifications = false
 const debugMode = !runningLive
 
@@ -631,6 +631,11 @@ io.on('connection', (socket) => {
 
       //Round warning
       // make timers run in serial
+       setTimeout(() => {
+        console.log('discussion questions', currentRound);
+        users.forEach(user => { io.in(user.id).emit('timer2', {time: roundMinutes * .6}) });
+      })
+
       setTimeout(() => {
         console.log('time warning', currentRound);
         users.forEach(user => { io.in(user.id).emit('timer', {time: roundMinutes * .1}) });

@@ -686,6 +686,13 @@ $(function() {
       socket.emit('execute experiment')
   });
 
+socket.on('timer2', data => {
+  log("<br>You're about <strong>60%</strong> done with this session! One part of the ad-writing process involves developing an ad strategy; brainstorm answers to the following questions for your ad:<br>\
+      <ul style='list-style-type:disc'> \
+        <li><strong>1. Who should your target audience be for this ad?</strong><br></li> \
+        <li><strong>2. What platform(s) should your ad run on?</strong><br></li>") 
+    }); 
+
   socket.on('timer',data => {
     log("You're about <strong>90% done with this session</strong>. Enter your final result now.")
     log("Remember, it needs to be <strong>maximum 30 characters long</strong>.")
