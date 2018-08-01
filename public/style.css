@@ -38,11 +38,27 @@ ul {
   -moz-box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
   box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
   z-index: 999;
+  display: flex;
 }
 
-.header h3 {
+
+#header-text-div {
+  flex: 1;
+}
+
+
+#header-text {
   color: white;
   text-align: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#character-counter {
+  color: black;
+  text-indent: 20px;
+  text-align: left;
 }
 
 #leave-hit-button {
@@ -54,6 +70,9 @@ ul {
   width: max-content;
 }
 
+#character-count {
+  color: black;
+}
 
 /* Pages */
 
@@ -379,18 +398,36 @@ button:hover {
 }
 
 /* Input */
+.input-area {
+  bottom: 0;
+  height: 60px;
+  left: 0;
+  display: flex;
+  position:fixed;
+  width:100%;
+}
 
+.input-message-div {
+  flex: 1;
+  height: 60px;
+  display: inline-block;
+}
 .inputMessage {
 /*   background-color: #ddd; */
 /*   color: #fff; */
   bottom: 0;
-  height: 60px;
+  height: 100%;
   left: 0;
   outline: none;
   padding-left: 10px;
-  position: absolute;
-  right: 0;
   width: 100%;
+  resize: none;
+}
+
+#character-counter-div { 
+  position: relative;
+  width: 200px;
+  height: 60px;
 }
 
 .ui-autocomplete .ui-menu-item{

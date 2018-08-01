@@ -326,7 +326,7 @@ io.on('connection', (socket) => {
             'blacklistCheck':'',
             'engagementFeedback': '',
             'teamfracture':'',
-            'teamfeedback':''
+            'teamfeedback':'',
           }
         };
 
