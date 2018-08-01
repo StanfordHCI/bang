@@ -4,13 +4,13 @@ require('dotenv').config()
 
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE"//ONLY CHANGE IN VIM ON SERVER
-const teamSize = process.env.TEAM_SIZE
+const teamSize = parseInt(process.env.TEAM_SIZE)
 const roundMinutes = process.env.ROUND_MINUTES
 
 const AWS = require('aws-sdk');
 
 const qualificationsOn = runningLive
-const runningDelayed = true
+const runningDelayed = false
 
 let endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 let submitTo = 'https://workersandbox.mturk.com'
@@ -32,27 +32,61 @@ AWS.config = {
   "sslEnabled": true
 }
 
-// Declaration of constants
+// Declaration of variables
 const numRounds = 3
-const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
+const taskDuration = roundMinutes * numRounds * 6
+//const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
 const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
-const hourlyWage = 12.50; // changes reward of experiment depending on length - change to 6?
-const rewardPrice = .60
+const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
+const rewardPrice = 0.50 // upfront cost
+const noUSA = false; // if true, turkers in the USA will not be able to see the HIT
+const multipleHITs = false; // if true, posts numHITs of hits with slightly different titles at the same time
+const numHITs = 3; 
+const maxAssignments = (teamSize * teamSize) + teamSize;
 let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
 let usersAcceptedHIT = 0;
-let numAssignments = teamSize * teamSize;
+let numAssignments = maxAssignments; // extra HITs for over-recruitment
 
+// multiple because of multipleHITs toggle - need to keep track of all active IDs
 let currentHitId = '';
+let currentHitId2 = '';
+let currentHitId3 = '';
+
 let hitsLeft = numAssignments; // changes when users accept and disconnect (important - don't remove)
+let taskStarted = false;
 
 let qualificationId = '';
 if(runningLive) {
   qualificationId = '3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG'; // a special qualification for our task
 }
 
+// Makes the MTurk externalHIT object, defaults to 700 px tall.
+const externalHIT = (taskURL, height = 700) => '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>' + height + '</FrameHeight></ExternalQuestion>'
+
 // This initiates the API
 // Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
 const mturk = new AWS.MTurk({ endpoint: endpoint });
+
+// * startTask *
+// -------------------------------------------------------------------
+// Notifies that task has started, cancel HIT posting.
+
+const startTask = () => {
+  taskStarted = true;
+}
+
+// * updatePayment *
+// -------------------------------------------------------------------
+// Changes the bonusPrice depending on the total time Turker has spent on the task.
+//
+// Takes a number as a parameter.
+
+const updatePayment = (totalTime) => {
+  bonusPrice = (hourlyWage * (totalTime / 60) - rewardPrice).toFixed(2);
+  if(bonusPrice < 0) {
+    bonusPrice = 0;
+  }
+}
 
 // * getBalance *
 // -------------------------------------------------------------------
@@ -104,8 +138,9 @@ const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoA
     //   },
     //   /* more items */
     // ],
-    Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
+    Question: externalHIT(taskURL)
   };
+
   mturk.createHIT(makeHITParams, (err, data) => {
     if (err) console.log(err, err.stack);
     else {
@@ -121,7 +156,7 @@ const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoA
 //
 // Takes HIT ID as parameter.
 
-const returnHIT = (hitId, ) => {
+const returnHIT = (hitId) => {
   var returnHITParams = {
     HITId: hitId /* required */
   };
@@ -135,19 +170,14 @@ const returnHIT = (hitId, ) => {
 // -------------------------------------------------------------------
 // Expires all active HITs by updating the time-until-expiration to 0.
 // Users who have already accepted the HIT should still be able to finish and submit.
+//
+// Takes a HIT ID as a parameter
 
-const expireActiveHits = () => {
-  mturk.listHITs({}, (err, data) => {
-    if (err) console.log(err, err.stack);
-    else {
-      data.HITs.map((hit) => {
-        mturk.updateExpirationForHIT({HITId: hit.HITId,ExpireAt:0}, (err, data) => {
-          if (err) { console.log(err, err.stack)
-          } else {console.log("Expired HIT:", hit.HITId)}
-        });
-      })
-    }
-  })
+const expireActiveHits = (HIT) => {
+  mturk.updateExpirationForHIT({HITId: HIT,ExpireAt:0}, (err, data) => {
+    if (err) { console.log(err, err.stack)
+    } else {console.log("Expired HIT:", HIT)}
+  });
 }
 
 // * deleteHIT *
@@ -193,34 +223,16 @@ const createQualification = (name) => {
 
 const setAssignmentsPending = (data) => {
   usersAcceptedHIT = data
-  hitsLeft = teamSize * teamSize - usersAcceptedHIT
-
+  hitsLeft = maxAssignments - usersAcceptedHIT
   console.log('users accepted: ', usersAcceptedHIT)
   console.log('hits left: ', hitsLeft);
-}
-
-// * increaseAssignmentsPending *
-// -------------------------------------------------------------------
-// Keeps track of how many assignments have been accepted by Turkers - necessary for HIT reposting.
-// Called whenever a user accepts a HIT (server.js)
-
-const increaseAssignmentsPending = () => {
-  usersAcceptedHIT = usersAcceptedHIT + 1;
-  hitsLeft = hitsLeft - 1;
-  console.log('users accepted: ', usersAcceptedHIT)
-  console.log('hits left: ', hitsLeft);
-}
-
-// * reduceAssignmentsPending *
-// -------------------------------------------------------------------
-// Keeps track of how many assignments have been accepted by Turkers - necessary for HIT reposting.
-// Called whenever a user disconnects (server.js)
-
-const reduceAssignmentsPending = () => {
-  usersAcceptedHIT = usersAcceptedHIT - 1;
-  hitsLeft = hitsLeft + 1;
-  console.log('users accepted: ', usersAcceptedHIT)
-  console.log('hits left: ', hitsLeft);
+  if(taskStarted) {
+    expireActiveHits(currentHitId);
+      if(multipleHITs) {
+        expireActiveHits(currentHitId2);
+        expireActiveHits(currentHitId3);
+      }
+  }
 }
 
 // * assignQualificationToUsers *
@@ -287,9 +299,9 @@ const payBonuses = (users) => {
       Reason: "Thanks for participating in our HIT!",
       WorkerId: u.mturkId,
       UniqueRequestToken: u.id
-    }, function(err, data) { 
+    }, function(err, data) {
       if (err) {
-       // console.log("Bonus not processed:",err) 
+       // console.log("Bonus not processed:",err)
       } else {
         successfullyBonusedUsers.push(u)
         console.log("Bonused:",u)
@@ -335,21 +347,50 @@ const checkBlocks = (removeBlocks = false) => {
   })
 }
 
+// * returnCurrentHIT *
+// -------------------------------------------------------------------
+// Returns the current active HIT ID
+// If multiple HITs, returns an array of the HIT IDs
+
+const returnCurrentHIT = () => {
+  if(multipleHITs) {
+    let HITs = [currentHitId, currentHitId2, currentHitId3]
+    return HITs;
+  } else {
+    return currentHitId;
+  }
+}
+
 // * launchBang *
 // -------------------------------------------------------------------
 // Launches Scaled-Humanity Fracture experiment
 
 const launchBang = () => {
   // HIT Parameters
-  let QualificationReqs = [
-    {
-      QualificationTypeId:"00000000000000000071",  // US workers only
-      LocaleValues:[{
-        Country:"US",
-      }],
-      Comparator:"In",
-      ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
+
+  let qualificationReqs = [{}];
+
+  if(noUSA) {
+    QualificationReqs = [
+      {
+        QualificationTypeId:"00000000000000000071",  // non-US workers only
+        LocaleValues:[{
+          Country:"US",
+        }],
+        Comparator:"NotIn",
+        ActionsGuarded:"DiscoverPreviewAndAccept"  // only users outside of the US can see the HIT
+      }];
+  } else {
+    QualificationReqs = [
+      {
+        QualificationTypeId:"00000000000000000071",  // US workers only
+        LocaleValues:[{
+          Country:"US",
+        }],
+        Comparator:"In",
+        ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
     }];
+  }
 
   if (qualificationsOn) {
     QualificationReqs.push({
@@ -376,8 +417,10 @@ const launchBang = () => {
 
   let time = Date.now();
 
+  let HITTitle = 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')';
+
   let params = {
-    Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')',
+    Title: HITTitle,
     Description: 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10)  + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
     AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
     LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
@@ -386,27 +429,46 @@ const launchBang = () => {
     Keywords: 'ads, writing, copy editing, advertising',
     MaxAssignments: numAssignments,
     QualificationRequirements: QualificationReqs,
-    Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
+    Question: externalHIT(taskURL)
   };
 
-  mturk.createHIT(params, (err, data) => {
-    if (err) {
-      console.log(err, err.stack);
-    } else {
-      console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
-      currentHitId = data.HIT.HITId;
+  if(multipleHITs) {
+    for(i = 1; i <= numHITs; i++) {
+      if(i > 1) {
+        HITTitle = HITTitle + i;
+      }
+      mturk.createHIT(params, (err, data) => {
+        if (err) {
+          console.log(err, err.stack);
+        } else {
+          console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
+          currentHitId = data.HIT.HITId;
+          if(i == 2) { currentHitId2 = data.HIT.HITId; }
+          if(i == 3) { currentHitId3 = data.HIT.HITId; }
+        }
+      });
     }
-  });
+  } else {
+    mturk.createHIT(params, (err, data) => {
+      if (err) {
+        console.log(err, err.stack);
+      } else {
+        console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
+        currentHitId = data.HIT.HITId;
+      }
+    });
+  }
 
   let delay = 1;
   // only continues to post if not enough people accepted HIT
   // Reposts every timeActive(x) number of minutes to keep HIT on top - stops reposting when enough people join
   setTimeout(() => {
-    if(hitsLeft > 0) {
+    if(hitsLeft > 0 && !taskStarted) {
       time = Date.now();
       numAssignments = hitsLeft;
+      let HITTitle = 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')';
       let params2 = {
-        Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')',
+        Title: HITTitle,
         Description: 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10)  + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
         AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
         LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
@@ -415,31 +477,55 @@ const launchBang = () => {
         Keywords: 'ads, writing, copy editing, advertising',
         MaxAssignments: numAssignments,
         QualificationRequirements: QualificationReqs,
-        Question: '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>400</FrameHeight></ExternalQuestion>',
+        Question: externalHIT(taskURL)
       };
-      mturk.createHIT(params2, (err, data) => {
-        if (err) console.log(err, err.stack);
-        else {
-          console.log("HIT expired, and posted", data.HIT.MaxAssignments, "new assignments:", data.HIT.HITId);
-          currentHitId = data.HIT.HITId;
+      if(multipleHITs) {
+        for(i = 1; i <= numHITs; i++) {
+          if(i > 1) {
+            HITTitle = HITTitle + i;
+          }
+          mturk.createHIT(params, (err, data) => {
+            if (err) {
+              console.log(err, err.stack);
+            } else {
+              console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
+              currentHitId = data.HIT.HITId;
+              if(i == 2) { currentHitId2 = data.HIT.HITId; }
+              if(i == 3) { currentHitId3 = data.HIT.HITId; }
+            }
+          });
         }
-      });
+      } else {
+        mturk.createHIT(params, (err, data) => {
+          if (err) {
+            console.log(err, err.stack);
+          } else {
+            console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
+            currentHitId = data.HIT.HITId;
+          }
+        });
+      }
       delay++;
     } else {
       clearTimeout();
+      expireActiveHits(currentHitId);
+      if(multipleHITs) {
+        expireActiveHits(currentHitId2);
+        expireActiveHits(currentHitId3);
+      }
     }
    }, 1000 * 60 * timeActive * delay)
 }
 
 module.exports = {
+  startTask: startTask,
+  updatePayment: updatePayment,
   getBalance: getBalance,
   makeHIT: makeHIT,
   returnHIT: returnHIT,
   expireActiveHits: expireActiveHits,
   deleteHIT: deleteHIT,
   createQualification: createQualification,
-  increaseAssignmentsPending: increaseAssignmentsPending,
-  reduceAssignmentsPending: reduceAssignmentsPending,
   setAssignmentsPending: setAssignmentsPending,
   assignQualificationToUsers: assignQualificationToUsers,
   disassociateQualification: disassociateQualification,
@@ -448,6 +534,7 @@ module.exports = {
   bonusPrice: bonusPrice,
   blockWorker: blockWorker,
   checkBlocks: checkBlocks,
+  returnCurrentHIT: returnCurrentHIT,
   submitTo: submitTo,
   launchBang: launchBang
 };
