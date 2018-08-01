@@ -342,9 +342,15 @@ const checkBlocks = (removeBlocks = false) => {
 // * returnCurrentHIT *
 // -------------------------------------------------------------------
 // Returns the current active HIT ID
+// If multiple HITs, returns an array of the HIT IDs
 
 const returnCurrentHIT = () => {
-  return currentHitId;
+  if(multipleHITs) {
+    let HITs = [currentHitId, currentHitId2, currentHitId3]
+    return HITs;
+  } else {
+    return currentHitId;
+  }
 }
 
 // * launchBang *
