@@ -178,7 +178,7 @@ $(function() {
         // 'height': $messageBodyDiv.css("height"),
         'display':'inline-block'
         });
-      
+
 
     const typingClass = data.typing ? 'typing' : '';
     const $messageDiv = $('<li class="message"/>')
@@ -318,7 +318,7 @@ $(function() {
         $("#character-count").css("color", "red");
       }
     } else {
-      document.getElementById("character-count").innerHTML = characterCount; 
+      document.getElementById("character-count").innerHTML = characterCount;
       $("#character-counter").css("color", "black");
       $("#character-count").css("color", "black");
     }
@@ -459,7 +459,7 @@ $(function() {
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', data => {
     addChatMessage(data);
-    notify("New Message", "You have received a new message!")
+    notify("New message", data.username + ": " + data.message)
   });
 
   // whenever the server emits 'checkin pop up', show checkin popup
@@ -844,5 +844,5 @@ var LeavingAlert = false;
 if (LeavingAlert) {
   window.onbeforeunload = function(){
     return 'Are you sure you want to leave?';
-  };  
+  };
 }
