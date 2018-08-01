@@ -20,6 +20,7 @@ const assignQualifications = false
 const debugMode = !runningLive
 
 const suddenDeath = false
+const multipleHITs = false // cross-check with mturkTools.js
 
 const randomCondition = false
 const randomRoundOrder = false
@@ -212,6 +213,25 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
     }
 }); // task_list instead of all of the toggles? (missing checkinOn)
 
+// Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
+setTimeout(() => {
+  if(multipleHITs) {
+    let currentHIT = mturk.returnCurrentHIT();
+    for(i = 0; i < currentHIT.length(); i++) {
+      db.ourHITs.insert({'currentHIT': currentHIT[i]}, (err, HITAdded) => {
+        if(err) console.log("There's a problem adding HIT to the DB: ", err);
+        else if(HITAdded) console.log("HIT added to the DB: ", currentHIT[i]);
+      })
+    }
+  } else {
+    let currentHIT = mturk.returnCurrentHIT();
+    db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+      if(err) console.log("There's a problem adding HIT to the DB: ", err);
+      else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+    })
+  }
+}, 1000 * 12)
+
 // Chatroom
 io.on('connection', (socket) => {
     //NOTE: THIS fxn is called multiple times so these conditions will be set multiple times
@@ -259,6 +279,18 @@ io.on('connection', (socket) => {
     // when the client emits 'add user', this listens and executes
     socket.on('add user', function (data) {
         if (addedUser) {return}
+
+        console.log('before enough people')
+        if (enoughPeople || users.every(user => user.id !== socket.id)) { //fix money
+          console.log('after enough people')
+              io.in(socket.id).emit('finished', {
+                    message: "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
+                    finishingCode: socket.id,
+                    turkSubmitTo: mturk.submitTo,
+                    assignmentId: user.assignmentId,
+                    crashed: false
+              })
+        }
 
         // we store the username in the socket session for this client
         name_structure = tools.makeName();
@@ -375,6 +407,23 @@ io.on('connection', (socket) => {
 
           if (!taskOver && suddenDeath && taskStarted){
             // Start cancel process
+
+            if(multipleHITs) {
+              let currentHIT = mturk.returnCurrentHIT();
+              for(i = 0; i < currentHIT.length(); i++) {
+                db.ourHITs.insert({'currentHIT': currentHIT[i]}, (err, HITAdded) => {
+                  if(err) console.log("There's a problem adding HIT to the DB: ", err);
+                  else if(HITAdded) console.log("HIT added to the DB: ", currentHIT[i]);
+                })
+              }
+            } else {
+              let currentHIT = mturk.returnCurrentHIT();
+              db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+                if(err) console.log("There's a problem adding HIT to the DB: ", err);
+                else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+              })
+            }
+
             console.log("User left, emitting cancel to all users");
 
             let totalTime = getSecondsPassed();
@@ -402,6 +451,23 @@ io.on('connection', (socket) => {
                   user.bonus += mturk.bonusPrice/2
                 }
                 updateUserInDB(user,'bonus',user.bonus)
+
+                if(multipleHITs) {
+                  let currentHIT = mturk.returnCurrentHIT();
+                  for(i = 0; i < currentHIT.length(); i++) {
+                    db.ourHITs.insert({'currentHIT': currentHIT[i]}, (err, HITAdded) => {
+                      if(err) console.log("There's a problem adding HIT to the DB: ", err);
+                      else if(HITAdded) console.log("HIT added to the DB: ", currentHIT[i]);
+                    })
+                  }
+                } else {
+                  let currentHIT = mturk.returnCurrentHIT();
+                  db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+                    if(err) console.log("There's a problem adding HIT to the DB: ", err);
+                    else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+                  })
+                }
+
               }
               io.in(user.id).emit('finished', {
                   message: cancelMessage,
