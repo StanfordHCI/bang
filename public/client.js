@@ -284,6 +284,8 @@ $(function() {
   })
 
   // Keyboard events
+  document.getElementById("character-count").innerHTML = 0;
+
   $window.keydown(event => {
     // Auto-focus the current input when a key is typed
     if (!(event.ctrlKey || event.metaKey || event.altKey)) {
@@ -303,7 +305,24 @@ $(function() {
       //&& $inputMessage.autocomplete("instance").menu.active as a poteantial second condition
       event.preventDefault()
     }
-  })
+  });
+
+  $inputMessage.keyup(function (event) {
+    const currentInput = $("#inputMessage").val();
+    const characterCount = currentInput.length;
+    if (currentInput[0] == "!") {
+      document.getElementById("character-count").innerHTML = characterCount - 1; //excluding the !
+      if (characterCount - 1 > 30) {
+        $("#character-counter").addClass
+        $("#character-counter").css("color", "red");
+        $("#character-count").css("color", "red");
+      }
+    } else {
+      document.getElementById("character-count").innerHTML = characterCount; 
+      $("#character-counter").css("color", "black");
+      $("#character-count").css("color", "black");
+    }
+  });
 
   //note: only built to handle 1 checkin question, should expand?
   $('#checkin-form').submit( (event) => {
@@ -610,15 +629,6 @@ $(function() {
           }
         }
       }
-
-      let currentInput = $("#inputMessage").val();
-      if (currentInput[0] == "!") {
-        let characterCount = currentInput.length;
-        document.getElementById("character-count").innerHTML = characterCount - 1; //excluding the !
-      } else {
-        document.getElementById("character-count").innerHTML = 0; //excluding the !
-      }
-      
     });
   });
 
@@ -830,7 +840,9 @@ const decodeURL = (toDecode) => {
   return unescape(encoded.replace(/\+/g,  " "));
 }
 
-window.onbeforeunload = function(){
-  return 'Are you sure you want to leave?';
-};
-
+var LeavingAlert = false;
+if (LeavingAlert) {
+  window.onbeforeunload = function(){
+    return 'Are you sure you want to leave?';
+  };  
+}

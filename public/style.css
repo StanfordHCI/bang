@@ -41,10 +41,7 @@ ul {
   display: flex;
 }
 
-#character-counter-div { 
-  flex: 0 1 35%;
-  position: relative;
-}
+
 #header-text-div {
   flex: 1;
 }
@@ -59,9 +56,9 @@ ul {
 }
 
 #character-counter {
-  color: white;
-  text-align: left;
+  color: black;
   text-indent: 20px;
+  text-align: left;
 }
 
 #leave-hit-button {
@@ -74,8 +71,7 @@ ul {
 }
 
 #character-count {
-  color: white;
-  text-align: left;
+  color: black;
 }
 
 /* Pages */
@@ -402,18 +398,36 @@ button:hover {
 }
 
 /* Input */
+.input-area {
+  bottom: 0;
+  height: 60px;
+  left: 0;
+  display: flex;
+  position:fixed;
+  width:100%;
+}
 
+.input-message-div {
+  flex: 1;
+  height: 60px;
+  display: inline-block;
+}
 .inputMessage {
 /*   background-color: #ddd; */
 /*   color: #fff; */
   bottom: 0;
-  height: 60px;
+  height: 100%;
   left: 0;
   outline: none;
   padding-left: 10px;
-  position: absolute;
-  right: 0;
   width: 100%;
+  resize: none;
+}
+
+#character-counter-div { 
+  position: relative;
+  width: 200px;
+  height: 60px;
 }
 
 .ui-autocomplete .ui-menu-item{
