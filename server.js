@@ -14,6 +14,7 @@ const assignQualifications = false
 const debugMode = !runningLive
 
 const suddenDeath = false
+const multipleHITs = false // cross-check with mturkTools.js
 
 const randomCondition = false
 const randomRoundOrder = false
@@ -215,11 +216,21 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
 
 // Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
 setTimeout(() => {
-  let currentHIT = mturk.returnCurrentHIT();
-  db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
-    if(err) console.log("There's a problem adding HIT to the DB: ", err);
-    else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
-  })
+  if(multipleHITs) {
+    let currentHIT = mturk.returnCurrentHIT();
+    for(i = 0; i < currentHIT.length(); i++) {
+      db.ourHITs.insert({'currentHIT': currentHIT[i]}, (err, HITAdded) => {
+        if(err) console.log("There's a problem adding HIT to the DB: ", err);
+        else if(HITAdded) console.log("HIT added to the DB: ", currentHIT[i]);
+      })
+    }
+  } else {
+    let currentHIT = mturk.returnCurrentHIT();
+    db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+      if(err) console.log("There's a problem adding HIT to the DB: ", err);
+      else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+    })
+  }
 }, 1000 * 12)
 
 // Chatroom
@@ -326,7 +337,7 @@ io.on('connection', (socket) => {
             'blacklistCheck':'',
             'engagementFeedback': '',
             'teamfracture':'',
-            'teamfeedback':''
+            'teamfeedback':'',
           }
         };
 
@@ -379,11 +390,21 @@ io.on('connection', (socket) => {
           if (!taskOver && suddenDeath){
             // Start cancel process
 
-            let currentHIT = mturk.returnCurrentHIT();
-            db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
-              if(err) console.log("There's a problem adding HIT to the DB: ", err);
-              else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
-            })
+            if(multipleHITs) {
+              let currentHIT = mturk.returnCurrentHIT();
+              for(i = 0; i < currentHIT.length(); i++) {
+                db.ourHITs.insert({'currentHIT': currentHIT[i]}, (err, HITAdded) => {
+                  if(err) console.log("There's a problem adding HIT to the DB: ", err);
+                  else if(HITAdded) console.log("HIT added to the DB: ", currentHIT[i]);
+                })
+              }
+            } else {
+              let currentHIT = mturk.returnCurrentHIT();
+              db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+                if(err) console.log("There's a problem adding HIT to the DB: ", err);
+                else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+              })
+            }
 
             console.log("User left, emitting cancel to all users");
 
@@ -500,11 +521,21 @@ io.on('connection', (socket) => {
         user.bonus += mturk.bonusPrice
         updateUserInDB(user,"bonus",user.bonus)
 
-        let currentHIT = mturk.returnCurrentHIT();
-        db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
-          if(err) console.log("There's a problem adding HIT to the DB: ", err);
-          else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
-        })
+        if(multipleHITs) {
+          let currentHIT = mturk.returnCurrentHIT();
+          for(i = 0; i < currentHIT.length(); i++) {
+            db.ourHITs.insert({'currentHIT': currentHIT[i]}, (err, HITAdded) => {
+              if(err) console.log("There's a problem adding HIT to the DB: ", err);
+              else if(HITAdded) console.log("HIT added to the DB: ", currentHIT[i]);
+            })
+          }
+        } else {
+          let currentHIT = mturk.returnCurrentHIT();
+          db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+            if(err) console.log("There's a problem adding HIT to the DB: ", err);
+            else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+          })
+        }
 
         io.in(socket.id).emit('finished', {
           message: "Thanks for participating, you're all done!",
@@ -561,6 +592,8 @@ io.on('connection', (socket) => {
       let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
       taskStarted = true
+      mturk.startTask();
+
       users.forEach(user => {
         if (autocompleteTestOn) {
           let teamNames = [tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username]
