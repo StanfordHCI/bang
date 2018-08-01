@@ -384,8 +384,8 @@ io.on('connection', (socket) => {
           console.log('There was a disconnect');
           usersAccepted = usersAccepted.filter(user => user.id != socket.id);
 
-          debugLog(usersAccepted)
-          console.log("num users accepted:", usersAccepted.length);
+          //debugLog(usersAccepted)
+          //console.log("num users accepted:", usersAccepted.length);
           if((teamSize ** 2) - usersAccepted.length < 0) {
             io.sockets.emit('update number waiting', {num: 0});
           } else {
@@ -479,6 +479,9 @@ io.on('connection', (socket) => {
               })
             })
           }
+        }
+        if (!suddenDeath && users.length !== 0 && !users.every(user => user.id !== socket.id)) { //this sets users to ready when they disconnect; TODO remove user from users
+          users.byID(socket.id).ready = true
         }
         users = users.filter(user => user.id != socket.id);
 
@@ -587,7 +590,7 @@ io.on('connection', (socket) => {
       // if (incompleteRooms().length) {
       //   console.log("Some rooms empty:",incompleteRooms())
       //   return } //are all rooms assigned
-      if (users.length != teamSize ** 2) {
+      if (suddenDeath && users.length != teamSize ** 2) {
         console.log("Need",teamSize ** 2 - users.length,"more users.")
         return
       } 
