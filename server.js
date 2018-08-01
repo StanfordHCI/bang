@@ -552,6 +552,8 @@ io.on('connection', (socket) => {
       let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
       taskStarted = true
+      mturk.startTask();
+
       users.forEach(user => {
         if (autocompleteTestOn) {
           let teamNames = [tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username]
