@@ -282,7 +282,7 @@ io.on('connection', (socket) => {
         if (addedUser) {return}
 
         console.log('before enough people')
-        if (enoughPeople || users.every(user => user.id !== socket.id)) { //fix money
+        if (enoughPeople) { //fix money
           console.log('after enough people')
               io.in(socket.id).emit('finished', {
                     message: "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
