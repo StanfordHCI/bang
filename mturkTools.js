@@ -232,6 +232,7 @@ const setAssignmentsPending = (data) => {
         expireActiveHits(currentHitId2);
         expireActiveHits(currentHitId3);
       }
+    console.log("expired active HITs")
   }
 }
 
