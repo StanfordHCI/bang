@@ -459,7 +459,7 @@ $(function() {
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', data => {
     addChatMessage(data);
-    notify("New message", data.username + ": " + data.message)
+    notify(data.username + ": " + data.message,)
   });
 
   // whenever the server emits 'checkin pop up', show checkin popup
