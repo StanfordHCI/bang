@@ -118,6 +118,7 @@ const Datastore = require('nedb'),
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
     db.time = new Datastore({ filename:'.data/time', autoload: true}); // store duration of tasks
     db.leavingMessage = new Datastore({filename: '.data/leavingMessage', autoload: true})
+    db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true})
 
 
 const updateUserInDB = (user,feild,value) => { db.users.update(
@@ -287,7 +288,7 @@ io.on('connection', (socket) => {
                     message: "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
                     finishingCode: socket.id,
                     turkSubmitTo: mturk.submitTo,
-                    assignmentId: user.assignmentId,
+                    assignmentId: socket.id,
                     crashed: false
               })
         }
