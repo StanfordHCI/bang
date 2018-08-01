@@ -226,7 +226,7 @@ const setAssignmentsPending = (data) => {
   hitsLeft = maxAssignments - usersAcceptedHIT
   console.log('users accepted: ', usersAcceptedHIT)
   console.log('hits left: ', hitsLeft);
-  if(hitsLeft <= (teamSize * teamSize)) {
+  if(taskStarted) {
     expireActiveHits(currentHitId);
       if(multipleHITs) {
         expireActiveHits(currentHitId2);
