@@ -563,8 +563,8 @@ $(function() {
   });
 
   socket.on('go', data => {
+    messagesSafe.innerHTML = ''
     startTimer(60 * data.duration - 1, $headerText) // start header timer, subtract 1 to give more notice
-
     document.getElementById("inputMessage").value = '' //clear chat in new round
     hideAll();
     $chatPage.show();

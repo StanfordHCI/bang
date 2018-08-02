@@ -3,8 +3,8 @@ require('dotenv').config()
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE
-const roundMinutes = process.env.ROUND_MINUTES
+const teamSize = process.env.TEAM_SIZE = 2
+const roundMinutes = process.env.ROUND_MINUTES = 0.5
 
 //Parameters for waiting qualifications
 const secondsToWait = 30 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
