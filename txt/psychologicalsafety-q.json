@@ -1,0 +1,13 @@
+{ "instructions": "Please thoughtfully answer the following questions about your last team. Your answers will have no impact on your task performance or ability to work with us in the future.",
+"name":"psychologicalsafety-q", 
+"questions":[
+{ "answerType":"S1", "question":"If you make a mistake on this team, it is often held against you."},
+{ "answerType":"S1", "question":"Members of this team are able to bring up problems and tough issues."},
+{ "answerType":"S1", "question":"People on this team sometimes reject others for being different."},
+{ "answerType":"S1", "question":"It is safe to take a risk on this team."},
+{ "answerType":"S1", "question":"It is difficult to ask other members of this team for help."},
+{ "answerType":"S1", "question":"No one on this team would deliberately act in a way that undermines my efforts."},
+{ "answerType":"S1", "question":"Working with members of this team, my unique skills and talents are valued and utilized."}
+]
+}
+

@@ -1,0 +1,20 @@
+{ "instructions": "Please thoughtfully answer the following questions about your last team. Your answers will have no impact on your task performance or ability to work with us in the future.",
+"name":"midsurvey-q", 
+"questions":[
+{ "answerType":"S1", "question":"The members of this team could work for a long time together."},
+{ "answerType":"S1", "question":"Most of the members of this team would welcome the opportunity to work as a group again in, the future."},
+{ "answerType":"S1", "question":"This team has the capacity for long-term success."},
+{ "answerType":"S1", "question":"This team has what it takes to be effective in the future."},
+{ "answerType":"S1", "question":"This team would work well together in the future."},
+{ "answerType":"S1", "question":"This team has positioned itself well for continued success."},
+{ "answerType":"S1", "question":"This team has the ability to perform well in the future."},
+{ "answerType":"S1", "question":"This team has the ability to function as an ongoing unit"},
+{ "answerType":"S1", "question":"This team should continue to function as a unit."},
+{ "answerType":"S1", "question":"This team has the resources to perform well in the future"},
+{ "answerType":"S1", "question":"This team is well positioned for growth over time."},
+{ "answerType":"S1", "question":"This team can develop to meet future challenges."},
+{ "answerType":"S1", "question":"This team has the capacity to sustain itself."},
+{ "answerType":"S1", "question":"This team has what it takes to endure in future performance episodes"},
+{ "answerType":"YN", "question":"If you had the choice, would you like to work with the same team in a future round?"}
+]
+}

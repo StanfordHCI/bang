@@ -1,0 +1,6 @@
+{ "agreementScale": {"answers": ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"], 
+    "answerType": "radio", 
+    "textValue": true},
+    "extremeScale": {"answers": ["", "", "", "", "", ""], "answerType": "radio", "textValue": true},
+    "binaryScale": {"answers": ["Yes", "No"], "answerType": "radio", "textValue": true}
+}

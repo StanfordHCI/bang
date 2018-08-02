@@ -1,0 +1,13 @@
+{ "instructions": "Please thoughtfully rate your team members on the following characteristics. Select your rating based on where each member falls within the two anchor characteristics. <br><br> Your answers will have no impact on your task performance or ability to work with us in the future.",
+    "name":"statusCharacteristics-q",
+"questions": [{"answerType": "S2", "question": "Respected <span style='float:right;'>Not respected</span>"},
+{"answerType": "S2", "question": "Inconsiderate <span style='float:right;'>Considerate</span>"},
+{"answerType": "S2", "question": "Unlikable <span style='float:right;'>Likable</span>"},
+{"answerType": "S2", "question": "Power <span style='float:right;'>Powerless</span>"},
+{"answerType": "S2", "question": "Low status <span style='float:right;'>High status</span>"},
+{"answerType": "S2", "question": "Leader <span style='float:right;'>Follower</span>"},
+{"answerType": "S2", "question": "Competent <span style='float:right;'>Incompetent</span>"},
+{"answerType": "S2", "question": "Knowledgeable <span style='float:right;'>Unknowledgeable</span>"},
+{"answerType": "S2", "question": "Incapable <span style='float:right;'>Capable</span>"},
+{"answerType": "S2", "question": "Cooperative <span style='float:right;'>Uncooperative</span>"}]
+}

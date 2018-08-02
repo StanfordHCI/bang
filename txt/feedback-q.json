@@ -1,0 +1,8 @@
+{ "instructions": "We're thinking about hiring a manager to lead each team in the future. For this team, provide the manager with an anonymous statement about how your team would work together on future tasks. Your answers will have no impact on your ability to work with us in the future.",
+"name":"feedback-q", 
+"questions":[
+{ "answerType":"S1", "question":"I am likely to want to work with this team again."}
+]
+}
+
+

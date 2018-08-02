@@ -1,0 +1,9 @@
+{ "instructions": "These check-ins are anonymous and will be used by an algorithm to pair you with an optimal team for the next round.",
+    "name":"checkin-q", 
+    "questions":[
+    { "answerType":"S1", "question":"The members of this team could work for a long time together."}
+    ]
+    }
+    
+    
+
