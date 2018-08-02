@@ -20,7 +20,7 @@ const assignQualifications = false
 const debugMode = !runningLive
 
 const suddenDeath = false
-
+let setPerson = false
 const randomCondition = false
 const randomRoundOrder = false
 
@@ -534,9 +534,13 @@ io.on('connection', (socket) => {
       const conditionRound = conditions[currentCondition][currentRound] - 1
 
       // assign rooms to people and reset.
-      users.forEach(u => {
-        u.person = people.pop();
-      })
+      if(!setPerson){
+        users.forEach(u => {
+          u.person = people.pop();
+        })
+        setPerson = true
+      }
+      
       Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
         users.filter(u => room.includes(u.person)).forEach(u => {
           u.room = roomName
