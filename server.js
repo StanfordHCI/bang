@@ -589,7 +589,7 @@ io.on('connection', (socket) => {
 
       //Notify user 'go' and send task.
       let currentProduct = products[currentRound]
-      let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
+      let taskText = "Design a text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
       taskStarted = true
       mturk.startTask();
@@ -634,7 +634,6 @@ io.on('connection', (socket) => {
        setTimeout(() => {
         console.log('brainstorm over', currentRound);
         users.forEach(user => { io.in(user.id).emit('timer2', {time: roundMinutes * .5}) }); 
-
 
       setTimeout(() => {
         console.log('time warning', currentRound);

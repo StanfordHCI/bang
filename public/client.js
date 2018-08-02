@@ -504,7 +504,7 @@ $(function() {
 
     setTimeout(()=>{
       log(data.task)
-      log("Start by checking out the link above. For the next <strong>5 minutes</strong>, each member in your team should come up with ideas for a short advertisement of no more than <strong>30 characters in length</strong>. During this brainstorm period, post your ideas with preceded by a <strong>**</strong> (e.g. **example). After this, we will prompt you to discuss and pick the best option to submit.  At the end of the time we will tell you how to submit your final result.")
+      log("Start by checking out the link above. For the next <strong>5 minutes</strong>, each member in your team should come up with ideas for a short advertisement of no more than <strong>30 characters in length</strong>. During this brainstorm period, post your ideas with preceded by a <strong>**</strong> (e.g. **idea). After this, we will prompt you to discuss and pick the best option to submit.  At the end of the time we will tell you how to submit your final result.")
       let durationString = ""
       if (data.duration < 1) { durationString = Math.round(data.duration * 60) + " seconds"
       } else if (data.duration == 1) { durationString = "one minute"
