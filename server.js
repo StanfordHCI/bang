@@ -139,7 +139,7 @@ if (runningLive){
 }
 
 // expires HITs left in the DB
-if (cleanHITs){ 
+if (cleanHITs){
   db.ourHITs.find({}, (err, HITsInDB) => {
     if (err) {console.log("Err loading HITS for expiration:" + err)} else {
       HITsInDB.forEach((HIT) => {
