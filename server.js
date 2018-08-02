@@ -3,8 +3,8 @@ require('dotenv').config()
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE = 1
-const roundMinutes = process.env.ROUND_MINUTES = 2
+const teamSize = process.env.TEAM_SIZE
+const roundMinutes = process.env.ROUND_MINUTES
 
 // Toggles
 const runExperimentNow = true
@@ -139,7 +139,7 @@ if (runningLive){
 }
 
 // expires HITs left in the DB
-if (cleanHITs){ 
+if (cleanHITs){
   db.ourHITs.find({}, (err, HITsInDB) => {
     if (err) {console.log("Err loading HITS for expiration:" + err)} else {
       HITsInDB.forEach((HIT) => {
