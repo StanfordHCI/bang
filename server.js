@@ -21,6 +21,8 @@ const debugMode = !runningLive
 
 const suddenDeath = false
 let setPerson = false
+const multipleHITs = false // cross-check with mturkTools.js
+
 const randomCondition = false
 const randomRoundOrder = false
 
@@ -117,6 +119,7 @@ const Datastore = require('nedb'),
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
     db.time = new Datastore({ filename:'.data/time', autoload: true}); // store duration of tasks
     db.leavingMessage = new Datastore({filename: '.data/leavingMessage', autoload: true})
+    db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true})
 
 
 const updateUserInDB = (user,feild,value) => { db.users.update(
@@ -212,6 +215,25 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
     }
 }); // task_list instead of all of the toggles? (missing checkinOn)
 
+// Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
+setTimeout(() => {
+  if(multipleHITs) {
+    let currentHIT = mturk.returnCurrentHIT();
+    for(i = 0; i < currentHIT.length(); i++) {
+      db.ourHITs.insert({'currentHIT': currentHIT[i]}, (err, HITAdded) => {
+        if(err) console.log("There's a problem adding HIT to the DB: ", err);
+        else if(HITAdded) console.log("HIT added to the DB: ", currentHIT[i]);
+      })
+    }
+  } else {
+    let currentHIT = mturk.returnCurrentHIT();
+    db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+      if(err) console.log("There's a problem adding HIT to the DB: ", err);
+      else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+    })
+  }
+}, 1000 * 12)
+
 // Chatroom
 io.on('connection', (socket) => {
     //NOTE: THIS fxn is called multiple times so these conditions will be set multiple times
@@ -259,6 +281,18 @@ io.on('connection', (socket) => {
     // when the client emits 'add user', this listens and executes
     socket.on('add user', function (data) {
         if (addedUser) {return}
+
+        console.log('before enough people')
+        if (enoughPeople) { //fix money
+          console.log('after enough people')
+              io.in(socket.id).emit('finished', {
+                    message: "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
+                    finishingCode: socket.id,
+                    turkSubmitTo: mturk.submitTo,
+                    assignmentId: socket.id,
+                    crashed: false
+              })
+        }
 
         // we store the username in the socket session for this client
         name_structure = tools.makeName();
@@ -351,8 +385,8 @@ io.on('connection', (socket) => {
           console.log('There was a disconnect');
           usersAccepted = usersAccepted.filter(user => user.id != socket.id);
 
-          debugLog(usersAccepted)
-          console.log("num users accepted:", usersAccepted.length);
+          //debugLog(usersAccepted)
+          //console.log("num users accepted:", usersAccepted.length);
           if((teamSize ** 2) - usersAccepted.length < 0) {
             io.sockets.emit('update number waiting', {num: 0});
           } else {
@@ -375,6 +409,23 @@ io.on('connection', (socket) => {
 
           if (!taskOver && suddenDeath && taskStarted){
             // Start cancel process
+
+            if(multipleHITs) {
+              let currentHIT = mturk.returnCurrentHIT();
+              for(i = 0; i < currentHIT.length(); i++) {
+                db.ourHITs.insert({'currentHIT': currentHIT[i]}, (err, HITAdded) => {
+                  if(err) console.log("There's a problem adding HIT to the DB: ", err);
+                  else if(HITAdded) console.log("HIT added to the DB: ", currentHIT[i]);
+                })
+              }
+            } else {
+              let currentHIT = mturk.returnCurrentHIT();
+              db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+                if(err) console.log("There's a problem adding HIT to the DB: ", err);
+                else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+              })
+            }
+
             console.log("User left, emitting cancel to all users");
 
             let totalTime = getSecondsPassed();
@@ -402,6 +453,23 @@ io.on('connection', (socket) => {
                   user.bonus += mturk.bonusPrice/2
                 }
                 updateUserInDB(user,'bonus',user.bonus)
+
+                if(multipleHITs) {
+                  let currentHIT = mturk.returnCurrentHIT();
+                  for(i = 0; i < currentHIT.length(); i++) {
+                    db.ourHITs.insert({'currentHIT': currentHIT[i]}, (err, HITAdded) => {
+                      if(err) console.log("There's a problem adding HIT to the DB: ", err);
+                      else if(HITAdded) console.log("HIT added to the DB: ", currentHIT[i]);
+                    })
+                  }
+                } else {
+                  let currentHIT = mturk.returnCurrentHIT();
+                  db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+                    if(err) console.log("There's a problem adding HIT to the DB: ", err);
+                    else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+                  })
+                }
+
               }
               io.in(user.id).emit('finished', {
                   message: cancelMessage,
@@ -412,6 +480,9 @@ io.on('connection', (socket) => {
               })
             })
           }
+        }
+        if (!suddenDeath && users.length !== 0 && !users.every(user => user.id !== socket.id)) { //this sets users to ready when they disconnect; TODO remove user from users
+          users.byID(socket.id).ready = true
         }
         users = users.filter(user => user.id != socket.id);
 
@@ -520,7 +591,7 @@ io.on('connection', (socket) => {
       // if (incompleteRooms().length) {
       //   console.log("Some rooms empty:",incompleteRooms())
       //   return } //are all rooms assigned
-      if (users.length != teamSize ** 2) {
+      if (suddenDeath && users.length != teamSize ** 2) {
         console.log("Need",teamSize ** 2 - users.length,"more users.")
         return
       } 

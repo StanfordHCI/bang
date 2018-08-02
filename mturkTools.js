@@ -37,14 +37,15 @@ const numRounds = 3
 const taskDuration = roundMinutes * numRounds * 6
 //const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
 const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
-const hourlyWage = 12.50; // changes reward of experiment depending on length - change to 6?
-const rewardPrice = 1.50 // upfront cost
+const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
+const rewardPrice = 0.50 // upfront cost
 const noUSA = false; // if true, turkers in the USA will not be able to see the HIT
 const multipleHITs = false; // if true, posts numHITs of hits with slightly different titles at the same time
 const numHITs = 3; 
+const maxAssignments = (teamSize * teamSize) + teamSize;
 let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
 let usersAcceptedHIT = 0;
-let numAssignments = (teamSize * teamSize) + teamSize; // extra HITs for over-recruitment
+let numAssignments = maxAssignments; // extra HITs for over-recruitment
 
 // multiple because of multipleHITs toggle - need to keep track of all active IDs
 let currentHitId = '';
@@ -222,9 +223,16 @@ const createQualification = (name) => {
 
 const setAssignmentsPending = (data) => {
   usersAcceptedHIT = data
-  hitsLeft = teamSize * teamSize - usersAcceptedHIT
+  hitsLeft = maxAssignments - usersAcceptedHIT
   console.log('users accepted: ', usersAcceptedHIT)
   console.log('hits left: ', hitsLeft);
+  if(taskStarted) {
+    expireActiveHits(currentHitId);
+      if(multipleHITs) {
+        expireActiveHits(currentHitId2);
+        expireActiveHits(currentHitId3);
+      }
+  }
 }
 
 // * assignQualificationToUsers *
@@ -342,9 +350,15 @@ const checkBlocks = (removeBlocks = false) => {
 // * returnCurrentHIT *
 // -------------------------------------------------------------------
 // Returns the current active HIT ID
+// If multiple HITs, returns an array of the HIT IDs
 
 const returnCurrentHIT = () => {
-  return currentHitId;
+  if(multipleHITs) {
+    let HITs = [currentHitId, currentHitId2, currentHitId3]
+    return HITs;
+  } else {
+    return currentHitId;
+  }
 }
 
 // * launchBang *

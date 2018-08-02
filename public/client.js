@@ -344,6 +344,7 @@ $(function() {
     $leaveHitPopup.show();
     $currentInput = $("#leavetaskfeedbackInput").focus();
     $currentInput.focus();
+    socket.emit('log', holdingUsername.innerText+ ' clicked leave hit button.');
   })
 
   //Simple autocomplete
