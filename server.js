@@ -21,8 +21,8 @@ const randomRoundOrder = false
 
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
-const midSurveyOn = true
-const blacklistOn = true
+const midSurveyOn = false
+const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
@@ -538,7 +538,7 @@ io.on('connection', (socket) => {
         }
 
         io.in(socket.id).emit('finished', {
-          message: "Thanks for participating, you're all done!",
+          message: "Thanks for participating in our study, you're all done! Click submit and grab your sweet treat!",
           finishingCode: socket.id,
           turkSubmitTo: mturk.submitTo,
           assignmentId: user.assignmentId
