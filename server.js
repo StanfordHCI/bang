@@ -15,19 +15,22 @@ const secondsToHold2 = 90 //maximum number of seconds of inactivity that we allo
 // Toggles
 const runExperimentNow = true
 const issueBonusesNow = true
-const cleanHITs = false
+
+const cleanHITs = true
 const assignQualifications = false
 const debugMode = !runningLive
 
 const suddenDeath = false
 let setPerson = false
+
 const multipleHITs = false // cross-check with mturkTools.js
 
 const randomCondition = false
 const randomRoundOrder = false
-const psychologicalSafetyOn = false
+
+const psychologicalSafetyOn = true
 const starterSurveyOn = false
-const midSurveyOn = true
+const midSurveyOn = false
 const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
@@ -53,6 +56,7 @@ const feedbackFile = txt + "feedback-q.txt"
 const starterSurveyFile = txt + "startersurvey-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
 const botFile = txt + 'botquestions.txt'
+
 const leaveHitFile = txt + "leave-hit-q.txt"
 
 // Answer Option Sets
@@ -362,7 +366,7 @@ io.on('connection', (socket) => {
             'blacklistCheck':'',
             'engagementFeedback': '',
             'teamfracture':'',
-            'teamfeedback':''
+            'teamfeedback':'',
           }
         };
 
@@ -474,6 +478,7 @@ io.on('connection', (socket) => {
                     else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
                   })
                 }
+
               }
               io.in(user.id).emit('finished', {
                   message: cancelMessage,
@@ -896,11 +901,9 @@ io.on('connection', (socket) => {
   });
 
   socket.on('mturk_formSubmit', (data) => {
-    // let user = users.byID(socket.id)
-    // user.results.engagementFeedback = data
-    // updateUserInDB(socket,"results.engagementFeedback",data)
-        // db.blacklist.insert({'userID':socket.id, 'name':user.name, 'midSurvey': user.results.blacklistCheck, 'batch':batchID}, (err, usersAdded) => {
-    db.leavingMessage.insert({'userID': socket.id, 'Message': data});
+    let user = users.byID(socket.id)
+    user.results.engagementFeedback = data
+    updateUserInDB(socket,"results.engagementFeedback",data)
   });
 
   socket.on('postSurveySubmit', (data) => {

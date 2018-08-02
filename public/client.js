@@ -37,6 +37,7 @@ $(function() {
   const $finishingPage = $('#finishing'); // The finishing page
   const botUsername = 'helperBot'
 
+
   Vue.component('question-component', {
     template: `
       <h3>{{question.question}}</h3>
@@ -200,7 +201,6 @@ $(function() {
         // 'height': $messageBodyDiv.css("height"),
         'display':'inline-block'
         });
-
 
     const typingClass = data.typing ? 'typing' : '';
     const $messageDiv = $('<li class="message"/>')
@@ -379,6 +379,7 @@ $(function() {
     $currentInput = $("#leavetaskfeedbackInput").focus();
     $currentInput.focus();
     socket.emit('log', holdingUsername.innerText+ ' clicked leave hit button.');
+
   })
 
   //Simple autocomplete
@@ -572,6 +573,7 @@ $(function() {
   socket.on('go', data => {
     messagesSafe.innerHTML = ''
     startTimer(60 * data.duration - 1, $headerText) // start header timer, subtract 1 to give more notice
+
     document.getElementById("inputMessage").value = '' //clear chat in new round
     hideAll();
     $chatPage.show();
@@ -600,8 +602,7 @@ $(function() {
       for (member of data.team){
         addChatMessage({username:member, message:'has entered the chatroom'})
       }
-    }, 2500)
-
+    }, 1000)
 
     $currentInput = $inputMessage.focus();
 
@@ -790,7 +791,8 @@ $(function() {
   $("#leave-hit-submit").click((event) => {
     event.preventDefault() //stops page reloading
     let feedbackMessage = $('#leavetaskfeedbackInput').val();
-    if (feedbackMessage.length > 1) {
+
+    if (feedbackMessage.length > 10) {
       hideAll();
       $finishingPage.show();
       document.getElementById("finishingMessage").innerHTML = "You terminated the HIT. Thank you for your time."
