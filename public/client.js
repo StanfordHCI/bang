@@ -28,6 +28,14 @@ $(function() {
   const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
   const $finishingPage = $('#finishing'); // The finishing page
 
+  Vue.component('instruction-component', {
+    template: `
+    <h3 class="intro"><span v-html="instructions"></span></h3>
+    `,
+    props: {
+      instructions: String
+    }
+  });
 
   Vue.component('question-component', {
     template: `
@@ -418,8 +426,16 @@ $(function() {
   });
 
   socket.on('load', data => {
-    let element = data.element;
-    let questions = data.questions;
+    const element = data.element;
+    const survey = data.survey;
+    const questions = survey["questions"];
+    const instructions = survey["instructions"];
+    new Vue({
+      el: '#'+element+'-instruction',
+      data: {
+        instructions
+      }
+    });
 
     new Vue({
       el: '#'+element+'-questions',
@@ -754,7 +770,7 @@ $(function() {
 
   $('#teamfeedbackForm').submit( (event) => {
     event.preventDefault() //stops page reloading
-    socket.emit('teamfeedbackSurveySubmit', $('#teamfeedbackForm').serialize())
+    socket.emit('teamfeedbackSurveySubmit', {fracture: $('#teamfeedbackForm').serialize(), feedback: $("#teamfeedbackInput").val()})
     $teamfeedbackSurvey.hide()
     $holdingPage.show()
     $('#teamfeedbackForm')[0].reset();

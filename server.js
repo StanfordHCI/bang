@@ -19,7 +19,7 @@ const statusCharacteristicsOn = true
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = false
-const blacklistOn = false
+const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
@@ -36,21 +36,21 @@ console.log(runningLocal ? "Running locally" : "Running remotely");
 // Question Files
 const fs = require('fs')
 const txt = "txt/"
-const midSurveyFile = txt + "midsurvey-q.txt"
-const psychologicalSafetyFile = txt + "psychologicalsafety-q.txt"
-const checkinFile = txt + "checkin-q.txt"
-const blacklistFile = txt + "blacklist-q.txt"
-const feedbackFile = txt + "feedback-q.txt"
-const starterSurveyFile = txt + "startersurvey-q.txt"
-const statusCharacteristicsFile = txt + "statusCharacteristics-q.txt"
-const postSurveyFile = txt + "postsurvey-q.txt"
-const leaveHitFile = txt + "leave-hit-q.txt"
+const midSurveyFile = txt + "midsurvey-q.json"
+const psychologicalSafetyFile = txt + "psychologicalsafety-q.json"
+const checkinFile = txt + "checkin-q.json"
+const blacklistFile = txt + "blacklist-q.json"
+const feedbackFile = txt + "feedback-q.json"
+const starterSurveyFile = txt + "startersurvey-q.json"
+const statusCharacteristicsFile = txt + "statusCharacteristics-q.json"
+const postSurveyFile = txt + "postsurvey-q.json"
 
 // Answer Option Sets
-const agreementScale = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
-const extremeScale = {answers: ['', '', '', '', '', ''], answerType: 'radio', textValue: true}
-const binaryScale = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
-const leaveHitAnswers = {answers: ['End Task and Send Feedback', 'Return to Task'], answerType: 'radio', textValue: false}
+const answerFile = txt + "answer-file.json"
+const answerJSON = JSON.parse(fs.readFileSync(answerFile).toString());
+const agreementScale = answerJSON["agreementScale"]
+const extremeScale = answerJSON["extremeScale"]
+const binaryScale = answerJSON["binaryScale"]
 
 // Setup basic express server
 let tools = require('./tools');
@@ -59,6 +59,7 @@ let express = require('express');
 const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
+const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 const port = process.env.PORT || 3000;
 server.listen(port, () => { console.log('Server listening at port %d', port); });
 
@@ -71,8 +72,8 @@ Array.prototype.set = function() {
 };
 
 // Experiment variables
-const conditionsAvailalbe = ['control','treatment','baseline']
-const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
+const conditionsAvailable = ['control','treatment','baseline']
+const currentCondition = randomCondition ? conditionsAvailable.pick() : conditionsAvailable[1]
 let treatmentNow = false
 let firstRun = false;
 
@@ -112,9 +113,9 @@ const Datastore = require('nedb'),
     db.time = new Datastore({ filename:'.data/time', autoload: true}); // store duration of tasks
     db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true}); // separate fracture HITs from other HCI hits
 
-const updateUserInDB = (user,feild,value) => { db.users.update(
-  {id: user.id}, {$set: {feild: value}}, {},
-  err => console.log(err ? "Err recording "+feild+": "+err : "Updated "+feild+" "+user.id+"\n"+value+"\n")
+const updateUserInDB = (user,field,value) => { db.users.update(
+  {id: user.id}, {$set: {field: value}}, {},
+  err => console.log(err ? "Err recording "+field+": "+err : "Updated "+field+" "+user.id+"\n"+value+"\n")
 )}
 
 require('express')().listen(); //Sets to only relaunch with source changes
@@ -440,7 +441,7 @@ io.on('connection', (socket) => {
       console.log ("Activity:", currentActivity, "which is", currentTask)
 
       if (currentTask == "starterSurvey") {
-        io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false, showHeaderBar: false});
+        io.in(user.id).emit("load", {element: 'starterSurvey', survey: loadsurveyJSON(starterSurveyFile), interstitial: false, showHeaderBar: false});
         taskStartTime = getSecondsPassed();
       }
       else if (currentTask == "ready") {
@@ -448,28 +449,27 @@ io.on('connection', (socket) => {
           recordTime("starterSurvey");
         }
         if (checkinOn) {
-          io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true, showHeaderBar: true});
+          io.in(user.id).emit("load", {element: 'checkin', survey: loadsurveyJSON(checkinFile), interstitial: true, showHeaderBar: true});
         }
-        io.in(user.id).emit("load", {element: 'leave-hit', questions: loadQuestions(leaveHitFile), interstitial: true, showHeaderBar: true})
         io.in(user.id).emit("echo", "ready");
       }
       else if (currentTask == "midSurvey") {
         if(timeCheckOn) {
           recordTime("round");
         }
-        io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false, showHeaderBar: true});
+        io.in(user.id).emit("load", {element: 'midSurvey', survey: loadsurveyJSON(midSurveyFile), interstitial: false, showHeaderBar: true});
       }
        else if (currentTask == "psychologicalSafety") {
         if(timeCheckOn) {
           recordTime("round");
         }
-        io.in(user.id).emit("load", {element: 'psychologicalSafety', questions: loadQuestions(psychologicalSafetyFile), interstitial: false, showHeaderBar: true});
+        io.in(user.id).emit("load", {element: 'psychologicalSafety', survey: loadsurveyJSON(psychologicalSafetyFile), interstitial: false, showHeaderBar: true});
       }
        else if (currentTask.includes("statusCharacteristics")) {
         if(timeCheckOn) { recordTime("round") }
         let currentMember = getTeamMembers(user,false).pop().filter(i => i.name != user.name)[currentTask.split(" ")[1]]
         console.log(user.name, user.friends.find(f => f.id == currentMember.id).alias)
-        io.in(user.id).emit("load", {element: 'statusCharacteristics', questions: loadQuestions(statusCharacteristicsFile), interstitial: false, showHeaderBar: true});
+        io.in(user.id).emit("load", {element: 'statusCharacteristics', survey: loadsurveyJSON(statusCharacteristicsFile), interstitial: false, showHeaderBar: true});
       }
       else if (currentTask == "teamfeedbackSurvey") {
         if(midSurveyOn && timeCheckOn) {
@@ -477,7 +477,7 @@ io.on('connection', (socket) => {
         } else if(timeCheckOn) {
           recordTime("round");
         }
-        io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false, showHeaderBar: true});
+        io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', survey: loadsurveyJSON(feedbackFile), interstitial: false, showHeaderBar: true});
       }
       else if (currentTask == "blacklistSurvey") {
         taskOver = true
@@ -492,8 +492,7 @@ io.on('connection', (socket) => {
        } else if(statusCharacteristicsOn) {
           recordTime("statusCharacteristics")
         }
-        console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false})
-        io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false});
+        io.in(user.id).emit("load", {element: 'blacklistSurvey', survey: loadsurveyJSON(blacklistFile), interstitial: false, showHeaderBar: false});
       }
 
       else if (currentTask == "postSurvey") { //Launch post survey
@@ -509,7 +508,7 @@ io.on('connection', (socket) => {
         let survey = postSurveyGenerator(user)
         user.results.manipulation = survey.correctAnswer
         updateUserInDB(user,'results.manipulation',user.results.manipulation)
-        io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false, showHeaderBar: false});
+        io.in(user.id).emit("load", {element: 'postSurvey', survey: loadsurveyJSON(postSurveyFile), interstitial: false, showHeaderBar: false});
       }
       else if (currentTask == "finished" || currentActivity > task_list.length) {
         if(timeCheckOn) {
@@ -788,15 +787,93 @@ io.on('connection', (socket) => {
 
   });
 
+  //function to load JSON files
+  function loadJSON(JSONfile, callback) {   
+
+    var xobj = new XMLHttpRequest();
+
+    xobj.overrideMimeType("application/json");
+    console.log("JSONfile", JSONfile)
+    xobj.open('GET', JSONfile, true); // Replace 'my_data' with the path to your file
+    xobj.onreadystatechange = function () {
+          if (xobj.readyState == 4 && xobj.status == "200") {
+            // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
+            callback(xobj.responseText);
+          }
+    };
+    xobj.send(null);  
+ }
+
+  // loads qs in JSON file, returns json array
+  function loadsurveyJSON(surveyJSON) {
+    let survey = JSON.parse(fs.readFileSync(surveyJSON).toString());
+    // console.log("survey", survey)
+    let questions = survey["questions"];
+    const survey_name = survey["name"];
+
+  
+    let questionHTML = []
+    let i = 0
+
+    // questions.map(q => {"yoyo"})
+    // console.log("my questions file", questions)
+    questions = questions.map(q => {
+      let questionObj = {};
+      i++;
+      questionObj['name'] = survey_name + i; // name of the question
+      questionObj['question'] = q['question'];
+      let answerObj = {};
+      switch(q['answerType']) {
+        case "S1":
+          answerObj = agreementScale;
+          break;
+        case "S2":
+          answerObj = extremeScale;
+          break;
+        case "YN":
+          answerObj = binaryScale;
+          break;
+        case "TR":
+          answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio', textValue: false};
+          break;
+        case "TC":
+          answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox', textValue: false};
+          break;   
+        default:
+          console.log("Answer tag not found",answerTag)
+          console.log("Try removing blank lines from question file")
+          answerObj = undefined
+        }
+      
+      questionObj['answers'] = answerObj.answers;
+      questionObj['answerType'] = answerObj.answerType;
+      questionObj['textValue'] = answerObj.textValue;
+      questionObj['required'] = false
+      if(requiredOn && answerObj.answerType === 'radio') { // only applies to radio buttons in vue template
+        questionObj['required'] = true
+      }
+      // console.log("the questionObj", questionObj)
+      return questionObj;
+    })
+    survey["questions"] = questions;
+    console.log("Questions after fix", survey["questions"])
+    return survey;
+  }
+
+
   //loads qs in text file, returns json array
   function loadQuestions(questionFile) {
+    //prefix = name of the survey
     const prefix = questionFile.substr(txt.length, questionFile.indexOf('.') - txt.length)
     let questions = []
     let i = 0
+    // Reads file, converts to a string, splits into a list of lines
+    // Ignores the blank lines, and parses the question object depending 
+    // on line
     fs.readFileSync(questionFile).toString().split('\n').filter(n => n.length != 0 ).forEach(function (line) {
       let questionObj = {};
       i++;
-      questionObj['name'] = prefix + i;
+      questionObj['name'] = prefix + i; // name of the question
       //each question in the text file should be formatted: ANSWERTAG.QUESTION ex: YN.Are you part of Team Mark?
       questionObj['question'] = line.substr(line.indexOf('.')+1, line.length);
       let answerTag = line.substr(0, line.indexOf('.'));

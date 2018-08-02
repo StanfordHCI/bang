@@ -16,7 +16,7 @@
     "mustache": "^2.3.0",
     "nedb": "^1.8.0",
     "socket.io": "^2.1.1",
-    "watson-developer-cloud": "^3.7.0"
+    "watson-developer-cloud": "^3.7.0",
   },
   "engines": {
     "node": "8.11.1"
