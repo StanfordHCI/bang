@@ -492,18 +492,12 @@ $(function() {
   });
 
   socket.on('go', data => {
+    startTimer(60 * data.duration - 1, $headerText) // start header timer, subtract 1 to give more notice
+
     document.getElementById("inputMessage").value = '' //clear chat in new round
     hideAll();
     $chatPage.show();
     $headerbarPage.show();
-    let teamStr = ""
-    //for(member of data.team) teamStr += member + ", "
-    //console.log(teamStr)
-    //teamStr = teamStr.substr(0, teamStr.length - 2)
-    console.log(data.duration)
-    startTimer(60 * data.duration, $headerText)
-    
-    //document.querySelector('#header-text').html('hi').
     $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
 
     setTimeout(()=>{
@@ -815,7 +809,7 @@ $(function() {
 
 function startTimer(duration, display) {
       var timer = duration, minutes, seconds;
-      setInterval(function () {
+      let interval = setInterval(function () {
           let minutes = parseInt(timer / 60, 10)
           let seconds = parseInt(timer % 60, 10);
 
@@ -825,7 +819,9 @@ function startTimer(duration, display) {
           display.html("Time: " + minutes + ":" + seconds);
 
           if (--timer < 0) {
-              timer = duration;
+            clearInterval(interval)
+            display.html("")
+              //timer = duration;
           }
       }, 1000);
   }
