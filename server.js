@@ -59,7 +59,6 @@ let express = require('express');
 const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
-const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 const port = process.env.PORT || 3000;
 server.listen(port, () => { console.log('Server listening at port %d', port); });
 
@@ -787,22 +786,6 @@ io.on('connection', (socket) => {
 
   });
 
-  //function to load JSON files
-  function loadJSON(JSONfile, callback) {   
-
-    var xobj = new XMLHttpRequest();
-
-    xobj.overrideMimeType("application/json");
-    console.log("JSONfile", JSONfile)
-    xobj.open('GET', JSONfile, true); // Replace 'my_data' with the path to your file
-    xobj.onreadystatechange = function () {
-          if (xobj.readyState == 4 && xobj.status == "200") {
-            // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
-            callback(xobj.responseText);
-          }
-    };
-    xobj.send(null);  
- }
 
   // loads qs in JSON file, returns json array
   function loadsurveyJSON(surveyJSON) {
@@ -859,55 +842,6 @@ io.on('connection', (socket) => {
     console.log("Questions after fix", survey["questions"])
     return survey;
   }
-
-
-  //loads qs in text file, returns json array
-  function loadQuestions(questionFile) {
-    //prefix = name of the survey
-    const prefix = questionFile.substr(txt.length, questionFile.indexOf('.') - txt.length)
-    let questions = []
-    let i = 0
-    // Reads file, converts to a string, splits into a list of lines
-    // Ignores the blank lines, and parses the question object depending 
-    // on line
-    fs.readFileSync(questionFile).toString().split('\n').filter(n => n.length != 0 ).forEach(function (line) {
-      let questionObj = {};
-      i++;
-      questionObj['name'] = prefix + i; // name of the question
-      //each question in the text file should be formatted: ANSWERTAG.QUESTION ex: YN.Are you part of Team Mark?
-      questionObj['question'] = line.substr(line.indexOf('.')+1, line.length);
-      let answerTag = line.substr(0, line.indexOf('.'));
-      if(answerTag === "S1") { // scale 1 radio
-        answerObj = agreementScale;
-      } else if (answerTag === "S2") { // 1-6 scale
-        answerObj = extremeScale;
-      } else if (answerTag === "YN") { // yes no
-        answerObj = binaryScale;
-      } else if (answerTag === "TR") { //team radio
-        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio', textValue: false};
-      } else if (answerTag === "TC") { //team checkbox
-        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox', textValue: false};
-      } else if (answerTag === "LH") { //leave hit yn
-        answerObj = leaveHitAnswers;
-      } else {
-        console.log("Answer tag not found",answerTag)
-        console.log("Try removing blank lines from question file")
-        answerObj = undefined
-    }
-
-      questionObj['answers'] = answerObj.answers;
-      questionObj['answerType'] = answerObj.answerType;
-      questionObj['textValue'] = answerObj.textValue;
-      questionObj['required'] = false
-      if(requiredOn && answerObj.answerType === 'radio') { // only applies to radio buttons in vue template
-        questionObj['required'] = true
-      }
-      questions.push(questionObj)
-    })
-    return questions
-  }
-
-});
 
 //replaces user.friend aliases with corresponding user IDs
 function aliasToID(user, newString) {
