@@ -504,14 +504,13 @@ $(function() {
 
     setTimeout(()=>{
       log(data.task)
-      log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
+      log("Start by checking out the link above. For the next <strong>5 minutes</strong>, each member in your team should come up with ideas for a short advertisement of no more than <strong>30 characters in length</strong>. During this brainstorm period, post your ideas with preceded by a <strong>**</strong> (e.g. **example). After this, we will prompt you to discuss and pick the best option to submit.  At the end of the time we will tell you how to submit your final result.")
       let durationString = ""
       if (data.duration < 1) { durationString = Math.round(data.duration * 60) + " seconds"
       } else if (data.duration == 1) { durationString = "one minute"
       } else { durationString = data.duration + " minutes" }
-      log("You will have <strong>" + durationString + "</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
-      log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
-      log("<br>For example, here are text advertisements for a golf club called Renaissance: <br>\
+      log("We will run your final advertisement online. <strong> The more successful your ad is, the larger the bonus each of your team members will receive.</strong>")
+      log("<br>For an example, here are text advertisements for a golf club called Renaissance: <br>\
       <ul style='list-style-type:disc'> \
         <li><strong>An empowering modern club</strong><br></li> \
         <li><strong>A private club with reach</strong><br></li> \
@@ -686,8 +685,12 @@ $(function() {
       socket.emit('execute experiment')
   });
 
+ socket.on('timer2',data => {
+    log("For the remaining 5 minutes, review the submitted ideas and begin to discuss best options! In 3 minutes we will instruct you how to submit your final answer!")
+  });
+
   socket.on('timer',data => {
-    log("You're about <strong>90% done with this session</strong>. Enter your final result now.")
+    log("You're about <strong>70% done with this session</strong>. Enter your final result now.")
     log("Remember, it needs to be <strong>maximum 30 characters long</strong>.")
     log("To indicate your final result, <strong>start the line with an exclamation mark (i.e., '!')</strong>. We will not count that character toward your length limit.")
     log("<br>If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat.")
