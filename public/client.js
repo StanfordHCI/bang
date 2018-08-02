@@ -2,6 +2,14 @@ $(function() {
   const FADE_TIME = 150; // ms
   const TYPING_TIMER_LENGTH = 400; // ms
   const COLORS = ['#e21400', '#91580f', '#f8a700', '#f78b00', '#58dc00', '#287b00', '#a8f07a', '#4ae8c4', '#3b88eb', '#3824aa', '#a700ff', '#d300e7'];
+  
+  //toggles
+  let waitChatOn = true
+
+  //globals for prechat
+  let preChat = waitChatOn;
+  let answered = false;
+
   // Initialize variables
   const $window = $(window);
   const $messages = $('.messages'); // Messages area
@@ -79,8 +87,6 @@ $(function() {
 
   const socket = io();
 
-  let preChat = true;
-  let answered = false;
   hideAll();
 
   //Check if user has accepted based on URL. Store URL variables.
@@ -88,19 +94,24 @@ $(function() {
   if (URLvars.assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
     $lockPage.show(); //prompt user to accept HIT
   } else { // tell the server that the user has accepted the HIT - server then adds this worker to array of accepted workers
-    socket.emit('accepted HIT',{ mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId, timeAdded: (new Date()).getTime()});
-    socket.emit('add user');
-    $chatPage.show()
-    $headerbarPage.show()
-    $leaveHitButton.hide()
-    addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername +", welcome to our HIT!"})
-    setTimeout(()=> {
-      addChatMessage({username: botUsername, message: "For this first task, I need you to answer a sequence of questions. Thanks for cooperating!"})
-      setTimeout(() => {
-        socket.emit('load bot qs')  
-      }, 1000*1)
-      
-    }, 1000*.5)
+    mturkVariables = { mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId, timeAdded: (new Date()).getTime()}
+    socket.emit('accepted HIT',mturkVariables);
+    if(waitChatOn){
+      socket.emit('add user');
+      $chatPage.show()
+      $headerbarPage.show()
+      $leaveHitButton.hide()
+      addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername +", welcome to our HIT!"})
+      setTimeout(()=> {
+        addChatMessage({username: botUsername, message: "For this first task, I need you to answer a sequence of questions. Thanks for cooperating!"})
+        setTimeout(() => {
+          socket.emit('load bot qs')  
+        }, 1000*1)
+        
+      }, 1000*.5)
+    } else {
+      $waitingPage.show();
+    }
   }
 
   // Get permission to notify
@@ -400,6 +411,9 @@ $(function() {
     
 
   // Socket events
+  socket.on('wait chat toggle', data => {
+    waitChatOn = data
+  })
 
   socket.on('chatbot', data => {
     const questions = data 
