@@ -25,7 +25,6 @@ const multipleHITs = false // cross-check with mturkTools.js
 
 const randomCondition = false
 const randomRoundOrder = false
-
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = true
@@ -121,7 +120,6 @@ const Datastore = require('nedb'),
     db.leavingMessage = new Datastore({filename: '.data/leavingMessage', autoload: true})
     db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true})
 
-
 const updateUserInDB = (user,feild,value) => { db.users.update(
   {id: user.id}, {$set: {feild: value}}, {},
   err => console.log(err ? "Err recording "+feild+": "+err : "Updated "+feild+" "+user.id+"\n"+value+"\n")
@@ -148,7 +146,17 @@ if (runningLive){
   })
 }
 
-if (cleanHITs){ mturk.expireActiveHits() }
+// expires HITs left in the DB
+if (cleanHITs){
+  db.ourHITs.find({}, (err, HITsInDB) => {
+    if (err) {console.log("Err loading HITS for expiration:" + err)} else {
+      HITsInDB.forEach((HIT) => {
+        let currentHIT = HIT.currentHIT;
+        mturk.expireActiveHits(currentHIT);
+      })
+    }
+  })
+}
 if (runExperimentNow){ mturk.launchBang() }
 
 //Add more products
@@ -281,7 +289,6 @@ io.on('connection', (socket) => {
     // when the client emits 'add user', this listens and executes
     socket.on('add user', function (data) {
         if (addedUser) {return}
-
         console.log('before enough people')
         if (enoughPeople) { //fix money
           console.log('after enough people')
@@ -404,7 +411,6 @@ io.on('connection', (socket) => {
           // update DB with change
           updateUserInDB(socket,'active',false)
 
-
           if (!taskOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
           if (!taskOver && suddenDeath && taskStarted){
@@ -453,7 +459,6 @@ io.on('connection', (socket) => {
                   user.bonus += mturk.bonusPrice/2
                 }
                 updateUserInDB(user,'bonus',user.bonus)
-
                 if(multipleHITs) {
                   let currentHIT = mturk.returnCurrentHIT();
                   for(i = 0; i < currentHIT.length(); i++) {
@@ -469,7 +474,6 @@ io.on('connection', (socket) => {
                     else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
                   })
                 }
-
               }
               io.in(user.id).emit('finished', {
                   message: cancelMessage,
@@ -564,6 +568,22 @@ io.on('connection', (socket) => {
         }
         user.bonus += mturk.bonusPrice
         updateUserInDB(user,"bonus",user.bonus)
+
+        if(multipleHITs) {
+          let currentHIT = mturk.returnCurrentHIT();
+          for(i = 0; i < currentHIT.length(); i++) {
+            db.ourHITs.insert({'currentHIT': currentHIT[i]}, (err, HITAdded) => {
+              if(err) console.log("There's a problem adding HIT to the DB: ", err);
+              else if(HITAdded) console.log("HIT added to the DB: ", currentHIT[i]);
+            })
+          }
+        } else {
+          let currentHIT = mturk.returnCurrentHIT();
+          db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+            if(err) console.log("There's a problem adding HIT to the DB: ", err);
+            else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+          })
+        }
 
         io.in(socket.id).emit('finished', {
           message: "Thanks for participating, you're all done!",

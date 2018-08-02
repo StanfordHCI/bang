@@ -18,10 +18,12 @@
 
     <li id="headerbarPage">
     <div class="header">
-      <h3 id="header-text"></h3> <p id="header-text-2"></p>
+      <div id="header-text-div"><h3 id="header-text"></h3></div>
+      
+      <p id="header-text-2"></p>
       <button type="button" id="leave-hit-button">Leave HIT</button>
     </div>
-      <div id="leave-hit-popup" class="popup" >
+      <div id="leave-hit-popup" class="popup">
         <form id="leave-hit-form" class="rb">
           <p><strong>Leaving now will terminate the task for other users. </strong><br><br>
 
@@ -33,6 +35,7 @@
             and be bonused.
           </p>
           <textarea id="leavetaskfeedbackInput"></textarea>
+
           <!-- <div id="leave-hit-questions" class="popup-questions">
             <question-component v-for="question in questions" :question="question" />
           </div> -->
@@ -64,7 +67,10 @@
       <div class="chatArea">
         <ul class="messages"></ul>
       </div>
-      <input id="inputMessage" class="inputMessage" placeholder="Type here..." oninput=""/>
+      <div class="input-area">
+        <div class="input-message-div"><input id="inputMessage" class="inputMessage" placeholder="Type here..." oninput=""></textarea></div>
+        <div id="character-counter-div"><h3 id="character-counter"><span id="character-count"></span> characters</h3></div>
+      </div>  
     </li>
     <div id="checkin" class="popup">
       <form id="checkin-form" class="rb">
