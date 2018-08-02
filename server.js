@@ -633,12 +633,13 @@ io.on('connection', (socket) => {
       // make timers run in serial
        setTimeout(() => {
         console.log('discussion questions', currentRound);
-        users.forEach(user => { io.in(user.id).emit('timer2', {time: roundMinutes * .6}) });
-      })
+        users.forEach(user => { io.in(user.id).emit('timer2', {time: roundMinutes * .5}) });
 
       setTimeout(() => {
         console.log('time warning', currentRound);
         users.forEach(user => { io.in(user.id).emit('timer', {time: roundMinutes * .1}) });
+
+        })
 
         //Done with round
         setTimeout(() => {
