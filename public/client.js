@@ -825,6 +825,7 @@ function turkGetParam( name, defaultValue, uri) {
 }
 
 const getUrlVars = (url) => {
+  if (false) {
     var hash;
     var myJson = {};
     var hashes = url.slice(url.indexOf('?') + 1).split('&');
@@ -833,6 +834,9 @@ const getUrlVars = (url) => {
         myJson[hash[0]] = hash[1];
     }
     return myJson;
+  } else {
+    return {mturkId: "Pilot", turkSubmitTo: decodeURL("pilot"), assignmentId: "Pilot" }
+  }
 }
 
 const decodeURL = (toDecode) => {
