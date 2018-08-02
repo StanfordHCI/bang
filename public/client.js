@@ -283,6 +283,7 @@ $(function() {
     setUsername()
   })
 
+  
   // Keyboard events
   document.getElementById("character-count").innerHTML = 0;
 
@@ -496,10 +497,13 @@ $(function() {
     $chatPage.show();
     $headerbarPage.show();
     let teamStr = ""
-    for(member of data.team) teamStr += member + ", "
-    console.log(teamStr)
-    teamStr = teamStr.substr(0, teamStr.length - 2)
-    $headerText.html("Team " + data.round + ": " + teamStr);
+    //for(member of data.team) teamStr += member + ", "
+    //console.log(teamStr)
+    //teamStr = teamStr.substr(0, teamStr.length - 2)
+    console.log(data.duration)
+    startTimer(60 * data.duration, $headerText)
+    
+    //document.querySelector('#header-text').html('hi').
     $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
 
     setTimeout(()=>{
@@ -807,9 +811,24 @@ $(function() {
     socket.emit('mturk_formSubmit', $('#engagementfeedbackInput').val())
   })
 
-
-
 });
+
+function startTimer(duration, display) {
+      var timer = duration, minutes, seconds;
+      setInterval(function () {
+          let minutes = parseInt(timer / 60, 10)
+          let seconds = parseInt(timer % 60, 10);
+
+          minutes = minutes < 10 ? "0" + minutes : minutes;
+          seconds = seconds < 10 ? "0" + seconds : seconds;
+
+          display.html("Time: " + minutes + ":" + seconds);
+
+          if (--timer < 0) {
+              timer = duration;
+          }
+      }, 1000);
+  }
 
 function turkGetParam( name, defaultValue, uri) {
    var regexS = "[\?&]"+name+"=([^&#]*)";
