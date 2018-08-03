@@ -290,20 +290,14 @@ $(function() {
 
   // Gets the color of a username through our hash function
   function getUsernameColor (username) {
-    let color = COLORS[colorIndex];
-    colorIndex++;
-    if(colorIndex >= COLORS.length) { colorIndex = 0; }
-    return color;
-    // Compute hash code
-    // let hash = 7;
-    // for (let i = 0; i < username.length; i++) {
-    //    hash = username.charCodeAt(i) + (hash << 5) - hash;
-    // }
-    // // Calculate color
-    //   const index = Math.abs(hash % COLORS.length);
-    //   let color = COLORS[index];
-    //   COLORS.splice(index, 1)
-    //   return color;
+    //Compute hash code
+    let hash = 7;
+    for (let i = 0; i < username.length; i++) {
+       hash = username.charCodeAt(i) + (hash << 5) - hash;
+    }
+    // Calculate color
+    const index = Math.abs(hash % COLORS.length);
+    return COLORS[index];
   }
 
   $chatLink.click((event) => {
