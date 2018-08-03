@@ -727,7 +727,7 @@ io.on('connection', (socket) => {
 
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
-        socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has may have had an error. You will be compensated."})
+        socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has finished early. You will be compensated by clicking submit below."})
         console.log("Sockets active: " + Object.keys(io.sockets.sockets));
   });
 
@@ -771,6 +771,7 @@ io.on('connection', (socket) => {
         // usersWaiting = usersAccepted.filter(u => u.waiting);
         weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - usersWaiting().length))
         if (secondsSince(user.timeAdded) > weightedHoldingSeconds || secondsSince(user.timeLastActivity) > secondsToHold2) {
+          console.log('removing user because of inactivity:', user.id);
           io.in(user.id).emit('get IDs', 'broken');
         }
       })
