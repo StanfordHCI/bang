@@ -2,9 +2,18 @@ $(function() {
   const FADE_TIME = 150; // ms
   const TYPING_TIMER_LENGTH = 400; // ms
   const COLORS = ['#e21400', '#91580f', '#f8a700', '#f78b00', '#58dc00', '#287b00', '#a8f07a', '#4ae8c4', '#3b88eb', '#3824aa', '#a700ff', '#d300e7'];
+  let colorIndex = 0;
+  //toggles
+  let waitChatOn = true;
+
+  //globals for prechat
+  let preChat = waitChatOn;
+  let answered = false;
+
   // Initialize variables
   const $window = $(window);
   const $messages = $('.messages'); // Messages area
+
   const $inputMessage = $('.inputMessage'); // Input message input box
   const $checkinPopup = $('#checkin');
   const $headerBar = $('.header')
@@ -26,6 +35,7 @@ $(function() {
   const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
   const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
   const $finishingPage = $('#finishing'); // The finishing page
+  const botUsername = 'helperBot'
 
 
   Vue.component('question-component', {
@@ -63,7 +73,7 @@ $(function() {
     $teamfeedbackSurvey.hide();
     $finishingPage.hide();
     $chatLink.hide();
-  }
+  };
 
   let holdingUsername = document.getElementById('username');
   let messagesSafe = document.getElementsByClassName('messages')[0];
@@ -85,9 +95,24 @@ $(function() {
   if (URLvars.assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
     $lockPage.show(); //prompt user to accept HIT
   } else { // tell the server that the user has accepted the HIT - server then adds this worker to array of accepted workers
-    $waitingPage.show();
-    mturkVariables = { mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId }
+    mturkVariables = { mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId, timeAdded: (new Date()).getTime()}
     socket.emit('accepted HIT',mturkVariables);
+    if(waitChatOn){
+      socket.emit('add user');
+      $chatPage.show()
+      $headerbarPage.show()
+      $leaveHitButton.hide()
+      addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername +", welcome to our HIT!"})
+      setTimeout(()=> {
+        addChatMessage({username: botUsername, message: "For this first task, I need you to answer a sequence of questions. Thanks for cooperating!"})
+        setTimeout(() => {
+          socket.emit('load bot qs')
+        }, 1000*1)
+
+      }, 1000*.5)
+    } else {
+      $waitingPage.show();
+    }
   }
 
   // Get permission to notify
@@ -102,7 +127,7 @@ $(function() {
 
   let currentTeam = []
 
-  document.title = "Team work";
+  document.title = "Ad writing task";
 
   // Implements notifications
   let notify = (title, body) => {
@@ -124,14 +149,6 @@ $(function() {
     // log(message);
   }
 
-  // Sets the client's username
-  function setUsername () {
-    hideAll();
-    $holdingPage.show();
-    socket.emit('add user');
-    socket.emit('execute experiment')
-  }
-
   // Sends a chat message
   function sendMessage () {
       let message = $inputMessage.val();
@@ -142,7 +159,13 @@ $(function() {
       $inputMessage.val('');
       addChatMessage({ username: username, message: message });
       // tell server to execute 'new message' and send along one parameter
-      socket.emit('new message', message);
+      if(preChat) {
+        answered = true;
+        socket.emit('accepted user chatted', {time: Date.now()});
+        socket.emit('log', holdingUsername.innerText+ ': ' + message);
+      } else {
+        socket.emit('new message', message);
+      }
     }
   }
 
@@ -163,19 +186,29 @@ $(function() {
       $typingMessages.remove();
     }
 
-      const $usernameDiv = $('<span class="username"/>')
-          .text(data.username)
-          .css('color', getUsernameColor(data.username));
-      const $messageBodyDiv = $('<span class="messageBody">')
-          .text(data.message);
+    const $messageBodyDiv = $('<span class="messageBody">')
+    .text(data.message)
+    .css({
+    'height': 'maxcontent',
+    'display':'block',
+    'overflow':'hidden'
+    });
 
-      const typingClass = data.typing ? 'typing' : '';
-      const $messageDiv = $('<li class="message"/>')
-          .data('username', data.username)
-          .addClass(typingClass)
-          .append($usernameDiv, $messageBodyDiv);
+    const $usernameDiv = $('<span class="username"/>')
+        .text(data.username)
+        .css({'color': getUsernameColor(data.username),
+        'float':'left',
+        // 'height': $messageBodyDiv.css("height"),
+        'display':'inline-block'
+        });
 
-      addMessageElement($messageDiv, options);
+    const typingClass = data.typing ? 'typing' : '';
+    const $messageDiv = $('<li class="message"/>')
+        .data('username', data.username)
+        .addClass(typingClass)
+        .append($usernameDiv, $messageBodyDiv);
+
+    addMessageElement($messageDiv, options);
   }
 
   // Adds the visual chat typing message
@@ -257,26 +290,36 @@ $(function() {
 
   // Gets the color of a username through our hash function
   function getUsernameColor (username) {
+    let color = COLORS[colorIndex];
+    colorIndex++;
+    if(colorIndex >= COLORS.length()) { colorIndex = 0; }
+    return color;
     // Compute hash code
-      let hash = 7;
-      for (let i = 0; i < username.length; i++) {
-       hash = username.charCodeAt(i) + (hash << 5) - hash;
-    }
-    // Calculate color
-      const index = Math.abs(hash % COLORS.length);
-      return COLORS[index];
+    // let hash = 7;
+    // for (let i = 0; i < username.length; i++) {
+    //    hash = username.charCodeAt(i) + (hash << 5) - hash;
+    // }
+    // // Calculate color
+    //   const index = Math.abs(hash % COLORS.length);
+    //   let color = COLORS[index];
+    //   COLORS.splice(index, 1)
+    //   return color;
   }
 
   $chatLink.click((event) => {
     event.preventDefault()
-    setUsername()
+    socket.emit('add user');
+    socket.emit('execute experiment')
   })
 
+
   // Keyboard events
+  document.getElementById("character-count").innerHTML = 0;
+
   $window.keydown(event => {
     // Auto-focus the current input when a key is typed
     if (!(event.ctrlKey || event.metaKey || event.altKey)) {
-      $currentInput.focus();
+        $currentInput.focus();
       // forcedComplete($currentInput)
     }
 
@@ -286,13 +329,30 @@ $(function() {
         sendMessage();
         socket.emit('stop typing');
         typing = false;
-      } else { setUsername() }
+      }
     }
     if (event.keyCode === $.ui.keyCode.TAB) {
       //&& $inputMessage.autocomplete("instance").menu.active as a poteantial second condition
       event.preventDefault()
     }
-  })
+  });
+
+  $inputMessage.keyup(function (event) {
+    const currentInput = $("#inputMessage").val();
+    const characterCount = currentInput.length;
+    if (currentInput[0] == "!") {
+      document.getElementById("character-count").innerHTML = characterCount - 1; //excluding the !
+      if (characterCount - 1 > 30) {
+        $("#character-counter").addClass
+        $("#character-counter").css("color", "red");
+        $("#character-count").css("color", "red");
+      }
+    } else {
+      document.getElementById("character-count").innerHTML = characterCount;
+      $("#character-counter").css("color", "black");
+      $("#character-count").css("color", "black");
+    }
+  });
 
   //note: only built to handle 1 checkin question, should expand?
   $('#checkin-form').submit( (event) => {
@@ -324,6 +384,8 @@ $(function() {
     $leaveHitPopup.show();
     $currentInput = $("#leavetaskfeedbackInput").focus();
     $currentInput.focus();
+    socket.emit('log', holdingUsername.innerText+ ' clicked leave hit button.');
+
   })
 
   //Simple autocomplete
@@ -354,13 +416,65 @@ $(function() {
   });
 
 
+
   // Socket events
+  socket.on('wait chat toggle', data => {
+    waitChatOn = data
+  })
+
+  socket.on('chatbot', data => {
+    const questions = data
+    let index = 0;
+    let typingTimer;
+    let doneTypingInterval = 1000;
+    answered =true
+    askQuestion()//ask first q right away
+
+    //on keyup, start the countdown
+    $inputMessage.on('keyup', function () {
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(askQuestion, doneTypingInterval);
+    });
+
+    //on keydown, clear the countdown
+    $inputMessage.on('keydown', function () {
+      clearTimeout(typingTimer);
+    });
+
+    //user is "finished typing," do something
+    function askQuestion () {
+      console.log(index)
+      if(preChat){
+        if(answered){
+          answered = false;
+
+          if(index < questions.length) {
+            let q = questions[index].question
+            addChatMessage({username:botUsername, message:q})
+            index++
+          } else {
+            addChatMessage({username:botUsername, message:'You\'ve answered all my questions! Hang tight while we set up the next task.'})
+          }
+        }
+      }
+    }
+  })
 
   //if there are enough workers who have accepted the task, show link to chat page
   socket.on('enough people', data => {
-    notify("There's enough people!", "Come and get started with the activity.")
-    $('.chatLink').show();
-  });
+    console.log('ENOUGH PEOPLE CALLED ')
+    if(preChat) {
+      notify("Moving you to another chatroom.", "Come and get started with the activity.")
+      addChatMessage({username:botUsername, message:"Please wait a few seconds while we move you to another chatroom to begin the next task"})
+      setTimeout(()=> {
+        socket.emit('execute experiment')
+        preChat = false;
+      }, 1000*2)
+    } else {
+      $chatLink.show();
+  }
+}
+);
 
   //checks if the user actually accepted or if they are previewing the task
   // socket.on('check accept', data => {
@@ -429,6 +543,7 @@ $(function() {
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', data => {
     addChatMessage(data);
+    notify(data.username + ": " + data.message,)
   });
 
   // whenever the server emits 'checkin pop up', show checkin popup
@@ -460,15 +575,14 @@ $(function() {
   });
 
   socket.on('go', data => {
+    messagesSafe.innerHTML = ''
+    startTimer(60 * data.duration - 1, $headerText) // start header timer, subtract 1 to give more notice
+
     document.getElementById("inputMessage").value = '' //clear chat in new round
     hideAll();
     $chatPage.show();
+    $leaveHitButton.show();
     $headerbarPage.show();
-    let teamStr = ""
-    for(member of data.team) teamStr += member + ", "
-    console.log(teamStr)
-    teamStr = teamStr.substr(0, teamStr.length - 2)
-    $headerText.html("Team " + data.round + ": " + teamStr);
     $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
 
     setTimeout(()=>{
@@ -490,8 +604,9 @@ $(function() {
 
     setTimeout(()=>{
       let str = ""
-      for (member of data.team)
+      for (member of data.team){
         addChatMessage({username:member, message:'has entered the chatroom'})
+      }
     }, 1000)
 
     $currentInput = $inputMessage.focus();
@@ -650,7 +765,7 @@ $(function() {
     // log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
       hideAll();
       $holdingPage.show();
-      messagesSafe.innerHTML = '';
+      // messagesSafe.innerHTML = '';
       $inputMessage.unbind("keydown")
       socket.emit('execute experiment')
   });
@@ -658,7 +773,7 @@ $(function() {
   socket.on('timer',data => {
     log("You're about <strong>90% done with this session</strong>. Enter your final result now.")
     log("Remember, it needs to be <strong>maximum 30 characters long</strong>.")
-    log("To indicate your final result, <strong>start the line with am exclamation mark (i.e., '!')</strong>. We will not count that character toward your length limit.")
+    log("To indicate your final result, <strong>start the line with an exclamation mark (i.e., '!')</strong>. We will not count that character toward your length limit.")
     log("<br>If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat.")
   });
 
@@ -681,6 +796,7 @@ $(function() {
   $("#leave-hit-submit").click((event) => {
     event.preventDefault() //stops page reloading
     let feedbackMessage = $('#leavetaskfeedbackInput').val();
+
     if (feedbackMessage.length > 10) {
       hideAll();
       $finishingPage.show();
@@ -780,6 +896,25 @@ $(function() {
 
 });
 
+function startTimer(duration, display) {
+      var timer = duration, minutes, seconds;
+      let interval = setInterval(function () {
+          let minutes = parseInt(timer / 60, 10)
+          let seconds = parseInt(timer % 60, 10);
+
+          minutes = minutes < 10 ? "0" + minutes : minutes;
+          seconds = seconds < 10 ? "0" + seconds : seconds;
+
+          display.html("Time: " + minutes + ":" + seconds);
+
+          if (--timer < 0) {
+            clearInterval(interval)
+            display.html("")
+              //timer = duration;
+          }
+      }, 1000);
+  }
+
 function turkGetParam( name, defaultValue, uri) {
    var regexS = "[\?&]"+name+"=([^&#]*)";
    var regex = new RegExp( regexS );
@@ -807,4 +942,11 @@ const getUrlVars = (url) => {
 const decodeURL = (toDecode) => {
   var encoded = toDecode;
   return unescape(encoded.replace(/\+/g,  " "));
+}
+
+var LeavingAlert = false;
+if (LeavingAlert) {
+  window.onbeforeunload = function(){
+    return 'Are you sure you want to leave?';
+  };
 }

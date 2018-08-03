@@ -6,14 +6,24 @@ const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
 const teamSize = process.env.TEAM_SIZE
 const roundMinutes = process.env.ROUND_MINUTES
 
+//Parameters for waiting qualifications
+//MAKE SURE secondsToWait > secondsSinceResponse
+const secondsToWait = 15 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+const secondsSinceResponse = 10 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
+const secondsToHold1 = 720 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
+const secondsToHold2 = 90 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
+
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = true
-const cleanHITs = true
+const issueBonusesNow = false
+
+const cleanHITs = false
 const assignQualifications = false
 const debugMode = !runningLive
 
 const suddenDeath = false
+let setPerson = false
+
 const multipleHITs = false // cross-check with mturkTools.js
 
 const randomCondition = false
@@ -46,6 +56,8 @@ const blacklistFile = txt + "blacklist-q.txt"
 const feedbackFile = txt + "feedback-q.txt"
 const starterSurveyFile = txt + "startersurvey-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
+const botFile = txt + 'botquestions.txt'
+
 const leaveHitFile = txt + "leave-hit-q.txt"
 
 // Answer Option Sets
@@ -110,7 +122,8 @@ const Datastore = require('nedb'),
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
     db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
     db.time = new Datastore({ filename:'.data/time', autoload: true}); // store duration of tasks
-    db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true}); // separate fracture HITs from other HCI hits
+    db.leavingMessage = new Datastore({filename: '.data/leavingMessage', autoload: true})
+    db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true})
 
 const updateUserInDB = (user,feild,value) => { db.users.update(
   {id: user.id}, {$set: {feild: value}}, {},
@@ -139,7 +152,7 @@ if (runningLive){
 }
 
 // expires HITs left in the DB
-if (cleanHITs){ 
+if (cleanHITs){
   db.ourHITs.find({}, (err, HITsInDB) => {
     if (err) {console.log("Err loading HITS for expiration:" + err)} else {
       HITsInDB.forEach((HIT) => {
@@ -161,6 +174,7 @@ let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
 let users = []; //the main local user storage
 let currentRound = 0
 let startTime = 0
+let enoughPeople = false
 
 // keeping track of time
 let taskStartTime = getSecondsPassed(); // reset for each start of new task
@@ -235,10 +249,11 @@ setTimeout(() => {
 
 // Chatroom
 io.on('connection', (socket) => {
-
+    //NOTE: THIS fxn is called multiple times so these conditions will be set multiple times
     let addedUser = false
     let taskStarted = false
     let taskOver = false
+    // let enoughPeople = false
 
     socket.on('log', string => { console.log(string); });
 
@@ -271,10 +286,25 @@ io.on('connection', (socket) => {
         });
     });
 
+    socket.on('load bot qs', () => {
+      io.in(socket.id).emit('chatbot', loadQuestions(botFile))
+    })
+
     //Login
     // when the client emits 'add user', this listens and executes
     socket.on('add user', function (data) {
         if (addedUser) {return}
+        console.log('before enough people')
+        if (enoughPeople) { //fix money
+          console.log('after enough people')
+              io.in(socket.id).emit('finished', {
+                    message: "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
+                    finishingCode: socket.id,
+                    turkSubmitTo: mturk.submitTo,
+                    assignmentId: socket.id,
+                    crashed: false
+              })
+        }
 
         // we store the username in the socket session for this client
         name_structure = tools.makeName();
@@ -315,7 +345,7 @@ io.on('connection', (socket) => {
           'room': '',
           'rooms':[],
           'bonus': 0,
-          'person': people.pop(),
+          'person': '',
           'name': socket.username,
           'ready': false,
           'friends': users.map(user => {
@@ -337,7 +367,7 @@ io.on('connection', (socket) => {
             'blacklistCheck':'',
             'engagementFeedback': '',
             'teamfracture':'',
-            'teamfeedback':''
+            'teamfeedback':'',
           }
         };
 
@@ -366,8 +396,9 @@ io.on('connection', (socket) => {
         if (usersAccepted.find(function(element) {return element.id == socket.id})) {
           console.log('There was a disconnect');
           usersAccepted = usersAccepted.filter(user => user.id != socket.id);
-          debugLog(usersAccepted)
-          console.log("num users accepted:", usersAccepted.length);
+
+          //debugLog(usersAccepted)
+          //console.log("num users accepted:", usersAccepted.length);
           if((teamSize ** 2) - usersAccepted.length < 0) {
             io.sockets.emit('update number waiting', {num: 0});
           } else {
@@ -377,7 +408,7 @@ io.on('connection', (socket) => {
           mturk.setAssignmentsPending(usersAccepted.length)
         }
 
-        if (addedUser) {
+        if (addedUser && !users.every(user => socket.id !== user.id)) {
           users.byID(socket.id).active = false //set user to inactive
           users.byID(socket.id).ready = false //set user to not ready
           if (!suddenDeath) {users.byID(socket.id).ready = true}
@@ -387,7 +418,7 @@ io.on('connection', (socket) => {
 
           if (!taskOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
-          if (!taskOver && suddenDeath){
+          if (!taskOver && suddenDeath && taskStarted){
             // Start cancel process
 
             if(multipleHITs) {
@@ -433,6 +464,22 @@ io.on('connection', (socket) => {
                   user.bonus += mturk.bonusPrice/2
                 }
                 updateUserInDB(user,'bonus',user.bonus)
+                if(multipleHITs) {
+                  let currentHIT = mturk.returnCurrentHIT();
+                  for(i = 0; i < currentHIT.length(); i++) {
+                    db.ourHITs.insert({'currentHIT': currentHIT[i]}, (err, HITAdded) => {
+                      if(err) console.log("There's a problem adding HIT to the DB: ", err);
+                      else if(HITAdded) console.log("HIT added to the DB: ", currentHIT[i]);
+                    })
+                  }
+                } else {
+                  let currentHIT = mturk.returnCurrentHIT();
+                  db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+                    if(err) console.log("There's a problem adding HIT to the DB: ", err);
+                    else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+                  })
+                }
+
               }
               io.in(user.id).emit('finished', {
                   message: cancelMessage,
@@ -444,10 +491,16 @@ io.on('connection', (socket) => {
             })
           }
         }
+        if (!suddenDeath && users.length !== 0 && !users.every(user => user.id !== socket.id)) { //this sets users to ready when they disconnect; TODO remove user from users
+          users.byID(socket.id).ready = true
+        }
+        users = users.filter(user => user.id != socket.id);
+
     });
 
     socket.on("execute experiment", (data) => {
       let user = users.byID(socket.id)
+      console.log("EXECUTE THE PRISONERS", socket.id)
       let currentActivity = user.currentActivity;
       let task_list = user.task_list;
       console.log ("Activity:", currentActivity, "which is", task_list[currentActivity])
@@ -465,6 +518,7 @@ io.on('connection', (socket) => {
         }
         io.in(user.id).emit("load", {element: 'leave-hit', questions: loadQuestions(leaveHitFile), interstitial: true, showHeaderBar: true})
         io.in(user.id).emit("echo", "ready");
+
       }
       else if (task_list[currentActivity] == "midSurvey") {
         if(timeCheckOn) {
@@ -563,7 +617,7 @@ io.on('connection', (socket) => {
       // if (incompleteRooms().length) {
       //   console.log("Some rooms empty:",incompleteRooms())
       //   return } //are all rooms assigned
-      if (users.length != teamSize ** 2) {
+      if (suddenDeath && users.length != teamSize ** 2) {
         console.log("Need",teamSize ** 2 - users.length,"more users.")
         return
       }
@@ -576,7 +630,14 @@ io.on('connection', (socket) => {
       treatmentNow = (currentCondition == "treatment" && currentRound == experimentRound)
       const conditionRound = conditions[currentCondition][currentRound] - 1
 
-      // assign rooms to peple and reset.
+      // assign rooms to people and reset.
+      if(!setPerson){
+        users.forEach(u => {
+          u.person = people.pop();
+        })
+        setPerson = true
+      }
+
       Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
         users.filter(u => room.includes(u.person)).forEach(u => {
           u.room = roomName
@@ -605,7 +666,7 @@ io.on('connection', (socket) => {
           let team_Aliases = tools.makeName(teamSize - 1, user.friends_history)
           user.friends_history = user.friends_history.concat(team_Aliases)
 
-          let teamMates = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
+          let teamMates = user.friends.filter(friend => { return (users.byID(friend.id)) && (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
           for (i = 0; i < teamMates.length; i++) {
             if (treatmentNow) {
               teamMates[i].tAlias = team_Aliases[i].join("")
@@ -617,7 +678,7 @@ io.on('connection', (socket) => {
           }
 
           team_Aliases.push(user.name) //now push user for autocomplete
-          let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
+          //let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
           // io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
           io.in(user.id).emit('go', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//round 0 indexed
         }
@@ -676,7 +737,10 @@ io.on('connection', (socket) => {
       "mturkId": data.mturkId,
       "id": String(socket.id),
       "turkSubmitTo": data.turkSubmitTo,
-      "assignmentId": data.assignmentId
+      "assignmentId": data.assignmentId,
+      "timeAdded": data.timeAdded,
+      "timeLastActivity": data.timeAdded,
+      "waiting": false
     });
     mturk.setAssignmentsPending(usersAccepted.length)
     debugLog(usersAccepted,"users accepted currently: " + usersAccepted.length )
@@ -689,15 +753,90 @@ io.on('connection', (socket) => {
       }
     });
     console.log("Sockets active: " + Object.keys(io.sockets.sockets));
-    // if enough people have accepted, push prompt to start task
-    if(usersAccepted.length >= teamSize ** 2) {
-      let numWaiting = 0;
-      io.sockets.emit('update number waiting', {num: 0});
-      usersAccepted.forEach(user => {io.in(user.id).emit('enough people')});
-    } else {
-      let numWaiting = (teamSize ** 2) - usersAccepted.length;
-      io.sockets.emit('update number waiting', {num: numWaiting});
+    checkUsersAccepted(usersAccepted);
+  });
+
+  function checkUsersAccepted(usersAccepted) {
+
+    function usersWaiting() {return usersAccepted.filter(u => u.waiting)}
+    function secondsSince(event) {return (Date.now() - event)/1000}
+
+    if (!enoughPeople) {
+      usersAccepted.forEach(user => {
+        if (secondsSince(user.timeAdded) > secondsToWait && secondsSince(user.timeLastActivity) < secondsSinceResponse) {
+          user.waiting = true;
+        } else {
+          user.waiting = false;
+        }
+        // usersWaiting = usersAccepted.filter(u => u.waiting);
+        weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - usersWaiting().length))
+        if (secondsSince(user.timeAdded) > weightedHoldingSeconds || secondsSince(user.timeLastActivity) > secondsToHold2) {
+          io.in(user.id).emit('get IDs', 'broken');
+        }
+      })
+
+      //console.log(usersWaiting());
+      //for debugging
+      console.log("\nUsers waiting:", usersWaiting().length, "/", usersAccepted.length);
+      users.forEach((u,i)=> { console.log("",i, usersAccepted.byID(u.id).waiting + '\t' + u.id )})
+      console.log("");
+
+      // if enough people have accepted, push prompt to start task
+      if(usersWaiting().length >= teamSize ** 2) {//if waiting users is >= required amount
+        //io.sockets.emit('update number waiting', {num: 0});
+        enoughPeople = true;
+        let usersNeeded = teamSize **2;
+        console.log('num of users is ' + users.length)
+        //users.forEach((user, index) => {//for every user
+        // console.log(users)
+
+        for (let index = users.length - 1; index >= 0; index -= 1) {
+          user = users[index]
+          console.log("this is the user we're processing: " + user.id)
+          if(usersWaiting().every(user2 => user.id !== user2.id) || usersNeeded <= 0) {//if that user that is not a waiting user or is extra
+            userDeleted = users.splice(index, 1)
+            console.log("this user has been deleted: " + userDeleted.id)
+            io.in(user.id).emit('finished', {
+              message: "Thanks for participating, you're all done!",
+              finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
+            });
+          } else { //found a valid user
+            usersNeeded--;
+          }
+
+          // console.log(users);
+        // console.log("some users not ready", users.filter(user => !user.ready).map(user => user.name))
+          // if(!usersWaiting().includes(user)) {
+          //   for (var i = 0; i < users.length; i++) {
+          //     if(users[i].id === user.id) {
+          //       users.splice(i);
+          //     }
+          //   }
+          // }
+        };
+
+        for (var i = 0; i < teamSize ** 2; i++) {
+          // console.log(i);
+          // console.log(users)
+          io.in(users[i].id).emit('enough people');
+        };
+
+        //send rest of users to finished
+        // for (var i = teamSize**2; i < usersAccepted.length; i++) {
+        //   if(usersWaiting()[i] !== null) {
+        //     io.in(usersWaiting()[i].id).emit('finished');
+        //   }
+        // }
+      } else {
+        let numWaiting = (teamSize ** 2) - usersAccepted.length;
+        io.sockets.emit('update number waiting', {num: numWaiting});
+      }
     }
+  }
+
+  socket.on('accepted user chatted', (data) => {
+    usersAccepted.filter(user => user.id === socket.id).forEach(user => {user.timeLastActivity = data.time});
+    checkUsersAccepted(usersAccepted);
   });
 
   // Starter task
@@ -802,8 +941,8 @@ io.on('connection', (socket) => {
       questionObj['name'] = prefix + i;
 
       //each question in the text file should be formatted: ANSWERTAG.QUESTION ex: YN.Are you part of Team Mark?
-      questionObj['question'] = line.substr(line.indexOf('.')+1, line.length);
-      let answerTag = line.substr(0, line.indexOf('.'));
+      questionObj['question'] = line.substr(line.indexOf('|')+1, line.length);
+      let answerTag = line.substr(0, line.indexOf('|'));
       if(answerTag === "S1") { // scale 1 radio
         answerObj = answers;
       } else if (answerTag === "YN") { // yes no
@@ -814,7 +953,10 @@ io.on('connection', (socket) => {
         answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox', textValue: false};
       } else if (answerTag === "LH") { //leave hit yn
         answerObj = leaveHitAnswers;
+      } else {//chatbot qs
+        answerObj={}
       }
+
       questionObj['answers'] = answerObj.answers;
       questionObj['answerType'] = answerObj.answerType;
       questionObj['textValue'] = answerObj.textValue;
