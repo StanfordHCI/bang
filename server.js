@@ -3,8 +3,8 @@ require('dotenv').config()
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE = 2
-const roundMinutes = process.env.ROUND_MINUTES = 0.5
+const teamSize = process.env.TEAM_SIZE
+const roundMinutes = process.env.ROUND_MINUTES
 
 //Parameters for waiting qualifications
 const secondsToWait = 30 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
@@ -14,9 +14,9 @@ const secondsToHold2 = 90 //maximum number of seconds of inactivity that we allo
 
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = true
+const issueBonusesNow = false
 
-const cleanHITs = true
+const cleanHITs = false
 const assignQualifications = false
 const debugMode = !runningLive
 
@@ -499,7 +499,7 @@ io.on('connection', (socket) => {
 
     socket.on("execute experiment", (data) => {
       let user = users.byID(socket.id)
-      console.log("EXECUTE THE PRISONERS" + socket.id)
+      console.log("EXECUTE THE PRISONERS", socket.id)
       let currentActivity = user.currentActivity;
       let task_list = user.task_list;
       console.log ("Activity:", currentActivity, "which is", task_list[currentActivity])
@@ -619,8 +619,8 @@ io.on('connection', (socket) => {
       if (suddenDeath && users.length != teamSize ** 2) {
         console.log("Need",teamSize ** 2 - users.length,"more users.")
         return
-      } 
-      
+      }
+
       console.log('all users ready -> starting experiment');
       //do we have more experiments to run? if not, finish
 
@@ -636,7 +636,7 @@ io.on('connection', (socket) => {
         })
         setPerson = true
       }
-      
+
       Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
         users.filter(u => room.includes(u.person)).forEach(u => {
           u.room = roomName
@@ -756,75 +756,78 @@ io.on('connection', (socket) => {
   });
 
   function checkUsersAccepted(usersAccepted) {
+
+    function usersWaiting() {return usersAccepted.filter(u => u.waiting)}
+    function secondsSince(event) {return (Date.now() - event)/1000}
+
     if (!enoughPeople) {
       usersAccepted.forEach(user => {
-      if ((Date.now() - user.timeAdded)/1000 > secondsToWait && (Date.now() - user.timeLastActivity)/1000 < secondsSinceResponse) {
-        user.waiting = true;
-      } else {
-        user.waiting = false;
-      }
-      usersWaiting = usersAccepted.filter(user => user.waiting === true);
-      weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - usersWaiting.length))
-      if ((Date.now() - user.timeAdded)/1000 > weightedHoldingSeconds || (Date.now() - user.timeLastActivity)/1000 > secondsToHold2) {
-        io.in(user.id).emit('get IDs', 'broken');
-      }
-    });
+        if (secondsSince(user.timeAdded) > secondsToWait && secondsSince(user.timeLastActivity) < secondsSinceResponse) {
+          user.waiting = true;
+        } else {
+          user.waiting = false;
+        }
+        // usersWaiting = usersAccepted.filter(u => u.waiting);
+        weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - usersWaiting().length))
+        if (secondsSince(user.timeAdded) > weightedHoldingSeconds || secondsSince(user.timeLastActivity) > secondsToHold2) {
+          io.in(user.id).emit('get IDs', 'broken');
+        }
+      })
 
-    //for debugging
-    for (var i = 0; i < users.length; i++) {
-      console.log("User", i, "is ready:", usersAccepted.filter(user => user.id === users[i].id)[0].waiting);
-    };
+      console.log(usersWaiting());
+      //for debugging
+      console.log("\nUsers waiting:", usersWaiting().length, "/", usersAccepted.length);
+      users.forEach((u,i)=> { console.log("",i, usersAccepted.byID(u.id).waiting + '\t' + u.id )})
+      console.log("");
 
-    // if enough people have accepted, push prompt to start task
-    usersWaiting = usersAccepted.filter(user => user.waiting === true);
-    if(usersWaiting.length >= teamSize ** 2) {//if waiting users is >= required amount
-      //io.sockets.emit('update number waiting', {num: 0});
-      enoughPeople = true;
-      let usersNeeded = teamSize **2;
-      console.log('num of users is ' + users.length)
-      //users.forEach((user, index) => {//for every user
-      // console.log(users);
-      for (let index = users.length - 1; index >= 0; index -= 1) {
-        user = users[index]
-        if(usersWaiting.every(user2 => user.id !== user2.id) || usersNeeded <= 0) {//if that user that is not a waiting user or is extra
-          users.splice(index, 1)
-          io.in(user.id).emit('finished', {
-            message: "Thanks for participating, you're all done!",
-            finishingCode: socket.id,
-            turkSubmitTo: mturk.submitTo,
-            assignmentId: user.assignmentId
-          });
-        } else { //found a valid user
-          usersNeeded--;
-        } 
-        // console.log(users);
-      // console.log("some users not ready", users.filter(user => !user.ready).map(user => user.name))
-        // if(!usersWaiting.includes(user)) {
-        //   for (var i = 0; i < users.length; i++) {
-        //     if(users[i].id === user.id) {
-        //       users.splice(i);
-        //     }
+      // if enough people have accepted, push prompt to start task
+      if(usersWaiting().length >= teamSize ** 2) {//if waiting users is >= required amount
+        //io.sockets.emit('update number waiting', {num: 0});
+        enoughPeople = true;
+        let usersNeeded = teamSize **2;
+        console.log('num of users is ' + users.length)
+        //users.forEach((user, index) => {//for every user
+        // console.log(users)
+
+        for (let index = users.length - 1; index >= 0; index -= 1) {
+          user = users[index]
+          if(usersWaiting().every(user2 => user.id !== user2.id) || usersNeeded <= 0) {//if that user that is not a waiting user or is extra
+            users.splice(index, 1)
+            io.in(user.id).emit('finished', {
+              message: "Thanks for participating, you're all done!",
+              finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
+            });
+          } else { //found a valid user
+            usersNeeded--;
+          }
+
+          // console.log(users);
+        // console.log("some users not ready", users.filter(user => !user.ready).map(user => user.name))
+          // if(!usersWaiting().includes(user)) {
+          //   for (var i = 0; i < users.length; i++) {
+          //     if(users[i].id === user.id) {
+          //       users.splice(i);
+          //     }
+          //   }
+          // }
+        };
+
+        for (var i = 0; i < teamSize ** 2; i++) {
+          // console.log(i);
+          // console.log(users)
+          io.in(users[i].id).emit('enough people');
+        };
+
+        //send rest of users to finished
+        // for (var i = teamSize**2; i < usersAccepted.length; i++) {
+        //   if(usersWaiting()[i] !== null) {
+        //     io.in(usersWaiting()[i].id).emit('finished');
         //   }
         // }
-      };
-
-      for (var i = 0; i < teamSize ** 2; i++) {
-        // console.log(i);
-        // console.log(users)
-        io.in(users[i].id).emit('enough people');
-      };
-      
-
-      //send rest of users to finished
-      // for (var i = teamSize**2; i < usersAccepted.length; i++) {
-      //   if(usersWaiting[i] !== null) {
-      //     io.in(usersWaiting[i].id).emit('finished');
-      //   }
-      // }
-    } else {
-      let numWaiting = (teamSize ** 2) - usersAccepted.length;
-      io.sockets.emit('update number waiting', {num: numWaiting});
-    }
+      } else {
+        let numWaiting = (teamSize ** 2) - usersAccepted.length;
+        io.sockets.emit('update number waiting', {num: numWaiting});
+      }
     }
   }
 
@@ -950,7 +953,7 @@ io.on('connection', (socket) => {
       } else {//chatbot qs
         answerObj={}
       }
-      
+
       questionObj['answers'] = answerObj.answers;
       questionObj['answerType'] = answerObj.answerType;
       questionObj['textValue'] = answerObj.textValue;

@@ -2,9 +2,9 @@ $(function() {
   const FADE_TIME = 150; // ms
   const TYPING_TIMER_LENGTH = 400; // ms
   const COLORS = ['#e21400', '#91580f', '#f8a700', '#f78b00', '#58dc00', '#287b00', '#a8f07a', '#4ae8c4', '#3b88eb', '#3824aa', '#a700ff', '#d300e7'];
-  
+
   //toggles
-  let waitChatOn = true
+  let waitChatOn = true;
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -106,9 +106,9 @@ $(function() {
       setTimeout(()=> {
         addChatMessage({username: botUsername, message: "For this first task, I need you to answer a sequence of questions. Thanks for cooperating!"})
         setTimeout(() => {
-          socket.emit('load bot qs')  
+          socket.emit('load bot qs')
         }, 1000*1)
-        
+
       }, 1000*.5)
     } else {
       $waitingPage.show();
@@ -302,11 +302,11 @@ $(function() {
 
   $chatLink.click((event) => {
     event.preventDefault()
-    socket.emit('add user');    
+    socket.emit('add user');
     socket.emit('execute experiment')
   })
 
-  
+
   // Keyboard events
   document.getElementById("character-count").innerHTML = 0;
 
@@ -323,7 +323,7 @@ $(function() {
         sendMessage();
         socket.emit('stop typing');
         typing = false;
-      } 
+      }
     }
     if (event.keyCode === $.ui.keyCode.TAB) {
       //&& $inputMessage.autocomplete("instance").menu.active as a poteantial second condition
@@ -408,8 +408,8 @@ $(function() {
   $inputMessage.click(function () {
     $inputMessage.focus();
   });
-    
-    
+
+
 
   // Socket events
   socket.on('wait chat toggle', data => {
@@ -417,10 +417,10 @@ $(function() {
   })
 
   socket.on('chatbot', data => {
-    const questions = data 
+    const questions = data
     let index = 0;
-    let typingTimer;                
-    let doneTypingInterval = 1000;  
+    let typingTimer;
+    let doneTypingInterval = 1000;
     answered =true
     askQuestion()//ask first q right away
 
@@ -430,7 +430,7 @@ $(function() {
       typingTimer = setTimeout(askQuestion, doneTypingInterval);
     });
 
-    //on keydown, clear the countdown 
+    //on keydown, clear the countdown
     $inputMessage.on('keydown', function () {
       clearTimeout(typingTimer);
     });
@@ -450,7 +450,7 @@ $(function() {
             addChatMessage({username:botUsername, message:'You\'ve answered all my questions! Hang tight while we set up the next task.'})
           }
         }
-      } 
+      }
     }
   })
 
