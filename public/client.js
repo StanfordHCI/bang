@@ -450,10 +450,7 @@ $(function() {
             addChatMessage({username:botUsername, message:'You\'ve answered all my questions! Hang tight while we set up the next task.'})
           }
         }
-      } else {
-        $inputMessage.off('keyup')
-        $inputMessage.off('keydown')
-      }
+      } 
     }
   })
 
@@ -461,8 +458,6 @@ $(function() {
   socket.on('enough people', data => {
     console.log('ENOUGH PEOPLE CALLED ')
     if(preChat) {
-      $inputMessage.off('keyup')
-      $inputMessage.off('keydown')
       notify("Moving you to another chatroom.", "Come and get started with the activity.")
       addChatMessage({username:botUsername, message:"Please wait a few seconds while we move you to another chatroom to begin the next task"})
       setTimeout(()=> {
