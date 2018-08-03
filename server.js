@@ -29,6 +29,7 @@ const multipleHITs = false // cross-check with mturkTools.js
 const randomCondition = false
 const randomRoundOrder = false
 
+const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = true
 const starterSurveyOn = false
 const midSurveyOn = false
@@ -151,13 +152,14 @@ if (runningLive){
   })
 }
 
-// expires HITs left in the DB
+// expires active HITs in the DB
 if (cleanHITs){
+  let activeHITs = mturk.returnActiveHITs();
   db.ourHITs.find({}, (err, HITsInDB) => {
     if (err) {console.log("Err loading HITS for expiration:" + err)} else {
       HITsInDB.forEach((HIT) => {
         let currentHIT = HIT.currentHIT;
-        mturk.expireActiveHits(currentHIT);
+        if(activeHITs.includes(currentHIT)) { mturk.expireActiveHits(currentHIT); }
       })
     }
   })
@@ -782,56 +784,52 @@ io.on('connection', (socket) => {
       users.forEach((u,i)=> { console.log("",i, usersAccepted.byID(u.id).waiting + '\t' + u.id )})
       console.log("");
 
+      if(waitChatOn){
       // if enough people have accepted, push prompt to start task
-      if(usersWaiting().length >= teamSize ** 2) {//if waiting users is >= required amount
-        //io.sockets.emit('update number waiting', {num: 0});
-        enoughPeople = true;
-        let usersNeeded = teamSize **2;
-        console.log('num of users is ' + users.length)
-        //users.forEach((user, index) => {//for every user
-        // console.log(users)
+        if(usersWaiting().length >= teamSize ** 2) {//if waiting users is >= required amount
+          //io.sockets.emit('update number waiting', {num: 0});
+          enoughPeople = true;
+          let usersNeeded = teamSize **2;
+          console.log('num of users is ' + users.length)
+          //users.forEach((user, index) => {//for every user
+          // console.log(users)
 
-        for (let index = users.length - 1; index >= 0; index -= 1) {
-          user = users[index]
-          console.log("this is the user we're processing: " + user.id)
-          if(usersWaiting().every(user2 => user.id !== user2.id) || usersNeeded <= 0) {//if that user that is not a waiting user or is extra
-            userDeleted = users.splice(index, 1)
-            console.log("this user has been deleted: " + userDeleted.id)
-            io.in(user.id).emit('finished', {
-              message: "Thanks for participating, you're all done!",
-              finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
-            });
-          } else { //found a valid user
-            usersNeeded--;
+          for (let index = users.length - 1; index >= 0; index -= 1) {
+            user = users[index]
+            console.log("this is the user we're processing: " + user.id)
+            if(usersWaiting().every(user2 => user.id !== user2.id) || usersNeeded <= 0) {//if that user that is not a waiting user or is extra
+              userDeleted = users.splice(index, 1)
+              console.log("this user has been deleted: " + userDeleted.id)
+              io.in(user.id).emit('finished', {
+                message: "Thanks for participating, you're all done!",
+                finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
+              });
+            } else { //found a valid user
+              usersNeeded--;
+            }
           }
 
-          // console.log(users);
-        // console.log("some users not ready", users.filter(user => !user.ready).map(user => user.name))
-          // if(!usersWaiting().includes(user)) {
-          //   for (var i = 0; i < users.length; i++) {
-          //     if(users[i].id === user.id) {
-          //       users.splice(i);
-          //     }
-          //   }
-          // }
-        };
+          for (var i = 0; i < teamSize ** 2; i++) {
 
-        for (var i = 0; i < teamSize ** 2; i++) {
-          // console.log(i);
-          // console.log(users)
-          io.in(users[i].id).emit('enough people');
-        };
+            io.in(users[i].id).emit('enough people');
+          };
 
-        //send rest of users to finished
-        // for (var i = teamSize**2; i < usersAccepted.length; i++) {
-        //   if(usersWaiting()[i] !== null) {
-        //     io.in(usersWaiting()[i].id).emit('finished');
-        //   }
-        // }
+        } else {
+          let numWaiting = (teamSize ** 2) - usersAccepted.length;
+          io.sockets.emit('update number waiting', {num: numWaiting});
+        }
       } else {
-        let numWaiting = (teamSize ** 2) - usersAccepted.length;
-        io.sockets.emit('update number waiting', {num: numWaiting});
+        // if enough people have accepted, push prompt to start task
+        if(usersAccepted.length >= teamSize ** 2) {
+          let numWaiting = 0;
+          io.sockets.emit('update number waiting', {num: 0});
+          usersAccepted.forEach(user => {io.in(user.id).emit('enough people')});
+        } else {
+          let numWaiting = (teamSize ** 2) - usersAccepted.length;
+          io.sockets.emit('update number waiting', {num: numWaiting});
+        }
       }
+
     }
   }
 

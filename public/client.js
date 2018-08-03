@@ -1,10 +1,10 @@
 $(function() {
   const FADE_TIME = 150; // ms
   const TYPING_TIMER_LENGTH = 400; // ms
-  const COLORS = ['#e21400', '#91580f', '#f8a700', '#f78b00', '#58dc00', '#287b00', '#a8f07a', '#4ae8c4', '#3b88eb', '#3824aa', '#a700ff', '#d300e7'];
-  let colorIndex = 0;
+  const COLORS = ['#e21400', '#91580f', '#dfe106', '#ff8300', '#58dc00', '#006400', '#a8f07a', '#4ae8c4', '#ff69b4', '#3824aa', '#a700ff', '#d300e7'];
+
   //toggles
-  let waitChatOn = true;
+  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -412,10 +412,6 @@ $(function() {
 
 
   // Socket events
-  socket.on('wait chat toggle', data => {
-    waitChatOn = data
-  })
-
   socket.on('chatbot', data => {
     const questions = data
     let index = 0;
