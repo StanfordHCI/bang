@@ -245,7 +245,6 @@ const assignQualificationToUsers = (users) => {
   users.filter((user) => {
     return user.mturkId
   }).forEach((user) => {
-    // // Assigns the qualification to the worker
     var assignQualificationParams = {QualificationTypeId: qualificationId, WorkerId: user.mturkId, IntegerValue: 1, SendNotification: false};
     mturk.associateQualificationWithWorker(assignQualificationParams, function(err, data) {
       if (err) console.log(err, err.stack); // an error occurred
@@ -302,7 +301,7 @@ const payBonuses = (users) => {
       UniqueRequestToken: u.id
     }, function(err, data) {
       if (err) {
-       // console.log("Bonus not processed:",err)
+        console.log("Bonus not processed")
       } else {
         successfullyBonusedUsers.push(u)
         console.log("Bonused:",u)
@@ -357,9 +356,7 @@ const returnCurrentHIT = () => {
   if(multipleHITs) {
     let HITs = [currentHitId, currentHitId2, currentHitId3]
     return HITs;
-  } else {
-    return currentHitId;
-  }
+  } else { return currentHitId; }
 }
 
 // * launchBang *
@@ -368,9 +365,7 @@ const returnCurrentHIT = () => {
 
 const launchBang = () => {
   // HIT Parameters
-
   let qualificationReqs = [{}];
-
   if(noUSA) {
     QualificationReqs = [
       {
@@ -392,7 +387,6 @@ const launchBang = () => {
         ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
     }];
   }
-
   if (qualificationsOn) {
     QualificationReqs.push({
       QualificationTypeId: '00000000000000000040',  // more than 1000 HITs
@@ -482,9 +476,7 @@ const launchBang = () => {
       };
       if(multipleHITs) {
         for(i = 1; i <= numHITs; i++) {
-          if(i > 1) {
-            HITTitle = HITTitle + i;
-          }
+          if(i > 1) { HITTitle = HITTitle + i; }
           mturk.createHIT(params, (err, data) => {
             if (err) {
               console.log(err, err.stack);
