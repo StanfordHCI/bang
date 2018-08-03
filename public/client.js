@@ -1,8 +1,8 @@
 $(function() {
   const FADE_TIME = 150; // ms
   const TYPING_TIMER_LENGTH = 400; // ms
-  let COLORS = ['#e21400', '#91580f', '#f8a700', '#f78b00', '#58dc00', '#287b00', '#a8f07a', '#4ae8c4', '#3b88eb', '#3824aa', '#a700ff', '#d300e7'];
-
+  const COLORS = ['#e21400', '#91580f', '#f8a700', '#f78b00', '#58dc00', '#287b00', '#a8f07a', '#4ae8c4', '#3b88eb', '#3824aa', '#a700ff', '#d300e7'];
+  let colorIndex = 0;
   //toggles
   let waitChatOn = true;
 
@@ -291,15 +291,22 @@ $(function() {
   // Gets the color of a username through our hash function
   function getUsernameColor (username) {
     // Compute hash code
-      let hash = 7;
-      for (let i = 0; i < username.length; i++) {
-       hash = username.charCodeAt(i) + (hash << 5) - hash;
+    let color = COLORS[colorIndex];
+    colorIndex++;
+    if(colorIndex >= COLORS.length()) { // reset if at end
+      colorIndex = 0;
     }
-    // Calculate color
-      const index = Math.abs(hash % COLORS.length);
-      let color = COLORS[index];
-      COLORS.splice(index, 1)
-      return color;
+    return color;
+
+    // let hash = 7;
+    // for (let i = 0; i < username.length; i++) {
+    //    hash = username.charCodeAt(i) + (hash << 5) - hash;
+    // }
+    // // Calculate color
+    //   const index = Math.abs(hash % COLORS.length);
+    //   let color = COLORS[index];
+    //   COLORS.splice(index, 1)
+    //   return color;
   }
 
   $chatLink.click((event) => {
