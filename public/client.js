@@ -572,6 +572,7 @@ $(function() {
     document.getElementById("inputMessage").value = '' //clear chat in new round
     hideAll();
     $chatPage.show();
+    $leaveHitButton.show();
     $headerbarPage.show();
     $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
 
