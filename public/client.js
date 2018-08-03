@@ -2,8 +2,7 @@ $(function() {
   const FADE_TIME = 150; // ms
   const TYPING_TIMER_LENGTH = 400; // ms
   const COLORS = ['#e21400', '#91580f', '#dfe106', '#ff8300', '#58dc00', '#006400', '#a8f07a', '#4ae8c4', '#ff69b4', '#3824aa', '#a700ff', '#d300e7'];
-  let hashCodes = [];
-  let colorsUsed = [];
+
   //toggles
   let waitChatOn = true;
 
@@ -289,9 +288,6 @@ $(function() {
     });
   }
 
-  // let hashCodes = [];
-  // let colorsUsed = [];
-
   // Gets the color of a username through our hash function
   function getUsernameColor (username) {
     //Compute hash code
@@ -299,22 +295,6 @@ $(function() {
     for (let i = 0; i < username.length; i++) {
        hash = username.charCodeAt(i) + (hash << 5) - hash;
     }
-
-    // if(hashCodes.includes(hash)) {
-    //   const index = hashCodes[hashCodes.indexOf(hash) + 1]
-    //   return COLORS[index];
-    // } else {
-    //   hashCodes.push(hash);
-    //   const index = Math.abs(hash % COLORS.length);
-    //   while(colorsUsed.includes(index)) {
-    //     index++;
-    //     if(index >= COLORS.length) {
-    //       index = 0;
-    //     }
-    //   }
-    //   hashCodes.push(index);
-    //   return COLORS[index];
-    // }
     // Calculate color
     const index = Math.abs(hash % COLORS.length);
     return COLORS[index];
