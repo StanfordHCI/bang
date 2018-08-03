@@ -578,19 +578,12 @@ $(function() {
 
     setTimeout(()=>{
       log(data.task)
-      log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
+      log("For this task, you will work with your group to discuss the question above. Spend the first 7-minutes thinking about this question and sharing perspectives and opinions!")
       let durationString = ""
       if (data.duration < 1) { durationString = Math.round(data.duration * 60) + " seconds"
       } else if (data.duration == 1) { durationString = "one minute"
       } else { durationString = data.duration + " minutes" }
-      log("You will have <strong>" + durationString + "</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
-      log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
-      log("<br>For example, here are text advertisements for a golf club called Renaissance: <br>\
-      <ul style='list-style-type:disc'> \
-        <li><strong>An empowering modern club</strong><br></li> \
-        <li><strong>A private club with reach</strong><br></li> \
-        <li><strong>Don't Wait. Discover Renaissance Today</strong></li> \
-      </ul>")
+      log("With 3-minutes remaining, you will be asked a follow-up discussion question; your performance on this task does not depend on whether or not you reach a consensus.")
     }, 500)
 
     setTimeout(()=>{
@@ -762,10 +755,9 @@ $(function() {
   });
 
   socket.on('timer',data => {
-    log("You're about <strong>90% done with this session</strong>. Enter your final result now.")
-    log("Remember, it needs to be <strong>maximum 30 characters long</strong>.")
-    log("To indicate your final result, <strong>start the line with an exclamation mark (i.e., '!')</strong>. We will not count that character toward your length limit.")
-    log("<br>If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat.")
+    log("<strong>Follow-up question:</strong> did your group come to a consensus?") 
+    log("If <strong>yes</strong>, why do you think you were able to come to a consensus?")  
+    log("If <strong>no</strong>, why do you think you are unable to come to a consensus?")
   });
 
   socket.on('echo',data => {

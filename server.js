@@ -164,12 +164,9 @@ if (cleanHITs){
 if (runExperimentNow){ mturk.launchBang() }
 
 //Add more products
-let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
-                 'url': 'https://www.kickstarter.com/projects/stilform/kosmos-ink' },
-                {'name':'Projka: Multi-Function Accessory Pouches',
-                 'url': 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches' },
-                {'name':"First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC",
-                 'url': 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono' }]
+let discussion= [{'name':'Thinking of the idea of humans possibly living in a virtual reality – does that affect our morals? How? '},
+                {'name':'Does religion do more harm than good?'},
+                {'name':"Can empathy save the world?"}]
 let users = []; //the main local user storage
 let currentRound = 0
 let startTime = 0
@@ -648,9 +645,8 @@ io.on('connection', (socket) => {
       })
 
       //Notify user 'go' and send task.
-      let currentProduct = products[currentRound]
-      let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
-
+      let currentDiscussion = discussion[currentRound]
+      let taskText = "Discussion question: <strong>" + currentDiscussion.name + "</strong>"
       taskStarted = true
       mturk.startTask();
 
@@ -658,7 +654,7 @@ io.on('connection', (socket) => {
         if (autocompleteTestOn) {
           let teamNames = [tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username]
           console.log(teamNames)
-          io.in(user.id).emit('go', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//rounds are 0 indexed
+          io.in(user.id).emit('go', {task: taskText, team: teamnames, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//rounds are 0 indexed
         } else {
           // Dynamically generate teammate names
           // even if teamSize = 1 for testing, this still works
@@ -691,9 +687,10 @@ io.on('connection', (socket) => {
 
       //Round warning
       // make timers run in serial
+      
       setTimeout(() => {
-        console.log('time warning', currentRound);
-        users.forEach(user => { io.in(user.id).emit('timer', {time: roundMinutes * .1}) });
+        console.log('follow-up question', currentRound);
+        users.forEach(user => { io.in(user.id).emit('timer', {time: roundMinutes * .7}) });
 
         //Done with round
         setTimeout(() => {
