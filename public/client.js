@@ -292,7 +292,7 @@ $(function() {
   function getUsernameColor (username) {
     let color = COLORS[colorIndex];
     colorIndex++;
-    if(colorIndex >= COLORS.length()) { colorIndex = 0; }
+    if(colorIndex >= COLORS.length) { colorIndex = 0; }
     return color;
     // Compute hash code
     // let hash = 7;
