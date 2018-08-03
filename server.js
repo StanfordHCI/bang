@@ -3,8 +3,8 @@ require('dotenv').config()
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE = 1
-const roundMinutes = process.env.ROUND_MINUTES = .1
+const teamSize = process.env.TEAM_SIZE
+const roundMinutes = process.env.ROUND_MINUTES
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
@@ -152,13 +152,14 @@ if (runningLive){
   })
 }
 
-// expires HITs left in the DB
+// expires active HITs in the DB
 if (cleanHITs){
+  let activeHITs = mturk.returnActiveHITs();
   db.ourHITs.find({}, (err, HITsInDB) => {
     if (err) {console.log("Err loading HITS for expiration:" + err)} else {
       HITsInDB.forEach((HIT) => {
         let currentHIT = HIT.currentHIT;
-        mturk.expireActiveHits(currentHIT);
+        if(activeHITs.includes(currentHIT)) { mturk.expireActiveHits(currentHIT); }
       })
     }
   })

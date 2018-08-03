@@ -166,6 +166,26 @@ const returnHIT = (hitId) => {
   });
 }
 
+
+// * returnActiveHITs *
+// -------------------------------------------------------------------
+// Retrieves all active HITs.
+//
+// Returns an array of Active HITs.
+
+const returnActiveHITs = () => {
+  mturk.listHITs({}, (err, data) => {
+    if (err) console.log(err, err.stack);
+    else {
+      let activeHITs = [];
+      data.HITs.map((hit) => {
+        if(hit.HITStatus == "Assignable") { activeHITs.push(hit.HITId) }
+      })
+      return activeHITs
+    }
+  })
+}
+
 // * expireActiveHits *
 // -------------------------------------------------------------------
 // Expires all active HITs by updating the time-until-expiration to 0.
@@ -516,6 +536,7 @@ module.exports = {
   getBalance: getBalance,
   makeHIT: makeHIT,
   returnHIT: returnHIT,
+  returnActiveHITs: returnActiveHITs,
   expireActiveHits: expireActiveHits,
   deleteHIT: deleteHIT,
   createQualification: createQualification,
