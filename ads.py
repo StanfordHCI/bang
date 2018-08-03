@@ -1,6 +1,6 @@
-# import sys
-# import uuid
-# from googleads import adwords
+import sys
+import uuid
+from googleads import adwords
 
 # print("THIS IS WORKING")
 # # print(sys.argv[1])
@@ -92,9 +92,7 @@
 # Set up... 
 # https://github.com/googleads/googleads-python-lib
 
-
 import argparse
-import sys
 
 from google_auth_oauthlib.flow import InstalledAppFlow
 from oauthlib.oauth2.rfc6749.errors import InvalidGrantError

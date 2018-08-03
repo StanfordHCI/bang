@@ -1,0 +1,62 @@
+Metadata-Version: 1.1
+Name: googleads
+Version: 13.0.0
+Summary: Google Ads Python Client Library
+Home-page: https://github.com/googleads/googleads-python-lib
+Author: Mark Saniscalchi
+Author-email: api.msaniscalchi@gmail.com
+License: Apache License 2.0
+Description: 
+        ===========================================
+        The googleads Python Client Libraries
+        ===========================================
+        
+        The googleads Python Client Libraries support the following products:
+        
+        * AdWords API
+        * DoubleClick for Publishers API
+        
+        You can find more information about the Google Ads Python Client Libraries
+        `here <https://github.com/googleads/googleads-python-lib>`_.
+        
+        Supported Python Versions
+        =========================
+        
+        This library is supported for Python 2 and 3, for versions 2.7+ and 3.4+
+        respectively. It is recommended that Python 2 users use python 2.7.9+ to take
+        advantage of the SSL Certificate Validation feature that is not included in
+        earlier versions.
+        
+        Installation
+        ============
+        
+        You have two options for installing the Ads Python Client Libraries:
+        
+        * Install with a tool such as pip::
+        
+          $ sudo pip install googleads
+        
+        * Install manually after downloading and extracting the tarball::
+        
+          $ sudo python setup.py install
+        
+        Examples
+        ========
+        
+        If you would like to obtain example code for any of the included
+        client libraries, you can find it on our
+        `downloads page <https://github.com/googleads/googleads-python-lib/releases>`_.
+        
+        Contact Us
+        ==========
+        
+        Do you have an issue using the googleads Client Libraries? Or perhaps some
+        feedback for how we can improve them? Feel free to let us know on our
+        `issue tracker <https://github.com/googleads/googleads-python-lib/issues>`_.
+        
+Keywords: adwords dfp google
+Platform: any
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.4
