@@ -464,7 +464,8 @@ $(function() {
         socket.emit('execute experiment')
         preChat = false;
       }, 1000*2)
-    }
+    } else {
+      $chatLink.show();
   });
 
   //checks if the user actually accepted or if they are previewing the task
