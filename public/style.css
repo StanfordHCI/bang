@@ -61,6 +61,11 @@ ul {
   text-align: left;
 }
 
+.header h3 {
+  color: white;
+  text-align: center;
+}
+
 #leave-hit-button {
   height: 80%;
   position: absolute;

@@ -2,15 +2,24 @@ $(function() {
   const FADE_TIME = 150; // ms
   const TYPING_TIMER_LENGTH = 400; // ms
   const COLORS = ['#e21400', '#91580f', '#f8a700', '#f78b00', '#58dc00', '#287b00', '#a8f07a', '#4ae8c4', '#3b88eb', '#3824aa', '#a700ff', '#d300e7'];
+  
+  //toggles
+  let waitChatOn = true
+
+  //globals for prechat
+  let preChat = waitChatOn;
+  let answered = false;
+
   // Initialize variables
   const $window = $(window);
   const $messages = $('.messages'); // Messages area
+
   const $inputMessage = $('.inputMessage'); // Input message input box
   const $checkinPopup = $('#checkin');
-  const $headerBar = $('.header');
-  const $headerText = $('#header-text');
-  const $leaveHitButton = $('#leave-hit-button');
-  const $leaveHitPopup = $('#leave-hit-popup');
+  const $headerBar = $('.header')
+  const $headerText = $('#header-text')
+  const $leaveHitButton = $('#leave-hit-button')
+  const $leaveHitPopup = $('#leave-hit-popup')
 
   const $chatLink = $('#chatLink');
   const $headerbarPage = $('#headerbarPage'); // The finishing page
@@ -26,6 +35,7 @@ $(function() {
   const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
   const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
   const $finishingPage = $('#finishing'); // The finishing page
+  const botUsername = 'helperBot'
 
 
   Vue.component('question-component', {
@@ -49,7 +59,7 @@ $(function() {
   const hideAll = () => {
     $headerbarPage.hide()
     $checkinPopup.hide();
-    $leaveHitPopup.hide();
+    $leaveHitPopup.hide()
     $lockPage.hide();
     $waitingPage.hide();
     $chatPage.hide();
@@ -69,7 +79,7 @@ $(function() {
   let messagesSafe = document.getElementsByClassName('messages')[0];
   let finishingcode = document.getElementById('finishingcode');
   let usersWaiting = document.getElementById('numberwaiting');
-  let mturkVariables;
+  let mturkVariables
 
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
   const $psychologicalSafetyQuestions = $('.psychologicalSafetyQuestions'); //pre survey
@@ -85,9 +95,24 @@ $(function() {
   if (URLvars.assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
     $lockPage.show(); //prompt user to accept HIT
   } else { // tell the server that the user has accepted the HIT - server then adds this worker to array of accepted workers
-    $waitingPage.show();
-    mturkVariables = { mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId }
+    mturkVariables = { mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId, timeAdded: (new Date()).getTime()}
     socket.emit('accepted HIT',mturkVariables);
+    if(waitChatOn){
+      socket.emit('add user');
+      $chatPage.show()
+      $headerbarPage.show()
+      $leaveHitButton.hide()
+      addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername +", welcome to our HIT!"})
+      setTimeout(()=> {
+        addChatMessage({username: botUsername, message: "For this first task, I need you to answer a sequence of questions. Thanks for cooperating!"})
+        setTimeout(() => {
+          socket.emit('load bot qs')  
+        }, 1000*1)
+        
+      }, 1000*.5)
+    } else {
+      $waitingPage.show();
+    }
   }
 
   // Get permission to notify
@@ -102,7 +127,7 @@ $(function() {
 
   let currentTeam = []
 
-  document.title = "Team work";
+  document.title = "Ad writing task";
 
   // Implements notifications
   let notify = (title, body) => {
@@ -124,14 +149,6 @@ $(function() {
     // log(message);
   }
 
-  // Sets the client's username
-  function setUsername () {
-    hideAll();
-    $holdingPage.show();
-    socket.emit('add user');
-    socket.emit('execute experiment')
-  }
-
   // Sends a chat message
   function sendMessage () {
       let message = $inputMessage.val();
@@ -142,7 +159,13 @@ $(function() {
       $inputMessage.val('');
       addChatMessage({ username: username, message: message });
       // tell server to execute 'new message' and send along one parameter
-      socket.emit('new message', message);
+      if(preChat) {
+        answered = true;
+        socket.emit('accepted user chatted', {time: Date.now()});
+        socket.emit('log', holdingUsername.innerText+ ': ' + message);
+      } else {
+        socket.emit('new message', message);
+      }
     }
   }
 
@@ -178,7 +201,6 @@ $(function() {
         // 'height': $messageBodyDiv.css("height"),
         'display':'inline-block'
         });
-
 
     const typingClass = data.typing ? 'typing' : '';
     const $messageDiv = $('<li class="message"/>')
@@ -280,7 +302,8 @@ $(function() {
 
   $chatLink.click((event) => {
     event.preventDefault()
-    setUsername()
+    socket.emit('add user');    
+    socket.emit('execute experiment')
   })
 
   
@@ -290,7 +313,7 @@ $(function() {
   $window.keydown(event => {
     // Auto-focus the current input when a key is typed
     if (!(event.ctrlKey || event.metaKey || event.altKey)) {
-      $currentInput.focus();
+        $currentInput.focus();
       // forcedComplete($currentInput)
     }
 
@@ -300,7 +323,7 @@ $(function() {
         sendMessage();
         socket.emit('stop typing');
         typing = false;
-      } else { setUsername() }
+      } 
     }
     if (event.keyCode === $.ui.keyCode.TAB) {
       //&& $inputMessage.autocomplete("instance").menu.active as a poteantial second condition
@@ -355,6 +378,8 @@ $(function() {
     $leaveHitPopup.show();
     $currentInput = $("#leavetaskfeedbackInput").focus();
     $currentInput.focus();
+    socket.emit('log', holdingUsername.innerText+ ' clicked leave hit button.');
+
   })
 
   //Simple autocomplete
@@ -383,14 +408,63 @@ $(function() {
   $inputMessage.click(function () {
     $inputMessage.focus();
   });
-
+    
+    
 
   // Socket events
+  socket.on('wait chat toggle', data => {
+    waitChatOn = data
+  })
+
+  socket.on('chatbot', data => {
+    const questions = data 
+    let index = 0;
+    let typingTimer;                
+    let doneTypingInterval = 1000;  
+    answered =true
+    askQuestion()//ask first q right away
+
+    //on keyup, start the countdown
+    $inputMessage.on('keyup', function () {
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(askQuestion, doneTypingInterval);
+    });
+
+    //on keydown, clear the countdown 
+    $inputMessage.on('keydown', function () {
+      clearTimeout(typingTimer);
+    });
+
+    //user is "finished typing," do something
+    function askQuestion () {
+      console.log(index)
+      if(preChat){
+        if(answered){
+          answered = false;
+
+          if(index < questions.length) {
+            let q = questions[index].question
+            addChatMessage({username:botUsername, message:q})
+            index++
+          } else {
+            addChatMessage({username:botUsername, message:'You\'ve answered all my questions! Hang tight while we set up the next task.'})
+          }
+        }
+      } 
+    }
+  })
 
   //if there are enough workers who have accepted the task, show link to chat page
   socket.on('enough people', data => {
-    notify("There's enough people!", "Come and get started with the activity.")
-    $('.chatLink').show();
+    console.log('ENOUGH PEOPLE CALLED ')
+    if(preChat) {
+      notify("Moving you to another chatroom.", "Come and get started with the activity.")
+      addChatMessage({username:botUsername, message:"Please wait a few seconds while we move you to another chatroom to begin the next task"})
+      setTimeout(()=> {
+        socket.emit('execute experiment')
+        preChat = false;
+      }, 1000*2)
+    }
   });
 
   //checks if the user actually accepted or if they are previewing the task
@@ -492,11 +566,13 @@ $(function() {
   });
 
   socket.on('go', data => {
+    messagesSafe.innerHTML = ''
     startTimer(60 * data.duration - 1, $headerText) // start header timer, subtract 1 to give more notice
 
     document.getElementById("inputMessage").value = '' //clear chat in new round
     hideAll();
     $chatPage.show();
+    $leaveHitButton.show();
     $headerbarPage.show();
     $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
 
@@ -519,8 +595,9 @@ $(function() {
 
     setTimeout(()=>{
       let str = ""
-      for (member of data.team)
+      for (member of data.team){
         addChatMessage({username:member, message:'has entered the chatroom'})
+      }
     }, 1000)
 
     $currentInput = $inputMessage.focus();
@@ -679,7 +756,7 @@ $(function() {
     // log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
       hideAll();
       $holdingPage.show();
-      messagesSafe.innerHTML = '';
+      // messagesSafe.innerHTML = '';
       $inputMessage.unbind("keydown")
       socket.emit('execute experiment')
   });
@@ -710,6 +787,7 @@ $(function() {
   $("#leave-hit-submit").click((event) => {
     event.preventDefault() //stops page reloading
     let feedbackMessage = $('#leavetaskfeedbackInput').val();
+
     if (feedbackMessage.length > 10) {
       hideAll();
       $finishingPage.show();
@@ -804,6 +882,8 @@ $(function() {
   $('#mturk_form').submit( (event) => {
     socket.emit('mturk_formSubmit', $('#engagementfeedbackInput').val())
   })
+
+
 
 });
 
