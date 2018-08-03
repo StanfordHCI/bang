@@ -7,6 +7,7 @@ const teamSize = process.env.TEAM_SIZE
 const roundMinutes = process.env.ROUND_MINUTES
 
 //Parameters for waiting qualifications
+//MAKE SURE secondsToWait > secondsSinceResponse
 const secondsToWait = 15 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
 const secondsSinceResponse = 10 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
 const secondsToHold1 = 720 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
