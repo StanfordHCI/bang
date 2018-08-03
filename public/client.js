@@ -290,14 +290,14 @@ $(function() {
 
   // Gets the color of a username through our hash function
   function getUsernameColor (username) {
-    // Compute hash code
+    //Compute hash code
     let hash = 7;
     for (let i = 0; i < username.length; i++) {
        hash = username.charCodeAt(i) + (hash << 5) - hash;
     }
     // Calculate color
-      const index = Math.abs(hash % COLORS.length);
-      return COLORS[index];
+    const index = Math.abs(hash % COLORS.length);
+    return COLORS[index];
   }
 
   $chatLink.click((event) => {
