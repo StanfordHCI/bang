@@ -7,8 +7,8 @@ const teamSize = process.env.TEAM_SIZE
 const roundMinutes = process.env.ROUND_MINUTES
 
 //Parameters for waiting qualifications
-const secondsToWait = 30 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
-const secondsSinceResponse = 60 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
+const secondsToWait = 15 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+const secondsSinceResponse = 10 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
 const secondsToHold1 = 720 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
 const secondsToHold2 = 90 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 
@@ -774,7 +774,7 @@ io.on('connection', (socket) => {
         }
       })
 
-      console.log(usersWaiting());
+      //console.log(usersWaiting());
       //for debugging
       console.log("\nUsers waiting:", usersWaiting().length, "/", usersAccepted.length);
       users.forEach((u,i)=> { console.log("",i, usersAccepted.byID(u.id).waiting + '\t' + u.id )})
@@ -791,8 +791,10 @@ io.on('connection', (socket) => {
 
         for (let index = users.length - 1; index >= 0; index -= 1) {
           user = users[index]
+          console.log("this is the user we're processing: " + user.id)
           if(usersWaiting().every(user2 => user.id !== user2.id) || usersNeeded <= 0) {//if that user that is not a waiting user or is extra
-            users.splice(index, 1)
+            userDeleted = users.splice(index, 1)
+            console.log("this user has been deleted: " + userDeleted.id)
             io.in(user.id).emit('finished', {
               message: "Thanks for participating, you're all done!",
               finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
