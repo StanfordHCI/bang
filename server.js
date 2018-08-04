@@ -15,7 +15,7 @@ const secondsToHold2 = 90 //maximum number of seconds of inactivity that we allo
 
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = false
+const issueBonusesNow = true
 
 const cleanHITs = false
 const assignQualifications = false
@@ -126,31 +126,24 @@ const Datastore = require('nedb'),
     db.leavingMessage = new Datastore({filename: '.data/leavingMessage', autoload: true, timestampData: true})
     db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true})
 
-const updateUserInDB = (user,feild,value) => { db.users.update(
-  {id: user.id}, {$set: {feild: value}}, {},
-  err => console.log(err ? "Err recording "+feild+": "+err : "Updated "+feild+" "+user.id+"\n"+value+"\n")
-)}
-
-require('express')().listen(); //Sets to only relaunch with source changes
-
-//Mturk Calls
-if (runningLive){
-  db.users.find({}, (err, usersInDB) => {
-    if (err) {console.log("Err loading users for background tasks:" + err)} else {
-      if (issueBonusesNow) {
-        mturk.payBonuses(usersInDB).forEach(u => updateUserInDB(u,'bonus',0))
-        // usersInDB.forEach(u => updateUserInDB(u,'bonus',0)) Clears all stored bonuses
-      }
-      if (assignQualifications) {
-        db.users.find({}, (err, usersInDB) => {
-          if (err) {console.log("Err loading users:" + err)}
-          mturk.assignQualificationToUsers(usersInDB);
-        })
-        mturk.listUsersWithQualification()
-      }
-    }
-  })
+function updateUserInDB(user,feild,value) {
+  db.users.update( {id: user.id}, {$set: {feild: value}}, {},
+    err => console.log(err ? "Err recording "+feild+": "+err : "Updated "+feild+" "+user.id+"\n"+value+"\n")
+  )
 }
+
+//Mturk background tasks
+db.users.find({}, (err, usersInDB) => {
+  if (err) {console.log("DB for MTurk:" + err)} else {
+    if (issueBonusesNow) {
+      mturk.payBonuses(usersInDB).forEach(u => updateUserInDB(u,'bonus',0))
+    }
+    if (assignQualifications) {
+      mturk.assignQualificationToUsers(usersInDB)
+      mturk.listUsersWithQualification()
+    }
+  }
+})
 
 // expires active HITs in the DB
 if (cleanHITs){

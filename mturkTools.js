@@ -41,7 +41,7 @@ const hourlyWage = 10.50; // changes reward of experiment depending on length - 
 const rewardPrice = 0.50 // upfront cost
 const noUSA = false; // if true, turkers in the USA will not be able to see the HIT
 const multipleHITs = false; // if true, posts numHITs of hits with slightly different titles at the same time
-const numHITs = 3; 
+const numHITs = 3;
 const maxAssignments = (teamSize * teamSize) + teamSize;
 let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
 let usersAcceptedHIT = 0;
@@ -312,19 +312,19 @@ const listUsersWithQualification = () => {
 
 const payBonuses = (users) => {
   let successfullyBonusedUsers = []
-  users.filter(u => u.bonus != 0).forEach((u) => {
+  users.filter(u => u.mturkId != 'A19MTSLG2OYDLZ').filter(u => u.bonus != 0).forEach((u) => {
     mturk.sendBonus({
       AssignmentId: u.assignmentId,
       BonusAmount: String(u.bonus),
       Reason: "Thanks for participating in our HIT!",
       WorkerId: u.mturkId,
       UniqueRequestToken: u.id
-    }, function(err, data) {
+    }, (err, data) => {
       if (err) {
-        console.log("Bonus not processed")
+        console.log("Bonus not processed\t",u.id,'\t',u.mturkId)
       } else {
         successfullyBonusedUsers.push(u)
-        console.log("Bonused:",u)
+        console.log("Bonused:",u.id, u.mturkId)
       }
     })
   })
