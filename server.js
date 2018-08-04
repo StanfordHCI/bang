@@ -108,23 +108,23 @@ const population = people.length
 const teams = tools.createTeams(teamSize,numRounds,people)
 
 const batchID = Date.now();
+console.log("Launching batch",batchID);
 
 // Setting up DB
 const Datastore = require('nedb'),
     db = {};
-    db.starterSurvey = new Datastore({ filename:'.data/starterSurvey', autoload: true });
-    db.users = new Datastore({ filename:'.data/users', autoload: true });
-    db.chats = new Datastore({ filename:'.data/chats', autoload: true });
-    db.products = new Datastore({ filename:'.data/products', autoload: true });
-    db.checkins = new Datastore({ filename:'.data/checkins', autoload: true});
-    db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true});
-    db.psychologicalSafety = new Datastore({ filename:'.data/psychologicalSafety', autoload: true}); // to store psychological safety results
-    db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true});
-    db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true}); // to store midSurvey results
-    db.batch = new Datastore({ filename:'.data/batch', autoload: true}); // to store batch information
-    db.time = new Datastore({ filename:'.data/time', autoload: true}); // store duration of tasks
-    db.leavingMessage = new Datastore({filename: '.data/leavingMessage', autoload: true})
-    db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true})
+    db.users = new Datastore({ filename:'.data/users', autoload: true, timestampData: true });
+    db.chats = new Datastore({ filename:'.data/chats', autoload: true, timestampData: true});
+    db.starterSurvey = new Datastore({ filename:'.data/starterSurvey', autoload: true, timestampData: true});
+    db.checkins = new Datastore({ filename:'.data/checkins', autoload: true, timestampData: true});
+    db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true, timestampData: true});
+    db.psychologicalSafety = new Datastore({ filename:'.data/psychologicalSafety', autoload: true, timestampData: true});
+    db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true, timestampData: true});
+    db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true, timestampData: true});
+    db.batch = new Datastore({ filename:'.data/batch', autoload: true, timestampData: true});
+    db.time = new Datastore({ filename:'.data/time', autoload: true, timestampData: true});
+    db.leavingMessage = new Datastore({filename: '.data/leavingMessage', autoload: true, timestampData: true})
+    db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true})
 
 const updateUserInDB = (user,feild,value) => { db.users.update(
   {id: user.id}, {$set: {feild: value}}, {},
