@@ -670,6 +670,7 @@ io.on('connection', (socket) => {
         return
       }
 
+      //PK: still relevant? can we delete this commented out code and/or incompleteRooms()?
       // if (incompleteRooms().length) {
       //   console.log("Some rooms empty:",incompleteRooms())
       //   return } //are all rooms assigned
