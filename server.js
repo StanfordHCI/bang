@@ -159,9 +159,6 @@ if (cleanHITs){
 }
 if (runExperimentNow){ mturk.launchBang() }
 
-console.log('running notify')
-mturk.notify();
-
 //Add more products
 let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
                  'url': 'https://www.kickstarter.com/projects/stilform/kosmos-ink' },
