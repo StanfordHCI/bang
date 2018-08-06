@@ -356,9 +356,9 @@ io.on('connection', (socket) => {
         'ready': false,
         'friends': [],
         'friends_history': [socket.name_structure.parts], // list of aliases to avoid, which includes the user's username//PK: is it okay to store this in the socket?
-        'task_list': task_list,
-        'currentActivity': 0,
         'active': true, //PK: what does user.active mean? is this ever set to false? I want to use 'active' instead of 'onCall' but need to check if this field is still needed
+        'eventSchedule': eventSchedule,
+        'currentEvent': 0,
         'results':{
           'condition':currentCondition,
           'format':conditions[currentCondition],
