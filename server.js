@@ -171,7 +171,6 @@ let users = []; //the main local user storage
 let userPool = []; //accumulates users pre-experiment
 let currentRound = 0 //PK: talk about 0-indexed v 1-indexed round numbers (note: if change -> change parts of code reliant on 0-indexed round num)
 let startTime = 0
-let enoughPeople = false
 let preExperiment = true
 
 // keeping track of time
