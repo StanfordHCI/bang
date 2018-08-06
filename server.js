@@ -682,20 +682,17 @@ io.on('connection', (socket) => {
       }
 
       console.log('all users ready -> starting experiment');
-      //do we have more experiments to run? if not, finish
-      preExperiment = false;
-      //can we move this into its own on.*** call
+      //can we move this into its own on.*** call //PK: still relevant?
 
-      treatmentNow = (currentCondition == "treatment" && currentRound == experimentRound)
-      const conditionRound = conditions[currentCondition][currentRound] - 1
-
-      // assign rooms to people and reset.
-      if(!setPerson){
+      // assign people to rooms/teams before experiment begins
+      if(preExperiment){
         users.forEach(u => {
           u.person = people.pop();
         })
-        setPerson = true
+         preExperiment = false;
       }
+      treatmentNow = (currentCondition == "treatment" && currentRound == experimentRound)
+      const conditionRound = conditions[currentCondition][currentRound] - 1
 
       Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
         users.filter(u => room.includes(u.person)).forEach(u => {
