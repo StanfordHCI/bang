@@ -8,7 +8,7 @@ const roundMinutes = process.env.ROUND_MINUTES
 
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = true
+const issueBonusesNow = false
 const cleanHITs = false
 const assignQualifications = false
 const debugMode = !runningLive
@@ -25,7 +25,7 @@ const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
-const requiredOn = runningLive
+const requiredOn = true
 const checkinIntervalMinutes = roundMinutes/30
 
 //Testing toggles
@@ -703,8 +703,10 @@ io.on('connection', (socket) => {
 
   socket.on('mturk_formSubmit', (data) => {
     let user = users.byID(socket.id)
+    if (user) {
     user.results.engagementFeedback = data
     updateUserInDB(socket,"results.engagementFeedback",data)
+    }
   });
 
   socket.on('postSurveySubmit', (data) => {
