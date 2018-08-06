@@ -705,7 +705,7 @@ io.on('connection', (socket) => {
       let currentProduct = products[currentRound]
       let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
-      taskStarted = true
+      experimentStarted = true
       mturk.startTask();
 
       users.forEach(user => {
