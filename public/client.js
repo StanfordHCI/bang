@@ -301,6 +301,7 @@ $(function() {
     return COLORS[index];
   }
 
+// equivalent of initiate experiment when waitChatOn === false PK: change this?
   $chatLink.click((event) => {
     event.preventDefault()
     hideAll();
