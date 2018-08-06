@@ -455,9 +455,7 @@ io.on('connection', (socket) => {
           console.log('There was a disconnect');
           userPool = userPool.filter(user => user.id != socket.id);
 
-          //debugLog(usersAccepted)
-          //console.log("num users accepted:", usersAccepted.length);
-          if((teamSize ** 2) - userPool.length < 0) {
+          if(userPool.length >= teamSize ** 2) {
             io.sockets.emit('update number waiting', {num: 0});
           } else {
             io.sockets.emit('update number waiting', {num: (teamSize ** 2) - userPool.length});
