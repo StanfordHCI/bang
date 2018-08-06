@@ -540,11 +540,11 @@ const turkerJSON = [{"mturkId": 'AGRKG3YT3KMD8', "url": 'https://www.google.com/
 
 // Figure out how to loop through JSON object
 
-const notifyWorkersManually = () => {
+const notifyWorkersManually = (param) => {
   var params = {
-    MessageText: params.message, /* required */
-    Subject: params.subject, /* required */
-    WorkerIds: [params.mturkId] /* required */ // must be an array : [ 'string', 'string', etc ]
+    MessageText: param.message, /* required */
+    Subject: param.subject, /* required */
+    WorkerIds: [param.mturkId] /* required */ // must be an array : [ 'string', 'string', etc ]
   };
   mturk.notifyWorkers(params, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
