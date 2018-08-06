@@ -467,6 +467,7 @@ io.on('connection', (socket) => {
     //Route messages
     socket.on('new message', function (message) {
       user = users.byID(socket.id)
+      if(!user) return;
       let cleanMessage = message;
       users.forEach(u => { cleanMessage = aliasToID(u, cleanMessage) });
 
