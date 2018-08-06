@@ -3,13 +3,13 @@ require('dotenv').config()
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE = 2
-const roundMinutes = process.env.ROUND_MINUTES = .2
+const teamSize = process.env.TEAM_SIZE
+const roundMinutes = process.env.ROUND_MINUTES
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
-const secondsToWait = 15 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
-const secondsSinceResponse = 10 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
+const secondsToWait = 60 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+const secondsSinceResponse = 59 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
 const secondsToHold1 = 720 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
 const secondsToHold2 = 90 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 
@@ -38,7 +38,7 @@ const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
-const requiredOn = runningLive
+const requiredOn = true
 const checkinIntervalMinutes = roundMinutes/30
 
 //Testing toggles
