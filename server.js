@@ -559,7 +559,7 @@ io.on('connection', (socket) => {
 
     });
 
-    socket.on("execute experiment", (data) => {
+    socket.on("next event", (data) => {
       let user = users.byID(socket.id)
       if(!user) return; //PK: quick fix, execute exp still called for 'user' never added to users, come back to this
       let currentActivity = user.currentActivity;

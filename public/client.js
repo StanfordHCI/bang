@@ -308,7 +308,7 @@ $(function() {
     $holdingPage.show();
     socket.emit('get username')
     socket.emit('add user');
-    socket.emit('execute experiment')
+    socket.emit('next event')
   })
 
 
@@ -364,7 +364,7 @@ $(function() {
   $('#midForm').submit( (event) => {
     event.preventDefault() //stops page reloading
     socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
-    socket.emit('execute experiment')
+    socket.emit('next event')
     $midSurvey.hide()
     $holdingPage.show()
     $('#midForm')[0].reset();
@@ -373,7 +373,7 @@ $(function() {
   $('#psychologicalSafety').submit( (event) => {
     event.preventDefault() //stops page reloading
     socket.emit('psychologicalSafetySubmit', $('#psychologicalSafety-form').serialize()) //submits results alone
-    socket.emit('execute experiment')
+    socket.emit('next event')
     $psychologicalSafety.hide()
     $holdingPage.show()
     $('#psychologicalSafety-form')[0].reset();
@@ -472,7 +472,7 @@ $(function() {
       notify("Moving you to another chatroom.", "Come and get started with the activity.")
       addChatMessage({username:botUsername, message:"Please wait a few seconds while we move you to another chatroom to begin the next task"})
       setTimeout(()=> {
-        socket.emit('execute experiment')
+        socket.emit('next event')
         preChat = false;
       }, 1000*2)
     } 
@@ -766,7 +766,7 @@ $(function() {
       $holdingPage.show();
       // messagesSafe.innerHTML = '';
       $inputMessage.unbind("keydown")
-      socket.emit('execute experiment')
+      socket.emit('next event')
   });
 
   socket.on('timer',data => {
@@ -833,7 +833,7 @@ $(function() {
   $('#starterForm').submit( (event) => {
     event.preventDefault() //stops page reloading
     socket.emit('starterSurveySubmit', $('#starterForm').serialize()) //submits results alone
-    socket.emit('execute experiment')
+    socket.emit('next event')
     $starterSurvey.hide()
     $holdingPage.show()
     $('#starterForm')[0].reset();
@@ -842,7 +842,7 @@ $(function() {
   $('#postForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
     socket.emit('postSurveySubmit', $('#postForm').serialize()) //submits results alone
-    socket.emit('execute experiment')
+    socket.emit('next event')
   })
 
 
@@ -850,7 +850,7 @@ $(function() {
   $('#blacklistForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
     socket.emit('blacklistSurveySubmit', $('#blacklistForm').serialize()) //submits results alone
-    socket.emit('execute experiment')
+    socket.emit('next event')
   })
 
 
@@ -861,7 +861,7 @@ $(function() {
     $teamfeedbackSurvey.hide()
     $holdingPage.show()
     $('#teamfeedbackForm')[0].reset();
-    socket.emit('execute experiment')
+    socket.emit('next event')
   })
 
   //update waiting page with number of workers that must join until task can start
