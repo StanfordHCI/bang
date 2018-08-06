@@ -206,9 +206,6 @@ console.log(eventSchedule)
 
 let fullUrl = ''
 
-// array of the users that have accepted the task
-let usersAccepted = [];
-
 app.use(express.static('public'));
 
 // Adds Batch data for this experiment. unique batchID based on time/date
