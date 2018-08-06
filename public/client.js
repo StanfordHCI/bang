@@ -103,9 +103,10 @@ $(function() {
     $lockPage.show(); //prompt user to accept HIT
   } else { // tell the server that the user has accepted the HIT - server then adds this worker to array of accepted workers
     mturkVariables = { mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId, timeAdded: (new Date()).getTime()}
-    socket.emit('accepted HIT',mturkVariables);
+    socket.emit('accepted HIT', mturkVariables); //PK: thoughts on setting waitchat toggle in client and sending it to server in this emit?
     if(waitChatOn){
-      socket.emit('add user');
+      socket.emit('get username')
+
       $chatPage.show()
       $headerbarPage.show()
       $leaveHitButton.hide()
@@ -151,8 +152,8 @@ $(function() {
 
   // Sends a chat message
   function sendMessage () {
-      let message = $inputMessage.val();
-      // Prevent markup from being injected into the message
+    let message = $inputMessage.val();
+    // Prevent markup from being injected into the message
     message = cleanInput(message);
     // if there is a non-empty message and a socket connection
     if (message && connected) {
@@ -161,7 +162,7 @@ $(function() {
       // tell server to execute 'new message' and send along one parameter
       if(preChat) {
         answered = true;
-        socket.emit('accepted user chatted', {time: Date.now()});
+        socket.emit('update user pool', {time: Date.now()});
         socket.emit('log', holdingUsername.innerText+ ': ' + message);
       } else {
         socket.emit('new message', message);
@@ -302,6 +303,9 @@ $(function() {
 
   $chatLink.click((event) => {
     event.preventDefault()
+    hideAll();
+    $holdingPage.show();
+    socket.emit('get username')
     socket.emit('add user');
     socket.emit('execute experiment')
   })
@@ -417,7 +421,7 @@ $(function() {
     let index = 0;
     let typingTimer;
     let doneTypingInterval = 1000;
-    answered =true
+    answered = true
     askQuestion()//ask first q right away
 
     //on keyup, start the countdown
@@ -450,9 +454,19 @@ $(function() {
     }
   })
 
+  socket.on('set username', data => {
+    username = data.username;
+    holdingUsername.innerText = username
+    console.log('username is set as ' + username)
+  }) 
+
+  socket.on('show chat link', data => {
+    $chatLink.show();
+    notify("Please click the link")
+  })
   //if there are enough workers who have accepted the task, show link to chat page
-  socket.on('enough people', data => {
-    console.log('ENOUGH PEOPLE CALLED ')
+  socket.on('initiate experiment', data => {
+    console.log('INITIATE EXPERIMENT CALLED')
     if(preChat) {
       notify("Moving you to another chatroom.", "Come and get started with the activity.")
       addChatMessage({username:botUsername, message:"Please wait a few seconds while we move you to another chatroom to begin the next task"})
@@ -460,9 +474,7 @@ $(function() {
         socket.emit('execute experiment')
         preChat = false;
       }, 1000*2)
-    } else {
-      $chatLink.show();
-  }
+    } 
 }
 );
 
@@ -491,17 +503,13 @@ $(function() {
 
   // Whenever the server emits 'login', log the login message
   socket.on('login', data => {
+    console.log('LOGIN CALLED')
     connected = true;
     // Display the welcome message
     const message = "Welcome";
 
     // log(message, { prepend: true });
     addParticipantsMessage(data);
-  });
-
-  socket.on('accepted user', data => {
-    username = data.name
-    holdingUsername.innerText = username
   });
 
   socket.on('rejected user', data => {

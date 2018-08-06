@@ -3,8 +3,8 @@ require('dotenv').config()
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE
-const roundMinutes = process.env.ROUND_MINUTES
+const teamSize = process.env.TEAM_SIZE = 2
+const roundMinutes = process.env.ROUND_MINUTES = .2
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
@@ -166,10 +166,13 @@ let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
                  'url': 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches' },
                 {'name':"First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC",
                  'url': 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono' }]
+
 let users = []; //the main local user storage
+let userPool = [];
 let currentRound = 0
 let startTime = 0
 let enoughPeople = false
+let preExperiment = true
 
 // keeping track of time
 let taskStartTime = getSecondsPassed(); // reset for each start of new task
@@ -250,6 +253,170 @@ io.on('connection', (socket) => {
     let taskOver = false
     // let enoughPeople = false
 
+    socket.on('get username', data => {
+      name_structure = tools.makeName();
+      socket.name_structure = name_structure;
+      socket.username = name_structure.username; 
+      socket.emit('set username', {username: socket.username})
+    })
+
+    socket.on('accepted HIT', data => {
+      userPool.push({
+        "id": socket.id,
+        "mturkId": data.mturkId,
+        "turkSubmitTo": data.turkSubmitTo,
+        "assignmentId": data.assignmentId,
+        "onCall": waitChatOn ? false : true,
+        "timeAdded": data.timeAdded,
+        "timeLastActivity": data.timeAdded
+      });
+
+      mturk.setAssignmentsPending(userPool.length)
+      debugLog(userPool,"users accepted currently: " + userPool.length )
+
+      // Disconnect leftover users PK: can we do this on start rather than in 'accepted HIT'
+        Object.keys(io.sockets.sockets).forEach(socketID => {
+          if (userPool.every(user => {return user.id !== socketID})) {
+            console.log("Removing dead socket: " + socketID);
+            io.in(socketID).emit('get IDs', 'broken');
+          }
+        });
+        console.log("Sockets active: " + Object.keys(io.sockets.sockets));
+        updateUserPool();
+    })
+
+    //PK: was there a concurrency reason we used to pass usersAccepted into checkUsersAccepted()
+    function updateUserPool(){
+      if(users.length === teamSize ** 2) return;
+
+      function getUsersOnCall() {return userPool.filter(user => user.onCall)}
+      function secondsSince(event) {return (Date.now() - event)/1000}
+      function updateUsersOnCall() {
+        userPool.forEach(user => {
+          //PK: rename secondsToWait
+          if(secondsSince(user.timeAdded) > secondsToWait && secondsSince(user.timeLastActivity) < secondsSinceResponse) { // PK: make isUserOnCall fxn
+            user.onCall = true;
+          } else {
+            user.onCall = false;
+          } 
+          weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - getUsersOnCall().length)) // PK: make isUserInactive fxn
+          if (secondsSince(user.timeAdded) > weightedHoldingSeconds || secondsSince(user.timeLastActivity) > secondsToHold2) {
+            console.log('removing user because of inactivity:', user.id);
+            io.in(user.id).emit('get IDs', 'broken');
+          }
+        })   
+      }
+
+      if(waitChatOn) updateUsersOnCall();
+      const usersOnCall = getUsersOnCall();
+
+      if(waitChatOn){
+        if(usersOnCall.length >= teamSize ** 2) {
+          for(let i = 0; i < usersOnCall.length; i ++){
+            let user = usersOnCall[i];
+            if(i < teamSize ** 2) {
+              io.in(user.id).emit("echo", "add user");
+              io.in(user.id).emit('initiate experiment');
+            } else {
+              io.in(user.id).emit('finished', {
+                message: "Thanks for participating, you're all done!",
+                finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
+              });
+            }
+          }
+          userPool.filter(user => !user.onCall).forEach(user => {
+            io.in(user.id).emit('finished', {
+              message: "Thanks for participating, you're all done!",
+              finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
+            });
+          })
+        } 
+      } else {
+        if(usersOnCall.length >= teamSize ** 2) {
+          io.sockets.emit('update number waiting', {num: 0});
+          console.log('there are ' + usersOnCall.length + ' users: ' + usersOnCall)
+          for(let i = 0; i < usersOnCall.length; i ++){
+            io.in(usersOnCall[i].id).emit('show chat link');
+          }
+        } else {
+          io.sockets.emit('update number waiting', {num: kUsersNeeded});
+        }
+      }
+      
+    }
+
+    function makeUser(data) {
+      return {
+        'id': socket.id,
+        'mturkId': data.mturkId,
+        'assignmentId': data.assignmentId,
+        'room': '',
+        'rooms':[],
+        'bonus': 0,
+        'person': '',
+        'name': socket.username,
+        'ready': false,
+        'friends': [],
+        'friends_history': [socket.name_structure.parts], // list of aliases to avoid, which includes the user's username//PK: is it okay to store this in the socket?
+        'active': true,
+        'task_list': task_list,
+        'currentActivity': 0,
+        'results':{
+          'condition':currentCondition,
+          'format':conditions[currentCondition],
+          'manipulation':[],
+          'starterCheck':[],
+          'viabilityCheck':[],
+          'psychologicalSafety':[],
+          'manipulationCheck':'',
+          'blacklistCheck':'',
+          'engagementFeedback': '',
+          'teamfracture':'',
+          'teamfeedback':'',
+        }
+      };
+    }
+    socket.on('add user', data => {
+      if (addedUser) {return}//PK: do we still need this bool/anyone know why it was needed?
+      if (users.length === teamSize ** 2) { //fix money - is this fixed -PK//PK: changed from if enoughPeople to if users.length === teamSize **2 or will this cause concurrency issures
+        io.in(socket.id).emit('finished', {
+          message: "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
+          finishingCode: socket.id,
+          turkSubmitTo: mturk.submitTo,
+          assignmentId: socket.id,
+          crashed: false
+        })
+        return;
+      }
+    
+      const newUser = makeUser(userPool.byID(socket.id));
+      users.push(newUser)
+      console.log('pushed user, users: ' + users)
+      //add friends for each user once the correct number of users is reached
+      if(users.length === teamSize **2){
+        users.forEach(user => {
+          user.friends = users.map(user => {
+            return {'id': user.id,
+                    'alias': tools.makeName().username,
+                    'tAlias':tools.makeName().username }
+          }); 
+        })
+      }
+      
+      db.users.insert(newUser, (err, usersAdded) => {
+        console.log( err ? "Didn't store user: " + err : "Added " + newUser.name + " to DB.")
+      });
+
+      //PK: need to emit login to each? or can we delete login fxn in client if no longer in use (login sets connected to true, is this needed?)
+      //io.in(user.id).emit('login', {numUsers: numUsers(user.room)})
+      
+    })
+
+    socket.on('update user pool', (data) => {
+      userPool.byID(socket.id).timeLastActivity = data.time;
+      updateUserPool()
+    });
+
     socket.on('log', string => { console.log(string); });
 
     //Route messages
@@ -285,122 +452,24 @@ io.on('connection', (socket) => {
       io.in(socket.id).emit('chatbot', loadQuestions(botFile))
     })
 
-    //Login
-    // when the client emits 'add user', this listens and executes
-    socket.on('add user', function (data) {
-        if (addedUser) {return}
-        console.log('before enough people')
-        if (enoughPeople) { //fix money
-          console.log('after enough people')
-              io.in(socket.id).emit('finished', {
-                    message: "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
-                    finishingCode: socket.id,
-                    turkSubmitTo: mturk.submitTo,
-                    assignmentId: socket.id,
-                    crashed: false
-              })
-        }
-
-        // we store the username in the socket session for this client
-        name_structure = tools.makeName();
-        socket.username = name_structure.username; // how they see themselves
-
-        // if (users.length >= population) {
-        //     io.in(socket.id).emit('rejected user', {});
-        //     console.log('user was rejected');
-        //     socket.disconnect()
-        //     return
-        // }
-
-        io.in(socket.id).emit('accepted user', {name: socket.username});
-
-        // Adding the user to the friends list for all other users
-        users.forEach(user => { user.friends.push({'id': socket.id, 'alias': tools.makeName().username, 'tAlias':tools.makeName().username }) });
-
-        // Add friends to DB
-        db.users.find({}, (err, usersInDB) => {
-          if (err) {console.log("Err loading users:" + err)}
-
-          usersInDB.forEach((user) => {
-            let localUser = users.byID(user.id)
-            if (localUser){
-              user.friends = localUser.friends
-              updateUserInDB(user,'friends',user.friends)
-            }
-          })
-        })
-
-        const acceptedUser = usersAccepted.byID(socket.id)
-
-        // Add user to graph and add others as friends
-        const newUser = {
-          'id': socket.id,
-          'mturkId': acceptedUser.mturkId,
-          'assignmentId': acceptedUser.assignmentId,
-          'room': '',
-          'rooms':[],
-          'bonus': 0,
-          'person': '',
-          'name': socket.username,
-          'ready': false,
-          'friends': users.map(user => {
-            return {'id': user.id,
-                    'alias': tools.makeName().username,
-                    'tAlias':tools.makeName().username }}),
-          'friends_history': [name_structure.parts], // list of aliases to avoid, which includes the user's username
-          'active': true,
-          'task_list': task_list,
-          'currentActivity': 0,
-          'results':{
-            'condition':currentCondition,
-            'format':conditions[currentCondition],
-            'manipulation':[],
-            'starterCheck':[],
-            'viabilityCheck':[],
-            'psychologicalSafety':[],
-            'manipulationCheck':'',
-            'blacklistCheck':'',
-            'engagementFeedback': '',
-            'teamfracture':'',
-            'teamfeedback':'',
-          }
-        };
-
-        newUser.friends.push({'id':newUser.id,
-                              'alias': newUser.name,
-                              'tAlias':newUser.name})
-
-        db.users.insert(newUser, (err, usersAdded) => {
-          console.log( err ? "Didn't store user: " + err : "Added " + newUser.name + " to DB.")
-        });
-
-        users.push(newUser)
-        addedUser = true;
-
-        users.forEach(user => {
-            io.in(user.id).emit('login', {numUsers: numUsers(user.room)})
-        });
-
-        console.log('now we have:', users.filter(user => user.active == true).map(user => user.name));
-    });
-
+    
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
         // if the user had accepted, removes them from the array of accepted users
         console.log("Socket disconecting is", socket.id)
-        if (usersAccepted.find(function(element) {return element.id == socket.id})) {
+        if (userPool.find(function(element) {return element.id == socket.id})) {
           console.log('There was a disconnect');
-          usersAccepted = usersAccepted.filter(user => user.id != socket.id);
+          userPool = userPool.filter(user => user.id != socket.id);
 
           //debugLog(usersAccepted)
           //console.log("num users accepted:", usersAccepted.length);
-          if((teamSize ** 2) - usersAccepted.length < 0) {
+          if((teamSize ** 2) - userPool.length < 0) {
             io.sockets.emit('update number waiting', {num: 0});
           } else {
-            io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersAccepted.length});
+            io.sockets.emit('update number waiting', {num: (teamSize ** 2) - userPool.length});
           }
 
-          mturk.setAssignmentsPending(usersAccepted.length)
+          mturk.setAssignmentsPending(userPool.length)
         }
 
         if (addedUser && !users.every(user => socket.id !== user.id)) {
@@ -489,13 +558,13 @@ io.on('connection', (socket) => {
         if (!suddenDeath && users.length !== 0 && !users.every(user => user.id !== socket.id)) { //this sets users to ready when they disconnect; TODO remove user from users
           users.byID(socket.id).ready = true
         }
-        users = users.filter(user => user.id != socket.id);
+        //users = users.filter(user => user.id != socket.id); // PK: now users should contain only teamSize ** 2 users (the exact amt for exp), come back when not brain dead
 
     });
 
     socket.on("execute experiment", (data) => {
       let user = users.byID(socket.id)
-      console.log("EXECUTE THE PRISONERS", socket.id)
+      if(!user) return; //PK: quick fix, execute exp still called for 'user' never added to users, come back to this
       let currentActivity = user.currentActivity;
       let task_list = user.task_list;
       console.log ("Activity:", currentActivity, "which is", task_list[currentActivity])
@@ -604,7 +673,7 @@ io.on('connection', (socket) => {
       users.byID(socket.id).ready = true;
       console.log(socket.username, 'is ready');
 
-      if (users.filter(u => !u.ready).length) {
+      if (users.filter(u => !u.ready).length ) {
         console.log("some users not ready", users.filter(u => !u.ready).map(u => u.name))
         return
       }
@@ -612,14 +681,14 @@ io.on('connection', (socket) => {
       // if (incompleteRooms().length) {
       //   console.log("Some rooms empty:",incompleteRooms())
       //   return } //are all rooms assigned
-      if (suddenDeath && users.length != teamSize ** 2) {
+      if ((suddenDeath || preExperiment) && users.length != teamSize ** 2) {
         console.log("Need",teamSize ** 2 - users.length,"more users.")
         return
       }
 
       console.log('all users ready -> starting experiment');
       //do we have more experiments to run? if not, finish
-
+      preExperiment = false;
       //can we move this into its own on.*** call
 
       treatmentNow = (currentCondition == "treatment" && currentRound == experimentRound)
@@ -726,111 +795,6 @@ io.on('connection', (socket) => {
         console.log("Sockets active: " + Object.keys(io.sockets.sockets));
   });
 
-  socket.on('accepted HIT', (data) => {
-    usersAccepted.push({
-      "id": socket.id,
-      "mturkId": data.mturkId,
-      "id": String(socket.id),
-      "turkSubmitTo": data.turkSubmitTo,
-      "assignmentId": data.assignmentId,
-      "timeAdded": data.timeAdded,
-      "timeLastActivity": data.timeAdded,
-      "waiting": false
-    });
-    mturk.setAssignmentsPending(usersAccepted.length)
-    debugLog(usersAccepted,"users accepted currently: " + usersAccepted.length )
-
-    // Disconnect leftover users
-    Object.keys(io.sockets.sockets).forEach(socketID => {
-      if (usersAccepted.every(acceptedUser => {return acceptedUser.id !== socketID})) {
-        console.log("Removing dead socket: " + socketID);
-        io.in(socketID).emit('get IDs', 'broken');
-      }
-    });
-    console.log("Sockets active: " + Object.keys(io.sockets.sockets));
-    checkUsersAccepted(usersAccepted);
-  });
-
-  function checkUsersAccepted(usersAccepted) {
-
-    function usersWaiting() {return usersAccepted.filter(u => u.waiting)}
-    function secondsSince(event) {return (Date.now() - event)/1000}
-
-    if (!enoughPeople) {
-      usersAccepted.forEach(user => {
-        if (secondsSince(user.timeAdded) > secondsToWait && secondsSince(user.timeLastActivity) < secondsSinceResponse) {
-          user.waiting = true;
-        } else {
-          user.waiting = false;
-        }
-        // usersWaiting = usersAccepted.filter(u => u.waiting);
-        weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - usersWaiting().length))
-        if (secondsSince(user.timeAdded) > weightedHoldingSeconds || secondsSince(user.timeLastActivity) > secondsToHold2) {
-          console.log('removing user because of inactivity:', user.id);
-          io.in(user.id).emit('get IDs', 'broken');
-        }
-      })
-
-      //console.log(usersWaiting());
-      //for debugging
-      console.log("\nUsers waiting:", usersWaiting().length, "/", usersAccepted.length);
-      users.forEach((u,i)=> { console.log("",i, usersAccepted.byID(u.id).waiting + '\t' + u.id )})
-      console.log("");
-
-      if(waitChatOn){
-      // if enough people have accepted, push prompt to start task
-        if(usersWaiting().length >= teamSize ** 2) {//if waiting users is >= required amount
-          //io.sockets.emit('update number waiting', {num: 0});
-          enoughPeople = true;
-          let usersNeeded = teamSize **2;
-          console.log('num of users is ' + users.length)
-          //users.forEach((user, index) => {//for every user
-          // console.log(users)
-
-          for (let index = users.length - 1; index >= 0; index -= 1) {
-            user = users[index]
-            console.log("this is the user we're processing: " + user.id)
-            if(usersWaiting().every(user2 => user.id !== user2.id) || usersNeeded <= 0) {//if that user that is not a waiting user or is extra
-              userDeleted = users.splice(index, 1)
-              console.log("this user has been deleted: " + userDeleted.id)
-              io.in(user.id).emit('finished', {
-                message: "Thanks for participating, you're all done!",
-                finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
-              });
-            } else { //found a valid user
-              usersNeeded--;
-            }
-          }
-
-          for (var i = 0; i < teamSize ** 2; i++) {
-
-            io.in(users[i].id).emit('enough people');
-          };
-
-        } else {
-          let numWaiting = (teamSize ** 2) - usersAccepted.length;
-          io.sockets.emit('update number waiting', {num: numWaiting});
-        }
-      } else {
-        // if enough people have accepted, push prompt to start task
-        if(usersAccepted.length >= teamSize ** 2) {
-          let numWaiting = 0;
-          io.sockets.emit('update number waiting', {num: 0});
-          usersAccepted.forEach(user => {io.in(user.id).emit('enough people')});
-        } else {
-          let numWaiting = (teamSize ** 2) - usersAccepted.length;
-          io.sockets.emit('update number waiting', {num: numWaiting});
-        }
-      }
-
-    }
-  }
-
-  socket.on('accepted user chatted', (data) => {
-    usersAccepted.filter(user => user.id === socket.id).forEach(user => {user.timeLastActivity = data.time});
-    checkUsersAccepted(usersAccepted);
-  });
-
   // Starter task
    socket.on('starterSurveySubmit', (data) => {
     let user = users.byID(socket.id)
@@ -900,8 +864,11 @@ io.on('connection', (socket) => {
 
   socket.on('mturk_formSubmit', (data) => {
     let user = users.byID(socket.id)
-    user.results.engagementFeedback = data
-    updateUserInDB(socket,"results.engagementFeedback",data)
+    if(user){ //PK: quick fix for user entering after task has started, come back to this
+      user.results.engagementFeedback = data
+      updateUserInDB(socket,"results.engagementFeedback",data)
+    }
+    
   });
 
   socket.on('postSurveySubmit', (data) => {
