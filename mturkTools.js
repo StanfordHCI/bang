@@ -552,3 +552,25 @@ module.exports = {
   submitTo: submitTo,
   launchBang: launchBang
 };
+
+// TODO: CLean this up by integrating with other bonus code
+const payBonusesManually = (user) => {
+  mturk.sendBonus({
+    AssignmentId: user.assignmentId,
+    BonusAmount: String(user.bonus),
+    Reason: "Thanks for working on our task.",
+    WorkerId: user.mturkId,
+    UniqueRequestToken: user.assignmentId
+  }, function(err, data) {
+    if (err) {
+     console.log("Bonus not processed:",err)
+    } else {
+      console.log("Bonused:",user.mturkId, user.bonus)
+      user.paid = user.bonus
+    }
+  })
+}
+
+users = [] //list of user objects
+
+// users.forEach(payBonusesManually)
