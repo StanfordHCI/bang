@@ -464,7 +464,7 @@ io.on('connection', (socket) => {
           mturk.setAssignmentsPending(userPool.length)
         }
 
-        if (addedUser && !users.every(user => socket.id !== user.id)) {
+        if (!users.every(user => socket.id !== user.id)) {
           users.byID(socket.id).active = false //set user to inactive
           users.byID(socket.id).ready = false //set user to not ready
           if (!suddenDeath) {users.byID(socket.id).ready = true}
