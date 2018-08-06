@@ -257,13 +257,24 @@ io.on('connection', (socket) => {
 
     socket.on('accepted HIT', data => {
       if(users.length === teamSize ** 2) {
-        io.in(socket.id).emit('finished', {
-          message: "We have enough users on this task. Thank you!",
-          finishingCode: socket.id,
-          turkSubmitTo: mturk.submitTo,
-          assignmentId: socket.id,
-          crashed: false
-        })
+        if (emailingWorkers) {
+          io.in(socket.id).emit('finished', {
+            message: "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
+            finishingCode: socket.id,
+            turkSubmitTo: mturk.submitTo,
+            assignmentId: socket.id,
+            crashed: false
+          })
+        }
+        else {
+          io.in(socket.id).emit('finished', {
+            message: "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
+            finishingCode: socket.id,
+            turkSubmitTo: mturk.submitTo,
+            assignmentId: socket.id,
+            crashed: false
+          })  
+        }
         return;
       }
       userPool.push({
@@ -326,17 +337,33 @@ io.on('connection', (socket) => {
               io.in(user.id).emit("echo", "add user");
               io.in(user.id).emit('initiate experiment');
             } else {
+              if (emailingWorkers) {
+                io.in(user.id).emit('finished', {
+                  message: "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
+                  finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
+                });
+              }
+              else {
+                io.in(user.id).emit('finished', {
+                  message: "Thanks for participating, you're all done!",
+                  finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
+                });    
+              }
+            }
+          }
+          userPool.filter(user => !user.onCall).forEach(user => {
+            if (emailingWorkers) {
+              io.in(user.id).emit('finished', {
+                message: "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
+                finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
+              });
+            }
+            else {
               io.in(user.id).emit('finished', {
                 message: "Thanks for participating, you're all done!",
                 finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
               });
             }
-          }
-          userPool.filter(user => !user.onCall).forEach(user => {
-            io.in(user.id).emit('finished', {
-              message: "Thanks for participating, you're all done!",
-              finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
-            });
           })
         }
       } else {
@@ -386,13 +413,24 @@ io.on('connection', (socket) => {
     }
     socket.on('add user', data => {
       if (users.length === teamSize ** 2) { //fix money - is this fixed -PK//PK: changed from if enoughPeople to if users.length === teamSize **2 or will this cause concurrency issues (js single threaded?)
-        io.in(socket.id).emit('finished', {
-          message: "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
-          finishingCode: socket.id,
-          turkSubmitTo: mturk.submitTo,
-          assignmentId: socket.id,
-          crashed: false
-        })
+        if (emailingWorkers) {
+          io.in(socket.id).emit('finished', {
+            message: "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
+            finishingCode: socket.id,
+            turkSubmitTo: mturk.submitTo,
+            assignmentId: socket.id,
+            crashed: false
+          })
+        }
+        else {
+          io.in(socket.id).emit('finished', {
+            message: "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
+            finishingCode: socket.id,
+            turkSubmitTo: mturk.submitTo,
+            assignmentId: socket.id,
+            crashed: false
+          })  
+        }
         return;
       }
 
