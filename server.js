@@ -250,7 +250,7 @@ io.on('connection', (socket) => {
     socket.on('get username', data => {
       name_structure = tools.makeName();
       socket.name_structure = name_structure;
-      socket.username = name_structure.username; 
+      socket.username = name_structure.username;
       socket.emit('set username', {username: socket.username})
     })
 
@@ -294,13 +294,13 @@ io.on('connection', (socket) => {
             user.onCall = true;
           } else {
             user.onCall = false;
-          } 
+          }
           weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - getUsersOnCall().length)) // PK: make isUserInactive fxn
           if (secondsSince(user.timeAdded) > weightedHoldingSeconds || secondsSince(user.timeLastActivity) > secondsToHold2) {
             console.log('removing user because of inactivity:', user.id);
             io.in(user.id).emit('get IDs', 'broken');
           }
-        })   
+        })
       }
 
       if(waitChatOn) updateUsersOnCall();
@@ -327,7 +327,7 @@ io.on('connection', (socket) => {
               finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
             });
           })
-        } 
+        }
       } else {
         if(usersOnCall.length >= teamSize ** 2) {
           io.sockets.emit('update number waiting', {num: 0});
@@ -339,7 +339,7 @@ io.on('connection', (socket) => {
           io.sockets.emit('update number waiting', {num: teamSize ** 2 - usersOnCall.length});
         }
       }
-      
+
     }
 
     function makeUser(data) {
@@ -384,7 +384,7 @@ io.on('connection', (socket) => {
         })
         return;
       }
-    
+
       const newUser = makeUser(userPool.byID(socket.id));
       users.push(newUser)
       console.log(newUser.name + " added to users.\n" + "Total users: " + users.length)
@@ -395,17 +395,17 @@ io.on('connection', (socket) => {
             return {'id': user.id,
                     'alias': tools.makeName().username,
                     'tAlias':tools.makeName().username }
-          }); 
+          });
         })
       }
-      
+
       db.users.insert(newUser, (err, usersAdded) => {
         console.log( err ? "Didn't store user: " + err : "Added " + newUser.name + " to DB.")
       });
 
       //PK: need to emit login to each? or can we delete login fxn in client if no longer in use (login sets connected to true, is this needed?)
       //io.in(user.id).emit('login', {numUsers: numUsers(user.room)})
-      
+
     })
 
     socket.on('update user pool', (data) => {
@@ -448,7 +448,7 @@ io.on('connection', (socket) => {
       io.in(socket.id).emit('chatbot', loadQuestions(botFile))
     })
 
-    
+
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
         // if the user had accepted, removes them from the array of accepted users
@@ -858,7 +858,7 @@ io.on('connection', (socket) => {
       user.results.engagementFeedback = data
       updateUserInDB(socket,"results.engagementFeedback",data)
     }
-    
+
   });
 
   socket.on('postSurveySubmit', (data) => {
