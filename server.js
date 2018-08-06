@@ -224,7 +224,7 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
       })
       firstRun = true;
     }
-}); // task_list instead of all of the toggles? (missing checkinOn)
+}); // eventSchedule instead of all of the toggles? (missing checkinOn) //PK: what does this comment mean?
 
 // Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
 setTimeout(() => {
@@ -356,9 +356,9 @@ io.on('connection', (socket) => {
         'ready': false,
         'friends': [],
         'friends_history': [socket.name_structure.parts], // list of aliases to avoid, which includes the user's username//PK: is it okay to store this in the socket?
-        'active': true,
         'task_list': task_list,
         'currentActivity': 0,
+        'active': true, //PK: what does user.active mean? is this ever set to false? I want to use 'active' instead of 'onCall' but need to check if this field is still needed
         'results':{
           'condition':currentCondition,
           'format':conditions[currentCondition],
