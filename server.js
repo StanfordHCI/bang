@@ -512,7 +512,7 @@ io.on('connection', (socket) => {
               prevent people leaving in future runs of the study. <br><br> \
               Since the team activity had already started, you will be additionally \
               bonused for the time spent working with the team."
-              if (taskStarted) { // Add future bonus pay
+              if (experimentStarted) { // Add future bonus pay
                 if(timeCheckOn) {
                   mturk.updatePayment(totalTime);
                   user.bonus += mturk.bonusPrice
@@ -561,11 +561,11 @@ io.on('connection', (socket) => {
       let eventSchedule = user.eventSchedule;
       console.log ("Event " + currentEvent + ": " + eventSchedule[currentEvent] + " | User: " + user.name)
 
-      if (task_list[currentActivity] == "starterSurvey") {
+      if (eventSchedule[currentEvent] == "starterSurvey") {
         io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false, showHeaderBar: false});
         taskStartTime = getSecondsPassed();
       }
-      else if (task_list[currentActivity] == "ready") {
+      else if (eventSchedule[currentEvent] == "ready") {
         if(starterSurveyOn && timeCheckOn) {
           recordTime("starterSurvey");
         }
@@ -576,19 +576,19 @@ io.on('connection', (socket) => {
         io.in(user.id).emit("echo", "ready");
 
       }
-      else if (task_list[currentActivity] == "midSurvey") {
+      else if (eventSchedule[currentEvent] == "midSurvey") {
         if(timeCheckOn) {
           recordTime("round");
         }
         io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false, showHeaderBar: true});
       }
-       else if (task_list[currentActivity] == "psychologicalSafety") {
+       else if (eventSchedule[currentEvent] == "psychologicalSafety") {
         if(timeCheckOn) {
           recordTime("round");
         }
         io.in(user.id).emit("load", {element: 'psychologicalSafety', questions: loadQuestions(psychologicalSafetyFile), interstitial: false, showHeaderBar: true});
       }
-      else if (task_list[currentActivity] == "teamfeedbackSurvey") {
+      else if (eventSchedule[currentEvent] == "teamfeedbackSurvey") {
         if(midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
         } else if(timeCheckOn) {
@@ -596,8 +596,8 @@ io.on('connection', (socket) => {
         }
         io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false, showHeaderBar: true});
       }
-      else if (task_list[currentActivity] == "blacklistSurvey") {
-        taskOver = true
+      else if (eventSchedule[currentEvent] == "blacklistSurvey") {
+        experimentOver = true
         if(teamfeedbackOn && timeCheckOn) {
           recordTime("teamfeedbackSurvey");
         } else if(midSurveyOn && timeCheckOn) {
@@ -609,7 +609,7 @@ io.on('connection', (socket) => {
         console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false})
         io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false});
       }
-      else if (task_list[currentActivity] == "postSurvey") { //Launch post survey
+      else if (eventSchedule[currentEvent] == "postSurvey") { //Launch post survey
         if(blacklistOn && timeCheckOn) {
           recordTime("blacklistSurvey");
         } else if(teamfeedbackOn && timeCheckOn) {
@@ -624,7 +624,7 @@ io.on('connection', (socket) => {
         updateUserInDB(user,'results.manipulation',user.results.manipulation)
         io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false, showHeaderBar: false});
       }
-      else if (task_list[currentActivity] == "finished" || currentActivity > task_list.length) {
+      else if (eventSchedule[currentEvent] == "finished" || currentEvent > eventSchedule.length) {
         if(timeCheckOn) {
           recordTime("postSurvey");
         }
@@ -654,7 +654,7 @@ io.on('connection', (socket) => {
           assignmentId: user.assignmentId
         })
       }
-      user.currentActivity += 1
+      user.currentEvent += 1
     })
 
     // Main experiment run
