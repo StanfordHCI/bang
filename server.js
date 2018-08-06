@@ -126,9 +126,9 @@ const Datastore = require('nedb'),
     db.leavingMessage = new Datastore({filename: '.data/leavingMessage', autoload: true, timestampData: true})
     db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true})
 
-function updateUserInDB(user,feild,value) {
-  db.users.update( {id: user.id}, {$set: {feild: value}}, {},
-    err => console.log(err ? "Err recording "+feild+": "+err : "Updated "+feild+" "+user.id+"\n"+value+"\n")
+function updateUserInDB(user,field,value) {
+  db.users.update( {id: user.id}, {$set: {field: value}}, {},
+    err => console.log(err ? "Err recording "+field+": "+err : "Updated "+field+" "+user.id+"\n"+value+"\n")
   )
 }
 
