@@ -450,7 +450,7 @@ io.on('connection', (socket) => {
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
         // if the user had accepted, removes them from the array of accepted users
-        console.log("Socket disconecting is", socket.id)
+        console.log("Disconnecting socket: " + socket.id)
         if (userPool.find(function(element) {return element.id == socket.id})) {
           console.log('There was a disconnect');
           userPool = userPool.filter(user => user.id != socket.id);
