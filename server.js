@@ -266,7 +266,7 @@ io.on('connection', (socket) => {
       });
 
       mturk.setAssignmentsPending(userPool.length)
-      debugLog(userPool,"users accepted currently: " + userPool.length )
+      debugLog(userPool, "users accepted currently: " + userPool.length)
 
       // Disconnect leftover users PK: can we do this on start rather than in 'accepted HIT'
         Object.keys(io.sockets.sockets).forEach(socketID => {
@@ -275,6 +275,8 @@ io.on('connection', (socket) => {
             io.in(socketID).emit('get IDs', 'broken');
           }
         });
+        var timeNow = new Date(Date.now())
+        console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment, which was at", timeNow.getMinutes(), "minutes and", timeNow.getSeconds(), "on the hour.")
         console.log("Sockets active: " + Object.keys(io.sockets.sockets));
         updateUserPool();
     })
@@ -986,6 +988,11 @@ const getTeamMembers = (user) => {
   },""))
   return answers;
 }
+
+function time(s) {
+    return new Date(s * 1e3).toISOString().slice(-13, -5);
+}
+
 //PK: delete this fxn and use the normal survey mechanism?
 // This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
 const postSurveyGenerator = (user) => {
