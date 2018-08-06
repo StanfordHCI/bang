@@ -12,7 +12,7 @@ const AWS = require('aws-sdk');
 const qualificationsOn = runningLive
 const runningDelayed = false
 
-const notifyWorkers = false 
+const notifyWorkers = true
 
 let endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 let submitTo = 'https://workersandbox.mturk.com'
@@ -532,6 +532,42 @@ const launchBang = () => {
    }, 1000 * 60 * timeActive * delay)
 }
 
+// users.forEach(payBonusesManually)
+
+///////////////////////////////////////////////////////////////////////////////////////
+// NOTIFY WORKERS - WORKING THIS
+
+
+// * notifyWorkersManually *
+// -------------------------------------------------------------------
+// Sends a message to all users specified
+
+const JSONObject = {"mturkId": 'A3PH8IITEI0MYR', "url": 'https://www.google.com/'}; // put JSON object here
+
+// Figure out how to loop through JSON object
+
+const notifyWorkersManually = (params) => {
+  mturk.notifyWorkers(params, function(err, data) {
+    if (err) console.log(err, err.stack); // an error occurred
+    else     console.log(data);           // successful response
+  });
+}
+
+const notify = () => {
+  if(notifyWorkers) {
+    for(i = 0; i < JSONObject.length; i++) {
+      let message = 'Worker ' + JSONObject.mturkId + ', this is a test. Click this link: ' + JSONObject.url
+      let subject = 'Message from Scaled Humanity team'
+      var params = {
+        MessageText: message, /* required */
+        Subject: subject, /* required */
+        WorkerIds: [JSONObject.mturkId] /* required */ // must be an array : [ 'string', 'string', etc ]
+      };
+      notifyWorkersManually();
+    }
+  }
+}
+
 module.exports = {
   startTask: startTask,
   updatePayment: updatePayment,
@@ -552,7 +588,8 @@ module.exports = {
   checkBlocks: checkBlocks,
   returnCurrentHIT: returnCurrentHIT,
   submitTo: submitTo,
-  launchBang: launchBang
+  launchBang: launchBang,
+  notify: notify
 };
 
 // TODO: CLean this up by integrating with other bonus code
@@ -574,33 +611,3 @@ const payBonusesManually = (user) => {
 }
 
 users = [] //list of user objects
-
-// users.forEach(payBonusesManually)
-
-///////////////////////////////////////////////////////////////////////////////////////
-// NOTIFY WORKERS - WORKING THIS
-
-
-// * notifyWorkersManually *
-// -------------------------------------------------------------------
-// Sends a message to all users specified
-
-const message = 'This is a test'
-const subject = 'Message from Scaled Humanity team'
-const workers = [] // place worker IDs here
-
-const notifyWorkersManually = () => {
-  var params = {
-    MessageText: message, /* required */
-    Subject: subject, /* required */
-    WorkerIds: workers /* required */ // must be an array : [ 'string', 'string', etc ]
-  };
-  mturk.notifyWorkers(params, function(err, data) {
-    if (err) console.log(err, err.stack); // an error occurred
-    else     console.log(data);           // successful response
-  });
-}
-
-if(notifyWorkers) {
-  notifyWorkersManually();
-}
