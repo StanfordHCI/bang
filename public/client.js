@@ -90,6 +90,13 @@ $(function() {
 
   hideAll();
 
+  // Prompt for setting a username
+  let username = ""
+  let connected = /*false*/ true; //PK: changed to true for testing, is this bool necessary?
+  let typing = false;
+  let lastTypingTime;
+  let $currentInput = $inputMessage.focus();
+
   //Check if user has accepted based on URL. Store URL variables.
   const URLvars = getUrlVars(location.href)
   if (URLvars.assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
@@ -117,13 +124,6 @@ $(function() {
 
   // Get permission to notify
   Notification.requestPermission()
-
-  // Prompt for setting a username
-  let username
-  let connected = false;
-  let typing = false;
-  let lastTypingTime;
-  let $currentInput = $inputMessage.focus();
 
   let currentTeam = []
 
