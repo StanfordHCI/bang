@@ -477,9 +477,9 @@ io.on('connection', (socket) => {
           // update DB with change
           updateUserInDB(socket,'active',false)
 
-          if (!taskOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
+          if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
-          if (!taskOver && suddenDeath && taskStarted){
+          if (!experimentOver && suddenDeath && experimentStarted){//PK: what does this if condition mean
             // Start cancel process
 
             if(multipleHITs) {
