@@ -738,8 +738,8 @@ io.on('connection', (socket) => {
 
           team_Aliases.push(user.name) //now push user for autocomplete
           //let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
-          // io.in(user.id).emit('go', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
-          io.in(user.id).emit('go', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//round 0 indexed
+          // io.in(user.id).emit('initiate round', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
+          io.in(user.id).emit('initiate round', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//round 0 indexed
         }
       })
 

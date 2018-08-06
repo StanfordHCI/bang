@@ -572,7 +572,7 @@ $(function() {
     removeChatTyping(data);
   });
 
-  socket.on('go', data => {
+  socket.on('initiate round', data => {
     messagesSafe.innerHTML = ''
     startTimer(60 * data.duration - 1, $headerText) // start header timer, subtract 1 to give more notice
 
