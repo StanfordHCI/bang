@@ -532,12 +532,6 @@ const launchBang = () => {
    }, 1000 * 60 * timeActive * delay)
 }
 
-// users.forEach(payBonusesManually)
-
-///////////////////////////////////////////////////////////////////////////////////////
-// NOTIFY WORKERS - WORKING THIS
-
-
 // * notifyWorkersManually *
 // -------------------------------------------------------------------
 // Sends a message to all users specified
@@ -602,3 +596,5 @@ const payBonusesManually = (user) => {
 }
 
 users = [] //list of user objects
+
+// users.forEach(payBonusesManually)
