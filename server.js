@@ -180,9 +180,9 @@ let taskEndTime = 0;
 let taskTime = 0;
 
 // Building task list
-let task_list = []
+let eventSchedule = []
 if (starterSurveyOn) {
-  task_list.push("starterSurvey")
+  eventSchedule.push("starterSurvey")
 }
 let task_loop = []
 task_loop.push("ready")
@@ -196,13 +196,13 @@ if (teamfeedbackOn) {
   task_loop.push("teamfeedbackSurvey")
 }
 task_loop = replicate(task_loop, numRounds)
-task_list= task_list.concat(task_loop)
+eventSchedule= eventSchedule.concat(experimentRoundSchedule)
 if (blacklistOn) {
-  task_list.push("blacklistSurvey")
+  eventSchedule.push("blacklistSurvey")
 }
-task_list.push("postSurvey")
-task_list.push("finished")
-console.log(task_list)
+eventSchedule.push("postSurvey")
+eventSchedule.push("finished")
+console.log(eventSchedule)
 
 let fullUrl = ''
 
