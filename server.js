@@ -16,6 +16,7 @@ const secondsToHold2 = 90 //maximum number of seconds of inactivity that we allo
 // Toggles
 const runExperimentNow = true
 const issueBonusesNow = true
+const emailingWorkers = true
 
 const cleanHITs = false
 const assignQualifications = false
@@ -781,7 +782,12 @@ io.on('connection', (socket) => {
 
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
+    if (emailingWorkers) {
+        socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions."})
+    }
+    else {
         socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has finished early. You will be compensated by clicking submit below."})
+    }
         console.log("Sockets active: " + Object.keys(io.sockets.sockets));
   });
 
