@@ -95,7 +95,7 @@ const roundOrdering = [
   {"control": [2,1,1], "treatment": [2,1,1], "baseline": [1,2,3]},
   {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
 
-const experimentRoundIndicator = 1
+const experimentRoundIndicator = 1//PK: is this different that roundNum?
 const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
 const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
 console.log(currentCondition,'with',conditions[currentCondition]);
@@ -168,8 +168,8 @@ let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
                  'url': 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono' }]
 
 let users = []; //the main local user storage
-let userPool = [];
-let currentRound = 0
+let userPool = []; //accumulates users pre-experiment
+let currentRound = 0 //PK: talk about 0-indexed v 1-indexed round numbers (note: if change -> change parts of code reliant on 0-indexed round num)
 let startTime = 0
 let enoughPeople = false
 let preExperiment = true
@@ -247,11 +247,9 @@ setTimeout(() => {
 
 // Chatroom
 io.on('connection', (socket) => {
-    //NOTE: THIS fxn is called multiple times so these conditions will be set multiple times
-    let addedUser = false
-    let taskStarted = false
-    let taskOver = false
-    // let enoughPeople = false
+  //PK: what are these bools for?
+    let experimentStarted = false //NOTE: this will be set multiple times but I don't think that's what is wanted in this case
+    let experimentOver = false
 
     socket.on('get username', data => {
       name_structure = tools.makeName();
@@ -377,8 +375,7 @@ io.on('connection', (socket) => {
       };
     }
     socket.on('add user', data => {
-      if (addedUser) {return}//PK: do we still need this bool/anyone know why it was needed?
-      if (users.length === teamSize ** 2) { //fix money - is this fixed -PK//PK: changed from if enoughPeople to if users.length === teamSize **2 or will this cause concurrency issures
+      if (users.length === teamSize ** 2) { //fix money - is this fixed -PK//PK: changed from if enoughPeople to if users.length === teamSize **2 or will this cause concurrency issues (js single threaded?)
         io.in(socket.id).emit('finished', {
           message: "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
           finishingCode: socket.id,
@@ -667,9 +664,7 @@ io.on('connection', (socket) => {
 
     // Main experiment run
     socket.on('ready', function (data) {
-      //console.log(fullUrl);
-      //waits until user ends up on correct link before adding user - repeated code, make function
-
+      //waits until user ends up on correct link before adding user - repeated code, make function //PK: what does this comment mean/ is it still relevant?
       users.byID(socket.id).ready = true;
       console.log(socket.username, 'is ready');
 
@@ -964,6 +959,8 @@ function replicate(arr, times) {
   return res;
 }
 
+//PK: we call this fxn many times, is it necessary?
+//PK: why do we need to record the length of each task? if this is for bonusing, can we avoid calling this fxn so many times and just do once when the exp ends?
 // records length of each task
 const recordTime = (event) => {
   taskEndTime = getSecondsPassed();
@@ -978,6 +975,7 @@ const recordTime = (event) => {
 //returns number of users in a room: room -> int
 const numUsers = room => users.filter(user => user.room === room).length
 
+//PK: is this being used/ okay to delete/ for future stuff?
 //Returns a random remaining room space, or error if none. () -> room | error
 const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize)
 const assignRoom = () => incompleteRooms().pick()
@@ -995,6 +993,7 @@ const getTeamMembers = (user) => {
   },""))
   return answers;
 }
+//PK: delete this fxn and use the normal survey mechanism?
 // This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
 const postSurveyGenerator = (user) => {
   const answers = getTeamMembers(user);
