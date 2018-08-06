@@ -707,7 +707,7 @@ io.on('connection', (socket) => {
         })
       })
 
-      //Notify user 'go' and send task.
+      //Notify user 'initiate round' and send task.
       let currentProduct = products[currentRound]
       let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
@@ -718,7 +718,7 @@ io.on('connection', (socket) => {
         if (autocompleteTestOn) {
           let teamNames = [tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username]
           console.log(teamNames)
-          io.in(user.id).emit('go', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//rounds are 0 indexed
+          io.in(user.id).emit('initiate round', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//rounds are 0 indexed
         } else {
           // Dynamically generate teammate names
           // even if teamSize = 1 for testing, this still works
