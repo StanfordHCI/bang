@@ -12,7 +12,7 @@ const AWS = require('aws-sdk');
 const qualificationsOn = runningLive
 const runningDelayed = false
 
-const notifyWorkers = false
+const notifyWorkers = false 
 
 let endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 let submitTo = 'https://workersandbox.mturk.com'
