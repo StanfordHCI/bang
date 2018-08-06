@@ -547,26 +547,18 @@ const turkerJSON = [{"mturkId": 'AGRKG3YT3KMD8', "url": 'https://www.google.com/
 // Figure out how to loop through JSON object
 
 const notifyWorkersManually = (params) => {
+  var params = {
+    MessageText: params.message, /* required */
+    Subject: params.subject, /* required */
+    WorkerIds: [params.mturkId] /* required */ // must be an array : [ 'string', 'string', etc ]
+  };
   mturk.notifyWorkers(params, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
     else     console.log(data);           // successful response
   });
 }
 
-const notify = () => {
-  if(notifyWorkers) {
-    for(i = 0; i < turkerJSON.length; i++) {
-      let message = 'Worker ' + turkerJSON[i].mturkId + ', click this link to continue: ' + turkerJSON[i].url
-      let subject = 'Message from Scaled Humanity team'
-      var params = {
-        MessageText: message, /* required */
-        Subject: subject, /* required */
-        WorkerIds: [turkerJSON[i].mturkId] /* required */ // must be an array : [ 'string', 'string', etc ]
-      };
-      notifyWorkersManually(params);
-    }
-  }
-}
+turkerJSON.forEach(notifyWorkersManually);
 
 module.exports = {
   startTask: startTask,
@@ -589,7 +581,6 @@ module.exports = {
   returnCurrentHIT: returnCurrentHIT,
   submitTo: submitTo,
   launchBang: launchBang,
-  notify: notify
 };
 
 // TODO: CLean this up by integrating with other bonus code
