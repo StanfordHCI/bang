@@ -334,7 +334,7 @@ io.on('connection', (socket) => {
             io.in(usersOnCall[i].id).emit('show chat link');
           }
         } else {
-          io.sockets.emit('update number waiting', {num: kUsersNeeded});
+          io.sockets.emit('update number waiting', {num: teamSize ** 2 - usersOnCall.length});
         }
       }
       
