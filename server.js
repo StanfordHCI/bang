@@ -184,18 +184,18 @@ let eventSchedule = []
 if (starterSurveyOn) {
   eventSchedule.push("starterSurvey")
 }
-let task_loop = []
-task_loop.push("ready")
+let experimentRoundSchedule = []
+experimentRoundSchedule.push("ready")
 if (midSurveyOn) {
-  task_loop.push("midSurvey")
+  experimentRoundSchedule.push("midSurvey")
 }
 if (psychologicalSafetyOn) {
-  task_loop.push("psychologicalSafety")
+  experimentRoundSchedule.push("psychologicalSafety")
 }
 if (teamfeedbackOn) {
-  task_loop.push("teamfeedbackSurvey")
+  experimentRoundSchedule.push("teamfeedbackSurvey")
 }
-task_loop = replicate(task_loop, numRounds)
+experimentRoundSchedule = replicate(experimentRoundSchedule, numRounds)
 eventSchedule= eventSchedule.concat(experimentRoundSchedule)
 if (blacklistOn) {
   eventSchedule.push("blacklistSurvey")
