@@ -542,7 +542,7 @@ const launchBang = () => {
 // -------------------------------------------------------------------
 // Sends a message to all users specified
 
-const JSONObject = {"mturkId": 'A3PH8IITEI0MYR', "url": 'https://www.google.com/'}; // put JSON object here
+const turkerJSON = [{"mturkId": 'AGRKG3YT3KMD8', "url": 'https://www.google.com/'}]; // put JSON object here
 
 // Figure out how to loop through JSON object
 
@@ -555,15 +555,15 @@ const notifyWorkersManually = (params) => {
 
 const notify = () => {
   if(notifyWorkers) {
-    for(i = 0; i < JSONObject.length; i++) {
-      let message = 'Worker ' + JSONObject.mturkId + ', this is a test. Click this link: ' + JSONObject.url
+    for(i = 0; i < turkerJSON.length; i++) {
+      let message = 'Worker ' + turkerJSON[i].mturkId + ', click this link to continue: ' + turkerJSON[i].url
       let subject = 'Message from Scaled Humanity team'
       var params = {
         MessageText: message, /* required */
         Subject: subject, /* required */
-        WorkerIds: [JSONObject.mturkId] /* required */ // must be an array : [ 'string', 'string', etc ]
+        WorkerIds: [turkerJSON[i].mturkId] /* required */ // must be an array : [ 'string', 'string', etc ]
       };
-      notifyWorkersManually();
+      notifyWorkersManually(params);
     }
   }
 }
