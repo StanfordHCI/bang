@@ -20,8 +20,8 @@ const randomRoundOrder = false
 
 const psychologicalSafetyOn = true
 const starterSurveyOn = false
-const midSurveyOn = false
-const blacklistOn = false
+const midSurveyOn = true
+const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
