@@ -303,7 +303,8 @@ io.on('connection', (socket) => {
 
       if(waitChatOn) updateUsersOnCall();
       const usersOnCall = getUsersOnCall();
-
+      console.log("Users on call: " + usersOnCall.length)
+      console.log("Users in pool: " + userPool.length)
       if(waitChatOn){
         if(usersOnCall.length >= teamSize ** 2) {
           for(let i = 0; i < usersOnCall.length; i ++){
@@ -384,7 +385,7 @@ io.on('connection', (socket) => {
     
       const newUser = makeUser(userPool.byID(socket.id));
       users.push(newUser)
-      console.log('pushed user, users: ' + users)
+      console.log(newUser.name + " added to users.\n" + "Total users: " + users.length)
       //add friends for each user once the correct number of users is reached
       if(users.length === teamSize **2){
         users.forEach(user => {
@@ -557,10 +558,10 @@ io.on('connection', (socket) => {
 
     socket.on("next event", (data) => {
       let user = users.byID(socket.id)
-      if(!user) return; //PK: quick fix, execute exp still called for 'user' never added to users, come back to this
-      let currentActivity = user.currentActivity;
-      let task_list = user.task_list;
-      console.log ("Activity:", currentActivity, "which is", task_list[currentActivity])
+      if(!user) return; //PK: quick fix, next event still called for 'user' never added to users, come back to this
+      let currentEvent = user.currentEvent;
+      let eventSchedule = user.eventSchedule;
+      console.log ("Event " + currentEvent + ": " + eventSchedule[currentEvent] + " | User: " + user.name)
 
       if (task_list[currentActivity] == "starterSurvey") {
         io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false, showHeaderBar: false});
