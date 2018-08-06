@@ -540,6 +540,7 @@ const turkerJSON = [{"mturkId": 'AGRKG3YT3KMD8', "url": 'https://www.google.com/
 
 // Figure out how to loop through JSON object
 
+
 //const notifyWorkersManually = () => {
 //  var params = {
 //    MessageText: params.message, /* required */
@@ -553,6 +554,21 @@ const turkerJSON = [{"mturkId": 'AGRKG3YT3KMD8', "url": 'https://www.google.com/
 //}
 
 //turkerJSON.forEach(notifyWorkersManually);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 module.exports = {
   startTask: startTask,

@@ -160,8 +160,11 @@ if (cleanHITs){
 }
 if (runExperimentNow){ mturk.launchBang() }
 
+
 //console.log('running notify')
 //mturk.notify();
+
+
 
 //Add more products
 let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
@@ -470,6 +473,7 @@ io.on('connection', (socket) => {
     //Route messages
     socket.on('new message', function (message) {
       user = users.byID(socket.id)
+      if(!user) return;
       let cleanMessage = message;
       users.forEach(u => { cleanMessage = aliasToID(u, cleanMessage) });
 
