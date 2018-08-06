@@ -12,6 +12,8 @@ const AWS = require('aws-sdk');
 const qualificationsOn = runningLive
 const runningDelayed = false
 
+const notifyWorkers = false
+
 let endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 let submitTo = 'https://workersandbox.mturk.com'
 
@@ -574,3 +576,31 @@ const payBonusesManually = (user) => {
 users = [] //list of user objects
 
 // users.forEach(payBonusesManually)
+
+///////////////////////////////////////////////////////////////////////////////////////
+// NOTIFY WORKERS - WORKING THIS
+
+
+// * notifyWorkersManually *
+// -------------------------------------------------------------------
+// Sends a message to all users specified
+
+const message = 'This is a test'
+const subject = 'Message from Scaled Humanity team'
+const workers = [] // place worker IDs here
+
+const notifyWorkersManually = () => {
+  var params = {
+    MessageText: message, /* required */
+    Subject: subject, /* required */
+    WorkerIds: workers /* required */ // must be an array : [ 'string', 'string', etc ]
+  };
+  mturk.notifyWorkers(params, function(err, data) {
+    if (err) console.log(err, err.stack); // an error occurred
+    else     console.log(data);           // successful response
+  });
+}
+
+if(notifyWorkers) {
+  notifyWorkersManually();
+}
