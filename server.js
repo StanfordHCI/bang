@@ -256,6 +256,16 @@ io.on('connection', (socket) => {
     })
 
     socket.on('accepted HIT', data => {
+      if(users.length === teamSize ** 2) {
+        io.in(socket.id).emit('finished', {
+          message: "We have enough users on this task. Thank you!",
+          finishingCode: socket.id,
+          turkSubmitTo: mturk.submitTo,
+          assignmentId: socket.id,
+          crashed: false
+        })
+        return;
+      }
       userPool.push({
         "id": socket.id,
         "mturkId": data.mturkId,
