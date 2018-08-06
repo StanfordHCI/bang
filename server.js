@@ -454,11 +454,11 @@ io.on('connection', (socket) => {
         if (userPool.find(function(element) {return element.id == socket.id})) {
           console.log('There was a disconnect');
           userPool = userPool.filter(user => user.id != socket.id);
-
-          if(userPool.length >= teamSize ** 2) {
+          let usersOnCall = userPool.filter(user => user.onCall) //PK: use the fxn
+          if(usersOnCall.length >= teamSize ** 2) {
             io.sockets.emit('update number waiting', {num: 0});
           } else {
-            io.sockets.emit('update number waiting', {num: (teamSize ** 2) - userPool.length});
+            io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersOnCall.length});
           }
 
           mturk.setAssignmentsPending(userPool.length)
