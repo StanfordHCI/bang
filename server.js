@@ -295,7 +295,7 @@ io.on('connection', (socket) => {
         "timeLastActivity": data.timeAdded
       });
 
-      mturk.setAssignmentsPending(userPool.length)
+      mturk.setAssignmentsPending(getPoolUsersConnected().length)
       debugLog(userPool, "users accepted currently: " + userPool.length)
 
       // Disconnect leftover users PK: can we do this on start rather than in 'accepted HIT'
@@ -557,7 +557,7 @@ io.on('connection', (socket) => {
             io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersActive.length});
           }
 
-          mturk.setAssignmentsPending(getPoolUsersConnected())
+          mturk.setAssignmentsPending(getPoolUsersConnected().length)
         }
 
         if (!users.every(user => socket.id !== user.id)) {//socket id is found in users
