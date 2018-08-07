@@ -1,7 +1,8 @@
 $(function() {
   const FADE_TIME = 150; // ms
   const TYPING_TIMER_LENGTH = 400; // ms
-  const COLORS = ['#e21400', '#91580f', '#dfe106', '#ff8300', '#58dc00', '#006400', '#a8f07a', '#4ae8c4', '#ff69b4', '#3824aa', '#a700ff', '#d300e7'];
+  let COLORS = ['#e21400', '#91580f', '#dfe106', '#ff8300', '#58dc00', '#006400', '#a8f07a', '#4ae8c4', '#ff69b4', '#3824aa', '#a700ff', '#d300e7'];
+  let colorAssignment = []
 
   //toggles
   let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
@@ -291,14 +292,19 @@ $(function() {
 
   // Gets the color of a username through our hash function
   function getUsernameColor (username) {
-    //Compute hash code
-    let hash = 7;
-    for (let i = 0; i < username.length; i++) {
-       hash = username.charCodeAt(i) + (hash << 5) - hash;
+
+    if(COLORS.length == 0) {
+      COLORS = ['#e21400', '#91580f', '#dfe106', '#ff8300', '#58dc00', '#006400', '#a8f07a', '#4ae8c4', '#ff69b4', '#3824aa', '#a700ff', '#d300e7']
     }
-    // Calculate color
-    const index = Math.abs(hash % COLORS.length);
-    return COLORS[index];
+    if(colorAssignment.includes(username)) {
+      return colorAssignment[colorAssignment.indexOf(username) + 1]
+    } else {
+      let color = COLORS[0]
+      colorAssignment.push(username)
+      colorAssignment.push(color)
+      COLORS.splice(0,1);
+      return color;
+    }
   }
 
 // equivalent of initiate experiment when waitChatOn === false PK: change this?
