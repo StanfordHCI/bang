@@ -324,7 +324,7 @@ io.on('connection', (socket) => {
           } else {
             user.active = false;
           }
-          weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - getUsersActive().length)) // PK: make isUserInactive fxn
+          weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - getPoolUsersActive().length)) // PK: make isUserInactive fxn
           if (secondsSince(user.timeAdded) > weightedHoldingSeconds || secondsSince(user.timeLastActivity) > secondsToHold2) {
             console.log('removing user because of inactivity:', user.id);
             io.in(user.id).emit('get IDs', 'broken');
