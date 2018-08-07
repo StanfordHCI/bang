@@ -419,7 +419,7 @@ $(function() {
   // Socket events
   socket.on('chatbot', data => {
     const questions = data
-    const questionIndex = permute(questions.length)
+    // const questionIndex = permute(questions.length)
     let index = 0;
     let typingTimer;
     let doneTypingInterval = 1000;
@@ -445,7 +445,7 @@ $(function() {
           answered = false;
 
           if(index < questions.length) {
-            let q = questions[questionIndex[index]].question
+            let q = questions[index].question
             addChatMessage({username:botUsername, message:q})
             index++
           } else {
