@@ -332,7 +332,7 @@ io.on('connection', (socket) => {
       }
 
       if(waitChatOn) updateUsersActive();
-      const usersActive = getUsersActive();
+      const usersActive = getPoolUsersActive();
       console.log("Users active: " + usersActive.length)
       console.log("Users in pool: " + userPool.length)
       if(waitChatOn){
@@ -545,14 +545,14 @@ io.on('connection', (socket) => {
           console.log('There was a disconnect');
           //userPool = userPool.filter(user => user.id != socket.id);
           userPool.byID(socket.id).connected = false;
-          let usersActive = getUsersActive() 
+          let usersActive = getPoolUsersActive() 
           if(usersActive.length >= teamSize ** 2) {
             io.sockets.emit('update number waiting', {num: 0});
           } else {
             io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersActive.length});
           }
 
-          mturk.setAssignmentsPending(getUsersConnected())
+          mturk.setAssignmentsPending(getPoolUsersConnected())
         }
 
         if (!users.every(user => socket.id !== user.id)) {//socket id is found in users
@@ -1034,8 +1034,8 @@ io.on('connection', (socket) => {
 });
 
 // return subset of userPool
-function getUsersConnected() {return userPool.filter(user => user.connected)}
-function getUsersActive() {return userPool.filter(user => user.active && user.connected)}
+function getPoolUsersConnected() {return userPool.filter(user => user.connected)}
+function getPoolUsersActive() {return userPool.filter(user => user.active && user.connected)}
 
 
 //replaces user.friend aliases with corresponding user IDs
