@@ -522,12 +522,12 @@ const launchBang = () => {
       }
       delay++;
     } else {
-      clearTimeout();
       expireActiveHits(currentHitId);
       if(multipleHITs) {
         expireActiveHits(currentHitId2);
         expireActiveHits(currentHitId3);
       }
+      clearTimeout();
     }
    }, 1000 * 60 * timeActive * delay)
 }
