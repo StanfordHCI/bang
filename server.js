@@ -306,7 +306,7 @@ io.on('connection', (socket) => {
           }
         });
         var timeNow = new Date(Date.now())
-        console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment, which was at", timeNow.getMinutes(), "minutes and", timeNow.getSeconds(), "on the hour.")
+        console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.getMinutes(), "minutes and", timeNow.getSeconds(), " seconds on the hour.")
         console.log("Sockets active: " + Object.keys(io.sockets.sockets));
         updateUserPool();
     })
