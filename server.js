@@ -439,7 +439,7 @@ io.on('connection', (socket) => {
         }
         return;
       }
-
+//PK: should i add a quick fix here?
       const newUser = makeUser(userPool.byID(socket.id));
       users.push(newUser)
       console.log(newUser.name + " added to users.\n" + "Total users: " + users.length)
@@ -464,7 +464,10 @@ io.on('connection', (socket) => {
     })
 
     socket.on('update user pool', (data) => {
-      if(!userPool.byID(socket.id)) return;//PK: quick fix
+      if(!userPool.byID(socket.id)) {
+        console.log("***USER UNDEFINED*** [line 468] in 'update user pool' ..this would crash out thing but haha it's okay")
+        return; 
+      }//PK: quick fix
       userPool.byID(socket.id).timeLastActivity = data.time;
       updateUserPool()
     });
@@ -473,8 +476,11 @@ io.on('connection', (socket) => {
 
     //Route messages
     socket.on('new message', function (message) {
-      user = users.byID(socket.id)
-      if(!user) return;
+      let user = users.byID(socket.id)//PK: this used to have no 'let'
+      if(!user) {
+        console.log("***USER UNDEFINED*** [line 481] in 'new message' ..this would crash out thing but haha it's okay")
+        return; 
+      }
       let cleanMessage = message;
       users.forEach(u => { cleanMessage = aliasToID(u, cleanMessage) });
 
@@ -493,6 +499,12 @@ io.on('connection', (socket) => {
 
     //when the client emits 'new checkin', this listens and executes
     socket.on('new checkin', function (value) {
+      let user = users.byID(socket.id)//PK: this used to have no 'let'
+      if(!user) {
+        console.log("***USER UNDEFINED*** [line 503] in 'new checkin' ..this would crash out thing but haha it's okay")
+        return; 
+      }
+      //^new
       console.log(socket.username + "checked in with value " + value);
       let currentRoom = users.byID(socket.id).room;
       db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': value, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
@@ -615,7 +627,10 @@ io.on('connection', (socket) => {
 
     socket.on("next event", (data) => {
       let user = users.byID(socket.id)
-      if(!user) return; //PK: quick fix, next event still called for 'user' never added to users, come back to this
+      if(!user) {
+        console.log("***USER UNDEFINED*** [line 631] in 'next event'..this would crash out thing but haha it's okay")
+        return; 
+      }//PK: quick fix, next event still called for 'user' never added to users, come back to this
       let currentEvent = user.currentEvent;
       let eventSchedule = user.eventSchedule;
       console.log ("Event " + currentEvent + ": " + eventSchedule[currentEvent] + " | User: " + user.name)
