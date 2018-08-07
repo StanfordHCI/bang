@@ -458,6 +458,7 @@ io.on('connection', (socket) => {
     })
 
     socket.on('update user pool', (data) => {
+      if(!userPool.byID(socket.id)) return;//PK: quick fix
       userPool.byID(socket.id).timeLastActivity = data.time;
       updateUserPool()
     });
