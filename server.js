@@ -197,6 +197,16 @@ let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
                  'url': 'https://www.kickstarter.com/projects/hexgears/hexgears-x-1-mechanical-keyboard?ref=discovery' },
                  {'name':"KARVD - Modular Wood Carved Wall Panel System",
                  'url': 'https://www.kickstarter.com/projects/karvdwalls/karvd-modular-wood-carved-wall-panel-system?ref=recommended&ref=discovery' },
+                 {'name':"PARA: Stationary l Pythagorean l Easy-to-Use Laser Measurer",
+                 'url': 'https://www.kickstarter.com/projects/1619356127/para-stationary-l-pythagorean-l-easy-to-use-laser?ref=recommended&ref=discovery' },
+                 {'name':"Blox: organize your world!",
+                 'url': 'https://www.kickstarter.com/projects/onehundred/blox-organize-your-world?ref=recommended&ref=discovery' },
+                 {'name':"Moment - World's Best Lenses For Mobile Photography",
+                 'url': 'https://www.kickstarter.com/projects/moment/moment-amazing-lenses-for-mobile-photography?ref=recommended&ref=discovery' },
+                 {'name':"The Ollie Chair: Shape-Shifting Seating",
+                 'url': 'https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating?ref=recommended&ref=discovery' },
+                 {'name':"Fave: the ideal all-purpose knife!",
+                 'url': 'https://www.kickstarter.com/projects/onehundred/fave-the-ideal-all-purpose-knife?ref=recommended&ref=discovery' },
               ]
 
 let users = []; //the main local user storage
@@ -848,7 +858,12 @@ io.on('connection', (socket) => {
       })
 
       //Notify user 'initiate round' and send task.
-      let currentProduct = products[currentRound]
+      let productInt = getRndInteger(0, products.length);
+      let currentProduct = products[productInt]
+      products.splice(productInt, 1)
+
+      // let currentProduct = products[currentRound]
+
       let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
       experimentStarted = true
@@ -1150,6 +1165,10 @@ const getTeamMembers = (user) => {
 
 function time(s) {
     return new Date(s * 1e3).toISOString().slice(-13, -5);
+}
+
+function getRndInteger(min, max) {
+  return Math.floor(Math.random() * (max - min) ) + min;
 }
 
 //PK: delete this fxn and use the normal survey mechanism?
