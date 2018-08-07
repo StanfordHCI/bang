@@ -445,11 +445,18 @@ io.on('connection', (socket) => {
       console.log(newUser.name + " added to users.\n" + "Total users: " + users.length)
       //add friends for each user once the correct number of users is reached
       if(users.length === teamSize **2){
-        users.forEach(user => {
-          user.friends = users.map(user => {
-            return {'id': user.id,
+        users.forEach(user => { //mutate the friend list of each user
+          user.friends = users.map(u => { //create the alias through which each user sees every other user
+            if (user.id != u.id) {
+              return {'id': u.id,
                     'alias': tools.makeName().username,
                     'tAlias':tools.makeName().username }
+            }
+            else {
+              return {'id': u.id,
+                    'alias': u.name,
+                    'tAlias': u.name }
+            }
           });
         })
       }
@@ -482,7 +489,7 @@ io.on('connection', (socket) => {
         return; 
       }
       let cleanMessage = message;
-      users.forEach(u => { cleanMessage = aliasToID(u, cleanMessage) });
+      users.forEach(u => { cleanMessage = aliasToID(u, cleanMessage)});
 
       db.chats.insert({'room':user.room,'userID':socket.id, 'message': cleanMessage, 'time': getSecondsPassed(), 'batch': batchID, 'round': currentRound}, (err, usersAdded) => {
         if(err) console.log("Error storing message:", err)
@@ -791,15 +798,20 @@ io.on('connection', (socket) => {
           // even if teamSize = 1 for testing, this still works
           let team_Aliases = tools.makeName(teamSize - 1, user.friends_history)
           user.friends_history = user.friends_history.concat(team_Aliases)
-
+          
           let teamMates = user.friends.filter(friend => { return (users.byID(friend.id)) && (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
           for (i = 0; i < teamMates.length; i++) {
             if (treatmentNow) {
               teamMates[i].tAlias = team_Aliases[i].join("")
               team_Aliases[i] = team_Aliases[i].join("")
             } else {
-              teamMates[i].alias = team_Aliases[i].join("")
-              team_Aliases[i] = team_Aliases[i].join("")
+              if (currentRound == 0) { //if first round, create aliases
+                teamMates[i].alias = team_Aliases[i].join("")
+                team_Aliases[i] = team_Aliases[i].join("")
+              }
+              else { //if not, use previously created aliases
+                team_Aliases[i] = teamMates[i].alias
+              }
             }
           }
 

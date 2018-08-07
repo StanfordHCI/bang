@@ -419,6 +419,7 @@ $(function() {
   // Socket events
   socket.on('chatbot', data => {
     const questions = data
+    const questionIndex = permute(questions.length)
     let index = 0;
     let typingTimer;
     let doneTypingInterval = 1000;
@@ -444,7 +445,7 @@ $(function() {
           answered = false;
 
           if(index < questions.length) {
-            let q = questions[index].question
+            let q = questions[questionIndex[index]].question
             addChatMessage({username:botUsername, message:q})
             index++
           } else {
@@ -452,6 +453,23 @@ $(function() {
           }
         }
       }
+    }
+
+    function permute(questionLength) {
+      // first make a list from 1 to questionLength
+      let questionIndex = [...Array(questionLength).keys()];
+      
+      // then proceed to shuffle the questionIndex array      
+      for(let idx = 0; idx < questionLength; idx++)
+      {
+          let swpIdx = idx + Math.floor(Math.random() * (questionLength - idx));
+          // now swap elements at idx and swpIdx
+          let tmp = questionIndex[idx];
+          questionIndex[idx] = questionIndex[swpIdx];
+          questionIndex[swpIdx] = tmp;
+      }
+      // here questionIndex[] will have been randomly shuffled (permuted)
+      return questionIndex
     }
   })
 
