@@ -90,6 +90,7 @@ const conditionsAvailalbe = ['control','treatment','baseline']
 const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
 let treatmentNow = false
 let firstRun = false;
+let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
 
 const roundOrdering = [
   {"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]},
@@ -296,7 +297,7 @@ io.on('connection', (socket) => {
       });
 
       mturk.setAssignmentsPending(getPoolUsersConnected().length)
-      debugLog(userPool, "users accepted currently: " + userPool.length)
+      // debugLog(userPool, "users accepted currently: " + userPool.length)
 
       // Disconnect leftover users PK: can we do this on start rather than in 'accepted HIT'
         Object.keys(io.sockets.sockets).forEach(socketID => {
@@ -338,13 +339,15 @@ io.on('connection', (socket) => {
       console.log("Users connected: " + getPoolUsersConnected().length)
       console.log("Users in pool: " + userPool.length)
       if(waitChatOn){
-        if(usersActive.length >= teamSize ** 2) {
-          for(let i = 0; i < usersActive.length; i ++){
+        if(!hasAddedUsers && usersActive.length >= teamSize ** 2) {//if have enough active users and had not added users before
+          hasAddedUsers = true;
+          for(let i = 0; i < usersActive.length; i ++){ //for every active user
             let user = usersActive[i];
-            if(i < teamSize ** 2) {
+            if(i < teamSize ** 2) { //take the 1st teamssize **2 users and add them
               io.in(user.id).emit("echo", "add user");
               io.in(user.id).emit('initiate experiment');
-            } else {
+            } else { //else emit finish
+              console.log('EMIT FINISH TO EXTRA ACTIVE WORKER')
               if (emailingWorkers) {
                 io.in(user.id).emit('finished', {
                   message: "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
@@ -359,7 +362,9 @@ io.on('connection', (socket) => {
               }
             }
           }
-          userPool.filter(user => !user.active).forEach(user => {
+          userPool.filter(user => !usersActive.byID(user.id)).forEach(user => {// 
+            console.log('EMIT FINISH TO NONACTIVE OR DISCONNECTED WORKER')
+
             if (emailingWorkers) {
               io.in(user.id).emit('finished', {
                 message: "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
@@ -442,11 +447,15 @@ io.on('connection', (socket) => {
         return;
       }
 //PK: should i add a quick fix here?
-      const newUser = makeUser(userPool.byID(socket.id));
+      if(users.byID(socket.id)){
+        console.log('ERR: ADDING A USER ALREADY IN USERS')
+      }
+      let newUser = makeUser(userPool.byID(socket.id));
       users.push(newUser)
       console.log(newUser.name + " added to users.\n" + "Total users: " + users.length)
       //add friends for each user once the correct number of users is reached
       if(users.length === teamSize **2){
+        debugLog(userPool, "USER POOL: " + userPool.length)
         console.log('MTURK IDS: ')
         users.forEach(user => { //mutate the friend list of each user
           user.friends = users.map(u => { //create the alias through which each user sees every other user
@@ -461,7 +470,7 @@ io.on('connection', (socket) => {
                     'tAlias': u.name }
             }
           });
-          console.log(user.mturkID)
+          console.log(user.mturkId)
         })
       }
 
