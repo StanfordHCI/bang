@@ -768,7 +768,7 @@ io.on('connection', (socket) => {
         console.log('SOCKET ID: ' + socket.id)
         return; 
       }
-      if(!users.byID(socket.id)f.connected) {
+      if(!users.byID(socket.id).connected) {
         console.log("block ***USER NOT CONNECTED*** in ready")
         return;
       }
