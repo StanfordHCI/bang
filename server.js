@@ -128,6 +128,7 @@ const Datastore = require('nedb'),
     db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true})
 
 function updateUserInDB(user,field,value) {
+  //PK: safeguard here?
   db.users.update( {id: user.id}, {$set: {field: value}}, {},
     err => console.log(err ? "Err recording "+field+": "+err : "Updated "+field+" "+user.id+"\n"+value+"\n")
   )
@@ -312,7 +313,7 @@ io.on('connection', (socket) => {
 
     //PK: was there a concurrency reason we used to pass usersAccepted into checkUsersAccepted()
     function updateUserPool(){
-      if(users.length === teamSize ** 2) return;
+      if(users.length === teamSize ** 2) return; //PK: if exp has already started, change to condition on state variable
 
       function secondsSince(event) {return (Date.now() - event)/1000}
       function updateUsersActive() {
@@ -323,7 +324,7 @@ io.on('connection', (socket) => {
           } else {
             user.active = false;
           }
-          weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - getUsersOnCall().length)) // PK: make isUserInactive fxn
+          weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - getUsersActive().length)) // PK: make isUserInactive fxn
           if (secondsSince(user.timeAdded) > weightedHoldingSeconds || secondsSince(user.timeLastActivity) > secondsToHold2) {
             console.log('removing user because of inactivity:', user.id);
             io.in(user.id).emit('get IDs', 'broken');
@@ -419,7 +420,7 @@ io.on('connection', (socket) => {
       };
     }
     socket.on('add user', data => {
-      if (users.length === teamSize ** 2) { //fix money - is this fixed -PK//PK: changed from if enoughPeople to if users.length === teamSize **2 or will this cause concurrency issues (js single threaded?)
+      if (users.length === teamSize ** 2) { // PK: if experiment has already started, change to condition on state variable
         if (emailingWorkers) {
           io.in(socket.id).emit('finished', {
             message: "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
@@ -474,9 +475,10 @@ io.on('connection', (socket) => {
     socket.on('update user pool', (data) => {
       if(!userPool.byID(socket.id)) {
         console.log("***USER UNDEFINED*** in update user pool ..this would crash out thing but haha whatever")
+        console.log('SOCKET ID: ' + socket.id)
         return; 
       }//PK: quick fix
-      if(!user.connected) {
+      if(!userPool.byID(socket.id).connected) {
         console.log("block ***USER NOT CONNECTED*** in update user pool")
         return;
       }
@@ -491,6 +493,7 @@ io.on('connection', (socket) => {
       let user = users.byID(socket.id)//PK: this used to have no 'let'
       if(!user) {
         console.log("***USER UNDEFINED*** in new message ..this would crash out thing but haha whatever")
+        console.log('SOCKET ID: ' + socket.id)
         return; 
       }
       if(!user.connected) {
@@ -518,6 +521,7 @@ io.on('connection', (socket) => {
       let user = users.byID(socket.id)//PK: this used to have no 'let'
       if(!user) {
         console.log("***USER UNDEFINED*** in new checkin ..this would crash out thing but haha whatever")
+        console.log('SOCKET ID: ' + socket.id)
         return; 
       }
       if(!user.connected) {
@@ -650,6 +654,7 @@ io.on('connection', (socket) => {
       let user = users.byID(socket.id)
       if(!user) {
         console.log("***USER UNDEFINED*** in 'next event'..this would crash out thing but haha whatever")
+        console.log('SOCKET ID: ' + socket.id)
         return; 
       }//PK: quick fix, next event still called for 'user' never added to users, come back to this
       if(!user.connected) {
@@ -758,11 +763,12 @@ io.on('connection', (socket) => {
 
     // Main experiment run
     socket.on('ready', function (data) {
-      if(!users.byID(socket.id).) {
+      if(!users.byID(socket.id)) {
         console.log("***USER UNDEFINED*** in ready ..this would crash out thing but haha whatever")
+        console.log('SOCKET ID: ' + socket.id)
         return; 
       }
-      if(!user.connected) {
+      if(!users.byID(socket.id)f.connected) {
         console.log("block ***USER NOT CONNECTED*** in ready")
         return;
       }
