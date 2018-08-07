@@ -528,6 +528,7 @@ const launchBang = () => {
         expireActiveHits(currentHitId3);
       }
       clearTimeout();
+      break;
     }
    }, 1000 * 60 * timeActive * delay)
 }
