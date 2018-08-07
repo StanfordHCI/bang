@@ -263,7 +263,7 @@ io.on('connection', (socket) => {
     })
 
     socket.on('accepted HIT', data => {
-      if(users.length === teamSize ** 2) {
+      if(users.length === teamSize ** 2) { //this is equivalent to "experiment has started"
         if (emailingWorkers) {
           io.in(socket.id).emit('finished', {
             message: "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
