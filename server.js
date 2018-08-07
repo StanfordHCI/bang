@@ -334,6 +334,7 @@ io.on('connection', (socket) => {
       if(waitChatOn) updateUsersActive();
       const usersActive = getPoolUsersActive();
       console.log("Users active: " + usersActive.length)
+      console.log("Users connected: " + getPoolUsersConnected().length)
       console.log("Users in pool: " + userPool.length)
       if(waitChatOn){
         if(usersActive.length >= teamSize ** 2) {
