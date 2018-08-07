@@ -10,12 +10,12 @@ const roundMinutes = process.env.ROUND_MINUTES
 //MAKE SURE secondsToWait > secondsSinceResponse
 const secondsToWait = 60 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
 const secondsSinceResponse = 59 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
-const secondsToHold1 = 720 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
-const secondsToHold2 = 90 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
+const secondsToHold1 = 2000 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
+const secondsToHold2 = 500 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = true
+const issueBonusesNow = false
 const emailingWorkers = true
 
 const cleanHITs = false
@@ -33,7 +33,7 @@ const randomRoundOrder = false
 const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = true
 const starterSurveyOn = false
-const midSurveyOn = false
+const midSurveyOn = true
 const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
@@ -159,6 +159,12 @@ if (cleanHITs){
   })
 }
 if (runExperimentNow){ mturk.launchBang() }
+
+
+//console.log('running notify')
+//mturk.notify();
+
+
 
 //Add more products
 let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
@@ -465,6 +471,7 @@ io.on('connection', (socket) => {
     })
 
     socket.on('update user pool', (data) => {
+      if(!userPool.byID(socket.id)) return;//PK: quick fix
       userPool.byID(socket.id).timeLastActivity = data.time;
       updateUserPool()
     });
