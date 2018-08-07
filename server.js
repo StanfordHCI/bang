@@ -262,7 +262,7 @@ io.on('connection', (socket) => {
     })
 
     socket.on('accepted HIT', data => {
-      if(users.length === teamSize ** 2) {
+      if(users.length === teamSize ** 2) { //this is equivalent to "experiment has started"
         if (emailingWorkers) {
           io.in(socket.id).emit('finished', {
             message: "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
@@ -758,7 +758,7 @@ io.on('connection', (socket) => {
 
     // Main experiment run
     socket.on('ready', function (data) {
-      if(!users.byID(socket.id).) {
+      if(!users.byID(socket.id)) {
         console.log("***USER UNDEFINED*** in ready ..this would crash out thing but haha whatever")
         return; 
       }
