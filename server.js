@@ -472,9 +472,13 @@ io.on('connection', (socket) => {
 
     socket.on('update user pool', (data) => {
       if(!userPool.byID(socket.id)) {
-        console.log("***USER UNDEFINED*** [line 468] in 'update user pool' ..this would crash out thing but haha it's okay")
+        console.log("***USER UNDEFINED*** in update user pool ..this would crash out thing but haha whatever")
         return; 
       }//PK: quick fix
+      if(!user.connected) {
+        console.log("block ***USER NOT CONNECTED*** in update user pool")
+        return;
+      }
       userPool.byID(socket.id).timeLastActivity = data.time;
       updateUserPool()
     });
@@ -485,8 +489,12 @@ io.on('connection', (socket) => {
     socket.on('new message', function (message) {
       let user = users.byID(socket.id)//PK: this used to have no 'let'
       if(!user) {
-        console.log("***USER UNDEFINED*** [line 481] in 'new message' ..this would crash out thing but haha it's okay")
+        console.log("***USER UNDEFINED*** in new message ..this would crash out thing but haha whatever")
         return; 
+      }
+      if(!user.connected) {
+        console.log("block ***USER NOT CONNECTED*** in new message")
+        return;
       }
       let cleanMessage = message;
       users.forEach(u => { cleanMessage = aliasToID(u, cleanMessage)});
@@ -508,8 +516,12 @@ io.on('connection', (socket) => {
     socket.on('new checkin', function (value) {
       let user = users.byID(socket.id)//PK: this used to have no 'let'
       if(!user) {
-        console.log("***USER UNDEFINED*** [line 503] in 'new checkin' ..this would crash out thing but haha it's okay")
+        console.log("***USER UNDEFINED*** in new checkin ..this would crash out thing but haha whatever")
         return; 
+      }
+      if(!user.connected) {
+        console.log("block ***USER NOT CONNECTED*** in new checkin")
+        return;
       }
       //^new
       console.log(socket.username + "checked in with value " + value);
@@ -636,9 +648,13 @@ io.on('connection', (socket) => {
     socket.on("next event", (data) => {
       let user = users.byID(socket.id)
       if(!user) {
-        console.log("***USER UNDEFINED*** [line 631] in 'next event'..this would crash out thing but haha it's okay")
+        console.log("***USER UNDEFINED*** in 'next event'..this would crash out thing but haha whatever")
         return; 
       }//PK: quick fix, next event still called for 'user' never added to users, come back to this
+      if(!user.connected) {
+        console.log("block ***USER NOT CONNECTED*** in 'next event'")
+        return;
+      }
       let currentEvent = user.currentEvent;
       let eventSchedule = user.eventSchedule;
       console.log ("Event " + currentEvent + ": " + eventSchedule[currentEvent] + " | User: " + user.name)
@@ -742,8 +758,12 @@ io.on('connection', (socket) => {
     // Main experiment run
     socket.on('ready', function (data) {
       if(!users.byID(socket.id).) {
-        console.log("***USER UNDEFINED*** [line 745] in 'ready'..this would crash out thing but haha it's okay")
+        console.log("***USER UNDEFINED*** in ready ..this would crash out thing but haha whatever")
         return; 
+      }
+      if(!user.connected) {
+        console.log("block ***USER NOT CONNECTED*** in ready")
+        return;
       }
       //waits until user ends up on correct link before adding user - repeated code, make function //PK: what does this comment mean/ is it still relevant?
       users.byID(socket.id).ready = true;
