@@ -15,8 +15,8 @@ const secondsToHold2 = 180 //maximum number of seconds of inactivity that we all
 
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = false
-const emailingWorkers = true
+const issueBonusesNow = true
+const emailingWorkers = false
 
 const cleanHITs = false
 const assignQualifications = false
