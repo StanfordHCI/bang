@@ -288,7 +288,8 @@ io.on('connection', (socket) => {
         "mturkId": data.mturkId,
         "turkSubmitTo": data.turkSubmitTo,
         "assignmentId": data.assignmentId,
-        "onCall": waitChatOn ? false : true,
+        "connected": true,
+        "active": waitChatOn ? false : true,
         "timeAdded": data.timeAdded,
         "timeLastActivity": data.timeAdded
       });
@@ -313,15 +314,14 @@ io.on('connection', (socket) => {
     function updateUserPool(){
       if(users.length === teamSize ** 2) return;
 
-      function getUsersOnCall() {return userPool.filter(user => user.onCall)}
       function secondsSince(event) {return (Date.now() - event)/1000}
-      function updateUsersOnCall() {
+      function updateUsersActive() {
         userPool.forEach(user => {
           //PK: rename secondsToWait
           if(secondsSince(user.timeAdded) > secondsToWait && secondsSince(user.timeLastActivity) < secondsSinceResponse) { // PK: make isUserOnCall fxn
-            user.onCall = true;
+            user.active = true;
           } else {
-            user.onCall = false;
+            user.active = false;
           }
           weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - getUsersOnCall().length)) // PK: make isUserInactive fxn
           if (secondsSince(user.timeAdded) > weightedHoldingSeconds || secondsSince(user.timeLastActivity) > secondsToHold2) {
@@ -331,14 +331,14 @@ io.on('connection', (socket) => {
         })
       }
 
-      if(waitChatOn) updateUsersOnCall();
-      const usersOnCall = getUsersOnCall();
-      console.log("Users on call: " + usersOnCall.length)
+      if(waitChatOn) updateUsersActive();
+      const usersActive = getUsersActive();
+      console.log("Users active: " + usersActive.length)
       console.log("Users in pool: " + userPool.length)
       if(waitChatOn){
-        if(usersOnCall.length >= teamSize ** 2) {
-          for(let i = 0; i < usersOnCall.length; i ++){
-            let user = usersOnCall[i];
+        if(usersActive.length >= teamSize ** 2) {
+          for(let i = 0; i < usersActive.length; i ++){
+            let user = usersActive[i];
             if(i < teamSize ** 2) {
               io.in(user.id).emit("echo", "add user");
               io.in(user.id).emit('initiate experiment');
@@ -357,7 +357,7 @@ io.on('connection', (socket) => {
               }
             }
           }
-          userPool.filter(user => !user.onCall).forEach(user => {
+          userPool.filter(user => !user.active).forEach(user => {
             if (emailingWorkers) {
               io.in(user.id).emit('finished', {
                 message: "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
@@ -373,14 +373,14 @@ io.on('connection', (socket) => {
           })
         }
       } else {
-        if(usersOnCall.length >= teamSize ** 2) {
+        if(usersActive.length >= teamSize ** 2) {
           io.sockets.emit('update number waiting', {num: 0});
-          console.log('there are ' + usersOnCall.length + ' users: ' + usersOnCall)
-          for(let i = 0; i < usersOnCall.length; i ++){
-            io.in(usersOnCall[i].id).emit('show chat link');
+          console.log('there are ' + usersActive.length + ' users: ' + usersActive)
+          for(let i = 0; i < usersActive.length; i ++){
+            io.in(usersActive[i].id).emit('show chat link');
           }
         } else {
-          io.sockets.emit('update number waiting', {num: teamSize ** 2 - usersOnCall.length});
+          io.sockets.emit('update number waiting', {num: teamSize ** 2 - usersActive.length});
         }
       }
 
@@ -399,7 +399,7 @@ io.on('connection', (socket) => {
         'ready': false,
         'friends': [],
         'friends_history': [socket.name_structure.parts], // list of aliases to avoid, which includes the user's username//PK: is it okay to store this in the socket?
-        'active': true, //PK: what does user.active mean? is this ever set to false? I want to use 'active' instead of 'onCall' but need to check if this field is still needed
+        'connected': true, //PK: what does user.active mean? is this ever set to false? I want to use 'active' instead of 'onCall' but need to check if this field is still needed
         'eventSchedule': eventSchedule,
         'currentEvent': 0,
         'results':{
@@ -527,28 +527,29 @@ io.on('connection', (socket) => {
 
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
-        // if the user had accepted, removes them from the array of accepted users
+        // changes connected to false of disconnected user in userPool
         console.log("Disconnecting socket: " + socket.id)
         if (userPool.find(function(element) {return element.id == socket.id})) {
           console.log('There was a disconnect');
-          userPool = userPool.filter(user => user.id != socket.id);
-          let usersOnCall = userPool.filter(user => user.onCall) //PK: use the fxn
-          if(usersOnCall.length >= teamSize ** 2) {
+          //userPool = userPool.filter(user => user.id != socket.id);
+          userPool.byID(socket.id).connected = false;
+          let usersActive = getUsersActive() 
+          if(usersActive.length >= teamSize ** 2) {
             io.sockets.emit('update number waiting', {num: 0});
           } else {
-            io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersOnCall.length});
+            io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersActive.length});
           }
 
-          mturk.setAssignmentsPending(userPool.length)
+          mturk.setAssignmentsPending(getUsersConnected())
         }
 
-        if (!users.every(user => socket.id !== user.id)) {
-          users.byID(socket.id).active = false //set user to inactive
+        if (!users.every(user => socket.id !== user.id)) {//socket id is found in users
+          users.byID(socket.id).connected = false //set user to disconnected
           users.byID(socket.id).ready = false //set user to not ready
           if (!suddenDeath) {users.byID(socket.id).ready = true}
 
           // update DB with change
-          updateUserInDB(socket,'active',false)
+          updateUserInDB(socket,'connected',false)
 
           if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
@@ -732,7 +733,7 @@ io.on('connection', (socket) => {
           message: "Thanks for participating, you're all done!",
           finishingCode: socket.id,
           turkSubmitTo: mturk.submitTo,
-          assignmentId: user.assignmentId
+          assignmentId: user.assignmentIdd
         })
       }
       user.currentEvent += 1
@@ -740,6 +741,10 @@ io.on('connection', (socket) => {
 
     // Main experiment run
     socket.on('ready', function (data) {
+      if(!users.byID(socket.id).) {
+        console.log("***USER UNDEFINED*** [line 745] in 'ready'..this would crash out thing but haha it's okay")
+        return; 
+      }
       //waits until user ends up on correct link before adding user - repeated code, make function //PK: what does this comment mean/ is it still relevant?
       users.byID(socket.id).ready = true;
       console.log(socket.username, 'is ready');
@@ -776,7 +781,7 @@ io.on('connection', (socket) => {
           u.room = roomName
           u.rooms.push(roomName)
           u.ready = false //return users to unready state
-          if (!suddenDeath && !u.active) {u.ready = true}
+          if (!suddenDeath && !u.connected) {u.ready = true}
           console.log(u.name, '-> room', u.room);
         })
       })
@@ -866,12 +871,11 @@ io.on('connection', (socket) => {
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
     if (emailingWorkers) {
-        socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions."})
+      socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions."})
     }
     else {
-        socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has finished early. You will be compensated by clicking submit below."})
+      socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has finished early. You will be compensated by clicking submit below."})
     }
-        console.log("Sockets active: " + Object.keys(io.sockets.sockets));
   });
 
   // Starter task
@@ -1008,6 +1012,11 @@ io.on('connection', (socket) => {
   }
 
 });
+
+// return subset of userPool
+function getUsersConnected() {return userPool.filter(user => user.connected)}
+function getUsersActive() {return userPool.filter(user => user.active && user.connected)}
+
 
 //replaces user.friend aliases with corresponding user IDs
 function aliasToID(user, newString) {

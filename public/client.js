@@ -902,7 +902,7 @@ $(function() {
         $("#submitButton_finish").before(input); //appendChild
       }
     }
-    // socket.disconnect(true);
+    socket.disconnect(true);
   })
 
   $('#mturk_form').submit( (event) => {
