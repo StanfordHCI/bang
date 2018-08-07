@@ -461,7 +461,7 @@ io.on('connection', (socket) => {
                     'tAlias': u.name }
             }
           });
-          console.log(user.mturkID)
+          console.log(user.mturkId)
         })
       }
 
