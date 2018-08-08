@@ -30,7 +30,7 @@ const multipleHITs = false // cross-check with mturkTools.js
 const randomCondition = false
 const randomRoundOrder = false
 
-const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = false
 const IRBOn = true
 const starterSurveyOn = false
@@ -64,11 +64,9 @@ const IRBFile = txt + 'IRB.txt'
 const leaveHitFile = txt + "leave-hit-q.txt"
 
 // Answer Option Sets
-const IRB = {answers: ['Agree', 'Disagree and exit the study'], answerType: 'radio', textValue: true}
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
 const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
 const leaveHitAnswers = {answers: ['End Task and Send Feedback', 'Return to Task'], answerType: 'radio', textValue: false}
-const IRBAnswers= {answers: ['Agree', 'Disagree, leave task now'], answerType: 'radio', textValue: false}
 
 
 // Setup basic express server
@@ -1042,8 +1040,6 @@ io.on('connection', (socket) => {
         answerObj = answers;
       } else if (answerTag === "YN") { // yes no
         answerObj = binaryAnswers;
-      } else if (answerTag === "AD") { // agree, disagree
-        answerObj = IRB;
       } else if (answerTag === "TR") { //team radio
         answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio', textValue: false};
       } else if (answerTag === "TC") { //team checkbox
