@@ -105,7 +105,7 @@ $(function() {
   //Check if user has accepted based on URL. Store URL variables.
   let URL = location.href
   let URLvars = {}
-  if (URL.includes("other")){
+  if (URL.includes("god")){
     URLvars.assignmentId = "ASSIGNMENT_ID_NOT_AVAILABLE"
   } else { URLvars = getUrlVars(location.href) }
 
