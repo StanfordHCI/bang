@@ -15,7 +15,7 @@ const secondsToHold2 = 180 //maximum number of seconds of inactivity that we all
 
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = false
+const issueBonusesNow = true
 const emailingWorkers = false
 
 const cleanHITs = false
@@ -30,15 +30,15 @@ const multipleHITs = false // cross-check with mturkTools.js
 const randomCondition = false
 const randomRoundOrder = false
 
-const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
-const psychologicalSafetyOn = false
+const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
+const psychologicalSafetyOn = true
 const starterSurveyOn = false
-const midSurveyOn = false
-const blacklistOn = false
+const midSurveyOn = true
+const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
-const requiredOn = false
+const requiredOn = true
 const checkinIntervalMinutes = roundMinutes/30
 
 //Testing toggles
@@ -220,9 +220,11 @@ app.use(express.static('public'));
 
 // Disconnect leftover users
 Object.keys(io.sockets.sockets).forEach(socketID => {
+  console.log(socketID)
   if (userPool.every(user => {return user.id !== socketID})) {
     console.log("Removing dead socket: " + socketID);
     io.in(socketID).emit('get IDs', 'broken');
+    io.in(socketID).disconnect(true)
   }
 });
 
@@ -844,7 +846,7 @@ io.on('connection', (socket) => {
         if (autocompleteTestOn) {
           let teamNames = [tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username]
           console.log(teamNames)
-          io.in(user.id).emit('initiate round', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//rounds are 0 indexed
+          io.in(user.id).emit('initiate round', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1, runningLive: runningLive})//rounds are 0 indexed
         } else {
           // Dynamically generate teammate names
           // even if teamSize = 1 for testing, this still works
