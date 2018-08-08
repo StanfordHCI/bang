@@ -246,7 +246,7 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
 }); // eventSchedule instead of all of the toggles? (missing checkinOn) //PK: what does this comment mean?
 
 // Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
-setTimeout(HandleMultipleHits(), 1000 * 12)
+setTimeout(HandleMultipleHits, 1000 * 12)
 
 // Chatroom
 io.on('connection', (socket) => {
@@ -264,8 +264,8 @@ io.on('connection', (socket) => {
     socket.on('accepted HIT', data => {
       if(users.length === teamSize ** 2) { //this is equivalent to "experiment has started"
         HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
-          ifNotEmailMessage = "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
-          finishingCode = socket.id, turkSubmitTo = mturk.submitTo, assignmentId = data.assignmentId)
+            ifNotEmailMessage = "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
+            finishingCode = socket.id, turkSubmitTo = mturk.submitTo, assignmentId = data.assignmentId)
         return;
       }
       userPool.push({
@@ -289,7 +289,7 @@ io.on('connection', (socket) => {
           }
         });
         var timeNow = new Date(Date.now())
-        console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.getMinutes(), "minutes and", timeNow.getSeconds(), " seconds on the hour.")
+        console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.getHours()+":"+timeNow.getMinutes()+":"+timeNow.getSeconds()+".")
         console.log("Sockets active: " + Object.keys(io.sockets.sockets));
         updateUserPool();
     })
@@ -940,6 +940,28 @@ io.on('connection', (socket) => {
     return questions
   }
 
+  function HandleFinishAndEmailWorkers(ifEmailMessage, ifNotEmailMessage,
+    finishingCode, turkSubmitTo, assignmentId) {
+    if (emailingWorkers) {
+      io.in(socket.id).emit('finished', {
+        message: ifEmailMessage,
+        finishingCode: finishingCode,
+        turkSubmitTo: turkSubmitTo,
+        assignmentId: assignmentId,
+        crashed: false
+      })
+    }
+    else {
+      io.in(socket.id).emit('finished', {
+        message: ifNotEmailMessage,
+        finishingCode: finishingCode,
+        turkSubmitTo: turkSubmitTo,
+        assignmentId: assignmentId,
+        crashed: false
+      })
+    }
+  }
+
 });
 
 // return subset of userPool
@@ -1058,24 +1080,3 @@ function HandleMultipleHits() {
   }
 }
 
-function HandleFinishAndEmailWorkers(ifEmailMessage, ifNotEmailMessage,
-  finishingCode, turkSubmitTo, assignmentId) {
-  if (emailingWorkers) {
-    io.in(socket.id).emit('finished', {
-      message: ifEmailMessage,
-      finishingCode: finishingCode,
-      turkSubmitTo: turkSubmitTo,
-      assignmentId: assignmentId,
-      crashed: false
-    })
-  }
-  else {
-    io.in(socket.id).emit('finished', {
-      message: ifNotEmailMessage,
-      finishingCode: finishingCode,
-      turkSubmitTo: turkSubmitTo,
-      assignmentId: assignmentId,
-      crashed: false
-    })
-  }
-}
