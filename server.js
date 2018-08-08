@@ -1052,6 +1052,8 @@ io.on('connection', (socket) => {
 function getPoolUsersConnected() {return userPool.filter(user => user.connected)}
 function getPoolUsersActive() {return userPool.filter(user => user.active && user.connected)}
 
+// return subset of users
+function getUsersConnected() {return users.filter(user => user.connected)}
 
 //replaces user.friend aliases with corresponding user IDs
 function aliasToID(user, newString) {
