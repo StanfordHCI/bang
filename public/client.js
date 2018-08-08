@@ -5,7 +5,7 @@ $(function() {
   let colorAssignment = []
 
   //toggles
-  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -78,6 +78,15 @@ $(function() {
     $finishingPage.hide();
     $chatLink.hide();
   };
+
+  const HandleFinish = (finishingMessage, mturk_form, assignmentId, finishingcode) => {
+    hideAll();
+    $finishingPage.show();
+    document.getElementById("finishingMessage").innerHTML = finishingMessage;
+    document.getElementById("mturk_form").action = mturk_form;
+    document.getElementById("assignmentId").value = assignmentId;
+    finishingcode.value = "LeftHit"
+  }
 
   let holdingUsername = document.getElementById('username');
   let messagesSafe = document.getElementsByClassName('messages')[0];
@@ -833,14 +842,11 @@ $(function() {
     let feedbackMessage = $('#leavetaskfeedbackInput').val();
 
     if (feedbackMessage.length > 10) {
-      hideAll();
-      $finishingPage.show();
-      document.getElementById("finishingMessage").innerHTML = "You terminated the HIT. Thank you for your time."
-      document.getElementById("mturk_form").action = mturkVariables.turkSubmitTo + "/mturk/externalSubmit"
-      document.getElementById("assignmentId").value = mturkVariables.assignmentId
-      finishingcode.value = "LeftHit"
+      HandleFinish(finishingMessage = "You terminated the HIT. Thank you for your time.",
+          mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
+          assignmentId = mturkVariables.assignmentId, finishingcode = "LeftHit");
       socket.emit('mturk_formSubmit', feedbackMessage)
-      socket.close();
+      socket.disconnect(true);
       $('#leave-hit-form')[0].reset();
     }
   })
@@ -851,6 +857,22 @@ $(function() {
     $currentInput = $inputMessage.focus();
     $currentInput.focus();
     $('#leave-hit-form')[0].reset();
+  })
+
+  $("#IRB-leave-hit-submit").click((event) => {
+    event.preventDefault() //stops page reloading
+    console.log("Yo you disagreed go away")
+    HandleFinish(finishingMessage = "You disagreed with our terms and conditions, and we are unable to let you proceed with this HIT. Thank you for your time.", 
+        mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit", 
+        assignmentId = mturkVariables.assignmentId, finishingcode = "LeftHit");
+    socket.disconnect(true);
+  })
+
+  $("#IRB-return-task-submit").click((event) => {
+    event.preventDefault(); //stops page reloading
+    $IRB.hide(); 
+    $holdingPage.show();
+    socket.emit('next event');
   })
 
   // $('#leave-hit-form').submit((event) => {
@@ -906,12 +928,8 @@ $(function() {
   });
 
   socket.on('finished',data => {
-    hideAll();
-    $finishingPage.show();
-    document.getElementById("finishingMessage").innerHTML = data.message
-    document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
-    document.getElementById("assignmentId").value = mturkVariables.assignmentId
-    finishingcode.value = data.finishingCode
+    HandleFinish(finishingMessage = data.message, mturk_form = data.turkSubmitTo + "/mturk/externalSubmit", 
+        assignmentId = mturkVariables.assignmentId, finishingcode = data.finishingCode);
     if (data.crashed) {
       if ($('#engagementfeedbackInput').length === 0) { //make sure element hasn't been already created
         let input = document.createElement("textarea");
@@ -978,6 +996,7 @@ const decodeURL = (toDecode) => {
   var encoded = toDecode;
   return unescape(encoded.replace(/\+/g,  " "));
 }
+
 
 var LeavingAlert = false;
 if (LeavingAlert) {

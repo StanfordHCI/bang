@@ -30,7 +30,7 @@ const multipleHITs = false // cross-check with mturkTools.js
 const randomCondition = false
 const randomRoundOrder = false
 
-const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = false
 const IRBOn = true
 const starterSurveyOn = false
