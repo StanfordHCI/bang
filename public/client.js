@@ -38,6 +38,10 @@ $(function() {
   const $finishingPage = $('#finishing'); // The finishing page
   const botUsername = 'helperBot'
 
+  $('#ready-to-all').click( (event) => {
+    console.log("Got ready to all button.");
+    socket.emit('ready-to-all',{})
+  })
 
   Vue.component('question-component', {
     template: `
@@ -99,7 +103,12 @@ $(function() {
   let $currentInput = $inputMessage.focus();
 
   //Check if user has accepted based on URL. Store URL variables.
-  const URLvars = getUrlVars(location.href)
+  let URL = location.href
+  let URLvars = {}
+  if (URL.includes("god")){
+    URLvars.assignmentId = "ASSIGNMENT_ID_NOT_AVAILABLE"
+  } else { URLvars = getUrlVars(location.href) }
+
   if (URLvars.assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
     $lockPage.show(); //prompt user to accept HIT
   } else { // tell the server that the user has accepted the HIT - server then adds this worker to array of accepted workers
@@ -425,7 +434,7 @@ $(function() {
   // Socket events
   socket.on('chatbot', data => {
     const questions = data
-    // const questionIndex = permute(questions.length)
+    const questionIndex = permute(questions.length - 1).concat([questions.length])
     let index = 0;
     let typingTimer;
     let doneTypingInterval = 1000;
@@ -451,7 +460,7 @@ $(function() {
           answered = false;
 
           if(index < questions.length) {
-            let q = questions[index].question
+            let q = questions[questionIndex[index]].question
             addChatMessage({username:botUsername, message:q})
             index++
           } else {
@@ -607,6 +616,7 @@ $(function() {
     $leaveHitButton.show();
     $headerbarPage.show();
     $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
+    LeavingAlert = data.runningLive; //leaving alert for users if running live
 
     setTimeout(()=>{
       log(data.task)
@@ -694,8 +704,8 @@ $(function() {
 
       });
 
-      // initiate spell check after space is hit
-      if (event.keyCode === $.ui.keyCode.SPACE) {
+      // initiate spell check after space or enter is hit
+      if (event.keyCode === $.ui.keyCode.SPACE || event.keyCode === $.ui.keyCode.ENTER) {
         let terms_typed = $("#inputMessage").val().split(" ");
         let currentTerm = terms_typed.pop();
         let fuzzyMatches = [];

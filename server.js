@@ -8,18 +8,18 @@ const roundMinutes = process.env.ROUND_MINUTES
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
-const secondsToWait = 60 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
-const secondsSinceResponse = 59 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
+const secondsToWait = 70 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+const secondsSinceResponse = 60 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
 const secondsToHold1 = 720 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
 const secondsToHold2 = 180 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = false
+const issueBonusesNow = true
 const emailingWorkers = false
 
 const cleanHITs = false
-const assignQualifications = false
+const assignQualifications = true
 const debugMode = !runningLive
 
 const suddenDeath = false
@@ -31,14 +31,14 @@ const randomCondition = false
 const randomRoundOrder = false
 
 const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
-const psychologicalSafetyOn = false
+const psychologicalSafetyOn = true
 const starterSurveyOn = false
-const midSurveyOn = false
-const blacklistOn = false
+const midSurveyOn = true
+const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
-const requiredOn = false
+const requiredOn = true
 const checkinIntervalMinutes = roundMinutes/30
 
 //Testing toggles
@@ -66,6 +66,7 @@ const leaveHitFile = txt + "leave-hit-q.txt"
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
 const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
 const leaveHitAnswers = {answers: ['End Task and Send Feedback', 'Return to Task'], answerType: 'radio', textValue: false}
+
 
 // Setup basic express server
 let tools = require('./tools');
@@ -219,9 +220,11 @@ app.use(express.static('public'));
 
 // Disconnect leftover users
 Object.keys(io.sockets.sockets).forEach(socketID => {
+  console.log(socketID)
   if (userPool.every(user => {return user.id !== socketID})) {
     console.log("Removing dead socket: " + socketID);
     io.in(socketID).emit('get IDs', 'broken');
+    io.in(socketID).disconnect(true)
   }
 });
 
@@ -442,7 +445,7 @@ io.on('connection', (socket) => {
       updateUserPool()
     });
 
-    socket.on('log', string => { console.log(string); });
+    socket.on('log', data => { console.log(data); });
 
     //Route messages
     socket.on('new message', function (message) {
@@ -503,8 +506,6 @@ io.on('connection', (socket) => {
         // changes connected to false of disconnected user in userPool
         console.log("Disconnecting socket: " + socket.id)
         if (userPool.find(function(element) {return element.id == socket.id})) {
-          console.log('There was a disconnect');
-          //userPool = userPool.filter(user => user.id != socket.id);
           userPool.byID(socket.id).connected = false;
           let usersActive = getPoolUsersActive()
           if(usersActive.length >= teamSize ** 2) {
@@ -525,7 +526,7 @@ io.on('connection', (socket) => {
           updateUserInDB(socket,'connected',false)
 
           if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
-
+          console.log("Connected users: " + getUsersConnected().length);
           if (!experimentOver && suddenDeath && experimentStarted){//PK: what does this if condition mean
             // Start cancel process
 
@@ -577,6 +578,11 @@ io.on('connection', (socket) => {
         //users = users.filter(user => user.id != socket.id); // PK: now users should contain only teamSize ** 2 users (the exact amt for exp), come back when not brain dead
 
     });
+
+    socket.on('ready-to-all', (data) => {
+      console.log("god is ready");
+      io.sockets.emit('echo','ready')
+    })
 
     socket.on("next event", (data) => {
       let user = users.byID(socket.id)
@@ -738,14 +744,15 @@ io.on('connection', (socket) => {
         if (autocompleteTestOn) {
           let teamNames = [tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username]
           console.log(teamNames)
-          io.in(user.id).emit('initiate round', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//rounds are 0 indexed
+          io.in(user.id).emit('initiate round', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1, runningLive: runningLive})//rounds are 0 indexed
         } else {
           // Dynamically generate teammate names
           // even if teamSize = 1 for testing, this still works
-          let team_Aliases = tools.makeName(teamSize - 1, user.friends_history)
-          user.friends_history = user.friends_history.concat(team_Aliases)
 
-          let teamMates = user.friends.filter(friend => { return (users.byID(friend.id)) && (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
+          let teamMates = user.friends.filter(friend => { return (users.byID(friend.id)) && users.byID(friend.id).connected && (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
+
+          let team_Aliases = tools.makeName(teamMates.length, user.friends_history)
+          user.friends_history = user.friends_history.concat(team_Aliases)
           for (i = 0; i < teamMates.length; i++) {
             if (treatmentNow) {
               teamMates[i].tAlias = team_Aliases[i].join("")
@@ -789,14 +796,13 @@ io.on('connection', (socket) => {
         }, 1000 * 60 * 0.1 * roundMinutes)
       }, 1000 * 60 * 0.9 * roundMinutes)
 
-
-      //record start checkin time in db
-      let currentRoom = users.byID(socket.id).room
-      db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
-        if(err) console.log("There's a problem adding a checkin to the DB: ", err);
-        else if(usersAdded) console.log("Checkin added to the DB");
-      });
       if(checkinOn){
+        //record start checkin time in db
+        let currentRoom = users.byID(socket.id).room
+        db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
+          if(err) console.log("There's a problem adding a checkin to the DB: ", err);
+          else if(usersAdded) console.log("Checkin added to the DB");
+        });
         let numPopups = 0;
         let interval = setInterval(() => {
           if(numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
@@ -928,9 +934,9 @@ io.on('connection', (socket) => {
       } else if (answerTag === "YN") { // yes no
         answerObj = binaryAnswers;
       } else if (answerTag === "TR") { //team radio
-        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio', textValue: false};
-      } else if (answerTag === "TC") { //team checkbox
-        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox', textValue: false};
+        answerObj = {answers: ["Team 1", "Team 2", "Team 3"], answerType: 'radio', textValue: true};
+      } else if (answerTag === "MTR") { //team checkbox
+        answerObj = {answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 1 and Team 3"], answerType: 'radio', textValue: true};
       } else if (answerTag === "LH") { //leave hit yn
         answerObj = leaveHitAnswers;
       } else {//chatbot qs
@@ -955,6 +961,8 @@ io.on('connection', (socket) => {
 function getPoolUsersConnected() {return userPool.filter(user => user.connected)}
 function getPoolUsersActive() {return userPool.filter(user => user.active && user.connected)}
 
+// return subset of users
+function getUsersConnected() {return users.filter(user => user.connected)}
 
 //replaces user.friend aliases with corresponding user IDs
 function aliasToID(user, newString) {
