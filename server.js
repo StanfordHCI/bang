@@ -867,6 +867,7 @@ io.on('connection', (socket) => {
         let currentProduct = products[productInt]
         products.splice(productInt, 1)
       } 
+      console.log('Current Product:', currentProduct);
 
       let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
