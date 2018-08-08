@@ -30,7 +30,7 @@ const multipleHITs = false // cross-check with mturkTools.js
 const randomCondition = false
 const randomRoundOrder = false
 
-const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = false
 const IRBOn = true
 const starterSurveyOn = false
@@ -192,9 +192,9 @@ let taskTime = 0;
 
 // Building task list
 let eventSchedule = []
-if (IRBOn) {
-  eventSchedule.push("IRB")
-}
+// if (IRBOn) {
+//   eventSchedule.push("IRB")
+// }
 if (starterSurveyOn) {
   eventSchedule.push("starterSurvey")
 }
@@ -710,12 +710,12 @@ io.on('connection', (socket) => {
         }
         io.in(user.id).emit("load", {element: 'psychologicalSafety', questions: loadQuestions(psychologicalSafetyFile), interstitial: false, showHeaderBar: true});
       }
-       else if (eventSchedule[currentEvent] == "IRB") {
-        if(timeCheckOn) {
-          recordTime("round");
-        }
-        io.in(user.id).emit("load", {element: 'IRB', questions: loadQuestions(IRBFile), interstitial: false, showHeaderBar: true});
-      }
+      //  else if (eventSchedule[currentEvent] == "IRB") {
+      //   if(timeCheckOn) {
+      //     recordTime("round");
+      //   }
+      //   io.in(user.id).emit("load", {element: 'IRB', questions: loadQuestions(IRBFile), interstitial: false, showHeaderBar: true});
+      // }
       else if (eventSchedule[currentEvent] == "teamfeedbackSurvey") {
         if(midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");

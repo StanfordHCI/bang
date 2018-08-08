@@ -5,7 +5,7 @@ $(function() {
   let colorAssignment = []
 
   //toggles
-  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -23,6 +23,8 @@ $(function() {
   const $leaveHitPopup = $('#leave-hit-popup')
 
   const $chatLink = $('#chatLink');
+  const $instructionsInfo = $('#instructions-info'); // Info page 
+  const $IRB = $('#IRB'); // IRB page 
   const $headerbarPage = $('#headerbarPage'); // The finishing page
   const $lockPage = $('#lockPage'); // The page shown before acceptance
   const $waitingPage = $('#waiting'); // The waiting page
@@ -32,8 +34,6 @@ $(function() {
   const $starterSurvey = $('#starterSurvey'); // The starterSurvey page
   const $midSurvey = $('#midSurvey'); // the midSurvey page
   const $psychologicalSafety = $('#psychologicalSafety'); // the psych safety page
-  const $IRB = $('#IRB'); // IRB page 
-
   const $postSurvey = $('#postSurvey'); // The postSurvey page
   const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
   const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
@@ -64,13 +64,14 @@ $(function() {
     $checkinPopup.hide();
     $leaveHitPopup.hide()
     $lockPage.hide();
+    $instructionsInfo.hide();
+    $IRB.hide();
     $waitingPage.hide();
     $chatPage.hide();
     $holdingPage.hide();
     $preSurvey.hide();
     $starterSurvey.hide();
-    $midSurvey.hide();
-    $IRB.hide(); 
+    $midSurvey.hide(); 
     $psychologicalSafety.hide();
     $postSurvey.hide();
     $blacklistSurvey.hide();
@@ -118,23 +119,8 @@ $(function() {
   } else { // tell the server that the user has accepted the HIT - server then adds this worker to array of accepted workers
     mturkVariables = { mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId, timeAdded: (new Date()).getTime()}
     socket.emit('accepted HIT', mturkVariables); //PK: thoughts on setting waitchat toggle in client and sending it to server in this emit?
-    if(waitChatOn){
-      socket.emit('get username')
-
-      $chatPage.show()
-      $headerbarPage.show()
-      $leaveHitButton.hide()
-      addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername +", welcome to our HIT!"})
-      setTimeout(()=> {
-        addChatMessage({username: botUsername, message: "For this first task, I need you to answer a sequence of questions. Thanks for cooperating!"})
-        setTimeout(() => {
-          socket.emit('load bot qs')
-        }, 1000*1)
-
-      }, 1000*.5)
-    } else {
-      $waitingPage.show();
-    }
+    $instructionsInfo.show();
+    
   }
 
   // Get permission to notify
@@ -861,7 +847,6 @@ $(function() {
 
   $("#IRB-leave-hit-submit").click((event) => {
     event.preventDefault() //stops page reloading
-    console.log("Yo you disagreed go away")
     HandleFinish(finishingMessage = "You disagreed with our terms and conditions, and we are unable to let you proceed with this HIT. Thank you for your time.", 
         mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit", 
         assignmentId = mturkVariables.assignmentId, finishingcode = "LeftHit");
@@ -870,9 +855,27 @@ $(function() {
 
   $("#IRB-return-task-submit").click((event) => {
     event.preventDefault(); //stops page reloading
-    $IRB.hide(); 
-    $holdingPage.show();
-    socket.emit('next event');
+    if(waitChatOn){
+      socket.emit('get username')
+      hideAll();
+      $chatPage.show()
+      $headerbarPage.show()
+      $leaveHitButton.hide()
+      addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername +", welcome to our HIT!"})
+      setTimeout(()=> {
+        addChatMessage({username: botUsername, message: "For this first task, I need you to answer a sequence of questions. Thanks for cooperating!"})
+        setTimeout(() => {
+          socket.emit('load bot qs')
+        }, 1000*1)
+
+      }, 1000*.5)
+    } else {
+      hideAll();
+      $waitingPage.show();
+    }
+    // $IRB.hide(); 
+    // $holdingPage.show();
+    // socket.emit('next event');
   })
 
   // $('#leave-hit-form').submit((event) => {
