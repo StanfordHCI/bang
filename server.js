@@ -30,8 +30,9 @@ const multipleHITs = false // cross-check with mturkTools.js
 const randomCondition = false
 const randomRoundOrder = false
 
-const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
-const psychologicalSafetyOn = true
+
+const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
+const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = true
 const blacklistOn = true
@@ -59,7 +60,7 @@ const feedbackFile = txt + "feedback-q.txt"
 const starterSurveyFile = txt + "startersurvey-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
 const botFile = txt + 'botquestions.txt'
-
+const IRBFile = txt + 'IRB.txt'
 const leaveHitFile = txt + "leave-hit-q.txt"
 
 // Answer Option Sets
@@ -122,6 +123,7 @@ const Datastore = require('nedb'),
     db.checkins = new Datastore({ filename:'.data/checkins', autoload: true, timestampData: true});
     db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true, timestampData: true});
     db.psychologicalSafety = new Datastore({ filename:'.data/psychologicalSafety', autoload: true, timestampData: true});
+    db.IRB = new Datastore({ filename:'.data/IRB', autoload: true, timestampData: true});
     db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true, timestampData: true});
     db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true, timestampData: true});
     db.batch = new Datastore({ filename:'.data/batch', autoload: true, timestampData: true});
@@ -190,6 +192,9 @@ let taskTime = 0;
 
 // Building task list
 let eventSchedule = []
+// if (IRBOn) {
+//   eventSchedule.push("IRB")
+// }
 if (starterSurveyOn) {
   eventSchedule.push("starterSurvey")
 }
@@ -231,7 +236,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
 
 
 // Adds Batch data for this experiment. unique batchID based on time/date
-db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn,
+db.batch.insert({'batchID': batchID,'IRBon': IRBOn, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn,
         'teamfeedbackOn': teamfeedbackOn, 'psychologicalSafetyOn' : psychologicalSafetyOn, 'checkinOn': checkinOn, 'conditions': conditions, 'experimentRound': experimentRound,
         'numRounds': numRounds, 'teamSize': teamSize}, (err, usersAdded) => {
     if(err) console.log("There's a problem adding batch to the DB: ", err);
@@ -379,6 +384,7 @@ io.on('connection', (socket) => {
           'starterCheck':[],
           'viabilityCheck':[],
           'psychologicalSafety':[],
+          'IRB':[],
           'manipulationCheck':'',
           'blacklistCheck':'',
           'engagementFeedback': '',
@@ -604,6 +610,12 @@ io.on('connection', (socket) => {
         }
         io.in(user.id).emit("load", {element: 'psychologicalSafety', questions: loadQuestions(psychologicalSafetyFile), interstitial: false, showHeaderBar: true});
       }
+      //  else if (eventSchedule[currentEvent] == "IRB") {
+      //   if(timeCheckOn) {
+      //     recordTime("round");
+      //   }
+      //   io.in(user.id).emit("load", {element: 'IRB', questions: loadQuestions(IRBFile), interstitial: false, showHeaderBar: true});
+      // }
       else if (eventSchedule[currentEvent] == "teamfeedbackSurvey") {
         if(midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
