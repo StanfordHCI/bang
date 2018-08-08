@@ -10,13 +10,13 @@ const roundMinutes = process.env.ROUND_MINUTES
 //MAKE SURE secondsToWait > secondsSinceResponse
 const secondsToWait = 60 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
 const secondsSinceResponse = 59 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
-const secondsToHold1 = 2000 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
-const secondsToHold2 = 500 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
+const secondsToHold1 = 720 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
+const secondsToHold2 = 180 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 
 // Toggles
 const runExperimentNow = true
 const issueBonusesNow = false
-const emailingWorkers = true
+const emailingWorkers = false
 
 const cleanHITs = false
 const assignQualifications = false
@@ -30,15 +30,15 @@ const multipleHITs = false // cross-check with mturkTools.js
 const randomCondition = false
 const randomRoundOrder = false
 
-const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
-const psychologicalSafetyOn = true
+const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
+const psychologicalSafetyOn = false
 const starterSurveyOn = false
-const midSurveyOn = true
+const midSurveyOn = false
 const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
-const requiredOn = true
+const requiredOn = false
 const checkinIntervalMinutes = roundMinutes/30
 
 //Testing toggles
@@ -90,6 +90,7 @@ const conditionsAvailalbe = ['control','treatment','baseline']
 const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
 let treatmentNow = false
 let firstRun = false;
+let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
 
 const roundOrdering = [
   {"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]},
@@ -128,6 +129,7 @@ const Datastore = require('nedb'),
     db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true})
 
 function updateUserInDB(user,field,value) {
+  //PK: safeguard here?
   db.users.update( {id: user.id}, {$set: {field: value}}, {},
     err => console.log(err ? "Err recording "+field+": "+err : "Updated "+field+" "+user.id+"\n"+value+"\n")
   )
@@ -212,7 +214,18 @@ console.log(eventSchedule)
 
 let fullUrl = ''
 
+
 app.use(express.static('public'));
+
+// Disconnect leftover users
+Object.keys(io.sockets.sockets).forEach(socketID => {
+  if (userPool.every(user => {return user.id !== socketID})) {
+    console.log("Removing dead socket: " + socketID);
+    io.in(socketID).emit('get IDs', 'broken');
+  }
+});
+
+
 
 // Adds Batch data for this experiment. unique batchID based on time/date
 db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn,
@@ -262,13 +275,13 @@ io.on('connection', (socket) => {
     })
 
     socket.on('accepted HIT', data => {
-      if(users.length === teamSize ** 2) {
+      if(users.length === teamSize ** 2) { //this is equivalent to "experiment has started"
         if (emailingWorkers) {
           io.in(socket.id).emit('finished', {
             message: "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
             finishingCode: socket.id,
             turkSubmitTo: mturk.submitTo,
-            assignmentId: socket.id,
+            assignmentId: data.assignmentId,
             crashed: false
           })
         }
@@ -277,9 +290,9 @@ io.on('connection', (socket) => {
             message: "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
             finishingCode: socket.id,
             turkSubmitTo: mturk.submitTo,
-            assignmentId: socket.id,
+            assignmentId: data.assignmentId,
             crashed: false
-          })  
+          })
         }
         return;
       }
@@ -288,15 +301,15 @@ io.on('connection', (socket) => {
         "mturkId": data.mturkId,
         "turkSubmitTo": data.turkSubmitTo,
         "assignmentId": data.assignmentId,
-        "onCall": waitChatOn ? false : true,
+        "connected": true,
+        "active": waitChatOn ? false : true,
         "timeAdded": data.timeAdded,
         "timeLastActivity": data.timeAdded
       });
 
-      mturk.setAssignmentsPending(userPool.length)
-      debugLog(userPool, "users accepted currently: " + userPool.length)
+      mturk.setAssignmentsPending(getPoolUsersConnected().length)
+      // debugLog(userPool, "users accepted currently: " + userPool.length)
 
-      // Disconnect leftover users PK: can we do this on start rather than in 'accepted HIT'
         Object.keys(io.sockets.sockets).forEach(socketID => {
           if (userPool.every(user => {return user.id !== socketID})) {
             console.log("Removing dead socket: " + socketID);
@@ -304,26 +317,25 @@ io.on('connection', (socket) => {
           }
         });
         var timeNow = new Date(Date.now())
-        console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment, which was at", timeNow.getMinutes(), "minutes and", timeNow.getSeconds(), "on the hour.")
+        console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.getMinutes(), "minutes and", timeNow.getSeconds(), " seconds on the hour.")
         console.log("Sockets active: " + Object.keys(io.sockets.sockets));
         updateUserPool();
     })
 
     //PK: was there a concurrency reason we used to pass usersAccepted into checkUsersAccepted()
     function updateUserPool(){
-      if(users.length === teamSize ** 2) return;
+      if(users.length === teamSize ** 2) return; //PK: if exp has already started, change to condition on state variable
 
-      function getUsersOnCall() {return userPool.filter(user => user.onCall)}
       function secondsSince(event) {return (Date.now() - event)/1000}
-      function updateUsersOnCall() {
+      function updateUsersActive() {
         userPool.forEach(user => {
           //PK: rename secondsToWait
           if(secondsSince(user.timeAdded) > secondsToWait && secondsSince(user.timeLastActivity) < secondsSinceResponse) { // PK: make isUserOnCall fxn
-            user.onCall = true;
+            user.active = true;
           } else {
-            user.onCall = false;
+            user.active = false;
           }
-          weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - getUsersOnCall().length)) // PK: make isUserInactive fxn
+          weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - getPoolUsersActive().length)) // PK: make isUserInactive fxn
           if (secondsSince(user.timeAdded) > weightedHoldingSeconds || secondsSince(user.timeLastActivity) > secondsToHold2) {
             console.log('removing user because of inactivity:', user.id);
             io.in(user.id).emit('get IDs', 'broken');
@@ -331,18 +343,21 @@ io.on('connection', (socket) => {
         })
       }
 
-      if(waitChatOn) updateUsersOnCall();
-      const usersOnCall = getUsersOnCall();
-      console.log("Users on call: " + usersOnCall.length)
+      if(waitChatOn) updateUsersActive();
+      const usersActive = getPoolUsersActive();
+      console.log("Users active: " + usersActive.length)
+      console.log("Users connected: " + getPoolUsersConnected().length)
       console.log("Users in pool: " + userPool.length)
       if(waitChatOn){
-        if(usersOnCall.length >= teamSize ** 2) {
-          for(let i = 0; i < usersOnCall.length; i ++){
-            let user = usersOnCall[i];
-            if(i < teamSize ** 2) {
+        if(!hasAddedUsers && usersActive.length >= teamSize ** 2) {//if have enough active users and had not added users before
+          hasAddedUsers = true;
+          for(let i = 0; i < usersActive.length; i ++){ //for every active user
+            let user = usersActive[i];
+            if(i < teamSize ** 2) { //take the 1st teamssize **2 users and add them
               io.in(user.id).emit("echo", "add user");
               io.in(user.id).emit('initiate experiment');
-            } else {
+            } else { //else emit finish
+              console.log('EMIT FINISH TO EXTRA ACTIVE WORKER')
               if (emailingWorkers) {
                 io.in(user.id).emit('finished', {
                   message: "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
@@ -353,11 +368,13 @@ io.on('connection', (socket) => {
                 io.in(user.id).emit('finished', {
                   message: "Thanks for participating, you're all done!",
                   finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
-                });    
+                });
               }
             }
           }
-          userPool.filter(user => !user.onCall).forEach(user => {
+          userPool.filter(user => !usersActive.byID(user.id)).forEach(user => {//
+            console.log('EMIT FINISH TO NONACTIVE OR DISCONNECTED WORKER')
+
             if (emailingWorkers) {
               io.in(user.id).emit('finished', {
                 message: "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
@@ -373,14 +390,14 @@ io.on('connection', (socket) => {
           })
         }
       } else {
-        if(usersOnCall.length >= teamSize ** 2) {
+        if(usersActive.length >= teamSize ** 2) {
           io.sockets.emit('update number waiting', {num: 0});
-          console.log('there are ' + usersOnCall.length + ' users: ' + usersOnCall)
-          for(let i = 0; i < usersOnCall.length; i ++){
-            io.in(usersOnCall[i].id).emit('show chat link');
+          console.log('there are ' + usersActive.length + ' users: ' + usersActive)
+          for(let i = 0; i < usersActive.length; i ++){
+            io.in(usersActive[i].id).emit('show chat link');
           }
         } else {
-          io.sockets.emit('update number waiting', {num: teamSize ** 2 - usersOnCall.length});
+          io.sockets.emit('update number waiting', {num: teamSize ** 2 - usersActive.length});
         }
       }
 
@@ -399,7 +416,7 @@ io.on('connection', (socket) => {
         'ready': false,
         'friends': [],
         'friends_history': [socket.name_structure.parts], // list of aliases to avoid, which includes the user's username//PK: is it okay to store this in the socket?
-        'active': true, //PK: what does user.active mean? is this ever set to false? I want to use 'active' instead of 'onCall' but need to check if this field is still needed
+        'connected': true, //PK: what does user.active mean? is this ever set to false? I want to use 'active' instead of 'onCall' but need to check if this field is still needed
         'eventSchedule': eventSchedule,
         'currentEvent': 0,
         'results':{
@@ -418,13 +435,13 @@ io.on('connection', (socket) => {
       };
     }
     socket.on('add user', data => {
-      if (users.length === teamSize ** 2) { //fix money - is this fixed -PK//PK: changed from if enoughPeople to if users.length === teamSize **2 or will this cause concurrency issues (js single threaded?)
+      if (users.length === teamSize ** 2) { // PK: if experiment has already started, change to condition on state variable
         if (emailingWorkers) {
           io.in(socket.id).emit('finished', {
             message: "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
             finishingCode: socket.id,
             turkSubmitTo: mturk.submitTo,
-            assignmentId: socket.id,
+            assignmentId: data.assignmentId,
             crashed: false
           })
         }
@@ -433,18 +450,23 @@ io.on('connection', (socket) => {
             message: "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
             finishingCode: socket.id,
             turkSubmitTo: mturk.submitTo,
-            assignmentId: socket.id,
+            assignmentId: data.assignmentId,
             crashed: false
-          })  
+          })
         }
         return;
       }
-
-      const newUser = makeUser(userPool.byID(socket.id));
+//PK: should i add a quick fix here?
+      if(users.byID(socket.id)){
+        console.log('ERR: ADDING A USER ALREADY IN USERS')
+      }
+      let newUser = makeUser(userPool.byID(socket.id));
       users.push(newUser)
       console.log(newUser.name + " added to users.\n" + "Total users: " + users.length)
       //add friends for each user once the correct number of users is reached
       if(users.length === teamSize **2){
+        debugLog(userPool, "USER POOL: " + userPool.length)
+        console.log('MTURK IDS: ')
         users.forEach(user => { //mutate the friend list of each user
           user.friends = users.map(u => { //create the alias through which each user sees every other user
             if (user.id != u.id) {
@@ -458,6 +480,7 @@ io.on('connection', (socket) => {
                     'tAlias': u.name }
             }
           });
+          console.log(user.mturkId)
         })
       }
 
@@ -471,7 +494,15 @@ io.on('connection', (socket) => {
     })
 
     socket.on('update user pool', (data) => {
-      if(!userPool.byID(socket.id)) return;//PK: quick fix
+      if(!userPool.byID(socket.id)) {
+        console.log("***USER UNDEFINED*** in update user pool ..this would crash our thing but haha whatever")
+        console.log('SOCKET ID: ' + socket.id)
+        return;
+      }//PK: quick fix
+      if(!userPool.byID(socket.id).connected) {
+        console.log("block ***USER NOT CONNECTED*** in update user pool")
+        return;
+      }
       userPool.byID(socket.id).timeLastActivity = data.time;
       updateUserPool()
     });
@@ -480,8 +511,16 @@ io.on('connection', (socket) => {
 
     //Route messages
     socket.on('new message', function (message) {
-      user = users.byID(socket.id)
-      if(!user) return;
+      let user = users.byID(socket.id)//PK: this used to have no 'let'
+      if(!user) {
+        console.log("***USER UNDEFINED*** in new message ..this would crash out thing but haha whatever")
+        console.log('SOCKET ID: ' + socket.id)
+        return;
+      }
+      if(!user.connected) {
+        console.log("block ***USER NOT CONNECTED*** in new message")
+        return;
+      }
       let cleanMessage = message;
       users.forEach(u => { cleanMessage = aliasToID(u, cleanMessage)});
 
@@ -500,6 +539,17 @@ io.on('connection', (socket) => {
 
     //when the client emits 'new checkin', this listens and executes
     socket.on('new checkin', function (value) {
+      let user = users.byID(socket.id)//PK: this used to have no 'let'
+      if(!user) {
+        console.log("***USER UNDEFINED*** in new checkin ..this would crash out thing but haha whatever")
+        console.log('SOCKET ID: ' + socket.id)
+        return;
+      }
+      if(!user.connected) {
+        console.log("block ***USER NOT CONNECTED*** in new checkin")
+        return;
+      }
+      //^new
       console.log(socket.username + "checked in with value " + value);
       let currentRoom = users.byID(socket.id).room;
       db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': value, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
@@ -515,31 +565,30 @@ io.on('connection', (socket) => {
 
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
-        // if the user had accepted, removes them from the array of accepted users
+        // changes connected to false of disconnected user in userPool
         console.log("Disconnecting socket: " + socket.id)
         if (userPool.find(function(element) {return element.id == socket.id})) {
-          console.log('There was a disconnect');
-          userPool = userPool.filter(user => user.id != socket.id);
-          let usersOnCall = userPool.filter(user => user.onCall) //PK: use the fxn
-          if(usersOnCall.length >= teamSize ** 2) {
+          userPool.byID(socket.id).connected = false;
+          let usersActive = getPoolUsersActive()
+          if(usersActive.length >= teamSize ** 2) {
             io.sockets.emit('update number waiting', {num: 0});
           } else {
-            io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersOnCall.length});
+            io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersActive.length});
           }
 
-          mturk.setAssignmentsPending(userPool.length)
+          mturk.setAssignmentsPending(getPoolUsersConnected().length)
         }
 
-        if (!users.every(user => socket.id !== user.id)) {
-          users.byID(socket.id).active = false //set user to inactive
+        if (!users.every(user => socket.id !== user.id)) {//socket id is found in users
+          users.byID(socket.id).connected = false //set user to disconnected
           users.byID(socket.id).ready = false //set user to not ready
           if (!suddenDeath) {users.byID(socket.id).ready = true}
 
           // update DB with change
-          updateUserInDB(socket,'active',false)
+          updateUserInDB(socket,'connected',false)
 
           if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
-
+          console.log("Connected users: " + getUsersConnected().length);
           if (!experimentOver && suddenDeath && experimentStarted){//PK: what does this if condition mean
             // Start cancel process
 
@@ -622,7 +671,15 @@ io.on('connection', (socket) => {
 
     socket.on("next event", (data) => {
       let user = users.byID(socket.id)
-      if(!user) return; //PK: quick fix, next event still called for 'user' never added to users, come back to this
+      if(!user) {
+        console.log("***USER UNDEFINED*** in 'next event'..this would crash out thing but haha whatever")
+        console.log('SOCKET ID: ' + socket.id)
+        return;
+      }//PK: quick fix, next event still called for 'user' never added to users, come back to this
+      if(!user.connected) {
+        console.log("block ***USER NOT CONNECTED*** in 'next event'")
+        return;
+      }
       let currentEvent = user.currentEvent;
       let eventSchedule = user.eventSchedule;
       console.log ("Event " + currentEvent + ": " + eventSchedule[currentEvent] + " | User: " + user.name)
@@ -717,7 +774,7 @@ io.on('connection', (socket) => {
           message: "Thanks for participating, you're all done!",
           finishingCode: socket.id,
           turkSubmitTo: mturk.submitTo,
-          assignmentId: user.assignmentId
+          assignmentId: user.assignmentIdd
         })
       }
       user.currentEvent += 1
@@ -725,6 +782,15 @@ io.on('connection', (socket) => {
 
     // Main experiment run
     socket.on('ready', function (data) {
+      if(!users.byID(socket.id)) {
+        console.log("***USER UNDEFINED*** in ready ..this would crash out thing but haha whatever")
+        console.log('SOCKET ID: ' + socket.id)
+        return;
+      }
+      if(!users.byID(socket.id).connected) {
+        console.log("block ***USER NOT CONNECTED*** in ready")
+        return;
+      }
       //waits until user ends up on correct link before adding user - repeated code, make function //PK: what does this comment mean/ is it still relevant?
       users.byID(socket.id).ready = true;
       console.log(socket.username, 'is ready');
@@ -761,7 +827,7 @@ io.on('connection', (socket) => {
           u.room = roomName
           u.rooms.push(roomName)
           u.ready = false //return users to unready state
-          if (!suddenDeath && !u.active) {u.ready = true}
+          if (!suddenDeath && !u.connected) {u.ready = true}
           console.log(u.name, '-> room', u.room);
         })
       })
@@ -781,10 +847,11 @@ io.on('connection', (socket) => {
         } else {
           // Dynamically generate teammate names
           // even if teamSize = 1 for testing, this still works
-          let team_Aliases = tools.makeName(teamSize - 1, user.friends_history)
+
+          let teamMates = user.friends.filter(friend => { return (users.byID(friend.id)) && users.byID(friend.id).connected && (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
+         
+          let team_Aliases = tools.makeName(teamMates.length, user.friends_history)
           user.friends_history = user.friends_history.concat(team_Aliases)
-          
-          let teamMates = user.friends.filter(friend => { return (users.byID(friend.id)) && (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
           for (i = 0; i < teamMates.length; i++) {
             if (treatmentNow) {
               teamMates[i].tAlias = team_Aliases[i].join("")
@@ -828,14 +895,13 @@ io.on('connection', (socket) => {
         }, 1000 * 60 * 0.1 * roundMinutes)
       }, 1000 * 60 * 0.9 * roundMinutes)
 
-
-      //record start checkin time in db
-      let currentRoom = users.byID(socket.id).room
-      db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
-        if(err) console.log("There's a problem adding a checkin to the DB: ", err);
-        else if(usersAdded) console.log("Checkin added to the DB");
-      });
       if(checkinOn){
+        //record start checkin time in db
+        let currentRoom = users.byID(socket.id).room
+        db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
+          if(err) console.log("There's a problem adding a checkin to the DB: ", err);
+          else if(usersAdded) console.log("Checkin added to the DB");
+        });
         let numPopups = 0;
         let interval = setInterval(() => {
           if(numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
@@ -851,12 +917,11 @@ io.on('connection', (socket) => {
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
     if (emailingWorkers) {
-        socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions."})
+      socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions."})
     }
     else {
-        socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has finished early. You will be compensated by clicking submit below."})
+      socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has finished early. You will be compensated by clicking submit below."})
     }
-        console.log("Sockets active: " + Object.keys(io.sockets.sockets));
   });
 
   // Starter task
@@ -993,6 +1058,13 @@ io.on('connection', (socket) => {
   }
 
 });
+
+// return subset of userPool
+function getPoolUsersConnected() {return userPool.filter(user => user.connected)}
+function getPoolUsersActive() {return userPool.filter(user => user.active && user.connected)}
+
+// return subset of users
+function getUsersConnected() {return users.filter(user => user.connected)}
 
 //replaces user.friend aliases with corresponding user IDs
 function aliasToID(user, newString) {

@@ -1,10 +1,11 @@
 $(function() {
   const FADE_TIME = 150; // ms
   const TYPING_TIMER_LENGTH = 400; // ms
-  const COLORS = ['#e21400', '#91580f', '#dfe106', '#ff8300', '#58dc00', '#006400', '#a8f07a', '#4ae8c4', '#ff69b4', '#3824aa', '#a700ff', '#d300e7'];
+  let COLORS = ['#e21400', '#91580f', '#dfe106', '#ff8300', '#58dc00', '#006400', '#a8f07a', '#4ae8c4', '#ff69b4', '#3824aa', '#a700ff', '#d300e7'];
+  let colorAssignment = []
 
   //toggles
-  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -79,7 +80,7 @@ $(function() {
   let messagesSafe = document.getElementsByClassName('messages')[0];
   let finishingcode = document.getElementById('finishingcode');
   let usersWaiting = document.getElementById('numberwaiting');
-  let mturkVariables
+  let mturkVariables = {}
 
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
   const $psychologicalSafetyQuestions = $('.psychologicalSafetyQuestions'); //pre survey
@@ -291,14 +292,19 @@ $(function() {
 
   // Gets the color of a username through our hash function
   function getUsernameColor (username) {
-    //Compute hash code
-    let hash = 7;
-    for (let i = 0; i < username.length; i++) {
-       hash = username.charCodeAt(i) + (hash << 5) - hash;
+
+    if(COLORS.length == 0) {
+      COLORS = ['#e21400', '#91580f', '#dfe106', '#ff8300', '#58dc00', '#006400', '#a8f07a', '#4ae8c4', '#ff69b4', '#3824aa', '#a700ff', '#d300e7']
     }
-    // Calculate color
-    const index = Math.abs(hash % COLORS.length);
-    return COLORS[index];
+    if(colorAssignment.includes(username)) {
+      return colorAssignment[colorAssignment.indexOf(username) + 1]
+    } else {
+      let color = COLORS[0]
+      colorAssignment.push(username)
+      colorAssignment.push(color)
+      COLORS.splice(0,1);
+      return color;
+    }
   }
 
 // equivalent of initiate experiment when waitChatOn === false PK: change this?
@@ -420,7 +426,6 @@ $(function() {
   socket.on('chatbot', data => {
     const questions = data
     const questionIndex = permute(questions.length - 1).concat([questions.length])
-    console.log("questionIndex", questionIndex)
     let index = 0;
     let typingTimer;
     let doneTypingInterval = 1000;
@@ -446,7 +451,7 @@ $(function() {
           answered = false;
 
           if(index < questions.length) {
-            let q = questions[questionIndex[index]].question
+            let q = questions[index].question
             addChatMessage({username:botUsername, message:q})
             index++
           } else {
@@ -459,8 +464,8 @@ $(function() {
     function permute(questionLength) {
       // first make a list from 1 to questionLength
       let questionIndex = [...Array(questionLength).keys()];
-      
-      // then proceed to shuffle the questionIndex array      
+
+      // then proceed to shuffle the questionIndex array
       for(let idx = 0; idx < questionLength; idx++)
       {
           let swpIdx = idx + Math.floor(Math.random() * (questionLength - idx));
@@ -478,7 +483,7 @@ $(function() {
     username = data.username;
     holdingUsername.innerText = username
     console.log('username is set as ' + username)
-  }) 
+  })
 
   socket.on('show chat link', data => {
     $chatLink.show();
@@ -494,7 +499,7 @@ $(function() {
         socket.emit('next event')
         preChat = false;
       }, 1000*2)
-    } 
+    }
 }
 );
 
@@ -802,7 +807,7 @@ $(function() {
   socket.on('get IDs', data => {
     const URLvars = getUrlVars(location.href);
     console.log('get IDs ran');
-    socket.emit(data,{mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId });
+    socket.emit(data,{mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId});
   })
 
   socket.on('starterSurvey',data => {
@@ -821,7 +826,7 @@ $(function() {
       document.getElementById("finishingMessage").innerHTML = "You terminated the HIT. Thank you for your time."
       document.getElementById("mturk_form").action = mturkVariables.turkSubmitTo + "/mturk/externalSubmit"
       document.getElementById("assignmentId").value = mturkVariables.assignmentId
-      finishingcode.value = "LeftHi"
+      finishingcode.value = "LeftHit"
       socket.emit('mturk_formSubmit', feedbackMessage)
       socket.close();
       $('#leave-hit-form')[0].reset();
@@ -893,7 +898,7 @@ $(function() {
     $finishingPage.show();
     document.getElementById("finishingMessage").innerHTML = data.message
     document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
-    document.getElementById("assignmentId").value = data.assignmentId
+    document.getElementById("assignmentId").value = mturkVariables.assignmentId
     finishingcode.value = data.finishingCode
     if (data.crashed) {
       if ($('#engagementfeedbackInput').length === 0) { //make sure element hasn't been already created
@@ -903,7 +908,7 @@ $(function() {
         $("#submitButton_finish").before(input); //appendChild
       }
     }
-    // socket.disconnect(true);
+    socket.disconnect(true);
   })
 
   $('#mturk_form').submit( (event) => {
