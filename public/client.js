@@ -862,19 +862,6 @@ $(function() {
     $('#leave-hit-form')[0].reset();
   })
 
-  $("#IRB-leave-hit-submit").click((event) => {
-    event.preventDefault() //stops page reloading
-    HandleFinish(finishingMessage = "You disagreed with our terms and conditions, and we are unable to let you proceed with this HIT. Thank you for your time.", 
-        mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit", 
-        assignmentId = mturkVariables.assignmentId, finishingcode = "LeftHit");
-    socket.disconnect(true);
-  })
-
-  $("#IRB-return-task-submit").click((event) => {
-    $IRB.hide(); 
-    $holdingPage.show();
-    socket.emit('next event');
-  })
 
   // $('#leave-hit-form').submit((event) => {
   //   event.preventDefault() //stops page reloading
