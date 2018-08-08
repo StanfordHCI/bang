@@ -837,10 +837,11 @@ io.on('connection', (socket) => {
         } else {
           // Dynamically generate teammate names
           // even if teamSize = 1 for testing, this still works
-          let team_Aliases = tools.makeName(teamSize - 1, user.friends_history)
-          user.friends_history = user.friends_history.concat(team_Aliases)
 
-          let teamMates = user.friends.filter(friend => { return (users.byID(friend.id)) && (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
+          let teamMates = user.friends.filter(friend => { return (users.byID(friend.id)) && users.byID(friend.id).connected && (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
+         
+          let team_Aliases = tools.makeName(teamMates.length, user.friends_history)
+          user.friends_history = user.friends_history.concat(team_Aliases)
           for (i = 0; i < teamMates.length; i++) {
             if (treatmentNow) {
               teamMates[i].tAlias = team_Aliases[i].join("")
