@@ -425,7 +425,7 @@ $(function() {
   // Socket events
   socket.on('chatbot', data => {
     const questions = data
-    // const questionIndex = permute(questions.length)
+    const questionIndex = permute(questions.length - 1).concat([questions.length])
     let index = 0;
     let typingTimer;
     let doneTypingInterval = 1000;
