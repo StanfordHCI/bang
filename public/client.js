@@ -32,6 +32,8 @@ $(function() {
   const $starterSurvey = $('#starterSurvey'); // The starterSurvey page
   const $midSurvey = $('#midSurvey'); // the midSurvey page
   const $psychologicalSafety = $('#psychologicalSafety'); // the psych safety page
+  const $IRB = $('#IRB'); // IRB page 
+
   const $postSurvey = $('#postSurvey'); // The postSurvey page
   const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
   const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
@@ -68,6 +70,7 @@ $(function() {
     $preSurvey.hide();
     $starterSurvey.hide();
     $midSurvey.hide();
+    $IRB.hide(); 
     $psychologicalSafety.hide();
     $postSurvey.hide();
     $blacklistSurvey.hide();
@@ -86,6 +89,7 @@ $(function() {
   const $psychologicalSafetyQuestions = $('.psychologicalSafetyQuestions'); //pre survey
   const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
+  const $IRBQuestions = $('.IRBQuestions'); 
 
   const socket = io();
 
@@ -365,6 +369,14 @@ $(function() {
     let selectedValue = $('input[name=checkin-q1]:checked').val();
     socket.emit('new checkin', selectedValue);
     $checkinPopup.hide();
+  })
+
+  $('#IRB').submit( (event) => {
+    event.preventDefault() //stops page reloading
+    socket.emit('IRBSubmit', $('#IRB').serialize()) //submits results alone
+    socket.emit('next event')
+    $IRB.hide()
+    $holdingPage.show(); 
   })
 
   $('#midForm').submit( (event) => {
