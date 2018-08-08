@@ -955,6 +955,28 @@ io.on('connection', (socket) => {
     return questions
   }
 
+  function HandleFinishAndEmailWorkers(ifEmailMessage, ifNotEmailMessage,
+    finishingCode, turkSubmitTo, assignmentId) {
+    if (emailingWorkers) {
+      io.in(socket.id).emit('finished', {
+        message: ifEmailMessage,
+        finishingCode: finishingCode,
+        turkSubmitTo: turkSubmitTo,
+        assignmentId: assignmentId,
+        crashed: false
+      })
+    }
+    else {
+      io.in(socket.id).emit('finished', {
+        message: ifNotEmailMessage,
+        finishingCode: finishingCode,
+        turkSubmitTo: turkSubmitTo,
+        assignmentId: assignmentId,
+        crashed: false
+      })
+    }
+  }
+
 });
 
 // return subset of userPool
@@ -1073,24 +1095,3 @@ function HandleMultipleHits() {
   }
 }
 
-function HandleFinishAndEmailWorkers(ifEmailMessage, ifNotEmailMessage,
-  finishingCode, turkSubmitTo, assignmentId) {
-  if (emailingWorkers) {
-    io.in(socket.id).emit('finished', {
-      message: ifEmailMessage,
-      finishingCode: finishingCode,
-      turkSubmitTo: turkSubmitTo,
-      assignmentId: assignmentId,
-      crashed: false
-    })
-  }
-  else {
-    io.in(socket.id).emit('finished', {
-      message: ifNotEmailMessage,
-      finishingCode: finishingCode,
-      turkSubmitTo: turkSubmitTo,
-      assignmentId: assignmentId,
-      crashed: false
-    })
-  }
-}
