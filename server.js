@@ -246,7 +246,23 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
 }); // eventSchedule instead of all of the toggles? (missing checkinOn) //PK: what does this comment mean?
 
 // Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
-setTimeout(HandleMultipleHits(), 1000 * 12)
+setTimeout(() => {
+  if(multipleHITs) {
+    let currentHIT = mturk.returnCurrentHIT();
+    for(i = 0; i < currentHIT.length(); i++) {
+      db.ourHITs.insert({'currentHIT': currentHIT[i]}, (err, HITAdded) => {
+        if(err) console.log("There's a problem adding HIT to the DB: ", err);
+        else if(HITAdded) console.log("HIT added to the DB: ", currentHIT[i]);
+      })
+    }
+  } else {
+    let currentHIT = mturk.returnCurrentHIT();
+    db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+      if(err) console.log("There's a problem adding HIT to the DB: ", err);
+      else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+    })
+  }
+}, 1000 * 12)
 
 // Chatroom
 io.on('connection', (socket) => {
@@ -263,9 +279,24 @@ io.on('connection', (socket) => {
 
     socket.on('accepted HIT', data => {
       if(users.length === teamSize ** 2) { //this is equivalent to "experiment has started"
-        HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
-          ifNotEmailMessage = "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
-          finishingCode = socket.id, turkSubmitTo = mturk.submitTo, assignmentId = data.assignmentId)
+        if (emailingWorkers) {
+          io.in(socket.id).emit('finished', {
+            message: "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
+            finishingCode: socket.id,
+            turkSubmitTo: mturk.submitTo,
+            assignmentId: data.assignmentId,
+            crashed: false
+          })
+        }
+        else {
+          io.in(socket.id).emit('finished', {
+            message: "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
+            finishingCode: socket.id,
+            turkSubmitTo: mturk.submitTo,
+            assignmentId: data.assignmentId,
+            crashed: false
+          })
+        }
         return;
       }
       userPool.push({
@@ -330,16 +361,34 @@ io.on('connection', (socket) => {
               io.in(user.id).emit('initiate experiment');
             } else { //else emit finish
               console.log('EMIT FINISH TO EXTRA ACTIVE WORKER')
-              HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
-                ifNotEmailMessage = "Thanks for participating, you're all done!",
-                finishingCode = socket.id, turkSubmitTo = mturk.submitTo, assignmentId = data.assignmentId)
+              if (emailingWorkers) {
+                io.in(user.id).emit('finished', {
+                  message: "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
+                  finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
+                });
+              }
+              else {
+                io.in(user.id).emit('finished', {
+                  message: "Thanks for participating, you're all done!",
+                  finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
+                });
+              }
             }
           }
           userPool.filter(user => !usersActive.byID(user.id)).forEach(user => {//
             console.log('EMIT FINISH TO NONACTIVE OR DISCONNECTED WORKER')
-            HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
-                ifNotEmailMessage = "Thanks for participating, you're all done!",
-                finishingCode = socket.id, turkSubmitTo = mturk.submitTo, assignmentId = data.assignmentId)
+            if (emailingWorkers) {
+              io.in(user.id).emit('finished', {
+                message: "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
+                finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
+              });
+            }
+            else {
+              io.in(user.id).emit('finished', {
+                message: "Thanks for participating, you're all done!",
+                finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
+              });
+            }
           })
         }
       } else {
@@ -389,9 +438,24 @@ io.on('connection', (socket) => {
     }
     socket.on('add user', data => {
       if (users.length === teamSize ** 2) { // PK: if experiment has already started, change to condition on state variable
-        HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
-                ifNotEmailMessage = "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
-                finishingCode = socket.id, turkSubmitTo = mturk.submitTo, assignmentId = data.assignmentId)
+        if (emailingWorkers) {
+          io.in(socket.id).emit('finished', {
+            message: "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
+            finishingCode: socket.id,
+            turkSubmitTo: mturk.submitTo,
+            assignmentId: data.assignmentId,
+            crashed: false
+          })
+        }
+        else {
+          io.in(socket.id).emit('finished', {
+            message: "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
+            finishingCode: socket.id,
+            turkSubmitTo: mturk.submitTo,
+            assignmentId: data.assignmentId,
+            crashed: false
+          })
+        }
         return;
       }
 //PK: should i add a quick fix here?
@@ -530,7 +594,21 @@ io.on('connection', (socket) => {
           if (!experimentOver && suddenDeath && experimentStarted){//PK: what does this if condition mean
             // Start cancel process
 
-            HandleMultipleHits()
+            if(multipleHITs) {
+              let currentHIT = mturk.returnCurrentHIT();
+              for(i = 0; i < currentHIT.length(); i++) {
+                db.ourHITs.insert({'currentHIT': currentHIT[i]}, (err, HITAdded) => {
+                  if(err) console.log("There's a problem adding HIT to the DB: ", err);
+                  else if(HITAdded) console.log("HIT added to the DB: ", currentHIT[i]);
+                })
+              }
+            } else {
+              let currentHIT = mturk.returnCurrentHIT();
+              db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+                if(err) console.log("There's a problem adding HIT to the DB: ", err);
+                else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+              })
+            }
 
             console.log("User left, emitting cancel to all users");
 
@@ -559,7 +637,21 @@ io.on('connection', (socket) => {
                   user.bonus += mturk.bonusPrice/2
                 }
                 updateUserInDB(user,'bonus',user.bonus)
-                HandleMultipleHits()
+                if(multipleHITs) {
+                  let currentHIT = mturk.returnCurrentHIT();
+                  for(i = 0; i < currentHIT.length(); i++) {
+                    db.ourHITs.insert({'currentHIT': currentHIT[i]}, (err, HITAdded) => {
+                      if(err) console.log("There's a problem adding HIT to the DB: ", err);
+                      else if(HITAdded) console.log("HIT added to the DB: ", currentHIT[i]);
+                    })
+                  }
+                } else {
+                  let currentHIT = mturk.returnCurrentHIT();
+                  db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+                    if(err) console.log("There's a problem adding HIT to the DB: ", err);
+                    else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+                  })
+                }
 
               }
               io.in(user.id).emit('finished', {
@@ -669,7 +761,21 @@ io.on('connection', (socket) => {
         user.bonus += mturk.bonusPrice
         updateUserInDB(user,"bonus",user.bonus)
 
-        HandleMultipleHits()
+        if(multipleHITs) {
+          let currentHIT = mturk.returnCurrentHIT();
+          for(i = 0; i < currentHIT.length(); i++) {
+            db.ourHITs.insert({'currentHIT': currentHIT[i]}, (err, HITAdded) => {
+              if(err) console.log("There's a problem adding HIT to the DB: ", err);
+              else if(HITAdded) console.log("HIT added to the DB: ", currentHIT[i]);
+            })
+          }
+        } else {
+          let currentHIT = mturk.returnCurrentHIT();
+          db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+            if(err) console.log("There's a problem adding HIT to the DB: ", err);
+            else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+          })
+        }
 
         io.in(socket.id).emit('finished', {
           message: "Thanks for participating, you're all done!",
@@ -817,9 +923,12 @@ io.on('connection', (socket) => {
 
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
-    HandleFinishAndEmailWorkers(ifEmailMessage = "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions.",
-          ifNotEmailMessage = "The task has finished early. You will be compensated by clicking submit below.",
-          finishingCode = "broken", turkSubmitTo = mturk.submitTo, assignmentId = data.assignmentId)
+    if (emailingWorkers) {
+      socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions."})
+    }
+    else {
+      socket.emit('finished', {finishingCode: "broken", turkSubmitTo: mturk.submitTo, assignmentId: data.assignmentId, message: "The task has finished early. You will be compensated by clicking submit below."})
+    }
   });
 
   // Starter task
@@ -1053,44 +1162,4 @@ const postSurveyGenerator = (user) => {
            answers: answers,
            answerType: 'checkbox',
            correctAnswer: correctAnswer }
-}
-
-function HandleMultipleHits() {
-  if(multipleHITs) {
-    let currentHIT = mturk.returnCurrentHIT();
-    for(i = 0; i < currentHIT.length(); i++) {
-      db.ourHITs.insert({'currentHIT': currentHIT[i]}, (err, HITAdded) => {
-        if(err) console.log("There's a problem adding HIT to the DB: ", err);
-        else if(HITAdded) console.log("HIT added to the DB: ", currentHIT[i]);
-      })
-    }
-  } else {
-    let currentHIT = mturk.returnCurrentHIT();
-    db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
-      if(err) console.log("There's a problem adding HIT to the DB: ", err);
-      else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
-    })
-  }
-}
-
-function HandleFinishAndEmailWorkers(ifEmailMessage, ifNotEmailMessage,
-  finishingCode, turkSubmitTo, assignmentId) {
-  if (emailingWorkers) {
-    io.in(socket.id).emit('finished', {
-      message: ifEmailMessage,
-      finishingCode: finishingCode,
-      turkSubmitTo: turkSubmitTo,
-      assignmentId: assignmentId,
-      crashed: false
-    })
-  }
-  else {
-    io.in(socket.id).emit('finished', {
-      message: ifNotEmailMessage,
-      finishingCode: finishingCode,
-      turkSubmitTo: turkSubmitTo,
-      assignmentId: assignmentId,
-      crashed: false
-    })
-  }
 }
