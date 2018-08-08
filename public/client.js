@@ -451,7 +451,7 @@ $(function() {
           answered = false;
 
           if(index < questions.length) {
-            let q = questions[index].question
+            let q = questions[questionIndex[index]].question
             addChatMessage({username:botUsername, message:q})
             index++
           } else {
@@ -607,6 +607,7 @@ $(function() {
     $leaveHitButton.show();
     $headerbarPage.show();
     $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
+    LeavingAlert = data.runningLive; //leaving alert for users if running live
 
     setTimeout(()=>{
       log(data.task)
@@ -694,8 +695,8 @@ $(function() {
 
       });
 
-      // initiate spell check after space is hit
-      if (event.keyCode === $.ui.keyCode.SPACE) {
+      // initiate spell check after space or enter is hit
+      if (event.keyCode === $.ui.keyCode.SPACE || event.keyCode === $.ui.keyCode.ENTER) {
         let terms_typed = $("#inputMessage").val().split(" ");
         let currentTerm = terms_typed.pop();
         let fuzzyMatches = [];
