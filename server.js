@@ -214,7 +214,18 @@ console.log(eventSchedule)
 
 let fullUrl = ''
 
+
 app.use(express.static('public'));
+
+// Disconnect leftover users
+Object.keys(io.sockets.sockets).forEach(socketID => {
+  if (userPool.every(user => {return user.id !== socketID})) {
+    console.log("Removing dead socket: " + socketID);
+    io.in(socketID).emit('get IDs', 'broken');
+  }
+});
+
+
 
 // Adds Batch data for this experiment. unique batchID based on time/date
 db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn,
@@ -299,7 +310,6 @@ io.on('connection', (socket) => {
       mturk.setAssignmentsPending(getPoolUsersConnected().length)
       // debugLog(userPool, "users accepted currently: " + userPool.length)
 
-      // Disconnect leftover users PK: can we do this on start rather than in 'accepted HIT'
         Object.keys(io.sockets.sockets).forEach(socketID => {
           if (userPool.every(user => {return user.id !== socketID})) {
             console.log("Removing dead socket: " + socketID);
