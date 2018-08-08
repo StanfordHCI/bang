@@ -67,6 +67,7 @@ const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 
 const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
 const leaveHitAnswers = {answers: ['End Task and Send Feedback', 'Return to Task'], answerType: 'radio', textValue: false}
 
+
 // Setup basic express server
 let tools = require('./tools');
 let mturk = require('./mturkTools');
@@ -570,8 +571,6 @@ io.on('connection', (socket) => {
         // changes connected to false of disconnected user in userPool
         console.log("Disconnecting socket: " + socket.id)
         if (userPool.find(function(element) {return element.id == socket.id})) {
-          console.log('There was a disconnect');
-          //userPool = userPool.filter(user => user.id != socket.id);
           userPool.byID(socket.id).connected = false;
           let usersActive = getPoolUsersActive()
           if(usersActive.length >= teamSize ** 2) {
@@ -592,7 +591,7 @@ io.on('connection', (socket) => {
           updateUserInDB(socket,'connected',false)
 
           if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
-
+          console.log("Connected users: " + getUsersConnected().length);
           if (!experimentOver && suddenDeath && experimentStarted){//PK: what does this if condition mean
             // Start cancel process
 
@@ -851,10 +850,11 @@ io.on('connection', (socket) => {
         } else {
           // Dynamically generate teammate names
           // even if teamSize = 1 for testing, this still works
-          let team_Aliases = tools.makeName(teamSize - 1, user.friends_history)
-          user.friends_history = user.friends_history.concat(team_Aliases)
 
-          let teamMates = user.friends.filter(friend => { return (users.byID(friend.id)) && (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
+          let teamMates = user.friends.filter(friend => { return (users.byID(friend.id)) && users.byID(friend.id).connected && (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
+         
+          let team_Aliases = tools.makeName(teamMates.length, user.friends_history)
+          user.friends_history = user.friends_history.concat(team_Aliases)
           for (i = 0; i < teamMates.length; i++) {
             if (treatmentNow) {
               teamMates[i].tAlias = team_Aliases[i].join("")
@@ -898,14 +898,13 @@ io.on('connection', (socket) => {
         }, 1000 * 60 * 0.1 * roundMinutes)
       }, 1000 * 60 * 0.9 * roundMinutes)
 
-
-      //record start checkin time in db
-      let currentRoom = users.byID(socket.id).room
-      db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
-        if(err) console.log("There's a problem adding a checkin to the DB: ", err);
-        else if(usersAdded) console.log("Checkin added to the DB");
-      });
       if(checkinOn){
+        //record start checkin time in db
+        let currentRoom = users.byID(socket.id).room
+        db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
+          if(err) console.log("There's a problem adding a checkin to the DB: ", err);
+          else if(usersAdded) console.log("Checkin added to the DB");
+        });
         let numPopups = 0;
         let interval = setInterval(() => {
           if(numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
@@ -1040,9 +1039,9 @@ io.on('connection', (socket) => {
       } else if (answerTag === "YN") { // yes no
         answerObj = binaryAnswers;
       } else if (answerTag === "TR") { //team radio
-        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio', textValue: false};
-      } else if (answerTag === "TC") { //team checkbox
-        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox', textValue: false};
+        answerObj = {answers: ["Team 1", "Team 2", "Team 3"], answerType: 'radio', textValue: true};
+      } else if (answerTag === "MTR") { //team checkbox
+        answerObj = {answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 1 and Team 3"], answerType: 'radio', textValue: true};
       } else if (answerTag === "LH") { //leave hit yn
         answerObj = leaveHitAnswers;
       } else {//chatbot qs
@@ -1067,6 +1066,8 @@ io.on('connection', (socket) => {
 function getPoolUsersConnected() {return userPool.filter(user => user.connected)}
 function getPoolUsersActive() {return userPool.filter(user => user.active && user.connected)}
 
+// return subset of users
+function getUsersConnected() {return users.filter(user => user.connected)}
 
 //replaces user.friend aliases with corresponding user IDs
 function aliasToID(user, newString) {
