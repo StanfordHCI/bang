@@ -884,14 +884,13 @@ io.on('connection', (socket) => {
         }, 1000 * 60 * 0.1 * roundMinutes)
       }, 1000 * 60 * 0.9 * roundMinutes)
 
-
-      //record start checkin time in db
-      let currentRoom = users.byID(socket.id).room
-      db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
-        if(err) console.log("There's a problem adding a checkin to the DB: ", err);
-        else if(usersAdded) console.log("Checkin added to the DB");
-      });
       if(checkinOn){
+        //record start checkin time in db
+        let currentRoom = users.byID(socket.id).room
+        db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
+          if(err) console.log("There's a problem adding a checkin to the DB: ", err);
+          else if(usersAdded) console.log("Checkin added to the DB");
+        });
         let numPopups = 0;
         let interval = setInterval(() => {
           if(numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
