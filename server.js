@@ -29,6 +29,7 @@ const multipleHITs = false // cross-check with mturkTools.js
 
 const randomCondition = false
 const randomRoundOrder = false
+const randomProduct = false
 
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = true
@@ -858,11 +859,14 @@ io.on('connection', (socket) => {
       })
 
       //Notify user 'initiate round' and send task.
-      let productInt = getRndInteger(0, products.length);
-      let currentProduct = products[productInt]
-      products.splice(productInt, 1)
 
-      // let currentProduct = products[currentRound]
+      let currentProduct = products[currentRound]
+
+      if(randomProduct) {
+        let productInt = getRndInteger(0, products.length);
+        let currentProduct = products[productInt]
+        products.splice(productInt, 1)
+      } 
 
       let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
