@@ -1038,8 +1038,8 @@ io.on('connection', (socket) => {
         answerObj = binaryAnswers;
       } else if (answerTag === "TR") { //team radio
         answerObj = {answers: ["Team 1", "Team 2", "Team 3"], answerType: 'radio', textValue: true};
-      } else if (answerTag === "TC") { //team checkbox
-        answerObj = {answers: ["Team 1", "Team 2", "Team 3"], answerType: 'checkbox', textValue: true};
+      } else if (answerTag === "MTR") { //team checkbox
+        answerObj = {answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 1 and Team 3"], answerType: 'radio', textValue: true};
       } else if (answerTag === "LH") { //leave hit yn
         answerObj = leaveHitAnswers;
       } else {//chatbot qs
