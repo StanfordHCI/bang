@@ -119,7 +119,24 @@ $(function() {
   } else { // tell the server that the user has accepted the HIT - server then adds this worker to array of accepted workers
     mturkVariables = { mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId, timeAdded: (new Date()).getTime()}
     socket.emit('accepted HIT', mturkVariables); //PK: thoughts on setting waitchat toggle in client and sending it to server in this emit?
-    $instructionsInfo.show();
+    if(waitChatOn){
+      socket.emit('get username')
+      hideAll();
+      $chatPage.show()
+      $headerbarPage.show()
+      $leaveHitButton.hide()
+      addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername +", welcome to our HIT!"})
+      setTimeout(()=> {
+        addChatMessage({username: botUsername, message: "For this first task, I need you to answer a sequence of questions. Thanks for cooperating!"})
+        setTimeout(() => {
+          socket.emit('load bot qs')
+        }, 1000*1)
+
+      }, 1000*.5)
+    } else {
+      hideAll();
+      $waitingPage.show();
+    }
     
   }
 
@@ -854,28 +871,9 @@ $(function() {
   })
 
   $("#IRB-return-task-submit").click((event) => {
-    event.preventDefault(); //stops page reloading
-    if(waitChatOn){
-      socket.emit('get username')
-      hideAll();
-      $chatPage.show()
-      $headerbarPage.show()
-      $leaveHitButton.hide()
-      addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername +", welcome to our HIT!"})
-      setTimeout(()=> {
-        addChatMessage({username: botUsername, message: "For this first task, I need you to answer a sequence of questions. Thanks for cooperating!"})
-        setTimeout(() => {
-          socket.emit('load bot qs')
-        }, 1000*1)
-
-      }, 1000*.5)
-    } else {
-      hideAll();
-      $waitingPage.show();
-    }
-    // $IRB.hide(); 
-    // $holdingPage.show();
-    // socket.emit('next event');
+    $IRB.hide(); 
+    $holdingPage.show();
+    socket.emit('next event');
   })
 
   // $('#leave-hit-form').submit((event) => {
