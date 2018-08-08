@@ -15,7 +15,7 @@ const secondsToHold2 = 180 //maximum number of seconds of inactivity that we all
 
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = true
+const issueBonusesNow = false
 const emailingWorkers = false
 
 const cleanHITs = false
@@ -30,15 +30,15 @@ const multipleHITs = false // cross-check with mturkTools.js
 const randomCondition = false
 const randomRoundOrder = false
 
-const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
-const psychologicalSafetyOn = true
+const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
+const psychologicalSafetyOn = false
 const starterSurveyOn = false
-const midSurveyOn = true
+const midSurveyOn = false
 const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
-const requiredOn = true
+const requiredOn = false
 const checkinIntervalMinutes = roundMinutes/30
 
 //Testing toggles
@@ -270,7 +270,7 @@ io.on('connection', (socket) => {
             message: "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
             finishingCode: socket.id,
             turkSubmitTo: mturk.submitTo,
-            assignmentId: socket.id,
+            assignmentId: data.assignmentId,
             crashed: false
           })
         }
@@ -279,9 +279,9 @@ io.on('connection', (socket) => {
             message: "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
             finishingCode: socket.id,
             turkSubmitTo: mturk.submitTo,
-            assignmentId: socket.id,
+            assignmentId: data.assignmentId,
             crashed: false
-          })  
+          })
         }
         return;
       }
@@ -358,11 +358,11 @@ io.on('connection', (socket) => {
                 io.in(user.id).emit('finished', {
                   message: "Thanks for participating, you're all done!",
                   finishingCode: socket.id, turkSubmitTo: mturk.submitTo, assignmentId: user.assignmentId
-                });    
+                });
               }
             }
           }
-          userPool.filter(user => !usersActive.byID(user.id)).forEach(user => {// 
+          userPool.filter(user => !usersActive.byID(user.id)).forEach(user => {//
             console.log('EMIT FINISH TO NONACTIVE OR DISCONNECTED WORKER')
 
             if (emailingWorkers) {
@@ -431,7 +431,7 @@ io.on('connection', (socket) => {
             message: "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
             finishingCode: socket.id,
             turkSubmitTo: mturk.submitTo,
-            assignmentId: socket.id,
+            assignmentId: data.assignmentId,
             crashed: false
           })
         }
@@ -440,9 +440,9 @@ io.on('connection', (socket) => {
             message: "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
             finishingCode: socket.id,
             turkSubmitTo: mturk.submitTo,
-            assignmentId: socket.id,
+            assignmentId: data.assignmentId,
             crashed: false
-          })  
+          })
         }
         return;
       }
@@ -487,7 +487,7 @@ io.on('connection', (socket) => {
       if(!userPool.byID(socket.id)) {
         console.log("***USER UNDEFINED*** in update user pool ..this would crash out thing but haha whatever")
         console.log('SOCKET ID: ' + socket.id)
-        return; 
+        return;
       }//PK: quick fix
       if(!userPool.byID(socket.id).connected) {
         console.log("block ***USER NOT CONNECTED*** in update user pool")
@@ -505,7 +505,7 @@ io.on('connection', (socket) => {
       if(!user) {
         console.log("***USER UNDEFINED*** in new message ..this would crash out thing but haha whatever")
         console.log('SOCKET ID: ' + socket.id)
-        return; 
+        return;
       }
       if(!user.connected) {
         console.log("block ***USER NOT CONNECTED*** in new message")
@@ -533,7 +533,7 @@ io.on('connection', (socket) => {
       if(!user) {
         console.log("***USER UNDEFINED*** in new checkin ..this would crash out thing but haha whatever")
         console.log('SOCKET ID: ' + socket.id)
-        return; 
+        return;
       }
       if(!user.connected) {
         console.log("block ***USER NOT CONNECTED*** in new checkin")
@@ -561,7 +561,7 @@ io.on('connection', (socket) => {
           console.log('There was a disconnect');
           //userPool = userPool.filter(user => user.id != socket.id);
           userPool.byID(socket.id).connected = false;
-          let usersActive = getPoolUsersActive() 
+          let usersActive = getPoolUsersActive()
           if(usersActive.length >= teamSize ** 2) {
             io.sockets.emit('update number waiting', {num: 0});
           } else {
@@ -666,7 +666,7 @@ io.on('connection', (socket) => {
       if(!user) {
         console.log("***USER UNDEFINED*** in 'next event'..this would crash out thing but haha whatever")
         console.log('SOCKET ID: ' + socket.id)
-        return; 
+        return;
       }//PK: quick fix, next event still called for 'user' never added to users, come back to this
       if(!user.connected) {
         console.log("block ***USER NOT CONNECTED*** in 'next event'")
@@ -777,7 +777,7 @@ io.on('connection', (socket) => {
       if(!users.byID(socket.id)) {
         console.log("***USER UNDEFINED*** in ready ..this would crash out thing but haha whatever")
         console.log('SOCKET ID: ' + socket.id)
-        return; 
+        return;
       }
       if(!users.byID(socket.id).connected) {
         console.log("block ***USER NOT CONNECTED*** in ready")
@@ -841,7 +841,7 @@ io.on('connection', (socket) => {
           // even if teamSize = 1 for testing, this still works
           let team_Aliases = tools.makeName(teamSize - 1, user.friends_history)
           user.friends_history = user.friends_history.concat(team_Aliases)
-          
+
           let teamMates = user.friends.filter(friend => { return (users.byID(friend.id)) && (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
           for (i = 0; i < teamMates.length; i++) {
             if (treatmentNow) {
