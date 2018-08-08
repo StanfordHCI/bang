@@ -30,7 +30,7 @@ const multipleHITs = false // cross-check with mturkTools.js
 const randomCondition = false
 const randomRoundOrder = false
 
-const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = true
 const starterSurveyOn = false
 const midSurveyOn = true
@@ -377,7 +377,6 @@ io.on('connection', (socket) => {
           }
           userPool.filter(user => !usersActive.byID(user.id)).forEach(user => {//
             console.log('EMIT FINISH TO NONACTIVE OR DISCONNECTED WORKER')
-
             if (emailingWorkers) {
               io.in(user.id).emit('finished', {
                 message: "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
@@ -510,7 +509,7 @@ io.on('connection', (socket) => {
       updateUserPool()
     });
 
-    socket.on('log', string => { console.log(string); });
+    socket.on('log', data => { console.log(data); });
 
     //Route messages
     socket.on('new message', function (message) {
@@ -671,6 +670,11 @@ io.on('connection', (socket) => {
         //users = users.filter(user => user.id != socket.id); // PK: now users should contain only teamSize ** 2 users (the exact amt for exp), come back when not brain dead
 
     });
+
+    socket.on('ready-to-all', (data) => {
+      console.log("god is ready");
+      io.sockets.emit('echo','ready')
+    })
 
     socket.on("next event", (data) => {
       let user = users.byID(socket.id)
@@ -852,7 +856,7 @@ io.on('connection', (socket) => {
           // even if teamSize = 1 for testing, this still works
 
           let teamMates = user.friends.filter(friend => { return (users.byID(friend.id)) && users.byID(friend.id).connected && (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
-         
+
           let team_Aliases = tools.makeName(teamMates.length, user.friends_history)
           user.friends_history = user.friends_history.concat(team_Aliases)
           for (i = 0; i < teamMates.length; i++) {
