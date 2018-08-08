@@ -67,6 +67,7 @@ const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 
 const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
 const leaveHitAnswers = {answers: ['End Task and Send Feedback', 'Return to Task'], answerType: 'radio', textValue: false}
 
+
 // Setup basic express server
 let tools = require('./tools');
 let mturk = require('./mturkTools');
@@ -1036,9 +1037,9 @@ io.on('connection', (socket) => {
       } else if (answerTag === "YN") { // yes no
         answerObj = binaryAnswers;
       } else if (answerTag === "TR") { //team radio
-        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'radio', textValue: false};
+        answerObj = {answers: ["Team 1", "Team 2", "Team 3"], answerType: 'radio', textValue: true};
       } else if (answerTag === "TC") { //team checkbox
-        answerObj = {answers: getTeamMembers(users.byID(socket.id)), answerType: 'checkbox', textValue: false};
+        answerObj = {answers: ["Team 1", "Team 2", "Team 3"], answerType: 'checkbox', textValue: true};
       } else if (answerTag === "LH") { //leave hit yn
         answerObj = leaveHitAnswers;
       } else {//chatbot qs
