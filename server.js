@@ -485,7 +485,7 @@ io.on('connection', (socket) => {
 
     socket.on('update user pool', (data) => {
       if(!userPool.byID(socket.id)) {
-        console.log("***USER UNDEFINED*** in update user pool ..this would crash out thing but haha whatever")
+        console.log("***USER UNDEFINED*** in update user pool ..this would crash our thing but haha whatever")
         console.log('SOCKET ID: ' + socket.id)
         return;
       }//PK: quick fix
