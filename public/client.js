@@ -620,6 +620,7 @@ $(function() {
 
     setTimeout(()=>{
       log(data.task)
+      log("Reminder: You will receive the bonus pay at the stated hourly rate only if you stay for all three rounds.")
       log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
       let durationString = ""
       if (data.duration < 1) { durationString = Math.round(data.duration * 60) + " seconds"
@@ -807,7 +808,7 @@ $(function() {
     log("You're about <strong>90% done with this session</strong>. Enter your final result now.")
     log("Remember, it needs to be <strong>maximum 30 characters long</strong>.")
     log("To indicate your final result, <strong>start the line with an exclamation mark (i.e., '!')</strong>. We will not count that character toward your length limit.")
-    log("<br>If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat.")
+    log("<br>If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat. This result will count equally for all members of the team.")
   });
 
   socket.on('echo',data => {
