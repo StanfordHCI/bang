@@ -246,7 +246,7 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
 }); // eventSchedule instead of all of the toggles? (missing checkinOn) //PK: what does this comment mean?
 
 // Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
-setTimeout(HandleMultipleHits(), 1000 * 12)
+setTimeout(HandleMultipleHits, 1000 * 12)
 
 // Chatroom
 io.on('connection', (socket) => {
