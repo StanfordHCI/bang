@@ -219,9 +219,11 @@ app.use(express.static('public'));
 
 // Disconnect leftover users
 Object.keys(io.sockets.sockets).forEach(socketID => {
+  console.log(socketID)
   if (userPool.every(user => {return user.id !== socketID})) {
     console.log("Removing dead socket: " + socketID);
     io.in(socketID).emit('get IDs', 'broken');
+    io.in(socketID).disconnect(true)
   }
 });
 
