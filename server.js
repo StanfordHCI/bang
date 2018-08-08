@@ -558,8 +558,6 @@ io.on('connection', (socket) => {
         // changes connected to false of disconnected user in userPool
         console.log("Disconnecting socket: " + socket.id)
         if (userPool.find(function(element) {return element.id == socket.id})) {
-          console.log('There was a disconnect');
-          //userPool = userPool.filter(user => user.id != socket.id);
           userPool.byID(socket.id).connected = false;
           let usersActive = getPoolUsersActive()
           if(usersActive.length >= teamSize ** 2) {
@@ -580,7 +578,7 @@ io.on('connection', (socket) => {
           updateUserInDB(socket,'connected',false)
 
           if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
-
+          console.log("Connected users: " + getUsersConnected().length);
           if (!experimentOver && suddenDeath && experimentStarted){//PK: what does this if condition mean
             // Start cancel process
 
