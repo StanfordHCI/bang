@@ -10,13 +10,13 @@ const roundMinutes = process.env.ROUND_MINUTES
 //MAKE SURE secondsToWait > secondsSinceResponse
 const secondsToWait = 60 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
 const secondsSinceResponse = 59 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
-const secondsToHold1 = 2000 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
-const secondsToHold2 = 500 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
+const secondsToHold1 = 720 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
+const secondsToHold2 = 180 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = false
-const emailingWorkers = true
+const issueBonusesNow = true
+const emailingWorkers = false
 
 const cleanHITs = false
 const assignQualifications = false
