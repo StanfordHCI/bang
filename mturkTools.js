@@ -555,21 +555,6 @@ const turkerJSON = [{"mturkId": 'AGRKG3YT3KMD8', "url": 'https://www.google.com/
 
 //turkerJSON.forEach(notifyWorkersManually);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 module.exports = {
   startTask: startTask,
   updatePayment: updatePayment,

@@ -5,7 +5,7 @@ $(function() {
   let colorAssignment = []
 
   //toggles
-  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -71,7 +71,7 @@ $(function() {
     $holdingPage.hide();
     $preSurvey.hide();
     $starterSurvey.hide();
-    $midSurvey.hide();
+    $midSurvey.hide(); 
     $psychologicalSafety.hide();
     $postSurvey.hide();
     $blacklistSurvey.hide();
@@ -79,6 +79,15 @@ $(function() {
     $finishingPage.hide();
     $chatLink.hide();
   };
+
+  const HandleFinish = (finishingMessage, mturk_form, assignmentId, finishingcode) => {
+    hideAll();
+    $finishingPage.show();
+    document.getElementById("finishingMessage").innerHTML = finishingMessage;
+    document.getElementById("mturk_form").action = mturk_form;
+    document.getElementById("assignmentId").value = assignmentId;
+    finishingcode.value = finishingcode
+  }
 
   let holdingUsername = document.getElementById('username');
   let messagesSafe = document.getElementsByClassName('messages')[0];
@@ -116,7 +125,7 @@ $(function() {
     socket.emit('accepted HIT', mturkVariables); //PK: thoughts on setting waitchat toggle in client and sending it to server in this emit?
     if(waitChatOn){
       socket.emit('get username')
-
+      hideAll();
       $chatPage.show()
       $headerbarPage.show()
       $leaveHitButton.hide()
@@ -129,8 +138,10 @@ $(function() {
 
       }, 1000*.5)
     } else {
+      hideAll();
       $waitingPage.show();
     }
+    
   }
 
   // Get permission to notify
@@ -375,6 +386,7 @@ $(function() {
     socket.emit('new checkin', selectedValue);
     $checkinPopup.hide();
   })
+
 
   $('#midForm').submit( (event) => {
     event.preventDefault() //stops page reloading
@@ -832,14 +844,11 @@ $(function() {
     let feedbackMessage = $('#leavetaskfeedbackInput').val();
 
     if (feedbackMessage.length > 10) {
-      hideAll();
-      $finishingPage.show();
-      document.getElementById("finishingMessage").innerHTML = "You terminated the HIT. Thank you for your time."
-      document.getElementById("mturk_form").action = mturkVariables.turkSubmitTo + "/mturk/externalSubmit"
-      document.getElementById("assignmentId").value = mturkVariables.assignmentId
-      finishingcode.value = "LeftHit"
+      HandleFinish(finishingMessage = "You terminated the HIT. Thank you for your time.",
+          mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
+          assignmentId = mturkVariables.assignmentId, finishingcode = "LeftHit");
       socket.emit('mturk_formSubmit', feedbackMessage)
-      socket.close();
+      socket.disconnect(true);
       $('#leave-hit-form')[0].reset();
     }
   })
@@ -851,6 +860,7 @@ $(function() {
     $currentInput.focus();
     $('#leave-hit-form')[0].reset();
   })
+
 
   // $('#leave-hit-form').submit((event) => {
   //   event.preventDefault() //stops page reloading
@@ -905,12 +915,8 @@ $(function() {
   });
 
   socket.on('finished',data => {
-    hideAll();
-    $finishingPage.show();
-    document.getElementById("finishingMessage").innerHTML = data.message
-    document.getElementById("mturk_form").action = data.turkSubmitTo + "/mturk/externalSubmit"
-    document.getElementById("assignmentId").value = mturkVariables.assignmentId
-    finishingcode.value = data.finishingCode
+    HandleFinish(finishingMessage = data.message, mturk_form = data.turkSubmitTo + "/mturk/externalSubmit", 
+        assignmentId = mturkVariables.assignmentId, finishingcode = data.finishingCode);
     if (data.crashed) {
       if ($('#engagementfeedbackInput').length === 0) { //make sure element hasn't been already created
         let input = document.createElement("textarea");
@@ -977,6 +983,7 @@ const decodeURL = (toDecode) => {
   var encoded = toDecode;
   return unescape(encoded.replace(/\+/g,  " "));
 }
+
 
 var LeavingAlert = false;
 if (LeavingAlert) {

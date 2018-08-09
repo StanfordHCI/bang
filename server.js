@@ -30,8 +30,9 @@ const multipleHITs = false // cross-check with mturkTools.js
 const randomCondition = false
 const randomRoundOrder = false
 
-const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
-const psychologicalSafetyOn = true
+
+const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
+const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = true
 const blacklistOn = true
@@ -59,7 +60,6 @@ const feedbackFile = txt + "feedback-q.txt"
 const starterSurveyFile = txt + "startersurvey-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
 const botFile = txt + 'botquestions.txt'
-
 const leaveHitFile = txt + "leave-hit-q.txt"
 
 // Answer Option Sets
@@ -927,7 +927,7 @@ io.on('connection', (socket) => {
       message: idToAlias(f, cleanMessage)
     });
   });
-}
+
   //loads qs in text file, returns json array
   function loadQuestions(questionFile) {
     const prefix = questionFile.substr(txt.length, questionFile.indexOf('.') - txt.length)
