@@ -40,7 +40,7 @@ const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
-const requiredOn = true
+const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/30
 
 //Testing toggles
@@ -89,10 +89,9 @@ Array.prototype.set = function() {
 
 function useUser(u,f,err = "Guarded against undefined user") {
   let user = users.byID(u.id)
-  if (user && typeof f === "function") { f(u)}
+  if (user && typeof f === "function") {f(user)}
   else {
-    console.log(err,socket.id);
-    return err
+    console.log(err,u.id)
   }
 }
 
@@ -496,32 +495,28 @@ io.on('connection', (socket) => {
     });
 
     function newMessage(message) {
-      let user = users.byID(socket.id)//PK: this used to have no 'let'
-      if(!user) {
-        console.log("***USER UNDEFINED*** in new message ..this would crash out thing but haha whatever")
-        console.log('SOCKET ID: ' + socket.id)
-        return;
-      }
-      if(!user.connected) {
-        console.log("block ***USER NOT CONNECTED*** in new message")
-        return;
-      }
-      let cleanMessage = message;
-      users.forEach(u => { cleanMessage = aliasToID(u, cleanMessage)});
+      useUser(socket, (user) =>{
+        if(!user.connected) {
+          console.log("block ***USER NOT CONNECTED*** in new message")
+          return;
+        }
+        let cleanMessage = message;
+        users.forEach(u => { cleanMessage = aliasToID(u, cleanMessage)});
 
-      db.chats.insert({'room':user.room,'userID':socket.id, 'message': cleanMessage, 'time': getSecondsPassed(), 'batch': batchID, 'round': currentRound}, (err, usersAdded) => {
-        if(err) console.log("Error storing message:", err)
-        else console.log("Message in", user.room, "from",user.name +":" ,cleanMessage)
-      });
-
-      users.filter(f => f.room == user.room).forEach(f => {
-        socket.broadcast.to(f.id).emit('new message', {
-          username: idToAlias(f, String(socket.id)),
-          message: idToAlias(f, cleanMessage)
+        db.chats.insert({'room':user.room,'userID':socket.id, 'message': cleanMessage, 'time': getSecondsPassed(), 'batch': batchID, 'round': currentRound}, (err, usersAdded) => {
+          if(err) console.log("Error storing message:", err)
+          else console.log("Message in", user.room, "from",user.name +":" ,cleanMessage)
         });
-      });
+
+        users.filter(f => f.room == user.room).forEach(f => {
+          socket.broadcast.to(f.id).emit('new message', {
+            username: idToAlias(f, String(socket.id)),
+            message: idToAlias(f, cleanMessage)
+          });
+        });
+      })
     }
-    
+
     //when the client emits 'new checkin', this listens and executes
     socket.on('new checkin', function (value) {
       let user = users.byID(socket.id)//PK: this used to have no 'let'
@@ -800,7 +795,7 @@ io.on('connection', (socket) => {
         let productInt = getRndInteger(0, products.length);
         let currentProduct = products[productInt]
         products.splice(productInt, 1)
-      } 
+      }
       console.log('Current Product:', currentProduct);
 
       let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
@@ -984,7 +979,7 @@ io.on('connection', (socket) => {
 
   });
 
-  
+
 
   //loads qs in text file, returns json array
   function loadQuestions(questionFile) {
