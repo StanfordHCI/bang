@@ -8,8 +8,8 @@ const roundMinutes = process.env.ROUND_MINUTES
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
-const secondsToWait = 70 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
-const secondsSinceResponse = 60 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
+const secondsToWait = 20 //70 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+const secondsSinceResponse = 19 //60 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
 const secondsToHold1 = 720 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
 const secondsToHold2 = 180 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 
@@ -19,7 +19,7 @@ const issueBonusesNow = true
 const emailingWorkers = false
 
 const cleanHITs = false
-const assignQualifications = true
+const assignQualifications = false //true
 const debugMode = !runningLive
 
 const suddenDeath = false
@@ -171,45 +171,49 @@ if (runExperimentNow){ mturk.launchBang() }
 
 
 //Add more products
-let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
-                 'url': 'https://www.kickstarter.com/projects/stilform/kosmos-ink' },
-                {'name':'Projka: Multi-Function Accessory Pouches',
-                 'url': 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches' },
-                {'name':"First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC",
-                 'url': 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono' },
-                 {'name':"Nomad Energy- Radically Sustainable Energy Drink",
-                 'url': 'https://www.kickstarter.com/projects/1273663738/nomad-energy-radically-sustainable-energy-drink?ref=home_new_and_noteworthy' },
-                 {'name':"Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
-                 'url': 'https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw?ref=home_new_and_noteworthy' },
-                 {'name':"The Travel Line: Versatile Travel Backpack + Packing Tools",
-                 'url': 'https://www.kickstarter.com/projects/peak-design/the-travel-line-versatile-travel-backpack-packing?ref=home_featured' },
-                 {'name':"Stool Nº1",
-                 'url': 'https://www.kickstarter.com/projects/390812913/stool-no1?ref=discovery' },
-                 {'name':"LetB Color - take a look at time in different ways",
-                 'url': 'https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways?ref=discovery' },
-                 {'name':"FLECTR 360 OMNI – cycling at night with full 360° visibility",
-                 'url': 'https://www.kickstarter.com/projects/outsider-team/flectr-360-omni?ref=discovery' },
-                 {'name':"Make perfect cold brew coffee at home with the BrewCub",
-                 'url': 'https://www.kickstarter.com/projects/1201993039/make-perfect-cold-brew-coffee-at-home-with-the-bre?ref=recommended&ref=discovery' },
-                 {'name': 'NanoPen | Worlds Smallest & Indestructible EDC Pen Tool',
-                 'url': 'https://www.kickstarter.com/projects/bullet/nanopen-worlds-smallest-and-indestructible-edc-pen?ref=section_design-tech_popular' },
-                 {'name':"The EVERGOODS MQD24 and CTB40 Crossover Backpacks",
-                 'url': 'https://www.kickstarter.com/projects/1362258351/the-evergoods-mqd24-and-ctb40-crossover-backpacks?ref=recommended&ref=discovery' },
-                 {'name':"Hexgears X-1 Mechanical Keyboard",
-                 'url': 'https://www.kickstarter.com/projects/hexgears/hexgears-x-1-mechanical-keyboard?ref=discovery' },
-                 {'name':"KARVD - Modular Wood Carved Wall Panel System",
-                 'url': 'https://www.kickstarter.com/projects/karvdwalls/karvd-modular-wood-carved-wall-panel-system?ref=recommended&ref=discovery' },
-                 {'name':"PARA: Stationary l Pythagorean l Easy-to-Use Laser Measurer",
-                 'url': 'https://www.kickstarter.com/projects/1619356127/para-stationary-l-pythagorean-l-easy-to-use-laser?ref=recommended&ref=discovery' },
-                 {'name':"Blox: organize your world!",
-                 'url': 'https://www.kickstarter.com/projects/onehundred/blox-organize-your-world?ref=recommended&ref=discovery' },
-                 {'name':"Moment - World's Best Lenses For Mobile Photography",
-                 'url': 'https://www.kickstarter.com/projects/moment/moment-amazing-lenses-for-mobile-photography?ref=recommended&ref=discovery' },
-                 {'name':"The Ollie Chair: Shape-Shifting Seating",
-                 'url': 'https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating?ref=recommended&ref=discovery' },
-                 {'name':"Fave: the ideal all-purpose knife!",
-                 'url': 'https://www.kickstarter.com/projects/onehundred/fave-the-ideal-all-purpose-knife?ref=recommended&ref=discovery' },
-              ]
+// let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
+//                  'url': 'https://www.kickstarter.com/projects/stilform/kosmos-ink' },
+//                 {'name':'Projka: Multi-Function Accessory Pouches',
+//                  'url': 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches' },
+//                 {'name':"First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC",
+//                  'url': 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono' },
+//                  {'name':"Nomad Energy- Radically Sustainable Energy Drink",
+//                  'url': 'https://www.kickstarter.com/projects/1273663738/nomad-energy-radically-sustainable-energy-drink?ref=home_new_and_noteworthy' },
+//                  {'name':"Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
+//                  'url': 'https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw?ref=home_new_and_noteworthy' },
+//                  {'name':"The Travel Line: Versatile Travel Backpack + Packing Tools",
+//                  'url': 'https://www.kickstarter.com/projects/peak-design/the-travel-line-versatile-travel-backpack-packing?ref=home_featured' },
+//                  {'name':"Stool Nº1",
+//                  'url': 'https://www.kickstarter.com/projects/390812913/stool-no1?ref=discovery' },
+//                  {'name':"LetB Color - take a look at time in different ways",
+//                  'url': 'https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways?ref=discovery' },
+//                  {'name':"FLECTR 360 OMNI – cycling at night with full 360° visibility",
+//                  'url': 'https://www.kickstarter.com/projects/outsider-team/flectr-360-omni?ref=discovery' },
+//                  {'name':"Make perfect cold brew coffee at home with the BrewCub",
+//                  'url': 'https://www.kickstarter.com/projects/1201993039/make-perfect-cold-brew-coffee-at-home-with-the-bre?ref=recommended&ref=discovery' },
+//                  {'name': 'NanoPen | Worlds Smallest & Indestructible EDC Pen Tool',
+//                  'url': 'https://www.kickstarter.com/projects/bullet/nanopen-worlds-smallest-and-indestructible-edc-pen?ref=section_design-tech_popular' },
+//                  {'name':"The EVERGOODS MQD24 and CTB40 Crossover Backpacks",
+//                  'url': 'https://www.kickstarter.com/projects/1362258351/the-evergoods-mqd24-and-ctb40-crossover-backpacks?ref=recommended&ref=discovery' },
+//                  {'name':"Hexgears X-1 Mechanical Keyboard",
+//                  'url': 'https://www.kickstarter.com/projects/hexgears/hexgears-x-1-mechanical-keyboard?ref=discovery' },
+//                  {'name':"KARVD - Modular Wood Carved Wall Panel System",
+//                  'url': 'https://www.kickstarter.com/projects/karvdwalls/karvd-modular-wood-carved-wall-panel-system?ref=recommended&ref=discovery' },
+//                  {'name':"PARA: Stationary l Pythagorean l Easy-to-Use Laser Measurer",
+//                  'url': 'https://www.kickstarter.com/projects/1619356127/para-stationary-l-pythagorean-l-easy-to-use-laser?ref=recommended&ref=discovery' },
+//                  {'name':"Blox: organize your world!",
+//                  'url': 'https://www.kickstarter.com/projects/onehundred/blox-organize-your-world?ref=recommended&ref=discovery' },
+//                  {'name':"Moment - World's Best Lenses For Mobile Photography",
+//                  'url': 'https://www.kickstarter.com/projects/moment/moment-amazing-lenses-for-mobile-photography?ref=recommended&ref=discovery' },
+//                  {'name':"The Ollie Chair: Shape-Shifting Seating",
+//                  'url': 'https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating?ref=recommended&ref=discovery' },
+//                  {'name':"Fave: the ideal all-purpose knife!",
+//                  'url': 'https://www.kickstarter.com/projects/onehundred/fave-the-ideal-all-purpose-knife?ref=recommended&ref=discovery' },
+ //             ]
+
+let discussion= [{'name':'Thinking of the idea of humans possibly living in a virtual reality – does that affect our morals? How? '},
+              {'name':'Does religion do more harm than good?'},
+              {'name':"Can empathy save the world?"}]
 
 let users = []; //the main local user storage
 let userPool = []; //accumulates users pre-experiment
@@ -774,16 +778,19 @@ io.on('connection', (socket) => {
 
       //Notify user 'initiate round' and send task.
 
-      let currentProduct = products[currentRound]
+      // let currentProduct = products[currentRound]
 
-      if(randomProduct) {
-        let productInt = getRndInteger(0, products.length);
-        let currentProduct = products[productInt]
-        products.splice(productInt, 1)
-      } 
-      console.log('Current Product:', currentProduct);
+      // if(randomProduct) {
+      //   let productInt = getRndInteger(0, products.length);
+      //   let currentProduct = products[productInt]
+      //   products.splice(productInt, 1)
+      // } 
+      // console.log('Current Product:', currentProduct);
 
-      let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
+      let currentDiscussion = discussion[currentRound]
+      let taskText = "Discussion question: <strong>" + currentDiscussion.name + "</strong>"
+
+  //    let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
       experimentStarted = true
 
