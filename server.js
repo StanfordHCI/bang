@@ -171,11 +171,6 @@ if (runExperimentNow){ mturk.launchBang() }
 
 
 //Add more products
-<<<<<<< HEAD
-let discussion= [{'name':'Thinking of the idea of humans possibly living in a virtual reality – does that affect our morals? How? '},
-                {'name':'Does religion do more harm than good?'},
-                {'name':"Can empathy save the world?"}]
-=======
 let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
                  'url': 'https://www.kickstarter.com/projects/stilform/kosmos-ink' },
                 {'name':'Projka: Multi-Function Accessory Pouches',
@@ -216,7 +211,6 @@ let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
                  'url': 'https://www.kickstarter.com/projects/onehundred/fave-the-ideal-all-purpose-knife?ref=recommended&ref=discovery' },
               ]
 
->>>>>>> 61dbb68327f4b3dbdb27026350d352c0f4b8a44f
 let users = []; //the main local user storage
 let userPool = []; //accumulates users pre-experiment
 let currentRound = 0 //PK: talk about 0-indexed v 1-indexed round numbers (note: if change -> change parts of code reliant on 0-indexed round num)
@@ -778,11 +772,6 @@ io.on('connection', (socket) => {
         })
       })
 
-<<<<<<< HEAD
-      //Notify user 'go' and send task.
-      let currentDiscussion = discussion[currentRound]
-      let taskText = "Discussion question: <strong>" + currentDiscussion.name + "</strong>"
-=======
       //Notify user 'initiate round' and send task.
 
       let currentProduct = products[currentRound]
@@ -796,7 +785,6 @@ io.on('connection', (socket) => {
 
       let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
->>>>>>> 61dbb68327f4b3dbdb27026350d352c0f4b8a44f
       experimentStarted = true
 
       mturk.startTask();
