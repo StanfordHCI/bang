@@ -36,7 +36,7 @@ AWS.config = {
 
 // Declaration of variables
 const numRounds = 3
-const taskDuration = roundMinutes * numRounds * 6
+const taskDuration = roundMinutes * numRounds * 2
 //const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
 const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
 const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
