@@ -54,6 +54,13 @@ let currentHitId = '';
 let currentHitId2 = '';
 let currentHitId3 = '';
 
+let currentHITTypeId = '';
+let currentHITGroupId = '';
+let currentHITTypeId2 = '';
+let currentHITGroupId2 = '';
+let currentHITTypeId3 = '';
+let currentHITGroupId3 = '';
+
 let hitsLeft = numAssignments; // changes when users accept and disconnect (important - don't remove)
 let taskStarted = false;
 
@@ -505,8 +512,17 @@ const launchBang = () => {
             } else {
               console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
               currentHitId = data.HIT.HITId;
-              if(i == 2) { currentHitId2 = data.HIT.HITId; }
-              if(i == 3) { currentHitId3 = data.HIT.HITId; }
+              if(i == 2) { 
+                currentHitId2 = data.HIT.HITId; 
+                currentHITTypeId2 = data.HIT.HITTypeId;
+                currentHITGroupId2 = data.HIT.HITGroupId;
+              }
+              if(i == 3) { 
+                currentHitId3 = data.HIT.HITId; 
+                currentHITTypeId3 = data.HIT.HITTypeId;
+                currentHITGroupId3 = data.HIT.HITGroupId;
+              }
+
             }
           });
         }
@@ -517,6 +533,8 @@ const launchBang = () => {
           } else {
             console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
             currentHitId = data.HIT.HITId;
+            currentHITTypeId = data.HIT.HITTypeId
+            currentHITGroupId = data.HIT.HITGroupId
           }
         });
       }
@@ -599,3 +617,8 @@ const payBonusesManually = (user) => {
 users = [] //list of user objects
 
 // users.forEach(payBonusesManually)
+
+// Figure out how to build link when HIT is created
+// `print "https://workersandbox.mturk.com/mturk/preview?groupId={}".format(hit_type_id)`
+// or 
+// `print "https://mturk.com/mturk/preview?groupId={}".format(hit_type_id)`
