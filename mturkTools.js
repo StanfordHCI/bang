@@ -9,7 +9,7 @@ const roundMinutes = process.env.ROUND_MINUTES
 
 const AWS = require('aws-sdk');
 
-const qualificationsOn = false //runningLive
+const qualificationsOn = runningLive
 const runningDelayed = false
 
 const notifyWorkers = true
