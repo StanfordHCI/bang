@@ -724,6 +724,7 @@ $(function() {
         let currentTerm = terms_typed.pop();
         let fuzzyMatches = [];
 
+
         // Match if users only type animal name
         Object.entries(teamAnimals).forEach(
           ([key, value]) => {
@@ -733,10 +734,12 @@ $(function() {
           }
         );
 
+
         // Quick typists catch
         if (fuzzyMatches[0] === undefined) {
           fuzzyMatches = currentTeam.filter(member => (currentTerm.indexOf(member) >= 0))
         }
+
 
         // Run spell check only if animal name not detected
         if (fuzzyMatches[0] === undefined) {
@@ -746,6 +749,7 @@ $(function() {
             }
           }
         }
+
 
         // if there is only 1 possible match, correct the user
         if (fuzzyMatches.length === 1 && fuzzyMatches[0] !== undefined) {
@@ -769,8 +773,8 @@ $(function() {
     a = comparer.trim().toLowerCase();
     b = comparitor.trim().toLowerCase();
 
-    if(a.length == 0) return b.length;
-    if(b.length == 0) return a.length;
+    if(a.length == 0) return false;
+    if(b.length == 0) return false;
     let matrix = [];
 
     // increment along the first column of each row
