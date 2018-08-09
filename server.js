@@ -89,10 +89,9 @@ Array.prototype.set = function() {
 
 function useUser(u,f,err = "Guarded against undefined user") {
   let user = users.byID(u.id)
-  if (user && typeof f === "function") { f(u)}
+  if (user && typeof f === "function") {f(u)}
   else {
-    console.log(err,socket.id);
-    return err
+    console.log(err,u.id)
   }
 }
 
@@ -521,7 +520,7 @@ io.on('connection', (socket) => {
         });
       });
     }
-    
+
     //when the client emits 'new checkin', this listens and executes
     socket.on('new checkin', function (value) {
       let user = users.byID(socket.id)//PK: this used to have no 'let'
@@ -800,7 +799,7 @@ io.on('connection', (socket) => {
         let productInt = getRndInteger(0, products.length);
         let currentProduct = products[productInt]
         products.splice(productInt, 1)
-      } 
+      }
       console.log('Current Product:', currentProduct);
 
       let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
@@ -984,7 +983,7 @@ io.on('connection', (socket) => {
 
   });
 
-  
+
 
   //loads qs in text file, returns json array
   function loadQuestions(questionFile) {
