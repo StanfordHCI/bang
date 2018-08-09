@@ -5,7 +5,7 @@ $(function() {
   let colorAssignment = []
 
   //toggles
-  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -38,10 +38,8 @@ $(function() {
   const $finishingPage = $('#finishing'); // The finishing page
   const botUsername = 'helperBot'
 
-  $('#ready-to-all').click( (event) => {
-    console.log("Got ready to all button.");
-    socket.emit('ready-to-all',{})
-  })
+  $('#ready-to-all').click((e) => { socket.emit('ready-to-all',{}) })
+  $('#kill-all').click( (event) => { socket.emit('',{}) })
 
   Vue.component('question-component', {
     template: `
@@ -71,7 +69,7 @@ $(function() {
     $holdingPage.hide();
     $preSurvey.hide();
     $starterSurvey.hide();
-    $midSurvey.hide(); 
+    $midSurvey.hide();
     $psychologicalSafety.hide();
     $postSurvey.hide();
     $blacklistSurvey.hide();
@@ -141,7 +139,7 @@ $(function() {
       hideAll();
       $waitingPage.show();
     }
-    
+
   }
 
   // Get permission to notify
@@ -503,7 +501,7 @@ $(function() {
   socket.on('set username', data => {
     username = data.username;
     holdingUsername.innerText = username
-    console.log('username is set as ' + username)
+    //console.log('username is set as ' + username)
   })
 
   socket.on('show chat link', data => {
@@ -631,14 +629,17 @@ $(function() {
     LeavingAlert = data.runningLive; //leaving alert for users if running live
 
     setTimeout(()=>{
-      log(data.task)
-      log("Reminder: You will receive the bonus pay at the stated hourly rate only if you stay for all three rounds.")
+      let totalLengthString = ""
+      totalLengthString = Math.round(3*(data.duration) + 15) + " minutes"
+      log("Reminder: You will receive the bonus pay at the stated hourly rate only if you stay for all three rounds. This should take no more than " + totalLengthString)
+      log("From now until when you receive a link to submit the HIT, <strong>DO NOT REFRESH OR LEAVE THE PAGE</strong>. This will kill the task for everyone and you will not be compensated.")
+      log("Task: " + data.task)
       log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
       let durationString = ""
       if (data.duration < 1) { durationString = Math.round(data.duration * 60) + " seconds"
       } else if (data.duration == 1) { durationString = "one minute"
       } else { durationString = data.duration + " minutes" }
-      log("You will have <strong>" + durationString + "</strong> to brainstorm. At the end of the time we will tell you how to submit your final result.")
+      log("You will have <strong>" + durationString + "</strong> to brainstorm for this round. Near the end of the time we will tell you how to submit your final result.")
       log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>")
       log("<br>For example, here are text advertisements for a golf club called Renaissance: <br>\
       <ul style='list-style-type:disc'> \
@@ -829,7 +830,7 @@ $(function() {
 
   socket.on('get IDs', data => {
     const URLvars = getUrlVars(location.href);
-    console.log('get IDs ran');
+    //console.log('get IDs ran');
     socket.emit(data,{mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId});
   })
 
@@ -915,7 +916,7 @@ $(function() {
   });
 
   socket.on('finished',data => {
-    HandleFinish(finishingMessage = data.message, mturk_form = data.turkSubmitTo + "/mturk/externalSubmit", 
+    HandleFinish(finishingMessage = data.message, mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
         assignmentId = mturkVariables.assignmentId, finishingcode = data.finishingCode);
     if (data.crashed) {
       if ($('#engagementfeedbackInput').length === 0) { //make sure element hasn't been already created
