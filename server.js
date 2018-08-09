@@ -921,12 +921,7 @@ io.on('connection', (socket) => {
 
   });
 
-  users.filter(f => f.room == user.room).forEach(f => {
-    socket.broadcast.to(f.id).emit('new message', {
-      username: idToAlias(f, String(socket.id)),
-      message: idToAlias(f, cleanMessage)
-    });
-  });
+  
 
   //loads qs in text file, returns json array
   function loadQuestions(questionFile) {
