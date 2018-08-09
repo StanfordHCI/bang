@@ -12,6 +12,8 @@ const AWS = require('aws-sdk');
 const qualificationsOn = runningLive
 const runningDelayed = false
 
+const notifyWorkers = true
+
 let endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 let submitTo = 'https://workersandbox.mturk.com'
 
@@ -38,11 +40,11 @@ const taskDuration = roundMinutes * numRounds * 6
 //const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
 const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
 const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
-const rewardPrice = 0.50 // upfront cost
+const rewardPrice = 0.01 // upfront cost
 const noUSA = false; // if true, turkers in the USA will not be able to see the HIT
 const multipleHITs = false; // if true, posts numHITs of hits with slightly different titles at the same time
-const numHITs = 3; 
-const maxAssignments = (teamSize * teamSize) + teamSize;
+const numHITs = 3;
+const maxAssignments = (teamSize * teamSize) + 2*teamSize;
 let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
 let usersAcceptedHIT = 0;
 let numAssignments = maxAssignments; // extra HITs for over-recruitment
@@ -166,6 +168,26 @@ const returnHIT = (hitId) => {
   });
 }
 
+
+// * returnActiveHITs *
+// -------------------------------------------------------------------
+// Retrieves all active HITs.
+//
+// Returns an array of Active HITs.
+
+const returnActiveHITs = () => {
+  mturk.listHITs({}, (err, data) => {
+    if (err) console.log(err, err.stack);
+    else {
+      let activeHITs = [];
+      data.HITs.map((hit) => {
+        if(hit.HITStatus == "Assignable") { activeHITs.push(hit.HITId) }
+      })
+      return activeHITs
+    }
+  })
+}
+
 // * expireActiveHits *
 // -------------------------------------------------------------------
 // Expires all active HITs by updating the time-until-expiration to 0.
@@ -232,6 +254,7 @@ const setAssignmentsPending = (data) => {
         expireActiveHits(currentHitId2);
         expireActiveHits(currentHitId3);
       }
+    console.log("expired active HITs")
   }
 }
 
@@ -244,7 +267,6 @@ const assignQualificationToUsers = (users) => {
   users.filter((user) => {
     return user.mturkId
   }).forEach((user) => {
-    // // Assigns the qualification to the worker
     var assignQualificationParams = {QualificationTypeId: qualificationId, WorkerId: user.mturkId, IntegerValue: 1, SendNotification: false};
     mturk.associateQualificationWithWorker(assignQualificationParams, function(err, data) {
       if (err) console.log(err, err.stack); // an error occurred
@@ -292,19 +314,19 @@ const listUsersWithQualification = () => {
 
 const payBonuses = (users) => {
   let successfullyBonusedUsers = []
-  users.filter(u => u.bonus != 0).forEach((u) => {
+  users.filter(u => u.mturkId != 'A19MTSLG2OYDLZ').filter(u => u.bonus != 0).forEach((u) => {
     mturk.sendBonus({
       AssignmentId: u.assignmentId,
       BonusAmount: String(u.bonus),
       Reason: "Thanks for participating in our HIT!",
       WorkerId: u.mturkId,
       UniqueRequestToken: u.id
-    }, function(err, data) {
+    }, (err, data) => {
       if (err) {
-       // console.log("Bonus not processed:",err)
+        console.log("Bonus not processed\t",u.id,'\t',u.mturkId)
       } else {
         successfullyBonusedUsers.push(u)
-        console.log("Bonused:",u)
+        console.log("Bonused:",u.id, u.mturkId)
       }
     })
   })
@@ -356,9 +378,7 @@ const returnCurrentHIT = () => {
   if(multipleHITs) {
     let HITs = [currentHitId, currentHitId2, currentHitId3]
     return HITs;
-  } else {
-    return currentHitId;
-  }
+  } else { return currentHitId; }
 }
 
 // * launchBang *
@@ -367,9 +387,7 @@ const returnCurrentHIT = () => {
 
 const launchBang = () => {
   // HIT Parameters
-
   let qualificationReqs = [{}];
-
   if(noUSA) {
     QualificationReqs = [
       {
@@ -391,7 +409,6 @@ const launchBang = () => {
         ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
     }];
   }
-
   if (qualificationsOn) {
     QualificationReqs.push({
       QualificationTypeId: '00000000000000000040',  // more than 1000 HITs
@@ -481,9 +498,7 @@ const launchBang = () => {
       };
       if(multipleHITs) {
         for(i = 1; i <= numHITs; i++) {
-          if(i > 1) {
-            HITTitle = HITTitle + i;
-          }
+          if(i > 1) { HITTitle = HITTitle + i; }
           mturk.createHIT(params, (err, data) => {
             if (err) {
               console.log(err, err.stack);
@@ -517,12 +532,36 @@ const launchBang = () => {
    }, 1000 * 60 * timeActive * delay)
 }
 
+// * notifyWorkersManually *
+// -------------------------------------------------------------------
+// Sends a message to all users specified
+
+const turkerJSON = [{"mturkId": 'AGRKG3YT3KMD8', "url": 'https://www.google.com/'}]; // put JSON object here
+
+// Figure out how to loop through JSON object
+
+
+//const notifyWorkersManually = () => {
+//  var params = {
+//    MessageText: params.message, /* required */
+//    Subject: params.subject, /* required */
+//    WorkerIds: [params.mturkId] /* required */ // must be an array : [ 'string', 'string', etc ]
+//  };
+//  mturk.notifyWorkers(params, function(err, data) {
+//    if (err) console.log(err, err.stack); // an error occurred
+//    else     console.log(data);           // successful response
+//  });
+//}
+
+//turkerJSON.forEach(notifyWorkersManually);
+
 module.exports = {
   startTask: startTask,
   updatePayment: updatePayment,
   getBalance: getBalance,
   makeHIT: makeHIT,
   returnHIT: returnHIT,
+  returnActiveHITs: returnActiveHITs,
   expireActiveHits: expireActiveHits,
   deleteHIT: deleteHIT,
   createQualification: createQualification,
@@ -536,5 +575,27 @@ module.exports = {
   checkBlocks: checkBlocks,
   returnCurrentHIT: returnCurrentHIT,
   submitTo: submitTo,
-  launchBang: launchBang
+  launchBang: launchBang,
 };
+
+// TODO: CLean this up by integrating with other bonus code
+const payBonusesManually = (user) => {
+  mturk.sendBonus({
+    AssignmentId: user.assignmentId,
+    BonusAmount: String(user.bonus),
+    Reason: "Thanks for working on our task.",
+    WorkerId: user.mturkId,
+    UniqueRequestToken: user.assignmentId
+  }, function(err, data) {
+    if (err) {
+     console.log("Bonus not processed:",err)
+    } else {
+      console.log("Bonused:",user.mturkId, user.bonus)
+      user.paid = user.bonus
+    }
+  })
+}
+
+users = [] //list of user objects
+
+// users.forEach(payBonusesManually)
