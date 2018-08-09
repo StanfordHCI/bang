@@ -452,6 +452,33 @@ io.on('connection', (socket) => {
       newMessage(message)
     });
 
+    function newMessage(message) {
+      let user = users.byID(socket.id)//PK: this used to have no 'let'
+      if(!user) {
+        console.log("***USER UNDEFINED*** in new message ..this would crash out thing but haha whatever")
+        console.log('SOCKET ID: ' + socket.id)
+        return;
+      }
+      if(!user.connected) {
+        console.log("block ***USER NOT CONNECTED*** in new message")
+        return;
+      }
+      let cleanMessage = message;
+      users.forEach(u => { cleanMessage = aliasToID(u, cleanMessage)});
+
+      db.chats.insert({'room':user.room,'userID':socket.id, 'message': cleanMessage, 'time': getSecondsPassed(), 'batch': batchID, 'round': currentRound}, (err, usersAdded) => {
+        if(err) console.log("Error storing message:", err)
+        else console.log("Message in", user.room, "from",user.name +":" ,cleanMessage)
+      });
+
+      users.filter(f => f.room == user.room).forEach(f => {
+        socket.broadcast.to(f.id).emit('new message', {
+          username: idToAlias(f, String(socket.id)),
+          message: idToAlias(f, cleanMessage)
+        });
+      });
+    }
+    
     //when the client emits 'new checkin', this listens and executes
     socket.on('new checkin', function (value) {
       let user = users.byID(socket.id)//PK: this used to have no 'let'
