@@ -941,8 +941,16 @@ io.on('connection', (socket) => {
       } else if (answerTag === "YN") { // yes no
         answerObj = binaryAnswers;
       } else if (answerTag === "TR") { //team radio
+        getTeamMembers(users.byID(socket.id)).forEach((team, index) => {
+          questionObj['question']+=" Team " + (index+1) + " (" + team + '),'
+        })
+        questionObj['question'] = questionObj['question'].slice(0,-1)
         answerObj = {answers: ["Team 1", "Team 2", "Team 3"], answerType: 'radio', textValue: true};
       } else if (answerTag === "MTR") { //team checkbox
+        getTeamMembers(users.byID(socket.id)).forEach(function(team, index){
+          questionObj['question']+=" Team " + (index+1) + " (" + team + '),'
+        })
+        questionObj['question'] = questionObj['question'].slice(0,-1)
         answerObj = {answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 1 and Team 3"], answerType: 'radio', textValue: true};
       } else if (answerTag === "LH") { //leave hit yn
         answerObj = leaveHitAnswers;
