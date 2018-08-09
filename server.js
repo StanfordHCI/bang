@@ -19,7 +19,7 @@ const issueBonusesNow = true
 const emailingWorkers = false
 
 const cleanHITs = false
-const assignQualifications = true
+const assignQualifications = false
 const debugMode = !runningLive
 
 const suddenDeath = false
@@ -31,7 +31,7 @@ const randomCondition = false
 const randomRoundOrder = false
 
 
-const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = true
@@ -85,6 +85,15 @@ Array.prototype.set = function() {
   this.forEach(element => { if (!setArray.includes(element)) { setArray.push(element) } })
   return setArray
 };
+
+function useUser(u,f,err = "Guarded against undefined user") {
+  let user = users.byID(u.id)
+  if (user && typeof f === "function")) { f(u)}
+  else {
+    console.log(err,socket.id);
+    return err
+  }
+}
 
 // Experiment variables
 const conditionsAvailalbe = ['control','treatment','baseline']
@@ -560,6 +569,17 @@ io.on('connection', (socket) => {
     socket.on('ready-to-all', (data) => {
       console.log("god is ready");
       io.sockets.emit('echo','ready')
+    })
+
+    socket.on('kill-all', (data) => {
+      console.log("god is angry");
+      io.sockets.emit('finished', {
+        message: "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
+        finishingCode: "kill-all",
+        turkSubmitTo: "",
+        assignmentId: "",
+        crashed: false
+      })
     })
 
     socket.on("next event", (data) => {
@@ -1079,4 +1099,3 @@ function HandleMultipleHits() {
     })
   }
 }
-

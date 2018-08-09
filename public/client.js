@@ -5,7 +5,7 @@ $(function() {
   let colorAssignment = []
 
   //toggles
-  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -38,10 +38,8 @@ $(function() {
   const $finishingPage = $('#finishing'); // The finishing page
   const botUsername = 'helperBot'
 
-  $('#ready-to-all').click( (event) => {
-    console.log("Got ready to all button.");
-    socket.emit('ready-to-all',{})
-  })
+  $('#ready-to-all').click((e) => { socket.emit('ready-to-all',{}) })
+  $('#kill-all').click( (event) => { socket.emit('',{}) })
 
   Vue.component('question-component', {
     template: `
@@ -71,7 +69,7 @@ $(function() {
     $holdingPage.hide();
     $preSurvey.hide();
     $starterSurvey.hide();
-    $midSurvey.hide(); 
+    $midSurvey.hide();
     $psychologicalSafety.hide();
     $postSurvey.hide();
     $blacklistSurvey.hide();
@@ -141,7 +139,7 @@ $(function() {
       hideAll();
       $waitingPage.show();
     }
-    
+
   }
 
   // Get permission to notify
@@ -915,7 +913,7 @@ $(function() {
   });
 
   socket.on('finished',data => {
-    HandleFinish(finishingMessage = data.message, mturk_form = data.turkSubmitTo + "/mturk/externalSubmit", 
+    HandleFinish(finishingMessage = data.message, mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
         assignmentId = mturkVariables.assignmentId, finishingcode = data.finishingCode);
     if (data.crashed) {
       if ($('#engagementfeedbackInput').length === 0) { //make sure element hasn't been already created
