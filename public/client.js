@@ -472,6 +472,7 @@ $(function() {
 
           if(index < questions.length) {
             let q = questions[questionIndex[index]].question
+            socket.emit('log', q);
             addChatMessage({username:botUsername, message:q})
             index++
           } else {
