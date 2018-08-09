@@ -29,6 +29,7 @@ const multipleHITs = false // cross-check with mturkTools.js
 
 const randomCondition = false
 const randomRoundOrder = false
+const randomProduct = false
 
 
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
@@ -170,9 +171,52 @@ if (runExperimentNow){ mturk.launchBang() }
 
 
 //Add more products
+<<<<<<< HEAD
 let discussion= [{'name':'Thinking of the idea of humans possibly living in a virtual reality – does that affect our morals? How? '},
                 {'name':'Does religion do more harm than good?'},
                 {'name':"Can empathy save the world?"}]
+=======
+let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
+                 'url': 'https://www.kickstarter.com/projects/stilform/kosmos-ink' },
+                {'name':'Projka: Multi-Function Accessory Pouches',
+                 'url': 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches' },
+                {'name':"First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC",
+                 'url': 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono' },
+                 {'name':"Nomad Energy- Radically Sustainable Energy Drink",
+                 'url': 'https://www.kickstarter.com/projects/1273663738/nomad-energy-radically-sustainable-energy-drink?ref=home_new_and_noteworthy' },
+                 {'name':"Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
+                 'url': 'https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw?ref=home_new_and_noteworthy' },
+                 {'name':"The Travel Line: Versatile Travel Backpack + Packing Tools",
+                 'url': 'https://www.kickstarter.com/projects/peak-design/the-travel-line-versatile-travel-backpack-packing?ref=home_featured' },
+                 {'name':"Stool Nº1",
+                 'url': 'https://www.kickstarter.com/projects/390812913/stool-no1?ref=discovery' },
+                 {'name':"LetB Color - take a look at time in different ways",
+                 'url': 'https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways?ref=discovery' },
+                 {'name':"FLECTR 360 OMNI – cycling at night with full 360° visibility",
+                 'url': 'https://www.kickstarter.com/projects/outsider-team/flectr-360-omni?ref=discovery' },
+                 {'name':"Make perfect cold brew coffee at home with the BrewCub",
+                 'url': 'https://www.kickstarter.com/projects/1201993039/make-perfect-cold-brew-coffee-at-home-with-the-bre?ref=recommended&ref=discovery' },
+                 {'name': 'NanoPen | Worlds Smallest & Indestructible EDC Pen Tool',
+                 'url': 'https://www.kickstarter.com/projects/bullet/nanopen-worlds-smallest-and-indestructible-edc-pen?ref=section_design-tech_popular' },
+                 {'name':"The EVERGOODS MQD24 and CTB40 Crossover Backpacks",
+                 'url': 'https://www.kickstarter.com/projects/1362258351/the-evergoods-mqd24-and-ctb40-crossover-backpacks?ref=recommended&ref=discovery' },
+                 {'name':"Hexgears X-1 Mechanical Keyboard",
+                 'url': 'https://www.kickstarter.com/projects/hexgears/hexgears-x-1-mechanical-keyboard?ref=discovery' },
+                 {'name':"KARVD - Modular Wood Carved Wall Panel System",
+                 'url': 'https://www.kickstarter.com/projects/karvdwalls/karvd-modular-wood-carved-wall-panel-system?ref=recommended&ref=discovery' },
+                 {'name':"PARA: Stationary l Pythagorean l Easy-to-Use Laser Measurer",
+                 'url': 'https://www.kickstarter.com/projects/1619356127/para-stationary-l-pythagorean-l-easy-to-use-laser?ref=recommended&ref=discovery' },
+                 {'name':"Blox: organize your world!",
+                 'url': 'https://www.kickstarter.com/projects/onehundred/blox-organize-your-world?ref=recommended&ref=discovery' },
+                 {'name':"Moment - World's Best Lenses For Mobile Photography",
+                 'url': 'https://www.kickstarter.com/projects/moment/moment-amazing-lenses-for-mobile-photography?ref=recommended&ref=discovery' },
+                 {'name':"The Ollie Chair: Shape-Shifting Seating",
+                 'url': 'https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating?ref=recommended&ref=discovery' },
+                 {'name':"Fave: the ideal all-purpose knife!",
+                 'url': 'https://www.kickstarter.com/projects/onehundred/fave-the-ideal-all-purpose-knife?ref=recommended&ref=discovery' },
+              ]
+
+>>>>>>> 61dbb68327f4b3dbdb27026350d352c0f4b8a44f
 let users = []; //the main local user storage
 let userPool = []; //accumulates users pre-experiment
 let currentRound = 0 //PK: talk about 0-indexed v 1-indexed round numbers (note: if change -> change parts of code reliant on 0-indexed round num)
@@ -286,7 +330,7 @@ io.on('connection', (socket) => {
         });
         var timeNow = new Date(Date.now())
         console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.getHours()+":"+timeNow.getMinutes()+":"+timeNow.getSeconds()+".")
-        console.log("Sockets active: " + Object.keys(io.sockets.sockets));
+        console.log("Sockets active: " + Object.keys(io.sockets.sockets) + " of " + teamSize);
         updateUserPool();
     })
 
@@ -734,9 +778,25 @@ io.on('connection', (socket) => {
         })
       })
 
+<<<<<<< HEAD
       //Notify user 'go' and send task.
       let currentDiscussion = discussion[currentRound]
       let taskText = "Discussion question: <strong>" + currentDiscussion.name + "</strong>"
+=======
+      //Notify user 'initiate round' and send task.
+
+      let currentProduct = products[currentRound]
+
+      if(randomProduct) {
+        let productInt = getRndInteger(0, products.length);
+        let currentProduct = products[productInt]
+        products.splice(productInt, 1)
+      } 
+      console.log('Current Product:', currentProduct);
+
+      let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
+
+>>>>>>> 61dbb68327f4b3dbdb27026350d352c0f4b8a44f
       experimentStarted = true
 
       mturk.startTask();
@@ -1066,6 +1126,10 @@ const getTeamMembers = (user) => {
 
 function time(s) {
     return new Date(s * 1e3).toISOString().slice(-13, -5);
+}
+
+function getRndInteger(min, max) {
+  return Math.floor(Math.random() * (max - min) ) + min;
 }
 
 //PK: delete this fxn and use the normal survey mechanism?
