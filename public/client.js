@@ -23,8 +23,6 @@ $(function() {
   const $leaveHitPopup = $('#leave-hit-popup')
 
   const $chatLink = $('#chatLink');
-  const $instructionsInfo = $('#instructions-info'); // Info page 
-  const $IRB = $('#IRB'); // IRB page 
   const $headerbarPage = $('#headerbarPage'); // The finishing page
   const $lockPage = $('#lockPage'); // The page shown before acceptance
   const $waitingPage = $('#waiting'); // The waiting page
@@ -68,8 +66,6 @@ $(function() {
     $checkinPopup.hide();
     $leaveHitPopup.hide()
     $lockPage.hide();
-    $instructionsInfo.hide();
-    $IRB.hide();
     $waitingPage.hide();
     $chatPage.hide();
     $holdingPage.hide();
@@ -90,7 +86,7 @@ $(function() {
     document.getElementById("finishingMessage").innerHTML = finishingMessage;
     document.getElementById("mturk_form").action = mturk_form;
     document.getElementById("assignmentId").value = assignmentId;
-    finishingcode.value = "LeftHit"
+    finishingcode.value = finishingcode
   }
 
   let holdingUsername = document.getElementById('username');
@@ -103,7 +99,6 @@ $(function() {
   const $psychologicalSafetyQuestions = $('.psychologicalSafetyQuestions'); //pre survey
   const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
-  const $IRBQuestions = $('.IRBQuestions'); 
 
   const socket = io();
 
@@ -392,13 +387,6 @@ $(function() {
     $checkinPopup.hide();
   })
 
-  $('#IRB').submit( (event) => {
-    event.preventDefault() //stops page reloading
-    socket.emit('IRBSubmit', $('#IRB').serialize()) //submits results alone
-    socket.emit('next event')
-    $IRB.hide()
-    $holdingPage.show(); 
-  })
 
   $('#midForm').submit( (event) => {
     event.preventDefault() //stops page reloading
