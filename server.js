@@ -984,12 +984,7 @@ io.on('connection', (socket) => {
 
   });
 
-  users.filter(f => f.room == user.room).forEach(f => {
-    socket.broadcast.to(f.id).emit('new message', {
-      username: idToAlias(f, String(socket.id)),
-      message: idToAlias(f, cleanMessage)
-    });
-  });
+  
 
   //loads qs in text file, returns json array
   function loadQuestions(questionFile) {
@@ -1009,8 +1004,16 @@ io.on('connection', (socket) => {
       } else if (answerTag === "YN") { // yes no
         answerObj = binaryAnswers;
       } else if (answerTag === "TR") { //team radio
+        getTeamMembers(users.byID(socket.id)).forEach((team, index) => {
+          questionObj['question']+=" Team " + (index+1) + " (" + team + '),'
+        })
+        questionObj['question'] = questionObj['question'].slice(0,-1)
         answerObj = {answers: ["Team 1", "Team 2", "Team 3"], answerType: 'radio', textValue: true};
       } else if (answerTag === "MTR") { //team checkbox
+        getTeamMembers(users.byID(socket.id)).forEach(function(team, index){
+          questionObj['question']+=" Team " + (index+1) + " (" + team + '),'
+        })
+        questionObj['question'] = questionObj['question'].slice(0,-1)
         answerObj = {answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 1 and Team 3"], answerType: 'radio', textValue: true};
       } else if (answerTag === "LH") { //leave hit yn
         answerObj = leaveHitAnswers;
@@ -1117,6 +1120,11 @@ const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize)
 const assignRoom = () => incompleteRooms().pick()
 
 const getTeamMembers = (user) => {
+  if(!users.byID(socket.id)) {
+    console.log("***USER UNDEFINED*** in getTeamMembers ..this would crash out thing but haha whatever")
+    console.log('SOCKET ID: ' + socket.id)
+    return;
+  }
   // Makes a list of teams this user has worked with
   const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
 
@@ -1141,6 +1149,11 @@ function getRndInteger(min, max) {
 //PK: delete this fxn and use the normal survey mechanism?
 // This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
 const postSurveyGenerator = (user) => {
+  if(!users.byID(socket.id)) {
+    console.log("***USER UNDEFINED*** in postSurveyGenerator ..this would crash out thing but haha whatever")
+    console.log('SOCKET ID: ' + socket.id)
+    return;
+  }
   const answers = getTeamMembers(user);
 
   // Makes a list comtaining the 2 team same teams, or empty if none.
