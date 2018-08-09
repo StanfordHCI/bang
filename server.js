@@ -446,7 +446,7 @@ io.on('connection', (socket) => {
       console.log(newUser.name + " added to users.\n" + "Total users: " + users.length)
       //add friends for each user once the correct number of users is reached
       if(users.length === teamSize **2){
-        debugLog(userPool, "USER POOL: " + userPool.length)
+        console.log("USER POOL: " + userPool)
         console.log('MTURK IDS: ')
         users.forEach(user => { //mutate the friend list of each user
           user.friends = users.map(u => { //create the alias through which each user sees every other user
