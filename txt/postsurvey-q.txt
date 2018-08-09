@@ -1,1 +1,1 @@
-TC.Select all teams you think were composed of the same people or none if you think all teams were composed of different people.
+MTR|Select the teams you think were composed of the same people.
