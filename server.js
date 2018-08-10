@@ -90,9 +90,7 @@ Array.prototype.set = function() {
 function useUser(u,f,err = "Guarded against undefined user") {
   let user = users.byID(u.id)
   if (user && typeof f === "function") {f(user)}
-  else {
-    console.log(err,u.id)
-  }
+  else { console.log(err,u.id) }
 }
 
 // Experiment variables
@@ -519,107 +517,93 @@ io.on('connection', (socket) => {
 
     //when the client emits 'new checkin', this listens and executes
     socket.on('new checkin', function (value) {
-      let user = users.byID(socket.id)//PK: this used to have no 'let'
-      if(!user) {
-        console.log("***USER UNDEFINED*** in new checkin ..this would crash out thing but haha whatever")
-        console.log('SOCKET ID: ' + socket.id)
-        return;
-      }
-      if(!user.connected) {
-        console.log("block ***USER NOT CONNECTED*** in new checkin")
-        return;
-      }
-      //^new
-      console.log(socket.username + "checked in with value " + value);
-      let currentRoom = users.byID(socket.id).room;
-      db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': value, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
-          if(err) console.log("There's a problem adding a checkin to the DB: ", err);
-          else console.log("Checkin added to the DB");
+      useUser(socket,user => {
+        console.log(user.username + "checked in with value " + value);
+        let currentRoom = user.room;
+        db.checkins.insert({'room':currentRoom, 'userID':user.id, 'value': value, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
+            if(err) console.log("There's a problem adding a checkin to the DB: ", err);
+            else console.log("Checkin added to the DB");
         });
-    });
+      })
+    })
 
     socket.on('load bot qs', () => {
       io.in(socket.id).emit('chatbot', loadQuestions(botFile))
     })
 
-
     // when the user disconnects.. perform this
     socket.on('disconnect', () => {
-        // changes connected to false of disconnected user in userPool
-        console.log("Disconnecting socket: " + socket.id)
-        if (userPool.find(function(element) {return element.id == socket.id})) {
-          userPool.byID(socket.id).connected = false;
-          let usersActive = getPoolUsersActive()
-          if(usersActive.length >= teamSize ** 2) {
-            io.sockets.emit('update number waiting', {num: 0});
-          } else {
-            io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersActive.length});
-          }
-
-          mturk.setAssignmentsPending(getPoolUsersConnected().length)
+      // changes connected to false of disconnected user in userPool
+      console.log("Disconnecting socket:", socket.id)
+      if (userPool.find(function(element) {return element.id == socket.id})) {
+        userPool.byID(socket.id).connected = false;
+        let usersActive = getPoolUsersActive()
+        if(usersActive.length >= teamSize ** 2) {
+          io.sockets.emit('update number waiting', {num: 0});
+        } else {
+          io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersActive.length});
         }
 
-        if (!users.every(user => socket.id !== user.id)) {//socket id is found in users
-          newMessage('has left the chatroom')
-          users.byID(socket.id).connected = false //set user to disconnected
-          users.byID(socket.id).ready = false //set user to not ready
-          if (!suddenDeath) {users.byID(socket.id).ready = true}
+        mturk.setAssignmentsPending(getPoolUsersConnected().length)
+      }
 
-          // update DB with change
-          updateUserInDB(socket,'connected',false)
+      // if (!users.every(user => socket.id !== user.id)) {//socket id is found in users
+      newMessage('has left the chatroom')
+      useUser(socket,user => {
+        user.connected = false
+        user.ready = suddenDeath ? false : true
 
-          if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
-          console.log("Connected users: " + getUsersConnected().length);
-          if (!experimentOver && suddenDeath && experimentStarted){//PK: what does this if condition mean
-            // Start cancel process
+        // update DB with change
+        updateUserInDB(user,'connected',false)
 
-            HandleMultipleHits()
+        if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
-            console.log("User left, emitting cancel to all users");
+        console.log("Connected users: " + getUsersConnected().length);
+        if (!experimentOver && suddenDeath && experimentStarted){//PK: what does this if condition mean
+          HandleMultipleHits()
 
-            let totalTime = getSecondsPassed();
+          console.log("User left, emitting cancel to all users");
+          let totalTime = getSecondsPassed();
 
-            if(timeCheckOn) {
-              db.time.insert({totalTaskTime: totalTime}, (err, timeAdded) => {
-                if(err) console.log("There's a problem adding total time to the DB: ", err);
-                else if(timeAdded) console.log("Total time added to the DB");
-              })
-            }
-
-            users.filter(u => u.id != socket.id).forEach((user) => {
-              let cancelMessage = "<strong>Someone left the task.</strong><br> <br> \
-              Unfortunately, our group task requires a specific number of users to run, \
-              so once a user leaves, our task cannot proceed. <br><br> \
-              To complete the task, please provide suggestions of ways to \
-              prevent people leaving in future runs of the study. <br><br> \
-              Since the team activity had already started, you will be additionally \
-              bonused for the time spent working with the team."
-              if (experimentStarted) { // Add future bonus pay
-                if(timeCheckOn) {
-                  mturk.updatePayment(totalTime);
-                  user.bonus += mturk.bonusPrice
-                } else {
-                  user.bonus += mturk.bonusPrice/2
-                }
-                updateUserInDB(user,'bonus',user.bonus)
-                HandleMultipleHits()
-
-              }
-              io.in(user.id).emit('finished', {
-                  message: cancelMessage,
-                  finishingCode: user.id,
-                  turkSubmitTo: mturk.submitTo,
-                  assignmentId: user.assignmentId,
-                  crashed: true
-              })
+          if(timeCheckOn) {
+            db.time.insert({totalTaskTime: totalTime}, (err, timeAdded) => {
+              if(err) console.log("There's a problem adding total time to the DB: ", err);
+              else if(timeAdded) console.log("Total time added to the DB");
             })
           }
-        }
-        if (!suddenDeath && users.length !== 0 && !users.every(user => user.id !== socket.id)) { //this sets users to ready when they disconnect; TODO remove user from users
-          users.byID(socket.id).ready = true
-        }
-        //users = users.filter(user => user.id != socket.id); // PK: now users should contain only teamSize ** 2 users (the exact amt for exp), come back when not brain dead
 
+          users.filter(u => u.id != socket.id).forEach((u) => {
+            let cancelMessage = "<strong>Someone left the task.</strong><br> <br> \
+            Unfortunately, our group task requires a specific number of users to run, \
+            so once a user leaves, our task cannot proceed. <br><br> \
+            To complete the task, please provide suggestions of ways to \
+            prevent people leaving in future runs of the study. <br><br> \
+            Since the team activity had already started, you will be additionally \
+            bonused for the time spent working with the team."
+            if (experimentStarted) { // Add future bonus pay
+              if(timeCheckOn) {
+                mturk.updatePayment(totalTime);
+                u.bonus += mturk.bonusPrice
+              } else {
+                u.bonus += mturk.bonusPrice/2
+              }
+              updateUserInDB(u,'bonus',u.bonus)
+              HandleMultipleHits()
+
+            }
+            io.in(u.id).emit('finished', {
+                message: cancelMessage,
+                finishingCode: u.id,
+                turkSubmitTo: mturk.submitTo,
+                assignmentId: u.assignmentId,
+                crashed: true
+            })
+          })
+        }
+        if (!suddenDeath && users.length !== 0) { //this sets users to ready when they disconnect;
+          user.ready = true // TODO: remove user from users
+        }
+      })
     });
 
     socket.on('ready-to-all', (data) => {
