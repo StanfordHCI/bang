@@ -12,8 +12,6 @@ const AWS = require('aws-sdk');
 const qualificationsOn = runningLive
 const runningDelayed = false
 
-const notifyWorkers = true
-
 let endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
 let submitTo = 'https://workersandbox.mturk.com'
 
@@ -185,6 +183,14 @@ const workOnActiveHITs = (callback) => {
       if (typeof callback === 'function'){
         callback(data.HITs.filter(h => h.HITStatus == "Assignable").map(h => h.HITId))
       }
+    }
+  })
+}
+
+const listAssignments = (HITId,callback) => {
+  mturk.listAssignmentsForHIT({HITId:HITId},(err,data) => {
+    if (err) {console.log(err, err.stack)} else {
+      if (typeof callback === 'function') callback(data)
     }
   })
 }
@@ -544,26 +550,16 @@ const launchBang = () => {
    }, 1000 * 60 * timeActive * delay)
 }
 
-// * notifyWorkersManually *
+// * notifyWorkers
 // -------------------------------------------------------------------
 // Sends a message to all users specified
 
-const turkerJSON = [{"mturkId": 'AGRKG3YT3KMD8', "url": 'https://www.google.com/'}]; // put JSON object here
-
-// Figure out how to loop through JSON object
-
-
-//const notifyWorkersManually = () => {
-//  var params = {
-//    MessageText: params.message, /* required */
-//    Subject: params.subject, /* required */
-//    WorkerIds: [params.mturkId] /* required */ // must be an array : [ 'string', 'string', etc ]
-//  };
-//  mturk.notifyWorkers(params, function(err, data) {
-//    if (err) console.log(err, err.stack); // an error occurred
-//    else     console.log(data);           // successful response
-//  });
-//}
+const notifyWorkers = (WorkerIds, subject, message) => {
+ mturk.notifyWorkers({WorkerIds:WorkerIds, MessageText:message, Subject:subject}, function(err, data) {
+   if (err) console.log("Error notifying workers:",err, err.stack); // an error occurred
+   else     console.log("Notified",WorkerIds.length,"workers:", subject);           // successful response
+ });
+}
 
 //turkerJSON.forEach(notifyWorkersManually);
 
@@ -588,7 +584,9 @@ module.exports = {
   returnCurrentHIT: returnCurrentHIT,
   submitTo: submitTo,
   launchBang: launchBang,
-  getHITURL: getHITURL
+  getHITURL: getHITURL,
+  listAssignments: listAssignments,
+  notifyWorkers: notifyWorkers
 };
 
 // TODO: CLean this up by integrating with other bonus code

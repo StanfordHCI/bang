@@ -16,13 +16,18 @@ const keywords = "ad writing, qualification, future task"
 const maxAssignments = 200
 const taskURL = questionHTML
 
-let HITId = ""
+let HITId = "3PCPFX4U405XHZWRW7GXXH3U9U5FQT"
 
 //Make HIT
-mturk.makeHIT(title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, taskURL, (HIT) => {
-  HITId = (HIT.HITId
-  // mturk.expireHIT(HITId)
+// mturk.makeHIT(title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, taskURL, (HIT) => {
+//   HITId = HIT.HITId
+//   // mturk.listAssignments(HITId,console.log)
+//
+// })
+
+mturk.listAssignments(HITId,data => {
+  mturk.notifyWorkers(data.Assignments.map(a => a.WorkerId),"Testing notifications","This notification worked, enjoy your lunch!")
 })
 
 //Expire HITs
-// mturk.workOnActiveHITs(H => H.forEach(mturk.expireHIT))
+mturk.workOnActiveHITs(H => H.forEach(mturk.expireHIT))
