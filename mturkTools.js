@@ -557,7 +557,7 @@ const launchBang = () => {
 const notifyWorkers = (WorkerIds, subject, message) => {
  mturk.notifyWorkers({WorkerIds:WorkerIds, MessageText:message, Subject:subject}, function(err, data) {
    if (err) console.log("Error notifying workers:",err, err.stack); // an error occurred
-   else     console.log("Notified workers", subject);           // successful response
+   else     console.log("Notified",WorkerIds.length,"workers:", subject);           // successful response
  });
 }
 
