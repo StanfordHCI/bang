@@ -155,7 +155,7 @@ const returnHIT = (hitId) => {
   });
 }
 
-const getHITURL = (hitId) => {
+const getHITURL = (hitId, callback) => {
   let url = ""
   mturk.getHIT({HITId: hitId}, (err, data) => {
     if (err) console.log(err, err.stack);
@@ -163,7 +163,7 @@ const getHITURL = (hitId) => {
       url = "https://worker.mturk.com/projects/" + data.HIT.HITGroupId + "/tasks"
     }
     console.log(url);
-    return url
+    if (typeof callback === 'function') callback(url)
   })
 }
 
@@ -583,6 +583,7 @@ module.exports = {
   returnCurrentHIT: returnCurrentHIT,
   submitTo: submitTo,
   launchBang: launchBang,
+  getHITURL: getHITURL
 };
 
 // TODO: CLean this up by integrating with other bonus code
