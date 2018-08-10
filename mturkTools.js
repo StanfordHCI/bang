@@ -175,6 +175,18 @@ const returnHIT = (hitId) => {
   });
 }
 
+const getHITURL = (hitId) => {
+  let url = ""
+  mturk.getHIT({HITId: hitId}, (err, data) => {
+    if (err) console.log(err, err.stack);
+    else {
+      url = "https://worker.mturk.com/projects/" + data.HIT.HITGroupId + "/tasks"
+    }
+    console.log(url);
+    return url
+  })
+}
+
 
 // * returnActiveHITs *
 // -------------------------------------------------------------------
@@ -183,14 +195,10 @@ const returnHIT = (hitId) => {
 // Returns an array of Active HITs.
 
 const returnActiveHITs = () => {
-  mturk.listHITs({}, (err, data) => {
+  mturk.listHITs({"MaxResults": 100}, (err, data) => {
     if (err) console.log(err, err.stack);
     else {
-      let activeHITs = [];
-      data.HITs.map((hit) => {
-        if(hit.HITStatus == "Assignable") { activeHITs.push(hit.HITId) }
-      })
-      return activeHITs
+      console.log(data.HITs.filter(h => h.HITStatus == "Assignable").map(h =>  "https://worker.mturk.com/projects/" + h.HITGroupId + "/tasks" ))
     }
   })
 }
@@ -512,13 +520,13 @@ const launchBang = () => {
             } else {
               console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
               currentHitId = data.HIT.HITId;
-              if(i == 2) { 
-                currentHitId2 = data.HIT.HITId; 
+              if(i == 2) {
+                currentHitId2 = data.HIT.HITId;
                 currentHITTypeId2 = data.HIT.HITTypeId;
                 currentHITGroupId2 = data.HIT.HITGroupId;
               }
-              if(i == 3) { 
-                currentHitId3 = data.HIT.HITId; 
+              if(i == 3) {
+                currentHitId3 = data.HIT.HITId;
                 currentHITTypeId3 = data.HIT.HITTypeId;
                 currentHITGroupId3 = data.HIT.HITGroupId;
               }
@@ -620,5 +628,8 @@ users = [] //list of user objects
 
 // Figure out how to build link when HIT is created
 // `print "https://workersandbox.mturk.com/mturk/preview?groupId={}".format(hit_type_id)`
-// or 
+// or
 // `print "https://mturk.com/mturk/preview?groupId={}".format(hit_type_id)`
+
+// var hitId =  "3UXQ63NLAA1WDL4YZ0RN312GDXALBD"
+// var hitURL = getHITURL(hitId)
