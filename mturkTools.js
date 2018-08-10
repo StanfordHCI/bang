@@ -155,6 +155,12 @@ const returnHIT = (hitId) => {
   });
 }
 
+// * getHITURL *
+// -------------------------------------------------------------------
+// Retrieves the URL of a specified HIT.
+//
+// Takes HIT ID as parameter.
+
 const getHITURL = (hitId, callback) => {
   let url = ""
   mturk.getHIT({HITId: hitId}, (err, data) => {
@@ -166,7 +172,6 @@ const getHITURL = (hitId, callback) => {
     if (typeof callback === 'function') callback(url)
   })
 }
-
 
 // * workOnActiveHITs *
 // -------------------------------------------------------------------
