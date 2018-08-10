@@ -465,7 +465,6 @@ $(function() {
 
     //user is "finished typing," do something
     function askQuestion () {
-      console.log(index)
       if(preChat){
         if(answered){
           answered = false;
@@ -503,7 +502,6 @@ $(function() {
   socket.on('set username', data => {
     username = data.username;
     holdingUsername.innerText = username
-    //console.log('username is set as ' + username)
   })
 
   socket.on('show chat link', data => {
