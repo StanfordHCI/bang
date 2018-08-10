@@ -713,145 +713,138 @@ io.on('connection', (socket) => {
 
     // Main experiment run
     socket.on('ready', function (data) {
-      if(!users.byID(socket.id)) {
-        console.log("***USER UNDEFINED*** in ready ..this would crash out thing but haha whatever")
-        console.log('SOCKET ID: ' + socket.id)
-        return;
-      }
-      if(!users.byID(socket.id).connected) {
-        console.log("block ***USER NOT CONNECTED*** in ready")
-        return;
-      }
-      //waits until user ends up on correct link before adding user - repeated code, make function //PK: what does this comment mean/ is it still relevant?
-      users.byID(socket.id).ready = true;
-      console.log(socket.username, 'is ready');
+      useUser(socket,user => {
+        //waits until user ends up on correct link before adding user - repeated code, make function //PK: what does this comment mean/ is it still relevant?
+        users.byID(socket.id).ready = true;
+        console.log(socket.username, 'is ready');
 
-      if (users.filter(u => !u.ready).length ) {
-        console.log("some users not ready", users.filter(u => !u.ready).map(u => u.name))
-        return
-      }
+        if (users.filter(u => !u.ready).length ) {
+          console.log("some users not ready", users.filter(u => !u.ready).map(u => u.name))
+          return
+        }
 
-      //PK: still relevant? can we delete this commented out code and/or incompleteRooms()?
-      // if (incompleteRooms().length) {
-      //   console.log("Some rooms empty:",incompleteRooms())
-      //   return } //are all rooms assigned
-      if ((suddenDeath || preExperiment) && users.length != teamSize ** 2) {
-        console.log("Need",teamSize ** 2 - users.length,"more users.")
-        return
-      }
+        //PK: still relevant? can we delete this commented out code and/or incompleteRooms()?
+        // if (incompleteRooms().length) {
+        //   console.log("Some rooms empty:",incompleteRooms())
+        //   return } //are all rooms assigned
+        if ((suddenDeath || preExperiment) && users.length != teamSize ** 2) {
+          console.log("Need",teamSize ** 2 - users.length,"more users.")
+          return
+        }
 
-      console.log('all users ready -> starting experiment');
-      //can we move this into its own on.*** call //PK: still relevant?
+        console.log('all users ready -> starting experiment');
+        //can we move this into its own on.*** call //PK: still relevant?
 
-      // assign people to rooms/teams before experiment begins
-      if(preExperiment){
-        users.forEach(u => {
-          u.person = people.pop();
+        // assign people to rooms/teams before experiment begins
+        if(preExperiment){
+          users.forEach(u => {
+            u.person = people.pop();
+          })
+           preExperiment = false;
+        }
+        treatmentNow = (currentCondition == "treatment" && currentRound == experimentRound)
+        const conditionRound = conditions[currentCondition][currentRound] - 1
+
+        Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
+          users.filter(u => room.includes(u.person)).forEach(u => {
+            u.room = roomName
+            u.rooms.push(roomName)
+            u.ready = false //return users to unready state
+            if (!suddenDeath && !u.connected) {u.ready = true}
+            console.log(u.name, '-> room', u.room);
+          })
         })
-         preExperiment = false;
-      }
-      treatmentNow = (currentCondition == "treatment" && currentRound == experimentRound)
-      const conditionRound = conditions[currentCondition][currentRound] - 1
 
-      Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
-        users.filter(u => room.includes(u.person)).forEach(u => {
-          u.room = roomName
-          u.rooms.push(roomName)
-          u.ready = false //return users to unready state
-          if (!suddenDeath && !u.connected) {u.ready = true}
-          console.log(u.name, '-> room', u.room);
-        })
-      })
+        //Notify user 'initiate round' and send task.
 
-      //Notify user 'initiate round' and send task.
+        let currentProduct = products[currentRound]
 
-      let currentProduct = products[currentRound]
+        if(randomProduct) {
+          let productInt = getRndInteger(0, products.length);
+          let currentProduct = products[productInt]
+          products.splice(productInt, 1)
+        }
+        console.log('Current Product:', currentProduct);
 
-      if(randomProduct) {
-        let productInt = getRndInteger(0, products.length);
-        let currentProduct = products[productInt]
-        products.splice(productInt, 1)
-      }
-      console.log('Current Product:', currentProduct);
+        let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
-      let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url + "' target='_blank'>" + currentProduct.name + "</a></strong>!"
+        experimentStarted = true
+        mturk.startTask();
 
-      experimentStarted = true
-      mturk.startTask();
+        users.forEach(user => {
+          if (autocompleteTestOn) {
+            let teamNames = [tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username]
+            console.log(teamNames)
+            io.in(user.id).emit('initiate round', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1, runningLive: runningLive})//rounds are 0 indexed
+          } else {
+            // Dynamically generate teammate names
+            // even if teamSize = 1 for testing, this still works
 
-      users.forEach(user => {
-        if (autocompleteTestOn) {
-          let teamNames = [tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username]
-          console.log(teamNames)
-          io.in(user.id).emit('initiate round', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1, runningLive: runningLive})//rounds are 0 indexed
-        } else {
-          // Dynamically generate teammate names
-          // even if teamSize = 1 for testing, this still works
+            let teamMates = user.friends.filter(friend => { return (users.byID(friend.id)) && users.byID(friend.id).connected && (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
 
-          let teamMates = user.friends.filter(friend => { return (users.byID(friend.id)) && users.byID(friend.id).connected && (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
-
-          let team_Aliases = tools.makeName(teamMates.length, user.friends_history)
-          user.friends_history = user.friends_history.concat(team_Aliases)
-          for (i = 0; i < teamMates.length; i++) {
-            if (treatmentNow) {
-              teamMates[i].tAlias = team_Aliases[i].join("")
-              team_Aliases[i] = team_Aliases[i].join("")
-            } else {
-              if (currentRound == 0) { //if first round, create aliases
-                teamMates[i].alias = team_Aliases[i].join("")
+            let team_Aliases = tools.makeName(teamMates.length, user.friends_history)
+            user.friends_history = user.friends_history.concat(team_Aliases)
+            for (i = 0; i < teamMates.length; i++) {
+              if (treatmentNow) {
+                teamMates[i].tAlias = team_Aliases[i].join("")
                 team_Aliases[i] = team_Aliases[i].join("")
-              }
-              else { //if not, use previously created aliases
-                team_Aliases[i] = teamMates[i].alias
+              } else {
+                if (currentRound == 0) { //if first round, create aliases
+                  teamMates[i].alias = team_Aliases[i].join("")
+                  team_Aliases[i] = team_Aliases[i].join("")
+                }
+                else { //if not, use previously created aliases
+                  team_Aliases[i] = teamMates[i].alias
+                }
               }
             }
-          }
 
-          team_Aliases.push(user.name) //now push user for autocomplete
-          //let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
-          // io.in(user.id).emit('initiate round', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
-          io.in(user.id).emit('initiate round', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//round 0 indexed
+            team_Aliases.push(user.name) //now push user for autocomplete
+            //let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
+            // io.in(user.id).emit('initiate round', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
+            io.in(user.id).emit('initiate round', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//round 0 indexed
+          }
+        })
+
+        console.log('Issued task for:', currentProduct.name)
+        console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
+
+        // save start time
+        startTime = (new Date()).getTime();
+
+        //Round warning
+        // make timers run in serial
+        setTimeout(() => {
+          console.log('time warning', currentRound);
+          users.forEach(user => { io.in(user.id).emit('timer', {time: roundMinutes * .1}) });
+
+          //Done with round
+          setTimeout(() => {
+            console.log('done with round', currentRound);
+            users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
+            currentRound += 1 // guard to only do this when a round is actually done.
+            console.log(currentRound, "out of", numRounds)
+          }, 1000 * 60 * 0.1 * roundMinutes)
+        }, 1000 * 60 * 0.9 * roundMinutes)
+
+        if(checkinOn){
+          //record start checkin time in db
+          let currentRoom = users.byID(socket.id).room
+          db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
+            if(err) console.log("There's a problem adding a checkin to the DB: ", err);
+            else if(usersAdded) console.log("Checkin added to the DB");
+          });
+          let numPopups = 0;
+          let interval = setInterval(() => {
+            if(numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
+              clearInterval(interval);
+            } else {
+              socket.emit("checkin popup");
+              numPopups++;
+            }
+          }, 1000 * 60 * checkinIntervalMinutes)
         }
       })
-
-      console.log('Issued task for:', currentProduct.name)
-      console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
-
-      // save start time
-      startTime = (new Date()).getTime();
-
-      //Round warning
-      // make timers run in serial
-      setTimeout(() => {
-        console.log('time warning', currentRound);
-        users.forEach(user => { io.in(user.id).emit('timer', {time: roundMinutes * .1}) });
-
-        //Done with round
-        setTimeout(() => {
-          console.log('done with round', currentRound);
-          users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
-          currentRound += 1 // guard to only do this when a round is actually done.
-          console.log(currentRound, "out of", numRounds)
-        }, 1000 * 60 * 0.1 * roundMinutes)
-      }, 1000 * 60 * 0.9 * roundMinutes)
-
-      if(checkinOn){
-        //record start checkin time in db
-        let currentRoom = users.byID(socket.id).room
-        db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
-          if(err) console.log("There's a problem adding a checkin to the DB: ", err);
-          else if(usersAdded) console.log("Checkin added to the DB");
-        });
-        let numPopups = 0;
-        let interval = setInterval(() => {
-          if(numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
-            clearInterval(interval);
-          } else {
-            socket.emit("checkin popup");
-            numPopups++;
-          }
-        }, 1000 * 60 * checkinIntervalMinutes)
-      }
     })
 
   //if broken, tell users they're done and disconnect their socket
@@ -862,16 +855,17 @@ io.on('connection', (socket) => {
   });
 
   // Starter task
-   socket.on('starterSurveySubmit', (data) => {
-    let user = users.byID(socket.id)
-    let currentRoom = user.room
-    let parsedResults = parseResults(data);
-    user.results.starterCheck = parsedResults
-    console.log(user.name, "submitted survey:", user.results.starterCheck);
-    db.starterSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'starterCheck': user.results.starterCheck, 'batch':batchID}, (err, usersAdded) => {
-      if(err) console.log("There's a problem adding starterSurvey to the DB: ", err);
-      else if(usersAdded) console.log("starterSurvey added to the DB");
-    });
+  socket.on('starterSurveySubmit', (data) => {
+    useUser(socket,user => {
+      let currentRoom = user.room
+      let parsedResults = parseResults(data);
+      user.results.starterCheck = parsedResults
+      console.log(user.name, "submitted survey:", user.results.starterCheck);
+      db.starterSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'starterCheck': user.results.starterCheck, 'batch':batchID}, (err, usersAdded) => {
+        if(err) console.log("There's a problem adding starterSurvey to the DB: ", err);
+        else if(usersAdded) console.log("starterSurvey added to the DB");
+      });
+    })
   });
 
   // parses results from surveys to proper format for JSON file
@@ -891,16 +885,17 @@ io.on('connection', (socket) => {
   }
 
    // Task after each round - midSurvey - MAIKA
-   socket.on('midSurveySubmit', (data) => {
-    let user = users.byID(socket.id)
-    let currentRoom = user.room
-    let midSurveyResults = parseResults(data);
-    user.results.viabilityCheck = midSurveyResults;
-    console.log(user.name, "submitted survey:", user.results.viabilityCheck);
-    db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'midSurvey': user.results.viabilityCheck, 'batch':batchID}, (err, usersAdded) => {
-      if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
-      else if(usersAdded) console.log("MidSurvey added to the DB");
-    });
+  socket.on('midSurveySubmit', (data) => {
+    useUser(socket, user => {
+      let currentRoom = user.room
+      let midSurveyResults = parseResults(data);
+      user.results.viabilityCheck = midSurveyResults;
+      console.log(user.name, "submitted survey:", user.results.viabilityCheck);
+      db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'midSurvey': user.results.viabilityCheck, 'batch':batchID}, (err, usersAdded) => {
+        if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
+        else if(usersAdded) console.log("MidSurvey added to the DB");
+      });
+    })
   });
 
     socket.on('psychologicalSafetySubmit', (data) => {
