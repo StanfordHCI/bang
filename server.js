@@ -428,7 +428,7 @@ io.on('connection', (socket) => {
       if (users.length === teamSize ** 2) { // PK: if experiment has already started, change to condition on state variable
         HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
                 ifNotEmailMessage = "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
-                finishingCode = socket.id, turkSubmitTo = mturk.submitTo, assignmentId = data.assignmentId)
+                finishingCode = socket.id, turkSubmitTo = mturk.submitTo, assignmentId = userPool.byID(socket.id).assignmentId)//PK: come back to this
         return;
       }
 //PK: should i add a quick fix here?
@@ -1071,6 +1071,8 @@ const getTeamMembers = (socket) => {
     },""))
     return answers;
   })
+  console.log('undefined user in getTeamMembers')//PK:come back to this
+  return []
 }
 
 function time(s) {
