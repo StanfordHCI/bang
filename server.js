@@ -1057,9 +1057,13 @@ const numUsers = room => users.filter(user => user.room === room).length
 const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize)
 const assignRoom = () => incompleteRooms().pick()
 
-const getTeamMembers = (socket) => {
-  useUser(socket, user => {
-    // Makes a list of teams this user has worked with
+const getTeamMembers = (user) => {
+  if(!users.byID(socket.id)) {
+    console.log("***USER UNDEFINED*** in getteammem ..this would crash out thing but haha whatever")
+    console.log('SOCKET ID: ' + socket.id)
+    return;
+  }
+  // Makes a list of teams this user has worked with
     const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
 
     // Makes a human friendly string for each team with things like 'you' for the current user, commas and 'and' before the last name.
@@ -1070,9 +1074,7 @@ const getTeamMembers = (socket) => {
       return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
     },""))
     return answers;
-  })
-  console.log('undefined user in getTeamMembers')//PK:come back to this
-  return []
+
 }
 
 function time(s) {
@@ -1086,7 +1088,8 @@ function getRndInteger(min, max) {
 //PK: delete this fxn and use the normal survey mechanism?
 // This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
 const postSurveyGenerator = (socket) => {
-    const answers = getTeamMembers(socket);
+  
+    const answers = getTeamMembers(user);
 
     // Makes a list comtaining the 2 team same teams, or empty if none.
     let correctAnswer = answers.filter((team,index) => {
