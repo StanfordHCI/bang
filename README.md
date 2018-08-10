@@ -44,23 +44,23 @@ In server:
   
   22. assignQualifications = true
   
-  34. waitChatOn = true
+  32. waitChatOn = true
   
-  41. timeCheckOn = true
+  39. timeCheckOn = true
   
-  42. requiredOn = true
+  40. requiredOn = true
   
   Choices:
   
   25. suddenDeath
   
-  35. psychologicalSafetyOn
+  33. psychologicalSafetyOn
   
-  37. midSurveyOn
+  35. midSurveyOn
   
-  38. blacklistOn
+  36. blacklistOn
   
-  39. teamfeedbackOn
+  37. teamfeedbackOn
   
 In client:
 
@@ -107,23 +107,23 @@ In server:
   
   22. assignQualifications = true
   
-  34. waitChatOn = true
+  32. waitChatOn = true
   
-  41. timeCheckOn = true
+  39. timeCheckOn = true
   
-  42. requiredOn = true
+  40. requiredOn = true
   
   Choices:
   
   25. suddenDeath
   
-  35. psychologicalSafetyOn
+  33. psychologicalSafetyOn
   
-  37. midSurveyOn
+  35. midSurveyOn
   
-  38. blacklistOn
+  36. blacklistOn
   
-  39. teamfeedbackOn
+  37. teamfeedbackOn
   
 In client:
 
