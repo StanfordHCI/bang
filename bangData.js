@@ -1,3 +1,9 @@
+Array.prototype.set = function() {
+  const setArray = []
+  this.forEach(element => { if (!setArray.includes(element)) { setArray.push(element) } })
+  return setArray
+};
+
 const Datastore = require('nedb'),
     db = {};
     db.users = new Datastore({ filename:'.data/users', autoload: true, timestampData: true });
@@ -21,6 +27,10 @@ const Datastore = require('nedb'),
 
 db.chats.find({batch:1533681023319}, (err, data) => {
   if (err) {console.log(err)} else {
-    console.log(data);
+    data.map(a => a.room).set().forEach(currentRoom => {
+      console.log(data.sort((a,b) => a.createdAt-b.createdAt).filter(a => a.room = currentRoom).map(a => {
+        return "Room " + a.room + " " + a.userID + ": " + a.message
+      }));
+    })
   }
 })
