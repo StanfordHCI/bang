@@ -868,22 +868,6 @@ io.on('connection', (socket) => {
     })
   });
 
-  // parses results from surveys to proper format for JSON file
-  function parseResults(data) {
-    let surveyResults = data;
-    console.log(surveyResults)
-    let parsedResults = surveyResults.split('&');
-    let arrayLength = parsedResults.length;
-    for(var i = 0; i < arrayLength; i++) {
-      console.log(parsedResults[i]);
-      let result = parsedResults[i].slice(parsedResults[i].indexOf("=") + 1);
-      let qIndex = (parsedResults[i].slice(0, parsedResults[i].indexOf("="))).lastIndexOf('q');
-      let questionNumber = (parsedResults[i].slice(0, parsedResults[i].indexOf("="))).slice(qIndex + 1);
-      parsedResults[i] = questionNumber + '=' + result;
-    }
-    return parsedResults;
-  }
-
    // Task after each round - midSurvey - MAIKA
   socket.on('midSurveySubmit', (data) => {
     useUser(socket, user => {
@@ -898,59 +882,56 @@ io.on('connection', (socket) => {
     })
   });
 
-    socket.on('psychologicalSafetySubmit', (data) => {
-    let user = users.byID(socket.id)
-    let currentRoom = user.room
-    let psychologicalSafetyResults = parseResults(data);
-    user.results.psychologicalSafety = psychologicalSafetyResults;
-    console.log(user.name, "submitted survey:", user.results.psychologicalSafety);
-    db.psychologicalSafety.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'psychologicalSafety': user.results.psychologicalSafety, 'batch':batchID}, (err, usersAdded) => {
-      if(err) console.log("There's a problem adding psychologicalSafety to the DB: ", err);
-      else if(usersAdded) console.log("psychologicalSafety added to the DB");
-    });
+  socket.on('psychologicalSafetySubmit', (data) => {
+    useUser(socket, user => {
+      let psychologicalSafetyResults = parseResults(data);
+      user.results.psychologicalSafety = psychologicalSafetyResults;
+      console.log(user.name, "submitted survey:", user.results.psychologicalSafety);
+      db.psychologicalSafety.insert({'userID':socket.id, 'room':user.room, 'name':user.name, 'round':currentRound, 'psychologicalSafety': user.results.psychologicalSafety, 'batch':batchID}, (err, usersAdded) => {
+        if(err) console.log("There's a problem adding psychologicalSafety to the DB: ", err);
+        else if(usersAdded) console.log("psychologicalSafety added to the DB");
+      });
+    })
   });
 
   socket.on('teamfeedbackSurveySubmit', (data) => {
-    let user = users.byID(socket.id)
-    let currentRoom = user.room
-    user.results.teamfracture = data.fracture
-    user.results.teamfeedback = data.feedback
-    console.log(user.name, "submitted team fracture survey:", user.results.teamfracture);
-    console.log(user.name, "submitted team feedback survey:", user.results.teamfeedback);
-    db.teamFeedback.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'teamfracture': user.results.teamfracture, 'teamfeedback' : user.results.teamfeedback, 'batch':batchID}, (err, usersAdded) => {
-      if(err) console.log("There's a problem adding TeamFeedback to the DB: ", err);
-      else if(usersAdded) console.log("TeamFeedback added to the DB");
-    });
+    useUser(socket, user => {
+      user.results.teamfracture = data.fracture
+      user.results.teamfeedback = data.feedback
+      console.log(user.name, "submitted team fracture survey:", user.results.teamfracture);
+      console.log(user.name, "submitted team feedback survey:", user.results.teamfeedback);
+      db.teamFeedback.insert({'userID':socket.id, 'room':user.room, 'name':user.name, 'teamfracture': user.results.teamfracture, 'teamfeedback' : user.results.teamfeedback, 'batch':batchID}, (err, usersAdded) => {
+        if(err) console.log("There's a problem adding TeamFeedback to the DB: ", err);
+        else if(usersAdded) console.log("TeamFeedback added to the DB");
+      });
+    })
   });
 
   socket.on('mturk_formSubmit', (data) => {
-    let user = users.byID(socket.id)
-    if(user){ //PK: quick fix for user entering after task has started, come back to this
+    useUser(socket, user => {
       user.results.engagementFeedback = data
       updateUserInDB(socket,"results.engagementFeedback",data)
-    }
-
+    })
   });
 
   socket.on('postSurveySubmit', (data) => {
-    let user = users.byID(socket.id)
-    user.results.manipulationCheck = data
-    updateUserInDB(socket,"results.manipulationCheck",data)
+    useUser(socket, user => {
+      user.results.manipulationCheck = data
+      updateUserInDB(socket,"results.manipulationCheck",data)
+    })
   })
 
   socket.on('blacklistSurveySubmit', (data) => {
-    let user = users.byID(socket.id)
-    user.results.blacklistCheck = data //(user.results.manipulation == data) ? true : false
-    // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
-    console.log(user.name, "submitted blacklist survey:", data);
-    db.blacklist.insert({'userID':socket.id, 'name':user.name, 'midSurvey': user.results.blacklistCheck, 'batch':batchID}, (err, usersAdded) => {
-      if(err) console.log("There's a problem adding blacklist to the DB: ", err);
-      else if(usersAdded) console.log("Blacklist added to the DB");
-    });
-
+    useUser(socket, user => {
+      user.results.blacklistCheck = data //(user.results.manipulation == data) ? true : false
+      // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
+      console.log(user.name, "submitted blacklist survey:", data);
+      db.blacklist.insert({'userID':socket.id, 'name':user.name, 'midSurvey': user.results.blacklistCheck, 'batch':batchID}, (err, usersAdded) => {
+        if(err) console.log("There's a problem adding blacklist to the DB: ", err);
+        else if(usersAdded) console.log("Blacklist added to the DB");
+      });
+    })
   });
-
-
 
   //loads qs in text file, returns json array
   function loadQuestions(questionFile) {
@@ -1151,4 +1132,20 @@ function HandleMultipleHits() {
       else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
     })
   }
+}
+
+// parses results from surveys to proper format for JSON file
+function parseResults(data) {
+  let surveyResults = data;
+  console.log(surveyResults)
+  let parsedResults = surveyResults.split('&');
+  let arrayLength = parsedResults.length;
+  for(var i = 0; i < arrayLength; i++) {
+    console.log(parsedResults[i]);
+    let result = parsedResults[i].slice(parsedResults[i].indexOf("=") + 1);
+    let qIndex = (parsedResults[i].slice(0, parsedResults[i].indexOf("="))).lastIndexOf('q');
+    let questionNumber = (parsedResults[i].slice(0, parsedResults[i].indexOf("="))).slice(qIndex + 1);
+    parsedResults[i] = questionNumber + '=' + result;
+  }
+  return parsedResults;
 }
