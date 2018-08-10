@@ -465,7 +465,7 @@ const launchBang = () => {
         AutoApprovalDelayInSeconds: 60*taskDuration,
         Keywords: 'ads, writing, copy editing, advertising',
         MaxAssignments: numAssignments,
-        QualificationRequirements: QualificationReqs,
+        QualificationRequirements: qualificationReqs,
         Question: externalHIT(taskURL)
       };
       mturk.createHIT(params, (err, data) => {
