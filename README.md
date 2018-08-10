@@ -44,23 +44,23 @@ In server:
   
   22. assignQualifications = true
   
-  34. waitChatOn = true
+  32. waitChatOn = true
   
-  41. timeCheckOn = true
+  39. timeCheckOn = true
   
-  42. requiredOn = true
+  40. requiredOn = true
   
   Choices:
   
   25. suddenDeath
   
-  35. psychologicalSafetyOn
+  33. psychologicalSafetyOn
   
-  37. midSurveyOn
+  35. midSurveyOn
   
-  38. blacklistOn
+  36. blacklistOn
   
-  39. teamfeedbackOn
+  37. teamfeedbackOn
   
 In client:
 
@@ -83,6 +83,65 @@ In .env:
 
 
 ## Checklist for emailing a link
+In server:
+
+  Every time:
+  
+  6. const teamSize = process.env.TEAM_SIZE
+  
+  7. const roundMinutes = process.env.ROUND_MINUTES
+  
+  11/12. Set secondsToWait > secondsSinceResponse
+  
+  13. Set secondsToHold1 at roughly 1000
+  
+  14. Set secondsToHold2 at roughly 200
+  
+  17. runExperimentNow = true
+  
+  18. issueBonusesNow = true
+  
+  19. emailingWorkers = true
+  
+  21. cleanHITs = false
+  
+  22. assignQualifications = true
+  
+  32. waitChatOn = true
+  
+  39. timeCheckOn = true
+  
+  40. requiredOn = true
+  
+  Choices:
+  
+  25. suddenDeath
+  
+  33. psychologicalSafetyOn
+  
+  35. midSurveyOn
+  
+  36. blacklistOn
+  
+  37. teamfeedbackOn
+  
+In client:
+
+  11. waitChatOn = true
+
+In .env:
+
+  RUNNING_LIVE = FALSE
+  
+  RUNNING_LOCAL = FALSE
+  
+  TEAM_SIZE = whatever we want team size
+  
+  ROUND_MINUTES = whatever we want round minutes
+  
+  Make sure it's team size and not (team size)^2
+  
+  
 
 
 
