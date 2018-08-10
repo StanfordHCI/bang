@@ -116,7 +116,7 @@ const getBalance = () => {
 // Requires multiple Parameters.
 // Must manually add Qualification Requirements if desired.
 
-const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, qualificationList = []) => {
+const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, callback, qualificationList = []) => {
   let makeHITParams = {
     Title: title,  // string
     Description: description, // string
@@ -134,11 +134,9 @@ const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoA
     if (err) console.log(err, err.stack);
     else {
       console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
-      currentHitId = data.HIT.HITId;
+      if (typeof callback === 'function') callback(data.HIT)
     }
   });
-
-  return currentHitId
 }
 
 // * returnHIT *
@@ -170,31 +168,30 @@ const getHITURL = (hitId) => {
 }
 
 
-// * returnActiveHITs *
+// * workOnActiveHITs *
 // -------------------------------------------------------------------
 // Retrieves all active HITs.
 //
 // Returns an array of Active HITs.
 
-const returnActiveHITs = () => {
+const workOnActiveHITs = (callback) => {
   mturk.listHITs({"MaxResults": 100}, (err, data) => {
-    if (err) console.log(err, err.stack);
-    else {
-      const hits = data.HITs.filter(h => h.HITStatus == "Assignable").map(h => h.HITId)
-      console.log(hits);
-      return hits
+    if (err) {console.log(err, err.stack)} else {
+      if (typeof callback === 'function'){
+        callback(data.HITs.filter(h => h.HITStatus == "Assignable").map(h => h.HITId))
+      }
     }
   })
 }
 
-// * expireActiveHits *
+// * expireHIT *
 // -------------------------------------------------------------------
 // Expires all active HITs by updating the time-until-expiration to 0.
 // Users who have already accepted the HIT should still be able to finish and submit.
 //
 // Takes a HIT ID as a parameter
 
-const expireActiveHits = (HITId) => {
+const expireHIT = (HITId) => {
   mturk.updateExpirationForHIT({HITId: HITId,ExpireAt:0}, (err, data) => {
     if (err) { console.log(err, err.stack)
     } else {console.log("Expired HIT:", HITId)}
@@ -248,10 +245,10 @@ const setAssignmentsPending = (data) => {
   console.log('users accepted: ', usersAcceptedHIT)
   console.log('hits left: ', hitsLeft);
   if(taskStarted) {
-    expireActiveHits(currentHitId);
+    expireHIT(currentHitId);
       if(multipleHITs) {
-        expireActiveHits(currentHitId2);
-        expireActiveHits(currentHitId3);
+        expireHIT(currentHitId2);
+        expireHIT(currentHitId3);
       }
     console.log("expired active HITs")
   }
@@ -533,10 +530,10 @@ const launchBang = () => {
       delay++;
     } else {
       clearTimeout();
-      expireActiveHits(currentHitId);
+      expireHIT(currentHitId);
       if(multipleHITs) {
-        expireActiveHits(currentHitId2);
-        expireActiveHits(currentHitId3);
+        expireHIT(currentHitId2);
+        expireHIT(currentHitId3);
       }
     }
    }, 1000 * 60 * timeActive * delay)
@@ -571,8 +568,8 @@ module.exports = {
   getBalance: getBalance,
   makeHIT: makeHIT,
   returnHIT: returnHIT,
-  returnActiveHITs: returnActiveHITs,
-  expireActiveHits: expireActiveHits,
+  workOnActiveHITs: workOnActiveHITs,
+  expireHIT: expireHIT,
   deleteHIT: deleteHIT,
   createQualification: createQualification,
   setAssignmentsPending: setAssignmentsPending,
