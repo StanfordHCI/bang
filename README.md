@@ -19,6 +19,43 @@ ROUND_MINUTES=10
 
 Then just run with `node server.js`.
 
+## Checklist for running on MTurk (i.e. not emailing workers a link)
+In server:
+  Every time:
+  6. const teamSize = process.env.TEAM_SIZE
+  7. const roundMinutes = process.env.ROUND_MINUTES
+  11/12. Set secondsToWait > secondsSinceResopnse
+  13. Set secondsToHold1 at roughly 1000
+  14. Set secondsToHold2 at roughly 200
+  17. runExperimentNow = true
+  18. issueBonusesNow = true
+  19. emailingWorkers = false
+  21. cleanHITs = false
+  22. assignQualifications = true
+  34. waitChatOn = true
+  41. timeCheckOn = true
+  42. requiredOn = true
+  
+  Choices:
+  25. suddenDeath
+  35. psychologicalSafetyOn
+  37. midSurveyOn
+  38. blacklistOn
+  39. teamfeedbackOn
+  
+In client:
+
+In .env:
+  
+  
+
+
+
+## Checklist for emailing a link
+
+
+
+
 ## Related literature
 1. Salganik, Matthew J., Peter Sheridan Dodds, and Duncan J. Watts. **[Experimental study of inequality and unpredictability in an artificial cultural market](http://science.sciencemag.org/content/311/5762/854.full)**. Science 311.5762 (2006): 854-856.
 2. Mao A, Mason W, Suri S, Watts DJ (2016) **[An Experimental Study of Team Size and Performance on a Complex Task](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0153048)**. PLOS ONE 11(4): e0153048. https://doi.org/10.1371/journal.pone.0153048
