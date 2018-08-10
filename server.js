@@ -623,100 +623,92 @@ io.on('connection', (socket) => {
     })
 
     socket.on("next event", (data) => {
-      let user = users.byID(socket.id)
-      if(!user) {
-        console.log("***USER UNDEFINED*** in 'next event'..this would crash out thing but haha whatever")
-        console.log('SOCKET ID: ' + socket.id)
-        return;
-      }//PK: quick fix, next event still called for 'user' never added to users, come back to this
-      if(!user.connected) {
-        console.log("block ***USER NOT CONNECTED*** in 'next event'")
-        return;
-      }
-      let currentEvent = user.currentEvent;
-      let eventSchedule = user.eventSchedule;
-      console.log ("Event " + currentEvent + ": " + eventSchedule[currentEvent] + " | User: " + user.name)
+      useUser(socket,(user) => {
+        let currentEvent = user.currentEvent;
+        let eventSchedule = user.eventSchedule;
+        console.log ("Event " + currentEvent + ": " + eventSchedule[currentEvent] + " | User: " + user.name)
 
-      if (eventSchedule[currentEvent] == "starterSurvey") {
-        io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false, showHeaderBar: false});
-        taskStartTime = getSecondsPassed();
-      }
-      else if (eventSchedule[currentEvent] == "ready") {
-        if(starterSurveyOn && timeCheckOn) {
-          recordTime("starterSurvey");
+        if (eventSchedule[currentEvent] == "starterSurvey") {
+          io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false, showHeaderBar: false});
+          taskStartTime = getSecondsPassed();
         }
-        if (checkinOn) {
-          io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true, showHeaderBar: true});
-        }
-        io.in(user.id).emit("load", {element: 'leave-hit', questions: loadQuestions(leaveHitFile), interstitial: true, showHeaderBar: true})
-        io.in(user.id).emit("echo", "ready");
+        else if (eventSchedule[currentEvent] == "ready") {
+          if(starterSurveyOn && timeCheckOn) {
+            recordTime("starterSurvey");
+          }
+          if (checkinOn) {
+            io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true, showHeaderBar: true});
+          }
+          io.in(user.id).emit("load", {element: 'leave-hit', questions: loadQuestions(leaveHitFile), interstitial: true, showHeaderBar: true})
+          io.in(user.id).emit("echo", "ready");
 
-      }
-      else if (eventSchedule[currentEvent] == "midSurvey") {
-        if(timeCheckOn) {
-          recordTime("round");
         }
-        io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false, showHeaderBar: true});
-      }
-       else if (eventSchedule[currentEvent] == "psychologicalSafety") {
-        if(timeCheckOn) {
-          recordTime("round");
+        else if (eventSchedule[currentEvent] == "midSurvey") {
+          if(timeCheckOn) {
+            recordTime("round");
+          }
+          io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false, showHeaderBar: true});
         }
-        io.in(user.id).emit("load", {element: 'psychologicalSafety', questions: loadQuestions(psychologicalSafetyFile), interstitial: false, showHeaderBar: true});
-      }
-      else if (eventSchedule[currentEvent] == "teamfeedbackSurvey") {
-        if(midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if(timeCheckOn) {
-          recordTime("round");
+         else if (eventSchedule[currentEvent] == "psychologicalSafety") {
+          if(timeCheckOn) {
+            recordTime("round");
+          }
+          io.in(user.id).emit("load", {element: 'psychologicalSafety', questions: loadQuestions(psychologicalSafetyFile), interstitial: false, showHeaderBar: true});
         }
-        io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false, showHeaderBar: true});
-      }
-      else if (eventSchedule[currentEvent] == "blacklistSurvey") {
-        experimentOver = true
-        if(teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if(midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if(timeCheckOn) {
-          recordTime("round");
-        } else if(psychologicalSafetyOn) {
-          recordTime("psychologicalSafety")}
-        console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false})
-        io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false});
-      }
-      else if (eventSchedule[currentEvent] == "postSurvey") { //Launch post survey
-        if(blacklistOn && timeCheckOn) {
-          recordTime("blacklistSurvey");
-        } else if(teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if(midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if(timeCheckOn) {
-          recordTime("round");
+        else if (eventSchedule[currentEvent] == "teamfeedbackSurvey") {
+          if(midSurveyOn && timeCheckOn) {
+            recordTime("midSurvey");
+          } else if(timeCheckOn) {
+            recordTime("round");
+          }
+          io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false, showHeaderBar: true});
         }
-        let survey = postSurveyGenerator(user)
-        user.results.manipulation = survey.correctAnswer
-        updateUserInDB(user,'results.manipulation',user.results.manipulation)
-        io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false, showHeaderBar: false});
-      }
-      else if (eventSchedule[currentEvent] == "finished" || currentEvent > eventSchedule.length) {
-        if(timeCheckOn) {
-          recordTime("postSurvey");
+        else if (eventSchedule[currentEvent] == "blacklistSurvey") {
+          experimentOver = true
+          if(teamfeedbackOn && timeCheckOn) {
+            recordTime("teamfeedbackSurvey");
+          } else if(midSurveyOn && timeCheckOn) {
+            recordTime("midSurvey");
+          } else if(timeCheckOn) {
+            recordTime("round");
+          } else if(psychologicalSafetyOn) {
+            recordTime("psychologicalSafety")}
+          console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false})
+          io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false});
         }
-        user.bonus += mturk.bonusPrice
-        updateUserInDB(user,"bonus",user.bonus)
+        else if (eventSchedule[currentEvent] == "postSurvey") { //Launch post survey
+          if(blacklistOn && timeCheckOn) {
+            recordTime("blacklistSurvey");
+          } else if(teamfeedbackOn && timeCheckOn) {
+            recordTime("teamfeedbackSurvey");
+          } else if(midSurveyOn && timeCheckOn) {
+            recordTime("midSurvey");
+          } else if(timeCheckOn) {
+            recordTime("round");
+          }
+          let survey = postSurveyGenerator(user)
+          user.results.manipulation = survey.correctAnswer
+          updateUserInDB(user,'results.manipulation',user.results.manipulation)
+          io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false, showHeaderBar: false});
+        }
+        else if (eventSchedule[currentEvent] == "finished" || currentEvent > eventSchedule.length) {
+          if(timeCheckOn) {
+            recordTime("postSurvey");
+          }
+          user.bonus += mturk.bonusPrice
+          updateUserInDB(user,"bonus",user.bonus)
 
-        HandleMultipleHits()
+          HandleMultipleHits()
 
-        io.in(socket.id).emit('finished', {
-          message: "Thanks for participating, you're all done!",
-          finishingCode: socket.id,
-          turkSubmitTo: mturk.submitTo,
-          assignmentId: user.assignmentIdd
-        })
-      }
-      user.currentEvent += 1
+          io.in(socket.id).emit('finished', {
+            message: "Thanks for participating, you're all done!",
+            finishingCode: socket.id,
+            turkSubmitTo: mturk.submitTo,
+            assignmentId: user.assignmentId
+          })
+        }
+        user.currentEvent += 1
+      })
     })
 
     // Main experiment run
