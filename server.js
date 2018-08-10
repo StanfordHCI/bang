@@ -519,8 +519,7 @@ io.on('connection', (socket) => {
     socket.on('new checkin', function (value) {
       useUser(socket,user => {
         console.log(user.username + "checked in with value " + value);
-        let currentRoom = user.room;
-        db.checkins.insert({'room':currentRoom, 'userID':user.id, 'value': value, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
+        db.checkins.insert({'room':user.room, 'userID':user.id, 'value': value, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
             if(err) console.log("There's a problem adding a checkin to the DB: ", err);
             else console.log("Checkin added to the DB");
         });
@@ -771,19 +770,19 @@ io.on('connection', (socket) => {
         experimentStarted = true
         mturk.startTask();
 
-        users.forEach(user => {
+        users.forEach(u => {
           if (autocompleteTestOn) {
             let teamNames = [tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username]
             console.log(teamNames)
-            io.in(user.id).emit('initiate round', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1, runningLive: runningLive})//rounds are 0 indexed
+            io.in(u.id).emit('initiate round', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1, runningLive: runningLive})//rounds are 0 indexed
           } else {
             // Dynamically generate teammate names
             // even if teamSize = 1 for testing, this still works
 
-            let teamMates = user.friends.filter(friend => { return (users.byID(friend.id)) && users.byID(friend.id).connected && (users.byID(friend.id).room == user.room) && (friend.id !== user.id)});
+            let teamMates = u.friends.filter(friend => { return (users.byID(friend.id)) && users.byID(friend.id).connected && (users.byID(friend.id).room == u.room) && (friend.id !== u.id)});
 
-            let team_Aliases = tools.makeName(teamMates.length, user.friends_history)
-            user.friends_history = user.friends_history.concat(team_Aliases)
+            let team_Aliases = tools.makeName(teamMates.length, u.friends_history)
+            user.friends_history = u.friends_history.concat(team_Aliases)
             for (i = 0; i < teamMates.length; i++) {
               if (treatmentNow) {
                 teamMates[i].tAlias = team_Aliases[i].join("")
@@ -799,10 +798,10 @@ io.on('connection', (socket) => {
               }
             }
 
-            team_Aliases.push(user.name) //now push user for autocomplete
+            team_Aliases.push(u.name) //now push user for autocomplete
             //let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
             // io.in(user.id).emit('initiate round', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
-            io.in(user.id).emit('initiate round', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//round 0 indexed
+            io.in(u.id).emit('initiate round', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//round 0 indexed
           }
         })
 
@@ -829,8 +828,7 @@ io.on('connection', (socket) => {
 
         if(checkinOn){
           //record start checkin time in db
-          let currentRoom = users.byID(socket.id).room
-          db.checkins.insert({'room':currentRoom, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
+          db.checkins.insert({'room':user.room, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
             if(err) console.log("There's a problem adding a checkin to the DB: ", err);
             else if(usersAdded) console.log("Checkin added to the DB");
           });
@@ -857,11 +855,10 @@ io.on('connection', (socket) => {
   // Starter task
   socket.on('starterSurveySubmit', (data) => {
     useUser(socket,user => {
-      let currentRoom = user.room
       let parsedResults = parseResults(data);
       user.results.starterCheck = parsedResults
       console.log(user.name, "submitted survey:", user.results.starterCheck);
-      db.starterSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'starterCheck': user.results.starterCheck, 'batch':batchID}, (err, usersAdded) => {
+      db.starterSurvey.insert({'userID':socket.id, 'room':user.room, 'name':user.name, 'starterCheck': user.results.starterCheck, 'batch':batchID}, (err, usersAdded) => {
         if(err) console.log("There's a problem adding starterSurvey to the DB: ", err);
         else if(usersAdded) console.log("starterSurvey added to the DB");
       });
@@ -871,11 +868,10 @@ io.on('connection', (socket) => {
    // Task after each round - midSurvey - MAIKA
   socket.on('midSurveySubmit', (data) => {
     useUser(socket, user => {
-      let currentRoom = user.room
       let midSurveyResults = parseResults(data);
       user.results.viabilityCheck = midSurveyResults;
       console.log(user.name, "submitted survey:", user.results.viabilityCheck);
-      db.midSurvey.insert({'userID':socket.id, 'room':currentRoom, 'name':user.name, 'round':currentRound, 'midSurvey': user.results.viabilityCheck, 'batch':batchID}, (err, usersAdded) => {
+      db.midSurvey.insert({'userID':socket.id, 'room':user.room, 'name':user.name, 'round':currentRound, 'midSurvey': user.results.viabilityCheck, 'batch':batchID}, (err, usersAdded) => {
         if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
         else if(usersAdded) console.log("MidSurvey added to the DB");
       });
