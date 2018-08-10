@@ -25,8 +25,6 @@ const debugMode = !runningLive
 const suddenDeath = false
 let setPerson = false
 
-const multipleHITs = false // cross-check with mturkTools.js
-
 const randomCondition = false
 const randomRoundOrder = false
 const randomProduct = false
@@ -285,7 +283,7 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
 }); // eventSchedule instead of all of the toggles? (missing checkinOn) //PK: what does this comment mean?
 
 // Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
-setTimeout(HandleMultipleHits, 1000 * 12)
+setTimeout(HandleHits, 1000 * 12)
 
 // Chatroom
 io.on('connection', (socket) => {
@@ -556,7 +554,7 @@ io.on('connection', (socket) => {
 
         console.log("Connected users: " + getUsersConnected().length);
         if (!experimentOver && suddenDeath && experimentStarted){//PK: what does this if condition mean
-          HandleMultipleHits()
+          HandleHits()
 
           console.log("User left, emitting cancel to all users");
           let totalTime = getSecondsPassed();
@@ -584,7 +582,7 @@ io.on('connection', (socket) => {
                 u.bonus += mturk.bonusPrice/2
               }
               updateUserInDB(u,'bonus',u.bonus)
-              HandleMultipleHits()
+              HandleHits()
 
             }
             io.in(u.id).emit('finished', {
@@ -694,7 +692,7 @@ io.on('connection', (socket) => {
           user.bonus += mturk.bonusPrice
           updateUserInDB(user,"bonus",user.bonus)
 
-          HandleMultipleHits()
+          HandleHits()
 
           io.in(socket.id).emit('finished', {
             message: "Thanks for participating, you're all done!",
@@ -1101,22 +1099,12 @@ const postSurveyGenerator = (socket) => {
              correctAnswer: correctAnswer }
 }
 
-function HandleMultipleHits() {
-  if(multipleHITs) {
-    let currentHIT = mturk.returnCurrentHIT();
-    for(i = 0; i < currentHIT.length(); i++) {
-      db.ourHITs.insert({'currentHIT': currentHIT[i]}, (err, HITAdded) => {
-        if(err) console.log("There's a problem adding HIT to the DB: ", err);
-        else if(HITAdded) console.log("HIT added to the DB: ", currentHIT[i]);
-      })
-    }
-  } else {
-    let currentHIT = mturk.returnCurrentHIT();
-    db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
-      if(err) console.log("There's a problem adding HIT to the DB: ", err);
-      else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
-    })
-  }
+function HandleHits() {
+  let currentHIT = mturk.returnCurrentHIT();
+  db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+    if(err) console.log("There's a problem adding HIT to the DB: ", err);
+    else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
+  })
 }
 
 // parses results from surveys to proper format for JSON file

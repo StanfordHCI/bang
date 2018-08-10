@@ -40,24 +40,15 @@ const timeActive = 4; //should be 10 // How long a task stays alive in minutes -
 const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
 const rewardPrice = 0.01 // upfront cost
 const noUSA = false; // if true, turkers in the USA will not be able to see the HIT
-const multipleHITs = false; // if true, posts numHITs of hits with slightly different titles at the same time
 const numHITs = 3;
 const maxAssignments = (teamSize * teamSize) + 2*teamSize;
 let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
 let usersAcceptedHIT = 0;
 let numAssignments = maxAssignments; // extra HITs for over-recruitment
 
-// multiple because of multipleHITs toggle - need to keep track of all active IDs
 let currentHitId = '';
-let currentHitId2 = '';
-let currentHitId3 = '';
-
 let currentHITTypeId = '';
 let currentHITGroupId = '';
-let currentHITTypeId2 = '';
-let currentHITGroupId2 = '';
-let currentHITTypeId3 = '';
-let currentHITGroupId3 = '';
 
 let hitsLeft = numAssignments; // changes when users accept and disconnect (important - don't remove)
 let taskStarted = false;
@@ -257,10 +248,6 @@ const setAssignmentsPending = (data) => {
   console.log('hits left: ', hitsLeft);
   if(taskStarted) {
     expireHIT(currentHitId);
-      if(multipleHITs) {
-        expireHIT(currentHitId2);
-        expireHIT(currentHitId3);
-      }
     console.log("expired active HITs")
   }
 }
@@ -379,13 +366,9 @@ const checkBlocks = (removeBlocks = false) => {
 // * returnCurrentHIT *
 // -------------------------------------------------------------------
 // Returns the current active HIT ID
-// If multiple HITs, returns an array of the HIT IDs
 
 const returnCurrentHIT = () => {
-  if(multipleHITs) {
-    let HITs = [currentHitId, currentHitId2, currentHitId3]
-    return HITs;
-  } else { return currentHitId; }
+  return currentHitId;
 }
 
 // * launchBang *
@@ -456,32 +439,14 @@ const launchBang = () => {
     Question: externalHIT(taskURL)
   };
 
-  if(multipleHITs) {
-    for(i = 1; i <= numHITs; i++) {
-      if(i > 1) {
-        HITTitle = HITTitle + i;
-      }
-      mturk.createHIT(params, (err, data) => {
-        if (err) {
-          console.log(err, err.stack);
-        } else {
-          console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
-          currentHitId = data.HIT.HITId;
-          if(i == 2) { currentHitId2 = data.HIT.HITId; }
-          if(i == 3) { currentHitId3 = data.HIT.HITId; }
-        }
-      });
+  mturk.createHIT(params, (err, data) => {
+    if (err) {
+       console.log(err, err.stack);
+    } else {
+       console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
+      currentHitId = data.HIT.HITId;
     }
-  } else {
-    mturk.createHIT(params, (err, data) => {
-      if (err) {
-        console.log(err, err.stack);
-      } else {
-        console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
-        currentHitId = data.HIT.HITId;
-      }
-    });
-  }
+  })
 
   let delay = 1;
   // only continues to post if not enough people accepted HIT
@@ -503,31 +468,7 @@ const launchBang = () => {
         QualificationRequirements: QualificationReqs,
         Question: externalHIT(taskURL)
       };
-      if(multipleHITs) {
-        for(i = 1; i <= numHITs; i++) {
-          if(i > 1) { HITTitle = HITTitle + i; }
-          mturk.createHIT(params, (err, data) => {
-            if (err) {
-              console.log(err, err.stack);
-            } else {
-              console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
-              currentHitId = data.HIT.HITId;
-              if(i == 2) {
-                currentHitId2 = data.HIT.HITId;
-                currentHITTypeId2 = data.HIT.HITTypeId;
-                currentHITGroupId2 = data.HIT.HITGroupId;
-              }
-              if(i == 3) {
-                currentHitId3 = data.HIT.HITId;
-                currentHITTypeId3 = data.HIT.HITTypeId;
-                currentHITGroupId3 = data.HIT.HITGroupId;
-              }
-
-            }
-          });
-        }
-      } else {
-        mturk.createHIT(params, (err, data) => {
+      mturk.createHIT(params, (err, data) => {
           if (err) {
             console.log(err, err.stack);
           } else {
@@ -536,16 +477,11 @@ const launchBang = () => {
             currentHITTypeId = data.HIT.HITTypeId
             currentHITGroupId = data.HIT.HITGroupId
           }
-        });
-      }
+      });
       delay++;
     } else {
       clearTimeout();
       expireHIT(currentHitId);
-      if(multipleHITs) {
-        expireHIT(currentHitId2);
-        expireHIT(currentHitId3);
-      }
     }
    }, 1000 * 60 * timeActive * delay)
 }
