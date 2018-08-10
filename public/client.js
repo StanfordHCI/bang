@@ -39,7 +39,7 @@ $(function() {
   const botUsername = 'helperBot'
 
   $('#ready-to-all').click((e) => { socket.emit('ready-to-all',{}) })
-  $('#kill-all').click( (event) => { socket.emit('',{}) })
+  $('#kill-all').click((e) => { socket.emit('kill-all',{}) })
 
   Vue.component('question-component', {
     template: `
