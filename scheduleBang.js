@@ -25,7 +25,7 @@ let HITId = "3PCPFX4U405XHZWRW7GXXH3U9U5FQT"
 //
 // })
 
-mturk.listAssignments(,data => {
+mturk.listAssignments(HITId,data => {
   mturk.notifyWorkers(data.Assignments.map(a => a.WorkerId),"Testing notifications","This notification worked, enjoy your lunch!")
 })
 
