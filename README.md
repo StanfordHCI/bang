@@ -21,31 +21,62 @@ Then just run with `node server.js`.
 
 ## Checklist for running on MTurk (i.e. not emailing workers a link)
 In server:
+
   Every time:
+  
   6. const teamSize = process.env.TEAM_SIZE
+  
   7. const roundMinutes = process.env.ROUND_MINUTES
-  11/12. Set secondsToWait > secondsSinceResopnse
+  
+  11/12. Set secondsToWait > secondsSinceResponse
+  
   13. Set secondsToHold1 at roughly 1000
+  
   14. Set secondsToHold2 at roughly 200
+  
   17. runExperimentNow = true
+  
   18. issueBonusesNow = true
+  
   19. emailingWorkers = false
+  
   21. cleanHITs = false
+  
   22. assignQualifications = true
+  
   34. waitChatOn = true
+  
   41. timeCheckOn = true
+  
   42. requiredOn = true
   
   Choices:
+  
   25. suddenDeath
+  
   35. psychologicalSafetyOn
+  
   37. midSurveyOn
+  
   38. blacklistOn
+  
   39. teamfeedbackOn
   
 In client:
 
+  11. waitChatOn = true
+
 In .env:
+
+  RUNNING_LIVE = TRUE
+  
+  RUNNING_LOCAL = FALSE
+  
+  TEAM_SIZE = whatever we want team size
+  
+  ROUND_MINUTES = whatever we want round minutes
+  
+  Make sure it's team size and not (team size)^2
   
   
 
