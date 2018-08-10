@@ -31,7 +31,6 @@ const randomCondition = false
 const randomRoundOrder = false
 const randomProduct = false
 
-
 const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
@@ -435,9 +434,7 @@ io.on('connection', (socket) => {
         return;
       }
 //PK: should i add a quick fix here?
-      if(users.byID(socket.id)){
-        console.log('ERR: ADDING A USER ALREADY IN USERS')
-      }
+      if(users.byID(socket.id)) {console.log('ERR: ADDING A USER ALREADY IN USERS')}
       let newUser = makeUser(userPool.byID(socket.id));
       users.push(newUser)
       console.log(newUser.name + " added to users.\n" + "Total users: " + users.length)
@@ -714,7 +711,7 @@ io.on('connection', (socket) => {
     socket.on('ready', function (data) {
       useUser(socket,user => {
         //waits until user ends up on correct link before adding user - repeated code, make function //PK: what does this comment mean/ is it still relevant?
-        users.byID(socket.id).ready = true;
+        user.ready = true;
         console.log(socket.username, 'is ready');
 
         if (users.filter(u => !u.ready).length ) {
@@ -947,13 +944,13 @@ io.on('connection', (socket) => {
       } else if (answerTag === "YN") { // yes no
         answerObj = binaryAnswers;
       } else if (answerTag === "TR") { //team radio
-        getTeamMembers(users.byID(socket.id)).forEach((team, index) => {
+        getTeamMembers(socket).forEach((team, index) => {
           questionObj['question']+=" Team " + (index+1) + " (" + team + '),'
         })
         questionObj['question'] = questionObj['question'].slice(0,-1)
         answerObj = {answers: ["Team 1", "Team 2", "Team 3"], answerType: 'radio', textValue: true};
       } else if (answerTag === "MTR") { //team checkbox
-        getTeamMembers(users.byID(socket.id)).forEach(function(team, index){
+        getTeamMembers(socket).forEach(function(team, index){
           questionObj['question']+=" Team " + (index+1) + " (" + team + '),'
         })
         questionObj['question'] = questionObj['question'].slice(0,-1)
@@ -1062,23 +1059,20 @@ const numUsers = room => users.filter(user => user.room === room).length
 const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize)
 const assignRoom = () => incompleteRooms().pick()
 
-const getTeamMembers = (user) => {
-  if(!users.byID(socket.id)) {
-    console.log("***USER UNDEFINED*** in getTeamMembers ..this would crash out thing but haha whatever")
-    console.log('SOCKET ID: ' + socket.id)
-    return;
-  }
-  // Makes a list of teams this user has worked with
-  const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
+const getTeamMembers = (socket) => {
+  useUser(socket, user => {
+    // Makes a list of teams this user has worked with
+    const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
 
-  // Makes a human friendly string for each team with things like 'you' for the current user, commas and 'and' before the last name.
-  const answers = roomTeams.map((team, tIndex) => team.reduce((total, current, pIndex, pArr)=>{
-    const friend = user.friends.find(friend => friend.id == current.id)
-    let name = ((experimentRound == tIndex && currentCondition == "treatment") ? friend.tAlias : friend.alias)
-    if (name == user.name) {name = "you"}
-    return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
-  },""))
-  return answers;
+    // Makes a human friendly string for each team with things like 'you' for the current user, commas and 'and' before the last name.
+    const answers = roomTeams.map((team, tIndex) => team.reduce((total, current, pIndex, pArr)=>{
+      const friend = user.friends.find(friend => friend.id == current.id)
+      let name = ((experimentRound == tIndex && currentCondition == "treatment") ? friend.tAlias : friend.alias)
+      if (name == user.name) {name = "you"}
+      return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
+    },""))
+    return answers;
+  })
 }
 
 function time(s) {
@@ -1091,25 +1085,20 @@ function getRndInteger(min, max) {
 
 //PK: delete this fxn and use the normal survey mechanism?
 // This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
-const postSurveyGenerator = (user) => {
-  if(!users.byID(socket.id)) {
-    console.log("***USER UNDEFINED*** in postSurveyGenerator ..this would crash out thing but haha whatever")
-    console.log('SOCKET ID: ' + socket.id)
-    return;
-  }
-  const answers = getTeamMembers(user);
+const postSurveyGenerator = (socket) => {
+    const answers = getTeamMembers(socket);
 
-  // Makes a list comtaining the 2 team same teams, or empty if none.
-  let correctAnswer = answers.filter((team,index) => {
-    return conditions[currentCondition][index] == experimentRoundIndicator })
-  if (correctAnswer.length == 1) {correctAnswer = ""}
-  console.log(answers,correctAnswer)
+    // Makes a list comtaining the 2 team same teams, or empty if none.
+    let correctAnswer = answers.filter((team,index) => {
+      return conditions[currentCondition][index] == experimentRoundIndicator })
+    if (correctAnswer.length == 1) {correctAnswer = ""}
+    console.log(answers,correctAnswer)
 
-  return { question:"Select teams you think consisted of the same people.",
-           name: "postsurvey",
-           answers: answers,
-           answerType: 'checkbox',
-           correctAnswer: correctAnswer }
+    return { question:"Select teams you think consisted of the same people.",
+             name: "postsurvey",
+             answers: answers,
+             answerType: 'checkbox',
+             correctAnswer: correctAnswer }
 }
 
 function HandleMultipleHits() {
