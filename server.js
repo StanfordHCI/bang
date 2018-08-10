@@ -139,7 +139,7 @@ const Datastore = require('nedb'),
 function updateUserInDB(user,field,value) {
   //PK: safeguard here?
   db.users.update( {id: user.id}, {$set: {field: value}}, {},
-    err => console.log(err ? "Err recording "+field+": "+err : "Updated "+field+" "+user.id+"\n"+value+"\n")
+    err => console.log(err ? "Err recording "+field+": "+err : "Updated " + field + ": " + value + " | User: " + user.id)
   )
 }
 
