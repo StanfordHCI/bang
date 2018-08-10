@@ -302,7 +302,7 @@ io.on('connection', (socket) => {
       if(users.length === teamSize ** 2) { //this is equivalent to "experiment has started"
         HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
             ifNotEmailMessage = "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
-            finishingCode = socket.id, turkSubmitTo = mturk.submitTo, assignmentId = data.assignmentId)
+            finishingCode = socket.id, turkSubmitTo = mturk.submitTo)
         return;
       }
       userPool.push({
@@ -369,14 +369,14 @@ io.on('connection', (socket) => {
               console.log('EMIT FINISH TO EXTRA ACTIVE WORKER')
               HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
                 ifNotEmailMessage = "Thanks for participating, you're all done!",
-                finishingCode = socket.id, turkSubmitTo = mturk.submitTo, assignmentId = data.assignmentId)
+                finishingCode = socket.id, turkSubmitTo = mturk.submitTo)
             }
           }
           userPool.filter(user => !usersActive.byID(user.id)).forEach(user => {//
             console.log('EMIT FINISH TO NONACTIVE OR DISCONNECTED WORKER')
             HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
                 ifNotEmailMessage = "Thanks for participating, you're all done!",
-                finishingCode = socket.id, turkSubmitTo = mturk.submitTo, assignmentId = data.assignmentId)
+                finishingCode = socket.id, turkSubmitTo = mturk.submitTo)
           })
         }
       } else {
@@ -428,7 +428,7 @@ io.on('connection', (socket) => {
       if (users.length === teamSize ** 2) { // PK: if experiment has already started, change to condition on state variable
         HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
                 ifNotEmailMessage = "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
-                finishingCode = socket.id, turkSubmitTo = mturk.submitTo, assignmentId = userPool.byID(socket.id).assignmentId)//PK: come back to this
+                finishingCode = socket.id, turkSubmitTo = mturk.submitTo)//PK: come back to this
         return;
       }
 //PK: should i add a quick fix here?
@@ -844,7 +844,7 @@ io.on('connection', (socket) => {
   socket.on('broken', (data) => {
     HandleFinishAndEmailWorkers(ifEmailMessage = "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions.",
           ifNotEmailMessage = "The task has finished early. You will be compensated by clicking submit below.",
-          finishingCode = "broken", turkSubmitTo = mturk.submitTo, assignmentId = data.assignmentId)
+          finishingCode = "broken", turkSubmitTo = mturk.submitTo)
   });
 
   // Starter task
@@ -972,13 +972,12 @@ io.on('connection', (socket) => {
   }
 
   function HandleFinishAndEmailWorkers(ifEmailMessage, ifNotEmailMessage,
-    finishingCode, turkSubmitTo, assignmentId) {
+    finishingCode, turkSubmitTo) {
     if (emailingWorkers) {
       io.in(socket.id).emit('finished', {
         message: ifEmailMessage,
         finishingCode: finishingCode,
         turkSubmitTo: turkSubmitTo,
-        assignmentId: assignmentId,
         crashed: false
       })
     }
@@ -987,7 +986,6 @@ io.on('connection', (socket) => {
         message: ifNotEmailMessage,
         finishingCode: finishingCode,
         turkSubmitTo: turkSubmitTo,
-        assignmentId: assignmentId,
         crashed: false
       })
     }
