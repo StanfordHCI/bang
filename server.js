@@ -1058,7 +1058,7 @@ const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize)
 const assignRoom = () => incompleteRooms().pick()
 
 const getTeamMembers = (user) => {
-  if(!users.byID(socket.id)) {
+  if(!user) {
     console.log("***USER UNDEFINED*** in getteammem ..this would crash out thing but haha whatever")
     console.log('SOCKET ID: ' + socket.id)
     return;
@@ -1087,8 +1087,12 @@ function getRndInteger(min, max) {
 
 //PK: delete this fxn and use the normal survey mechanism?
 // This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
-const postSurveyGenerator = (socket) => {
-  
+const postSurveyGenerator = (user) => {
+    if(!user) {
+      console.log("***USER UNDEFINED*** in getteammem ..this would crash out thing but haha whatever")
+      console.log('SOCKET ID: ' + socket.id)
+      return;
+    }
     const answers = getTeamMembers(user);
 
     // Makes a list comtaining the 2 team same teams, or empty if none.
