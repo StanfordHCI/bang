@@ -88,7 +88,7 @@ Array.prototype.set = function() {
 
 function useUser(u,f,err = "Guarded against undefined user") {
   let user = users.byID(u.id)
-  if (user && typeof f === "function") {f(user)}
+  if (typeof user != 'undefined' && typeof f === "function") {f(user)}
   else { console.log(err,u.id) }
 }
 

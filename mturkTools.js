@@ -116,8 +116,7 @@ const getBalance = () => {
 // Requires multiple Parameters.
 // Must manually add Qualification Requirements if desired.
 
-const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments,
-  comparator, qualificationTypeID, actionsGuarded, integer, taskURL) => {
+const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, qualificationList = []) => {
   let makeHITParams = {
     Title: title,  // string
     Description: description, // string
@@ -127,27 +126,8 @@ const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoA
     AutoApprovalDelayInSeconds: 60 * autoApprovalDelay, // number, pass as minutes
     Keywords: keywords, // string
     MaxAssignments: maxAssignments, // number
-    // QualificationRequirements: [
-    //   {
-    //     Comparator: comparator, // string
-    //     QualificationTypeId: qualificationTypeID, // string
-    //     ActionsGuarded: actionsGuarded, // string
-    //     IntegerValues: [
-    //       integer,
-    //       /* more items */
-    //     ],
-    //     LocaleValues: [
-    //       {
-    //         Country: 'STRING_VALUE', /* required */
-    //         Subdivision: 'STRING_VALUE'
-    //       },
-    //       /* more items */
-    //     ],
-    //     RequiredToPreview: true || false
-    //   },
-    //   /* more items */
-    // ],
-    Question: externalHIT(taskURL)
+    QualificationRequirements: qualificationList, // list of qualification objects
+    Question: hitContent
   };
 
   mturk.createHIT(makeHITParams, (err, data) => {
@@ -157,6 +137,8 @@ const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoA
       currentHitId = data.HIT.HITId;
     }
   });
+
+  return currentHitId
 }
 
 // * returnHIT *
@@ -198,7 +180,9 @@ const returnActiveHITs = () => {
   mturk.listHITs({"MaxResults": 100}, (err, data) => {
     if (err) console.log(err, err.stack);
     else {
-      console.log(data.HITs.filter(h => h.HITStatus == "Assignable").map(h =>  "https://worker.mturk.com/projects/" + h.HITGroupId + "/tasks" ))
+      const hits = data.HITs.filter(h => h.HITStatus == "Assignable").map(h => h.HITId)
+      console.log(hits);
+      return hits
     }
   })
 }
@@ -210,10 +194,10 @@ const returnActiveHITs = () => {
 //
 // Takes a HIT ID as a parameter
 
-const expireActiveHits = (HIT) => {
-  mturk.updateExpirationForHIT({HITId: HIT,ExpireAt:0}, (err, data) => {
+const expireActiveHits = (HITId) => {
+  mturk.updateExpirationForHIT({HITId: HITId,ExpireAt:0}, (err, data) => {
     if (err) { console.log(err, err.stack)
-    } else {console.log("Expired HIT:", HIT)}
+    } else {console.log("Expired HIT:", HITId)}
   });
 }
 
