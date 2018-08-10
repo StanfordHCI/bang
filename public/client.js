@@ -128,7 +128,7 @@ $(function() {
       $headerbarPage.show()
       $leaveHitButton.hide()
       addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername +", welcome to our HIT!"})
-      addChatMessage({username: botUsername, message: "You must be able to stay for the amount of time allotted for this HIT, though we will likely finish before this. You will not be compensated if you leave before all the tasks are over. As a reminder, do not refresh or close the page."})
+      addChatMessage({username: botUsername, message: "You must be able to stay for the amount of time allotted for this HIT, though we will likely finish before this. If you cannot stay, please leave now. You will not be compensated if you leave before all the tasks are over. As a reminder, do not refresh or close the page."})
       setTimeout(()=> {
         addChatMessage({username: botUsername, message: "For this first task, I need you to answer a sequence of questions. Thanks for cooperating!"})
         setTimeout(() => {
