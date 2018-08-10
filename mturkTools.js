@@ -390,7 +390,7 @@ const launchBang = () => {
   // HIT Parameters
   let qualificationReqs = [{}];
   if(noUSA) {
-    QualificationReqs = [
+    qualificationReqs = [
       {
         QualificationTypeId:"00000000000000000071",  // non-US workers only
         LocaleValues:[{
@@ -400,7 +400,7 @@ const launchBang = () => {
         ActionsGuarded:"DiscoverPreviewAndAccept"  // only users outside of the US can see the HIT
       }];
   } else {
-    QualificationReqs = [
+    qualificationReqs = [
       {
         QualificationTypeId:"00000000000000000071",  // US workers only
         LocaleValues:[{
@@ -411,21 +411,21 @@ const launchBang = () => {
     }];
   }
   if (qualificationsOn) {
-    QualificationReqs.push({
+    qualificationReqs.push({
       QualificationTypeId: '00000000000000000040',  // more than 1000 HITs
       Comparator: 'GreaterThan',
       IntegerValues: [1000],
       RequiredToPreview: true,
     })
     if(runningLive) {
-      QualificationReqs.push({
+      qualificationReqs.push({
         QualificationTypeId: qualificationId,  // have not already completed the HIT
         Comparator: 'DoesNotExist',
         ActionsGuarded:"DiscoverPreviewAndAccept"
       })
     }
     if(runningDelayed) {
-      QualificationReqs.push({
+      qualificationReqs.push({
         QualificationTypeId: "3H3KEN1OLSVM98I05ACTNWVOM3JBI9",
         Comparator: 'Exists',
         ActionsGuarded:"DiscoverPreviewAndAccept"
@@ -446,7 +446,7 @@ const launchBang = () => {
     AutoApprovalDelayInSeconds: 60*taskDuration,
     Keywords: 'ads, writing, copy editing, advertising',
     MaxAssignments: numAssignments,
-    QualificationRequirements: QualificationReqs,
+    QualificationRequirements: qualificationReqs,
     Question: externalHIT(taskURL)
   };
 
