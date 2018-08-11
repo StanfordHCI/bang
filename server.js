@@ -265,6 +265,17 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
   }
 });
 
+// Notify workers that a HIT has started if we're doing recruiting by email
+if (emailingWorkers) {
+  let HITId = process.argv[2];
+  mturk.listAssignments(HITId, data => {
+    let subject = "We launched our new HIT! Join now, there are limited spaces!";
+    let URL = mturk.getHITURL(mturk.returnCurrentHIT());
+    let message = "You’re invited to join our newly launched HIT on Mturk; there are limited spaces! The HIT title includes \"Write online ads - bonus up to $10.5 / hour.\" You can find the HIT by searching the previous title or clicking this link" + URL;
+    mturk.notifyWorkers(data.Assignments.map(a => a.WorkerId), subject, message)
+  });
+}
+
 
   
 
@@ -285,6 +296,9 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
 
 // Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
 setTimeout(HandleHits, 1000 * 12)
+
+
+
 
 // Chatroom
 io.on('connection', (socket) => {
