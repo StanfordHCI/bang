@@ -23,7 +23,7 @@ function renderChats(batch) {
   db.chats.find({batch: batch}, (err, data) => {
     if (err) {console.log(err)} else {
       data.map(a => a.round).set().sort().forEach(currentRound => {
-        console.log("\nRound",);
+        console.log("\nRound", currentRound);
         data.map(a => a.room).set().sort().forEach(currentRoom => {
           console.log("\nRoom",currentRoom,"in round",currentRound);
           data.sort((a,b) => a.createdAt-b.createdAt).filter(a => a.room == currentRoom && a.round == currentRound).forEach(a => {
