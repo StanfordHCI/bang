@@ -8,10 +8,10 @@ const roundMinutes = process.env.ROUND_MINUTES
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
-const secondsToWait = 70 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
-const secondsSinceResponse = 60 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
-const secondsToHold1 = 720 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
-const secondsToHold2 = 180 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
+const secondsToWait = 60 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+const secondsSinceResponse = 59 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
+const secondsToHold1 = 1000 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
+const secondsToHold2 = 200 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 
 // Toggles
 const runExperimentNow = true
@@ -19,7 +19,7 @@ const issueBonusesNow = true
 const emailingWorkers = false
 
 const cleanHITs = false
-const assignQualifications = false
+const assignQualifications = true
 const debugMode = !runningLive
 
 const suddenDeath = false
@@ -30,11 +30,11 @@ const randomRoundOrder = false
 const randomProduct = false
 
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
-const psychologicalSafetyOn = false
+const psychologicalSafetyOn = true
 const starterSurveyOn = false
 const midSurveyOn = true
 const blacklistOn = true
-const teamfeedbackOn = false
+const teamfeedbackOn = true
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
 const requiredOn = true
