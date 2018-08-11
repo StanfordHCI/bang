@@ -266,6 +266,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
 });
 
 
+  
 
 // Adds Batch data for this experiment. unique batchID based on time/date
 db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn,
