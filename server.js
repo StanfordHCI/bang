@@ -224,6 +224,10 @@ let preExperiment = true
 let taskStartTime = getSecondsPassed(); // reset for each start of new task
 let taskEndTime = 0;
 let taskTime = 0;
+const timedBonusAmount = () => {
+  getSecondsPassed() - taskStartTime
+  return
+}
 
 // Building task list
 let eventSchedule = []
@@ -606,7 +610,10 @@ io.on('connection', (socket) => {
     })
 
     socket.on('kill-all', (data) => {
-      console.log("god is angry");
+      console.log("god is angry")
+
+      updateUserInDB(socket,"bonus",timedBonusAmount())
+
       io.sockets.emit('finished', {
         message: "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
         finishingCode: "kill-all",
