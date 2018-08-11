@@ -27,10 +27,14 @@ const Datastore = require('nedb'),
 
 db.chats.find({batch:1533681023319}, (err, data) => {
   if (err) {console.log(err)} else {
-    data.map(a => a.room).set().forEach(currentRoom => {
-      console.log(data.sort((a,b) => a.createdAt-b.createdAt).filter(a => a.room = currentRoom).map(a => {
-        return "Room " + a.room + " " + a.userID + ": " + a.message
-      }));
+    data.map(a => a.round).set().sort().forEach(currentRound => {
+      data.map(a => a.room).set().sort().forEach(currentRoom => {
+        data.sort((a,b) => a.createdAt-b.createdAt).filter(a => a.room = currentRoom && a.round == currentRound).forEach(a => {
+          console.log("Room " + a.round + a.room + " " + a.userID.slice(0,5) + ": " + a.message);
+        });
+      })
     })
+
+    console.log(data[0]);
   }
 })
