@@ -30,14 +30,35 @@ ul {
 .header {
   overflow: hidden;
   background-color: #333;
-  position: fixed; 
-  top: 0; 
-  width: 100%; 
+  position: fixed;
+  top: 0;
+  width: 100%;
   height: 60px;
   -webkit-box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
   -moz-box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
   box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
   z-index: 999;
+  display: flex;
+}
+
+
+#header-text-div {
+  flex: 1;
+}
+
+
+#header-text {
+  color: white;
+  text-align: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#character-counter {
+  color: black;
+  text-indent: 20px;
+  text-align: left;
 }
 
 .header h3 {
@@ -54,6 +75,9 @@ ul {
   width: max-content;
 }
 
+#character-count {
+  color: black;
+}
 
 /* Pages */
 
@@ -105,16 +129,13 @@ ul {
   margin-right: auto;
 }
 
-
-
-
 .login.page .title {
   font-size: 200%;
   display: inline-block;
 }
 
 .login.page .intro {
-  font-size: 100%;
+  font-size: 120%;
 }
 
 .login.page .usernameInput {
@@ -148,6 +169,7 @@ ul {
 .log {
   color: gray;
   font-size: 80%;
+  margin-bottom: 1em;
 }
 
 /* Messages */
@@ -174,7 +196,7 @@ ul {
 .chatArea {
   float: left;
   height: 100%;
-  width:  100%; 
+  width:  100%;
   padding: 60px 0;
 }
 
@@ -206,7 +228,7 @@ ul {
   display: inline-block;
   position: relative;
   float: left;
-  min-width: 100px;
+  min-width: 130px;
   margin: 5px;
 }
 
@@ -244,7 +266,7 @@ ul {
 .two-buttons {
   display: flex;
 }
- 
+
 .submit-buttons {
   display: inline-block;
   width: 100%;
@@ -284,7 +306,7 @@ input[type='radio']:checked~label, input[type='checkbox']:checked~label {
 .rb-spot + label {
   position: relative;
   display: inherit;
-  font-size:.8em;
+  font-size:.9em;
   transform: translate(0, 25%);
 }
 
@@ -379,18 +401,36 @@ button:hover {
 }
 
 /* Input */
+.input-area {
+  bottom: 0;
+  height: 60px;
+  left: 0;
+  display: flex;
+  position:fixed;
+  width:100%;
+}
 
+.input-message-div {
+  flex: 1;
+  height: 60px;
+  display: inline-block;
+}
 .inputMessage {
 /*   background-color: #ddd; */
 /*   color: #fff; */
   bottom: 0;
-  height: 60px;
+  height: 100%;
   left: 0;
   outline: none;
   padding-left: 10px;
-  position: absolute;
-  right: 0;
   width: 100%;
+  resize: none;
+}
+
+#character-counter-div {
+  position: relative;
+  width: 200px;
+  height: 60px;
 }
 
 .ui-autocomplete .ui-menu-item{

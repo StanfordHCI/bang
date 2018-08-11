@@ -4,7 +4,7 @@ require('dotenv').config()
 
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE"//ONLY CHANGE IN VIM ON SERVER
-const teamSize = process.env.TEAM_SIZE
+const teamSize = parseInt(process.env.TEAM_SIZE)
 const roundMinutes = process.env.ROUND_MINUTES
 
 const AWS = require('aws-sdk');
@@ -34,16 +34,24 @@ AWS.config = {
 
 // Declaration of variables
 const numRounds = 3
-const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
+const taskDuration = roundMinutes * numRounds * 2
+//const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
 const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
-const hourlyWage = 12.50; // changes reward of experiment depending on length - change to 6?
-const rewardPrice = .60
+const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
+const rewardPrice = 0.01 // upfront cost
+const noUSA = false; // if true, turkers in the USA will not be able to see the HIT
+const numHITs = 3;
+const maxAssignments = (2 * teamSize * teamSize);
 let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
 let usersAcceptedHIT = 0;
-let numAssignments = teamSize * teamSize;
+let numAssignments = maxAssignments; // extra HITs for over-recruitment
 
 let currentHitId = '';
+let currentHITTypeId = '';
+let currentHITGroupId = '';
+
 let hitsLeft = numAssignments; // changes when users accept and disconnect (important - don't remove)
+let taskStarted = false;
 
 let qualificationId = '';
 if(runningLive) {
@@ -56,6 +64,14 @@ const externalHIT = (taskURL, height = 700) => '<ExternalQuestion xmlns="http://
 // This initiates the API
 // Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
 const mturk = new AWS.MTurk({ endpoint: endpoint });
+
+// * startTask *
+// -------------------------------------------------------------------
+// Notifies that task has started, cancel HIT posting.
+
+const startTask = () => {
+  taskStarted = true;
+}
 
 // * updatePayment *
 // -------------------------------------------------------------------
@@ -89,8 +105,7 @@ const getBalance = () => {
 // Requires multiple Parameters.
 // Must manually add Qualification Requirements if desired.
 
-const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments,
-  comparator, qualificationTypeID, actionsGuarded, integer, taskURL) => {
+const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, callback, qualificationList = []) => {
   let makeHITParams = {
     Title: title,  // string
     Description: description, // string
@@ -100,35 +115,15 @@ const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoA
     AutoApprovalDelayInSeconds: 60 * autoApprovalDelay, // number, pass as minutes
     Keywords: keywords, // string
     MaxAssignments: maxAssignments, // number
-    // QualificationRequirements: [
-    //   {
-    //     Comparator: comparator, // string
-    //     QualificationTypeId: qualificationTypeID, // string
-    //     ActionsGuarded: actionsGuarded, // string
-    //     IntegerValues: [
-    //       integer,
-    //       /* more items */
-    //     ],
-    //     LocaleValues: [
-    //       {
-    //         Country: 'STRING_VALUE', /* required */
-    //         Subdivision: 'STRING_VALUE'
-    //       },
-    //       /* more items */
-    //     ],
-    //     RequiredToPreview: true || false
-    //   },
-    //   /* more items */
-    // ],
-    Question: externalHIT(taskURL)
+    QualificationRequirements: qualificationList, // list of qualification objects
+    Question: hitContent
   };
-
 
   mturk.createHIT(makeHITParams, (err, data) => {
     if (err) console.log(err, err.stack);
     else {
       console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
-      currentHitId = data.HIT.HITId;
+      if (typeof callback === 'function') callback(data.HIT)
     }
   });
 }
@@ -139,7 +134,7 @@ const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoA
 //
 // Takes HIT ID as parameter.
 
-const returnHIT = (hitId, ) => {
+const returnHIT = (hitId) => {
   var returnHITParams = {
     HITId: hitId /* required */
   };
@@ -149,23 +144,60 @@ const returnHIT = (hitId, ) => {
   });
 }
 
-// * expireActiveHits *
+// * getHITURL *
+// -------------------------------------------------------------------
+// Retrieves the URL of a specified HIT.
+//
+// Takes HIT ID as parameter.
+
+const getHITURL = (hitId, callback) => {
+  let url = ""
+  mturk.getHIT({HITId: hitId}, (err, data) => {
+    if (err) console.log(err, err.stack);
+    else {
+      url = "https://worker.mturk.com/projects/" + data.HIT.HITGroupId + "/tasks"
+    }
+    console.log(url);
+    if (typeof callback === 'function') callback(url)
+  })
+}
+
+// * workOnActiveHITs *
+// -------------------------------------------------------------------
+// Retrieves all active HITs.
+//
+// Returns an array of Active HITs.
+
+const workOnActiveHITs = (callback) => {
+  mturk.listHITs({"MaxResults": 100}, (err, data) => {
+    if (err) {console.log(err, err.stack)} else {
+      if (typeof callback === 'function'){
+        callback(data.HITs.filter(h => h.HITStatus == "Assignable").map(h => h.HITId))
+      }
+    }
+  })
+}
+
+const listAssignments = (HITId,callback) => {
+  mturk.listAssignmentsForHIT({HITId:HITId},(err,data) => {
+    if (err) {console.log(err, err.stack)} else {
+      if (typeof callback === 'function') callback(data)
+    }
+  })
+}
+
+// * expireHIT *
 // -------------------------------------------------------------------
 // Expires all active HITs by updating the time-until-expiration to 0.
 // Users who have already accepted the HIT should still be able to finish and submit.
+//
+// Takes a HIT ID as a parameter
 
-const expireActiveHits = () => {
-  mturk.listHITs({}, (err, data) => {
-    if (err) console.log(err, err.stack);
-    else {
-      data.HITs.map((hit) => {
-        mturk.updateExpirationForHIT({HITId: hit.HITId,ExpireAt:0}, (err, data) => {
-          if (err) { console.log(err, err.stack)
-          } else {console.log("Expired HIT:", hit.HITId)}
-        });
-      })
-    }
-  })
+const expireHIT = (HITId) => {
+  mturk.updateExpirationForHIT({HITId: HITId,ExpireAt:0}, (err, data) => {
+    if (err) { console.log(err, err.stack)
+    } else {console.log("Expired HIT:", HITId)}
+  });
 }
 
 // * deleteHIT *
@@ -211,9 +243,13 @@ const createQualification = (name) => {
 
 const setAssignmentsPending = (data) => {
   usersAcceptedHIT = data
-  hitsLeft = teamSize * teamSize - usersAcceptedHIT
+  hitsLeft = maxAssignments - usersAcceptedHIT
   console.log('users accepted: ', usersAcceptedHIT)
   console.log('hits left: ', hitsLeft);
+  if(taskStarted) {
+    expireHIT(currentHitId);
+    console.log("expired active HITs")
+  }
 }
 
 // * assignQualificationToUsers *
@@ -225,7 +261,6 @@ const assignQualificationToUsers = (users) => {
   users.filter((user) => {
     return user.mturkId
   }).forEach((user) => {
-    // // Assigns the qualification to the worker
     var assignQualificationParams = {QualificationTypeId: qualificationId, WorkerId: user.mturkId, IntegerValue: 1, SendNotification: false};
     mturk.associateQualificationWithWorker(assignQualificationParams, function(err, data) {
       if (err) console.log(err, err.stack); // an error occurred
@@ -273,19 +308,19 @@ const listUsersWithQualification = () => {
 
 const payBonuses = (users) => {
   let successfullyBonusedUsers = []
-  users.filter(u => u.bonus != 0).forEach((u) => {
+  users.filter(u => u.mturkId != 'A19MTSLG2OYDLZ').filter(u => u.bonus != 0).forEach((u) => {
     mturk.sendBonus({
       AssignmentId: u.assignmentId,
       BonusAmount: String(u.bonus),
       Reason: "Thanks for participating in our HIT!",
       WorkerId: u.mturkId,
       UniqueRequestToken: u.id
-    }, function(err, data) {
+    }, (err, data) => {
       if (err) {
-       // console.log("Bonus not processed:",err)
+        console.log("Bonus not processed\t",u.id,'\t',u.mturkId)
       } else {
         successfullyBonusedUsers.push(u)
-        console.log("Bonused:",u)
+        console.log("Bonused:",u.id, u.mturkId)
       }
     })
   })
@@ -328,38 +363,58 @@ const checkBlocks = (removeBlocks = false) => {
   })
 }
 
+// * returnCurrentHIT *
+// -------------------------------------------------------------------
+// Returns the current active HIT ID
+
+const returnCurrentHIT = () => {
+  return currentHitId;
+}
+
 // * launchBang *
 // -------------------------------------------------------------------
 // Launches Scaled-Humanity Fracture experiment
 
 const launchBang = () => {
   // HIT Parameters
-  let QualificationReqs = [
-    {
-      QualificationTypeId:"00000000000000000071",  // US workers only
-      LocaleValues:[{
-        Country:"US",
-      }],
-      Comparator:"In",
-      ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
+  let qualificationReqs = [{}];
+  if(noUSA) {
+    qualificationReqs = [
+      {
+        QualificationTypeId:"00000000000000000071",  // non-US workers only
+        LocaleValues:[{
+          Country:"US",
+        }],
+        Comparator:"NotIn",
+        ActionsGuarded:"DiscoverPreviewAndAccept"  // only users outside of the US can see the HIT
+      }];
+  } else {
+    qualificationReqs = [
+      {
+        QualificationTypeId:"00000000000000000071",  // US workers only
+        LocaleValues:[{
+          Country:"US",
+        }],
+        Comparator:"In",
+        ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
     }];
-
+  }
   if (qualificationsOn) {
-    QualificationReqs.push({
+    qualificationReqs.push({
       QualificationTypeId: '00000000000000000040',  // more than 1000 HITs
       Comparator: 'GreaterThan',
       IntegerValues: [1000],
       RequiredToPreview: true,
     })
     if(runningLive) {
-      QualificationReqs.push({
+      qualificationReqs.push({
         QualificationTypeId: qualificationId,  // have not already completed the HIT
         Comparator: 'DoesNotExist',
         ActionsGuarded:"DiscoverPreviewAndAccept"
       })
     }
     if(runningDelayed) {
-      QualificationReqs.push({
+      qualificationReqs.push({
         QualificationTypeId: "3H3KEN1OLSVM98I05ACTNWVOM3JBI9",
         Comparator: 'Exists',
         ActionsGuarded:"DiscoverPreviewAndAccept"
@@ -369,8 +424,10 @@ const launchBang = () => {
 
   let time = Date.now();
 
+  let HITTitle = 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')';
+
   let params = {
-    Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')',
+    Title: HITTitle,
     Description: 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10)  + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
     AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
     LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
@@ -378,28 +435,29 @@ const launchBang = () => {
     AutoApprovalDelayInSeconds: 60*taskDuration,
     Keywords: 'ads, writing, copy editing, advertising',
     MaxAssignments: numAssignments,
-    QualificationRequirements: QualificationReqs,
+    QualificationRequirements: qualificationReqs,
     Question: externalHIT(taskURL)
   };
 
   mturk.createHIT(params, (err, data) => {
     if (err) {
-      console.log(err, err.stack);
+       console.log(err, err.stack);
     } else {
-      console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
+       console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
       currentHitId = data.HIT.HITId;
     }
-  });
+  })
 
   let delay = 1;
   // only continues to post if not enough people accepted HIT
   // Reposts every timeActive(x) number of minutes to keep HIT on top - stops reposting when enough people join
   setTimeout(() => {
-    if(hitsLeft > 0) {
+    if(hitsLeft > 0 && !taskStarted) {
       time = Date.now();
       numAssignments = hitsLeft;
+      let HITTitle = 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')';
       let params2 = {
-        Title: 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')',
+        Title: HITTitle,
         Description: 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10)  + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
         AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
         LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
@@ -407,29 +465,48 @@ const launchBang = () => {
         AutoApprovalDelayInSeconds: 60*taskDuration,
         Keywords: 'ads, writing, copy editing, advertising',
         MaxAssignments: numAssignments,
-        QualificationRequirements: QualificationReqs,
+        QualificationRequirements: qualificationReqs,
         Question: externalHIT(taskURL)
       };
-      mturk.createHIT(params2, (err, data) => {
-        if (err) console.log(err, err.stack);
-        else {
-          console.log("HIT expired, and posted", data.HIT.MaxAssignments, "new assignments:", data.HIT.HITId);
-          currentHitId = data.HIT.HITId;
-        }
+      mturk.createHIT(params, (err, data) => {
+          if (err) {
+            console.log(err, err.stack);
+          } else {
+            console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
+            currentHitId = data.HIT.HITId;
+            currentHITTypeId = data.HIT.HITTypeId
+            currentHITGroupId = data.HIT.HITGroupId
+          }
       });
       delay++;
     } else {
       clearTimeout();
+      expireHIT(currentHitId);
     }
    }, 1000 * 60 * timeActive * delay)
 }
 
+// * notifyWorkers
+// -------------------------------------------------------------------
+// Sends a message to all users specified
+
+const notifyWorkers = (WorkerIds, subject, message) => {
+ mturk.notifyWorkers({WorkerIds:WorkerIds, MessageText:message, Subject:subject}, function(err, data) {
+   if (err) console.log("Error notifying workers:",err, err.stack); // an error occurred
+   else     console.log("Notified",WorkerIds.length,"workers:", subject);           // successful response
+ });
+}
+
+//turkerJSON.forEach(notifyWorkersManually);
+
 module.exports = {
+  startTask: startTask,
   updatePayment: updatePayment,
   getBalance: getBalance,
   makeHIT: makeHIT,
   returnHIT: returnHIT,
-  expireActiveHits: expireActiveHits,
+  workOnActiveHITs: workOnActiveHITs,
+  expireHIT: expireHIT,
   deleteHIT: deleteHIT,
   createQualification: createQualification,
   setAssignmentsPending: setAssignmentsPending,
@@ -440,6 +517,40 @@ module.exports = {
   bonusPrice: bonusPrice,
   blockWorker: blockWorker,
   checkBlocks: checkBlocks,
+  returnCurrentHIT: returnCurrentHIT,
   submitTo: submitTo,
-  launchBang: launchBang
+  launchBang: launchBang,
+  getHITURL: getHITURL,
+  listAssignments: listAssignments,
+  notifyWorkers: notifyWorkers
 };
+
+// TODO: CLean this up by integrating with other bonus code
+const payBonusesManually = (user) => {
+  mturk.sendBonus({
+    AssignmentId: user.assignmentId,
+    BonusAmount: String(user.bonus),
+    Reason: "Thanks for working on our task.",
+    WorkerId: user.mturkId,
+    UniqueRequestToken: user.assignmentId
+  }, function(err, data) {
+    if (err) {
+     console.log("Bonus not processed:",err)
+    } else {
+      console.log("Bonused:",user.mturkId, user.bonus)
+      user.paid = user.bonus
+    }
+  })
+}
+
+users = [] //list of user objects
+
+// users.forEach(payBonusesManually)
+
+// Figure out how to build link when HIT is created
+// `print "https://workersandbox.mturk.com/mturk/preview?groupId={}".format(hit_type_id)`
+// or
+// `print "https://mturk.com/mturk/preview?groupId={}".format(hit_type_id)`
+
+// var hitId =  "3UXQ63NLAA1WDL4YZ0RN312GDXALBD"
+// var hitURL = getHITURL(hitId)
