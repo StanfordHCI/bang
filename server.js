@@ -8,10 +8,10 @@ const roundMinutes = process.env.ROUND_MINUTES
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
-const secondsToWait = 70 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
-const secondsSinceResponse = 60 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
-const secondsToHold1 = 720 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
-const secondsToHold2 = 180 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
+const secondsToWait = 60 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+const secondsSinceResponse = 59 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
+const secondsToHold1 = 1000 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
+const secondsToHold2 = 200 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 
 // Toggles
 const runExperimentNow = true
@@ -30,11 +30,11 @@ const randomRoundOrder = false
 const randomProduct = false
 
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
-const psychologicalSafetyOn = false
+const psychologicalSafetyOn = true
 const starterSurveyOn = false
 const midSurveyOn = true
 const blacklistOn = true
-const teamfeedbackOn = false
+const teamfeedbackOn = true
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
 const requiredOn = true
@@ -292,6 +292,11 @@ io.on('connection', (socket) => {
     let experimentStarted = false //NOTE: this will be set multiple times but I don't think that's what is wanted in this case
     let experimentOver = false
 
+    let userStartTime = getSecondsPassed();
+    const currentBonus = () => {
+      console.log(getSecondsPassed() - workerStartTime);
+    }
+
     socket.on('get username', data => {
       name_structure = tools.makeName();
       socket.name_structure = name_structure;
@@ -303,7 +308,7 @@ io.on('connection', (socket) => {
       if(users.length === teamSize ** 2) { //this is equivalent to "experiment has started"
         HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
             ifNotEmailMessage = "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
-            finishingCode = socket.id, turkSubmitTo = mturk.submitTo, assignmentId = data.assignmentId)
+            finishingCode = socket.id, turkSubmitTo = mturk.submitTo)
         return;
       }
       userPool.push({
@@ -370,14 +375,14 @@ io.on('connection', (socket) => {
               console.log('EMIT FINISH TO EXTRA ACTIVE WORKER')
               HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
                 ifNotEmailMessage = "Thanks for participating, you're all done!",
-                finishingCode = socket.id, turkSubmitTo = mturk.submitTo, assignmentId = data.assignmentId)
+                finishingCode = socket.id, turkSubmitTo = mturk.submitTo)
             }
           }
           userPool.filter(user => !usersActive.byID(user.id)).forEach(user => {//
             console.log('EMIT FINISH TO NONACTIVE OR DISCONNECTED WORKER')
             HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
                 ifNotEmailMessage = "Thanks for participating, you're all done!",
-                finishingCode = socket.id, turkSubmitTo = mturk.submitTo, assignmentId = data.assignmentId)
+                finishingCode = socket.id, turkSubmitTo = mturk.submitTo)
           })
         }
       } else {
@@ -429,7 +434,7 @@ io.on('connection', (socket) => {
       if (users.length === teamSize ** 2) { // PK: if experiment has already started, change to condition on state variable
         HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
                 ifNotEmailMessage = "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
-                finishingCode = socket.id, turkSubmitTo = mturk.submitTo, assignmentId = data.assignmentId)
+                finishingCode = socket.id, turkSubmitTo = mturk.submitTo)//PK: come back to this
         return;
       }
 //PK: should i add a quick fix here?
@@ -605,9 +610,10 @@ io.on('connection', (socket) => {
       console.log("god is ready");
       io.sockets.emit('echo','ready')
     })
-
     socket.on('kill-all', (data) => {
-      console.log("god is angry");
+      console.log("god is angry")
+      currentBonus()
+      // updateUserInDB(socket,"bonus",currentBonus())
       io.sockets.emit('finished', {
         message: "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
         finishingCode: "kill-all",
@@ -845,7 +851,7 @@ io.on('connection', (socket) => {
   socket.on('broken', (data) => {
     HandleFinishAndEmailWorkers(ifEmailMessage = "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions.",
           ifNotEmailMessage = "The task has finished early. You will be compensated by clicking submit below.",
-          finishingCode = "broken", turkSubmitTo = mturk.submitTo, assignmentId = data.assignmentId)
+          finishingCode = "broken", turkSubmitTo = mturk.submitTo)
   });
 
   // Starter task
@@ -973,13 +979,12 @@ io.on('connection', (socket) => {
   }
 
   function HandleFinishAndEmailWorkers(ifEmailMessage, ifNotEmailMessage,
-    finishingCode, turkSubmitTo, assignmentId) {
+    finishingCode, turkSubmitTo) {
     if (emailingWorkers) {
       io.in(socket.id).emit('finished', {
         message: ifEmailMessage,
         finishingCode: finishingCode,
         turkSubmitTo: turkSubmitTo,
-        assignmentId: assignmentId,
         crashed: false
       })
     }
@@ -988,7 +993,6 @@ io.on('connection', (socket) => {
         message: ifNotEmailMessage,
         finishingCode: finishingCode,
         turkSubmitTo: turkSubmitTo,
-        assignmentId: assignmentId,
         crashed: false
       })
     }
@@ -1058,9 +1062,13 @@ const numUsers = room => users.filter(user => user.room === room).length
 const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize)
 const assignRoom = () => incompleteRooms().pick()
 
-const getTeamMembers = (socket) => {
-  useUser(socket, user => {
-    // Makes a list of teams this user has worked with
+const getTeamMembers = (user) => {
+  if(!user) {
+    console.log("***USER UNDEFINED*** in getteammem ..this would crash out thing but haha whatever")
+    console.log('SOCKET ID: ' + socket.id)
+    return;
+  }
+  // Makes a list of teams this user has worked with
     const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
 
     // Makes a human friendly string for each team with things like 'you' for the current user, commas and 'and' before the last name.
@@ -1071,7 +1079,7 @@ const getTeamMembers = (socket) => {
       return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
     },""))
     return answers;
-  })
+
 }
 
 function time(s) {
@@ -1084,8 +1092,13 @@ function getRndInteger(min, max) {
 
 //PK: delete this fxn and use the normal survey mechanism?
 // This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
-const postSurveyGenerator = (socket) => {
-    const answers = getTeamMembers(socket);
+const postSurveyGenerator = (user) => {
+    if(!user) {
+      console.log("***USER UNDEFINED*** in getteammem ..this would crash out thing but haha whatever")
+      console.log('SOCKET ID: ' + socket.id)
+      return;
+    }
+    const answers = getTeamMembers(user);
 
     // Makes a list comtaining the 2 team same teams, or empty if none.
     let correctAnswer = answers.filter((team,index) => {

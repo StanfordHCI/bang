@@ -19,7 +19,6 @@ const Datastore = require('nedb');
     
 //Set HIT Params
 const title = `Join our task tomorrow at ${actual_runTIME.getHours()}:${actual_runTIME.getMinutes()} for up to 2 hours`
-console.log("My title is", title)
 const description = "Earn $10.50 per hour for up to 2 hours."
 const assignmentDuration = 20
 const reward = 0.01
@@ -39,8 +38,6 @@ mturk.makeHIT(title, description, assignmentDuration, lifetime, reward, autoAppr
   });
   mturk.listAssignments(HITId,console.log)
 })
-
-
 
 
 
