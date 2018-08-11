@@ -19,22 +19,20 @@ const Datastore = require('nedb'),
     db.leavingMessage = new Datastore({filename: '.data/leavingMessage', autoload: true, timestampData: true})
     db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true})
 
-// db.users.find({}, (err, data) => {
-//   if (err) {console.log(err)} else {
-//     console.log(data);
-//   }
-// })
-
-db.chats.find({batch:1533681023319}, (err, data) => {
-  if (err) {console.log(err)} else {
-    data.map(a => a.round).set().sort().forEach(currentRound => {
-      data.map(a => a.room).set().sort().forEach(currentRoom => {
-        data.sort((a,b) => a.createdAt-b.createdAt).filter(a => a.room = currentRoom && a.round == currentRound).forEach(a => {
-          console.log("Room " + a.round + a.room + " " + a.userID.slice(0,5) + ": " + a.message);
-        });
+function renderChats(batch) {
+  db.chats.find({batch: batch}, (err, data) => {
+    if (err) {console.log(err)} else {
+      data.map(a => a.round).set().sort().forEach(currentRound => {
+        console.log("\nRound",);
+        data.map(a => a.room).set().sort().forEach(currentRoom => {
+          console.log("\nRoom",currentRoom,"in round",currentRound);
+          data.sort((a,b) => a.createdAt-b.createdAt).filter(a => a.room == currentRoom && a.round == currentRound).forEach(a => {
+            console.log(" " + a.userID.slice(0,5) + ": " + a.message);
+          });
+        })
       })
-    })
+    }
+  })
+}
 
-    console.log(data[0]);
-  }
-})
+renderChats(1533681023319)

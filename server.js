@@ -19,7 +19,7 @@ const issueBonusesNow = true
 const emailingWorkers = false
 
 const cleanHITs = false
-const assignQualifications = true
+const assignQualifications = false
 const debugMode = !runningLive
 
 const suddenDeath = false
@@ -224,10 +224,6 @@ let preExperiment = true
 let taskStartTime = getSecondsPassed(); // reset for each start of new task
 let taskEndTime = 0;
 let taskTime = 0;
-const timedBonusAmount = () => {
-  getSecondsPassed() - taskStartTime
-  return
-}
 
 // Building task list
 let eventSchedule = []
@@ -294,6 +290,11 @@ io.on('connection', (socket) => {
   //PK: what are these bools for?
     let experimentStarted = false //NOTE: this will be set multiple times but I don't think that's what is wanted in this case
     let experimentOver = false
+
+    let userStartTime = getSecondsPassed();
+    const currentBonus = () => {
+      console.log(getSecondsPassed() - workerStartTime);
+    }
 
     socket.on('get username', data => {
       name_structure = tools.makeName();
@@ -608,12 +609,10 @@ io.on('connection', (socket) => {
       console.log("god is ready");
       io.sockets.emit('echo','ready')
     })
-
     socket.on('kill-all', (data) => {
       console.log("god is angry")
-
-      updateUserInDB(socket,"bonus",timedBonusAmount())
-
+      currentBonus()
+      // updateUserInDB(socket,"bonus",currentBonus())
       io.sockets.emit('finished', {
         message: "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
         finishingCode: "kill-all",
