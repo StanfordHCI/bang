@@ -19,6 +19,14 @@ const Datastore = require('nedb'),
     db.leavingMessage = new Datastore({filename: '.data/leavingMessage', autoload: true, timestampData: true})
     db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true})
 
+//Renders a full db by name.
+function renderFullDB(dbName) {
+    db[dbName].find({}, (err, data) => {
+      data.forEach(datum => console.log(datum))
+    })
+}
+
+//Cleanly renders chats for a given batch
 function renderChats(batch) {
   db.chats.find({batch: batch}, (err, data) => {
     if (err) {console.log(err)} else {
@@ -35,4 +43,6 @@ function renderChats(batch) {
   })
 }
 
-renderChats(1533681023319)
+// renderChats(1533681023319)
+
+renderFullDB("users")
