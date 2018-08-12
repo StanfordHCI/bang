@@ -1,4 +1,5 @@
 require('dotenv').config()
+var colors = require('colors')
 
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
@@ -44,7 +45,7 @@ const checkinIntervalMinutes = roundMinutes/3
 const autocompleteTestOn = false //turns on fake team to test autocomplete
 const debugLog = (...args) => {if (debugMode){console.log(...args)}}
 
-console.log(runningLive ? "\nRUNNING LIVE\n" : "\nRUNNING SANDBOXED\n");
+console.log(runningLive ? "\n RUNNING LIVE ".red.inverse : "\n RUNNING SANDBOXED ".green.inverse);
 console.log(runningLocal ? "Running locally" : "Running remotely");
 
 // Question Files
@@ -74,7 +75,7 @@ const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 const port = process.env.PORT || 3000;
-server.listen(port, () => { console.log('Server listening at port %d', port); });
+server.listen(port, () => { console.log('Server listening at port %d', port) });
 
 Array.prototype.pick = function() { return this[Math.floor(Math.random() * this.length)] };
 Array.prototype.byID = function(id) { return this.find(user => user.id === id) };
@@ -87,7 +88,7 @@ Array.prototype.set = function() {
 function useUser(u,f,err = "Guarded against undefined user") {
   let user = users.byID(u.id)
   if (typeof user != 'undefined' && typeof f === "function") {f(user)}
-  else { console.log(err,u.id) }
+  else { console.log(err.red,u.id) }
 }
 
 // Experiment variables
@@ -128,7 +129,7 @@ const Datastore = require('nedb'),
 
 function updateUserInDB(user,field,value) {
   db.users.update( {id: user.id}, {$set: {[field]: value}}, {},
-    err => console.log(err ? "Err recording "+field+": "+err : "Updated " + field + " for " + user.id + " " + JSON.stringify(value,null,2))
+    err => console.log(err ? "Err recording ".red +field+": "+err : "Updated " + field + " for " + user.id + " " + JSON.stringify(value,null,2))
   )
 }
 
