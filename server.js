@@ -119,13 +119,13 @@ const batchID = Date.now();
 console.log("Launching batch",batchID);
 
 // Setting up DB
-const Datastore = require('nedb'),
-    db = {};
-    db.users = new Datastore({ filename:'.data/users', autoload: true, timestampData: true });
-    db.chats = new Datastore({ filename:'.data/chats', autoload: true, timestampData: true});
-    db.batch = new Datastore({ filename:'.data/batch', autoload: true, timestampData: true});
-    db.time = new Datastore({ filename:'.data/time', autoload: true, timestampData: true});
-    db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true})
+const Datastore = require('nedb')
+const db = {}
+db.users = new Datastore({ filename:'.data/users', autoload: true, timestampData: true });
+db.chats = new Datastore({ filename:'.data/chats', autoload: true, timestampData: true});
+db.batch = new Datastore({ filename:'.data/batch', autoload: true, timestampData: true});
+db.time = new Datastore({ filename:'.data/time', autoload: true, timestampData: true});
+db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true})
 
 function updateUserInDB(user,field,value) {
   db.users.update( {id: user.id}, {$set: {[field]: value}}, {},
