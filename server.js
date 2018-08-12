@@ -33,12 +33,12 @@ const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = false
-const blacklistOn = false
-const teamfeedbackOn = false
+const blacklistOn = true
+const teamfeedbackOn = true
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
 const requiredOn = false
-const checkinIntervalMinutes = roundMinutes/30
+const checkinIntervalMinutes = roundMinutes/3
 
 //Testing toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
@@ -122,19 +122,13 @@ const Datastore = require('nedb'),
     db = {};
     db.users = new Datastore({ filename:'.data/users', autoload: true, timestampData: true });
     db.chats = new Datastore({ filename:'.data/chats', autoload: true, timestampData: true});
-    db.starterSurvey = new Datastore({ filename:'.data/starterSurvey', autoload: true, timestampData: true});
-    db.checkins = new Datastore({ filename:'.data/checkins', autoload: true, timestampData: true});
-    db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true, timestampData: true});
-    db.psychologicalSafety = new Datastore({ filename:'.data/psychologicalSafety', autoload: true, timestampData: true});
-    db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true, timestampData: true});
     db.batch = new Datastore({ filename:'.data/batch', autoload: true, timestampData: true});
     db.time = new Datastore({ filename:'.data/time', autoload: true, timestampData: true});
-    db.leavingMessage = new Datastore({filename: '.data/leavingMessage', autoload: true, timestampData: true})
     db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true})
 
 function updateUserInDB(user,field,value) {
   db.users.update( {id: user.id}, {$set: {[field]: value}}, {},
-    err => console.log(err ? "Err recording "+field+": "+err : "Updated " + field + ": " + value + " | User: " + user.id)
+    err => console.log(err ? "Err recording "+field+": "+err : "Updated " + field + " for " + user.id + " " + JSON.stringify(value,null,2))
   )
 }
 
@@ -287,9 +281,10 @@ io.on('connection', (socket) => {
 
     socket.on('accepted HIT', data => {
       if(users.length === teamSize ** 2) { //this is equivalent to "experiment has started"
-        HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
-            ifNotEmailMessage = "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
-            finishingCode = socket.id, turkSubmitTo = mturk.submitTo)
+        issueFinish(
+          ifEmailMessage = "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com.",
+          ifNotEmailMessage = "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!",
+          finishingCode = socket.id, turkSubmitTo = mturk.submitTo)
         return;
       }
       userPool.push({
@@ -354,14 +349,14 @@ io.on('connection', (socket) => {
               io.in(user.id).emit('initiate experiment');
             } else { //else emit finish
               console.log('EMIT FINISH TO EXTRA ACTIVE WORKER')
-              HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
+              issueFinish(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
                 ifNotEmailMessage = "Thanks for participating, you're all done!",
                 finishingCode = socket.id, turkSubmitTo = mturk.submitTo)
             }
           }
           userPool.filter(user => !usersActive.byID(user.id)).forEach(user => {//
             console.log('EMIT FINISH TO NONACTIVE OR DISCONNECTED WORKER')
-            HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
+            issueFinish(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
                 ifNotEmailMessage = "Thanks for participating, you're all done!",
                 finishingCode = socket.id, turkSubmitTo = mturk.submitTo)
           })
@@ -401,20 +396,20 @@ io.on('connection', (socket) => {
           condition:currentCondition,
           format:conditions[currentCondition],
           manipulation:[],
+          checkin:[],
           starterCheck:[],
           viabilityCheck:[],
           psychologicalSafety:[],
+          teamfeedback:[],
           manipulationCheck:'',
           blacklistCheck:'',
           engagementFeedback: '',
-          teamfracture:'',
-          teamfeedback:'',
         }
       };
     }
     socket.on('add user', data => {
       if (users.length === teamSize ** 2) { // PK: if experiment has already started, change to condition on state variable
-        HandleFinishAndEmailWorkers(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
+        issueFinish(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
                 ifNotEmailMessage = "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
                 finishingCode = socket.id, turkSubmitTo = mturk.submitTo)//PK: come back to this
         return;
@@ -426,7 +421,7 @@ io.on('connection', (socket) => {
       console.log(newUser.name + " added to users.\n" + "Total users: " + users.length)
       //add friends for each user once the correct number of users is reached
       if(users.length === teamSize **2){
-        console.log("USER POOL:\n" + userPool)
+        console.log("USER POOL:\n" + userPool.map(u => u.mturkID))
         console.log('MTURK IDS: ')
         users.forEach(user => { //mutate the friend list of each user
           user.friends = users.map(u => { //create the alias through which each user sees every other user
@@ -501,13 +496,14 @@ io.on('connection', (socket) => {
     }
 
     //when the client emits 'new checkin', this listens and executes
-    socket.on('new checkin', function (value) {
+    socket.on('new checkin', function (data) {
       useUser(socket,user => {
-        console.log(user.username + "checked in with value " + value);
-        db.checkins.insert({'room':user.room, 'userID':user.id, 'value': value, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
-            if(err) console.log("There's a problem adding a checkin to the DB: ", err);
-            else console.log("Checkin added to the DB");
-        });
+        user.results.checkin.push({
+          round:currentRound,
+          room: user.room,
+          result:data
+        })
+        updateUserInDB(user,"results.checkin",user.results.checkin)
       })
     })
 
@@ -573,7 +569,6 @@ io.on('connection', (socket) => {
               }
               updateUserInDB(u,'bonus',u.bonus)
               storeHIT()
-
             }
             io.in(u.id).emit('finished', {
                 message: cancelMessage,
@@ -813,11 +808,6 @@ io.on('connection', (socket) => {
         }, 1000 * 60 * 0.9 * roundMinutes)
 
         if(checkinOn){
-          //record start checkin time in db
-          db.checkins.insert({'room':user.room, 'userID':socket.id, 'value': 0, 'time': getSecondsPassed(), 'batch':batchID}, (err, usersAdded) => {
-            if(err) console.log("There's a problem adding a checkin to the DB: ", err);
-            else if(usersAdded) console.log("Checkin added to the DB");
-          });
           let numPopups = 0;
           let interval = setInterval(() => {
             if(numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
@@ -833,7 +823,7 @@ io.on('connection', (socket) => {
 
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
-    HandleFinishAndEmailWorkers(ifEmailMessage = "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions.",
+    issueFinish(ifEmailMessage = "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions.",
           ifNotEmailMessage = "The task has finished early. You will be compensated by clicking submit below.",
           finishingCode = "broken", turkSubmitTo = mturk.submitTo)
   });
@@ -841,47 +831,42 @@ io.on('connection', (socket) => {
   // Starter task
   socket.on('starterSurveySubmit', (data) => {
     useUser(socket,user => {
-      let parsedResults = parseResults(data);
-      user.results.starterCheck = parsedResults
-      console.log(user.name, "submitted survey:", user.results.starterCheck);
-      db.starterSurvey.insert({'userID':socket.id, 'room':user.room, 'name':user.name, 'starterCheck': user.results.starterCheck, 'batch':batchID}, (err, usersAdded) => {
-        if(err) console.log("There's a problem adding starterSurvey to the DB: ", err);
-        else if(usersAdded) console.log("starterSurvey added to the DB");
-      });
+      user.results.starterCheck = parseResults(data)
+      updateUserInDB(user,"results.starterCheck",user.results.starterCheck)
     })
   });
 
    // Task after each round - midSurvey - MAIKA
   socket.on('midSurveySubmit', (data) => {
     useUser(socket, user => {
-      let midSurveyResults = parseResults(data);
-      user.results.viabilityCheck.push({round:currentRound, room: user.room, result:midSurveyResults});
+      user.results.viabilityCheck.push({
+        round:currentRound,
+        room: user.room,
+        result:parseResults(data)
+      });
       updateUserInDB(user,"results.viabilityCheck",user.results.viabilityCheck)
     })
   });
 
   socket.on('psychologicalSafetySubmit', (data) => {
     useUser(socket, user => {
-      let psychologicalSafetyResults = parseResults(data);
-      user.results.psychologicalSafety = psychologicalSafetyResults;
-      console.log(user.name, "submitted survey:", user.results.psychologicalSafety);
-      db.psychologicalSafety.insert({'userID':socket.id, 'room':user.room, 'name':user.name, 'round':currentRound, 'psychologicalSafety': user.results.psychologicalSafety, 'batch':batchID}, (err, usersAdded) => {
-        if(err) console.log("There's a problem adding psychologicalSafety to the DB: ", err);
-        else if(usersAdded) console.log("psychologicalSafety added to the DB");
-      });
+      user.results.psychologicalSafety.push({
+        round:currentRound,
+        room: user.room,
+        result:parseResults(data)
+      })
+      updateUserInDB(user,"results.psychologicalSafety",user.results.psychologicalSafety)
     })
   });
 
   socket.on('teamfeedbackSurveySubmit', (data) => {
     useUser(socket, user => {
-      user.results.teamfracture = data.fracture
-      user.results.teamfeedback = data.feedback
-      console.log(user.name, "submitted team fracture survey:", user.results.teamfracture);
-      console.log(user.name, "submitted team feedback survey:", user.results.teamfeedback);
-      db.teamFeedback.insert({'userID':socket.id, 'room':user.room, 'name':user.name, 'teamfracture': user.results.teamfracture, 'teamfeedback' : user.results.teamfeedback, 'batch':batchID}, (err, usersAdded) => {
-        if(err) console.log("There's a problem adding TeamFeedback to the DB: ", err);
-        else if(usersAdded) console.log("TeamFeedback added to the DB");
-      });
+      user.results.teamfeedback.push({
+        round:currentRound,
+        room: user.room,
+        result: parseResults(data)
+      })
+      updateUserInDB(user,"results.teamfeedback",user.results.teamfeedback)
     })
   });
 
@@ -901,13 +886,8 @@ io.on('connection', (socket) => {
 
   socket.on('blacklistSurveySubmit', (data) => {
     useUser(socket, user => {
-      user.results.blacklistCheck = data //(user.results.manipulation == data) ? true : false
-      // console.log(user.name, "submitted blacklist survey:", user.results.blacklistCheck);
-      console.log(user.name, "submitted blacklist survey:", data);
-      db.blacklist.insert({'userID':socket.id, 'name':user.name, 'midSurvey': user.results.blacklistCheck, 'batch':batchID}, (err, usersAdded) => {
-        if(err) console.log("There's a problem adding blacklist to the DB: ", err);
-        else if(usersAdded) console.log("Blacklist added to the DB");
-      });
+      user.results.blacklistCheck = data
+      updateUserInDB(user,"results.blacklistCheck",user.results.blacklistCheck)
     })
   });
 
@@ -958,7 +938,7 @@ io.on('connection', (socket) => {
     return questions
   }
 
-  function HandleFinishAndEmailWorkers(ifEmailMessage, ifNotEmailMessage,
+  function issueFinish(ifEmailMessage, ifNotEmailMessage,
     finishingCode, turkSubmitTo) {
     if (emailingWorkers) {
       io.in(socket.id).emit('finished', {
@@ -1094,7 +1074,12 @@ function parseResults(data) {
   let parsedResults = {}
   data.split('&').forEach(responsePair => {
     let response = responsePair.split("=")
-    parsedResults[response[0]] = response[1]
+    parsedResults[response[0]] = decode(response[1])
   })
   return parsedResults;
+}
+
+const decode = (toDecode) => {
+  var encoded = toDecode;
+  return unescape(encoded.replace(/\+/g,  " "));
 }
