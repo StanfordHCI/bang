@@ -336,7 +336,7 @@ const listUsersWithQualification = (qual) => {
 
 const payBonuses = (users) => {
   let successfullyBonusedUsers = []
-  users.filter(u => u.mturkId != 'A19MTSLG2OYDLZ' && u.mturkId.length < 5).filter(u => u.bonus != 0).forEach((u) => {
+  users.filter(u => u.mturkId).filter(u => u.mturkId != 'A19MTSLG2OYDLZ' && u.mturkId.length < 5).filter(u => u.bonus != 0).forEach((u) => {
     mturk.sendBonus({
       AssignmentId: u.assignmentId,
       BonusAmount: String(u.bonus),
