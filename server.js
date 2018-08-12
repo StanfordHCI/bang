@@ -1055,7 +1055,6 @@ function parseResults(data) {
   return parsedResults;
 }
 
-const decode = (toDecode) => {
-  var encoded = toDecode;
+const decode = (encoded) => {
   return unescape(encoded.replace(/\+/g,  " "));
 }
