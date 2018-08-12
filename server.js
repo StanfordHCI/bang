@@ -127,7 +127,6 @@ const Datastore = require('nedb'),
     db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true, timestampData: true});
     db.psychologicalSafety = new Datastore({ filename:'.data/psychologicalSafety', autoload: true, timestampData: true});
     db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true, timestampData: true});
-    db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true, timestampData: true});
     db.batch = new Datastore({ filename:'.data/batch', autoload: true, timestampData: true});
     db.time = new Datastore({ filename:'.data/time', autoload: true, timestampData: true});
     db.leavingMessage = new Datastore({filename: '.data/leavingMessage', autoload: true, timestampData: true})
@@ -166,52 +165,28 @@ if (cleanHITs){
 }
 if (runExperimentNow){ mturk.launchBang() }
 
-
-//console.log('running notify')
-//mturk.notify();
-
-
-
 //Add more products
-let products = [{'name':'KOSMOS ink - Magnetic Fountain Pen',
-                 'url': 'https://www.kickstarter.com/projects/stilform/kosmos-ink' },
-                {'name':'Projka: Multi-Function Accessory Pouches',
-                 'url': 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches' },
-                {'name':"First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC",
-                 'url': 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono' },
-                 {'name':"Nomad Energy- Radically Sustainable Energy Drink",
-                 'url': 'https://www.kickstarter.com/projects/1273663738/nomad-energy-radically-sustainable-energy-drink?ref=home_new_and_noteworthy' },
-                 {'name':"Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
-                 'url': 'https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw?ref=home_new_and_noteworthy' },
-                 {'name':"The Travel Line: Versatile Travel Backpack + Packing Tools",
-                 'url': 'https://www.kickstarter.com/projects/peak-design/the-travel-line-versatile-travel-backpack-packing?ref=home_featured' },
-                 {'name':"Stool Nº1",
-                 'url': 'https://www.kickstarter.com/projects/390812913/stool-no1?ref=discovery' },
-                 {'name':"LetB Color - take a look at time in different ways",
-                 'url': 'https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways?ref=discovery' },
-                 {'name':"FLECTR 360 OMNI – cycling at night with full 360° visibility",
-                 'url': 'https://www.kickstarter.com/projects/outsider-team/flectr-360-omni?ref=discovery' },
-                 {'name':"Make perfect cold brew coffee at home with the BrewCub",
-                 'url': 'https://www.kickstarter.com/projects/1201993039/make-perfect-cold-brew-coffee-at-home-with-the-bre?ref=recommended&ref=discovery' },
-                 {'name': 'NanoPen | Worlds Smallest & Indestructible EDC Pen Tool',
-                 'url': 'https://www.kickstarter.com/projects/bullet/nanopen-worlds-smallest-and-indestructible-edc-pen?ref=section_design-tech_popular' },
-                 {'name':"The EVERGOODS MQD24 and CTB40 Crossover Backpacks",
-                 'url': 'https://www.kickstarter.com/projects/1362258351/the-evergoods-mqd24-and-ctb40-crossover-backpacks?ref=recommended&ref=discovery' },
-                 {'name':"Hexgears X-1 Mechanical Keyboard",
-                 'url': 'https://www.kickstarter.com/projects/hexgears/hexgears-x-1-mechanical-keyboard?ref=discovery' },
-                 {'name':"KARVD - Modular Wood Carved Wall Panel System",
-                 'url': 'https://www.kickstarter.com/projects/karvdwalls/karvd-modular-wood-carved-wall-panel-system?ref=recommended&ref=discovery' },
-                 {'name':"PARA: Stationary l Pythagorean l Easy-to-Use Laser Measurer",
-                 'url': 'https://www.kickstarter.com/projects/1619356127/para-stationary-l-pythagorean-l-easy-to-use-laser?ref=recommended&ref=discovery' },
-                 {'name':"Blox: organize your world!",
-                 'url': 'https://www.kickstarter.com/projects/onehundred/blox-organize-your-world?ref=recommended&ref=discovery' },
-                 {'name':"Moment - World's Best Lenses For Mobile Photography",
-                 'url': 'https://www.kickstarter.com/projects/moment/moment-amazing-lenses-for-mobile-photography?ref=recommended&ref=discovery' },
-                 {'name':"The Ollie Chair: Shape-Shifting Seating",
-                 'url': 'https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating?ref=recommended&ref=discovery' },
-                 {'name':"Fave: the ideal all-purpose knife!",
-                 'url': 'https://www.kickstarter.com/projects/onehundred/fave-the-ideal-all-purpose-knife?ref=recommended&ref=discovery' },
-              ]
+let products = [
+  {name:'KOSMOS ink - Magnetic Fountain Pen', url: 'https://www.kickstarter.com/projects/stilform/kosmos-ink' },
+  {name:'Projka: Multi-Function Accessory Pouches', url: 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches' },
+  {name:"First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC", url: 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono' },
+  {name:"Nomad Energy- Radically Sustainable Energy Drink", url: 'https://www.kickstarter.com/projects/1273663738/nomad-energy-radically-sustainable-energy-drink?ref=home_new_and_noteworthy' },
+  {name:"Thé-tis Tea : Plant-based seaweed tea, rich in minerals", url: 'https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw?ref=home_new_and_noteworthy' },
+  {name:"The Travel Line: Versatile Travel Backpack + Packing Tools", url: 'https://www.kickstarter.com/projects/peak-design/the-travel-line-versatile-travel-backpack-packing?ref=home_featured' },
+  {name:"Stool Nº1", url: 'https://www.kickstarter.com/projects/390812913/stool-no1?ref=discovery' },
+  {name:"LetB Color - take a look at time in different ways", url: 'https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways?ref=discovery' },
+  {name:"FLECTR 360 OMNI – cycling at night with full 360° visibility", url: 'https://www.kickstarter.com/projects/outsider-team/flectr-360-omni?ref=discovery' },
+  {name:"Make perfect cold brew coffee at home with the BrewCub", url: 'https://www.kickstarter.com/projects/1201993039/make-perfect-cold-brew-coffee-at-home-with-the-bre?ref=recommended&ref=discovery' },
+  {name: 'NanoPen | Worlds Smallest & Indestructible EDC Pen Tool', url: 'https://www.kickstarter.com/projects/bullet/nanopen-worlds-smallest-and-indestructible-edc-pen?ref=section_design-tech_popular' },
+  {name:"The EVERGOODS MQD24 and CTB40 Crossover Backpacks", url: 'https://www.kickstarter.com/projects/1362258351/the-evergoods-mqd24-and-ctb40-crossover-backpacks?ref=recommended&ref=discovery' },
+  {name:"Hexgears X-1 Mechanical Keyboard", url: 'https://www.kickstarter.com/projects/hexgears/hexgears-x-1-mechanical-keyboard?ref=discovery' },
+  {name:"KARVD - Modular Wood Carved Wall Panel System", url: 'https://www.kickstarter.com/projects/karvdwalls/karvd-modular-wood-carved-wall-panel-system?ref=recommended&ref=discovery' },
+  {name:"PARA: Stationary l Pythagorean l Easy-to-Use Laser Measurer", url: 'https://www.kickstarter.com/projects/1619356127/para-stationary-l-pythagorean-l-easy-to-use-laser?ref=recommended&ref=discovery' },
+  {name:"Blox: organize your world!", url: 'https://www.kickstarter.com/projects/onehundred/blox-organize-your-world?ref=recommended&ref=discovery' },
+  {name:"Moment - World's Best Lenses For Mobile Photography", url: 'https://www.kickstarter.com/projects/moment/moment-amazing-lenses-for-mobile-photography?ref=recommended&ref=discovery' },
+  {name:"The Ollie Chair: Shape-Shifting Seating", url: 'https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating?ref=recommended&ref=discovery' },
+  {name:"Fave: the ideal all-purpose knife!", url: 'https://www.kickstarter.com/projects/onehundred/fave-the-ideal-all-purpose-knife?ref=recommended&ref=discovery' },
+]
 
 let users = []; //the main local user storage
 let userPool = []; //accumulates users pre-experiment
@@ -264,12 +239,20 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
   }
 });
 
-
-
 // Adds Batch data for this experiment. unique batchID based on time/date
-db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurveyOn':midSurveyOn, 'blacklistOn': blacklistOn,
-        'teamfeedbackOn': teamfeedbackOn, 'psychologicalSafetyOn' : psychologicalSafetyOn, 'checkinOn': checkinOn, 'conditions': conditions, 'experimentRound': experimentRound,
-        'numRounds': numRounds, 'teamSize': teamSize}, (err, usersAdded) => {
+db.batch.insert({
+    batchID: batchID,
+    starterSurveyOn:starterSurveyOn,
+    midSurveyOn: midSurveyOn,
+    blacklistOn: blacklistOn,
+    teamfeedbackOn: teamfeedbackOn,
+    psychologicalSafetyOn : psychologicalSafetyOn,
+    checkinOn: checkinOn,
+    conditions: conditions,
+    experimentRound: experimentRound,
+    numRounds: numRounds,
+    teamSize: teamSize
+  }, (err, usersAdded) => {
     if(err) console.log("There's a problem adding batch to the DB: ", err);
     else if(usersAdded) console.log("Batch added to the DB");
     console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
@@ -310,14 +293,14 @@ io.on('connection', (socket) => {
         return;
       }
       userPool.push({
-        "id": socket.id,
-        "mturkId": data.mturkId,
-        "turkSubmitTo": data.turkSubmitTo,
-        "assignmentId": data.assignmentId,
-        "connected": true,
-        "active": waitChatOn ? false : true,
-        "timeAdded": data.timeAdded,
-        "timeLastActivity": data.timeAdded
+        id: socket.id,
+        mturkId: data.mturkId,
+        turkSubmitTo: data.turkSubmitTo,
+        assignmentId: data.assignmentId,
+        connected: true,
+        active: waitChatOn ? false : true,
+        timeAdded: data.timeAdded,
+        timeLastActivity: data.timeAdded
       });
 
       mturk.setAssignmentsPending(getPoolUsersConnected().length)
@@ -399,33 +382,33 @@ io.on('connection', (socket) => {
 
     function makeUser(data) {
       return {
-        'id': socket.id,
-        'mturkId': data.mturkId,
-        'assignmentId': data.assignmentId,
-        'batch': batchID,
-        'room': '',
-        'rooms':[],
-        'bonus': 0,
-        'person': '',
-        'name': socket.username,
-        'ready': false,
-        'friends': [],
-        'friends_history': [socket.name_structure.parts], // list of aliases to avoid, which includes the user's username//PK: is it okay to store this in the socket?
-        'connected': true, //PK: what does user.active mean? is this ever set to false? I want to use 'active' instead of 'onCall' but need to check if this field is still needed
-        'eventSchedule': eventSchedule,
-        'currentEvent': 0,
-        'results':{
-          'condition':currentCondition,
-          'format':conditions[currentCondition],
-          'manipulation':[],
-          'starterCheck':[],
-          'viabilityCheck':[],
-          'psychologicalSafety':[],
-          'manipulationCheck':'',
-          'blacklistCheck':'',
-          'engagementFeedback': '',
-          'teamfracture':'',
-          'teamfeedback':'',
+        id: socket.id,
+        mturkId: data.mturkId,
+        assignmentId: data.assignmentId,
+        batch: batchID,
+        room: '',
+        rooms:[],
+        bonus: 0,
+        person: '',
+        name: socket.username,
+        ready: false,
+        friends: [],
+        friends_history: [socket.name_structure.parts], // list of aliases to avoid, which includes the user's username//PK: is it okay to store this in the socket?
+        connected: true, //PK: what does user.active mean? is this ever set to false? I want to use 'active' instead of 'onCall' but need to check if this field is still needed
+        eventSchedule: eventSchedule,
+        currentEvent: 0,
+        results:{
+          condition:currentCondition,
+          format:conditions[currentCondition],
+          manipulation:[],
+          starterCheck:[],
+          viabilityCheck:[],
+          psychologicalSafety:[],
+          manipulationCheck:'',
+          blacklistCheck:'',
+          engagementFeedback: '',
+          teamfracture:'',
+          teamfeedback:'',
         }
       };
     }
@@ -448,14 +431,16 @@ io.on('connection', (socket) => {
         users.forEach(user => { //mutate the friend list of each user
           user.friends = users.map(u => { //create the alias through which each user sees every other user
             if (user.id != u.id) {
-              return {'id': u.id,
-                    'alias': tools.makeName().username,
-                    'tAlias':tools.makeName().username }
+              return {
+                id: u.id,
+                alias: tools.makeName().username,
+                tAlias:tools.makeName().username }
             }
             else {
-              return {'id': u.id,
-                    'alias': u.name,
-                    'tAlias': u.name }
+              return {
+                id: u.id,
+                alias: u.name,
+                tAlias: u.name }
             }
           });
           console.log(user.mturkId)
@@ -872,10 +857,6 @@ io.on('connection', (socket) => {
       let midSurveyResults = parseResults(data);
       user.results.viabilityCheck.push({round:currentRound, room: user.room, result:midSurveyResults});
       updateUserInDB(user,"results.viabilityCheck",user.results.viabilityCheck)
-      // db.midSurvey.insert({'userID':socket.id, 'room':user.room, 'name':user.name, 'round':currentRound, 'midSurvey': user.results.viabilityCheck, 'batch':batchID}, (err, usersAdded) => {
-      //   if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
-      //   else if(usersAdded) console.log("MidSurvey added to the DB");
-      // });
     })
   });
 

@@ -23,7 +23,7 @@ const Datastore = require('nedb'),
 function renderFullDB(dbName) {
     db[dbName].find({}, (err, data) => {
       // console.log(JSON.stringify(data));
-      console.log(data.filter(u => u.batch == 1534033268521)[0].results.viabilityCheck)
+      console.log(data.filter(u => u.batch == 1534088685920)[0].results)
     })
 }
 
