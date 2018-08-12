@@ -26,10 +26,10 @@ if (runningLocal) {
 }
 
 AWS.config = {
-  "accessKeyId": process.env.AWS_ID ,
-  "secretAccessKey": process.env.AWS_KEY,
-  "region": "us-east-1",
-  "sslEnabled": true
+  accessKeyId: process.env.AWS_ID ,
+  secretAccessKey: process.env.AWS_KEY,
+  region: "us-east-1",
+  sslEnabled: true
 }
 
 // Declaration of variables
@@ -199,7 +199,7 @@ const getHITURL = (hitId, callback) => {
 // Returns an array of Active HITs.
 
 const workOnActiveHITs = (callback) => {
-  mturk.listHITs({"MaxResults": 100}, (err, data) => {
+  mturk.listHITs({MaxResults: 100}, (err, data) => {
     if (err) {console.log(err, err.stack)} else {
       if (typeof callback === 'function'){
         callback(data.HITs.filter(h => h.HITStatus == "Assignable").map(h => h.HITId))

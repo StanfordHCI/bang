@@ -98,9 +98,9 @@ let firstRun = false;
 let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
 
 const roundOrdering = [
-  {"control": [1,2,1], "treatment": [1,2,1], "baseline": [1,2,3]},
-  {"control": [2,1,1], "treatment": [2,1,1], "baseline": [1,2,3]},
-  {"control": [1,1,2], "treatment": [1,1,2], "baseline": [1,2,3]}]
+  {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]},
+  {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]},
+  {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}]
 
 const experimentRoundIndicator = 1//PK: is this different that roundNum?
 const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
