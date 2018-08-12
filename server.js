@@ -19,8 +19,8 @@ const runExperimentNow = true
 const issueBonusesNow = true
 const emailingWorkers = false
 
-const cleanHITs = false
-const assignQualifications = false
+const cleanHITs = true
+const assignQualifications = true
 const debugMode = !runningLive
 
 const suddenDeath = false
@@ -34,8 +34,8 @@ const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = false
-const blacklistOn = true
-const teamfeedbackOn = true
+const blacklistOn = false
+const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
 const requiredOn = false
@@ -138,25 +138,24 @@ db.users.find({}, (err, usersInDB) => {
     if (issueBonusesNow) {
       mturk.payBonuses(usersInDB).forEach(u => updateUserInDB(u,'bonus',0))
     }
-    if (assignQualifications) {
-      mturk.assignQualificationToUsers(usersInDB)
-      mturk.listUsersWithQualification()
+    if (assignQualifications && runningLive) {
+      mturk.assignQualificationToUsers(usersInDB, mturk.quals.hasBanged)
+      mturk.listUsersWithQualification(mturk.quals.hasBanged)
     }
   }
 })
 
 // expires active HITs in the DB
 if (cleanHITs){
-  let activeHITs = mturk.returnActiveHITs();
-  db.ourHITs.find({}, (err, HITsInDB) => {
-    if (err) {console.log("Err loading HITS for expiration:" + err)} else {
-      HITsInDB.forEach((HIT) => {
-        let currentHIT = HIT.currentHIT;
-        if(activeHITs.includes(currentHIT)) { mturk.expireActiveHits(currentHIT); }
-      })
-    }
+  mturk.workOnActiveHITs(activeHITs => {
+    db.ourHITs.find({}, (err, HITsInDB) => {
+      if (err) {console.log("Err loading HITS for expiration:" + err)} else {
+        HITsInDB.map(h => h.HITId).filter(h => activeHITs.includes(h)).forEach(mturk.expireHIT)
+      }
+    })
   })
 }
+
 if (runExperimentNow){ mturk.launchBang() }
 
 //Add more products
@@ -483,7 +482,14 @@ io.on('connection', (socket) => {
       let cleanMessage = message;
       users.forEach(u => { cleanMessage = aliasToID(u, cleanMessage)});
 
-      db.chats.insert({'room':user.room,'userID':socket.id, 'message': cleanMessage, 'time': getSecondsPassed(), 'batch': batchID, 'round': currentRound}, (err, usersAdded) => {
+      db.chats.insert({
+          room: user.room,
+          userID: socket.id,
+          message: cleanMessage,
+          time: getSecondsPassed(),
+          batch: batchID,
+          round: currentRound
+        }, (err, usersAdded) => {
         if(err) console.log("Error storing message:", err)
         else console.log("Message in", user.room, "from",user.name +":" ,cleanMessage)
       });
@@ -1064,7 +1070,7 @@ function getRndInteger(min, max) {
 
 function storeHIT() {
   let currentHIT = mturk.returnCurrentHIT();
-  db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
+  db.ourHITs.insert({HITId: currentHIT, batch:batchID}, (err, HITAdded) => {
     if(err) console.log("There's a problem adding HIT to the DB: ", err);
     else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
   })
