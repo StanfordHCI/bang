@@ -192,42 +192,42 @@ $(function() {
 
   // Log a message
   function log (message, options) {
-      const $el = $('<li>').addClass('log').html(message);
-      // const $el = $('<li>').addClass('log').(message);
-      addMessageElement($el, options);
+    const $el = $('<li>').addClass('log').html(message);
+    // const $el = $('<li>').addClass('log').(message);
+    addMessageElement($el, options);
   }
 
   // Adds the visual chat message to the message list
   function addChatMessage (data, options) {
     // Don't fade the message in if there is an 'X was typing'
-      const $typingMessages = getTypingMessages(data);
-      options = options || {};
+    const $typingMessages = getTypingMessages(data);
+    options = options || {};
     if ($typingMessages.length !== 0) {
       options.fade = false;
       $typingMessages.remove();
     }
 
     const $messageBodyDiv = $('<span class="messageBody">')
-    .text(data.message)
-    .css({
-    'height': 'maxcontent',
-    'display':'block',
-    'overflow':'hidden'
+      .text(data.message)
+      .css({
+      'height': 'maxcontent',
+      'display':'block',
+      'overflow':'hidden'
     });
 
     const $usernameDiv = $('<span class="username"/>')
-        .text(data.username)
-        .css({'color': getUsernameColor(data.username),
-        'float':'left',
-        // 'height': $messageBodyDiv.css("height"),
-        'display':'inline-block'
-        });
+      .text(data.username)
+      .css({'color': getUsernameColor(data.username),
+      'float':'left',
+      // 'height': $messageBodyDiv.css("height"),
+      'display':'inline-block'
+    });
 
     const typingClass = data.typing ? 'typing' : '';
     const $messageDiv = $('<li class="message"/>')
-        .data('username', data.username)
-        .addClass(typingClass)
-        .append($usernameDiv, $messageBodyDiv);
+      .data('username', data.username)
+      .addClass(typingClass)
+      .append($usernameDiv, $messageBodyDiv);
 
     addMessageElement($messageDiv, options);
   }
