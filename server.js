@@ -30,7 +30,7 @@ const randomCondition = false
 const randomRoundOrder = false
 const randomProduct = false
 
-const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = false
@@ -268,9 +268,9 @@ io.on('connection', (socket) => {
   let experimentStarted = false //NOTE: this will be set multiple times but I don't think that's what is wanted in this case
   let experimentOver = false
 
-  let userStartTime = getSecondsPassed();
+  const workerStartTime = getSecondsPassed();
   const currentBonus = () => {
-    console.log(getSecondsPassed() - workerStartTime);
+    mturk.updatePayment(getSecondsPassed() - workerStartTime)
   }
 
   socket.on('get username', data => {
@@ -282,10 +282,8 @@ io.on('connection', (socket) => {
 
   socket.on('accepted HIT', data => {
     if(users.length === teamSize ** 2) { //this is equivalent to "experiment has started"
-      issueFinish(
-        ifEmailMessage = "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com.",
-        ifNotEmailMessage = "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!",
-        finishingCode = socket.id, turkSubmitTo = mturk.submitTo)
+      //updateUserInDB(socket,'bonus',currentBonus())
+      issueFinish(user,emailingWorkers ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
       return;
     }
     userPool.push({
@@ -350,16 +348,12 @@ io.on('connection', (socket) => {
             io.in(user.id).emit('initiate experiment');
           } else { //else emit finish
             console.log('EMIT FINISH TO EXTRA ACTIVE WORKER')
-            issueFinish(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
-              ifNotEmailMessage = "Thanks for participating, you're all done!",
-              finishingCode = socket.id, turkSubmitTo = mturk.submitTo)
+            issueFinish(user, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
           }
         }
         userPool.filter(user => !usersActive.byID(user.id)).forEach(user => {//
           console.log('EMIT FINISH TO NONACTIVE OR DISCONNECTED WORKER')
-          issueFinish(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
-              ifNotEmailMessage = "Thanks for participating, you're all done!",
-              finishingCode = socket.id, turkSubmitTo = mturk.submitTo)
+          issueFinish(user, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
         })
       }
     } else {
@@ -411,9 +405,7 @@ io.on('connection', (socket) => {
 
   socket.on('add user', data => {
     if (users.length === teamSize ** 2) { // PK: if experiment has already started, change to condition on state variable
-      issueFinish(ifEmailMessage = "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com. Don't worry, you're still getting paid for your time!",
-              ifNotEmailMessage = "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!",
-              finishingCode = socket.id, turkSubmitTo = mturk.submitTo)//PK: come back to this
+      issueFinish(socket, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!")//PK: come back to this
       return;
     }
     if(users.byID(socket.id)) {console.log('ERR: ADDING A USER ALREADY IN USERS')}
@@ -569,22 +561,11 @@ io.on('connection', (socket) => {
           Since the team activity had already started, you will be additionally \
           bonused for the time spent working with the team."
           if (experimentStarted) { // Add future bonus pay
-            if(timeCheckOn) {
-              mturk.updatePayment(totalTime);
-              u.bonus += mturk.bonusPrice
-            } else {
-              u.bonus += mturk.bonusPrice/2
-            }
+            u.bonus = currentBonus()
             updateUserInDB(u,'bonus',u.bonus)
             storeHIT()
           }
-          io.in(u.id).emit('finished', {
-              message: cancelMessage,
-              finishingCode: u.id,
-              turkSubmitTo: mturk.submitTo,
-              assignmentId: u.assignmentId,
-              crashed: true
-          })
+          issueFinish(u,cancelMessage,true)
         })
       }
       if (!suddenDeath && users.length !== 0) { //this sets users to ready when they disconnect;
@@ -599,8 +580,7 @@ io.on('connection', (socket) => {
   })
   socket.on('kill-all', (data) => {
     console.log("god is angry")
-    currentBonus()
-    // updateUserInDB(socket,"bonus",currentBonus())
+    updateUserInDB(socket,"bonus",currentBonus())
     io.sockets.emit('finished', {
       message: "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
       finishingCode: "kill-all",
@@ -831,7 +811,8 @@ io.on('connection', (socket) => {
 
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
-    issueFinish(ifEmailMessage = "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions.", ifNotEmailMessage = "The task has finished early. You will be compensated by clicking submit below.", finishingCode = "broken", turkSubmitTo = mturk.submitTo)
+
+    issueFinish(socket, emailingWorkers ? "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions." : "The task has finished early. You will be compensated by clicking submit below.", finishingCode = "broken")
   });
 
   // Starter task
@@ -944,24 +925,12 @@ io.on('connection', (socket) => {
     return questions
   }
 
-  function issueFinish(ifEmailMessage, ifNotEmailMessage,
-    finishingCode, turkSubmitTo) {
-    if (emailingWorkers) {
-      io.in(socket.id).emit('finished', {
-        message: ifEmailMessage,
-        finishingCode: finishingCode,
-        turkSubmitTo: turkSubmitTo,
-        crashed: false
-      })
-    }
-    else {
-      io.in(socket.id).emit('finished', {
-        message: ifNotEmailMessage,
-        finishingCode: finishingCode,
-        turkSubmitTo: turkSubmitTo,
-        crashed: false
-      })
-    }
+  function issueFinish(socket, message, crashed=false, finishingCode = socket.id) {
+    io.in(socket.id).emit('finished', {
+      message: message,
+      finishingCode: finishingCode,
+      crashed: false
+    })
   }
 });
 
