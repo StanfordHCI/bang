@@ -29,15 +29,15 @@ const randomCondition = false
 const randomRoundOrder = false
 const randomProduct = false
 
-const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
-const psychologicalSafetyOn = true
+const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
+const psychologicalSafetyOn = false
 const starterSurveyOn = false
-const midSurveyOn = true
-const blacklistOn = true
-const teamfeedbackOn = true
+const midSurveyOn = false
+const blacklistOn = false
+const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
-const requiredOn = true
+const requiredOn = false
 const checkinIntervalMinutes = roundMinutes/30
 
 //Testing toggles
@@ -134,8 +134,7 @@ const Datastore = require('nedb'),
     db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true})
 
 function updateUserInDB(user,field,value) {
-  //PK: safeguard here?
-  db.users.update( {id: user.id}, {$set: {field: value}}, {},
+  db.users.update( {id: user.id}, {$set: {[field]: value}}, {},
     err => console.log(err ? "Err recording "+field+": "+err : "Updated " + field + ": " + value + " | User: " + user.id)
   )
 }
@@ -295,7 +294,7 @@ db.batch.insert({'batchID': batchID, 'starterSurveyOn':starterSurveyOn,'midSurve
 }); // eventSchedule instead of all of the toggles? (missing checkinOn) //PK: what does this comment mean?
 
 // Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
-setTimeout(HandleHits, 1000 * 12)
+setTimeout(storeHIT, 1000 * 12)
 
 
 
@@ -418,6 +417,7 @@ io.on('connection', (socket) => {
         'id': socket.id,
         'mturkId': data.mturkId,
         'assignmentId': data.assignmentId,
+        'batch': batchID,
         'room': '',
         'rooms':[],
         'bonus': 0,
@@ -574,7 +574,7 @@ io.on('connection', (socket) => {
 
         console.log("Connected users: " + getUsersConnected().length);
         if (!experimentOver && suddenDeath && experimentStarted){//PK: what does this if condition mean
-          HandleHits()
+          storeHIT()
 
           console.log("User left, emitting cancel to all users");
           let totalTime = getSecondsPassed();
@@ -602,7 +602,7 @@ io.on('connection', (socket) => {
                 u.bonus += mturk.bonusPrice/2
               }
               updateUserInDB(u,'bonus',u.bonus)
-              HandleHits()
+              storeHIT()
 
             }
             io.in(u.id).emit('finished', {
@@ -676,7 +676,7 @@ io.on('connection', (socket) => {
           } else if(timeCheckOn) {
             recordTime("round");
           }
-          io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile), interstitial: false, showHeaderBar: true});
+          io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile,user), interstitial: false, showHeaderBar: true});
         }
         else if (eventSchedule[currentEvent] == "blacklistSurvey") {
           experimentOver = true
@@ -688,8 +688,8 @@ io.on('connection', (socket) => {
             recordTime("round");
           } else if(psychologicalSafetyOn) {
             recordTime("psychologicalSafety")}
-          console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false})
-          io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile), interstitial: false, showHeaderBar: false});
+          console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile,user), interstitial: false, showHeaderBar: false})
+          io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile,user), interstitial: false, showHeaderBar: false});
         }
         else if (eventSchedule[currentEvent] == "postSurvey") { //Launch post survey
           if(blacklistOn && timeCheckOn) {
@@ -704,7 +704,7 @@ io.on('connection', (socket) => {
           let survey = postSurveyGenerator(user)
           user.results.manipulation = survey.correctAnswer
           updateUserInDB(user,'results.manipulation',user.results.manipulation)
-          io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile), interstitial: false, showHeaderBar: false});
+          io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile,user), interstitial: false, showHeaderBar: false});
         }
         else if (eventSchedule[currentEvent] == "finished" || currentEvent > eventSchedule.length) {
           if(timeCheckOn) {
@@ -713,7 +713,7 @@ io.on('connection', (socket) => {
           user.bonus += mturk.bonusPrice
           updateUserInDB(user,"bonus",user.bonus)
 
-          HandleHits()
+          storeHIT()
 
           io.in(socket.id).emit('finished', {
             message: "Thanks for participating, you're all done!",
@@ -885,12 +885,12 @@ io.on('connection', (socket) => {
   socket.on('midSurveySubmit', (data) => {
     useUser(socket, user => {
       let midSurveyResults = parseResults(data);
-      user.results.viabilityCheck = midSurveyResults;
-      console.log(user.name, "submitted survey:", user.results.viabilityCheck);
-      db.midSurvey.insert({'userID':socket.id, 'room':user.room, 'name':user.name, 'round':currentRound, 'midSurvey': user.results.viabilityCheck, 'batch':batchID}, (err, usersAdded) => {
-        if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
-        else if(usersAdded) console.log("MidSurvey added to the DB");
-      });
+      user.results.viabilityCheck.push({round:currentRound, room: user.room, result:midSurveyResults});
+      updateUserInDB(user,"results.viabilityCheck",user.results.viabilityCheck)
+      // db.midSurvey.insert({'userID':socket.id, 'room':user.room, 'name':user.name, 'round':currentRound, 'midSurvey': user.results.viabilityCheck, 'batch':batchID}, (err, usersAdded) => {
+      //   if(err) console.log("There's a problem adding midSurvey to the DB: ", err);
+      //   else if(usersAdded) console.log("MidSurvey added to the DB");
+      // });
     })
   });
 
@@ -946,7 +946,7 @@ io.on('connection', (socket) => {
   });
 
   //loads qs in text file, returns json array
-  function loadQuestions(questionFile) {
+  function loadQuestions(questionFile,user=null) {
     const prefix = questionFile.substr(txt.length, questionFile.indexOf('.') - txt.length)
     let questions = []
     let i = 0
@@ -963,13 +963,13 @@ io.on('connection', (socket) => {
       } else if (answerTag === "YN") { // yes no
         answerObj = binaryAnswers;
       } else if (answerTag === "TR") { //team radio
-        getTeamMembers(socket).forEach((team, index) => {
+        getTeamMembers(user).forEach((team, index) => {
           questionObj['question']+=" Team " + (index+1) + " (" + team + '),'
         })
         questionObj['question'] = questionObj['question'].slice(0,-1)
         answerObj = {answers: ["Team 1", "Team 2", "Team 3"], answerType: 'radio', textValue: true};
       } else if (answerTag === "MTR") { //team checkbox
-        getTeamMembers(socket).forEach(function(team, index){
+        getTeamMembers(user).forEach(function(team, index){
           questionObj['question']+=" Team " + (index+1) + " (" + team + '),'
         })
         questionObj['question'] = questionObj['question'].slice(0,-1)
@@ -1077,12 +1077,7 @@ const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize)
 const assignRoom = () => incompleteRooms().pick()
 
 const getTeamMembers = (user) => {
-  if(!user) {
-    console.log("***USER UNDEFINED*** in getteammem ..this would crash out thing but haha whatever")
-    console.log('SOCKET ID: ' + socket.id)
-    return;
-  }
-  // Makes a list of teams this user has worked with
+    // Makes a list of teams this user has worked with
     const roomTeams = user.rooms.map((room, rIndex) => { return users.filter(user => user.rooms[rIndex] == room) })
 
     // Makes a human friendly string for each team with things like 'you' for the current user, commas and 'and' before the last name.
@@ -1093,27 +1088,12 @@ const getTeamMembers = (user) => {
       return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
     },""))
     return answers;
-
-}
-
-function time(s) {
-    return new Date(s * 1e3).toISOString().slice(-13, -5);
-}
-
-function getRndInteger(min, max) {
-  return Math.floor(Math.random() * (max - min) ) + min;
 }
 
 //PK: delete this fxn and use the normal survey mechanism?
 // This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
 const postSurveyGenerator = (user) => {
-    if(!user) {
-      console.log("***USER UNDEFINED*** in getteammem ..this would crash out thing but haha whatever")
-      console.log('SOCKET ID: ' + socket.id)
-      return;
-    }
     const answers = getTeamMembers(user);
-
     // Makes a list comtaining the 2 team same teams, or empty if none.
     let correctAnswer = answers.filter((team,index) => {
       return conditions[currentCondition][index] == experimentRoundIndicator })
@@ -1127,7 +1107,15 @@ const postSurveyGenerator = (user) => {
              correctAnswer: correctAnswer }
 }
 
-function HandleHits() {
+function time(s) {
+    return new Date(s * 1e3).toISOString().slice(-13, -5);
+}
+
+function getRndInteger(min, max) {
+  return Math.floor(Math.random() * (max - min) ) + min;
+}
+
+function storeHIT() {
   let currentHIT = mturk.returnCurrentHIT();
   db.ourHITs.insert({'currentHIT': currentHIT}, (err, HITAdded) => {
     if(err) console.log("There's a problem adding HIT to the DB: ", err);
@@ -1137,16 +1125,10 @@ function HandleHits() {
 
 // parses results from surveys to proper format for JSON file
 function parseResults(data) {
-  let surveyResults = data;
-  console.log(surveyResults)
-  let parsedResults = surveyResults.split('&');
-  let arrayLength = parsedResults.length;
-  for(var i = 0; i < arrayLength; i++) {
-    console.log(parsedResults[i]);
-    let result = parsedResults[i].slice(parsedResults[i].indexOf("=") + 1);
-    let qIndex = (parsedResults[i].slice(0, parsedResults[i].indexOf("="))).lastIndexOf('q');
-    let questionNumber = (parsedResults[i].slice(0, parsedResults[i].indexOf("="))).slice(qIndex + 1);
-    parsedResults[i] = questionNumber + '=' + result;
-  }
+  let parsedResults = {}
+  data.split('&').forEach(responsePair => {
+    let response = responsePair.split("=")
+    parsedResults[response[0]] = response[1]
+  })
   return parsedResults;
 }
