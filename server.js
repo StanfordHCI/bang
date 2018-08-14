@@ -186,6 +186,7 @@ let userPool = []; //accumulates users pre-experiment
 let currentRound = 0 //PK: talk about 0-indexed v 1-indexed round numbers (note: if change -> change parts of code reliant on 0-indexed round num)
 let startTime = 0
 let preExperiment = true
+let usersFinished = 0
 
 // keeping track of time
 let taskStartTime = getSecondsPassed(); // reset for each start of new task
@@ -692,6 +693,9 @@ io.on('connection', (socket) => {
         updateUserInDB(user,"bonus",user.bonus)
 
         storeHIT()
+
+        usersFinished += 1
+        console.log(usersFinished, "users have finished.")
 
         io.in(socket.id).emit('finished', {
           message: "Thanks for participating, you're all done!",
