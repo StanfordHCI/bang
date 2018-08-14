@@ -9,8 +9,8 @@ const roundMinutes = process.env.ROUND_MINUTES
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
-const secondsToWait = 60 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
-const secondsSinceResponse = 59 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
+const secondsToWait = 15 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+const secondsSinceResponse = 14 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
 const secondsToHold1 = 1000 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
 const secondsToHold2 = 200 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 
@@ -30,8 +30,8 @@ const randomCondition = false
 const randomRoundOrder = false
 const randomProduct = false
 
-const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
-const psychologicalSafetyOn = false
+const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
+const psychologicalSafetyOn = true
 const starterSurveyOn = false
 const midSurveyOn = false
 const blacklistOn = false
