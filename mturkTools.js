@@ -105,7 +105,7 @@ const getBalance = () => {
 // Requires multiple Parameters.
 // Must manually add Qualification Requirements if desired.
 
-const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, database, callback, qualificationList = []) => {
+const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, callback, qualificationList = []) => {
   let makeHITParams = {
     Title: title,  // string
     Description: description, // string
@@ -123,7 +123,7 @@ const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoA
     if (err) console.log(err, err.stack);
     else {
       console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
-      if (typeof callback === 'function') callback(data.HIT, database)
+      if (typeof callback === 'function') callback(data.HIT)
     }
   });
 }

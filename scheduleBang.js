@@ -9,7 +9,7 @@ let questionHTML = fs.readFileSync('./question.html').toString()
 
 // Determine the lifetime of HIT
 const runtimeString = process.argv.length > 2 ? process.argv[2] : "" //if we specify a flag
-const actual_runTIME = new Date(runtimeString || "August 11 2018 14:15");
+const actual_runTIME = new Date(runtimeString || "August 14 2018 12:00");
 const expireHITTime = new Date(actual_runTIME.getTime() - 30*60000); //get time 30 minutes before actualruntime
 const timeDiff = Math.abs(expireHITTime.getTime() - Date.now()); 
 const lifetime = timeDiff / 1000 / 60 //calculate lifetime based on when runTime was
@@ -30,8 +30,8 @@ const taskURL = questionHTML
 let HITId = "3PCPFX4U405XHZWRW7GXXH3U9U5FQT"
 
 //Make HIT
-mturk.makeHIT(title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, taskURL, db, (HIT, db) => {
-  HITId = HIT.HITId;
+mturk.makeHIT(title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, taskURL, (HIT) => {
+  const HITId = HIT.HITId;
   db.ourHITs.insert({'currentHIT': HITId}, (err, HITAdded) => {
     if(err) console.log("There's a problem adding HIT to the DB: ", err);
     else if(HITAdded) console.log("HIT added to the DB: ", HITId);
