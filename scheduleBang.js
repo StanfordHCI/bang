@@ -9,7 +9,7 @@ let questionHTML = fs.readFileSync('./question.html').toString()
 
 // Determine the lifetime of HIT
 const runtimeString = process.argv.length > 2 ? process.argv[2] : "" //if we specify a flag
-const actual_runTIME = new Date(runtimeString || "August 14 2018 12:00");
+const actual_runTIME = new Date(runtimeString || "August 14 2018 12:15");
 const expireHITTime = new Date(actual_runTIME.getTime() - 30*60000); //get time 30 minutes before actualruntime
 const timeDiff = Math.abs(expireHITTime.getTime() - Date.now()); 
 const lifetime = timeDiff / 1000 / 60 //calculate lifetime based on when runTime was
@@ -18,7 +18,7 @@ const Datastore = require('nedb');
     db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true});
     
 //Set HIT Params
-const title = `Join our task tomorrow at ${actual_runTIME.getHours()}:${actual_runTIME.getMinutes()} for up to 2 hours`
+const title = `Join our task today at ${actual_runTIME.getHours()}:${actual_runTIME.getMinutes()} PST for up to 2 hours`
 const description = "Earn $10.50 per hour for up to 2 hours."
 const assignmentDuration = 20
 const reward = 0.01
@@ -38,6 +38,7 @@ mturk.makeHIT(title, description, assignmentDuration, lifetime, reward, autoAppr
   });
   mturk.listAssignments(HITId,console.log)
 })
+
 
 
 

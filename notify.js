@@ -10,4 +10,7 @@ switch (notification_type) {
             mturk.notifyWorkers(data.Assignments.map(a => a.WorkerId), subject, message);
         });
         break;
+    case "killTask":
+        mturk.expireHIT(HITId);
+        break;
     }
