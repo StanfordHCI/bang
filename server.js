@@ -307,7 +307,7 @@ io.on('connection', (socket) => {
         console.log("no socket in accepted HIT")
         return;
       }
-      issueFinish(socket.id,emailingWorkers ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
+      issueFinish(socket,emailingWorkers ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
       return;
     }
     userPool.push({
