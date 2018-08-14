@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 Array.prototype.set = function() {
   const setArray = []
   this.forEach(element => { if (!setArray.includes(element)) { setArray.push(element) } })
@@ -21,10 +23,10 @@ const Datastore = require('nedb'),
 
 //Renders a full db by name.
 function renderFullDB(dbName) {
-    db[dbName].find({}, (err, data) => {
-      // console.log(JSON.stringify(data));
-      console.log(data.filter(u => u.batch == 1534088685920)[0].results)
-    })
+  db[dbName].find({}, (err, data) => {
+    // console.log(JSON.stringify(data));
+    console.log(data.filter(u => u.batch == 1534088685920)[0].results)
+  })
 }
 
 //Cleanly renders chats for a given batch
@@ -44,6 +46,20 @@ function renderChats(batch) {
   })
 }
 
+//Renders a full db by name.
+function saveOutBatch(dbName,batch) {
+  const dir = "./.data/"+ batch
+  if (!fs.existsSync(dir)){
+    fs.mkdirSync(dir);
+  }
+  db[dbName].find({}, (err, data) => {
+    fs.writeFile(dir +"/"+ dbName + ".json", JSON.stringify(data.filter(u => u.batch == batch),null,2) , function(err) {
+      if(err) { return console.log(err)}
+      console.log("Batch", batch, dbName,"saved!");
+    });
+  })
+}
+
 // renderChats(1533681023319)
 
-renderFullDB("users")
+saveOutBatch("users",1534088685920)

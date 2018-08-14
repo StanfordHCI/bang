@@ -96,6 +96,7 @@ const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditio
 let treatmentNow = false
 let firstRun = false;
 let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
+let batchCompleteUpdated = false;
 
 const roundOrdering = [
   {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]},
@@ -248,13 +249,11 @@ if (emailingWorkers) {
 }
 
 
-  
-
-
 // Adds Batch data for this experiment. unique batchID based on time/date
 db.batch.insert(
   {
     batchID: batchID,
+    batchComplete: false,
     starterSurveyOn:starterSurveyOn,
     midSurveyOn: midSurveyOn,
     blacklistOn: blacklistOn,
@@ -686,6 +685,12 @@ io.on('connection', (socket) => {
         io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile,user), interstitial: false, showHeaderBar: false});
       }
       else if (eventSchedule[currentEvent] == "finished" || currentEvent > eventSchedule.length) {
+        if(!batchCompleteUpdated) {
+          db.batch.update( {batchID: batchID}, {$set: {batchComplete: true}}, {},
+            err => console.log(err ? "Err updating batch completion"+err : "Updated batch for complete ")
+          )
+          batchCompleteUpdated = true;
+        }
         if(timeCheckOn) {
           recordTime("postSurvey");
         }
@@ -840,7 +845,6 @@ io.on('connection', (socket) => {
 
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
-
     issueFinish(socket, emailingWorkers ? "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions." : "The task has finished early. You will be compensated by clicking submit below.", finishingCode = "broken")
   });
 
@@ -888,21 +892,21 @@ io.on('connection', (socket) => {
 
   socket.on('mturk_formSubmit', (data) => {
     useUser(socket, user => {
-      user.results.engagementFeedback = data
-      updateUserInDB(socket,"results.engagementFeedback",data)
+      user.results.engagementFeedback = parseResults(data)
+      updateUserInDB(socket,"results.engagementFeedback",user.results.engagementFeedback)
     })
   });
 
   socket.on('postSurveySubmit', (data) => {
     useUser(socket, user => {
-      user.results.manipulationCheck = data
-      updateUserInDB(socket,"results.manipulationCheck",data)
+      user.results.manipulationCheck = parseResults(data)
+      updateUserInDB(socket,"results.manipulationCheck",user.results.manipulationCheck)
     })
   })
 
   socket.on('blacklistSurveySubmit', (data) => {
     useUser(socket, user => {
-      user.results.blacklistCheck = data
+      user.results.blacklistCheck = parseResults(data)
       updateUserInDB(user,"results.blacklistCheck",user.results.blacklistCheck)
     })
   });
