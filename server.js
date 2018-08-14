@@ -880,21 +880,21 @@ io.on('connection', (socket) => {
 
   socket.on('mturk_formSubmit', (data) => {
     useUser(socket, user => {
-      user.results.engagementFeedback = data
-      updateUserInDB(socket,"results.engagementFeedback",data)
+      user.results.engagementFeedback = parseResults(data)
+      updateUserInDB(socket,"results.engagementFeedback",user.results.engagementFeedback)
     })
   });
 
   socket.on('postSurveySubmit', (data) => {
     useUser(socket, user => {
-      user.results.manipulationCheck = data
-      updateUserInDB(socket,"results.manipulationCheck",data)
+      user.results.manipulationCheck = parseResults(data)
+      updateUserInDB(socket,"results.manipulationCheck",user.results.manipulationCheck)
     })
   })
 
   socket.on('blacklistSurveySubmit', (data) => {
     useUser(socket, user => {
-      user.results.blacklistCheck = data
+      user.results.blacklistCheck = parseResults(data)
       updateUserInDB(user,"results.blacklistCheck",user.results.blacklistCheck)
     })
   });
