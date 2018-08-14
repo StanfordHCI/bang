@@ -351,7 +351,8 @@ io.on('connection', (socket) => {
           user.active = false;
         }
         weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - getPoolUsersActive().length)) // PK: make isUserInactive fxn
-        if (secondsSince(user.timeAdded) > weightedHoldingSeconds || secondsSince(user.timeLastActivity) > secondsToHold2) {
+        if (!user.removed && (secondsSince(user.timeAdded) > weightedHoldingSeconds || secondsSince(user.timeLastActivity) > secondsToHold2)) {
+          user.removed = true;
           console.log('removing user because of inactivity:', user.id);
           io.in(user.id).emit('get IDs', 'broken');
         }
@@ -410,6 +411,7 @@ io.on('connection', (socket) => {
       friends: [],
       friends_history: [socket.name_structure.parts], // list of aliases to avoid, which includes the user's username//PK: is it okay to store this in the socket?
       connected: true, //PK: what does user.active mean? is this ever set to false? I want to use 'active' instead of 'onCall' but need to check if this field is still needed
+      removed: false,
       eventSchedule: eventSchedule,
       currentEvent: 0,
       results:{
