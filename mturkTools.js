@@ -9,7 +9,6 @@ const roundMinutes = process.env.ROUND_MINUTES
 
 const AWS = require('aws-sdk');
 
-const qualificationsOn = runningLive
 const runningDelayed = false
 
 let endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
@@ -20,7 +19,7 @@ if (runningLive) {
   submitTo = 'https://www.mturk.com'
 }
 
-let taskURL = 'https://bang.dmorina.com/';
+let taskURL = 'https://mark.dmorina.com/';
 if (runningLocal) {
   taskURL = 'https://localhost:3000/';
 }

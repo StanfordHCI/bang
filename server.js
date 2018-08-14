@@ -96,6 +96,7 @@ const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditio
 let treatmentNow = false
 let firstRun = false;
 let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
+let batchCompleteUpdated = false;
 
 const roundOrdering = [
   {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]},
@@ -247,13 +248,11 @@ if (emailingWorkers) {
 }
 
 
-  
-
-
 // Adds Batch data for this experiment. unique batchID based on time/date
 db.batch.insert(
   {
     batchID: batchID,
+    batchComplete: false,
     starterSurveyOn:starterSurveyOn,
     midSurveyOn: midSurveyOn,
     blacklistOn: blacklistOn,
@@ -304,7 +303,11 @@ io.on('connection', (socket) => {
   socket.on('accepted HIT', data => {
     if(users.length === teamSize ** 2) { //this is equivalent to "experiment has started"
       //updateUserInDB(socket,'bonus',currentBonus())
-      issueFinish(user,emailingWorkers ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
+      if (!socket) {
+        console.log("no socket in accepted HIT")
+        return;
+      }
+      issueFinish(socket.id,emailingWorkers ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
       return;
     }
     userPool.push({
@@ -681,6 +684,12 @@ io.on('connection', (socket) => {
         io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile,user), interstitial: false, showHeaderBar: false});
       }
       else if (eventSchedule[currentEvent] == "finished" || currentEvent > eventSchedule.length) {
+        if(!batchCompleteUpdated) {
+          db.batch.update( {batchID: batchID}, {$set: {batchComplete: true}}, {},
+            err => console.log(err ? "Err updating batch completion"+err : "Updated batch for complete ")
+          )
+          batchCompleteUpdated = true;
+        }
         if(timeCheckOn) {
           recordTime("postSurvey");
         }
@@ -832,7 +841,6 @@ io.on('connection', (socket) => {
 
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
-
     issueFinish(socket, emailingWorkers ? "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions." : "The task has finished early. You will be compensated by clicking submit below.", finishingCode = "broken")
   });
 
@@ -947,6 +955,10 @@ io.on('connection', (socket) => {
   }
 
   function issueFinish(socket, message, crashed=false, finishingCode = socket.id) {
+    if (!socket) {
+      console.log("Undefined user in issueFinish")
+      return;
+    }
     io.in(socket.id).emit('finished', {
       message: message,
       finishingCode: finishingCode,
