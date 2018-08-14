@@ -20,7 +20,7 @@ if (runningLive) {
   submitTo = 'https://www.mturk.com'
 }
 
-let taskURL = 'https://bang.dmorina.com/';
+let taskURL = 'https://mark.dmorina.com/';
 if (runningLocal) {
   taskURL = 'https://localhost:3000/';
 }

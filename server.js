@@ -304,7 +304,11 @@ io.on('connection', (socket) => {
   socket.on('accepted HIT', data => {
     if(users.length === teamSize ** 2) { //this is equivalent to "experiment has started"
       //updateUserInDB(socket,'bonus',currentBonus())
-      issueFinish(user,emailingWorkers ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
+      if (!socket) {
+        console.log("no socket in accepted HIT")
+        return;
+      }
+      issueFinish(socket.id,emailingWorkers ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
       return;
     }
     userPool.push({
@@ -947,6 +951,10 @@ io.on('connection', (socket) => {
   }
 
   function issueFinish(socket, message, crashed=false, finishingCode = socket.id) {
+    if (!socket) {
+      console.log("Undefined user in issueFinish")
+      return;
+    }
     io.in(socket.id).emit('finished', {
       message: message,
       finishingCode: finishingCode,
