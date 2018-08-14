@@ -96,6 +96,7 @@ const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditio
 let treatmentNow = false
 let firstRun = false;
 let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
+let batchCompleteUpdated = false;
 
 const roundOrdering = [
   {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]},
@@ -247,13 +248,11 @@ if (emailingWorkers) {
 }
 
 
-  
-
-
 // Adds Batch data for this experiment. unique batchID based on time/date
 db.batch.insert(
   {
     batchID: batchID,
+    batchComplete: false,
     starterSurveyOn:starterSurveyOn,
     midSurveyOn: midSurveyOn,
     blacklistOn: blacklistOn,
@@ -685,6 +684,12 @@ io.on('connection', (socket) => {
         io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile,user), interstitial: false, showHeaderBar: false});
       }
       else if (eventSchedule[currentEvent] == "finished" || currentEvent > eventSchedule.length) {
+        if(!batchCompleteUpdated) {
+          db.batch.update( {batchID: batchID}, {$set: {batchComplete: true}}, {},
+            err => console.log(err ? "Err updating batch completion"+err : "Updated batch for complete ")
+          )
+          batchCompleteUpdated = true;
+        }
         if(timeCheckOn) {
           recordTime("postSurvey");
         }
