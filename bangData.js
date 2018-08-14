@@ -22,8 +22,8 @@ const Datastore = require('nedb'),
 //Renders a full db by name.
 function renderFullDB(dbName) {
     db[dbName].find({}, (err, data) => {
-      console.log(JSON.stringify(data));
-      // data.forEach(datum => console.log(datum))
+      // console.log(JSON.stringify(data));
+      console.log(data.filter(u => u.batch == 1534033268521)[0].results.viabilityCheck)
     })
 }
 
@@ -46,4 +46,4 @@ function renderChats(batch) {
 
 // renderChats(1533681023319)
 
-renderFullDB("midSurvey")
+renderFullDB("users")

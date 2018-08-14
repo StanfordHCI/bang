@@ -5,7 +5,7 @@ $(function() {
   let colorAssignment = []
 
   //toggles
-  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -974,14 +974,12 @@ function turkGetParam( name, defaultValue, uri) {
 }
 
 const getUrlVars = (url) => {
-    var hash;
-    var myJson = {};
-    var hashes = url.slice(url.indexOf('?') + 1).split('&');
-    for (var i = 0; i < hashes.length; i++) {
-        hash = hashes[i].split('=');
-        myJson[hash[0]] = hash[1];
-    }
-    return myJson;
+  var myJson = {};
+  url.slice(url.indexOf('?') + 1).split('&').forEach(varString => {
+    const varList = varString.split('=')
+    myJson[varList[0]] = varList[1];
+  })
+  return myJson;
 }
 
 const decodeURL = (toDecode) => {
