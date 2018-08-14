@@ -26,10 +26,10 @@ if (runningLocal) {
 }
 
 AWS.config = {
-  "accessKeyId": process.env.AWS_ID ,
-  "secretAccessKey": process.env.AWS_KEY,
-  "region": "us-east-1",
-  "sslEnabled": true
+  accessKeyId: process.env.AWS_ID ,
+  secretAccessKey: process.env.AWS_KEY,
+  region: "us-east-1",
+  sslEnabled: true
 }
 
 // Declaration of variables
@@ -53,10 +53,40 @@ let currentHITGroupId = '';
 let hitsLeft = numAssignments; // changes when users accept and disconnect (important - don't remove)
 let taskStarted = false;
 
-let qualificationId = '';
-if(runningLive) {
-  qualificationId = '3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG'; // a special qualification for our task
+//Setting up qualifications
+const quals = {
+  notUSA: {
+    QualificationTypeId:"00000000000000000071",  // non-US workers only
+    LocaleValues:[{ Country:"US" }],
+    Comparator:"NotIn",
+    ActionsGuarded:"DiscoverPreviewAndAccept"  // only users outside of the US can see the HIT
+  },
+  onlyUSA: {
+    QualificationTypeId:"00000000000000000071",  // US workers only
+    LocaleValues:[{ Country:"US" }],
+    Comparator:"In",
+    ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
+  },
+  hitsAccepted: (k) => { return {
+    QualificationTypeId: '00000000000000000040',  // more than 1000 HITs
+    Comparator: 'GreaterThan',
+    IntegerValues: [k],
+    RequiredToPreview: true
+  }},
+  hasBanged: {
+    QualificationTypeId: "3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG",  // have not already completed the HIT
+    Comparator: 'DoesNotExist',
+    ActionsGuarded:"DiscoverPreviewAndAccept"
+  },
+  willBang: {
+    QualificationTypeId: "3H3KEN1OLSVM98I05ACTNWVOM3JBI9",
+    Comparator: 'Exists',
+    ActionsGuarded:"DiscoverPreviewAndAccept"
+  }
 }
+
+const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(500), quals.hasBanged]
+const qualsForTesting = [quals.notUSA, quals.hitsAccepted(100)]
 
 // Makes the MTurk externalHIT object, defaults to 700 px tall.
 const externalHIT = (taskURL, height = 700) => '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>' + height + '</FrameHeight></ExternalQuestion>'
@@ -105,7 +135,7 @@ const getBalance = () => {
 // Requires multiple Parameters.
 // Must manually add Qualification Requirements if desired.
 
-const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, callback, qualificationList = []) => {
+const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, callback, qualificationList = runningLive ? qualsForLive : qualsForTesting) => {
   let makeHITParams = {
     Title: title,  // string
     Description: description, // string
@@ -169,7 +199,7 @@ const getHITURL = (hitId, callback) => {
 // Returns an array of Active HITs.
 
 const workOnActiveHITs = (callback) => {
-  mturk.listHITs({"MaxResults": 100}, (err, data) => {
+  mturk.listHITs({MaxResults: 100}, (err, data) => {
     if (err) {console.log(err, err.stack)} else {
       if (typeof callback === 'function'){
         callback(data.HITs.filter(h => h.HITStatus == "Assignable").map(h => h.HITId))
@@ -257,14 +287,12 @@ const setAssignmentsPending = (data) => {
 // Assigns a qualification to users who have already completed the task - does not let workers repeat task
 // Takes users in Database as a parameter, fetches mturk Id.
 
-const assignQualificationToUsers = (users) => {
-  users.filter((user) => {
-    return user.mturkId
-  }).forEach((user) => {
-    var assignQualificationParams = {QualificationTypeId: qualificationId, WorkerId: user.mturkId, IntegerValue: 1, SendNotification: false};
+const assignQualificationToUsers = (users,qual) => {
+  users.filter(u => u.mturkId).forEach((user) => {
+    var assignQualificationParams = {QualificationTypeId: qual.QualificationTypeId, WorkerId: user.mturkId, IntegerValue: 1, SendNotification: false};
     mturk.associateQualificationWithWorker(assignQualificationParams, function(err, data) {
       if (err) console.log(err, err.stack); // an error occurred
-      else     console.log(data);           // successful response
+      else     console.log("Assigned",qual.QualificationTypeId,"to",user.mturkId);           // successful response
     });
   })
 }
@@ -291,8 +319,8 @@ const disassociateQualification = (qualificationId, workerId, reason) => {
 // -------------------------------------------------------------------
 // Lists MTurk users who have a specific qualification
 
-const listUsersWithQualification = () => {
-  var userWithQualificationParams = {QualificationTypeId: qualificationId, MaxResults: 100};
+const listUsersWithQualification = (qual) => {
+  var userWithQualificationParams = {QualificationTypeId: qual.QualificationTypeId, MaxResults: 100};
   mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
     else console.log(data);
@@ -308,7 +336,7 @@ const listUsersWithQualification = () => {
 
 const payBonuses = (users) => {
   let successfullyBonusedUsers = []
-  users.filter(u => u.mturkId != 'A19MTSLG2OYDLZ').filter(u => u.bonus != 0).forEach((u) => {
+  users.filter(u => u.mturkId).filter(u => u.mturkId != 'A19MTSLG2OYDLZ' && u.mturkId.length < 5).filter(u => u.bonus != 0).forEach((u) => {
     mturk.sendBonus({
       AssignmentId: u.assignmentId,
       BonusAmount: String(u.bonus),
@@ -377,51 +405,6 @@ const returnCurrentHIT = () => {
 
 const launchBang = () => {
   // HIT Parameters
-  let qualificationReqs = [{}];
-  if(noUSA) {
-    qualificationReqs = [
-      {
-        QualificationTypeId:"00000000000000000071",  // non-US workers only
-        LocaleValues:[{
-          Country:"US",
-        }],
-        Comparator:"NotIn",
-        ActionsGuarded:"DiscoverPreviewAndAccept"  // only users outside of the US can see the HIT
-      }];
-  } else {
-    qualificationReqs = [
-      {
-        QualificationTypeId:"00000000000000000071",  // US workers only
-        LocaleValues:[{
-          Country:"US",
-        }],
-        Comparator:"In",
-        ActionsGuarded:"DiscoverPreviewAndAccept"  // only users within the US can see the HIT
-    }];
-  }
-  if (qualificationsOn) {
-    qualificationReqs.push({
-      QualificationTypeId: '00000000000000000040',  // more than 1000 HITs
-      Comparator: 'GreaterThan',
-      IntegerValues: [1000],
-      RequiredToPreview: true,
-    })
-    if(runningLive) {
-      qualificationReqs.push({
-        QualificationTypeId: qualificationId,  // have not already completed the HIT
-        Comparator: 'DoesNotExist',
-        ActionsGuarded:"DiscoverPreviewAndAccept"
-      })
-    }
-    if(runningDelayed) {
-      qualificationReqs.push({
-        QualificationTypeId: "3H3KEN1OLSVM98I05ACTNWVOM3JBI9",
-        Comparator: 'Exists',
-        ActionsGuarded:"DiscoverPreviewAndAccept"
-      })
-    }
-  }
-
   let time = Date.now();
 
   let HITTitle = 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')';
@@ -435,7 +418,7 @@ const launchBang = () => {
     AutoApprovalDelayInSeconds: 60*taskDuration,
     Keywords: 'ads, writing, copy editing, advertising',
     MaxAssignments: numAssignments,
-    QualificationRequirements: qualificationReqs,
+    QualificationRequirements: runningLive ? qualsForLive : qualsForTesting,
     Question: externalHIT(taskURL)
   };
 
@@ -465,7 +448,7 @@ const launchBang = () => {
         AutoApprovalDelayInSeconds: 60*taskDuration,
         Keywords: 'ads, writing, copy editing, advertising',
         MaxAssignments: numAssignments,
-        QualificationRequirements: qualificationReqs,
+        QualificationRequirements: runningLive ? qualsForLive : qualsForTesting,
         Question: externalHIT(taskURL)
       };
       mturk.createHIT(params, (err, data) => {
@@ -522,7 +505,8 @@ module.exports = {
   launchBang: launchBang,
   getHITURL: getHITURL,
   listAssignments: listAssignments,
-  notifyWorkers: notifyWorkers
+  notifyWorkers: notifyWorkers,
+  quals: quals
 };
 
 // TODO: CLean this up by integrating with other bonus code
