@@ -268,10 +268,12 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
 if (emailingWorkers) {
   let HITId = process.argv[2];
   mturk.listAssignments(HITId, data => {
-    let subject = "We launched our new HIT! Join now, there are limited spaces!";
-    let URL = mturk.getHITURL(mturk.returnCurrentHIT());
-    let message = "You’re invited to join our newly launched HIT on Mturk; there are limited spaces! The HIT title includes \"Write online ads - bonus up to $10.5 / hour.\" You can find the HIT by searching the previous title or clicking this link" + URL;
-    mturk.notifyWorkers(data.Assignments.map(a => a.WorkerId), subject, message)
+    if (data.Assignments.length < 100) {
+      let subject = "We launched our new HIT! Join now, there are limited spaces!";
+      let URL = mturk.getHITURL(mturk.returnCurrentHIT());
+      let message = "You’re invited to join our newly launched HIT on Mturk; there are limited spaces! The HIT title includes \"Write online ads - bonus up to $10.5 / hour.\" You can find the HIT by searching the previous title or clicking this link" + URL;
+      mturk.notifyWorkers(data.Assignments.map(a => a.WorkerId), subject, message)
+    }
   });
 }
 
