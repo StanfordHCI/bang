@@ -232,6 +232,24 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
   }
 });
 
+// Notify workers that a HIT has started if we're doing recruiting by email
+if (emailingWorkers) {
+  let HITId = process.argv[2];
+  mturk.listAssignments(HITId, data => {
+    if (data.Assignments.length < 100) {
+      let subject = "We launched our new HIT! Join now, there are limited spaces!";
+      let URL = mturk.getHITURL(mturk.returnCurrentHIT());
+      let message = "You’re invited to join our newly launched HIT on Mturk; \
+                    there are limited spaces! You can join it by clicking this link" + URL;
+      mturk.notifyWorkers(data.Assignments.map(a => a.WorkerId), subject, message)
+    }
+  });
+}
+
+
+  
+
+
 // Adds Batch data for this experiment. unique batchID based on time/date
 db.batch.insert(
   {
@@ -261,6 +279,9 @@ db.batch.insert(
 
 // Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
 setTimeout(storeHIT, 1000 * 12)
+
+
+
 
 // Chatroom
 io.on('connection', (socket) => {
