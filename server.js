@@ -140,7 +140,7 @@ db.users.find({}, (err, usersInDB) => {
       mturk.payBonuses(usersInDB).forEach(u => updateUserInDB(u,'bonus',0))
     }
     if (assignQualifications && runningLive) {
-      mturk.assignQualificationToUsers(usersInDB, mturk.quals.hasBanged)
+      // mturk.assignQualificationToUsers(usersInDB, mturk.quals.hasBanged)
       mturk.listUsersWithQualification(mturk.quals.hasBanged)
     }
   }
@@ -812,6 +812,15 @@ io.on('connection', (socket) => {
 
       console.log('Issued task for:', currentProduct.name)
       console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
+
+      // assign hasBanged qualification to all users who rolled over
+      db.users.find({}, (err, usersInDB) => {
+        if (err) {console.log("DB for MTurk:" + err)} else {
+          if (assignQualifications && runningLive) {
+           mturk.assignQualificationToUsers(usersInDB, mturk.quals.hasBanged)
+          }
+        }
+      })
 
       // save start time
       startTime = (new Date()).getTime();
