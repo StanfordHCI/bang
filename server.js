@@ -30,10 +30,10 @@ const randomCondition = false
 const randomRoundOrder = false
 const randomProduct = false
 
-const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
-const psychologicalSafetyOn = true
+const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
+const psychologicalSafetyOn = false
 const starterSurveyOn = false
-const midSurveyOn = false
+const midSurveyOn = true
 const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
@@ -414,17 +414,17 @@ io.on('connection', (socket) => {
       removed: false,
       eventSchedule: eventSchedule,
       currentEvent: 0,
-      results:{
-        condition:currentCondition,
-        format:conditions[currentCondition],
-        manipulation:[],
-        checkin:[],
-        starterCheck:[],
-        viabilityCheck:[],
-        psychologicalSafety:[],
-        teamfeedback:[],
-        manipulationCheck:'',
-        blacklistCheck:'',
+      results: {
+        condition: currentCondition,
+        format: conditions[currentCondition],
+        manipulation: {},
+        checkin: {},
+        starterCheck: {},
+        viabilityCheck: {},
+        psychologicalSafety: {},
+        teamfeedback: {},
+        manipulationCheck: '',
+        blacklistCheck: '',
         engagementFeedback: '',
       }
     };
@@ -861,33 +861,21 @@ io.on('connection', (socket) => {
    // Task after each round - midSurvey - MAIKA
   socket.on('midSurveySubmit', (data) => {
     useUser(socket, user => {
-      user.results.viabilityCheck.push({
-        round:currentRound,
-        room: user.room,
-        result:parseResults(data)
-      });
+      user.results.viabilityCheck[currentRound] = parseResults(data)
       updateUserInDB(user,"results.viabilityCheck",user.results.viabilityCheck)
     })
   });
 
   socket.on('psychologicalSafetySubmit', (data) => {
     useUser(socket, user => {
-      user.results.psychologicalSafety.push({
-        round:currentRound,
-        room: user.room,
-        result:parseResults(data)
-      })
+      user.results.psychologicalSafety[currentRound] = parseResults(data)
       updateUserInDB(user,"results.psychologicalSafety",user.results.psychologicalSafety)
     })
   });
 
   socket.on('teamfeedbackSurveySubmit', (data) => {
     useUser(socket, user => {
-      user.results.teamfeedback.push({
-        round:currentRound,
-        room: user.room,
-        result: parseResults(data)
-      })
+      user.results.teamfeedback[currentRound] = parseResults(data)
       updateUserInDB(user,"results.teamfeedback",user.results.teamfeedback)
     })
   });
@@ -1089,7 +1077,8 @@ function parseResults(data) {
   let parsedResults = {}
   data.split('&').forEach(responsePair => {
     let response = responsePair.split("=")
-    parsedResults[response[0]] = decode(response[1])
+    index = response[0].split("-q")
+    parsedResults[index[1]] = decode(response[1])
   })
   return parsedResults;
 }
