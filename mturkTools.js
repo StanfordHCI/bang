@@ -296,6 +296,22 @@ const assignQualificationToUsers = (users,qual) => {
   })
 }
 
+
+// * unassignQualificationFromUsers *
+// -------------------------------------------------------------------
+// Assigns a qualification to users who have already completed the task - does not let workers repeat task
+// Takes users in Database as a parameter, fetches mturk Id.
+
+const unassignQualificationFromUsers = (users,qual) => {
+  users.filter(u => u.mturkId).forEach((user) => {
+    var assignQualificationParams = {QualificationTypeId: qual.QualificationTypeId, WorkerId: user.mturkId};
+    mturk.disassociateQualificationFromWorker(assignQualificationParams, function(err, data) {
+      if (err) console.log(err, err.stack); // an error occurred
+      else     console.log("Un-Assigned",qual.QualificationTypeId,"from",user.mturkId);           // successful response
+    });
+  })
+}
+
 // * disassociateQualification *
 // -------------------------------------------------------------------
 // Revokes a previously assigned qualification from a specified user.
@@ -318,11 +334,14 @@ const disassociateQualification = (qualificationId, workerId, reason) => {
 // -------------------------------------------------------------------
 // Lists MTurk users who have a specific qualification
 
-const listUsersWithQualification = (qual) => {
+const listUsersWithQualification = (qual, callback) => {
   var userWithQualificationParams = {QualificationTypeId: qual.QualificationTypeId, MaxResults: 100};
   mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
-    else console.log(data);
+    else {
+      console.log(data);
+      if (typeof callback === 'function') callback(data)
+    }
   });
 }
 
@@ -477,6 +496,7 @@ const notifyWorkers = (WorkerIds, subject, message) => {
    if (err) console.log("Error notifying workers:",err, err.stack); // an error occurred
    else     console.log("Notified",WorkerIds.length,"workers:", subject);           // successful response
  });
+ mturk.assignQualificationToUsers(WorkerIds, mturk.quals.willBang)
 }
 
 //turkerJSON.forEach(notifyWorkersManually);
@@ -493,6 +513,7 @@ module.exports = {
   createQualification: createQualification,
   setAssignmentsPending: setAssignmentsPending,
   assignQualificationToUsers: assignQualificationToUsers,
+  unassignQualificationFromUsers: unassignQualificationFromUsers,
   disassociateQualification: disassociateQualification,
   listUsersWithQualification: listUsersWithQualification,
   payBonuses: payBonuses,

@@ -18,6 +18,7 @@ const secondsToHold2 = 200 //maximum number of seconds of inactivity that we all
 const runExperimentNow = true
 const issueBonusesNow = true
 const emailingWorkers = false
+const usingWillBang = true
 
 const cleanHITs = true
 const assignQualifications = true
@@ -237,13 +238,19 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
 // Notify workers that a HIT has started if we're doing recruiting by email
 if (emailingWorkers) {
   let HITId = process.argv[2];
-  mturk.listAssignments(HITId, data => {
-    if (data.Assignments.length < 100) {
-      let subject = "We launched our new HIT! Join now, there are limited spaces!";
-      let URL = mturk.getHITURL(mturk.returnCurrentHIT());
-      let message = "You’re invited to join our newly launched HIT on Mturk; \
+  let subject = "We launched our new HIT! Join now, there are limited spaces!";
+  let URL = mturk.getHITURL(mturk.returnCurrentHIT());
+  let message = "You’re invited to join our newly launched HIT on Mturk; \
                     there are limited spaces! You can join it by clicking this link" + URL;
-      mturk.notifyWorkers(data.Assignments.map(a => a.WorkerId), subject, message)
+  if(usingWillBang) {
+    mturk.listUsersWithQualification(mturk.quals.willBang, function(data) { // notifies all willBang
+      mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)  
+    }); // must return from mturkTools
+  }
+  mturk.listAssignments(HITId, data => { // notifies all recent Turkers
+    if (data.Assignments.length < 100) {
+      // watch the notifyWorkers call, it also assigns willBang qualification
+      mturk.notifyWorkers(data.Assignments.map(a => a.WorkerId), subject, message) 
     }
   });
 }
@@ -814,6 +821,7 @@ io.on('connection', (socket) => {
       console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
 
       // assign hasBanged qualification to all users who rolled over
+      // might want to change this because it is reassigning the qual to every user every time
       db.users.find({}, (err, usersInDB) => {
         if (err) {console.log("DB for MTurk:" + err)} else {
           if (assignQualifications && runningLive) {
@@ -821,6 +829,12 @@ io.on('connection', (socket) => {
           }
         }
       })
+
+      // remove willBang qualification from people who rolled over
+      if(usingWillBang) {
+        const usersActive = getPoolUsersActive();
+        mturk.unassignQualificationFromUsers(usersActive, mturk.quals.willBang)
+      }
 
       // save start time
       startTime = (new Date()).getTime();
