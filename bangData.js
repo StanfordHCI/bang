@@ -48,7 +48,7 @@ function saveOutBatch(dbName,batch) {
     fs.mkdirSync(dir);
   }
   db[dbName].find({}, (err, data) => {
-    fs.writeFile(dir +"/"+ dbName + ".json", JSON.stringify(data.filter(u => u.batch == batch),null,2) , function(err) {
+    fs.writeFile(dir +"/"+ dbName + ".json", JSON.stringify(data.filter(u => u.batch == batch || u.batchID == batch),null,2) , function(err) {
       if(err) { return console.log(err)}
       console.log("Batch", batch, dbName,"saved!");
     });
