@@ -1,4 +1,5 @@
 const fs = require('fs');
+var exec = require('child_process').exec;
 
 Array.prototype.set = function() {
   const setArray = []
@@ -10,22 +11,14 @@ const Datastore = require('nedb'),
     db = {};
     db.users = new Datastore({ filename:'.data/users', autoload: true, timestampData: true });
     db.chats = new Datastore({ filename:'.data/chats', autoload: true, timestampData: true});
-    db.starterSurvey = new Datastore({ filename:'.data/starterSurvey', autoload: true, timestampData: true});
-    db.checkins = new Datastore({ filename:'.data/checkins', autoload: true, timestampData: true});
-    db.teamFeedback = new Datastore({ filename:'.data/teamFeedback', autoload: true, timestampData: true});
-    db.psychologicalSafety = new Datastore({ filename:'.data/psychologicalSafety', autoload: true, timestampData: true});
-    db.blacklist = new Datastore({ filename:'.data/blacklist', autoload: true, timestampData: true});
-    db.midSurvey = new Datastore({ filename:'.data/midSurvey', autoload: true, timestampData: true});
     db.batch = new Datastore({ filename:'.data/batch', autoload: true, timestampData: true});
     db.time = new Datastore({ filename:'.data/time', autoload: true, timestampData: true});
-    db.leavingMessage = new Datastore({filename: '.data/leavingMessage', autoload: true, timestampData: true})
     db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true})
 
 //Renders a full db by name.
-function renderFullDB(dbName) {
-  console.log(lastBatch);
+function renderBatch(dbName, batch) {
   db[dbName].find({}, (err, data) => {
-    console.log(JSON.stringify(data.filter(u => u.batch == lastBatch),null,2));
+    console.log(JSON.stringify(data.filter(u => u.batch == batch)));
     // console.log(data.filter(u => u.batch == 1534088685920)[0].results)
   })
 }
@@ -34,12 +27,13 @@ function renderFullDB(dbName) {
 function renderChats(batch) {
   db.chats.find({batch: batch}, (err, data) => {
     if (err) {console.log(err)} else {
+      console.log("\nChats for batch:",batch);
       data.map(a => a.round).set().sort().forEach(currentRound => {
         console.log("\nRound", currentRound);
         data.map(a => a.room).set().sort().forEach(currentRoom => {
           console.log("\nRoom",currentRoom,"in round",currentRound);
           data.sort((a,b) => a.createdAt-b.createdAt).filter(a => a.room == currentRoom && a.round == currentRound).forEach(a => {
-            console.log(" " + a.userID.slice(0,5) + ": " + a.message);
+            console.log("  " + a.userID.slice(0,5) + ": " + a.message);
           });
         })
       })
@@ -72,13 +66,48 @@ function useLatestBatch(callback) {
   return console.log("None");
 }
 
-function checkBatches() {
-  db.chats.find({}, (err, data) => {
+function useEachBatch(callback) {
+  db.batch.find({}, (err,data) => {
+    const batches = data.map(b => b.batchID).sort()
+    if (typeof(callback) == 'function') {
+      batches.forEach(callback)
+      return batches
+    }
+  })
+  return console.log("None");
+}
 
+function saveAllData() {
+  useEachBatch(batch => {
+    ['users','chats','batch'].forEach(data => {
+      saveOutBatch(data,batch)
+    })
   })
 }
 
+function downloadData(url,callback) {
+  pemFile = '~/.ssh/sh-server.pem'
+  source = "ubuntu@"+url+":bang/.data/*"
+  destination = ".data"
+  command = ['scp', '-i', pemFile, source, destination]
+  exec(command.join(' '), (err, stdout, stderr) => {
+    if (err) console.log(err);
+    else {
+      console.log("Saved * data",stdout);
+      if (typeof(callback) == 'function') {
+        callback(stdout)
+      }
+    }
+  })
+}
+
+downloadData("mark.dmorina.com",saveAllData)
+
 // renderFullDB("users")
-useLatestBatch(renderChats)
+// useLatestBatch(renderChats)
 // renderChats()
 // saveOutBatch("users",1534088685920)
+
+// useEachBatch(renderChats)
+
+// useLatestBatch(b => renderBatch("users",b))
