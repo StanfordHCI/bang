@@ -38,7 +38,6 @@ const taskDuration = roundMinutes * numRounds * 2
 const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
 const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
 const rewardPrice = 0.01 // upfront cost
-const noUSA = false; // if true, turkers in the USA will not be able to see the HIT
 const numHITs = 3;
 const maxAssignments = (2 * teamSize * teamSize);
 let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
@@ -86,6 +85,7 @@ const quals = {
 
 const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(500), quals.hasBanged]
 const qualsForTesting = [quals.notUSA, quals.hitsAccepted(100)]
+const safeQuals = runningLive ? qualsForLive : []
 
 // Makes the MTurk externalHIT object, defaults to 700 px tall.
 const externalHIT = (taskURL, height = 700) => '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>' + height + '</FrameHeight></ExternalQuestion>'
@@ -134,7 +134,7 @@ const getBalance = () => {
 // Requires multiple Parameters.
 // Must manually add Qualification Requirements if desired.
 
-const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, callback, qualificationList = runningLive ? qualsForLive : qualsForTesting) => {
+const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, callback) => {
   let makeHITParams = {
     Title: title,  // string
     Description: description, // string
@@ -144,7 +144,7 @@ const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoA
     AutoApprovalDelayInSeconds: 60 * autoApprovalDelay, // number, pass as minutes
     Keywords: keywords, // string
     MaxAssignments: maxAssignments, // number
-    QualificationRequirements: qualificationList, // list of qualification objects
+    QualificationRequirements: safeQuals, // list of qualification objects
     Question: hitContent
   };
 
@@ -417,7 +417,7 @@ const launchBang = () => {
     AutoApprovalDelayInSeconds: 60*taskDuration,
     Keywords: 'ads, writing, copy editing, advertising',
     MaxAssignments: numAssignments,
-    QualificationRequirements: runningLive ? qualsForLive : qualsForTesting,
+    QualificationRequirements: safeQuals,
     Question: externalHIT(taskURL)
   };
 
@@ -447,7 +447,7 @@ const launchBang = () => {
         AutoApprovalDelayInSeconds: 60*taskDuration,
         Keywords: 'ads, writing, copy editing, advertising',
         MaxAssignments: numAssignments,
-        QualificationRequirements: runningLive ? qualsForLive : qualsForTesting,
+        QualificationRequirements: safeQuals,
         Question: externalHIT(taskURL)
       };
       mturk.createHIT(params, (err, data) => {
