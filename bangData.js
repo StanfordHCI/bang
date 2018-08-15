@@ -23,9 +23,13 @@ const Datastore = require('nedb'),
 
 //Renders a full db by name.
 function renderFullDB(dbName) {
-  db[dbName].find({}, (err, data) => {
-    // console.log(JSON.stringify(data));
-    console.log(data.filter(u => u.batch == 1534088685920)[0].results)
+  db.batch.find({}, (err,data) => {
+    const lastBatch = data.map(b => b.batchID).sort().pop()
+    console.log(lastBatch);
+    db[dbName].find({}, (err, data) => {
+      console.log(JSON.stringify(data.filter(u => u.batch == lastBatch),null,2));
+      // console.log(data.filter(u => u.batch == 1534088685920)[0].results)
+    })
   })
 }
 
@@ -33,6 +37,7 @@ function renderFullDB(dbName) {
 function renderChats(batch) {
   db.chats.find({batch: batch}, (err, data) => {
     if (err) {console.log(err)} else {
+      console.log("working");
       data.map(a => a.round).set().sort().forEach(currentRound => {
         console.log("\nRound", currentRound);
         data.map(a => a.room).set().sort().forEach(currentRoom => {
@@ -60,6 +65,6 @@ function saveOutBatch(dbName,batch) {
   })
 }
 
-// renderChats(1533681023319)
-
-saveOutBatch("users",1534088685920)
+// renderFullDB("users")
+renderChats("1534277574314")
+// saveOutBatch("users",1534088685920)
