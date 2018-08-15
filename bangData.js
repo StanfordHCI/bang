@@ -102,12 +102,5 @@ function downloadData(url,callback) {
 }
 
 downloadData("mark.dmorina.com",saveAllData)
-
-// renderFullDB("users")
-// useLatestBatch(renderChats)
-// renderChats()
-// saveOutBatch("users",1534088685920)
-
+// downloadData("bang.dmorina.com",saveAllData)
 // useEachBatch(renderChats)
-
-// useLatestBatch(b => renderBatch("users",b))
