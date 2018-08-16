@@ -1,7 +1,7 @@
 var mturk = require('./mturkTools');
 
-notification_type = process.argv[3]
-HITId = process.argv[4];
+notification_type = process.argv[2]
+HITId = process.argv[3];
 switch (notification_type) {
     case "weCrashed":
         mturk.listAssignments(HITId, data => {
@@ -12,5 +12,24 @@ switch (notification_type) {
         break;
     case "killTask":
         mturk.expireHIT(HITId);
+        break;
+    case "listActiveTasks":
+        mturk.workOnActiveHITs(console.log)
+        break;
+    case "listwillBangers":
+        mturk.listUsersWithQualification(mturk.quals.willBang, (data) => {
+            console.log(data.Qualifications.map(a => a.WorkerId))
+        });
+        break;
+    case "HandleQualsforUsersinDB":
+        let db = {};
+        db.users = new Datastore({ filename:'.data/users', autoload: true, timestampData: true});
+        db.users.find({}, (err, usersInDB) => {
+            if (err) {console.log("DB for MTurk:" + err)} 
+            else {
+            mturk.unassignQualificationFromUsers(usersInDB, mturk.quals.willBang)
+            mturk.assignQualificationToUsers(usersInDB, mturk.quals.hasBanged)
+            }
+        })
         break;
     }
