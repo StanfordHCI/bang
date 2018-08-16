@@ -1,7 +1,7 @@
 var mturk = require('./mturkTools');
 
-notification_type = process.argv[3]
-HITId = process.argv[4];
+notification_type = process.argv[2]
+HITId = process.argv[3];
 switch (notification_type) {
     case "weCrashed":
         mturk.listAssignments(HITId, data => {
@@ -17,7 +17,9 @@ switch (notification_type) {
         mturk.workOnActiveHITs(console.log)
         break;
     case "listwillBangers":
-        mturk.listUsersWithQualification(mturk.quals.willBang, console.log);
+        mturk.listUsersWithQualification(mturk.quals.willBang, (data) => {
+            console.log(data.Qualifications.map(a => a.WorkerId))
+        });
         break;
     case "HandleQualsforUsersinDB":
         let db = {};

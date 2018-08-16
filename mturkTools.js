@@ -80,6 +80,11 @@ const quals = {
     QualificationTypeId: "3H3KEN1OLSVM98I05ACTNWVOM3JBI9",
     Comparator: 'Exists',
     ActionsGuarded:"DiscoverPreviewAndAccept"
+  },
+  willBang: {
+    QualificationTypeId: "3H3KEN1OLSVM98I05ACTNWVOM3JBI9",
+    Comparator: "Exists",
+    ActionsGuarded: "DiscoverPreviewAndAccept"
   }
 }
 
