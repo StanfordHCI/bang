@@ -32,4 +32,6 @@ switch (notification_type) {
             }
         })
         break;
+    case "expireBangs":
+        mturk.workOnActiveHITs(H => H.forEach(mturk.expireHIT))
     }
