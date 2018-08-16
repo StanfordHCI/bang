@@ -4,8 +4,6 @@ var http = require('http'),
     fs = require('fs');
 var colors = require('colors')
 const Datastore = require('nedb');
-var db = {};
-db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true});
 
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
