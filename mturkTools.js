@@ -438,9 +438,9 @@ const launchBang = (callback) => {
   let maxAssignments = numAssignments
   let hitContent = externalHIT(taskURL)
 
-  makeHIT(HITTitle, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, function(hitID) {
+  makeHIT(HITTitle, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, function(HIT) {
 
-    if (typeof callback === 'function') callback(hitID)
+    if (typeof callback === 'function') callback(HIT)
   });
 
   let delay = 1;

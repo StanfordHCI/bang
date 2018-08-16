@@ -158,12 +158,13 @@ if (cleanHITs){
   })
 }
 
-if (runExperimentNow){ mturk.launchBang(function() {
+if (runExperimentNow){ mturk.launchBang(function(HIT) {
   // Notify workers that a HIT has started if we're doing recruiting by email
   if (emailingWorkers) {
     // let HITId = process.argv[2];
     let subject = "We launched our new ad writing HIT. Join now, spaces are limited."
-    let URL = mturk.getHITURL(mturk.returnCurrentHIT());
+    console.log(HIT)
+    let URL = mturk.getHITURL(HIT.HITId);
     let message = "You’re invited to join our newly launched HIT on Mturk; \
                       there are limited spaces! You can join it by clicking this link" + URL;
     if(usingWillBang) {
