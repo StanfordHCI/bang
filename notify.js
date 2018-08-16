@@ -16,6 +16,9 @@ switch (notification_type) {
     case "listActiveTasks":
         mturk.workOnActiveHITs(console.log)
         break;
+    case "listwillBangers":
+        mturk.listUsersWithQualification(mturk.quals.willBang, console.log);
+        break;
     case "HandleQualsforUsersinDB":
         let db = {};
         db.users = new Datastore({ filename:'.data/users', autoload: true, timestampData: true});
