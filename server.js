@@ -164,7 +164,10 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
     // let HITId = process.argv[2];
     let subject = "We launched our new ad writing HIT. Join now, spaces are limited."
     console.log(HIT)
-    let URL = mturk.getHITURL(HIT.HITId);
+    let URL = ''
+    mturk.getHITURL(HIT.HITId, function(url) {
+      URL = url;
+    });
     let message = "You’re invited to join our newly launched HIT on Mturk; \
                       there are limited spaces! You can join it by clicking this link" + URL;
     if(usingWillBang) {
