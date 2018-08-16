@@ -13,4 +13,15 @@ switch (notification_type) {
     case "killTask":
         mturk.expireHIT(HITId);
         break;
+    case "HandleQualsforUsersinDB":
+        let db = {};
+        db.users = new Datastore({ filename:'.data/users', autoload: true, timestampData: true});
+        db.users.find({}, (err, usersInDB) => {
+            if (err) {console.log("DB for MTurk:" + err)} 
+            else {
+            mturk.unassignQualificationFromUsers(usersInDB, mturk.quals.willBang)
+            mturk.assignQualificationToUsers(usersInDB, mturk.quals.hasBanged)
+            }
+        })
+        break;
     }
