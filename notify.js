@@ -13,6 +13,9 @@ switch (notification_type) {
     case "killTask":
         mturk.expireHIT(HITId);
         break;
+    case "listActiveTasks":
+        mturk.workOnActiveHITs(console.log)
+        break;
     case "HandleQualsforUsersinDB":
         let db = {};
         db.users = new Datastore({ filename:'.data/users', autoload: true, timestampData: true});
