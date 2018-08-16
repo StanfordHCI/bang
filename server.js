@@ -187,7 +187,7 @@ let users = []; //the main local user storage
 let userPool = []; //accumulates users pre-experiment
 let currentRound = 0 //PK: talk about 0-indexed v 1-indexed round numbers (note: if change -> change parts of code reliant on 0-indexed round num)
 let startTime = 0
-let preExperiment = true
+let userAcquisitionStage = true
 let usersFinished = 0
 
 // keeping track of time
@@ -309,7 +309,7 @@ io.on('connection', (socket) => {
   })
 
   socket.on('accepted HIT', data => {
-    if(users.length === teamSize ** 2) { //this is equivalent to "experiment has started"
+    if(!userAcquisitionStage) { 
       //updateUserInDB(socket,'bonus',currentBonus())
       if (!socket) {
         console.log("no socket in accepted HIT")
@@ -344,9 +344,8 @@ io.on('connection', (socket) => {
       updateUserPool();
   })
 
-  //PK: was there a concurrency reason we used to pass usersAccepted into checkUsersAccepted()
   function updateUserPool(){
-    if(users.length === teamSize ** 2) return; //PK: if exp has already started, change to condition on state variable
+    if(!userAcquisitionStage) return; 
 
     function secondsSince(event) {return (Date.now() - event)/1000}
     function updateUsersActive() {
@@ -438,7 +437,7 @@ io.on('connection', (socket) => {
   }
 
   socket.on('add user', data => {
-    if (users.length === teamSize ** 2) { // PK: if experiment has already started, change to condition on state variable
+    if (!userAcquisitionStage) { 
       issueFinish(socket, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!")//PK: come back to this
       return;
     }
@@ -447,7 +446,7 @@ io.on('connection', (socket) => {
     users.push(newUser)
     console.log(newUser.name + " added to users.\n" + "Total users: " + users.length)
     //add friends for each user once the correct number of users is reached
-    if(users.length === teamSize **2){
+    if(users.length === teamSize **2){ // if the last user was just added
       console.log("USER POOL:\n" + userPool.map(u => u.mturkID))
       console.log('MTURK IDS: ')
       users.forEach(user => { //mutate the friend list of each user
@@ -467,6 +466,11 @@ io.on('connection', (socket) => {
         });
         console.log(user.mturkId)
       })
+      // assign people to rooms/teams 
+      users.forEach(u => {
+        u.person = people.pop();
+      })
+      userAcquisitionStage = false;
     }
 
     db.users.insert(newUser, (err, usersAdded) => {
@@ -602,7 +606,7 @@ io.on('connection', (socket) => {
           issueFinish(u,cancelMessage,true)
         })
       }
-      if (!suddenDeath && users.length !== 0) { //this sets users to ready when they disconnect;
+      if (!suddenDeath && !userAcquisitionStage) { // sets users to ready when they disconnect 
         user.ready = true // TODO: remove user from users
       }
     })
@@ -738,21 +742,16 @@ io.on('connection', (socket) => {
       // if (incompleteRooms().length) {
       //   console.log("Some rooms empty:",incompleteRooms())
       //   return } //are all rooms assigned
-      if ((suddenDeath || preExperiment) && users.length != teamSize ** 2) {
-        console.log("Need",teamSize ** 2 - users.length,"more users.")
-        return
-      }
 
-      console.log('all users ready -> starting experiment');
+      // I think this is irrelevant now
+      // if ((suddenDeath || !userAquisitionStage) && users.length != teamSize ** 2) {
+      //   console.log("Need",teamSize ** 2 - users.length,"more users.")
+      //   return
+      // }
+
       //can we move this into its own on.*** call //PK: still relevant?
+      console.log('all users ready -> starting experiment');
 
-      // assign people to rooms/teams before experiment begins
-      if(preExperiment){
-        users.forEach(u => {
-          u.person = people.pop();
-        })
-         preExperiment = false;
-      }
       treatmentNow = (currentCondition == "treatment" && currentRound == experimentRound)
       const conditionRound = conditions[currentCondition][currentRound] - 1
 
