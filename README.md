@@ -39,6 +39,8 @@ In server:
   18. issueBonusesNow = true
   
   19. emailingWorkers = false
+
+  20. usingWillBang = true
   
   21. cleanHITs = false
   
