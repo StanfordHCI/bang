@@ -237,7 +237,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
 
 // Notify workers that a HIT has started if we're doing recruiting by email
 if (emailingWorkers) {
-  let HITId = process.argv[2];
+  // let HITId = process.argv[2];
   let subject = "We launched our new HIT! Join now, there are limited spaces!";
   let URL = mturk.getHITURL(mturk.returnCurrentHIT());
   let message = "You’re invited to join our newly launched HIT on Mturk; \
@@ -247,12 +247,12 @@ if (emailingWorkers) {
       mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)  
     }); // must return from mturkTools
   }
-  mturk.listAssignments(HITId, data => { // notifies all recent Turkers
-    if (data.Assignments.length < 100) {
-      // watch the notifyWorkers call, it also assigns willBang qualification
-      mturk.notifyWorkers(data.Assignments.map(a => a.WorkerId), subject, message) 
-    }
-  });
+  // mturk.listAssignments(HITId, data => { // notifies all recent Turkers
+  //   if (data.Assignments.length < 100) {
+  //     // watch the notifyWorkers call, it also assigns willBang qualification
+  //     mturk.notifyWorkers(data.Assignments.map(a => a.WorkerId), subject, message) 
+  //   }
+  // });
 }
 
 

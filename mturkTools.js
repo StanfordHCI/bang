@@ -76,7 +76,7 @@ const quals = {
     Comparator: 'DoesNotExist',
     ActionsGuarded:"DiscoverPreviewAndAccept"
   },
-  willBang: {
+  assignQualificationToUsers: {
     QualificationTypeId: "3H3KEN1OLSVM98I05ACTNWVOM3JBI9",
     Comparator: 'Exists',
     ActionsGuarded:"DiscoverPreviewAndAccept"
