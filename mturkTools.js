@@ -152,6 +152,9 @@ const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoA
     if (err) console.log(err, err.stack);
     else {
       console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
+      currentHitId = data.HIT.HITId;
+      currentHITTypeId = data.HIT.HITTypeId
+      currentHITGroupId = data.HIT.HITGroupId
       if (typeof callback === 'function') callback(data.HIT)
     }
   });
@@ -421,33 +424,23 @@ const returnCurrentHIT = () => {
 // -------------------------------------------------------------------
 // Launches Scaled-Humanity Fracture experiment
 
-const launchBang = () => {
+const launchBang = (callback) => {
   // HIT Parameters
   let time = Date.now();
 
   let HITTitle = 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')';
+  let description = 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10)  + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.'
+  let assignmentDuration = 60 * taskDuration
+  let lifetime = 60*(timeActive)
+  let reward = String(rewardPrice)
+  let autoApprovalDelay = 60*taskDuration
+  let keywords = 'ads, writing, copy editing, advertising'
+  let maxAssignments = numAssignments
+  let hitContent = externalHIT(taskURL)
 
-  let params = {
-    Title: HITTitle,
-    Description: 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10)  + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
-    AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
-    LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
-    Reward: String(rewardPrice),
-    AutoApprovalDelayInSeconds: 60*taskDuration,
-    Keywords: 'ads, writing, copy editing, advertising',
-    MaxAssignments: numAssignments,
-    QualificationRequirements: safeQuals,
-    Question: externalHIT(taskURL)
-  };
-
-  mturk.createHIT(params, (err, data) => {
-    if (err) {
-       console.log(err, err.stack);
-    } else {
-       console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
-      currentHitId = data.HIT.HITId;
-    }
-  })
+  makeHIT(HITTitle, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, function() {
+    if (typeof callback === 'function') callback()
+  });
 
   let delay = 1;
   // only continues to post if not enough people accepted HIT
@@ -469,6 +462,7 @@ const launchBang = () => {
         QualificationRequirements: safeQuals,
         Question: externalHIT(taskURL)
       };
+
       mturk.createHIT(params, (err, data) => {
           if (err) {
             console.log(err, err.stack);
@@ -485,6 +479,7 @@ const launchBang = () => {
       expireHIT(currentHitId);
     }
    }, 1000 * 60 * timeActive * delay)
+
 }
 
 // * notifyWorkers
