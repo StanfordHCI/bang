@@ -252,7 +252,7 @@ if (emailingWorkers) {
   //     // watch the notifyWorkers call, it also assigns willBang qualification
   //     mturk.notifyWorkers(data.Assignments.map(a => a.WorkerId), subject, message) 
   //   }
-  // });
+  // });g
 }
 
 

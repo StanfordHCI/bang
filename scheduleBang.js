@@ -25,7 +25,7 @@ let recruitingHITstorage = './txt/currentrecruitingHIT.txt'
 const lifetime = 60 //calculate lifetime based on when runTime was
 
 //Set HIT Params
-const title = `Get notified when our ad writing task launches. The next task will be tomorrow morning PST (California time) for up to 2 hours`
+const title = `Get notified when our ad writing task launches. We run tasks hourly from 9am to 5pm (Pacific time) for up to 2 hours`
 const description = "Submit this HIT to be notified when our ad writing task launches. Space is limited in our ad writing task but we will run many iterations of it. If you submit this HIT you will receive notifications about our HITs until you have completed that task."
 const assignmentDuration = 20
 const reward = 0.01
