@@ -238,7 +238,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
 // Notify workers that a HIT has started if we're doing recruiting by email
 if (emailingWorkers) {
   // let HITId = process.argv[2];
-  let subject = "We launched our new HIT! Join now, there are limited spaces!";
+  let subject = "We launched our new ad writing HIT. Join now, spaces are limited."
   let URL = mturk.getHITURL(mturk.returnCurrentHIT());
   let message = "You’re invited to join our newly launched HIT on Mturk; \
                     there are limited spaces! You can join it by clicking this link" + URL;
@@ -832,8 +832,13 @@ io.on('connection', (socket) => {
 
       // remove willBang qualification from people who rolled over
       if(usingWillBang) {
-        const usersActive = getPoolUsersActive();
-        mturk.unassignQualificationFromUsers(usersActive, mturk.quals.willBang)
+        // mturk.unassignQualificationFromUsers(users, mturk.quals.willBang)
+        db.users.find({}, (err, usersInDB) => {
+          if (err) {console.log("DB for MTurk:" + err)} 
+          else {
+            mturk.unassignQualificationFromUsers(usersInDB, mturk.quals.willBang)
+          }
+        })
       }
 
       // save start time

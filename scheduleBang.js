@@ -25,8 +25,8 @@ let recruitingHITstorage = './txt/currentrecruitingHIT.txt'
 const lifetime = 60 //calculate lifetime based on when runTime was
 
 //Set HIT Params
-const title = `Get notified when our ad writing task launches. We run tasks hourly from 9am to 5pm (Pacific time) for up to 2 hours`
-const description = "Submit this HIT to be notified when our ad writing task launches. Space is limited in our ad writing task but we will run many iterations of it. If you submit this HIT you will receive notifications about our HITs until you have completed that task."
+const title = `Get notified when our ad writing task launches. If you stay for the whole task, we bonus to approximately $10.50 per hour.`
+const description = "Submit this HIT to be notified when our ad writing task launches. Space is limited in our ad writing task but we will run many iterations of it. We run tasks hourly from 9am to 5pm (Pacific time) for up to 2 hours. If you submit this HIT you will receive notifications about our HITs until you have completed that task."
 const assignmentDuration = 20
 const reward = 0.01
 const autoApprovalDelay = 1
@@ -35,18 +35,29 @@ const maxAssignments = 200
 const taskURL = questionHTML
 
 // Assign willBang to people who have accepted recruiting HIT of last hour
-if (fs.readFileSync(recruitingHITstorage).toString()) {
+console.log("fs.exists()", fs.existsSync(recruitingHITstorage))
+if (fs.existsSync(recruitingHITstorage)) {
   let HITId = fs.readFileSync(recruitingHITstorage).toString();
+  console.log("HITID found in database", HITId)
   mturk.listAssignments(HITId, data => {
     mturk.assignQualificationToUsers(data.Assignments.map(a => a.WorkerId), mturk.quals.willBang)
   })
+
+  // Expire HIT to ensure no one else accepts
+  mturk.expireHIT(HITId);
+
+  // Delete recruitingHITstorage
+  fs.unlink(recruitingHITstorage, (err) => {
+    if (err) throw err;
+    console.log('recruitingHITstorage was deleted');
+  });
+
+}
+else {
+  console.log("No recruitingHITstorage found. Perhaps this is your first time running.")
 }
 
-// Delete recruitingHITstorage
-fs.unlink(recruitingHITstorage, (err) => {
-  if (err) throw err;
-  console.log('recruitingHITstorage was deleted');
-});
+
 
 
 //Make new recruiting HIT
