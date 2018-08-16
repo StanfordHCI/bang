@@ -496,7 +496,7 @@ const notifyWorkers = (WorkerIds, subject, message) => {
    if (err) console.log("Error notifying workers:",err, err.stack); // an error occurred
    else     console.log("Notified",WorkerIds.length,"workers:", subject);           // successful response
  });
- mturk.assignQualificationToUsers(WorkerIds, quals.willBang)
+//  mturk.assignQualificationToUsers(WorkerIds, quals.willBang)
 }
 
 //turkerJSON.forEach(notifyWorkersManually);
