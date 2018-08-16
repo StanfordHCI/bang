@@ -35,7 +35,7 @@ const maxAssignments = 200
 const taskURL = questionHTML
 
 // Assign willBang to people who have accepted recruiting HIT of last hour
-if (fs.readFileSync('').toString()) {
+if (fs.readFileSync(recruitingHITstorage).toString()) {
   let HITId = fs.readFileSync(recruitingHITstorage).toString();
   mturk.listAssignments(HITId, data => {
     mturk.assignQualificationToUsers(data.Assignments.map(a => a.WorkerId), mturk.quals.willBang)
