@@ -17,10 +17,10 @@ const secondsToHold2 = 200 //maximum number of seconds of inactivity that we all
 // Toggles
 const runExperimentNow = true
 const issueBonusesNow = true
-const emailingWorkers = false
+const emailingWorkers = true
 const usingWillBang = true
 
-const cleanHITs = true
+const cleanHITs = false
 const assignQualifications = true
 const debugMode = !runningLive
 
@@ -31,7 +31,7 @@ const randomCondition = false
 const randomRoundOrder = false
 const randomProduct = false
 
-const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = true
@@ -39,7 +39,7 @@ const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
-const requiredOn = false
+const requiredOn = true
 const checkinIntervalMinutes = roundMinutes/3
 
 //Testing toggles
