@@ -1,4 +1,3 @@
-require('dotenv').config()
 var colors = require('colors')
 
 //Environmental settings, set in .env
@@ -18,7 +17,7 @@ const secondsToHold2 = 200 //maximum number of seconds of inactivity that we all
 const runExperimentNow = false
 const issueBonusesNow = true
 const emailingWorkers = false
-const usingWillBang = false
+const usingWillBang = true
 
 const cleanHITs = false
 const assignQualifications = false
