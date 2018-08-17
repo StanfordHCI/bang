@@ -65,6 +65,3 @@ mturk.makeHIT(title, description, assignmentDuration, lifetime, reward, autoAppr
     if(err) console.log("There's a problem writing HIT to the recruiting file: ", err);
   });
 })
-
-//Expire HITs
-// mturk.workOnActiveHITs(H => H.forEach(mturk.expireHIT))
