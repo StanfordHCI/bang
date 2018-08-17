@@ -16,7 +16,8 @@ const secondsToHold2 = 200 //maximum number of seconds of inactivity that we all
 // Toggles
 const runExperimentNow = false
 const issueBonusesNow = true
-const emailingWorkers = false
+const notifyWorkersOn = true
+const runViaEmailOn = false
 const usingWillBang = true
 
 const cleanHITs = false
@@ -166,7 +167,7 @@ mturk.listUsersWithQualification(mturk.quals.hasBanged, function(data) {
 
 if (runExperimentNow){ mturk.launchBang(function(HIT) {
   // Notify workers that a HIT has started if we're doing recruiting by email
-  if (emailingWorkers) {
+  if (notifyWorkersOn) {
     // let HITId = process.argv[2];
     let subject = "We launched our new ad writing HIT. Join now, spaces are limited."
     console.log(HIT)
@@ -334,7 +335,7 @@ io.on('connection', (socket) => {
         console.log("no socket in accepted HIT")
         return;
       }
-      issueFinish(socket,emailingWorkers ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
+      issueFinish(socket,runViaEmailOn ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
       return;
     }
     userPool.push({
@@ -399,12 +400,12 @@ io.on('connection', (socket) => {
             io.in(user.id).emit('initiate experiment');
           } else { //else emit finish
             console.log('EMIT FINISH TO EXTRA ACTIVE WORKER')
-            issueFinish(user, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
+            issueFinish(user, runViaEmailOn ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
           }
         }
         userPool.filter(user => !usersActive.byID(user.id)).forEach(user => {//
           console.log('EMIT FINISH TO NONACTIVE OR DISCONNECTED WORKER')
-          issueFinish(user, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
+          issueFinish(user, runViaEmailOn ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
         })
       }
     } else {
@@ -457,7 +458,7 @@ io.on('connection', (socket) => {
 
   socket.on('add user', data => {
     if (!userAcquisitionStage) {
-      issueFinish(socket, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!")//PK: come back to this
+      issueFinish(socket, runViaEmailOn ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!")//PK: come back to this
       return;
     }
     if(users.byID(socket.id)) {console.log('ERR: ADDING A USER ALREADY IN USERS')}
@@ -893,7 +894,7 @@ io.on('connection', (socket) => {
 
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
-    issueFinish(socket, emailingWorkers ? "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions." : "The task has finished early. You will be compensated by clicking submit below.", finishingCode = "broken")
+    issueFinish(socket, runViaEmailOn ? "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions." : "The task has finished early. You will be compensated by clicking submit below.", finishingCode = "broken")
   });
 
   // Starter task
