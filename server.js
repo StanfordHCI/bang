@@ -32,7 +32,7 @@ const randomRoundOrder = false
 const randomProduct = false
 
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
-const extraRoundOn = true
+const extraRoundOn = true //Only set to true if teamSize = 4
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = true
@@ -456,7 +456,8 @@ io.on('connection', (socket) => {
     users.push(newUser)
     console.log(newUser.name + " added to users.\n" + "Total users: " + users.length)
     //add friends for each user once the correct number of users is reached
-    if(users.length === teamSize **2){ // if the last user was just added
+    numUsersRequired = extraRoundOn ? teamSize ** 2 + teamSize : teamSize ** 2
+    if(users.length === numUsersRequired){ // if the last user was just added
       console.log("USER POOL:\n" + userPool.map(u => u.mturkID))
       console.log('MTURK IDS: ')
       users.forEach(user => { //mutate the friend list of each user
