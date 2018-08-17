@@ -83,8 +83,10 @@ const quals = {
   }
 }
 
-const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(500), quals.hasBanged, quals.willBang]
-const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(500), quals.hasBanged]
+//const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(0), quals.hasBanged, quals.willBang]
+//const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged]
+const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(0), quals.hasBanged, quals.willBang]
+const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged]
 const qualsForTesting = [quals.notUSA, quals.hitsAccepted(100)]
 const safeQuals = runningLive ? qualsForLive : []
 
