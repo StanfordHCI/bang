@@ -84,7 +84,7 @@ const quals = {
 }
 
 const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(500), quals.hasBanged, quals.willBang]
-const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(100), quals.hasBanged]
+const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(500), quals.hasBanged]
 const qualsForTesting = [quals.notUSA, quals.hitsAccepted(100)]
 const safeQuals = runningLive ? qualsForLive : []
 
@@ -218,6 +218,12 @@ const workOnActiveHITs = (callback) => {
   })
 }
 
+// * listAssignments *
+// -------------------------------------------------------------------
+// Retrieves all active HIT assignments, returns the assignments
+//
+// Takes a HITId as a parameter
+
 const listAssignments = (HITId,callback) => {
   mturk.listAssignmentsForHIT({HITId:HITId},(err,data) => {
     if (err) {console.log(err, err.stack)} else {
@@ -306,7 +312,6 @@ const assignQualificationToUsers = (users,qual) => {
     });
   })
 }
-
 
 // * unassignQualificationFromUsers *
 // -------------------------------------------------------------------

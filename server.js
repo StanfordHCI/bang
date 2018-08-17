@@ -266,7 +266,6 @@ console.log(eventSchedule)
 
 let fullUrl = ''
 
-
 app.use(express.static('public'));
 
 // Disconnect leftover users
@@ -278,7 +277,6 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
     io.in(socketID).disconnect(true)
   }
 });
-
 
 // Adds Batch data for this experiment. unique batchID based on time/date
 db.batch.insert(
@@ -310,9 +308,6 @@ db.batch.insert(
 
 // Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
 setTimeout(storeHIT, 1000 * 12)
-
-
-
 
 // Chatroom
 io.on('connection', (socket) => {

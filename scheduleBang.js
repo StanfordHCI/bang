@@ -50,7 +50,6 @@ if (fs.existsSync(recruitingHITstorage)) {
     if (err) throw err;
     console.log('recruitingHITstorage was deleted');
   });
-
 }
 else {
   console.log("No recruitingHITstorage found. Perhaps this is your first time running.")
@@ -64,4 +63,5 @@ mturk.makeHIT('scheduleQuals', title, description, assignmentDuration, lifetime,
   fs.writeFile(recruitingHITstorage, HITId, (err) => {
     if(err) console.log("There's a problem writing HIT to the recruiting file: ", err);
   });
+  console.log("recruitment schedule HIT success")
 })
