@@ -168,13 +168,14 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
     mturk.getHITURL(HIT.HITId, function(url) {
       URL = url;
       let message = "You’re invited to join our newly launched HIT on Mturk; \
-      there are limited spaces! You can join it by clicking this link" + URL;
+      there are limited spaces! You can join it by clicking this link " + URL;
+      console.log("message to willBangers", message);
       if(usingWillBang) {
-      mturk.listUsersWithQualification(mturk.quals.willBang, function(data) { // notifies all willBang
-      mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)  
-      }); // must return from mturkTools
+        mturk.listUsersWithQualification(mturk.quals.willBang, function(data) { // notifies all willBang
+          mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)  
+          }); // must return from mturkTools
       }
-      console.log(URL)
+      
     });
     // mturk.listAssignments(HITId, data => { // notifies all recent Turkers
     //   if (data.Assignments.length < 100) {
