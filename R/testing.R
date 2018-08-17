@@ -1,11 +1,12 @@
 library("jsonlite", lib.loc="~/Library/R/3.3/library")
-setwd(dirname(sys.frame(1)$ofile))
+library("ggplot2", lib.loc="~/Library/R/3.3/library")
+setwd(dirname(sys.frame(1)$ofile)) #if this is causing errors, check "Source on Save" then save.
 getwd()
 dataPath = "../.data"
 
 # Returns a table of survey observations with a new column for round number
 extractSurvey = function(frame,survey) {
-  rounds = range(1,length(frame$results.format[[1]]))
+  rounds = seq(1,length(frame$results.format[[1]]))
   roundResponses = lapply(rounds, function(round) {
     getCol = paste("results.",survey,".",round, sep="")
     surveyCols = Filter(function(x) grepl(getCol,x),names(frame))
@@ -65,7 +66,8 @@ viabilitySurvey = myData[,surveyCols]
 viabilityBinary = myData$results.viabilityCheck.15
 
 summary(lm(viabilityBinary ~., viabilitySurvey))
-plot(viabilitySurvey,viabilityBinary)
+autoplot(viabilityBinary)
 
-plot(viabilitySurvey$results.viabilityCheck.10,viabilityBinary)
-abline(lm(viabilityBinary~viabilitySurvey$results.viabilityCheck.10))
+hist(viabilityBinary)
+
+ggplot(viabilityBinary, aes(x = Home.Value)) + geom_histogram()
