@@ -138,7 +138,9 @@ function updateUserInDB(user,field,value) {
 db.users.find({}, (err, usersInDB) => {
   if (err) {console.log("DB for MTurk:" + err)} else {
     if (issueBonusesNow) {
-      mturk.payBonuses(usersInDB).forEach(u => updateUserInDB(u,'bonus',0))
+      mturk.payBonuses(usersInDB, (bonusedUsers) => {
+        bonusedUsers.forEach(u => updateUserInDB(u,'bonus',0))
+      })
     }
     if (assignQualifications && runningLive) {
       // mturk.assignQualificationToUsers(usersInDB, mturk.quals.hasBanged)

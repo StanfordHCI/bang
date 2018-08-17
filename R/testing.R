@@ -36,10 +36,7 @@ userFiles = lapply(completeBatches, function(batch){
   return(flatten(userFile, recursive = TRUE))
 })
 
-class(userFiles)
-userFiles
-
-Reduce(rbind,userFiles)
+Reduce(names,userFiles)
 
 
 moreBatches = Filter(function(batch) {
