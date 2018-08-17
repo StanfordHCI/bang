@@ -33,6 +33,7 @@ switch (notification_type) {
             }
         })
         break;
+    // THIS KILLS ALL STANFORD HCI HITS - MUST CHANGE
     case "expireBangs":
         mturk.workOnActiveHITs(H => H.forEach(mturk.expireHIT))
     }
