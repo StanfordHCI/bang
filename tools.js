@@ -17,8 +17,8 @@ const randomAnimal = 'Bison Eagle Pony Moose Deer Duck Rabbit Spider Wolf Lion S
 const randomAdjective = 'new small young little likely nice cultured snappy spry conventional'.split(" ")
 let nameCount = 2
 
-const createTeams = (teamSize, numRounds, people) => {
-    console.log(people.length != teamSize **2 ? "Can't create teams. Wrong number of people" : "Building teams")
+const createTeams = (teamSize, numRounds, people, extraRoundOn) => {
+    console.log(!extraRoundOn && people.length != teamSize **2 ? "Can't create teams. Wrong number of people" : "Building teams")
     console.log(teamSize > numRounds+1 ? "Error" : "")
     const teamNames = letters.slice(0,teamSize)
 
@@ -35,7 +35,7 @@ const createTeams = (teamSize, numRounds, people) => {
         while (team.length < teamSize) {
           let teamCollaborators = team.map(member => collaborators[member]).reduce((a,b) => a.concat(b) ).set() //find all prior collaborators
           let remainingOptions = unUsedPeople.filter(person => !teamCollaborators.includes(person) ) //find all remaining options
-          if (!remainingOptions.length) { return createTeams(teamSize, numRounds, people) } // deal with random selection overlap
+          if (!remainingOptions.length) { return createTeams(teamSize, numRounds, people, extraRoundOn) } // deal with random selection overlap
           let newCollaborator = remainingOptions.pick()
           unUsedPeople = unUsedPeople.filter(person => person != newCollaborator ) //update unused people
 
@@ -49,6 +49,12 @@ const createTeams = (teamSize, numRounds, people) => {
     }
 
     if(!teamChecker(roundTeams)){console.log("teams not valid")}
+    if(extraRoundOn) { //couldn't get this to work generically with letters[]
+      for (i = 0; i < teamSize; i++) {
+        roundTeams[0][letters[i]].push(letters[teamSize**2 + i])
+      }
+    }
+    console.log(roundTeams)
     return roundTeams
   }
 
