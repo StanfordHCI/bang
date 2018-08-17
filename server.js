@@ -15,13 +15,13 @@ const secondsToHold1 = 1000 //maximum number of seconds we allow someone to stay
 const secondsToHold2 = 200 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 
 // Toggles
-const runExperimentNow = true
+const runExperimentNow = false
 const issueBonusesNow = true
-const emailingWorkers = true
-const usingWillBang = true
+const emailingWorkers = false
+const usingWillBang = false
 
 const cleanHITs = false
-const assignQualifications = true
+const assignQualifications = false
 const debugMode = !runningLive
 
 const suddenDeath = false
@@ -31,15 +31,15 @@ const randomCondition = false
 const randomRoundOrder = false
 const randomProduct = false
 
-const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
-const midSurveyOn = true
+const midSurveyOn = false
 const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
-const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
-const requiredOn = true
+const timeCheckOn = false // tracks time user spends on task and updates payment - also tracks how long each task is taking
+const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/3
 
 //Testing toggles
@@ -138,7 +138,9 @@ function updateUserInDB(user,field,value) {
 db.users.find({}, (err, usersInDB) => {
   if (err) {console.log("DB for MTurk:" + err)} else {
     if (issueBonusesNow) {
-      mturk.payBonuses(usersInDB).forEach(u => updateUserInDB(u,'bonus',0))
+      mturk.payBonuses(usersInDB, (bonusedUsers) => {
+        bonusedUsers.forEach(u => updateUserInDB(u,'bonus',0))
+      })
     }
     if (assignQualifications && runningLive) {
       // mturk.assignQualificationToUsers(usersInDB, mturk.quals.hasBanged)
@@ -175,17 +177,20 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
       let message = "You’re invited to join our newly launched HIT on Mturk; \
       there are limited spaces! You can join it by clicking this link " + URL;
       console.log("message to willBangers", message);
+      if (!URL) {
+        throw "URL not defined"
+      }
       if(usingWillBang) {
         mturk.listUsersWithQualification(mturk.quals.willBang, function(data) { // notifies all willBang
-          mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)  
+          mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
           }); // must return from mturkTools
       }
-      
+
     });
     // mturk.listAssignments(HITId, data => { // notifies all recent Turkers
     //   if (data.Assignments.length < 100) {
     //     // watch the notifyWorkers call, it also assigns willBang qualification
-    //     mturk.notifyWorkers(data.Assignments.map(a => a.WorkerId), subject, message) 
+    //     mturk.notifyWorkers(data.Assignments.map(a => a.WorkerId), subject, message)
     //   }
     // });g
   }
@@ -320,7 +325,7 @@ io.on('connection', (socket) => {
   })
 
   socket.on('accepted HIT', data => {
-    if(!userAcquisitionStage) { 
+    if(!userAcquisitionStage) {
       //updateUserInDB(socket,'bonus',currentBonus())
       if (!socket) {
         console.log("no socket in accepted HIT")
@@ -356,7 +361,7 @@ io.on('connection', (socket) => {
   })
 
   function updateUserPool(){
-    if(!userAcquisitionStage) return; 
+    if(!userAcquisitionStage) return;
 
     function secondsSince(event) {return (Date.now() - event)/1000}
     function updateUsersActive() {
@@ -448,7 +453,7 @@ io.on('connection', (socket) => {
   }
 
   socket.on('add user', data => {
-    if (!userAcquisitionStage) { 
+    if (!userAcquisitionStage) {
       issueFinish(socket, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!")//PK: come back to this
       return;
     }
@@ -477,7 +482,7 @@ io.on('connection', (socket) => {
         });
         console.log(user.mturkId)
       })
-      // assign people to rooms/teams 
+      // assign people to rooms/teams
       users.forEach(u => {
         u.person = people.pop();
       })
@@ -617,7 +622,7 @@ io.on('connection', (socket) => {
           issueFinish(u,cancelMessage,true)
         })
       }
-      if (!suddenDeath && !userAcquisitionStage) { // sets users to ready when they disconnect 
+      if (!suddenDeath && !userAcquisitionStage) { // sets users to ready when they disconnect
         user.ready = true // TODO: remove user from users
       }
     })
@@ -844,7 +849,7 @@ io.on('connection', (socket) => {
       if(usingWillBang) {
         // mturk.unassignQualificationFromUsers(users, mturk.quals.willBang)
         db.users.find({}, (err, usersInDB) => {
-          if (err) {console.log("DB for MTurk:" + err)} 
+          if (err) {console.log("DB for MTurk:" + err)}
           else {
             mturk.unassignQualificationFromUsers(usersInDB, mturk.quals.willBang)
           }

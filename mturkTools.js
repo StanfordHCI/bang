@@ -355,9 +355,9 @@ const listUsersWithQualification = (qual, callback) => {
 // Takes users as a parameter.
 // Returns an array of bonused users.
 
-const payBonuses = (users) => {
+const payBonuses = (users,callback) => {
   let successfullyBonusedUsers = []
-  users.filter(u => u.mturkId).filter(u => u.mturkId != 'A19MTSLG2OYDLZ' && u.mturkId.length < 5).filter(u => u.bonus != 0).forEach((u) => {
+  users.filter(u => u.mturkId != 'A19MTSLG2OYDLZ' && u.mturkId.length > 5).filter(u => u.bonus != 0).forEach((u) => {
     mturk.sendBonus({
       AssignmentId: u.assignmentId,
       BonusAmount: String(u.bonus),
@@ -366,14 +366,22 @@ const payBonuses = (users) => {
       UniqueRequestToken: u.id
     }, (err, data) => {
       if (err) {
-        console.log("Bonus not processed\t",u.id,'\t',u.mturkId)
+        if(err.message.includes("The idempotency token \"" + u.id + "\" has already been processed.")) {
+          console.log("Already bonused",u.bonus ,u.id, u.mturkId)
+          successfullyBonusedUsers.push(u)
+        } else {
+          console.log("NOT bonused\t",u.bonus ,u.id, u.mturkId,err)
+        }
       } else {
         successfullyBonusedUsers.push(u)
-        console.log("Bonused:",u.id, u.mturkId)
+        console.log("Bonused:",u.bonus ,u.id, u.mturkId)
       }
+      if (typeof callback === 'function') {
+        callback(successfullyBonusedUsers)
+      }
+      return successfullyBonusedUsers
     })
   })
-  return successfullyBonusedUsers
 }
 
 // * blockWorker *

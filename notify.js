@@ -1,4 +1,5 @@
 var mturk = require('./mturkTools');
+const Datastore = require('nedb')
 
 notification_type = process.argv[2]
 HITId = process.argv[3];
