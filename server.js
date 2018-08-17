@@ -31,6 +31,7 @@ const randomRoundOrder = false
 const randomProduct = false
 
 const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
+const extraRoundOn = false
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = true
@@ -98,7 +99,10 @@ let firstRun = false;
 let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
 let batchCompleteUpdated = false;
 
-const roundOrdering = [
+const roundOrdering = extraRoundOn ? [
+  {control: [3,1,2,1], treatment: [3,1,2,1], baseline: [4,1,2,3]},
+  {control: [3,2,1,1], treatment: [3,2,1,1], baseline: [4,1,2,3]},
+  {control: [3,1,1,2], treatment: [3,1,1,2], baseline: [4,1,2,3]}] : [
   {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]},
   {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]},
   {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}]
@@ -107,13 +111,13 @@ const experimentRoundIndicator = 1//PK: is this different that roundNum?
 const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
 const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
 console.log(currentCondition,'with',conditions[currentCondition]);
-const numRounds = conditions.baseline.length
+const numRounds = extraRoundOn ? conditions.baseline.length + 1 : conditions.baseline.length
 
 const numberOfRooms = teamSize * numRounds
 const rooms = tools.letters.slice(0,numberOfRooms)
 const people = tools.letters.slice(0,teamSize ** 2)
 const population = people.length
-const teams = tools.createTeams(teamSize,numRounds,people)
+const teams = tools.createTeams(teamSize,numRounds,people,extraRoundOn)
 
 const batchID = Date.now();
 console.log("Launching batch",batchID);
