@@ -66,3 +66,6 @@ viabilityBinary = myData$results.viabilityCheck.15
 
 summary(lm(viabilityBinary ~., viabilitySurvey))
 plot(viabilitySurvey,viabilityBinary)
+
+plot(viabilitySurvey$results.viabilityCheck.10,viabilityBinary)
+abline(lm(viabilityBinary~viabilitySurvey$results.viabilityCheck.10))
