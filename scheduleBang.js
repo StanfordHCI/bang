@@ -57,7 +57,7 @@ else {
 }
 
 //Make new recruiting HIT
-mturk.makeHIT(title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, taskURL, (HIT) => {
+mturk.makeHIT('scheduleQuals', title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, taskURL, (HIT) => {
   const HITId = HIT.HITId;
 
   // Write new recruiting HIT id to file for next hour run

@@ -160,9 +160,9 @@ if (cleanHITs){
 }
 
 // Run this to remove willBang from anyone who hasBanged
-// mturk.listUsersWithQualification(mturk.quals.hasBanged, function(data) {
-//   mturk.unassignQualificationFromUsers(data.Qualifications.map(a => a.WorkerId), mturk.quals.willBang);
-// })
+mturk.listUsersWithQualification(mturk.quals.hasBanged, function(data) {
+  mturk.unassignQualificationFromUsers(data.Qualifications.map(a => a.WorkerId), mturk.quals.willBang);
+})
 
 if (runExperimentNow){ mturk.launchBang(function(HIT) {
   // Notify workers that a HIT has started if we're doing recruiting by email
@@ -184,14 +184,23 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
           mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
           }); // must return from mturkTools
       }
+      // if(usingWillBang) {
+      //   mturk.listUsersWithQualification(mturk.quals.willBang, function(data) { // notifies all willBang
+      //     let workers = data.Qualifications.map(a=>a.WorkerId)
+      //     mturk.listUsersWithQualification(mturk.quals.hasBanged, function(data2) {
+      //       let workers2 = data2.Qualifications.map(a=>a.WorkerId)
+      //       for(i = 0; i < workers.length - 1; i++) {
+      //         if (workers2.includes(workers[i])) {
+      //           workers.splice(i, 1);
+      //         }
+      //       }
+      //     })
+
+      //     mturk.notifyWorkers(workers.map(a => workers), subject, message)
+      //   }); // must return from mturkTools
+      // }
 
     });
-    // mturk.listAssignments(HITId, data => { // notifies all recent Turkers
-    //   if (data.Assignments.length < 100) {
-    //     // watch the notifyWorkers call, it also assigns willBang qualification
-    //     mturk.notifyWorkers(data.Assignments.map(a => a.WorkerId), subject, message)
-    //   }
-    // });g
   }
 }) }
 

@@ -84,6 +84,7 @@ const quals = {
 }
 
 const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(500), quals.hasBanged, quals.willBang]
+const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(100), quals.hasBanged]
 const qualsForTesting = [quals.notUSA, quals.hitsAccepted(100)]
 const safeQuals = runningLive ? qualsForLive : []
 
@@ -134,7 +135,14 @@ const getBalance = () => {
 // Requires multiple Parameters.
 // Must manually add Qualification Requirements if desired.
 
-const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, callback) => {
+const makeHIT = (chooseQual, title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, callback) => {
+
+  // if a schedule bang, change quals to scheduleQuals
+
+  let quals = [];
+  if(chooseQual == 'safeQuals') quals = safeQuals;
+  else if (chooseQual == 'scheduleQuals') quals = scheduleQuals;
+
   let makeHITParams = {
     Title: title,  // string
     Description: description, // string
@@ -144,7 +152,7 @@ const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoA
     AutoApprovalDelayInSeconds: 60 * autoApprovalDelay, // number, pass as minutes
     Keywords: keywords, // string
     MaxAssignments: maxAssignments, // number
-    QualificationRequirements: safeQuals, // list of qualification objects
+    QualificationRequirements: quals, // list of qualification objects
     Question: hitContent
   };
 
@@ -446,7 +454,7 @@ const launchBang = (callback) => {
   let maxAssignments = numAssignments
   let hitContent = externalHIT(taskURL)
 
-  makeHIT(HITTitle, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, function(HIT) {
+  makeHIT('safeQuals', HITTitle, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, function(HIT) {
 
     if (typeof callback === 'function') callback(HIT)
   });
