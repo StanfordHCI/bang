@@ -56,12 +56,10 @@ else {
   console.log("No recruitingHITstorage found. Perhaps this is your first time running.")
 }
 
-
-
-
 //Make new recruiting HIT
 mturk.makeHIT(title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, taskURL, (HIT) => {
   const HITId = HIT.HITId;
+
   // Write new recruiting HIT id to file for next hour run
   fs.writeFile(recruitingHITstorage, HITId, (err) => {
     if(err) console.log("There's a problem writing HIT to the recruiting file: ", err);

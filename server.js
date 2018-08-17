@@ -158,6 +158,11 @@ if (cleanHITs){
   })
 }
 
+// Run this to remove willBang from anyone who hasBanged
+// mturk.listUsersWithQualification(mturk.quals.hasBanged, function(data) {
+//   mturk.unassignQualificationFromUsers(data.Qualifications.map(a => a.WorkerId), mturk.quals.willBang);
+// })
+
 if (runExperimentNow){ mturk.launchBang(function(HIT) {
   // Notify workers that a HIT has started if we're doing recruiting by email
   if (emailingWorkers) {
