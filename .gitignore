@@ -4,3 +4,5 @@ package-lock.json
 .env
 googleads.yaml
 .txt/currentrecruitingHIT.txt
+R/.Rhistory
+R/.RData

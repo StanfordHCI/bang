@@ -1,6 +1,7 @@
 library("jsonlite", lib.loc="~/Library/R/3.3/library")
-input = ''
-data = flatten(fromJSON(input),recursive = TRUE)
+setwd(dirname(sys.frame(1)$ofile))
+getwd()
+dataPath = "../.data"
 
 # Returns a table of survey observations with a new column for round number
 extractSurvey = function(frame,survey) {
@@ -10,6 +11,7 @@ extractSurvey = function(frame,survey) {
     surveyCols = Filter(function(x) grepl(getCol,x),names(frame))
     newCols = lapply(surveyCols, function(x) gsub(getCol,paste("results.",survey, sep=""),x) )
     surveyFrame = frame[,surveyCols]
+    if (is.null(newCols)) {return("No newCols")}
     names(surveyFrame) = newCols
     surveyFrame$id = frame$id
     surveyFrame$round = round
@@ -18,31 +20,49 @@ extractSurvey = function(frame,survey) {
   return(Reduce(rbind,roundResponses))
 }
 
-survey = 'viabilityCheck'
-extractSurvey(data,survey)
+# Returns factorized survey results
+convertValues = function(x) { 
+  yesNo = c("No","Yes")
+  agreementLevels = c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")
+  
+  if (any(as.character(x) == "Yes") || any(as.character(x) == "No")){
+    levels = yesNo
+  } else {
+    levels = agreementLevels
+  }
+  return(as.numeric(factor(x,levels = levels, ordered = TRUE)))
+}
 
-path = "../.data"
-batches = dir(path, pattern = "^[0-9]+$" )
+survey = 'viabilityCheck'
+
+batches = dir(dataPath, pattern = "^[0-9]+$" )
 completeBatches = Filter(function(batch) { 
-  if (any(dir(paste(path,batch,sep="/")) == "batch.json") && (any(dir(paste(path,batch,sep="/")) == "users.json")) ) {
-    batchData = read_json(paste(path,batch,"batch.json",sep="/"), simplifyVector = TRUE)
+  if (any(dir(paste(dataPath,batch,sep="/")) == "batch.json") && (any(dir(paste(dataPath,batch,sep="/")) == "users.json")) ) {
+    batchData = read_json(paste(dataPath,batch,"batch.json",sep="/"), simplifyVector = TRUE)
     return(any(batchData$batchComplete == TRUE))
   } 
   return(FALSE)
 }, batches)
 
 userFiles = lapply(completeBatches, function(batch){
-  userFile = read_json(paste(path,batch,"users.json",sep="/"), simplifyVector = TRUE)
+  userFile = read_json(paste(dataPath,batch,"users.json",sep="/"), simplifyVector = TRUE)
   return(flatten(userFile, recursive = TRUE))
 })
 
-Reduce(names,userFiles)
+overlappingFiles = Reduce(function(x,y) {
+  merge(x, y, all=TRUE)
+}, userFiles)
 
+myData = extractSurvey(overlappingFiles,survey)
+myData = myData[complete.cases(myData),]
 
-moreBatches = Filter(function(batch) {
-  read_json(paste(path,batch,"batch.json",sep="/"))
-}, batchesWithBatch)
+surveyCols = setdiff(names(myData), c("results.viabilityCheck.15", "id", "round"))
 
-files = dir(path, pattern = "users.json")
-data = files %>%
-  map_df(~fromJSON(file.path(path, .), flatten = TRUE))
+myData[surveyCols] = lapply(myData[surveyCols],convertValues)
+myData$results.viabilityCheck.15 = convertValues(myData$results.viabilityCheck.15)
+
+viabilitySurvey = myData[,surveyCols]
+viabilityBinary = myData$results.viabilityCheck.15
+
+summary(lm(viabilityBinary ~., viabilitySurvey))
+plot(viabilitySurvey,viabilityBinary)
