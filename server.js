@@ -170,6 +170,9 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
       let message = "You’re invited to join our newly launched HIT on Mturk; \
       there are limited spaces! You can join it by clicking this link " + URL;
       console.log("message to willBangers", message);
+      if (!URL) {
+        throw "URL not defined"
+      }
       if(usingWillBang) {
         mturk.listUsersWithQualification(mturk.quals.willBang, function(data) { // notifies all willBang
           mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)  
