@@ -1,5 +1,6 @@
 const fs = require('fs');
 var exec = require('child_process').exec;
+let mturk = require('./mturkTools');
 
 Array.prototype.set = function() {
   const setArray = []
@@ -41,6 +42,24 @@ function renderChats(batch) {
   })
 }
 
+//Goes through stored data and checks for bonuses. Bonuses any remaining work.
+function retroactiveBonus() {
+  const dir = "./.data/"
+  const batchFolders = fs.readdirSync(dir).filter(f => fs.statSync(dir + f).isDirectory())
+  batchFolders.filter(f => fs.readdirSync(dir + f).includes('users.json')).forEach(f => {
+    fs.readFile(dir + f + '/' + 'users.json',(err,usersJSON)=> {
+      if (err) {return console.log(err)} else {
+        mturk.payBonuses( JSON.parse(usersJSON) ,paidUsers => {
+          users.filter(u => paidUsers.map(p => p.id).includes(u)).forEach(u => u.bonus == 0)
+          fs.writeFile(dir + f + '/' + 'users.json', JSON.stringify(users,null,2) , function(err) {
+            if(err) { return console.log(err)} else { console.log("saved",f);}
+          });
+        })
+      }
+    })
+  })
+}
+
 //Renders a full db by name.
 function saveOutBatch(dbName,batch) {
   const dir = "./.data/"+ batch
@@ -68,13 +87,14 @@ function useLatestBatch(callback) {
 
 function useEachBatch(callback) {
   db.batch.find({}, (err,data) => {
-    const batches = data.map(b => b.batchID).sort()
-    if (typeof(callback) == 'function') {
-      batches.forEach(callback)
-      return batches
+    if (err) {console.log(err)} else {
+      const batches = data.map(b => b.batchID).sort()
+      if (typeof(callback) == 'function') {
+        batches.forEach(callback)
+        return batches
+      }
     }
   })
-  return console.log("None");
 }
 
 function saveAllData() {
@@ -87,13 +107,13 @@ function saveAllData() {
 
 function downloadData(url,callback) {
   pemFile = '~/.ssh/sh-server.pem'
-  source = "ubuntu@"+url+":bang/.data/*"
+  source = "ubuntu@" + url + ":bang/.data/*"
   destination = ".data"
   command = ['scp', '-i', pemFile, source, destination]
   exec(command.join(' '), (err, stdout, stderr) => {
     if (err) console.log(err);
     else {
-      console.log("Saved * data",stdout);
+      console.log("Downloaded data from",url);
       if (typeof(callback) == 'function') {
         callback(stdout)
       }
@@ -102,10 +122,12 @@ function downloadData(url,callback) {
 }
 
 //Save from servers
-downloadData("mark.dmorina.com",saveAllData)
+// downloadData("mark.dmorina.com",saveAllData)
 // downloadData("bang.dmorina.com",saveAllData)
 
 //Save from local folder
 // saveAllData()
 
 // useEachBatch(renderChats)
+
+// retroactiveBonus()
