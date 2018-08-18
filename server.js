@@ -790,6 +790,7 @@ io.on('connection', (socket) => {
         users.filter(u => room.includes(u.person)).forEach(u => {
           u.room = roomName
           u.rooms.push(roomName)
+          updateUserInDB(u,"rooms",u.rooms)
           u.ready = false //return users to unready state
           if (!suddenDeath && !u.connected) {u.ready = true}
           console.log(u.name, '-> room', u.room);
