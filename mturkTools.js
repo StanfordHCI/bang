@@ -3,7 +3,7 @@
 require('dotenv').config()
 
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
-const runningLive = process.env.RUNNING_LIVE == "TRUE"//ONLY CHANGE IN VIM ON SERVER
+const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE IN VIM ON SERVER
 const teamSize = parseInt(process.env.TEAM_SIZE)
 const roundMinutes = process.env.ROUND_MINUTES
 
@@ -357,7 +357,7 @@ const listUsersWithQualification = (qual, callback) => {
   mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
     else {
-      console.log(data);
+      // console.log(data);
       if (typeof callback === 'function') callback(data)
     }
   });
@@ -549,31 +549,31 @@ module.exports = {
 };
 
 // TODO: CLean this up by integrating with other bonus code
-const payBonusesManually = (user) => {
-  mturk.sendBonus({
-    AssignmentId: user.assignmentId,
-    BonusAmount: String(user.bonus),
-    Reason: "Thanks for working on our task.",
-    WorkerId: user.mturkId,
-    UniqueRequestToken: user.assignmentId
-  }, function(err, data) {
-    if (err) {
-     console.log("Bonus not processed:",err)
-    } else {
-      console.log("Bonused:",user.mturkId, user.bonus)
-      user.paid = user.bonus
-    }
-  })
-}
+// const payBonusesManually = (user) => {
+//   mturk.sendBonus({
+//     AssignmentId: user.assignmentId,
+//     BonusAmount: String(user.bonus),
+//     Reason: "Thanks for working on our task.",
+//     WorkerId: user.mturkId,
+//     UniqueRequestToken: user.assignmentId
+//   }, function(err, data) {
+//     if (err) {
+//      console.log("Bonus not processed:",err)
+//     } else {
+//       console.log("Bonused:",user.mturkId, user.bonus)
+//       user.paid = user.bonus
+//     }
+//   })
+// }
+//
+// users = [] //list of user objects
 
-users = [] //list of user objects
 
-// users.forEach(payBonusesManually)
 
-// Figure out how to build link when HIT is created
-// `print "https://workersandbox.mturk.com/mturk/preview?groupId={}".format(hit_type_id)`
-// or
-// `print "https://mturk.com/mturk/preview?groupId={}".format(hit_type_id)`
 
-// var hitId =  "3UXQ63NLAA1WDL4YZ0RN312GDXALBD"
-// var hitURL = getHITURL(hitId)
+// listUsersWithQualification(quals.hasBanged,(hasBangers) => {
+//   listUsersWithQualification(quals.willBang,(willBangers) => {
+//     console.log(willBangWorkers = willBangers.Qualifications.map(u => u.workerId).includes("A21UA6O7ZFAIQJ"));
+//     console.log(hasBangers.Qualifications.map(u => u.workerId).includes("A21UA6O7ZFAIQJ"));
+//   })
+// })
