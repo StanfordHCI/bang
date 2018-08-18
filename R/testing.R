@@ -66,8 +66,3 @@ viabilitySurvey = myData[,surveyCols]
 viabilityBinary = myData$results.viabilityCheck.15
 
 summary(lm(viabilityBinary ~., viabilitySurvey))
-autoplot(viabilityBinary)
-
-hist(viabilityBinary)
-
-ggplot(viabilityBinary, aes(x = Home.Value)) + geom_histogram()
