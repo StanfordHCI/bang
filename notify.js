@@ -1,4 +1,5 @@
 var mturk = require('./mturkTools');
+const Datastore = require('nedb')
 
 notification_type = process.argv[2]
 HITId = process.argv[3];
@@ -32,4 +33,12 @@ switch (notification_type) {
             }
         })
         break;
+    case "expireBangs":
+        mturk.workOnActiveHITs(activeHITs => {
+            db.ourHITs.find({}, (err, HITsInDB) => {
+              if (err) {console.log("Err loading HITS for expiration:" + err)} else {
+                HITsInDB.map(h => h.HITId).filter(h => activeHITs.includes(h)).forEach(mturk.expireHIT)
+              }
+            })
+          })
     }

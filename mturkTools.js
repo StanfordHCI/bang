@@ -83,7 +83,10 @@ const quals = {
   }
 }
 
-const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(500), quals.hasBanged]
+//const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(0), quals.hasBanged, quals.willBang]
+//const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged]
+const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(0), quals.hasBanged, quals.willBang]
+const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged]
 const qualsForTesting = [quals.notUSA, quals.hitsAccepted(100)]
 const safeQuals = runningLive ? qualsForLive : []
 
@@ -134,7 +137,14 @@ const getBalance = () => {
 // Requires multiple Parameters.
 // Must manually add Qualification Requirements if desired.
 
-const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, callback) => {
+const makeHIT = (chooseQual, title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, callback) => {
+
+  // if a schedule bang, change quals to scheduleQuals
+
+  let quals = [];
+  if(chooseQual == 'safeQuals') quals = safeQuals;
+  else if (chooseQual == 'scheduleQuals') quals = scheduleQuals;
+
   let makeHITParams = {
     Title: title,  // string
     Description: description, // string
@@ -144,7 +154,7 @@ const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoA
     AutoApprovalDelayInSeconds: 60 * autoApprovalDelay, // number, pass as minutes
     Keywords: keywords, // string
     MaxAssignments: maxAssignments, // number
-    QualificationRequirements: safeQuals, // list of qualification objects
+    QualificationRequirements: quals, // list of qualification objects
     Question: hitContent
   };
 
@@ -152,6 +162,9 @@ const makeHIT = (title, description, assignmentDuration, lifetime, reward, autoA
     if (err) console.log(err, err.stack);
     else {
       console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
+      currentHitId = data.HIT.HITId;
+      currentHITTypeId = data.HIT.HITTypeId
+      currentHITGroupId = data.HIT.HITGroupId
       if (typeof callback === 'function') callback(data.HIT)
     }
   });
@@ -206,6 +219,12 @@ const workOnActiveHITs = (callback) => {
     }
   })
 }
+
+// * listAssignments *
+// -------------------------------------------------------------------
+// Retrieves all active HIT assignments, returns the assignments
+//
+// Takes a HITId as a parameter
 
 const listAssignments = (HITId,callback) => {
   mturk.listAssignmentsForHIT({HITId:HITId},(err,data) => {
@@ -296,7 +315,6 @@ const assignQualificationToUsers = (users,qual) => {
   })
 }
 
-
 // * unassignQualificationFromUsers *
 // -------------------------------------------------------------------
 // Assigns a qualification to users who have already completed the task - does not let workers repeat task
@@ -352,9 +370,9 @@ const listUsersWithQualification = (qual, callback) => {
 // Takes users as a parameter.
 // Returns an array of bonused users.
 
-const payBonuses = (users) => {
+const payBonuses = (users,callback) => {
   let successfullyBonusedUsers = []
-  users.filter(u => u.mturkId).filter(u => u.mturkId != 'A19MTSLG2OYDLZ' && u.mturkId.length < 5).filter(u => u.bonus != 0).forEach((u) => {
+  users.filter(u => u.mturkId != 'A19MTSLG2OYDLZ' && u.mturkId.length > 5).filter(u => u.bonus != 0).forEach((u) => {
     mturk.sendBonus({
       AssignmentId: u.assignmentId,
       BonusAmount: String(u.bonus),
@@ -363,14 +381,22 @@ const payBonuses = (users) => {
       UniqueRequestToken: u.id
     }, (err, data) => {
       if (err) {
-        console.log("Bonus not processed\t",u.id,'\t',u.mturkId)
+        if(err.message.includes("The idempotency token \"" + u.id + "\" has already been processed.")) {
+          console.log("Already bonused",u.bonus ,u.id, u.mturkId)
+          successfullyBonusedUsers.push(u)
+        } else {
+          console.log("NOT bonused\t",u.bonus ,u.id, u.mturkId,err)
+        }
       } else {
         successfullyBonusedUsers.push(u)
-        console.log("Bonused:",u.id, u.mturkId)
+        console.log("Bonused:",u.bonus ,u.id, u.mturkId)
       }
+      if (typeof callback === 'function') {
+        callback(successfullyBonusedUsers)
+      }
+      return successfullyBonusedUsers
     })
   })
-  return successfullyBonusedUsers
 }
 
 // * blockWorker *
@@ -421,33 +447,24 @@ const returnCurrentHIT = () => {
 // -------------------------------------------------------------------
 // Launches Scaled-Humanity Fracture experiment
 
-const launchBang = () => {
+const launchBang = (callback) => {
   // HIT Parameters
   let time = Date.now();
 
   let HITTitle = 'Write online ads - bonus up to $'+ hourlyWage + ' / hour (' + time + ')';
+  let description = 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10)  + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.'
+  let assignmentDuration = 60 * taskDuration
+  let lifetime = 60*(timeActive)
+  let reward = String(rewardPrice)
+  let autoApprovalDelay = 60*taskDuration
+  let keywords = 'ads, writing, copy editing, advertising'
+  let maxAssignments = numAssignments
+  let hitContent = externalHIT(taskURL)
 
-  let params = {
-    Title: HITTitle,
-    Description: 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10)  + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
-    AssignmentDurationInSeconds: 60*taskDuration, // 30 minutes?
-    LifetimeInSeconds: 60*(timeActive),  // short lifetime, deletes and reposts often
-    Reward: String(rewardPrice),
-    AutoApprovalDelayInSeconds: 60*taskDuration,
-    Keywords: 'ads, writing, copy editing, advertising',
-    MaxAssignments: numAssignments,
-    QualificationRequirements: safeQuals,
-    Question: externalHIT(taskURL)
-  };
+  makeHIT('safeQuals', HITTitle, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, function(HIT) {
 
-  mturk.createHIT(params, (err, data) => {
-    if (err) {
-       console.log(err, err.stack);
-    } else {
-       console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
-      currentHitId = data.HIT.HITId;
-    }
-  })
+    if (typeof callback === 'function') callback(HIT)
+  });
 
   let delay = 1;
   // only continues to post if not enough people accepted HIT
@@ -469,7 +486,8 @@ const launchBang = () => {
         QualificationRequirements: safeQuals,
         Question: externalHIT(taskURL)
       };
-      mturk.createHIT(params, (err, data) => {
+
+      mturk.createHIT(params2, (err, data) => {
           if (err) {
             console.log(err, err.stack);
           } else {
@@ -485,6 +503,7 @@ const launchBang = () => {
       expireHIT(currentHitId);
     }
    }, 1000 * 60 * timeActive * delay)
+
 }
 
 // * notifyWorkers
@@ -496,7 +515,7 @@ const notifyWorkers = (WorkerIds, subject, message) => {
    if (err) console.log("Error notifying workers:",err, err.stack); // an error occurred
    else     console.log("Notified",WorkerIds.length,"workers:", subject);           // successful response
  });
- mturk.assignQualificationToUsers(WorkerIds, quals.willBang)
+//  mturk.assignQualificationToUsers(WorkerIds, quals.willBang)
 }
 
 //turkerJSON.forEach(notifyWorkersManually);

@@ -1,4 +1,3 @@
-require('dotenv').config()
 var colors = require('colors')
 
 //Environmental settings, set in .env
@@ -16,13 +15,14 @@ const secondsToHold2 = 200 //maximum number of seconds of inactivity that we all
 const maxWaitChatMinutes = 15
 
 // Toggles
-const runExperimentNow = true
+const runExperimentNow = false
 const issueBonusesNow = true
-const emailingWorkers = true
+const notifyWorkersOn = true
+const runViaEmailOn = false
 const usingWillBang = true
 
 const cleanHITs = false
-const assignQualifications = true
+const assignQualifications = false
 const debugMode = !runningLive
 
 const suddenDeath = false
@@ -32,15 +32,15 @@ const randomCondition = false
 const randomRoundOrder = false
 const randomProduct = false
 
-const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
-const midSurveyOn = true
+const midSurveyOn = false
 const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
-const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
-const requiredOn = true
+const timeCheckOn = false // tracks time user spends on task and updates payment - also tracks how long each task is taking
+const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/3
 
 //Testing toggles
@@ -139,7 +139,9 @@ function updateUserInDB(user,field,value) {
 db.users.find({}, (err, usersInDB) => {
   if (err) {console.log("DB for MTurk:" + err)} else {
     if (issueBonusesNow) {
-      mturk.payBonuses(usersInDB).forEach(u => updateUserInDB(u,'bonus',0))
+      mturk.payBonuses(usersInDB, (bonusedUsers) => {
+        bonusedUsers.forEach(u => updateUserInDB(u,'bonus',0))
+      })
     }
     if (assignQualifications && runningLive) {
       // mturk.assignQualificationToUsers(usersInDB, mturk.quals.hasBanged)
@@ -159,7 +161,50 @@ if (cleanHITs){
   })
 }
 
-if (runExperimentNow){ mturk.launchBang() }
+// Run this to remove willBang from anyone who hasBanged
+mturk.listUsersWithQualification(mturk.quals.hasBanged, function(data) {
+  mturk.unassignQualificationFromUsers(data.Qualifications.map(a => a.WorkerId), mturk.quals.willBang);
+})
+
+if (runExperimentNow){ mturk.launchBang(function(HIT) {
+  // Notify workers that a HIT has started if we're doing recruiting by email
+  if (notifyWorkersOn) {
+    // let HITId = process.argv[2];
+    let subject = "We launched our new ad writing HIT. Join now, spaces are limited."
+    console.log(HIT)
+    let URL = ''
+    mturk.getHITURL(HIT.HITId, function(url) {
+      URL = url;
+      let message = "You’re invited to join our newly launched HIT on Mturk; \
+      there are limited spaces! You can join it by clicking this link " + URL;
+      console.log("message to willBangers", message);
+      if (!URL) {
+        throw "URL not defined"
+      }
+      if(usingWillBang) {
+        mturk.listUsersWithQualification(mturk.quals.willBang, function(data) { // notifies all willBang
+          mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
+          }); // must return from mturkTools
+      }
+      // if(usingWillBang) {
+      //   mturk.listUsersWithQualification(mturk.quals.willBang, function(data) { // notifies all willBang
+      //     let workers = data.Qualifications.map(a=>a.WorkerId)
+      //     mturk.listUsersWithQualification(mturk.quals.hasBanged, function(data2) {
+      //       let workers2 = data2.Qualifications.map(a=>a.WorkerId)
+      //       for(i = 0; i < workers.length - 1; i++) {
+      //         if (workers2.includes(workers[i])) {
+      //           workers.splice(i, 1);
+      //         }
+      //       }
+      //     })
+
+      //     mturk.notifyWorkers(workers.map(a => workers), subject, message)
+      //   }); // must return from mturkTools
+      // }
+
+    });
+  }
+}) }
 
 //Add more products
 let products = [
@@ -224,7 +269,6 @@ console.log(eventSchedule)
 
 let fullUrl = ''
 
-
 app.use(express.static('public'));
 
 // Disconnect leftover users
@@ -236,27 +280,6 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
     io.in(socketID).disconnect(true)
   }
 });
-
-// Notify workers that a HIT has started if we're doing recruiting by email
-if (emailingWorkers) {
-  // let HITId = process.argv[2];
-  let subject = "We launched our new ad writing HIT. Join now, spaces are limited."
-  let URL = mturk.getHITURL(mturk.returnCurrentHIT());
-  let message = "You’re invited to join our newly launched HIT on Mturk; \
-                    there are limited spaces! You can join it by clicking this link" + URL;
-  if(usingWillBang) {
-    mturk.listUsersWithQualification(mturk.quals.willBang, function(data) { // notifies all willBang
-      mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)  
-    }); // must return from mturkTools
-  }
-  // mturk.listAssignments(HITId, data => { // notifies all recent Turkers
-  //   if (data.Assignments.length < 100) {
-  //     // watch the notifyWorkers call, it also assigns willBang qualification
-  //     mturk.notifyWorkers(data.Assignments.map(a => a.WorkerId), subject, message) 
-  //   }
-  // });g
-}
-
 
 // Adds Batch data for this experiment. unique batchID based on time/date
 db.batch.insert(
@@ -289,9 +312,6 @@ db.batch.insert(
 // Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
 setTimeout(storeHIT, 1000 * 12)
 
-
-
-
 // Chatroom
 io.on('connection', (socket) => {
   //PK: what are these bools for?
@@ -311,13 +331,13 @@ io.on('connection', (socket) => {
   })
 
   socket.on('accepted HIT', data => {
-    if(!userAcquisitionStage) { 
+    if(!userAcquisitionStage) {
       //updateUserInDB(socket,'bonus',currentBonus())
       if (!socket) {
         console.log("no socket in accepted HIT")
         return;
       }
-      issueFinish(socket,emailingWorkers ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
+      issueFinish(socket,runViaEmailOn ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
       return;
     }
     userPool.push({
@@ -350,7 +370,7 @@ io.on('connection', (socket) => {
   })
 
   function updateUserPool(){
-    if(!userAcquisitionStage) return; 
+    if(!userAcquisitionStage) return;
 
     function secondsSince(event) {return (Date.now() - event)/1000}
     function updateUsersActive() {
@@ -385,12 +405,12 @@ io.on('connection', (socket) => {
             io.in(user.id).emit('initiate experiment');
           } else { //else emit finish
             console.log('EMIT FINISH TO EXTRA ACTIVE WORKER')
-            issueFinish(user, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
+            issueFinish(user, runViaEmailOn ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
           }
         }
         userPool.filter(user => !usersActive.byID(user.id)).forEach(user => {//
           console.log('EMIT FINISH TO NONACTIVE OR DISCONNECTED WORKER')
-          issueFinish(user, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
+          issueFinish(user, runViaEmailOn ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
         })
       } else {
         if(secondsSince(waitchatStart) / 60 >= maxWaitChatMinutes) { 
@@ -447,8 +467,8 @@ io.on('connection', (socket) => {
   }
 
   socket.on('add user', data => {
-    if (!userAcquisitionStage) { 
-      issueFinish(socket, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!")//PK: come back to this
+    if (!userAcquisitionStage) {
+      issueFinish(socket, runViaEmailOn ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!")//PK: come back to this
       return;
     }
     if(users.byID(socket.id)) {console.log('ERR: ADDING A USER ALREADY IN USERS')}
@@ -476,7 +496,7 @@ io.on('connection', (socket) => {
         });
         console.log(user.mturkId)
       })
-      // assign people to rooms/teams 
+      // assign people to rooms/teams
       users.forEach(u => {
         u.person = people.pop();
       })
@@ -616,7 +636,7 @@ io.on('connection', (socket) => {
           issueFinish(u,cancelMessage,true)
         })
       }
-      if (!suddenDeath && !userAcquisitionStage) { // sets users to ready when they disconnect 
+      if (!suddenDeath && !userAcquisitionStage) { // sets users to ready when they disconnect
         user.ready = true // TODO: remove user from users
       }
     })
@@ -843,7 +863,7 @@ io.on('connection', (socket) => {
       if(usingWillBang) {
         // mturk.unassignQualificationFromUsers(users, mturk.quals.willBang)
         db.users.find({}, (err, usersInDB) => {
-          if (err) {console.log("DB for MTurk:" + err)} 
+          if (err) {console.log("DB for MTurk:" + err)}
           else {
             mturk.unassignQualificationFromUsers(usersInDB, mturk.quals.willBang)
           }
@@ -884,7 +904,7 @@ io.on('connection', (socket) => {
 
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
-    issueFinish(socket, emailingWorkers ? "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions." : "The task has finished early. You will be compensated by clicking submit below.", finishingCode = "broken")
+    issueFinish(socket, runViaEmailOn ? "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions." : "The task has finished early. You will be compensated by clicking submit below.", finishingCode = "broken")
   });
 
   // Starter task
