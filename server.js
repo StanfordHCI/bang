@@ -4,8 +4,8 @@ var colors = require('colors')
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE
-const roundMinutes = process.env.ROUND_MINUTES
+const teamSize = process.env.TEAM_SIZE = 2
+const roundMinutes = process.env.ROUND_MINUTES =.1
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
@@ -13,6 +13,7 @@ const secondsToWait = 15 //number of seconds users must have been on pretask to 
 const secondsSinceResponse = 14 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
 const secondsToHold1 = 1000 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
 const secondsToHold2 = 200 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
+const maxWaitChatMinutes = 15
 
 // Toggles
 const runExperimentNow = true
@@ -185,6 +186,7 @@ let products = [
 
 let users = []; //the main local user storage
 let userPool = []; //accumulates users pre-experiment
+let waitchatStart = 0
 let currentRound = 0 //PK: talk about 0-indexed v 1-indexed round numbers (note: if change -> change parts of code reliant on 0-indexed round num)
 let startTime = 0
 let userAcquisitionStage = true
@@ -328,6 +330,9 @@ io.on('connection', (socket) => {
       timeAdded: data.timeAdded,
       timeLastActivity: data.timeAdded
     });
+    if(userPool.length == 1){//first user entered waitchat
+      waitchatStart = data.timeAdded
+    }
 
     mturk.setAssignmentsPending(getPoolUsersConnected().length)
     // debugLog(userPool, "users accepted currently: " + userPool.length)
@@ -387,8 +392,13 @@ io.on('connection', (socket) => {
           console.log('EMIT FINISH TO NONACTIVE OR DISCONNECTED WORKER')
           issueFinish(user, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
         })
+      } else {
+        if(secondsSince(waitchatStart) / 60 >= maxWaitChatMinutes) { 
+          console.log("Waitchat time limit reached".red)
+          io.in(socket.id).emit('echo', 'kill-all')
+        }
       }
-    } else {
+    } else { // waitchat off
       if(usersActive.length >= teamSize ** 2) {
         io.sockets.emit('update number waiting', {num: 0});
         console.log('there are ' + usersActive.length + ' users: ' + usersActive)
