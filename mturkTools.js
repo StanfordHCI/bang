@@ -569,9 +569,14 @@ module.exports = {
 // users = [] //list of user objects
 
 
+// listUsersWithQualification({QualificationTypeId:"p1:PiTRhIC9eaSVy8/7Lqohp4ifJ8+UkQwv7QrhELsQjNJPkWdEimPhOk3IodO88vo="},console.log)
+
 // listUsersWithQualification(quals.hasBanged,(hasBangers) => {
 //   listUsersWithQualification(quals.willBang,(willBangers) => {
-//     console.log(willBangWorkers = willBangers.Qualifications.map(u => u.workerId).includes("A21UA6O7ZFAIQJ"));
-//     console.log(hasBangers.Qualifications.map(u => u.workerId).includes("A21UA6O7ZFAIQJ"));
+//     console.log(willBangers)
+//
+//     idToCheck = "AW6DFFL8QE1FH"
+//     console.log(willBangWorkers = willBangers.Qualifications.map(u => u.workerId).includes(idToCheck));
+//     console.log(hasBangers.Qualifications.map(u => u.workerId).includes(idToCheck));
 //   })
 // })

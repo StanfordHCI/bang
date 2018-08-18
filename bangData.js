@@ -51,10 +51,53 @@ function retroactiveBonus() {
       if (err) {return console.log(err)} else {
         mturk.payBonuses( JSON.parse(usersJSON) ,paidUsers => {
           users.filter(u => paidUsers.map(p => p.id).includes(u)).forEach(u => u.bonus == 0)
-          fs.writeFile(dir + f + '/' + 'users.json', JSON.stringify(users,null,2) , function(err) {
+          fs.writeFile(dir + f + '/' + 'users.json', JSON.stringify(users,null,2) , (err) => {
             if(err) { return console.log(err)} else { console.log("saved",f);}
           });
         })
+      }
+    })
+  })
+}
+
+//Goes through stored data and adds rooms from chats if they are not propperly stored.
+function retroactivelyFixRooms() {
+  const dir = "./.data/"
+  const batchFolders = fs.readdirSync(dir).filter(f => fs.statSync(dir + f).isDirectory())
+  batchFolders.filter(f => fs.readdirSync(dir + f).includes('users.json') && fs.readdirSync(dir + f).includes('chats.json')).forEach(f => {
+    fs.readFile(dir + f + '/' + 'users.json',(err,usersJSON)=> {
+      if (err) {return console.log(err)} else {
+        const users = JSON.parse(usersJSON)
+        try {
+          if (users[0].rooms.length == 0) {
+            fs.readFile(dir + f + '/' + 'chats.json',(err,chatJSON)=> {
+              if (err) {return console.log(err)} else {
+                const chats = JSON.parse(chatJSON)
+                const orderedChats = chats.sort((a,b) => a.time - b.time)
+                users.forEach(u => {
+                  u.rooms = []
+                  let roomsObj = {}
+                  orderedChats.filter(c => c.userID == u.id).forEach(c => {
+                    roomsObj[c.round] = c.room
+                  })
+                  try{
+                    u.results.format.forEach((f,i) => {
+                      const room = roomsObj[i]
+                      if (room != null) {
+                        u.rooms.push(room)
+                      }
+                    })
+                  } catch(err) {}
+                })
+                fs.writeFile(dir + f + '/' + 'users.json', JSON.stringify(users,null,2) ,(err) => {
+                    if(err) { return console.log(err)} else { console.log("saved",f);}
+                  });
+              }
+            })
+          }
+        } catch(err) {
+        }
+
       }
     })
   })
@@ -131,3 +174,4 @@ function downloadData(url,callback) {
 // useEachBatch(renderChats)
 
 // retroactiveBonus()
+// retroactivelyFixRooms()
