@@ -93,33 +93,38 @@ function useUser(u,f,err = "Guarded against undefined user") {
   else { console.log(err.red,u.id) }
 }
 
-// Experiment variables
-const conditionsAvailalbe = ['control','treatment','baseline']
-const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
-let treatmentNow = false
-let firstRun = false;
-let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
-let batchCompleteUpdated = false;
+if (runExperimentNow){
+  // Experiment variables
+  const conditionsAvailalbe = ['control','treatment','baseline']
+  const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
+  let treatmentNow = false
+  let firstRun = false;
+  let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
+  let batchCompleteUpdated = false;
 
-const roundOrdering = [
-  {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]},
-  {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]},
-  {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}]
+  const roundOrdering = [
+    {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]},
+    {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]},
+    {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}]
 
-const experimentRoundIndicator = 1//PK: is this different that roundNum?
-const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
-const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
-console.log(currentCondition,'with',conditions[currentCondition]);
-const numRounds = conditions.baseline.length
+  const experimentRoundIndicator = 1//PK: is this different that roundNum?
+  const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
+  const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
+    console.log(currentCondition,'with',conditions[currentCondition]);
 
-const numberOfRooms = teamSize * numRounds
-const rooms = tools.letters.slice(0,numberOfRooms)
-const people = tools.letters.slice(0,teamSize ** 2)
-const population = people.length
-const teams = tools.createTeams(teamSize,numRounds,people)
+  const numRounds = conditions.baseline.length
 
-const batchID = Date.now();
-console.log("Launching batch",batchID);
+  const numberOfRooms = teamSize * numRounds
+  const rooms = tools.letters.slice(0,numberOfRooms)
+  const people = tools.letters.slice(0,teamSize ** 2)
+  const population = people.length
+  const teams = tools.createTeams(teamSize,numRounds,people)
+}
+
+if (runExperimentNow) {
+  const batchID = Date.now();
+  console.log("Launching batch",batchID);
+}
 
 // Setting up DB
 const Datastore = require('nedb')
@@ -162,12 +167,15 @@ if (cleanHITs){
   })
 }
 
-// Run this to remove willBang from anyone who hasBanged
-mturk.listUsersWithQualification(mturk.quals.hasBanged, function(data) {
-  mturk.unassignQualificationFromUsers(data.Qualifications.map(a => a.WorkerId), mturk.quals.willBang);
-})
+if (assignQualifications) {
+  // Run this to remove willBang from anyone who hasBanged
+  mturk.listUsersWithQualification(mturk.quals.hasBanged, function(data) {
+    mturk.unassignQualificationFromUsers(data.Qualifications.map(a => a.WorkerId), mturk.quals.willBang);
+  })
+}
 
 if (runExperimentNow){ mturk.launchBang(function(HIT) {
+  storeHIT(HIT.HITId)
   // Notify workers that a HIT has started if we're doing recruiting by email
   if (notifyWorkersOn) {
     // let HITId = process.argv[2];
@@ -244,29 +252,31 @@ let taskEndTime = 0;
 let taskTime = 0;
 
 // Building task list
-let eventSchedule = []
-if (starterSurveyOn) {
-  eventSchedule.push("starterSurvey")
+if (runExperimentNow){
+  let eventSchedule = []
+  if (starterSurveyOn) {
+    eventSchedule.push("starterSurvey")
+  }
+  let roundSchedule = []
+  roundSchedule.push("ready")
+  if (midSurveyOn) {
+    roundSchedule.push("midSurvey")
+  }
+  if (psychologicalSafetyOn) {
+    roundSchedule.push("psychologicalSafety")
+  }
+  if (teamfeedbackOn) {
+    roundSchedule.push("teamfeedbackSurvey")
+  }
+  roundSchedule = replicate(roundSchedule, numRounds)
+  eventSchedule= eventSchedule.concat(roundSchedule)
+  if (blacklistOn) {
+    eventSchedule.push("blacklistSurvey")
+  }
+  eventSchedule.push("postSurvey")
+  eventSchedule.push("finished")
+  console.log("This batch will include:",eventSchedule)
 }
-let roundSchedule = []
-roundSchedule.push("ready")
-if (midSurveyOn) {
-  roundSchedule.push("midSurvey")
-}
-if (psychologicalSafetyOn) {
-  roundSchedule.push("psychologicalSafety")
-}
-if (teamfeedbackOn) {
-  roundSchedule.push("teamfeedbackSurvey")
-}
-roundSchedule = replicate(roundSchedule, numRounds)
-eventSchedule= eventSchedule.concat(roundSchedule)
-if (blacklistOn) {
-  eventSchedule.push("blacklistSurvey")
-}
-eventSchedule.push("postSurvey")
-eventSchedule.push("finished")
-console.log(eventSchedule)
 
 let fullUrl = ''
 
@@ -282,36 +292,38 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
   }
 });
 
-// Adds Batch data for this experiment. unique batchID based on time/date
-db.batch.insert(
-  {
-    batchID: batchID,
-    batchComplete: false,
-    starterSurveyOn:starterSurveyOn,
-    midSurveyOn: midSurveyOn,
-    blacklistOn: blacklistOn,
-    teamfeedbackOn: teamfeedbackOn,
-    psychologicalSafetyOn : psychologicalSafetyOn,
-    checkinOn: checkinOn,
-    conditions: conditions,
-    experimentRound: experimentRound,
-    numRounds: numRounds,
-    teamSize: teamSize
-  }, (err, usersAdded) => {
-    if(err) console.log("There's a problem adding batch to the DB: ", err);
-    else if(usersAdded) console.log("Batch added to the DB");
-    console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
-    if (!firstRun) {
-      Object.keys(io.sockets.sockets).forEach(socketID => {
-        io.sockets.sockets[socketID].disconnect(true);
-      })
-      firstRun = true;
+if (runExperimentNow){
+  // Adds Batch data for this experiment. unique batchID based on time/date
+  db.batch.insert(
+    {
+      batchID: batchID,
+      batchComplete: false,
+      starterSurveyOn:starterSurveyOn,
+      midSurveyOn: midSurveyOn,
+      blacklistOn: blacklistOn,
+      teamfeedbackOn: teamfeedbackOn,
+      psychologicalSafetyOn : psychologicalSafetyOn,
+      checkinOn: checkinOn,
+      conditions: conditions,
+      experimentRound: experimentRound,
+      numRounds: numRounds,
+      teamSize: teamSize
+    }, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding batch to the DB: ", err);
+      else if(usersAdded) console.log("Batch added to the DB");
+      console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
+      if (!firstRun) {
+        Object.keys(io.sockets.sockets).forEach(socketID => {
+          io.sockets.sockets[socketID].disconnect(true);
+        })
+        firstRun = true;
+      }
     }
-  }
-); // eventSchedule instead of all of the toggles? (missing checkinOn) //PK: what does this comment mean?
+  )// eventSchedule instead of all of the toggles? (missing checkinOn) //PK: what does this comment mean?
+}
+
 
 // Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
-setTimeout(storeHIT, 1000 * 12)
 
 // Chatroom
 io.on('connection', (socket) => {
@@ -1123,8 +1135,7 @@ function getRndInteger(min, max) {
   return Math.floor(Math.random() * (max - min) ) + min;
 }
 
-function storeHIT() {
-  let currentHIT = mturk.returnCurrentHIT();
+function storeHIT(currentHIT = mturk.returnCurrentHIT()) {
   db.ourHITs.insert({HITId: currentHIT, batch:batchID}, (err, HITAdded) => {
     if(err) console.log("There's a problem adding HIT to the DB: ", err);
     else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);

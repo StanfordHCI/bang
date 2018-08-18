@@ -71,13 +71,13 @@ const quals = {
     IntegerValues: [k],
     RequiredToPreview: true
   }},
-  hasBanged: {
-    QualificationTypeId: "3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG",  // have not already completed the HIT
+  hasBanged: { // those how have completed our HIT shoudl not see it
+    QualificationTypeId: runningLive ? "3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG" : "32X4OLFWW285XJWVDIWLQXWVGH0TDB",
     Comparator: 'DoesNotExist',
     ActionsGuarded:"DiscoverPreviewAndAccept"
   },
-  willBang: {
-    QualificationTypeId: "3H3KEN1OLSVM98I05ACTNWVOM3JBI9",
+  willBang: { // those who plan to complete our HIT
+    QualificationTypeId: runningLive ? "3H3KEN1OLSVM98I05ACTNWVOM3JBI9" : "3Q14PV9RQ817STQZOSBE3H0UXC7M1J",
     Comparator: 'Exists',
     ActionsGuarded:"DiscoverPreviewAndAccept"
   }
@@ -87,8 +87,8 @@ const quals = {
 //const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged]
 const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(0), quals.hasBanged, quals.willBang]
 const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged]
-const qualsForTesting = [quals.notUSA, quals.hitsAccepted(100)]
-const safeQuals = runningLive ? qualsForLive : []
+const qualsForTesting = [quals.onlyUSA, quals.hitsAccepted(0)]
+const safeQuals = runningLive ? qualsForLive : qualsForTesting
 
 // Makes the MTurk externalHIT object, defaults to 700 px tall.
 const externalHIT = (taskURL, height = 700) => '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>'+ taskURL + '</ExternalURL><FrameHeight>' + height + '</FrameHeight></ExternalQuestion>'
@@ -569,9 +569,14 @@ module.exports = {
 // users = [] //list of user objects
 
 
+// listUsersWithQualification({QualificationTypeId:"p1:PiTRhIC9eaSVy8/7Lqohp4ifJ8+UkQwv7QrhELsQjNJPkWdEimPhOk3IodO88vo="},console.log)
+
 // listUsersWithQualification(quals.hasBanged,(hasBangers) => {
 //   listUsersWithQualification(quals.willBang,(willBangers) => {
-//     console.log(willBangWorkers = willBangers.Qualifications.map(u => u.workerId).includes("A21UA6O7ZFAIQJ"));
-//     console.log(hasBangers.Qualifications.map(u => u.workerId).includes("A21UA6O7ZFAIQJ"));
+//     console.log(willBangers)
+//
+//     idToCheck = "AW6DFFL8QE1FH"
+//     console.log(willBangWorkers = willBangers.Qualifications.map(u => u.workerId).includes(idToCheck));
+//     console.log(hasBangers.Qualifications.map(u => u.workerId).includes(idToCheck));
 //   })
 // })
