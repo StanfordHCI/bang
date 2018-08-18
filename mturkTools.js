@@ -487,7 +487,7 @@ const launchBang = (callback) => {
         Question: externalHIT(taskURL)
       };
 
-      mturk.createHIT(params, (err, data) => {
+      mturk.createHIT(params2, (err, data) => {
           if (err) {
             console.log(err, err.stack);
           } else {
@@ -567,8 +567,6 @@ module.exports = {
 // }
 //
 // users = [] //list of user objects
-
-
 
 
 // listUsersWithQualification(quals.hasBanged,(hasBangers) => {
