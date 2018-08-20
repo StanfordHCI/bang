@@ -93,7 +93,7 @@ function useUser(u,f,err = "Guarded against undefined user") {
   else { console.log(err.red,u.id) }
 }
 
-if (runExperimentNow){
+//if (runExperimentNow){
   // Experiment variables
   const conditionsAvailalbe = ['control','treatment','baseline']
   const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
@@ -119,12 +119,14 @@ if (runExperimentNow){
   const people = tools.letters.slice(0,teamSize ** 2)
   const population = people.length
   const teams = tools.createTeams(teamSize,numRounds,people)
-}
 
-if (runExperimentNow) {
+//}
+
+//if (runExperimentNow) {
   const batchID = Date.now();
+
   console.log("Launching batch",batchID);
-}
+//}
 
 // Setting up DB
 const Datastore = require('nedb')
@@ -252,7 +254,7 @@ let taskEndTime = 0;
 let taskTime = 0;
 
 // Building task list
-if (runExperimentNow){
+//if (runExperimentNow){
   let eventSchedule = []
   if (starterSurveyOn) {
     eventSchedule.push("starterSurvey")
@@ -276,7 +278,7 @@ if (runExperimentNow){
   eventSchedule.push("postSurvey")
   eventSchedule.push("finished")
   console.log("This batch will include:",eventSchedule)
-}
+//}
 
 let fullUrl = ''
 
@@ -292,7 +294,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
   }
 });
 
-if (runExperimentNow){
+//if (runExperimentNow){
   // Adds Batch data for this experiment. unique batchID based on time/date
   db.batch.insert(
     {
@@ -320,7 +322,7 @@ if (runExperimentNow){
       }
     }
   )// eventSchedule instead of all of the toggles? (missing checkinOn) //PK: what does this comment mean?
-}
+//}
 
 
 // Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
