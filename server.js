@@ -20,7 +20,7 @@ const runExperimentNow = false
 const issueBonusesNow = true
 const notifyWorkersOn = false
 const runViaEmailOn = false
-const usingWillBang = false
+const usingWillBang = true
 
 const cleanHITs = false
 const assignQualifications = false
@@ -169,12 +169,12 @@ if (cleanHITs){
   })
 }
 
-if (assignQualifications) {
-  // Run this to remove willBang from anyone who hasBanged
-  mturk.listUsersWithQualification(mturk.quals.hasBanged, function(data) {
-    mturk.unassignQualificationFromUsers(data.Qualifications.map(a => a.WorkerId), mturk.quals.willBang);
-  })
-}
+// if (assignQualifications) {
+//   // Run this to remove willBang from anyone who hasBanged
+//   mturk.listUsersWithQualification(mturk.quals.hasBanged, function(data) {
+//     mturk.unassignQualificationFromUsers(data.Qualifications.map(a => a.WorkerId), mturk.quals.willBang);
+//   })
+// }
 
 if (runExperimentNow){ mturk.launchBang(function(HIT) {
   storeHIT(HIT.HITId)
@@ -867,23 +867,32 @@ io.on('connection', (socket) => {
 
       // assign hasBanged qualification to all users who rolled over
       // might want to change this because it is reassigning the qual to every user every time
-      db.users.find({}, (err, usersInDB) => {
-        if (err) {console.log("DB for MTurk:" + err)} else {
-          if (assignQualifications && runningLive) {
-           mturk.assignQualificationToUsers(usersInDB, mturk.quals.hasBanged)
-          }
-        }
-      })
+      // db.users.find({}, (err, usersInDB) => {
+      //   if (err) {console.log("DB for MTurk:" + err)} else {
+      //     if (assignQualifications && runningLive) {
+      //      mturk.assignQualificationToUsers(usersInDB, mturk.quals.hasBanged)
+      //     }
+      //   }
+      // })
 
+      // assignes hasBanged to new users
+      if(assignQualifications && runningLive) {
+        for(i = 0; i < users.length; i++) {
+          mturk.assignQuals(users[i].mturkId, mturk.quals.hasBanged)
+        }
+      }
       // remove willBang qualification from people who rolled over
       if(usingWillBang) {
+        for(i = 0; i < users.length; i++) {
+          mturk.unassignQuals(users[i].mturkId, mturk.quals.willBang)
+        }
         // mturk.unassignQualificationFromUsers(users, mturk.quals.willBang)
-        db.users.find({}, (err, usersInDB) => {
-          if (err) {console.log("DB for MTurk:" + err)}
-          else {
-            mturk.unassignQualificationFromUsers(usersInDB, mturk.quals.willBang)
-          }
-        })
+        // db.users.find({}, (err, usersInDB) => {
+        //   if (err) {console.log("DB for MTurk:" + err)}
+        //   else {
+        //     mturk.unassignQualificationFromUsers(usersInDB, mturk.quals.willBang)
+        //   }
+        // })
       }
 
       // save start time

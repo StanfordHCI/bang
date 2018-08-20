@@ -356,10 +356,22 @@ const assignQualificationToUsers = (users,qual) => {
   })
 }
 
-// * unassignQualificationFromUsers *
+// * assignQualificationToUsers *
 // -------------------------------------------------------------------
 // Assigns a qualification to users who have already completed the task - does not let workers repeat task
-// Takes users in Database as a parameter, fetches mturk Id.
+// Takes single userId string as param, and qual as
+
+const assignQuals = (users,qual) => {
+  var assignQualificationParams = {QualificationTypeId: qual.QualificationTypeId, WorkerId: user, IntegerValue: 1, SendNotification: false};
+  mturk.associateQualificationWithWorker(assignQualificationParams, function(err, data) {
+    if (err) console.log(err, err.stack); // an error occurred
+    else     console.log("Assigned",qual.QualificationTypeId,"to",user);
+  })
+}
+
+// * unassignQualificationFromUsers *
+// -------------------------------------------------------------------
+// Removes a qualification to users who have already completed the task - does not let workers repeat task
 
 const unassignQualificationFromUsers = (users,qual) => {
   users.filter(u => u.mturkId).forEach((user) => {
@@ -368,6 +380,19 @@ const unassignQualificationFromUsers = (users,qual) => {
       if (err) console.log(err, err.stack); // an error occurred
       else     console.log("Un-Assigned",qual.QualificationTypeId,"from",user.mturkId);           // successful response
     });
+  })
+}
+
+// * unassignQuals *
+// -------------------------------------------------------------------
+// Removes a qualification to users who have already completed the task - does not let workers repeat task
+// takes a userId as a string as paramter, and the qualification
+
+const unassignQuals = (user, qual) => {
+  var assignQualificationParams = {QualificationTypeId: qual.QualificationTypeId, WorkerId: user, IntegerValue: 1, SendNotification: false};
+  mturk.disassociateQualificationFromWorker(assignQualificationParams, function(err, data) {
+    if (err) console.log(err, err.stack); // an error occurred
+    else     console.log("Assigned",qual.QualificationTypeId,"to",user);
   })
 }
 
@@ -573,7 +598,9 @@ module.exports = {
   createQualification: createQualification,
   setAssignmentsPending: setAssignmentsPending,
   assignQualificationToUsers: assignQualificationToUsers,
+  assignQuals: assignQuals,
   unassignQualificationFromUsers: unassignQualificationFromUsers,
+  unassignQuals: unassignQuals,
   disassociateQualification: disassociateQualification,
   listUsersWithQualification: listUsersWithQualification,
   payBonuses: payBonuses,
@@ -586,7 +613,7 @@ module.exports = {
   getHITURL: getHITURL,
   listAssignments: listAssignments,
   notifyWorkers: notifyWorkers,
-  quals: quals
+  quals: quals,
 };
 
 // TODO: CLean this up by integrating with other bonus code
