@@ -1,0 +1,56 @@
+Breakdown of what we need: 
+
+cleanData = 
+Criteria: 
+1. Complete batches (bonuses!=0? if not confident that complete batches is accurate)
+2. Room  
+3. Viability  
+4. Psychological safety 
+3. New row for each round of survey answers 
+4. Factor levels 
+	a. Survey 
+	b. Repeat team question 
+	c. Blacklist 
+
+##2 Likert datatables: 
+
+psychSafetyLikert: 
+
+1. Psych safety likert 
+	a. Select columns contain psychsafety 
+	b. Add labels  
+	b. Summary table of answer distributions 
+	c. Traditional likert plot 
+	d. Heat wave likert plot  
+
+viabilityLikert: 
+
+2. Viability likert 
+	a. Select columns contain viability 
+	b. Add labels  
+	b. Summary table of answer distributions 
+	c. Traditional likert plot 
+	d. Heat wave likert plot  
+
+##3 
+
+viabilityNumeric: 
+
+1. as.factor: as.numeric 
+2. New column: sum of viability questions: viabilitySum
+3. New column: mean of viability scores: viabilityMean 
+4. New column: standard deviation of viability scores 
+
+**Graphs:** 
+
+viabilityMeanDistribution: 
+
+1. GGplot mean distribution + viability sum 
+
+repeatTeamViabilitySum: 
+
+1. GGplot viability sum + repeat team question  
+2. GGplot viability sum + repeat team question (overlay round + room) 
+3. GGplot viability sum + facet_grid 
+
+Workflow: 
