@@ -34,11 +34,13 @@ switch (notification_type) {
     })
     break;
   case "expireBangs":
+    // mturk.workOnActiveHITs(H => H.forEach(mturk.expireHIT)) -- THIS KILLS ALL ACTIVE HITS
     mturk.workOnActiveHITs(activeHITs => {
     db.ourHITs.find({}, (err, HITsInDB) => {
       if (err) {console.log("Err loading HITS for expiration:" + err)} else {
-        HITsInDB.map(h => h.HITId).filter(h => activeHITs.includes(h)).forEach(mturk.expireHIT)
+       HITsInDB.map(h => h.HITId).filter(h => activeHITs.includes(h)).forEach(mturk.expireHIT)
       }
+      })
     })
-  })
+    break;
 }

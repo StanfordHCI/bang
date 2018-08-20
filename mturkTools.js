@@ -234,6 +234,47 @@ const listAssignments = (HITId,callback) => {
   })
 }
 
+const listWithoutRecursion = (HITId, callback) => {
+  var userWithQualificationParams = {QualificationTypeId: quals.hasBanged.QualificationTypeId, MaxResults: 100};
+  mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
+    if (err) console.log(err, err.stack); // an error occurred
+    else {
+      console.log(data);
+
+      console.log("\n\nMORE\n\n");
+
+      var userWithQualificationParams = {QualificationTypeId: quals.hasBanged.QualificationTypeId, MaxResults: 100, NextToken: data.NextToken};
+      mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
+        if (err) console.log(err, err.stack); // an error occurred
+        else {
+          console.log(data);
+
+          console.log("\n\nMORE 2\n\n");
+
+          var userWithQualificationParams = {QualificationTypeId: quals.hasBanged.QualificationTypeId, MaxResults: 100, NextToken: data.NextToken};
+          mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
+            if (err) console.log(err, err.stack); // an error occurred
+            else {
+              console.log(data);
+
+              console.log("\n\nMORE 3\n\n");
+
+              var userWithQualificationParams = {QualificationTypeId: quals.hasBanged.QualificationTypeId, MaxResults: 100, NextToken: data.NextToken};
+              mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
+                if (err) console.log(err, err.stack); // an error occurred
+                else {
+                  console.log(data);
+                }
+              });
+            }
+          });
+        }
+      });
+
+    }
+  });
+}
+
 // * expireHIT *
 // -------------------------------------------------------------------
 // Expires all active HITs by updating the time-until-expiration to 0.
