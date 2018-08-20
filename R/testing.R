@@ -25,7 +25,6 @@ extractSurvey = function(frame,survey) {
 convertValues = function(x) { 
   yesNo = c("No","Yes")
   agreementLevels = c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")
-  
   if (any(as.character(x) == "Yes") || any(as.character(x) == "No")){
     levels = yesNo
   } else {
@@ -45,14 +44,23 @@ completeBatches = Filter(function(batch) {
   return(FALSE)
 }, batches)
 
+
 userFiles = lapply(completeBatches, function(batch){
   userFile = read_json(paste(dataPath,batch,"users.json",sep="/"), simplifyVector = TRUE)
   return(flatten(userFile, recursive = TRUE))
 })
 
-overlappingFiles = Reduce(function(x,y) {
-  merge(x, y, all=TRUE)
-}, userFiles)
+overlappingFiles = Reduce(function(x,y) merge(x, y, all=TRUE), userFiles)
+
+roundsWithRooms = apply(overlappingFiles,1,function(x) {
+  roomsForIndividual = lapply(seq(1,length(x$rooms)),function(y) {
+    x$room = x$rooms[y]
+    x$round = y
+    return(x)
+  })
+  return(Reduce(rbind,roomsForIndividual))
+})
+finalRounds = Reduce(rbind,roundsWithRooms)
 
 myData = extractSurvey(overlappingFiles,survey)
 myData = myData[complete.cases(myData),]
