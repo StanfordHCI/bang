@@ -1,8 +1,18 @@
-Breakdown of what we need: 
+Breakdown of what final R notebook should include: 
+
+## All install.packages + libraries 
+    1. GGplot2 
+    2. Jsonlite 
+    3. Tidyverse 
+    4. Likert
+    5. Psych 
+    6. Datatable 
+
+## Included instructions on what each chunk is cleaning and why (+ add brief description of how to interpret results)
 
 cleanData = 
 Criteria: 
-1. Complete batches (bonuses!=0? if not confident that complete batches is accurate)
+1. Complete batches (bonuses!=0? if not confident that complete batches is accurate?)
 2. Room  
 3. Viability  
 4. Psychological safety 
@@ -11,6 +21,9 @@ Criteria:
 	a. Survey 
 	b. Repeat team question 
 	c. Blacklist 
+
++ hidden function to filter cleanData based on variables (e.g. list of batch numbers, round, etc. for more case study style apporach to 
+data analysis) 
 
 ##2 Likert datatables: 
 
@@ -43,14 +56,29 @@ viabilityNumeric:
 
 **Graphs:** 
 
-viabilityMeanDistribution: 
+viabilityMeanDistribution: (1 graph)
 
 1. GGplot mean distribution + viability sum 
 
-repeatTeamViabilitySum: 
+repeatTeamViabilitySum: (3 graphs)
 
 1. GGplot viability sum + repeat team question  
 2. GGplot viability sum + repeat team question (overlay round + room) 
 3. GGplot viability sum + facet_grid 
 
-Workflow: 
+***Statistical analyses***: 
+
+1. Use Wilcox test to test for a difference in scoring tendancies between exactly 2 groups 
+2. Use Kruskal-Wallis Test to test for a difference in scoring tendancies between 2+ groups
+3. To test for a difference in means between two groups: use Anova to treat this type of data if we there is a “normally” distributed continious
+4. If parametric inference is justified, run following tests: 
+Examples: 
+
+***What questions do we want to answer***: 
+
+1. How are we defining fracture based on reuslts from our runs? 
+
+
+
+
+
