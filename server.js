@@ -865,16 +865,6 @@ io.on('connection', (socket) => {
       console.log('Issued task for:', currentProduct.name)
       console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
 
-      // assign hasBanged qualification to all users who rolled over
-      // might want to change this because it is reassigning the qual to every user every time
-      // db.users.find({}, (err, usersInDB) => {
-      //   if (err) {console.log("DB for MTurk:" + err)} else {
-      //     if (assignQualifications && runningLive) {
-      //      mturk.assignQualificationToUsers(usersInDB, mturk.quals.hasBanged)
-      //     }
-      //   }
-      // })
-
       // assignes hasBanged to new users
       if(assignQualifications && runningLive) {
         const hasBangers = users.map(a => a.mturkId)
