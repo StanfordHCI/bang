@@ -16,6 +16,7 @@ extractSurvey = function(frame,survey) {
     names(surveyFrame) = newCols
     surveyFrame$id = frame$id
     surveyFrame$round = round
+    surveyFrame$room = frame$rooms[round]
     return(surveyFrame)
   })
   return(Reduce(rbind,roundResponses))
@@ -60,7 +61,7 @@ roundsWithRooms = apply(overlappingFiles,1,function(x) {
   })
   return(Reduce(rbind,roomsForIndividual))
 })
-finalRounds = Reduce(rbind,roundsWithRooms)
+finalRounds = as.data.frame(Reduce(rbind,roundsWithRooms))
 
 myData = extractSurvey(overlappingFiles,survey)
 myData = myData[complete.cases(myData),]

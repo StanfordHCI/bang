@@ -35,11 +35,11 @@ const taskURL = questionHTML
 // Assign willBang to people who have accepted recruiting HIT of last hour
 console.log("fs.exists()", fs.existsSync(recruitingHITstorage))
 if (fs.existsSync(recruitingHITstorage)) {
-  let HITId = fs.readFileSync(recruitingHITstorage).toString();
+  const HITId = fs.readFileSync(recruitingHITstorage).toString();
   console.log("HITID found in database", HITId)
   mturk.listAssignments(HITId, data => {
-    console.log("willBangers:", data.Assignments.map(a => a.WorkerId))
-    mturk.assignQualificationToUsers(data.Assignments.map(a => a.WorkerId), mturk.quals.willBang)
+    const willBangers = data.Assignments.map(a => a.WorkerId)
+    willBangers.forEach(u => mturk.assignQuals(u, mturk.quals.willBang))
   })
 
   // Expire HIT to ensure no one else accepts
