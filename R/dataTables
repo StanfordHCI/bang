@@ -13,8 +13,19 @@ Breakdown of what final R notebook should include:
 cleanData = 
 Criteria: 
 1. Complete batches (bonuses!=0? if not confident that complete batches is accurate?)
-2. Room  
-3. Viability  
+2. Variables of interest: 
+	1. id 
+	2. mTurkId
+	3. assignmentId
+	4. batch # 
+	5. results.condition 
+	6. results.format 
+	7. results.manipulation 
+	8. results.manipulation check 
+	9. results.blacklist check 
+	10. results.viability(1:15)(3 rounds)
+	11.room 
+	12. rooms(list) 
 4. New row for each round of survey answers 
 5. Factor levels 
 	a. Survey 
@@ -22,9 +33,9 @@ Criteria:
 	c. Blacklist 
 6. Group by random treatment configuration for each batch 
 - Loop for each treatment type: 
-- e.g. (1,2,1 grouping might iterate on each user: groupAMask <- for users with round[1]==A & round[3]==A, groupBmask <- round[2]==B & round[2]==B, etc.) or if (2,1,1: grouping iterate on each user: groupAMask <- round[2]==A & round[3]==A, etc.)\
+- e.g. (1,2,1 grouping might iterate on each user: groupAMask <- for users with round[1]==A & round[3]==A, groupBmask <- round[2]==B & round[2]==B, etc.) or if (2,1,1: grouping iterate on each user: groupAMask <- round[2]==A & round[3]==A, etc.)
 
-Creating generalized masked and unmasked 
+Creating generalized masked and unmasked groupings when data is read in: 
 groupBmask 
 - Observations in round[1] = unmasked 
 - Observation in round[2] = masked 
@@ -73,13 +84,16 @@ individualViabilitySum
 
 viabilityMeanDistribution: (1 graph)
 
-1. GGplot mean distribution + viability sum 
+1. GGplot mean distribution + viability sum (group)
+2. GGplot mean distribution.+ viability sum (individual)
+3. 
 
-repeatTeamViabilitySum: (3 graphs)
+repeatTeamViabilitySum: (multiple graphs)
 
-1. GGplot viability sum + repeat team question  
-2. GGplot viability sum + repeat team question (overlay round + room) 
-3. GGplot viability sum + facet_grid 
+1. GGplot group viability sum + repeat team question  
+2. GGplot individual viability sum + repeat team question (overlay round + room) 
+3. GGplot viability T-test boxplot + facet_grid 
+
 
 ***Statistical analyses***: 
 

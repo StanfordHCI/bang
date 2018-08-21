@@ -8,6 +8,7 @@ Methods to measure fracture?
    b. Individual level 
    	  i. Individual level? 
    	 - Non // parametric test individual viability sums in mask + unmask 
+   	 - Tukey post hoc 
    	  ii. Group level? 
      - Non // parametric test room viability sums in mask + unmask
 
@@ -44,6 +45,11 @@ How might we use question 15 in predictive modeling?
 - What does that get us? 
 Question 15 is helpful for variability 
 
+Best visualizations: 
+- Boxplot and barplot facet grid for paired mean differences 
+
+Power analysis: 
+- 
 
 
 
