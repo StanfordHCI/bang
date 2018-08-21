@@ -226,10 +226,16 @@ const workOnActiveHITs = (callback) => {
 //
 // Takes a HITId as a parameter
 
-const listAssignments = (HITId,callback) => {
-  mturk.listAssignmentsForHIT({HITId:HITId},(err,data) => {
-    if (err) {console.log(err, err.stack)} else {
-      if (typeof callback === 'function') callback(data)
+const listAssignments = (HITId,callback, paginationToken = null, passthrough = []) => {
+  mturk.listAssignmentsForHIT({HITId: HITId, MaxResults: 100, NextToken: paginationToken},(err,data) => {
+    if (err) console.log(err, err.stack)
+    else {
+      passthrough = passthrough.concat(data.Assignments)
+      if (data.NumResults == 100) {
+        listAssignments(HITId, callback, data.NextToken, passthrough)
+      } else {
+        if (typeof callback === 'function') callback(passthrough)
+      }
     }
   })
 }
@@ -628,6 +634,10 @@ const checkQualsRecursive = (qualObject, callback, paginationToken = null, passt
   })
 }
 
+// hitIds.forEach(id => listAssignments(id,data => {
+//   data.map(u => u.WorkerId).forEach(u => assignQuals(u,quals.willBang))
+// }))
+//
 // checkQualsRecursive(quals.willBang,L => {
 //   console.log(L.length)
 // })
