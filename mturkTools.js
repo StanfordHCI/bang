@@ -227,7 +227,7 @@ const workOnActiveHITs = (callback) => {
 // Takes a HITId as a parameter
 
 const listAssignments = (HITId,callback) => {
-  mturk.listAssignmentsForHIT({HITId:HITId},(err,data) => {
+  mturk.listAssignmentsForHIT({HITId:HITId, MaxResults: 100},(err,data) => {
     if (err) {console.log(err, err.stack)} else {
       if (typeof callback === 'function') callback(data)
     }
