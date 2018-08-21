@@ -80,13 +80,18 @@ const quals = {
     QualificationTypeId: runningLive ? "3H3KEN1OLSVM98I05ACTNWVOM3JBI9" : "3Q14PV9RQ817STQZOSBE3H0UXC7M1J",
     Comparator: 'Exists',
     ActionsGuarded:"DiscoverPreviewAndAccept"
-  }
+  },
+  willNotBang: { // those who plan to complete our HIT
+    QualificationTypeId: runningLive ? "3H3KEN1OLSVM98I05ACTNWVOM3JBI9" : "3Q14PV9RQ817STQZOSBE3H0UXC7M1J",
+    Comparator: 'DoesNotExist',
+    ActionsGuarded:"DiscoverPreviewAndAccept"
+  },
 }
 
 //const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(0), quals.hasBanged, quals.willBang]
 //const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged]
 const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(0), quals.hasBanged, quals.willBang]
-const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged]
+const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged, quals.willNotBang]
 const qualsForTesting = [quals.onlyUSA, quals.hitsAccepted(0)]
 const safeQuals = runningLive ? qualsForLive : qualsForTesting
 
