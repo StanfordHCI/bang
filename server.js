@@ -877,22 +877,13 @@ io.on('connection', (socket) => {
 
       // assignes hasBanged to new users
       if(assignQualifications && runningLive) {
-        for(i = 0; i < users.length; i++) {
-          mturk.assignQuals(users[i].mturkId, mturk.quals.hasBanged)
-        }
+        const hasBangers = users.map(a => a.mturkId)
+        hasBangers.forEach(u => mturk.assignQuals(u, mturk.quals.hasBanged))
       }
       // remove willBang qualification from people who rolled over
       if(usingWillBang) {
-        for(i = 0; i < users.length; i++) {
-          mturk.unassignQuals(users[i].mturkId, mturk.quals.willBang)
-        }
-        // mturk.unassignQualificationFromUsers(users, mturk.quals.willBang)
-        // db.users.find({}, (err, usersInDB) => {
-        //   if (err) {console.log("DB for MTurk:" + err)}
-        //   else {
-        //     mturk.unassignQualificationFromUsers(usersInDB, mturk.quals.willBang)
-        //   }
-        // })
+        const hasBangers = users.map(a => a.mturkId)
+        hasBangers.forEach(u => mturk.unassignQuals(u, mturk.quals.willBang))
       }
 
       // save start time
