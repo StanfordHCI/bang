@@ -41,7 +41,7 @@ if (fs.existsSync(recruitingHITstorage)) {
     let willBangers = data.Assignments.map(a => a.WorkerId)
     console.log("willBangers:", willBangers)
     for(i = 0; i < willBangers.length; i++) {
-      mturk.assignQualificationToUsers(willBangers[i], mturk.quals.willBang)
+      mturk.assignQuals(willBangers[i], mturk.quals.willBang)
     }
     //console.log("willBangers:", data.Assignments.map(a => a.WorkerId))
     //mturk.assignQualificationToUsers(data.Assignments.map(a => a.WorkerId), mturk.quals.willBang)
