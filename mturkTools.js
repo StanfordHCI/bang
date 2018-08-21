@@ -515,10 +515,7 @@ const notifyWorkers = (WorkerIds, subject, message) => {
    if (err) console.log("Error notifying workers:",err, err.stack); // an error occurred
    else     console.log("Notified",WorkerIds.length,"workers:", subject);           // successful response
  });
-//  mturk.assignQualificationToUsers(WorkerIds, quals.willBang)
 }
-
-//turkerJSON.forEach(notifyWorkersManually);
 
 module.exports = {
   startTask: startTask,
@@ -548,35 +545,21 @@ module.exports = {
   quals: quals
 };
 
-// TODO: CLean this up by integrating with other bonus code
-// const payBonusesManually = (user) => {
-//   mturk.sendBonus({
-//     AssignmentId: user.assignmentId,
-//     BonusAmount: String(user.bonus),
-//     Reason: "Thanks for working on our task.",
-//     WorkerId: user.mturkId,
-//     UniqueRequestToken: user.assignmentId
-//   }, function(err, data) {
-//     if (err) {
-//      console.log("Bonus not processed:",err)
-//     } else {
-//       console.log("Bonused:",user.mturkId, user.bonus)
-//       user.paid = user.bonus
-//     }
-//   })
-// }
-//
-// users = [] //list of user objects
+const checkQualsRecursive = (qualObject, callback, paginationToken = null, passthrough = []) => {
+  var userWithQualificationParams = {QualificationTypeId: qualObject.QualificationTypeId, MaxResults: 100, NextToken: paginationToken};
+  mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
+    if (err) console.log(err, err.stack)
+    else {
+      passthrough = passthrough.concat(data.Qualifications)
+      if (data.NumResults == 100) {
+        checkQualsRecursive(qualObject, callback, data.NextToken, passthrough)
+      } else {
+        callback(passthrough)
+      }
+    }
+  })
+}
 
-
-// listUsersWithQualification({QualificationTypeId:"p1:PiTRhIC9eaSVy8/7Lqohp4ifJ8+UkQwv7QrhELsQjNJPkWdEimPhOk3IodO88vo="},console.log)
-
-// listUsersWithQualification(quals.hasBanged,(hasBangers) => {
-//   listUsersWithQualification(quals.willBang,(willBangers) => {
-//     console.log(willBangers)
-//
-//     idToCheck = "AW6DFFL8QE1FH"
-//     console.log(willBangWorkers = willBangers.Qualifications.map(u => u.workerId).includes(idToCheck));
-//     console.log(hasBangers.Qualifications.map(u => u.workerId).includes(idToCheck));
-//   })
-// })
+checkQualsRecursive(quals.hasBanged,L => {
+  console.log(L.length)
+})
