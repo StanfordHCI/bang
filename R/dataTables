@@ -15,15 +15,28 @@ Criteria:
 1. Complete batches (bonuses!=0? if not confident that complete batches is accurate?)
 2. Room  
 3. Viability  
-4. Psychological safety 
-3. New row for each round of survey answers 
-4. Factor levels 
+4. New row for each round of survey answers 
+5. Factor levels 
 	a. Survey 
 	b. Repeat team question 
 	c. Blacklist 
+6. Group by random treatment configuration for each batch 
+- Loop for each treatment type: 
+- e.g. (1,2,1 grouping might iterate on each user: groupAMask <- for users with round[1]==A & round[3]==A, groupBmask <- round[2]==B & round[2]==B, etc.) or if (2,1,1: grouping iterate on each user: groupAMask <- round[2]==A & round[3]==A, etc.)\
 
-+ hidden function to filter cleanData based on variables (e.g. list of batch numbers, round, etc. for more case study style apporach to 
-data analysis) 
+Creating generalized masked and unmasked 
+groupBmask 
+- Observations in round[1] = unmasked 
+- Observation in round[2] = masked 
+
+Do we want all visualizations and data table analyses to output per group? 
+
+- Can we generalize? i.e. combine and compare -  
+All observations in first round of group - unmasked 
+All observations in last round of group - masked 
+Meta-look at variability consistency / inconsistency with visualizations + summary tables 
+
++ hidden function to filter cleanData based on variables (e.g. list of batch numbers, round, etc. for more case study style apporach to data analysis) 
 
 ##2 Likert datatables: 
 
@@ -50,9 +63,11 @@ viabilityLikert:
 viabilityNumeric: 
 
 1. as.factor: as.numeric 
-2. New column: sum of viability questions: viabilitySum
-3. New column: mean of viability scores: viabilityMean 
-4. New column: standard deviation of viability scores 
+2. New column: sum of room aggregate viability answers: aggregateViabilitySum
+3. New column: sum of individual viability answers: 
+individualViabilitySum 
+3. New column: mean of room aggregate viability scores: viabilityMean 
+4. New column: standard deviation of room aggregate viability scores
 
 **Graphs:** 
 
@@ -72,11 +87,9 @@ repeatTeamViabilitySum: (3 graphs)
 2. Use Kruskal-Wallis Test to test for a difference in scoring tendancies between 2+ groups
 3. To test for a difference in means between two groups: use Anova to treat this type of data if we there is a “normally” distributed continious
 4. If parametric inference is justified, run following tests: 
-Examples: 
 
-***What questions do we want to answer***: 
-
-1. How are we defining fracture based on reuslts from our runs? 
+How to test qualitative measures as predictive in defining fracture? 
+ - Blind review chat data for groups and vote on fracture based on measures // compare with predictive analysis 
 
 
 
