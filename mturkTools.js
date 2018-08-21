@@ -628,6 +628,6 @@ const checkQualsRecursive = (qualObject, callback, paginationToken = null, passt
   })
 }
 
-checkQualsRecursive(quals.hasBanged,L => {
-  console.log(L.length)
-})
+// checkQualsRecursive(quals.willBang,L => {
+//   console.log(L.length)
+// })
