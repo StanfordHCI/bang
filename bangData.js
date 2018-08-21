@@ -180,7 +180,7 @@ function downloadData(url,callback) {
 }
 
 //Save from servers
-// downloadData("mark.dmorina.com",saveAllData)
+downloadData("mark.dmorina.com",saveAllData)
 
 // downloadData("bang.dmorina.com",saveAllData)
 
@@ -189,5 +189,5 @@ function downloadData(url,callback) {
 
 // useEachBatch(renderChats)
 
-retroactiveBonus()
+// retroactiveBonus()
 // retroactivelyFixRooms()
