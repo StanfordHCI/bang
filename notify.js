@@ -19,8 +19,8 @@ switch (notification_type) {
     mturk.workOnActiveHITs(console.log)
     break;
   case "listwillBangers":
-    mturk.listUsersWithQualification(mturk.quals.willBang, (data) => {
-      console.log(data.Qualifications.map(a => a.WorkerId))
+    mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, (data) => {
+      console.log("Number of users with qualification willBang:", data.length)
     });
     break;
   case "HandleQualsforUsersinDB":

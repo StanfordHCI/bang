@@ -9,21 +9,21 @@ const roundMinutes = process.env.ROUND_MINUTES
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
-const secondsToWait = 15 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
-const secondsSinceResponse = 14 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
+const secondsToWait = 60 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+const secondsSinceResponse = 59 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
 const secondsToHold1 = 1000 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
 const secondsToHold2 = 200 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
-const maxWaitChatMinutes = 15
+const maxWaitChatMinutes = 20
 
 // Toggles
-const runExperimentNow = false
+const runExperimentNow = true
 const issueBonusesNow = true
 const notifyWorkersOn = false
 const runViaEmailOn = false
-const usingWillBang = true
+const usingWillBang = false
 
 const cleanHITs = false
-const assignQualifications = false
+const assignQualifications = true
 const debugMode = !runningLive
 
 const suddenDeath = false
@@ -33,11 +33,11 @@ const randomCondition = false
 const randomRoundOrder = false
 const randomProduct = false
 
-const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
-const midSurveyOn = false
-const blacklistOn = false
+const midSurveyOn = true
+const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = false // tracks time user spends on task and updates payment - also tracks how long each task is taking
@@ -177,8 +177,9 @@ db.users.find({}, (err, usersInDB) => {
       })
     }
     if (assignQualifications && runningLive) {
-      // mturk.assignQualificationToUsers(usersInDB, mturk.quals.hasBanged)
-      mturk.listUsersWithQualification(mturk.quals.hasBanged)
+      mturk.listUsersWithQualificationRecursively(mturk.quals.hasBanged, (data) => {
+        console.log("Number of users with qualification hasBanged:", data.length)
+      });
     }
   }
 })
@@ -193,13 +194,6 @@ if (cleanHITs){
     })
   })
 }
-
-// if (assignQualifications) {
-//   // Run this to remove willBang from anyone who hasBanged
-//   mturk.listUsersWithQualification(mturk.quals.hasBanged, function(data) {
-//     mturk.unassignQualificationFromUsers(data.Qualifications.map(a => a.WorkerId), mturk.quals.willBang);
-//   })
-// }
 
 if (runExperimentNow){ mturk.launchBang(function(HIT) {
   storeHIT(HIT.HITId)
@@ -218,26 +212,11 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
         throw "URL not defined"
       }
       if(usingWillBang) {
-        mturk.listUsersWithQualification(mturk.quals.willBang, function(data) { // notifies all willBang
+        let maxWorkersToNotify = 100; // cannot be more than 100
+        mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
           mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
           }); // must return from mturkTools
       }
-      // if(usingWillBang) {
-      //   mturk.listUsersWithQualification(mturk.quals.willBang, function(data) { // notifies all willBang
-      //     let workers = data.Qualifications.map(a=>a.WorkerId)
-      //     mturk.listUsersWithQualification(mturk.quals.hasBanged, function(data2) {
-      //       let workers2 = data2.Qualifications.map(a=>a.WorkerId)
-      //       for(i = 0; i < workers.length - 1; i++) {
-      //         if (workers2.includes(workers[i])) {
-      //           workers.splice(i, 1);
-      //         }
-      //       }
-      //     })
-
-      //     mturk.notifyWorkers(workers.map(a => workers), subject, message)
-      //   }); // must return from mturkTools
-      // }
-
     });
   }
 }) }
@@ -480,7 +459,7 @@ io.on('connection', (socket) => {
       batch: batchID,
       room: '',
       rooms:[],
-      bonus: 0,
+      bonus: mturk.bonusPrice,
       person: '',
       name: socket.username,
       ready: false,
@@ -647,7 +626,7 @@ io.on('connection', (socket) => {
       if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
       console.log("Connected users: " + getUsersConnected().length);
-      if (!experimentOver && suddenDeath && experimentStarted){//PK: what does this if condition mean
+      if (!experimentOver && suddenDeath && experimentStarted){
         storeHIT()
 
         console.log("User left, emitting cancel to all users");
@@ -898,7 +877,7 @@ io.on('connection', (socket) => {
       // remove willBang qualification from people who rolled over
       if(usingWillBang) {
         const hasBangers = users.map(a => a.mturkId)
-        hasBangers.forEach(u => mturk.unassignQuals(u, mturk.quals.willBang))
+        hasBangers.forEach(u => mturk.unassignQuals(u, mturk.quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!'))
       }
 
       // save start time
