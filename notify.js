@@ -2,8 +2,15 @@ const mturk = require('./mturkTools');
 const fs = require('fs');
 const Datastore = require('nedb');
 
-notification_type = process.argv[2]
-HITId = process.argv[3];
+// What are we doing?
+var notification_type = process.argv[2]
+var HITId = process.argv[3];
+
+// File paths
+var bonusworkersStorage = "./txt/bonusworkers.txt";
+var repayworkersHITstorage = "./txt/currentrepayHIT.txt"
+var bonusworkersArray = fs.readFileSync(bonusworkersStorage).toString().split("\n");
+
 switch (notification_type) {
   case "weCrashed":
     mturk.listAssignments(HITId, data => {
@@ -44,18 +51,13 @@ switch (notification_type) {
       })
     })
     break;
-  case "repaypeople":
-    let bonusworkersStorage = "./txt/bonusworkers.txt";
-    let repayworkersHITstorage = "./txt/currentrepayHIT.txt"
-    let bonusworkersArray = fs.readFileSync(bonusworkersStorage).toString().split("\n");
-
+  case "repaypeople": //Check if people from our list has accepted the repay HIT and bonus them
     // Find a current repay HIT
     let repayHITs = [];
     mturk.workOnActiveHITs((activeHITs) => {  
       activeHITs.forEach(HITId => {
         mturk.returnHIT(HITId, data => {
           if (data.HIT.Title == "Hit to repay workers") {
-            console.log("YOYO")
             // Find people in our list of people to repay
             mturk.listAssignments(HITId, data => {
               const repayacceptors = data.filter(a => bonusworkersArray.includes(a.WorkerId))
@@ -76,7 +78,12 @@ switch (notification_type) {
       })
     })
     break;
-  case "createrepayHITs":
+  case "notify people": // Tell people on our list they need to accept our repay HIT
+    let subject = "Accept our repay hit to be bonused for your work";
+    let message = "Accept our repay hit to be bonused for your work"
+    mturk.notifyWorkers(bonusworkersArray, subject, message)
+    break;
+  case "createrepayHITs": // Create a new repay HIT
     let title = "Hit to repay workers";
     let description = "Only complete this hit if you have been expressly advised to and have been given a completion code already."
     let assignmentDuration = 60;
@@ -90,7 +97,7 @@ switch (notification_type) {
       const HITId = HIT.HITId;
     })
     break;
-  case "killrepayHITs":
+  case "killrepayHITs": // Kill all current repay HITs
     mturk.workOnActiveHITs((activeHITs) => {  
         activeHITs.forEach(HITId => {
           mturk.returnHIT(HITId, data => {
