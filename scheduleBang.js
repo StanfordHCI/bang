@@ -38,7 +38,7 @@ if (fs.existsSync(recruitingHITstorage)) {
   const HITId = fs.readFileSync(recruitingHITstorage).toString();
   console.log("HITID found in database", HITId)
   mturk.listAssignments(HITId, data => {
-    const willBangers = data.Assignments.map(a => a.WorkerId)
+    const willBangers = data.map(a => a.WorkerId)
     willBangers.forEach(u => mturk.assignQuals(u, mturk.quals.willBang))
   })
 

@@ -80,13 +80,16 @@ const quals = {
     QualificationTypeId: runningLive ? "3H3KEN1OLSVM98I05ACTNWVOM3JBI9" : "3Q14PV9RQ817STQZOSBE3H0UXC7M1J",
     Comparator: 'Exists',
     ActionsGuarded:"DiscoverPreviewAndAccept"
-  }
+  },
+  willNotBang: { // those who plan to complete our HIT
+    QualificationTypeId: runningLive ? "3H3KEN1OLSVM98I05ACTNWVOM3JBI9" : "3Q14PV9RQ817STQZOSBE3H0UXC7M1J",
+    Comparator: 'DoesNotExist',
+    ActionsGuarded:"DiscoverPreviewAndAccept"
+  },
 }
 
-//const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(0), quals.hasBanged, quals.willBang]
-//const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged]
 const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(0), quals.hasBanged, quals.willBang]
-const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged]
+const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged, quals.willNotBang]
 const qualsForTesting = [quals.onlyUSA, quals.hitsAccepted(0)]
 const safeQuals = runningLive ? qualsForLive : qualsForTesting
 
@@ -226,10 +229,16 @@ const workOnActiveHITs = (callback) => {
 //
 // Takes a HITId as a parameter
 
-const listAssignments = (HITId,callback) => {
-  mturk.listAssignmentsForHIT({HITId:HITId},(err,data) => {
-    if (err) {console.log(err, err.stack)} else {
-      if (typeof callback === 'function') callback(data)
+const listAssignments = (HITId,callback, paginationToken = null, passthrough = []) => {
+  mturk.listAssignmentsForHIT({HITId: HITId, MaxResults: 100, NextToken: paginationToken},(err,data) => {
+    if (err) console.log(err, err.stack)
+    else {
+      passthrough = passthrough.concat(data.Assignments)
+      if (data.NumResults == 100) {
+        listAssignments(HITId, callback, data.NextToken, passthrough)
+      } else {
+        if (typeof callback === 'function') callback(passthrough)
+      }
     }
   })
 }
@@ -628,6 +637,10 @@ const checkQualsRecursive = (qualObject, callback, paginationToken = null, passt
   })
 }
 
+// hitIds.forEach(id => listAssignments(id,data => {
+//   data.map(u => u.WorkerId).forEach(u => assignQuals(u,quals.willBang))
+// }))
+//
 // checkQualsRecursive(quals.willBang,L => {
 //   console.log(L.length)
 // })
