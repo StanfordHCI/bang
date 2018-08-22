@@ -223,14 +223,11 @@ g + geom_bar() + facet_grid(.~launched) +
 
 ## Data analysis: 
 ```{r}
-## NEEDS TO BE UPDATED WITH NEW DATA FORMAT (WILL DO TONIGHT)
-
 ## Use Wilcox test to test for a difference in scoring tendancies between exactly 2 groups: 
 wilcox.test(sum~room,data=merged)
 wilcox.test(sum~nominalQ15,data=merged)
 
 ## Use Kruskal-Wallis Test to test for a difference in scoring tendancies between 2+ groups: 
-
 kruskal.test(sum~blacklist,data=merged)
 kruskal.test(sum~round,data=merged)
 
@@ -258,9 +255,6 @@ Regression techniques include;
 • Alternatively collapse the levels of the Dependent variable into two levels and run binary logistic regression.
 ```
 
-```{r}
-```
-
 Parametric analysis of ordinary averages of Likert scale data is justifiable by the Central Limit
 Theorem, analysis of variance techniques incude;
 • t-test.
@@ -274,16 +268,12 @@ hist(merged$sum,xlab="Sum of scores",main="")
 ## Depending on the results from this test, we can determine if we are justified in using a parametric test. 
 
 ## If, data passes normality tests, then we can use the following tests: 
-
 ## T-Test. We can use a two-sample T-test to asses if there is a difference in the scores of specific groups:
-
 ## Examples: 
-
 ## First use a boxplot for visualization to identify a relationship. 
 
 boxplot(sum~nominalQ15,data=merged,names=c("Continue working with team",
                                                 "Stop working with team"))
-
 boxplot(sum~blacklist,data=merged,names=c("Blacklist Team 1",
                                                 "Blacklist Team 2", "Indifferent"))
 
