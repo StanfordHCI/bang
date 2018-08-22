@@ -917,7 +917,7 @@ io.on('connection', (socket) => {
           currentRound += 1 // guard to only do this when a round is actually done.
           console.log(currentRound, "out of", numRounds)
         }, 1000 * 60 * 0.1 * roundMinutes)
-      }, 1000 * 60 * 0.9 * roundMinutes)
+      }, 1000 * 60 * 0.8 * roundMinutes)
 
       if(checkinOn){
         let numPopups = 0;
