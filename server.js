@@ -177,8 +177,9 @@ db.users.find({}, (err, usersInDB) => {
       })
     }
     if (assignQualifications && runningLive) {
-      // mturk.assignQualificationToUsers(usersInDB, mturk.quals.hasBanged)
-      mturk.listUsersWithQualification(mturk.quals.hasBanged)
+      mturk.listUsersWithQualificationRecursively(mturk.quals.hasBanged, (data) => {
+        console.log("Number of users with qualification hasBanged:", data.length)
+      });
     }
   }
 })
@@ -193,13 +194,6 @@ if (cleanHITs){
     })
   })
 }
-
-// if (assignQualifications) {
-//   // Run this to remove willBang from anyone who hasBanged
-//   mturk.listUsersWithQualification(mturk.quals.hasBanged, function(data) {
-//     mturk.unassignQualificationFromUsers(data.Qualifications.map(a => a.WorkerId), mturk.quals.willBang);
-//   })
-// }
 
 if (runExperimentNow){ mturk.launchBang(function(HIT) {
   storeHIT(HIT.HITId)
@@ -218,26 +212,11 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
         throw "URL not defined"
       }
       if(usingWillBang) {
-        mturk.listUsersWithQualification(mturk.quals.willBang, function(data) { // notifies all willBang
+        let maxWorkersToNotify = 100; // cannot be more than 100
+        mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
           mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
           }); // must return from mturkTools
       }
-      // if(usingWillBang) {
-      //   mturk.listUsersWithQualification(mturk.quals.willBang, function(data) { // notifies all willBang
-      //     let workers = data.Qualifications.map(a=>a.WorkerId)
-      //     mturk.listUsersWithQualification(mturk.quals.hasBanged, function(data2) {
-      //       let workers2 = data2.Qualifications.map(a=>a.WorkerId)
-      //       for(i = 0; i < workers.length - 1; i++) {
-      //         if (workers2.includes(workers[i])) {
-      //           workers.splice(i, 1);
-      //         }
-      //       }
-      //     })
-
-      //     mturk.notifyWorkers(workers.map(a => workers), subject, message)
-      //   }); // must return from mturkTools
-      // }
-
     });
   }
 }) }
@@ -916,7 +895,7 @@ io.on('connection', (socket) => {
           users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
           currentRound += 1 // guard to only do this when a round is actually done.
           console.log(currentRound, "out of", numRounds)
-        }, 1000 * 60 * 0.1 * roundMinutes)
+        }, 1000 * 60 * 0.2 * roundMinutes)
       }, 1000 * 60 * 0.8 * roundMinutes)
 
       if(checkinOn){

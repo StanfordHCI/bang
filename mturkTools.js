@@ -386,15 +386,30 @@ const disassociateQualification = (qualificationId, workerId, reason) => {
 // -------------------------------------------------------------------
 // Lists MTurk users who have a specific qualification
 
-const listUsersWithQualification = (qual, callback) => {
-  var userWithQualificationParams = {QualificationTypeId: qual.QualificationTypeId, MaxResults: 100};
+const listUsersWithQualification = (qual, max, callback) => {
+  if (max > 100) max = 100;
+  var userWithQualificationParams = {QualificationTypeId: qual.QualificationTypeId, MaxResults: max};
   mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
     else {
-      // console.log(data);
       if (typeof callback === 'function') callback(data)
     }
   });
+}
+
+// recursive version of function - returns an array of workerIds
+const listUsersWithQualificationRecursively = (qual, callback, paginationToken = null, passthrough = []) => {
+  mturk.listWorkersWithQualificationType({QualificationTypeId: qual.QualificationTypeId, MaxResults: 100, NextToken: paginationToken}, (err, data) => {
+    if(err) console.log(err, err.stack)
+    else {
+      passthrough = passthrough.concat(data.Qualifications.map(a => a.WorkerId))
+      if(data.NumResults == 100) {
+        listUsersWithQualificationRecursively(qual, callback, data.NextToken, passthrough)
+      } else {
+        if (typeof callback === 'function') callback(passthrough)
+      }
+    }
+  })
 }
 
 // * payBonuses *
@@ -568,6 +583,7 @@ module.exports = {
   unassignQuals: unassignQuals,
   disassociateQualification: disassociateQualification,
   listUsersWithQualification: listUsersWithQualification,
+  listUsersWithQualificationRecursively: listUsersWithQualificationRecursively,
   payBonuses: payBonuses,
   bonusPrice: bonusPrice,
   blockWorker: blockWorker,
@@ -580,6 +596,12 @@ module.exports = {
   notifyWorkers: notifyWorkers,
   quals: quals,
 };
+
+// * checkQualsRecursive *
+// -------------------------------------------------------------------
+// Gets the total number of users that have a certain qualification. Uncomment the funciton underneath to call.
+// 
+// Takes a qual object and callback(function) as parameters, returns an array of users
 
 const checkQualsRecursive = (qualObject, callback, paginationToken = null, passthrough = []) => {
   var userWithQualificationParams = {QualificationTypeId: qualObject.QualificationTypeId, MaxResults: 100, NextToken: paginationToken};
@@ -596,10 +618,10 @@ const checkQualsRecursive = (qualObject, callback, paginationToken = null, passt
   })
 }
 
+// checkQualsRecursive(quals.willBang,L => {
+//   console.log("Number of users with willBang:", L.length)
+// })
+
 // hitIds.forEach(id => listAssignments(id,data => {
 //   data.map(u => u.WorkerId).forEach(u => assignQuals(u,quals.willBang))
 // }))
-//
-// checkQualsRecursive(quals.willBang,L => {
-//   console.log(L.length)
-// })
