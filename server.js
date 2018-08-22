@@ -480,7 +480,7 @@ io.on('connection', (socket) => {
       batch: batchID,
       room: '',
       rooms:[],
-      bonus: 0,
+      bonus: mturk.bonusPrice,
       person: '',
       name: socket.username,
       ready: false,
