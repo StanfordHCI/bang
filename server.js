@@ -877,7 +877,7 @@ io.on('connection', (socket) => {
       // remove willBang qualification from people who rolled over
       if(usingWillBang) {
         const hasBangers = users.map(a => a.mturkId)
-        hasBangers.forEach(u => mturk.unassignQuals(u, mturk.quals.willBang))
+        hasBangers.forEach(u => mturk.unassignQuals(u, mturk.quals.willBang, ''))
       }
 
       // save start time
