@@ -20,7 +20,7 @@ const runExperimentNow = false
 const issueBonusesNow = true
 const notifyWorkersOn = false
 const runViaEmailOn = false
-const usingWillBang = true
+const usingWillBang = false
 
 const cleanHITs = false
 const assignQualifications = false
@@ -33,11 +33,11 @@ const randomCondition = false
 const randomRoundOrder = false
 const randomProduct = false
 
-const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
-const midSurveyOn = false
-const blacklistOn = false
+const midSurveyOn = true
+const blacklistOn = true
 const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = false // tracks time user spends on task and updates payment - also tracks how long each task is taking
@@ -647,7 +647,7 @@ io.on('connection', (socket) => {
       if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
       console.log("Connected users: " + getUsersConnected().length);
-      if (!experimentOver && suddenDeath && experimentStarted){//PK: what does this if condition mean
+      if (!experimentOver && suddenDeath && experimentStarted){
         storeHIT()
 
         console.log("User left, emitting cancel to all users");
