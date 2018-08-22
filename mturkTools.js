@@ -402,6 +402,7 @@ const disassociateQualification = (qualificationId, workerId, reason) => {
 // Lists MTurk users who have a specific qualification
 
 const listUsersWithQualification = (qual, max, callback) => {
+  if (max > 100) max = 100;
   var userWithQualificationParams = {QualificationTypeId: qual.QualificationTypeId, MaxResults: max};
   mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
@@ -611,6 +612,12 @@ module.exports = {
   quals: quals,
 };
 
+// * checkQualsRecursive *
+// -------------------------------------------------------------------
+// Gets the total number of users that have a certain qualification. Uncomment the funciton underneath to call.
+// 
+// Takes a qual object and callback(function) as parameters, returns an array of users
+
 const checkQualsRecursive = (qualObject, callback, paginationToken = null, passthrough = []) => {
   var userWithQualificationParams = {QualificationTypeId: qualObject.QualificationTypeId, MaxResults: 100, NextToken: paginationToken};
   mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
@@ -626,10 +633,11 @@ const checkQualsRecursive = (qualObject, callback, paginationToken = null, passt
   })
 }
 
-// hitIds.forEach(id => listAssignments(id,data => {
-//   data.map(u => u.WorkerId).forEach(u => assignQuals(u,quals.willBang))
-// }))
-//
 // checkQualsRecursive(quals.willBang,L => {
 //   console.log(L.length)
 // })
+
+// hitIds.forEach(id => listAssignments(id,data => {
+//   data.map(u => u.WorkerId).forEach(u => assignQuals(u,quals.willBang))
+// }))
+

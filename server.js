@@ -212,7 +212,7 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
         throw "URL not defined"
       }
       if(usingWillBang) {
-        let maxWorkersToNotify = 100;
+        let maxWorkersToNotify = 100; // cannot be more than 100
         mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
           mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
           }); // must return from mturkTools
