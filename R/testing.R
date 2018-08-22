@@ -16,8 +16,11 @@ extractSurvey = function(frame,survey) {
     names(surveyFrame) = newCols
     surveyFrame$id = frame$id
     surveyFrame$round = round
-    surveyFrame$room = frame$rooms[round]
-    return(surveyFrame)
+    surveyFrame$room = ""
+    surveyFrameRows = apply(surveyFrame,1,function(x){
+      x$room = frame[frame$id == x['id'],]$rooms[round]
+    })
+    return(Reduce(rbind,surveyFrameRows))
   })
   return(Reduce(rbind,roundResponses))
 }
@@ -73,5 +76,3 @@ myData$results.viabilityCheck.15 = convertValues(myData$results.viabilityCheck.1
 
 viabilitySurvey = myData[,surveyCols]
 viabilityBinary = myData$results.viabilityCheck.15
-
-summary(lm(viabilityBinary ~., viabilitySurvey))

@@ -182,6 +182,7 @@ function downloadData(url,callback) {
 //Save from servers
 // downloadData("mark.dmorina.com",saveAllData)
 
+
 // downloadData("bang.dmorina.com",saveAllData)
 
 //Save from local folder
@@ -189,5 +190,5 @@ function downloadData(url,callback) {
 
 // useEachBatch(renderChats)
 
-retroactiveBonus()
-// retroactivelyFixRooms()
+// retroactiveBonus()
+retroactivelyFixRooms()
