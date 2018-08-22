@@ -49,12 +49,27 @@ function retroactiveBonus() {
   batchFolders.filter(f => fs.readdirSync(dir + f).includes('users.json')).forEach(f => {
     fs.readFile(dir + f + '/' + 'users.json',(err,usersJSON)=> {
       if (err) {return console.log(err)} else {
-        mturk.payBonuses( JSON.parse(usersJSON) ,paidUsers => {
-          users.filter(u => paidUsers.map(p => p.id).includes(u)).forEach(u => u.bonus == 0)
-          fs.writeFile(dir + f + '/' + 'users.json', JSON.stringify(users,null,2) , (err) => {
+        const allUsers = JSON.parse(usersJSON)
+        mturk.payBonuses(allUsers ,paidUsers => {
+          allUsers.filter(u => paidUsers.map(p => p.id).includes(u.id)).forEach(u => u.bonus = 0)
+          fs.writeFile(dir + f + '/' + 'users.json', JSON.stringify(allUsers,null,2) , (err) => {
             if(err) { return console.log(err)} else { console.log("saved",f);}
           });
         })
+      }
+    })
+  })
+}
+
+// Add qualification to all users
+function retroactiveQualification(qualification) {
+  const dir = "./.data/"
+  const batchFolders = fs.readdirSync(dir).filter(f => fs.statSync(dir + f).isDirectory())
+  batchFolders.filter(f => fs.readdirSync(dir + f).includes('users.json')).forEach(f => {
+    fs.readFile(dir + f + '/' + 'users.json',(err,usersJSON)=> {
+      if (err) {return console.log(err)} else {
+        const allUsers = JSON.parse(usersJSON)
+        mturk.assignQualificationToUsers(allUsers, qualification)
       }
     })
   })
@@ -166,6 +181,8 @@ function downloadData(url,callback) {
 
 //Save from servers
 // downloadData("mark.dmorina.com",saveAllData)
+
+
 // downloadData("bang.dmorina.com",saveAllData)
 
 //Save from local folder
@@ -174,4 +191,4 @@ function downloadData(url,callback) {
 // useEachBatch(renderChats)
 
 // retroactiveBonus()
-// retroactivelyFixRooms()
+retroactivelyFixRooms()

@@ -16,7 +16,11 @@ extractSurvey = function(frame,survey) {
     names(surveyFrame) = newCols
     surveyFrame$id = frame$id
     surveyFrame$round = round
-    return(surveyFrame)
+    surveyFrame$room = ""
+    surveyFrameRows = apply(surveyFrame,1,function(x){
+      x$room = frame[frame$id == x['id'],]$rooms[round]
+    })
+    return(Reduce(rbind,surveyFrameRows))
   })
   return(Reduce(rbind,roundResponses))
 }
@@ -60,7 +64,7 @@ roundsWithRooms = apply(overlappingFiles,1,function(x) {
   })
   return(Reduce(rbind,roomsForIndividual))
 })
-finalRounds = Reduce(rbind,roundsWithRooms)
+finalRounds = as.data.frame(Reduce(rbind,roundsWithRooms))
 
 myData = extractSurvey(overlappingFiles,survey)
 myData = myData[complete.cases(myData),]
@@ -72,5 +76,3 @@ myData$results.viabilityCheck.15 = convertValues(myData$results.viabilityCheck.1
 
 viabilitySurvey = myData[,surveyCols]
 viabilityBinary = myData$results.viabilityCheck.15
-
-summary(lm(viabilityBinary ~., viabilitySurvey))

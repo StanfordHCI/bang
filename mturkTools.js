@@ -80,13 +80,16 @@ const quals = {
     QualificationTypeId: runningLive ? "3H3KEN1OLSVM98I05ACTNWVOM3JBI9" : "3Q14PV9RQ817STQZOSBE3H0UXC7M1J",
     Comparator: 'Exists',
     ActionsGuarded:"DiscoverPreviewAndAccept"
-  }
+  },
+  willNotBang: { // those who plan to complete our HIT
+    QualificationTypeId: runningLive ? "3H3KEN1OLSVM98I05ACTNWVOM3JBI9" : "3Q14PV9RQ817STQZOSBE3H0UXC7M1J",
+    Comparator: 'DoesNotExist',
+    ActionsGuarded:"DiscoverPreviewAndAccept"
+  },
 }
 
-//const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(0), quals.hasBanged, quals.willBang]
-//const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged]
 const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(0), quals.hasBanged, quals.willBang]
-const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged]
+const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged, quals.willNotBang]
 const qualsForTesting = [quals.onlyUSA, quals.hitsAccepted(0)]
 const safeQuals = runningLive ? qualsForLive : qualsForTesting
 
@@ -226,10 +229,16 @@ const workOnActiveHITs = (callback) => {
 //
 // Takes a HITId as a parameter
 
-const listAssignments = (HITId,callback) => {
-  mturk.listAssignmentsForHIT({HITId:HITId},(err,data) => {
-    if (err) {console.log(err, err.stack)} else {
-      if (typeof callback === 'function') callback(data)
+const listAssignments = (HITId,callback, paginationToken = null, passthrough = []) => {
+  mturk.listAssignmentsForHIT({HITId: HITId, MaxResults: 100, NextToken: paginationToken},(err,data) => {
+    if (err) console.log(err, err.stack)
+    else {
+      passthrough = passthrough.concat(data.Assignments)
+      if (data.NumResults == 100) {
+        listAssignments(HITId, callback, data.NextToken, passthrough)
+      } else {
+        if (typeof callback === 'function') callback(passthrough)
+      }
     }
   })
 }
@@ -389,7 +398,7 @@ const unassignQualificationFromUsers = (users,qual) => {
 // takes a userId as a string as paramter, and the qualification
 
 const unassignQuals = (user, qual) => {
-  var assignQualificationParams = {QualificationTypeId: qual.QualificationTypeId, WorkerId: user, IntegerValue: 1, SendNotification: false};
+  var assignQualificationParams = {QualificationTypeId: qual.QualificationTypeId, WorkerId: user};
   mturk.disassociateQualificationFromWorker(assignQualificationParams, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
     else     console.log("Assigned",qual.QualificationTypeId,"to",user);
@@ -581,10 +590,7 @@ const notifyWorkers = (WorkerIds, subject, message) => {
    if (err) console.log("Error notifying workers:",err, err.stack); // an error occurred
    else     console.log("Notified",WorkerIds.length,"workers:", subject);           // successful response
  });
-//  mturk.assignQualificationToUsers(WorkerIds, quals.willBang)
 }
-
-//turkerJSON.forEach(notifyWorkersManually);
 
 module.exports = {
   startTask: startTask,
@@ -616,35 +622,25 @@ module.exports = {
   quals: quals,
 };
 
-// TODO: CLean this up by integrating with other bonus code
-// const payBonusesManually = (user) => {
-//   mturk.sendBonus({
-//     AssignmentId: user.assignmentId,
-//     BonusAmount: String(user.bonus),
-//     Reason: "Thanks for working on our task.",
-//     WorkerId: user.mturkId,
-//     UniqueRequestToken: user.assignmentId
-//   }, function(err, data) {
-//     if (err) {
-//      console.log("Bonus not processed:",err)
-//     } else {
-//       console.log("Bonused:",user.mturkId, user.bonus)
-//       user.paid = user.bonus
-//     }
-//   })
-// }
+const checkQualsRecursive = (qualObject, callback, paginationToken = null, passthrough = []) => {
+  var userWithQualificationParams = {QualificationTypeId: qualObject.QualificationTypeId, MaxResults: 100, NextToken: paginationToken};
+  mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
+    if (err) console.log(err, err.stack)
+    else {
+      passthrough = passthrough.concat(data.Qualifications)
+      if (data.NumResults == 100) {
+        checkQualsRecursive(qualObject, callback, data.NextToken, passthrough)
+      } else {
+        callback(passthrough)
+      }
+    }
+  })
+}
+
+// hitIds.forEach(id => listAssignments(id,data => {
+//   data.map(u => u.WorkerId).forEach(u => assignQuals(u,quals.willBang))
+// }))
 //
-// users = [] //list of user objects
-
-
-// listUsersWithQualification({QualificationTypeId:"p1:PiTRhIC9eaSVy8/7Lqohp4ifJ8+UkQwv7QrhELsQjNJPkWdEimPhOk3IodO88vo="},console.log)
-
-// listUsersWithQualification(quals.hasBanged,(hasBangers) => {
-//   listUsersWithQualification(quals.willBang,(willBangers) => {
-//     console.log(willBangers)
-//
-//     idToCheck = "AW6DFFL8QE1FH"
-//     console.log(willBangWorkers = willBangers.Qualifications.map(u => u.workerId).includes(idToCheck));
-//     console.log(hasBangers.Qualifications.map(u => u.workerId).includes(idToCheck));
-//   })
+// checkQualsRecursive(quals.willBang,L => {
+//   console.log(L.length)
 // })

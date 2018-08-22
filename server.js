@@ -93,6 +93,31 @@ function useUser(u,f,err = "Guarded against undefined user") {
   else { console.log(err.red,u.id) }
 }
 
+// Save debug logs for later review
+const util = require('util');
+const trueLog = console.log;
+const debugDir = ".data/debug/"
+
+if (!fs.existsSync(debugDir)) {
+  fs.mkdirSync(debugDir)
+}
+log_file = debugDir + "debug" + Date.now() + ".log";
+console.log = function(...msg) {
+  trueLog(msg.map(item => {return util.format(item)}).join(" ")); //uncomment if you want logs
+    msg.map(item => {
+      fs.appendFile(log_file, util.format(item) + " ", function(err) {
+        if(err) {
+            return trueLog(err);
+        }
+      });
+    })
+    fs.appendFile(log_file, "\n", function(err) {
+      if(err) {
+          return trueLog(err);
+      }
+    });
+}
+
 //if (runExperimentNow){
   // Experiment variables
   const conditionsAvailalbe = ['control','treatment','baseline']
@@ -455,7 +480,7 @@ io.on('connection', (socket) => {
       batch: batchID,
       room: '',
       rooms:[],
-      bonus: 0,
+      bonus: mturk.bonusPrice,
       person: '',
       name: socket.username,
       ready: false,
@@ -865,34 +890,15 @@ io.on('connection', (socket) => {
       console.log('Issued task for:', currentProduct.name)
       console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
 
-      // assign hasBanged qualification to all users who rolled over
-      // might want to change this because it is reassigning the qual to every user every time
-      // db.users.find({}, (err, usersInDB) => {
-      //   if (err) {console.log("DB for MTurk:" + err)} else {
-      //     if (assignQualifications && runningLive) {
-      //      mturk.assignQualificationToUsers(usersInDB, mturk.quals.hasBanged)
-      //     }
-      //   }
-      // })
-
       // assignes hasBanged to new users
       if(assignQualifications && runningLive) {
-        for(i = 0; i < users.length; i++) {
-          mturk.assignQuals(users[i].mturkId, mturk.quals.hasBanged)
-        }
+        const hasBangers = users.map(a => a.mturkId)
+        hasBangers.forEach(u => mturk.assignQuals(u, mturk.quals.hasBanged))
       }
       // remove willBang qualification from people who rolled over
       if(usingWillBang) {
-        for(i = 0; i < users.length; i++) {
-          mturk.unassignQuals(users[i].mturkId, mturk.quals.willBang)
-        }
-        // mturk.unassignQualificationFromUsers(users, mturk.quals.willBang)
-        // db.users.find({}, (err, usersInDB) => {
-        //   if (err) {console.log("DB for MTurk:" + err)}
-        //   else {
-        //     mturk.unassignQualificationFromUsers(usersInDB, mturk.quals.willBang)
-        //   }
-        // })
+        const hasBangers = users.map(a => a.mturkId)
+        hasBangers.forEach(u => mturk.unassignQuals(u, mturk.quals.willBang))
       }
 
       // save start time
@@ -911,7 +917,7 @@ io.on('connection', (socket) => {
           currentRound += 1 // guard to only do this when a round is actually done.
           console.log(currentRound, "out of", numRounds)
         }, 1000 * 60 * 0.1 * roundMinutes)
-      }, 1000 * 60 * 0.9 * roundMinutes)
+      }, 1000 * 60 * 0.8 * roundMinutes)
 
       if(checkinOn){
         let numPopups = 0;
