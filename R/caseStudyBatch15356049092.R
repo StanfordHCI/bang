@@ -20,7 +20,6 @@ extractSurvey = function(frame,survey) {
     surveyFrame$round = round
     surveyFrame$batch = frame$batch
     surveyFrame$rooms = frame$rooms
-    
     surveyFrame$blacklist = frame$results.blacklistCheck
     return(surveyFrame)
   })
@@ -47,7 +46,7 @@ roundsWithRooms = apply(overlappingFiles,1,function(x) {
   roomsForIndividual = lapply(seq(1,length(x$rooms)),function(y) {
     x$room = x$rooms[y]
     x$round = y
-    if (x$room=="") { 
+    if (x$room=="") {
       x$room=x$rooms[2]
     }
     return(x)
@@ -58,21 +57,22 @@ roundsWithRooms = apply(overlappingFiles,1,function(x) {
 frame <- extractSurvey(overlappingFiles, survey)
 finalRounds = as.data.frame(Reduce(rbind,roundsWithRooms))
 
-
 ## to-do: *FIGURE OUT A BETTER WAY TO MERGE: THIS IS PURE JIBBERISH // WORST CODING EVER, BUT R SUCKS* 
 
-## Subset batch #1, complete observations for case study: 
-data <- frame[frame$batch==1534356049092, ] 
-data <- data[data$blacklist!="", ]
-data2 <- finalRounds[finalRounds$batch==1534356049092, ]
-data2 <- data2[data2$results.blacklistCheck!="", ]
-data2 = data2 %>% select(id, mturkId, assignmentId, batch, room, bonus, name, friends, 
+## Subset by batch #s, complete observations for case study: 
+
+data <- frame[frame$blacklist!="",]
+data2 <- finalRounds[finalRounds$results.blacklistCheck!="", ]
+data2 = data2 %>% select(id, batch, room, bonus, name, friends, 
                               friends_history, results.condition, results.format,
                               results.manipulation,results.manipulationCheck, results.blacklistCheck, round)
 data2$id <- unlist(data2$id)
 data2$round <- unlist(data$round)
 data2$batch <- unlist(data$batch)
 data <- right_join(data, data2, by=NULL)
+data <- data[data$batch %in% completeBatches, ]
+
+## filter out complete rounds: 
 
 ## new columns for masked vs. unmasked data:  
 data <- data %>% mutate(condition = case_when(round == 1 ~ "unmasked",
@@ -252,7 +252,7 @@ meanViabilityDistributionMasked
 
 ## unmasked condition + repeat team question 
 
-g <- ggplot(unMaskedStats, aes(factor(repeatTeam, labels=("No")), sum))
+g <- ggplot(unMaskedStats, aes(factor(repeatTeam), sum))
 g + geom_boxplot(varwidth=T, fill="plum") + 
   labs(subtitle="Sum of viability measures grouped by repeat team question in unmasked condition", 
        x="If you had the choice, would you like to work with the same team in a future round? ",
@@ -317,14 +317,18 @@ t.test(stats$maskedSum,
 
 ## Is there a significant difference between viability sums between conditions: masked // unmasked? 
 
-t.test(sum~condition, data=stats)
+pairedTest <-  subset(stats, condition=="masked" | condition=="unmasked") 
+t.test(sum~condition, data=pairedTest)
 
-
-## How to compare individual: 
+## How to compare individual:
 
 ## facet_grid sums from masked vs. unmasked based on id? (rename id as individual) 
 
-
+g <- ggplot(stats, aes(factor(condition), sum))
+g + geom_boxplot(varwidth=T, fill="plum") + facet_grid(.~mturkId)
+  labs(subtitle="Sum of viability measures grouped by condition", 
+       x="Sum of viability measures grouped by condition", 
+       y="Numeric sum of viability measures questions (range: 14-98)")
 
 
 
