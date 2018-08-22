@@ -213,26 +213,11 @@ const getHITURL = (hitId, callback) => {
 //
 // Returns an array of Active HITs.
 
-// const workOnActiveHITs = (callback) => {
-//   mturk.listHITs({MaxResults: 100}, (err, data) => {
-//     if (err) {console.log(err, err.stack)} else {
-//       if (typeof callback === 'function'){
-//         callback(data.HITs.filter(h => h.HITStatus == "Assignable").map(h => h.HITId))
-//       }
-//     }
-//   })
-// }
-
-// recursive version of the call
-const workOnActiveHITs = (callback, paginationToken = null, passthrough = []) => {
-  mturk.listHITs({MaxResults: 100, NextToken: paginationToken}, (err, data) => {
-    if (err) {console.log(err, err.stack)} 
-    else {
-      passthrough.concat(data.HITs.filter(h => h.HITStatus == "Assignable").map(h => h.HITId));
-      if(data.NumResults == 100) {
-        workOnActiveHITs(callback, data.NextToken, passthrough)
-      } else {
-        if (typeof callback === 'function') callback(passthrough)
+const workOnActiveHITs = (callback) => {
+  mturk.listHITs({MaxResults: 100}, (err, data) => {
+    if (err) {console.log(err, err.stack)} else {
+      if (typeof callback === 'function'){
+        callback(data.HITs.filter(h => h.HITStatus == "Assignable").map(h => h.HITId))
       }
     }
   })
@@ -634,10 +619,9 @@ const checkQualsRecursive = (qualObject, callback, paginationToken = null, passt
 }
 
 // checkQualsRecursive(quals.willBang,L => {
-//   console.log(L.length)
+//   console.log("Number of users with willBang:", L.length)
 // })
 
 // hitIds.forEach(id => listAssignments(id,data => {
 //   data.map(u => u.WorkerId).forEach(u => assignQuals(u,quals.willBang))
 // }))
-
