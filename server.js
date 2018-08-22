@@ -23,7 +23,7 @@ const runViaEmailOn = false
 const usingWillBang = false
 
 const cleanHITs = false
-const assignQualifications = false
+const assignQualifications = true
 const debugMode = !runningLive
 
 const suddenDeath = false
