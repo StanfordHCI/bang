@@ -357,8 +357,6 @@ Q4 <- aggregate( . ~ Text, data=Q4, mean)
 # make table long form for ggplot
 Q4 <- melt(Q4,id.var="Text")
 
-c("")
-
 ggplot() + 
   geom_bar(
     aes(x=variable,fill=Text,y=value),
