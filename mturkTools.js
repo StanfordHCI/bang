@@ -179,13 +179,16 @@ const makeHIT = (chooseQual, title, description, assignmentDuration, lifetime, r
 //
 // Takes HIT ID as parameter.
 
-const returnHIT = (hitId) => {
+const returnHIT = (hitId, callback) => {
   var returnHITParams = {
     HITId: hitId /* required */
   };
   mturk.getHIT(returnHITParams, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
-    else     console.log(data);           // successful response
+    else  {
+      // console.log(data);           // successful response
+      if (typeof callback === 'function') callback(data)
+    }   
   });
 }
 
@@ -218,6 +221,7 @@ const workOnActiveHITs = (callback) => {
     if (err) {console.log(err, err.stack)} else {
       if (typeof callback === 'function'){
         callback(data.HITs.filter(h => h.HITStatus == "Assignable").map(h => h.HITId))
+        // callback(data.HITs.filter(h => h.HITStatus == "Assignable"))
       }
     }
   })
@@ -283,6 +287,8 @@ const listWithoutRecursion = (HITId, callback) => {
     }
   });
 }
+
+
 
 // * expireHIT *
 // -------------------------------------------------------------------

@@ -916,7 +916,7 @@ io.on('connection', (socket) => {
           users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
           currentRound += 1 // guard to only do this when a round is actually done.
           console.log(currentRound, "out of", numRounds)
-        }, 1000 * 60 * 0.1 * roundMinutes)
+        }, 1000 * 60 * 0.2 * roundMinutes)
       }, 1000 * 60 * 0.8 * roundMinutes)
 
       if(checkinOn){
