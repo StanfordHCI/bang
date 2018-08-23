@@ -360,7 +360,7 @@ const unassignQuals = (user, qual, reason) => {
   var assignQualificationParams = {QualificationTypeId: qual.QualificationTypeId, WorkerId: user, Reason: reason};
   mturk.disassociateQualificationFromWorker(assignQualificationParams, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
-    else     console.log("Assigned",qual.QualificationTypeId,"to",user);
+    else     console.log("Unassigned ",qual.QualificationTypeId," from ",user);
   })
 }
 
@@ -601,14 +601,14 @@ module.exports = {
 // -------------------------------------------------------------------
 // Gets the total number of users that have a certain qualification. Uncomment the funciton underneath to call.
 // 
-// Takes a qual object and callback(function) as parameters, returns an array of users
-
+// Takes a qual object and callback(function) as parameters, returns an array of MTURK IDS
+//NOTE: CHANGED TO RETURN ARRAY OF MTURK IDS NOT USER OBJECTS
 const checkQualsRecursive = (qualObject, callback, paginationToken = null, passthrough = []) => {
   var userWithQualificationParams = {QualificationTypeId: qualObject.QualificationTypeId, MaxResults: 100, NextToken: paginationToken};
   mturk.listWorkersWithQualificationType(userWithQualificationParams, function(err, data) {
     if (err) console.log(err, err.stack)
     else {
-      passthrough = passthrough.concat(data.Qualifications)
+      passthrough = passthrough.concat(data.Qualifications.map(a => a.WorkerId))
       if (data.NumResults == 100) {
         checkQualsRecursive(qualObject, callback, data.NextToken, passthrough)
       } else {
@@ -618,8 +618,12 @@ const checkQualsRecursive = (qualObject, callback, paginationToken = null, passt
   })
 }
 
-// checkQualsRecursive(quals.willBang,L => {
-//   console.log("Number of users with willBang:", L.length)
+// checkQualsRecursive(quals.willBang, will => {
+//   checkQualsRecursive(quals.hasBanged, has => {
+//     has.filter(h => will.includes(h)).forEach(h => {
+//       unassignQuals(h, quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!')
+//     })
+//   })
 // })
 
 // hitIds.forEach(id => listAssignments(id,data => {
