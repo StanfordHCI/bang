@@ -69,9 +69,9 @@ data2$batch <- unlist(data2$batch)
 data$batch <- unlist(data$batch)
 data2$round <- unlist(data2$round)
 data <- left_join(data, data2, by=NULL)
+data <- data[data$batch %in% completeBatches, ]
 
 ## Subset complete batches only 
-data <- data[data$batch %in% completeBatches, ]
 
 ## Create new columns for masked vs. unmasked data:  
 data <- data %>% mutate(condition = case_when(round == 1 ~ "unmasked",
@@ -303,14 +303,6 @@ hist(stats$sum,xlab="Sum of scores",main="")
 ## First use a boxplot for visualization to identify a relationship. 
 
 ## If normality assumptions are met: 
-
-merge(unMaskedStats, maskedStats, by=NULL)
-
-t.test(stats$maskedSum, 
-       stats$unmaskedSum, 
-       paired=TRUE, 
-       conf.level=0.95)
-
 ## Is there a significant difference between viability sums between conditions: masked // unmasked? 
 
 pairedTest <-  subset(stats, condition=="masked" | condition=="unmasked") 
@@ -327,6 +319,15 @@ g + geom_boxplot(varwidth=T, fill="plum") + facet_grid(.~mturkId)
        y="Numeric sum of viability measures questions (range: 14-98)")
 
 
+## Analyze data from control and basline conditions: 
+  
+## subset data for baseline 
+  
+baselineData %>% data %>% filter(condition=="basline")
+
+## subset data for control
+
+controlData %>% data %>% filter(condition=="control")
 
 
 
