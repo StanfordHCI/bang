@@ -356,8 +356,8 @@ const unassignQualificationFromUsers = (users,qual) => {
 // Removes a qualification to users who have already completed the task - does not let workers repeat task
 // takes a userId as a string as paramter, and the qualification
 
-const unassignQuals = (user, qual) => {
-  var assignQualificationParams = {QualificationTypeId: qual.QualificationTypeId, WorkerId: user};
+const unassignQuals = (user, qual, reason) => {
+  var assignQualificationParams = {QualificationTypeId: qual.QualificationTypeId, WorkerId: user, Reason: reason};
   mturk.disassociateQualificationFromWorker(assignQualificationParams, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
     else     console.log("Assigned",qual.QualificationTypeId,"to",user);
