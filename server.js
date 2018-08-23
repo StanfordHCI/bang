@@ -656,6 +656,19 @@ io.on('connection', (socket) => {
     console.log("god is ready");
     io.sockets.emit('echo','ready')
   })
+
+  socket.on('active-to-all', (data) => {
+    console.log("god is active");
+    io.sockets.emit('echo','active')
+  })
+
+  socket.on('active', (data) => {
+    useUser(socket, user => {
+      user.active = true
+      console.log("users active:", users.filter(u => u.active == true).length)
+    })
+  })
+
   socket.on('kill-all', (data) => {
     console.log("god is angry")
     updateUserInDB(socket,"bonus",currentBonus())
@@ -811,23 +824,54 @@ io.on('connection', (socket) => {
                 replacingPersonName = room[teamSize]
               }
             })
-            users.filter(u => u.name == replacingPersonName).forEach(u => {
-              users.filter(v => v.name == users[i]).forEach(v => {
+
+            //this part doesn't work
+            users.filter(u => u.person == replacingPersonName).forEach(u => {
+              console.log("u.name printed here!:", u.person, "here's the id:", u.id)
+              users.filter(v => v.person == users[i].person).forEach(v => {
                 console.log("line 816 triggered. Before the switch, here's u.id:", u.id, "and v.id:", v.id)
+                u.person = v.person
                 u.name = v.name
                 u.rooms = v.rooms
               })
             })
           }
         }
-        for (j = teamSize ** 2; j < teamSize ** 2 + teamSize; j++) {
-          if (users[j]) {
-            console.log("line 820 triggered. here's users[j].id:", users[j].id)
-            issueFinish(users[j].id,emailingWorkers ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
-            users[j].connected = false
+        //this is wrong
+        badUsers = []
+        console.log("here are the users:", users)
+        users.forEach(u => {
+          console.log("log 1:", tools.letters.slice(teamSize**2, teamSize ** 2 + teamSize))
+          if(u) {
+            console.log("log 2:", u.person)
+            if (tools.letters.slice(teamSize**2, teamSize ** 2 + teamSize).includes(u.person)) {
+              badUsers.push(u)
+            }
           }
-        }
+        })
+
+        console.log("here is badUsers:", badUsers)
+        console.log("here is the length of badUsers:", badUsers.length)
+
+        badUsers.forEach(u => {
+          console.log("here's the user being processed:", u, "and their person", u.person)
+            console.log("line 825 triggered. here's users[j].id:", u.id, "and person:", u.person)
+            issueFinish(u,emailingWorkers ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
+            u.connected = false
+        })
       }
+
+        // console.log("here's the filter:", users.filter(u => people.slice(teamSize**2, teamSize ** 2 + teamSize)).includes(u.person))
+        // console.log("here's the filter's length", users.filter(u => people.slice(teamSize**2, teamSize ** 2 + teamSize)).includes(u.person).length)
+        // users.filter(u => people.slice(teamSize**2, teamSize ** 2 + teamSize)).includes(u.person).forEach(u => {
+        //   console.log("here's the user being processed:", u, "and their person", u.person)
+        //   if(u) {
+        //     console.log("line 825 triggered. here's users[j].id:", u.id, "and person:", u.person)
+        //     issueFinish(u,emailingWorkers ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
+        //     u.connected = false
+        //   }
+        // })
+      // }
 
 
 
