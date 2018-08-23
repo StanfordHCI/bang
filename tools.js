@@ -17,17 +17,23 @@ const randomAnimal = 'Bison Eagle Pony Moose Deer Duck Rabbit Spider Wolf Lion S
 const randomAdjective = 'new small young little likely nice cultured snappy spry conventional'.split(" ")
 let nameCount = 2
 
+
+
 const createTeams = (teamSize, numRounds, people, extraRoundOn) => {
+
+    realPeople = people.slice(0, teamSize ** 2) //working here
     console.log(!extraRoundOn && people.length != teamSize **2 ? "Can't create teams. Wrong number of people" : "Building teams")
     console.log(teamSize > numRounds+1 ? "Error" : "")
     const teamNames = letters.slice(0,teamSize)
 
     let roundTeams = []
     let collaborators = {}
-    people.forEach( person => { collaborators[person] = [person] })
+    realPeople.forEach( person => { collaborators[person] = [person] })
+
+    console.log(realPeople)
 
     while (roundTeams.length < numRounds) {
-      let unUsedPeople = people.slice()
+      let unUsedPeople = realPeople.slice()
       let teams = {}
 
       while (unUsedPeople.length) {
@@ -35,7 +41,7 @@ const createTeams = (teamSize, numRounds, people, extraRoundOn) => {
         while (team.length < teamSize) {
           let teamCollaborators = team.map(member => collaborators[member]).reduce((a,b) => a.concat(b) ).set() //find all prior collaborators
           let remainingOptions = unUsedPeople.filter(person => !teamCollaborators.includes(person) ) //find all remaining options
-          if (!remainingOptions.length) { return createTeams(teamSize, numRounds, people, extraRoundOn) } // deal with random selection overlap
+          if (!remainingOptions.length) { return createTeams(teamSize, numRounds, realPeople, extraRoundOn) } // deal with random selection overlap
           let newCollaborator = remainingOptions.pick()
           unUsedPeople = unUsedPeople.filter(person => person != newCollaborator ) //update unused people
 
@@ -45,12 +51,14 @@ const createTeams = (teamSize, numRounds, people, extraRoundOn) => {
         team.forEach(member => { collaborators[member] = collaborators[member].concat(team).set() }) //Add collaborators from new team
         teams[teamNames[Object.keys(teams).length]] = team //Add new team
       }
+      //console.log(teams)
       roundTeams.push(teams)
     }
 
     if(!teamChecker(roundTeams)){console.log("teams not valid")}
     if(extraRoundOn) { //couldn't get this to work generically with letters[]
       for (i = 0; i < teamSize; i++) {
+        //console.log(roundTeams)
         roundTeams[0][letters[i]].push(letters[teamSize**2 + i])
       }
     }
@@ -58,6 +66,10 @@ const createTeams = (teamSize, numRounds, people, extraRoundOn) => {
     return roundTeams
   }
 
+const hardcodedTeams = (people) => {
+  teams = createTeams(2, 4, people, false)
+  return teams
+}
 
 module.exports = {
   letters: letters,

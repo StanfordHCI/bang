@@ -4,20 +4,20 @@ var colors = require('colors')
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE
-const roundMinutes = process.env.ROUND_MINUTES
+const teamSize = process.env.TEAM_SIZE = 4
+const roundMinutes = process.env.ROUND_MINUTES = 0.5
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
-const secondsToWait = 15 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
-const secondsSinceResponse = 14 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
+const secondsToWait = 10 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+// const secondsSinceResponse = 29 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
 const secondsToHold1 = 1000 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
 const secondsToHold2 = 200 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 
 // Toggles
 const runExperimentNow = true
 const issueBonusesNow = true
-const emailingWorkers = true
+const emailingWorkers = false
 const usingWillBang = true
 
 const cleanHITs = false
@@ -32,7 +32,7 @@ const randomRoundOrder = false
 const randomProduct = false
 
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
-const extraRoundOn = true //Only set to true if teamSize = 4
+const extraRoundOn = true //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = true
@@ -40,7 +40,7 @@ const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
-const requiredOn = true
+const requiredOn = false
 const checkinIntervalMinutes = roundMinutes/3
 
 //Testing toggles
@@ -101,9 +101,9 @@ let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
 let batchCompleteUpdated = false;
 
 const roundOrdering = extraRoundOn ? [
-  {control: [3,1,2,1], treatment: [3,1,2,1], baseline: [4,1,2,3]},
-  {control: [3,2,1,1], treatment: [3,2,1,1], baseline: [4,1,2,3]},
-  {control: [3,1,1,2], treatment: [3,1,1,2], baseline: [4,1,2,3]}] : [
+  {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]},
+  {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]},
+  {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [
   {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]},
   {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]},
   {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}]
@@ -112,13 +112,16 @@ const experimentRoundIndicator = 1//PK: is this different that roundNum?
 const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
 const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
 console.log(currentCondition,'with',conditions[currentCondition]);
-const numRounds = extraRoundOn ? conditions.baseline.length + 1 : conditions.baseline.length
+const numRounds = conditions.baseline.length
 
 const numberOfRooms = teamSize * numRounds
 const rooms = tools.letters.slice(0,numberOfRooms)
-const people = tools.letters.slice(0,teamSize ** 2)
+const people = extraRoundOn ? tools.letters.slice(0,teamSize ** 2 + teamSize) : tools.letters.slice(0,teamSize ** 2)
 const population = people.length
 const teams = tools.createTeams(teamSize,numRounds,people,extraRoundOn)
+//FOR DEBUGGING PURPOSES
+// const teams = extraRoundOn && teamSize == 2 ? [ { A: [ 'D', 'A', 'E' ], B: [ 'C', 'B', 'F' ] }, { A: [ 'D', 'C' ], B: [ 'B', 'A' ] }, { A: [ 'D', 'B' ], B: [ 'C', 'A' ] } ]
+//  : tools.createTeams(teamSize,numRounds,people,extraRoundOn)
 
 const batchID = Date.now();
 console.log("Launching batch",batchID);
@@ -325,6 +328,7 @@ io.on('connection', (socket) => {
         console.log("no socket in accepted HIT")
         return;
       }
+      console.log("error message 2")
       issueFinish(socket,emailingWorkers ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
       return;
     }
@@ -361,12 +365,14 @@ io.on('connection', (socket) => {
     function updateUsersActive() {
       userPool.forEach(user => {
         //PK: rename secondsToWait
-        if(secondsSince(user.timeAdded) > secondsToWait && secondsSince(user.timeLastActivity) < secondsSinceResponse) { // PK: make isUserOnCall fxn
+        if(secondsSince(user.timeAdded) > secondsToWait) {
+        // if(secondsSince(user.timeAdded) > secondsToWait && secondsSince(user.timeLastActivity) < secondsSinceResponse) { // PK: make isUserOnCall fxn
           user.active = true;
         } else {
           user.active = false;
         }
-        weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - getPoolUsersActive().length)) // PK: make isUserInactive fxn
+        let numUsersWanted = extraRoundOn ? teamSize ** 2 + teamSize : teamSize ** 2
+        weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(numUsersWanted - getPoolUsersActive().length)) // PK: make isUserInactive fxn
         if (!user.removed && (secondsSince(user.timeAdded) > weightedHoldingSeconds || secondsSince(user.timeLastActivity) > secondsToHold2)) {
           user.removed = true;
           console.log('removing user because of inactivity:', user.id);
@@ -380,21 +386,24 @@ io.on('connection', (socket) => {
     console.log("Users active: " + usersActive.length)
     console.log("Users connected: " + getPoolUsersConnected().length)
     console.log("Users in pool: " + userPool.length)
+    let numUsersWanted = extraRoundOn ? teamSize ** 2 + teamSize : teamSize ** 2 //turn into const at start
     if(waitChatOn){
-      if(!hasAddedUsers && usersActive.length >= teamSize ** 2) {//if have enough active users and had not added users before
+      if(!hasAddedUsers && usersActive.length >= numUsersWanted) {//if have enough active users and had not added users before
         hasAddedUsers = true;
         for(let i = 0; i < usersActive.length; i ++){ //for every active user
           let user = usersActive[i];
-          if(i < teamSize ** 2) { //take the 1st teamssize **2 users and add them
+          if(i < numUsersWanted) { //take the 1st teamssize **2 users and add them
             io.in(user.id).emit("echo", "add user");
             io.in(user.id).emit('initiate experiment');
           } else { //else emit finish
             console.log('EMIT FINISH TO EXTRA ACTIVE WORKER')
+            console.log('error message 3')
             issueFinish(user, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
           }
         }
         userPool.filter(user => !usersActive.byID(user.id)).forEach(user => {//
           console.log('EMIT FINISH TO NONACTIVE OR DISCONNECTED WORKER')
+          console.log('error message 4') //this one!
           issueFinish(user, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
         })
       }
@@ -447,7 +456,8 @@ io.on('connection', (socket) => {
   }
 
   socket.on('add user', data => {
-    if (!userAcquisitionStage) { 
+    if (!userAcquisitionStage) {
+      console.log("error message 1")
       issueFinish(socket, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!")//PK: come back to this
       return;
     }
@@ -479,6 +489,7 @@ io.on('connection', (socket) => {
       })
       // assign people to rooms/teams 
       users.forEach(u => {
+        console.log("People length:", people.length, ", People:", people)
         u.person = people.pop();
       })
       userAcquisitionStage = false;
@@ -581,6 +592,7 @@ io.on('connection', (socket) => {
     useUser(socket,user => {
       user.connected = false
       user.ready = suddenDeath ? false : true
+      notEnoughUsers = false
 
       // update DB with change
       updateUserInDB(user,'connected',false)
@@ -589,33 +601,50 @@ io.on('connection', (socket) => {
 
       console.log("Connected users: " + getUsersConnected().length);
       if (!experimentOver && suddenDeath && experimentStarted){//PK: what does this if condition mean
-        storeHIT()
+        
+        if (extraRoundOn) {
+          Object.entries(teams[0]).forEach(([roomName,room]) => {
+            numberConnected = 0
+            room.forEach(person => {
+              users.filter(u => u.name == person).forEach(u => {
+                if (u.connected) {numberConnected += 1}
+              })
+            })
+            if (numberConnected < teamSize) {notEnoughUsers = true}
 
-        console.log("User left, emitting cancel to all users");
-        let totalTime = getSecondsPassed();
-
-        if(timeCheckOn) {
-          db.time.insert({totalTaskTime: totalTime}, (err, timeAdded) => {
-            if(err) console.log("There's a problem adding total time to the DB: ", err);
-            else if(timeAdded) console.log("Total time added to the DB");
           })
         }
 
-        users.filter(u => u.id != socket.id).forEach((u) => {
-          let cancelMessage = "<strong>Someone left the task.</strong><br> <br> \
-          Unfortunately, our group task requires a specific number of users to run, \
-          so once a user leaves, our task cannot proceed. <br><br> \
-          To complete the task, please provide suggestions of ways to \
-          prevent people leaving in future runs of the study. <br><br> \
-          Since the team activity had already started, you will be additionally \
-          bonused for the time spent working with the team."
-          if (experimentStarted) { // Add future bonus pay
-            u.bonus = currentBonus()
-            updateUserInDB(u,'bonus',u.bonus)
-            storeHIT()
+        if (!extraRoundOn || notEnoughUsers) {
+          storeHIT()
+
+          console.log("User left, emitting cancel to all users");
+          let totalTime = getSecondsPassed();
+
+          if(timeCheckOn) {
+            db.time.insert({totalTaskTime: totalTime}, (err, timeAdded) => {
+              if(err) console.log("There's a problem adding total time to the DB: ", err);
+              else if(timeAdded) console.log("Total time added to the DB");
+            })
           }
-          issueFinish(u,cancelMessage,true)
-        })
+
+          users.filter(u => u.id != socket.id).forEach((u) => {
+            let cancelMessage = "<strong>Someone left the task.</strong><br> <br> \
+            Unfortunately, our group task requires a specific number of users to run, \
+            so once a user leaves, our task cannot proceed. <br><br> \
+            To complete the task, please provide suggestions of ways to \
+            prevent people leaving in future runs of the study. <br><br> \
+            Since the team activity had already started, you will be additionally \
+            bonused for the time spent working with the team."
+            if (experimentStarted) { // Add future bonus pay
+              u.bonus = currentBonus()
+              updateUserInDB(u,'bonus',u.bonus)
+              storeHIT()
+            }
+            issueFinish(u,cancelMessage,true)
+          })
+        }
+
       }
       if (!suddenDeath && !userAcquisitionStage) { // sets users to ready when they disconnect 
         user.ready = true // TODO: remove user from users
@@ -766,7 +795,44 @@ io.on('connection', (socket) => {
       treatmentNow = (currentCondition == "treatment" && currentRound == experimentRound)
       const conditionRound = conditions[currentCondition][currentRound] - 1
 
+      // secondReadyIndex = eventSchedule.indexOf("ready", eventSchedule.indexOf("ready") + 1)
+
+      console.log("user.rooms.length:", user.rooms.length)
+
+      if(extraRoundOn && user.rooms.length == 1) {
+        console.log("line 803 triggered")
+        for (i = 0; i < teamSize ** 2; i++) {
+          if (!users[i].connected) {
+            console.log("line 806 triggered")
+            disconnectedsRoom = users[i].room
+            Object.entries(teams[0]).forEach(([roomName,room]) => {
+              if(roomName == disconnectedsRoom) {
+                console.log("line 810 triggered. here's room[teamSize]:", room[teamSize])
+                replacingPersonName = room[teamSize]
+              }
+            })
+            users.filter(u => u.name == replacingPersonName).forEach(u => {
+              users.filter(v => v.name == users[i]).forEach(v => {
+                console.log("line 816 triggered. Before the switch, here's u.id:", u.id, "and v.id:", v.id)
+                u.name = v.name
+                u.rooms = v.rooms
+              })
+            })
+          }
+        }
+        for (j = teamSize ** 2; j < teamSize ** 2 + teamSize; j++) {
+          if (users[j]) {
+            console.log("line 820 triggered. here's users[j].id:", users[j].id)
+            issueFinish(users[j].id,emailingWorkers ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
+            users[j].connected = false
+          }
+        }
+      }
+
+
+
       Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
+        console.log("here are the teams for conditionRound", conditionRound, ":", teams[conditionRound])
         users.filter(u => room.includes(u.person)).forEach(u => {
           u.room = roomName
           u.rooms.push(roomName)
@@ -800,9 +866,11 @@ io.on('connection', (socket) => {
         } else {
           // Dynamically generate teammate names
           // even if teamSize = 1 for testing, this still works
-
+          users.forEach(u => {
+            console.log(u.id, u.room)
+          })
           let teamMates = u.friends.filter(friend => { return (users.byID(friend.id)) && users.byID(friend.id).connected && (users.byID(friend.id).room == u.room) && (friend.id !== u.id)});
-
+          console.log(teamMates)
           let team_Aliases = tools.makeName(teamMates.length, u.friends_history)
           user.friends_history = u.friends_history.concat(team_Aliases)
           for (i = 0; i < teamMates.length; i++) {
@@ -1116,7 +1184,7 @@ function parseResults(data) {
   data.split('&').forEach(responsePair => {
     let response = responsePair.split("=")
     index = response[0].split("-q")
-    parsedResults[index[1]] = decode(response[1])
+    parsedResults[index[1]] = response[1] ? decode(response[1]) : ""
   })
   return parsedResults;
 }
