@@ -8,6 +8,7 @@ Breakdown of what final R notebook should include:
     5. Psych 
     6. Datatable 
 
+
 ## Included instructions on what each chunk is cleaning and why (+ add brief description of how to interpret results)
 
 cleanData = 
@@ -103,6 +104,10 @@ repeatTeamViabilitySum: (multiple graphs)
 
 How to test qualitative measures as predictive in defining fracture? 
  - Blind review chat data for groups and vote on fracture based on measures // compare with predictive analysis 
+
+## Chat data: 
+
+
 
 
 
