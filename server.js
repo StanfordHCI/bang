@@ -212,10 +212,16 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
         throw "URL not defined"
       }
       if(usingWillBang) {
-        let maxWorkersToNotify = 100; // cannot be more than 100
-        mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
-          mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
-          }); // must return from mturkTools
+        // Use this function to notify only x users <= 100
+        // let maxWorkersToNotify = 100; // cannot be more than 100
+        // mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
+        //   mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
+        //   }); // must return from mturkTools
+
+        // use this function to notify entire list of willBang workers
+        mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
+          mturk.notifyWorkers(data, subject, message)
+        })
       }
     });
   }
