@@ -621,7 +621,8 @@ io.on('connection', (socket) => {
     }
 
     // if (!users.every(user => socket.id !== user.id)) {//socket id is found in users
-    newMessage('has left the chatroom')
+    //newMessage('has left the chatroom')
+    console.log(socket.username + "HAS LEFT")
     useUser(socket,user => {
       user.connected = false
       user.ready = suddenDeath ? false : true
