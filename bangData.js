@@ -164,26 +164,27 @@ function saveAllData() {
 }
 
 function downloadData(url,callback) {
-  pemFile = '~/.ssh/sh-server.pem'
-  source = "ubuntu@" + url + ":bang/.data/*"
-  destination = ".data"
-  command = ['scp', '-i', pemFile, source, destination]
-  exec(command.join(' '), (err, stdout, stderr) => {
-    if (err) console.log(err);
-    else {
-      console.log("Downloaded data from",url);
-      if (typeof(callback) == 'function') {
-        callback(stdout)
+  const pemFile = '~/.ssh/sh-server.pem'
+  const destination = ".data"
+  const names = ['users','chats','batch']
+  names.forEach(name => {
+    const source = "ubuntu@" + url + ":bang/.data/" + name
+    const command = ['scp', '-i', pemFile, source, destination]
+    exec(command.join(' '), (err, stdout, stderr) => {
+      if (err) console.log(err);
+      else {
+        console.log("Downloaded data from",url);
+        if (typeof(callback) == 'function') {
+          callback(stdout)
+        }
       }
-    }
+    })
   })
 }
 
 //Save from servers
 // downloadData("mark.dmorina.com",saveAllData)
-
-
-// downloadData("bang.dmorina.com",saveAllData)
+downloadData("bang.dmorina.com",saveAllData)
 
 //Save from local folder
 // saveAllData()
@@ -191,4 +192,4 @@ function downloadData(url,callback) {
 // useEachBatch(renderChats)
 
 // retroactiveBonus()
-retroactivelyFixRooms()
+// retroactivelyFixRooms() 
