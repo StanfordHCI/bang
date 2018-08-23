@@ -18,9 +18,9 @@ const maxWaitChatMinutes = 20
 // Toggles
 const runExperimentNow = true
 const issueBonusesNow = true
-const notifyWorkersOn = false
+const notifyWorkersOn = true
 const runViaEmailOn = false
-const usingWillBang = false
+const usingWillBang = true
 
 const cleanHITs = false
 const assignQualifications = true
@@ -29,8 +29,8 @@ const debugMode = !runningLive
 const suddenDeath = false
 let setPerson = false
 
-const randomCondition = false
-const randomRoundOrder = false
+const randomCondition = true
+const randomRoundOrder = true
 const randomProduct = false
 
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
