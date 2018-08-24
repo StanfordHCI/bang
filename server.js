@@ -215,14 +215,17 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
       if(usingWillBang) {
         // Use this function to notify only x users <= 100
         let maxWorkersToNotify = 100; // cannot be more than 100
-        mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
+
+        mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
           // randomize list
           let list = (data.Qualifications.map(a => a.WorkerId))
           let notifyList = getRandomSubarray(list, maxWorkersToNotify)
           mturk.notifyWorkers(notifyList, subject, message)
-
-          //mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
-        }); // must return from mturkTools
+        })
+        // unrandomized list
+        // mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
+        //   //mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
+        // }); // must return from mturkTools
 
         // use this function to notify entire list of willBang workers
         // mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
