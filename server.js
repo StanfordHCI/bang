@@ -37,7 +37,7 @@ const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = true
-const blacklistOn = true
+const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = false // tracks time user spends on task and updates payment - also tracks how long each task is taking
@@ -66,7 +66,7 @@ const leaveHitFile = txt + "leave-hit-q.txt"
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
-const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
+const binaryAnswers = {answers: ['Keep this team', 'Do not keep this team'], answerType: 'radio', textValue: true}
 const leaveHitAnswers = {answers: ['End Task and Send Feedback', 'Return to Task'], answerType: 'radio', textValue: false}
 
 // Setup basic express server
@@ -196,6 +196,7 @@ if (cleanHITs){
 }
 
 if (runExperimentNow){ mturk.launchBang(function(HIT) {
+  logTime()
   storeHIT(HIT.HITId)
   // Notify workers that a HIT has started if we're doing recruiting by email
   if (notifyWorkersOn) {
@@ -214,9 +215,16 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
       if(usingWillBang) {
         // Use this function to notify only x users <= 100
         let maxWorkersToNotify = 100; // cannot be more than 100
-        mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
-          mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
-        }); // must return from mturkTools
+
+        mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
+          // randomize list
+          let notifyList = getRandomSubarray(data, maxWorkersToNotify)
+          mturk.notifyWorkers(notifyList, subject, message)
+        })
+        // unrandomized list
+        // mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
+        //   //mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
+        // }); // must return from mturkTools
 
         // use this function to notify entire list of willBang workers
         // mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
@@ -388,8 +396,7 @@ io.on('connection', (socket) => {
           io.in(socketID).emit('get IDs', 'broken');
         }
       });
-      var timeNow = new Date(Date.now())
-      console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.getHours()+":"+timeNow.getMinutes()+":"+timeNow.getSeconds()+".")
+      logTime()
       console.log("Sockets active: " + Object.keys(io.sockets.sockets) + " of " + teamSize);
       updateUserPool();
   })
@@ -422,6 +429,7 @@ io.on('connection', (socket) => {
     console.log("Users in pool: " + userPool.length)
     if(waitChatOn){
       if(!hasAddedUsers && usersActive.length >= teamSize ** 2) {//if have enough active users and had not added users before
+        logTime()
         hasAddedUsers = true;
         for(let i = 0; i < usersActive.length; i ++){ //for every active user
           let user = usersActive[i];
@@ -1033,6 +1041,7 @@ io.on('connection', (socket) => {
       crashed: false
     })
   }
+  
 });
 
 // return subset of userPool
@@ -1158,4 +1167,21 @@ function parseResults(data) {
 
 const decode = (encoded) => {
   return unescape(encoded.replace(/\+/g,  " "));
+}
+
+const logTime = () => {
+  let timeNow = new Date(Date.now())
+  // console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.getHours()+":"+timeNow.getMinutes()+":"+timeNow.getSeconds()+".")
+  console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.toString());
+}
+
+function getRandomSubarray(arr, size) {
+  let shuffled = arr.slice(0), i = arr.length, min = i - size, temp, index;
+  while (i-- > min) {
+      index = Math.floor((i + 1) * Math.random());
+      temp = shuffled[index];
+      shuffled[index] = shuffled[i];
+      shuffled[i] = temp;
+  }
+  return shuffled.slice(min);
 }

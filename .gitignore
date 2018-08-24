@@ -6,7 +6,9 @@ package-lock.json
 .env
 googleads.yaml
 .txt/currentrecruitingHIT.txt
+.txt/bonusworkers.txt
 R/.Rhistory
 R/.RData
 .DS_Store
 *.png
+*.txt
