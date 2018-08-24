@@ -72,7 +72,7 @@ switch (notification_type) {
 
             // Bonus Them and remove their name from repay list
               mturk.payBonuses(repayacceptors, (successfullyBonusedUsers) => {
-                let successfullyBonusedUsersID = successfullyBonusedUsers.map(u => u.mturkId)
+                let successfullyBonusedUsersID = successfullyBonusedUsers.map(u => u.mturkId);
                 let unsuccessfullyBonusedUsers = bonusworkersArray.filter(u => !successfullyBonusedUsersID.includes(u));
                 fs.writeFile(bonusworkersStorage, unsuccessfullyBonusedUsers.join("\n"), (err) => {
                   if (err) throw err;
