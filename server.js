@@ -216,7 +216,12 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
         // Use this function to notify only x users <= 100
         let maxWorkersToNotify = 100; // cannot be more than 100
         mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
-          mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
+          // randomize list
+          let list = (data.Qualifications.map(a => a.WorkerId))
+          let notifyList = getRandomSubarray(list, maxWorkersToNotify)
+          mturk.notifyWorkers(notifyList, subject, message)
+
+          //mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
         }); // must return from mturkTools
 
         // use this function to notify entire list of willBang workers
@@ -1166,4 +1171,15 @@ const logTime = () => {
   let timeNow = new Date(Date.now())
   // console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.getHours()+":"+timeNow.getMinutes()+":"+timeNow.getSeconds()+".")
   console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.toString());
+}
+
+function getRandomSubarray(arr, size) {
+  let shuffled = arr.slice(0), i = arr.length, min = i - size, temp, index;
+  while (i-- > min) {
+      index = Math.floor((i + 1) * Math.random());
+      temp = shuffled[index];
+      shuffled[index] = shuffled[i];
+      shuffled[i] = temp;
+  }
+  return shuffled.slice(min);
 }
