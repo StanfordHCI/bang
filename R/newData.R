@@ -60,8 +60,8 @@ data <- frame[frame$blacklist!="",]
 data <- rename(data, "rooms" = rooms)
 data2 <- finalRounds[finalRounds$results.blacklistCheck!="", ]
 data2 = data2 %>% select(id, batch, room, bonus, name, friends, 
-                              friends_history, results.condition, results.format,
-                              results.manipulation,results.manipulationCheck,results.blacklistCheck, round)
+                         friends_history, results.condition, results.format,
+                         results.manipulation,results.manipulationCheck,results.blacklistCheck, round)
 
 ## Convert to compatible data type before merge (to-do: clean up)
 data2$id <- unlist(data2$id)
@@ -76,16 +76,16 @@ allConditions <- data[data$batch %in% completeBatches, ]
 
 ## Create new columns for 
 data <- allConditions %>% filter(results.condition=="treatment") %>% mutate(condition = case_when(round == 1 ~ "baseline",
-                                               round == 2  ~ "control",
-                                              round == 3 ~ "experiment"))
+                                                                                                  round == 2  ~ "control",
+                                                                                                  round == 3 ~ "experiment"))
 
 ## Conditional for reading and assigning conditions: 
 
 
 data3 <- for (i in 1:nrow(data)) { 
   if (data$results.format[i]==x) {mutate(data, condition2 = case_when(round == 1 ~ "test",
-                                                                          round == 2  ~ "control",
-                                                                          round == 3 ~ "masked"))
+                                                                      round == 2  ~ "control",
+                                                                      round == 3 ~ "masked"))
   }} 
 
 x=as.character(list(c(1,2,1)))
@@ -94,10 +94,10 @@ data$results.format <- as.character(data$results.format)
 identical(x, data$results.format[1])
 
 data3 <- for (i in 1:nrow(data)) { 
- if (data$results.format[i]==x) { mutate(data, condition2[i] = case_when(round == 1 ~ "does this work",
-                                                       round == 2  ~ "control",
-                                                      round == 3 ~ "masked"))
- }} 
+  if (data$results.format[i]==x) { mutate(data, condition2[i] = case_when(round == 1 ~ "does this work",
+                                                                          round == 2  ~ "control",
+                                                                          round == 3 ~ "masked"))
+  }} 
 
 # 
 #  else if (data$results.format==c(2,1,1)) {mutate(data, condition = case_when(round == 1 ~ "control",
@@ -107,7 +107,7 @@ data3 <- for (i in 1:nrow(data)) {
 #                                                               round == 2  ~ "masked",
 #                                                                round == 3 ~ "control")) 
 #   
-#  }
+#  } 
 
 ## Extract observations only for unmasked and masked conditions: 
 
@@ -117,40 +117,10 @@ data <- rename(data, "repeatTeam" = results.viabilityCheck.15)
 data <- na.omit(data)
 levels <- c("Strongly Disagree", "Disagree", "Neutral","Agree", "Strongly Agree") 
 levels2 <- c("1","2","3")
-levels3 <- c(0:1)
 clean <- data %>% 
   mutate_at(.vars = vars(contains("results.viabilityCheck")), funs(factor(., levels = levels))) %>%
   mutate_at(.vars = vars(contains("blacklist")), funs(factor(., levels = levels2))) %>% 
   mutate_at(.vars = vars(contains("repeatTeam")), funs(factor(., levels=levels3))) 
-
-clean$repeatTeam <- clean$repeatTeam[clean$repeatTeam=="Yes"] <- 1 
-clean$repeatTeam <- clean$repeatTeam[clean$repeatTeam=="No"] <- 0
-
-
-4 <- 7,
-5 <- 8,
-otherwise = "copy"
-)
-
-dat2$scode[dat2$sex=="F"]<-"0" 
-
-recode(clean$repeatTeam, "Yes" = `1`, "No" = `0`)
-
-dplyr::clean$repeatTeam <- (recode(clean$repeatTeam,
-                    1 <- "Yes", 2 <- "No"))
-
-
-
-Recode(clean$repeatTeam, "Yes"=1, "No"=0)
-
-SchoolData$NewGrade[SchoolData$Grade==5] <- 5
-
-recode(clean$repeatTeam, "Yes" <- 1, "No" <- 0, as.numeric.result=TRUE, 
-       as.factor.result = FALSE)
-
-factor(clean$repeatTeam, levels=levels4)
-
-hist(stats$repeatTeam)
 
 ## Viabilitylikert visuals: 
 
@@ -351,7 +321,7 @@ g + geom_bar(stat="identity") + facet_grid(.~blacklist) +
   labs(title="Mean viability grouped by team and blacklist", fill = "Teams")
 
 g <- ggplot(stats, aes(x=blacklist, fill=factor(blacklist, mean))) + 
-g + geom_bar() + facet_grid(.~repeatTeam) + 
+  g + geom_bar() + facet_grid(.~repeatTeam) + 
   theme(
     axis.text.x=element_blank(),
     axis.ticks.x=element_blank()) + 
@@ -360,21 +330,20 @@ g + geom_bar() + facet_grid(.~repeatTeam) +
   labs(title="Distribution of repeat team question overlayed by blacklist response", fill = "Blacklist")
 
 ## Proportion graphs for Q15: 
-Q15 <- stats %>% group_by(round, batch, room) %>% 
-  mutate(sum=sum, mean=mean(sum), median=median(sum), n=n(),prop=sum(repeatTeam)/n)
-Q15 <- Q15 %>% filter(n>1)
-
 
 stats$repeatTeam <- revalue(stats$repeatTeam, c("Yes"="1", "No"="0"))
 stats$repeatTeam <- as.numeric(stats$repeatTeam)
 stats$room <- unlist(stats$room) 
-proportion <- stats %>%
-  group_by(round, room, batch, repeatTeam) %>% 
-  summarise (n=n()) %>% 
-  mutate(freq=sum(repeatTeam)/n, mean=mean(repeatTeam))
-proportion <- proportion %>% filter(n>1)
 
-ggplot(data=proportion, aes(proportion$freq)) + 
+groupedProportion <- stats %>%
+  group_by(round, room, batch) %>% 
+  summarise(n=n()) %>% 
+  mutate(sum=sum(repeatTeam)) %>% filter(n>1)
+
+individualProportion <- stats %>% group_by(round, batch, room) %>% 
+  mutate(sum=sum, mean=mean(sum), median=median(sum), n=n(),prop=sum(repeatTeam)/n) %>% filter(n>1)
+
+ggplot(data=groupedProportion, aes(groupedProportion$freq)) + 
   geom_histogram(breaks=seq(0, 1, by=0.20), 
                  col="red", 
                  fill="green", 
@@ -382,21 +351,13 @@ ggplot(data=proportion, aes(proportion$freq)) +
                                   x="If you had the choice, would you like to work with the same team in a future round? 
                                   1=Yes , 0=No", y="Count") 
 
-
-ggplot(data=Q15, aes(Q15$prop)) + 
+ggplot(data=individualProportion, aes(individualProportion$prop)) + 
   geom_histogram(breaks=seq(0, 1, by=0.20), 
                  col="red", 
                  fill="green", 
                  alpha=.2) + labs(title="Binary proportion of answers for question 15 per team (team size range: 2-4) N=127 observations",
                                   x="If you had the choice, would you like to work with the same team in a future round? 
                                   1=Yes , 0=No", y="Count") 
-
-proportion <- stats %>%
-  group_by(round, room, batch, repeatTeam) %>% 
-  summarise (n=n()) %>% 
-  mutate(freq=(repeatTeam)/sum(repeatTeam), sum=sum, mean=mean(sum))
-proportion$freq <- proportion$freq[is.nan(proportion$freq)] <- 0 
-proportion <- proportion %>% filter(n>1)
 
 qplot(sum, median, data=proportion, 
       main="Scatterplots median vs. mean for viability sum responses per team",
@@ -410,7 +371,7 @@ abline(fit1)
 qplot(prop, sum, data=Q15, 
       main="Scatterplot of proportions for repeat team and viability sum responses per team",
       xlab="Repeat team question proportion", ylab="viability sums") + 
-      geom_smooth(method='lm',se=TRUE)
+  geom_smooth(method='lm',se=TRUE)
 
 ggplot(data=proportion, aes(proportion$freq)) + 
   geom_histogram(breaks=seq(0, 1, by=0.1), 
@@ -450,10 +411,10 @@ t.test(sum~condition, data=pairedTest)
 
 g <- ggplot(stats, aes(factor(condition), sum))
 g + geom_boxplot(varwidth=T, fill="plum") + facet_grid(.~mturkId)
-  labs(subtitle="Sum of viability measures grouped by condition", 
-       x="Sum of viability measures grouped by condition", 
-       y="Numeric sum of viability measures questions (range: 14-98)")
-  
+labs(subtitle="Sum of viability measures grouped by condition", 
+     x="Sum of viability measures grouped by condition", 
+     y="Numeric sum of viability measures questions (range: 14-98)")
+
 blacklist$blacklist <- unlist(blacklist$blacklist)
 
 g <- ggplot(blacklist, aes(factor(team), mean, fill=blacklist)) 
@@ -463,9 +424,9 @@ g + geom_boxplot(varwidth=T, fill="plum") +
        y="Numeric sum of viability measures questions (range: 14-98)") 
 
 ## Analyze data from control and basline conditions: 
-  
+
 ## subset data for baseline 
-  
+
 baselineData %>% data %>% filter(condition=="basline")
 
 ## subset data for control
