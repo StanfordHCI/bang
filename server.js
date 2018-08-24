@@ -196,6 +196,7 @@ if (cleanHITs){
 }
 
 if (runExperimentNow){ mturk.launchBang(function(HIT) {
+  logTime()
   storeHIT(HIT.HITId)
   // Notify workers that a HIT has started if we're doing recruiting by email
   if (notifyWorkersOn) {
@@ -388,8 +389,7 @@ io.on('connection', (socket) => {
           io.in(socketID).emit('get IDs', 'broken');
         }
       });
-      var timeNow = new Date(Date.now())
-      console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.getHours()+":"+timeNow.getMinutes()+":"+timeNow.getSeconds()+".")
+      logTime()
       console.log("Sockets active: " + Object.keys(io.sockets.sockets) + " of " + teamSize);
       updateUserPool();
   })
@@ -422,6 +422,7 @@ io.on('connection', (socket) => {
     console.log("Users in pool: " + userPool.length)
     if(waitChatOn){
       if(!hasAddedUsers && usersActive.length >= teamSize ** 2) {//if have enough active users and had not added users before
+        logTime()
         hasAddedUsers = true;
         for(let i = 0; i < usersActive.length; i ++){ //for every active user
           let user = usersActive[i];
@@ -1033,6 +1034,7 @@ io.on('connection', (socket) => {
       crashed: false
     })
   }
+  
 });
 
 // return subset of userPool
@@ -1158,4 +1160,10 @@ function parseResults(data) {
 
 const decode = (encoded) => {
   return unescape(encoded.replace(/\+/g,  " "));
+}
+
+const logTime = () => {
+  let timeNow = new Date(Date.now())
+  // console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.getHours()+":"+timeNow.getMinutes()+":"+timeNow.getSeconds()+".")
+  console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.toString());
 }
