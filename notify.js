@@ -51,7 +51,7 @@ switch (notification_type) {
       })
     })
     break;
-  case "repaypeople": //Check if people from our list has accepted the repay HIT and bonus them
+  case "bonusworkers": //Check if people from our list has accepted the repay HIT and bonus them
     // Find a current repay HIT
     let repayHITs = [];
     mturk.workOnActiveHITs((activeHITs) => {  
