@@ -218,8 +218,7 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
 
         mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
           // randomize list
-          let list = (data.Qualifications.map(a => a.WorkerId))
-          let notifyList = getRandomSubarray(list, maxWorkersToNotify)
+          let notifyList = getRandomSubarray(data, maxWorkersToNotify)
           mturk.notifyWorkers(notifyList, subject, message)
         })
         // unrandomized list
