@@ -216,7 +216,7 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
         // Use this function to notify only x users <= 100
         let maxWorkersToNotify = 100; // cannot be more than 100
 
-        mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
+          mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
           // randomize list
           let notifyList = getRandomSubarray(data, maxWorkersToNotify)
           mturk.notifyWorkers(notifyList, subject, message)
@@ -630,14 +630,14 @@ io.on('connection', (socket) => {
 
     // if (!users.every(user => socket.id !== user.id)) {//socket id is found in users
     //newMessage('has left the chatroom')
-    console.log(socket.username + "HAS LEFT")
+
     useUser(socket,user => {
       user.connected = false
       user.ready = suddenDeath ? false : true
 
       // update DB with change
       updateUserInDB(user,'connected',false)
-
+      console.log(socket.username + " HAS LEFT")
       if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
       console.log("Connected users: " + getUsersConnected().length);
