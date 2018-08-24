@@ -54,6 +54,7 @@ finalRounds = as.data.frame(Reduce(rbind,roundsWithRooms))
 
 ## to-do: *FIGURE OUT A BETTER WAY TO MERGE: THIS IS PURE JIBBERISH // WORST CODING EVER, BUT R SUCKS* 
 
+
 ## Is there a better way we can subset out complete observations then using blacklist? 
 data <- frame[frame$blacklist!="",]
 data <- rename(data, "rooms" = rooms)
@@ -73,23 +74,40 @@ allConditions <- data[data$batch %in% completeBatches, ]
 
 ## Subset complete batches only 
 
-## Create new columns for masked vs. unmasked data:  
-data <- allConditions %>% filter(results.condition=="treatment") %>% mutate(condition = case_when(round == 1 ~ "unmasked",
-                                               round == 3  ~ "masked",
-                                              round == 2 ~ "control"))
+## Create new columns for 
+data <- allConditions %>% filter(results.condition=="treatment") %>% mutate(condition = case_when(round == 1 ~ "baseline",
+                                               round == 2  ~ "control",
+                                              round == 3 ~ "experiment"))
 
 ## Conditional for reading and assigning conditions: 
+
+
+data3 <- for (i in 1:nrow(data)) { 
+  if (data$results.format[i]==x) {mutate(data, condition2 = case_when(round == 1 ~ "test",
+                                                                          round == 2  ~ "control",
+                                                                          round == 3 ~ "masked"))
+  }} 
+
+x=as.character(list(c(1,2,1)))
+data$results.format <- as.character(data$results.format)
+
+identical(x, data$results.format[1])
+
+data3 <- for (i in 1:nrow(data)) { 
+ if (data$results.format[i]==x) { mutate(data, condition2[i] = case_when(round == 1 ~ "does this work",
+                                                       round == 2  ~ "control",
+                                                      round == 3 ~ "masked"))
+ }} 
+
 # 
-# if (data$results.format==c(1, 2, 1)) {mutate(data, condition2 = case_when(round == 1 ~ "unmasked",
-#                                                       round == 2  ~ "control",
-#                                                       round == 3 ~ "masked"))
-# } else if (data$results.format==c(2,1,1)) {mutate(data, condition = case_when(round == 1 ~ "control",
-#                                                               round == 2  ~ "unmasked",
-#                                                               round == 3 ~ "masked"))
+#  else if (data$results.format==c(2,1,1)) {mutate(data, condition = case_when(round == 1 ~ "control",
+#                                                            round == 2  ~ "unmasked",
+#                                                           round == 3 ~ "masked"))
 # } else if (data$results.format==c(1,1,2)) {mutate(data, condition = case_when(round == 1 ~ "unmasked",
-#                                                                 round == 2  ~ "masked",
-#                                                                 round == 3 ~ "control"))
-# }
+#                                                               round == 2  ~ "masked",
+#                                                                round == 3 ~ "control")) 
+#   
+#  }
 
 ## Extract observations only for unmasked and masked conditions: 
 
@@ -99,11 +117,38 @@ data <- rename(data, "repeatTeam" = results.viabilityCheck.15)
 data <- na.omit(data)
 levels <- c("Strongly Disagree", "Disagree", "Neutral","Agree", "Strongly Agree") 
 levels2 <- c("1","2","3")
-levels3 <- c("Yes", "No")
+levels3 <- c(0:1)
 clean <- data %>% 
   mutate_at(.vars = vars(contains("results.viabilityCheck")), funs(factor(., levels = levels))) %>%
   mutate_at(.vars = vars(contains("blacklist")), funs(factor(., levels = levels2))) %>% 
   mutate_at(.vars = vars(contains("repeatTeam")), funs(factor(., levels=levels3))) 
+
+clean$repeatTeam <- clean$repeatTeam[clean$repeatTeam=="Yes"] <- 1 
+clean$repeatTeam <- clean$repeatTeam[clean$repeatTeam=="No"] <- 0
+
+
+4 <- 7,
+5 <- 8,
+otherwise = "copy"
+)
+
+dat2$scode[dat2$sex=="F"]<-"0" 
+
+recode(clean$repeatTeam, "Yes" = `1`, "No" = `0`)
+
+dplyr::clean$repeatTeam <- (recode(clean$repeatTeam,
+                    1 <- "Yes", 2 <- "No"))
+
+
+
+Recode(clean$repeatTeam, "Yes"=1, "No"=0)
+
+SchoolData$NewGrade[SchoolData$Grade==5] <- 5
+
+recode(clean$repeatTeam, "Yes" <- 1, "No" <- 0, as.numeric.result=TRUE, 
+       as.factor.result = FALSE)
+
+factor(clean$repeatTeam, levels=levels4)
 
 hist(stats$repeatTeam)
 
@@ -176,6 +221,10 @@ for (i in 1:nrow(controlStats)) {
 } 
 controlStats$mean <- mean(controlStats$sum) 
 controlStats$median <- median(controlStats$sum)
+
+## mean / median plot: 
+
+plot(stats$mean, stats$median)
 
 ## Mean viability distribution graph: unmasked condition
 barfill <- "#4271AE"
@@ -311,11 +360,68 @@ g + geom_bar() + facet_grid(.~repeatTeam) +
   labs(title="Distribution of repeat team question overlayed by blacklist response", fill = "Blacklist")
 
 ## Proportion graphs for Q15: 
+Q15 <- stats %>% group_by(round, batch, room) %>% 
+  mutate(sum=sum, mean=mean(sum), median=median(sum), n=n(),prop=sum(repeatTeam)/n)
+Q15 <- Q15 %>% filter(n>1)
 
-proportionQ15 <- stats %>% group_by(round, room, batch) %>% mutate(n=n(), prop=sum(repeatTeam)/n())
-## Filter where teams group n>1? 
-ggplot(data=proportionQ15, aes(proportion2$prop)) + 
-  geom_histogram(breaks=seq(1, 2, by=0.1), 
+
+stats$repeatTeam <- revalue(stats$repeatTeam, c("Yes"="1", "No"="0"))
+stats$repeatTeam <- as.numeric(stats$repeatTeam)
+stats$room <- unlist(stats$room) 
+proportion <- stats %>%
+  group_by(round, room, batch, repeatTeam) %>% 
+  summarise (n=n()) %>% 
+  mutate(freq=sum(repeatTeam)/n, mean=mean(repeatTeam))
+proportion <- proportion %>% filter(n>1)
+
+ggplot(data=proportion, aes(proportion$freq)) + 
+  geom_histogram(breaks=seq(0, 1, by=0.20), 
+                 col="red", 
+                 fill="green", 
+                 alpha=.2) + labs(title="Binary proportion of answers for question 15 per team (team size range: 2-4) N=49 teams", 
+                                  x="If you had the choice, would you like to work with the same team in a future round? 
+                                  1=Yes , 0=No", y="Count") 
+
+
+ggplot(data=Q15, aes(Q15$prop)) + 
+  geom_histogram(breaks=seq(0, 1, by=0.20), 
+                 col="red", 
+                 fill="green", 
+                 alpha=.2) + labs(title="Binary proportion of answers for question 15 per team (team size range: 2-4) N=127 observations",
+                                  x="If you had the choice, would you like to work with the same team in a future round? 
+                                  1=Yes , 0=No", y="Count") 
+
+proportion <- stats %>%
+  group_by(round, room, batch, repeatTeam) %>% 
+  summarise (n=n()) %>% 
+  mutate(freq=(repeatTeam)/sum(repeatTeam), sum=sum, mean=mean(sum))
+proportion$freq <- proportion$freq[is.nan(proportion$freq)] <- 0 
+proportion <- proportion %>% filter(n>1)
+
+qplot(sum, median, data=proportion, 
+      main="Scatterplots median vs. mean for viability sum responses per team",
+      xlab="mean", ylab="median")
+
+fit1 <- lm(sum ~ prop, data = proportionQ15)
+summary(fit1)
+plot(sum ~ prop, data = proportionQ15)
+abline(fit1)
+
+qplot(prop, sum, data=Q15, 
+      main="Scatterplot of proportions for repeat team and viability sum responses per team",
+      xlab="Repeat team question proportion", ylab="viability sums") + 
+      geom_smooth(method='lm',se=TRUE)
+
+ggplot(data=proportion, aes(proportion$freq)) + 
+  geom_histogram(breaks=seq(0, 1, by=0.1), 
+                 col="red", 
+                 fill="green", 
+                 alpha=.2) + labs(title="Binary proportion of answers for question 15 per team (team size range: 2-4) N=49 teams", 
+                                  x="If you had the choice, would you like to work with the same team in a future round? 
+                                  1=Yes , 2=no", y="Count") 
+
+ggplot(data=proportion, aes(proportion$freq)) + 
+  geom_histogram(breaks=seq(0, 1, by=0.05), 
                  col="red", 
                  fill="green", 
                  alpha=.2) + labs(title="Binary proportion of answers for question 15 per team (team size range: 2-4) N=49 teams", 
@@ -327,7 +433,6 @@ ggplot(data=proportionQ15, aes(proportion2$prop)) +
 hist(stats$sum,xlab="Sum of scores",main="")
 
 ## Depending on the results from this test, we can determine if we are justified in using a parametric test. 
-
 ## If, data passes normality tests, then we can use the following tests: 
 ## T-Test. We can use a two-sample T-test to asses if there is a difference in the scores of specific groups:
 ## Examples: 
