@@ -78,7 +78,7 @@ switch (notification_type) {
       })
     })
     break;
-  case "notifypeople": // Tell people on our list they need to accept our repay HIT
+  case "notifybonusworkers": // Tell people on our list they need to accept our repay HIT
     let repayHITnumber = 0
     mturk.workOnActiveHITs((activeHITs) => {  
       activeHITs.forEach(HITId => {
