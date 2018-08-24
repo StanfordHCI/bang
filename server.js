@@ -812,6 +812,17 @@ io.on('connection', (socket) => {
 
       console.log("user.rooms.length:", user.rooms.length)
 
+      //FOR DEBUGGING, DO NOT PUSH:
+      users.forEach(u => {
+        if(!tools.letters.slice(0, teamSize**2).includes(u.person)) {
+          socket.emit('new message', {
+            username: idToAlias(u, String(u.id)),
+            message: idToAlias(u, "this one!")
+            }
+          )
+        }
+      })
+
       if(extraRoundOn && user.rooms.length == 1) {
         console.log("line 803 triggered")
         users.forEach(u => {
@@ -828,9 +839,11 @@ io.on('connection', (socket) => {
             //replacingPersonName is the v.person of some v in users who will replace u
             users.filter(v => v.person == replacingPersonName).forEach(v => {
               console.log("line 816 triggered. Before the switch, here's u.person:", u.person, "and v.person:", v.person)
-              u.person = v.person
-              u.name = v.name
-              u.rooms = v.rooms
+              v.room = u.room
+              v.rooms = u.rooms
+              v.person = u.person
+              v.name = u.name
+              v.friends = u.friends
             })
           }
         })
@@ -839,7 +852,6 @@ io.on('connection', (socket) => {
         badUsers = []
         console.log("here are the users:", users)
         users.forEach(u => {
-          console.log("log 1:", tools.letters.slice(teamSize**2, teamSize ** 2 + teamSize))
           if(u) {
             console.log("log 2:", u.person)
             if (tools.letters.slice(teamSize**2, teamSize ** 2 + teamSize).includes(u.person)) {
@@ -854,7 +866,7 @@ io.on('connection', (socket) => {
         badUsers.forEach(u => {
           console.log("here's the user being processed:", u, "and their person", u.person)
             console.log("line 825 triggered. here's users[j].id:", u.id, "and person:", u.person)
-            issueFinish(u,emailingWorkers ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
+            issueFinish(u,emailingWorkers ? "Please click submit below and await further instructions from scaledhumanity@gmail.com." : "Thank you for participating in our task! Click the submit button below and you will be compensated at the promised rate for the time you have spent.")
             u.connected = false
         })
       }
