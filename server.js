@@ -244,6 +244,10 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
                 }
               })
             }
+            else {
+              let workerstonotify = currentTimePoolWorkers.map(u => u.id)
+              mturk.notifyWorkers(workerstonotify, subject, message)
+            }
           }
         })
 
