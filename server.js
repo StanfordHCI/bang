@@ -814,29 +814,27 @@ io.on('connection', (socket) => {
 
       if(extraRoundOn && user.rooms.length == 1) {
         console.log("line 803 triggered")
-        for (i = 0; i < teamSize ** 2; i++) {
-          if (!users[i].connected) {
+        users.forEach(u => {
+          if(tools.letters.slice(0, teamSize**2).includes(u.person) && !u.connected) {
             console.log("line 806 triggered")
-            disconnectedsRoom = users[i].room
+            disconnectedsRoom = u.room
             Object.entries(teams[0]).forEach(([roomName,room]) => {
               if(roomName == disconnectedsRoom) {
                 console.log("line 810 triggered. here's room[teamSize]:", room[teamSize])
                 replacingPersonName = room[teamSize]
               }
             })
-
-            //this part doesn't work
-            users.filter(u => u.person == replacingPersonName).forEach(u => {
-              console.log("u.name printed here!:", u.person, "here's the id:", u.id)
-              users.filter(v => v.person == users[i].person).forEach(v => {
-                console.log("line 816 triggered. Before the switch, here's u.id:", u.id, "and v.id:", v.id)
-                u.person = v.person
-                u.name = v.name
-                u.rooms = v.rooms
-              })
+            //u is the user who left
+            //replacingPersonName is the v.person of some v in users who will replace u
+            users.filter(v => v.person == replacingPersonName).forEach(v => {
+              console.log("line 816 triggered. Before the switch, here's u.person:", u.person, "and v.person:", v.person)
+              u.person = v.person
+              u.name = v.name
+              u.rooms = v.rooms
             })
           }
-        }
+        })
+        //this part doesn't work
         //this is wrong
         badUsers = []
         console.log("here are the users:", users)
