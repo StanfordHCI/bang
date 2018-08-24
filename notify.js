@@ -78,10 +78,27 @@ switch (notification_type) {
       })
     })
     break;
-  case "notify people": // Tell people on our list they need to accept our repay HIT
-    let subject = "Accept our repay hit to be bonused for your work";
-    let message = "Accept our repay hit to be bonused for your work"
-    mturk.notifyWorkers(bonusworkersArray, subject, message)
+  case "notifypeople": // Tell people on our list they need to accept our repay HIT
+    let repayHITnumber = 0
+    mturk.workOnActiveHITs((activeHITs) => {  
+      activeHITs.forEach(HITId => {
+        mturk.returnHIT(HITId, data => {
+          if (data.HIT.Title == "Hit to repay workers") {
+            console.log("YOYO", HITId)
+            mturk.getHITURL(HITId, function(url) {
+              let subject = "Accept this HIT to be bonused";
+              let message = "We've created a bonus HIT to ensure you are properly bonused for our earlier HIT. Your bonus will be issued within 1 day. Please accept it and submit. " + url
+              repayHITnumber += 1
+              if (repayHITnumber > 1) {
+                console.log("You've got more than 1 repay HIT. Breaking to ensure you don't spam people!")
+                return;
+              }
+              mturk.notifyWorkers(bonusworkersArray, subject, message)
+            })
+          }
+        })
+      })
+    })  
     break;
   case "createrepayHITs": // Create a new repay HIT
     let title = "Hit to repay workers";
@@ -91,6 +108,7 @@ switch (notification_type) {
     let autoApprovalDelay = 4320;
     let keywords = "repay";
     let maxAssignments = 100;
+    let reward = 0.01;
     let taskURL = fs.readFileSync('./repayworkers.html').toString();
 
     mturk.makeHIT('noQuals', title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, taskURL, (HIT) => {
@@ -101,7 +119,9 @@ switch (notification_type) {
     mturk.workOnActiveHITs((activeHITs) => {  
         activeHITs.forEach(HITId => {
           mturk.returnHIT(HITId, data => {
-            mturk.expireHIT(HITId)
+            if (data.HIT.Title == "Hit to repay workers") {
+              mturk.expireHIT(HITId)
+            }
           })
         })
       })  
