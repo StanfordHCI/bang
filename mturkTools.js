@@ -25,8 +25,8 @@ if (runningLocal) {
 }
 
 AWS.config = {
-  accessKeyId: process.env.AWS_ID ,
-  secretAccessKey: process.env.AWS_KEY,
+  // accessKeyId: process.env.AWS_ID ,
+  // secretAccessKey: process.env.AWS_KEY,
   region: "us-east-1",
   sslEnabled: true
 }

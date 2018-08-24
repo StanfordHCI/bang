@@ -631,7 +631,7 @@ $(function() {
     setTimeout(()=>{
       let totalLengthString = ""
       totalLengthString = Math.round(3*(data.duration) + 15) + " minutes"
-      log("Reminder: You will receive the bonus pay at the stated hourly rate only if you stay for all three rounds. This should take no more than " + totalLengthString)
+      log("Reminder: You will receive the bonus pay at the stated hourly rate only if you stay for all three rounds and answer any survey questions. This should take no more than " + totalLengthString)
       log("From now until when you receive a link to submit the HIT, <strong>DO NOT REFRESH OR LEAVE THE PAGE</strong>. This will kill the task for everyone and you will not be compensated.")
       log("Task: " + data.task)
       log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
