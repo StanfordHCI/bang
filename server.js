@@ -657,8 +657,6 @@ io.on('connection', (socket) => {
 
         console.log("User left, emitting cancel to all users");
         let totalTime = getSecondsPassed();
-          })
-        }
 
         if (!extraRoundOn || notEnoughUsers) {
           storeHIT()
