@@ -1,7 +1,6 @@
 const mturk = require('./mturkTools');
 const fs = require('fs');
 const Datastore = require('nedb');
-const moment = require('moment-timezone');
 
 let db = {};
 db.willBang = new Datastore({ filename:'.data/willBang', autoload: true, timestampData: true});
