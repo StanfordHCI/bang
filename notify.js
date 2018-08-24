@@ -1,6 +1,12 @@
 const mturk = require('./mturkTools');
 const fs = require('fs');
 const Datastore = require('nedb');
+const moment = require('moment-timezone');
+
+let db = {};
+db.willBang = new Datastore({ filename:'.data/willBang', autoload: true, timestampData: true});
+db.users = new Datastore({ filename:'.data/users', autoload: true, timestampData: true});
+db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true});
 
 // What are we doing?
 var notification_type = process.argv[2]
@@ -30,9 +36,19 @@ switch (notification_type) {
       console.log("Number of users with qualification willBang:", data.length)
     });
     break;
+  case "savewillBangersinDatabase":
+
+    mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, (data) => {
+      data.forEach(workerID => {
+        db.willBang.insert( {id: workerID, timePreference: ""},
+        (err, usersAdded) => {
+          if(err) console.log("There's a problem adding users to the willBang DB: ", err);
+          else if(usersAdded) console.log("Users added to the willBang DB: " + workerID);
+        })
+      })
+    });
+    break;
   case "HandleQualsforUsersinDB":
-    let db = {};
-    db.users = new Datastore({ filename:'.data/users', autoload: true, timestampData: true});
     db.users.find({}, (err, usersInDB) => {
       if (err) {console.log("DB for MTurk:" + err)}
       else {
@@ -134,3 +150,4 @@ switch (notification_type) {
       })  
     break;
 }
+

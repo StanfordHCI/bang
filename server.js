@@ -161,6 +161,7 @@ db.chats = new Datastore({ filename:'.data/chats', autoload: true, timestampData
 db.batch = new Datastore({ filename:'.data/batch', autoload: true, timestampData: true});
 db.time = new Datastore({ filename:'.data/time', autoload: true, timestampData: true});
 db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true})
+db.willBang = new Datastore({ filename:'.data/willBang', autoload: true, timestampData: true});
 
 function updateUserInDB(user,field,value) {
   db.users.update( {id: user.id}, {$set: {[field]: value}}, {},
@@ -215,9 +216,39 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
       if(usingWillBang) {
         // Use this function to notify only x users <= 100
         let maxWorkersToNotify = 100; // cannot be more than 100
-        mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
-          mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
-        }); // must return from mturkTools
+
+        // Get workers to notify from 
+        let currenttimePeriod = "";
+        let currentHour = new Date(Date.now()).getHours();
+        if ((6 <= currentHour) && (currentHour <= 12)) {
+          currenttimePeriod = "morning"
+        }
+        else if ((12 <= currentHour) && (currentHour <= 15)) {
+          currenttimePeriod = "afternoon"
+        }
+        else if ((15 <= currentHour) && (currentHour <= 18)) {
+          currenttimePeriod = "evening"
+        }
+
+        db.willBang.find({ timePreference: currenttimePeriod }, (err, currentTimePoolWorkers) => {
+          if (err) {console.log("DB for MTurk:" + err)}
+          else { //if we don't have enough people with current time preference to notify 
+            let moreworkersneeded = maxWorkersToNotify - currentTimePoolWorkers.length
+            db.willBang.find({ timePreference: '' }, (err, workersfromnullPool) => {
+              if (err) {console.log("DB for MTurk:" + err)}
+              else {
+                workersfromnullPool = getRandomSubarray(workersfromnullPool, moreworkersneeded)
+                let workerstonotify = currentTimePoolWorkers.concat(workersfromnullPool).map(u => u.id)
+                mturk.notifyWorkers(workerstonotify, subject, message)
+              }
+            })
+          }
+        })
+
+        // mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
+
+        //   mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
+        // }); // must return from mturkTools
 
         // use this function to notify entire list of willBang workers
         // mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
@@ -1140,6 +1171,17 @@ function getRndInteger(min, max) {
   return Math.floor(Math.random() * (max - min) ) + min;
 }
 
+function getRandomSubarray(arr, size) {
+  let shuffled = arr.slice(0), i = arr.length, min = i - size, temp, index;
+  while (i-- > min) {
+      index = Math.floor((i + 1) * Math.random());
+      temp = shuffled[index];
+      shuffled[index] = shuffled[i];
+      shuffled[i] = temp;
+  }
+  return shuffled.slice(min);
+}
+
 function storeHIT(currentHIT = mturk.returnCurrentHIT()) {
   db.ourHITs.insert({HITId: currentHIT, batch:batchID}, (err, HITAdded) => {
     if(err) console.log("There's a problem adding HIT to the DB: ", err);
@@ -1167,3 +1209,4 @@ const logTime = () => {
   // console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.getHours()+":"+timeNow.getMinutes()+":"+timeNow.getSeconds()+".")
   console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.toString());
 }
+

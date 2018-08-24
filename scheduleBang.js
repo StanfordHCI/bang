@@ -40,6 +40,29 @@ if (fs.existsSync(recruitingHITstorage)) {
   mturk.listAssignments(HITId, data => {
     const willBangers = data.map(a => a.WorkerId)
     willBangers.forEach(u => mturk.assignQuals(u, mturk.quals.willBang))
+
+    // Store willBangers with timePreference in database
+    // Deal with timezones?
+    data.forEach(u => {
+      let timePreference = "";
+      if(u.Answer.includes("morning")) { //current this only allows them to choose 1 time preference. Fix?
+        timePreference = "morning";
+      } 
+      else if (u.Answer.includes("afternoon")) {
+        timePreference = "afternoon";
+      }
+      else if (u.Answer.includes("evening")) {
+        timePreference = "evening";
+      }
+      let db = {}
+      db.willBang = new Datastore({ filename:'.data/willBang', autoload: true, timestampData: true});
+      db.willBang.insert( {id: u.WorkerId, timePreference: timePreference},
+        (err, usersAdded) => {
+          if(err) console.log("There's a problem adding users to the willBang DB: ", err);
+          else if(usersAdded) console.log("Users added to the willBang DB: " + u.WorkerId);
+        })
+    })
+    
   })
 
   // Expire HIT to ensure no one else accepts
@@ -55,8 +78,8 @@ else {
   console.log("No recruitingHITstorage found. Perhaps this is your first time running.")
 }
 
-//Make new recruiting HIT
-mturk.makeHIT('scheduleQuals', title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, taskURL, (HIT) => {
+// Make new recruiting HIT
+mturk.makeHIT('noQuals', title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, taskURL, (HIT) => {
   const HITId = HIT.HITId;
 
   // Write new recruiting HIT id to file for next hour run
