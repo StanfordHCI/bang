@@ -36,7 +36,6 @@ switch (notification_type) {
     });
     break;
   case "savewillBangersinDatabase":
-
     mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, (data) => {
       data.forEach(workerID => {
         db.willBang.insert( {id: workerID, timePreference: ""},

@@ -913,10 +913,16 @@ io.on('connection', (socket) => {
         const hasBangers = users.map(a => a.mturkId)
         hasBangers.forEach(u => mturk.assignQuals(u, mturk.quals.hasBanged))
       }
-      // remove willBang qualification from people who rolled over
+      // remove willBang qualification from people who rolled over 
+      // remove people who rolled over from willBang database
       if(usingWillBang) {
         const hasBangers = users.map(a => a.mturkId)
-        hasBangers.forEach(u => mturk.unassignQuals(u, mturk.quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!'))
+        hasBangers.forEach(u => {
+          mturk.unassignQuals(u, mturk.quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!')
+          db.willBang.remove({ id: u }, {}, function (err, numRemoved) {
+            if (err) console.log("Error removing willBanger from database", err)
+          });
+        })
       }
 
       // save start time
