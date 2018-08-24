@@ -448,7 +448,7 @@ $(function() {
     const questionIndex = permute(questions.length - 1).concat([questions.length])
     let index = 0;
     let typingTimer;
-    let doneTypingInterval = 1000;
+    let doneTypingInterval = 2000;
     answered = true
     askQuestion()//ask first q right away
 
@@ -852,7 +852,7 @@ $(function() {
       HandleFinish(finishingMessage = "You terminated the HIT. Thank you for your time.",
           mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
           assignmentId = mturkVariables.assignmentId, finishingcode = "LeftHit");
-      socket.emit('mturk_formSubmit', feedbackMessage)
+      socket.emit('mturk_formSubmit', $('#leave-hit-form').serialize())
       socket.disconnect(true);
       $('#leave-hit-form')[0].reset();
     }
@@ -926,6 +926,7 @@ $(function() {
       if ($('#engagementfeedbackInput').length === 0) { //make sure element hasn't been already created
         let input = document.createElement("textarea");
         input.id = "engagementfeedbackInput";
+        input.name="engagementfeedbackInput"
         input.required = true;
         $("#submitButton_finish").before(input); //appendChild
       }
@@ -934,7 +935,7 @@ $(function() {
   })
 
   $('#mturk_form').submit( (event) => {
-    socket.emit('mturk_formSubmit', $('#engagementfeedbackInput').val())
+    socket.emit('mturk_formSubmit', $('#mturk_form').serialize())
   })
 
 

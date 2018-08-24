@@ -9,15 +9,17 @@ const roundMinutes = process.env.ROUND_MINUTES = 0.5
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
-const secondsToWait = 10 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
-// const secondsSinceResponse = 29 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
+const secondsToWait = 60 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+const secondsSinceResponse = 59 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
 const secondsToHold1 = 1000 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
 const secondsToHold2 = 200 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
+const maxWaitChatMinutes = 20
 
 // Toggles
 const runExperimentNow = true
 const issueBonusesNow = true
-const emailingWorkers = false
+const notifyWorkersOn = true
+const runViaEmailOn = false
 const usingWillBang = true
 
 const cleanHITs = false
@@ -27,8 +29,8 @@ const debugMode = !runningLive
 const suddenDeath = false
 let setPerson = false
 
-const randomCondition = false
-const randomRoundOrder = false
+const randomCondition = true
+const randomRoundOrder = true
 const randomProduct = false
 
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
@@ -39,8 +41,8 @@ const midSurveyOn = true
 const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
-const timeCheckOn = true // tracks time user spends on task and updates payment - also tracks how long each task is taking
-const requiredOn = false
+const timeCheckOn = false // tracks time user spends on task and updates payment - also tracks how long each task is taking
+const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/3
 
 //Testing toggles
@@ -65,7 +67,7 @@ const leaveHitFile = txt + "leave-hit-q.txt"
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
-const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
+const binaryAnswers = {answers: ['Keep this team', 'Do not keep this team'], answerType: 'radio', textValue: true}
 const leaveHitAnswers = {answers: ['End Task and Send Feedback', 'Return to Task'], answerType: 'radio', textValue: false}
 
 // Setup basic express server
@@ -92,39 +94,68 @@ function useUser(u,f,err = "Guarded against undefined user") {
   else { console.log(err.red,u.id) }
 }
 
-// Experiment variables
-const conditionsAvailalbe = ['control','treatment','baseline']
-const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
-let treatmentNow = false
-let firstRun = false;
-let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
-let batchCompleteUpdated = false;
+// Save debug logs for later review
+const util = require('util');
+const trueLog = console.log;
+const debugDir = ".data/debug/"
 
-const roundOrdering = extraRoundOn ? [
-  {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]},
-  {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]},
-  {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [
-  {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]},
-  {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]},
-  {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}]
+if (!fs.existsSync(debugDir)) {
+  fs.mkdirSync(debugDir)
+}
+log_file = debugDir + "debug" + Date.now() + ".log";
+console.log = function(...msg) {
+  trueLog(msg.map(item => {return util.format(item)}).join(" ")); //uncomment if you want logs
+    msg.map(item => {
+      fs.appendFile(log_file, util.format(item) + " ", function(err) {
+        if(err) {
+            return trueLog(err);
+        }
+      });
+    })
+    fs.appendFile(log_file, "\n", function(err) {
+      if(err) {
+          return trueLog(err);
+      }
+    });
+}
 
-const experimentRoundIndicator = 1//PK: is this different that roundNum?
-const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
-const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
-console.log(currentCondition,'with',conditions[currentCondition]);
-const numRounds = conditions.baseline.length
+//if (runExperimentNow){
+  // Experiment variables
+  const conditionsAvailalbe = ['control','treatment','baseline']
+  const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
+  let treatmentNow = false
+  let firstRun = false;
+  let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
+  let batchCompleteUpdated = false;
 
-const numberOfRooms = teamSize * numRounds
-const rooms = tools.letters.slice(0,numberOfRooms)
-const people = extraRoundOn ? tools.letters.slice(0,teamSize ** 2 + teamSize) : tools.letters.slice(0,teamSize ** 2)
-const population = people.length
-const teams = tools.createTeams(teamSize,numRounds,people,extraRoundOn)
-//FOR DEBUGGING PURPOSES
-// const teams = extraRoundOn && teamSize == 2 ? [ { A: [ 'D', 'A', 'E' ], B: [ 'C', 'B', 'F' ] }, { A: [ 'D', 'C' ], B: [ 'B', 'A' ] }, { A: [ 'D', 'B' ], B: [ 'C', 'A' ] } ]
-//  : tools.createTeams(teamSize,numRounds,people,extraRoundOn)
+  const roundOrdering = extraRoundOn ? [
+    {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]},
+    {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]},
+    {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [
+    {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]},
+    {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]},
+    {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}]
 
-const batchID = Date.now();
-console.log("Launching batch",batchID);
+  const experimentRoundIndicator = 1//PK: is this different that roundNum?
+  const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
+  const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
+    console.log(currentCondition,'with',conditions[currentCondition]);
+
+  const numRounds = conditions.baseline.length
+
+  const numberOfRooms = teamSize * numRounds
+  const rooms = tools.letters.slice(0,numberOfRooms)
+  const people = extraRoundOn ? tools.letters.slice(0,teamSize ** 2 + teamSize) : tools.letters.slice(0,teamSize ** 2)
+  const population = people.length
+  const teams = tools.createTeams(teamSize,numRounds,people,extraRoundOn)
+
+//}
+
+//if (runExperimentNow) {
+  const batchID = Date.now();
+
+  console.log("Launching batch",batchID);
+//}
 
 // Setting up DB
 const Datastore = require('nedb')
@@ -145,11 +176,14 @@ function updateUserInDB(user,field,value) {
 db.users.find({}, (err, usersInDB) => {
   if (err) {console.log("DB for MTurk:" + err)} else {
     if (issueBonusesNow) {
-      mturk.payBonuses(usersInDB).forEach(u => updateUserInDB(u,'bonus',0))
+      mturk.payBonuses(usersInDB, (bonusedUsers) => {
+        bonusedUsers.forEach(u => updateUserInDB(u,'bonus',0))
+      })
     }
     if (assignQualifications && runningLive) {
-      // mturk.assignQualificationToUsers(usersInDB, mturk.quals.hasBanged)
-      mturk.listUsersWithQualification(mturk.quals.hasBanged)
+      mturk.listUsersWithQualificationRecursively(mturk.quals.hasBanged, (data) => {
+        console.log("Number of users with qualification hasBanged:", data.length)
+      });
     }
   }
 })
@@ -166,8 +200,10 @@ if (cleanHITs){
 }
 
 if (runExperimentNow){ mturk.launchBang(function(HIT) {
+  logTime()
+  storeHIT(HIT.HITId)
   // Notify workers that a HIT has started if we're doing recruiting by email
-  if (emailingWorkers) {
+  if (notifyWorkersOn) {
     // let HITId = process.argv[2];
     let subject = "We launched our new ad writing HIT. Join now, spaces are limited."
     console.log(HIT)
@@ -177,19 +213,29 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
       let message = "You’re invited to join our newly launched HIT on Mturk; \
       there are limited spaces! You can join it by clicking this link " + URL;
       console.log("message to willBangers", message);
-      if(usingWillBang) {
-        mturk.listUsersWithQualification(mturk.quals.willBang, function(data) { // notifies all willBang
-          mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)  
-          }); // must return from mturkTools
+      if (!URL) {
+        throw "URL not defined"
       }
-      
+      if(usingWillBang) {
+        // Use this function to notify only x users <= 100
+        let maxWorkersToNotify = 100; // cannot be more than 100
+
+          mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
+          // randomize list
+          let notifyList = getRandomSubarray(data, maxWorkersToNotify)
+          mturk.notifyWorkers(notifyList, subject, message)
+        })
+        // unrandomized list
+        // mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
+        //   //mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
+        // }); // must return from mturkTools
+
+        // use this function to notify entire list of willBang workers
+        // mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
+        //   mturk.notifyWorkers(data, subject, message)
+        // })
+      }
     });
-    // mturk.listAssignments(HITId, data => { // notifies all recent Turkers
-    //   if (data.Assignments.length < 100) {
-    //     // watch the notifyWorkers call, it also assigns willBang qualification
-    //     mturk.notifyWorkers(data.Assignments.map(a => a.WorkerId), subject, message) 
-    //   }
-    // });g
   }
 }) }
 
@@ -218,6 +264,7 @@ let products = [
 
 let users = []; //the main local user storage
 let userPool = []; //accumulates users pre-experiment
+let waitchatStart = 0
 let currentRound = 0 //PK: talk about 0-indexed v 1-indexed round numbers (note: if change -> change parts of code reliant on 0-indexed round num)
 let startTime = 0
 let userAcquisitionStage = true
@@ -229,32 +276,33 @@ let taskEndTime = 0;
 let taskTime = 0;
 
 // Building task list
-let eventSchedule = []
-if (starterSurveyOn) {
-  eventSchedule.push("starterSurvey")
-}
-let roundSchedule = []
-roundSchedule.push("ready")
-if (midSurveyOn) {
-  roundSchedule.push("midSurvey")
-}
-if (psychologicalSafetyOn) {
-  roundSchedule.push("psychologicalSafety")
-}
-if (teamfeedbackOn) {
-  roundSchedule.push("teamfeedbackSurvey")
-}
-roundSchedule = replicate(roundSchedule, numRounds)
-eventSchedule= eventSchedule.concat(roundSchedule)
-if (blacklistOn) {
-  eventSchedule.push("blacklistSurvey")
-}
-eventSchedule.push("postSurvey")
-eventSchedule.push("finished")
-console.log(eventSchedule)
+//if (runExperimentNow){
+  let eventSchedule = []
+  if (starterSurveyOn) {
+    eventSchedule.push("starterSurvey")
+  }
+  let roundSchedule = []
+  roundSchedule.push("ready")
+  if (midSurveyOn) {
+    roundSchedule.push("midSurvey")
+  }
+  if (psychologicalSafetyOn) {
+    roundSchedule.push("psychologicalSafety")
+  }
+  if (teamfeedbackOn) {
+    roundSchedule.push("teamfeedbackSurvey")
+  }
+  roundSchedule = replicate(roundSchedule, numRounds)
+  eventSchedule= eventSchedule.concat(roundSchedule)
+  if (blacklistOn) {
+    eventSchedule.push("blacklistSurvey")
+  }
+  eventSchedule.push("postSurvey")
+  eventSchedule.push("finished")
+  console.log("This batch will include:",eventSchedule)
+//}
 
 let fullUrl = ''
-
 
 app.use(express.static('public'));
 
@@ -268,40 +316,38 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
   }
 });
 
-
-// Adds Batch data for this experiment. unique batchID based on time/date
-db.batch.insert(
-  {
-    batchID: batchID,
-    batchComplete: false,
-    starterSurveyOn:starterSurveyOn,
-    midSurveyOn: midSurveyOn,
-    blacklistOn: blacklistOn,
-    teamfeedbackOn: teamfeedbackOn,
-    psychologicalSafetyOn : psychologicalSafetyOn,
-    checkinOn: checkinOn,
-    conditions: conditions,
-    experimentRound: experimentRound,
-    numRounds: numRounds,
-    teamSize: teamSize
-  }, (err, usersAdded) => {
-    if(err) console.log("There's a problem adding batch to the DB: ", err);
-    else if(usersAdded) console.log("Batch added to the DB");
-    console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
-    if (!firstRun) {
-      Object.keys(io.sockets.sockets).forEach(socketID => {
-        io.sockets.sockets[socketID].disconnect(true);
-      })
-      firstRun = true;
+//if (runExperimentNow){
+  // Adds Batch data for this experiment. unique batchID based on time/date
+  db.batch.insert(
+    {
+      batchID: batchID,
+      batchComplete: false,
+      starterSurveyOn:starterSurveyOn,
+      midSurveyOn: midSurveyOn,
+      blacklistOn: blacklistOn,
+      teamfeedbackOn: teamfeedbackOn,
+      psychologicalSafetyOn : psychologicalSafetyOn,
+      checkinOn: checkinOn,
+      conditions: conditions,
+      experimentRound: experimentRound,
+      numRounds: numRounds,
+      teamSize: teamSize
+    }, (err, usersAdded) => {
+      if(err) console.log("There's a problem adding batch to the DB: ", err);
+      else if(usersAdded) console.log("Batch added to the DB");
+      console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
+      if (!firstRun) {
+        Object.keys(io.sockets.sockets).forEach(socketID => {
+          io.sockets.sockets[socketID].disconnect(true);
+        })
+        firstRun = true;
+      }
     }
-  }
-); // eventSchedule instead of all of the toggles? (missing checkinOn) //PK: what does this comment mean?
+  )// eventSchedule instead of all of the toggles? (missing checkinOn) //PK: what does this comment mean?
+//}
+
 
 // Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
-setTimeout(storeHIT, 1000 * 12)
-
-
-
 
 // Chatroom
 io.on('connection', (socket) => {
@@ -322,14 +368,13 @@ io.on('connection', (socket) => {
   })
 
   socket.on('accepted HIT', data => {
-    if(!userAcquisitionStage) { 
+    if(!userAcquisitionStage) {
       //updateUserInDB(socket,'bonus',currentBonus())
       if (!socket) {
         console.log("no socket in accepted HIT")
         return;
       }
-      console.log("error message 2")
-      issueFinish(socket,emailingWorkers ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
+      issueFinish(socket,runViaEmailOn ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
       return;
     }
     userPool.push({
@@ -342,6 +387,9 @@ io.on('connection', (socket) => {
       timeAdded: data.timeAdded,
       timeLastActivity: data.timeAdded
     });
+    if(userPool.length == 1){//first user entered waitchat
+      waitchatStart = data.timeAdded
+    }
 
     mturk.setAssignmentsPending(getPoolUsersConnected().length)
     // debugLog(userPool, "users accepted currently: " + userPool.length)
@@ -352,14 +400,13 @@ io.on('connection', (socket) => {
           io.in(socketID).emit('get IDs', 'broken');
         }
       });
-      var timeNow = new Date(Date.now())
-      console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.getHours()+":"+timeNow.getMinutes()+":"+timeNow.getSeconds()+".")
+      logTime()
       console.log("Sockets active: " + Object.keys(io.sockets.sockets) + " of " + teamSize);
       updateUserPool();
   })
 
   function updateUserPool(){
-    if(!userAcquisitionStage) return; 
+    if(!userAcquisitionStage) return;
 
     function secondsSince(event) {return (Date.now() - event)/1000}
     function updateUsersActive() {
@@ -389,6 +436,7 @@ io.on('connection', (socket) => {
     let numUsersWanted = extraRoundOn ? teamSize ** 2 + teamSize : teamSize ** 2 //turn into const at start
     if(waitChatOn){
       if(!hasAddedUsers && usersActive.length >= numUsersWanted) {//if have enough active users and had not added users before
+        logTime()
         hasAddedUsers = true;
         for(let i = 0; i < usersActive.length; i ++){ //for every active user
           let user = usersActive[i];
@@ -397,17 +445,20 @@ io.on('connection', (socket) => {
             io.in(user.id).emit('initiate experiment');
           } else { //else emit finish
             console.log('EMIT FINISH TO EXTRA ACTIVE WORKER')
-            console.log('error message 3')
-            issueFinish(user, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
+            issueFinish(user, runViaEmailOn ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
           }
         }
         userPool.filter(user => !usersActive.byID(user.id)).forEach(user => {//
           console.log('EMIT FINISH TO NONACTIVE OR DISCONNECTED WORKER')
-          console.log('error message 4') //this one!
-          issueFinish(user, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
+          issueFinish(user, runViaEmailOn ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
         })
+      } else {
+        if(secondsSince(waitchatStart) / 60 >= maxWaitChatMinutes) {
+          console.log("Waitchat time limit reached".red)
+          io.in(socket.id).emit('echo', 'kill-all')
+        }
       }
-    } else {
+    } else { // waitchat off
       if(usersActive.length >= teamSize ** 2) {
         io.sockets.emit('update number waiting', {num: 0});
         console.log('there are ' + usersActive.length + ' users: ' + usersActive)
@@ -429,7 +480,7 @@ io.on('connection', (socket) => {
       batch: batchID,
       room: '',
       rooms:[],
-      bonus: 0,
+      bonus: mturk.bonusPrice,
       person: '',
       name: socket.username,
       ready: false,
@@ -457,8 +508,7 @@ io.on('connection', (socket) => {
 
   socket.on('add user', data => {
     if (!userAcquisitionStage) {
-      console.log("error message 1")
-      issueFinish(socket, emailingWorkers ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!")//PK: come back to this
+      issueFinish(socket, runViaEmailOn ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!")//PK: come back to this
       return;
     }
     if(users.byID(socket.id)) {console.log('ERR: ADDING A USER ALREADY IN USERS')}
@@ -487,7 +537,7 @@ io.on('connection', (socket) => {
         });
         console.log(user.mturkId)
       })
-      // assign people to rooms/teams 
+      // assign people to rooms/teams
       users.forEach(u => {
         console.log("People length:", people.length, ", People:", people)
         u.person = people.pop();
@@ -588,7 +638,8 @@ io.on('connection', (socket) => {
     }
 
     // if (!users.every(user => socket.id !== user.id)) {//socket id is found in users
-    newMessage('has left the chatroom')
+    //newMessage('has left the chatroom')
+
     useUser(socket,user => {
       user.connected = false
       user.ready = suddenDeath ? false : true
@@ -596,22 +647,16 @@ io.on('connection', (socket) => {
 
       // update DB with change
       updateUserInDB(user,'connected',false)
-
+      console.log(socket.username + " HAS LEFT")
       if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
       console.log("Connected users: " + getUsersConnected().length);
-      if (!experimentOver && suddenDeath && experimentStarted){//PK: what does this if condition mean
-        
-        if (extraRoundOn) {
-          Object.entries(teams[0]).forEach(([roomName,room]) => {
-            numberConnected = 0
-            room.forEach(person => {
-              users.filter(u => u.name == person).forEach(u => {
-                if (u.connected) {numberConnected += 1}
-              })
-            })
-            if (numberConnected < teamSize) {notEnoughUsers = true}
+      //if things don't work look at this part of the code?
+      if (!experimentOver && suddenDeath && experimentStarted){
+        storeHIT()
 
+        console.log("User left, emitting cancel to all users");
+        let totalTime = getSecondsPassed();
           })
         }
 
@@ -646,7 +691,7 @@ io.on('connection', (socket) => {
         }
 
       }
-      if (!suddenDeath && !userAcquisitionStage) { // sets users to ready when they disconnect 
+      if (!suddenDeath && !userAcquisitionStage) { // sets users to ready when they disconnect
         user.ready = true // TODO: remove user from users
       }
     })
@@ -890,6 +935,7 @@ io.on('connection', (socket) => {
         users.filter(u => room.includes(u.person)).forEach(u => {
           u.room = roomName
           u.rooms.push(roomName)
+          updateUserInDB(u,"rooms",u.rooms)
           u.ready = false //return users to unready state
           if (!suddenDeath && !u.connected) {u.ready = true}
           console.log(u.name, '-> room', u.room);
@@ -952,25 +998,15 @@ io.on('connection', (socket) => {
       console.log('Issued task for:', currentProduct.name)
       console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
 
-      // assign hasBanged qualification to all users who rolled over
-      // might want to change this because it is reassigning the qual to every user every time
-      db.users.find({}, (err, usersInDB) => {
-        if (err) {console.log("DB for MTurk:" + err)} else {
-          if (assignQualifications && runningLive) {
-           mturk.assignQualificationToUsers(usersInDB, mturk.quals.hasBanged)
-          }
-        }
-      })
-
+      // assignes hasBanged to new users
+      if(assignQualifications && runningLive) {
+        const hasBangers = users.map(a => a.mturkId)
+        hasBangers.forEach(u => mturk.assignQuals(u, mturk.quals.hasBanged))
+      }
       // remove willBang qualification from people who rolled over
       if(usingWillBang) {
-        // mturk.unassignQualificationFromUsers(users, mturk.quals.willBang)
-        db.users.find({}, (err, usersInDB) => {
-          if (err) {console.log("DB for MTurk:" + err)} 
-          else {
-            mturk.unassignQualificationFromUsers(usersInDB, mturk.quals.willBang)
-          }
-        })
+        const hasBangers = users.map(a => a.mturkId)
+        hasBangers.forEach(u => mturk.unassignQuals(u, mturk.quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!'))
       }
 
       // save start time
@@ -988,8 +1024,8 @@ io.on('connection', (socket) => {
           users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
           currentRound += 1 // guard to only do this when a round is actually done.
           console.log(currentRound, "out of", numRounds)
-        }, 1000 * 60 * 0.1 * roundMinutes)
-      }, 1000 * 60 * 0.9 * roundMinutes)
+        }, 1000 * 60 * 0.2 * roundMinutes)
+      }, 1000 * 60 * 0.8 * roundMinutes)
 
       if(checkinOn){
         let numPopups = 0;
@@ -1007,7 +1043,7 @@ io.on('connection', (socket) => {
 
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
-    issueFinish(socket, emailingWorkers ? "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions." : "The task has finished early. You will be compensated by clicking submit below.", finishingCode = "broken")
+    issueFinish(socket, runViaEmailOn ? "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions." : "The task has finished early. You will be compensated by clicking submit below.", finishingCode = "broken")
   });
 
   // Starter task
@@ -1119,6 +1155,7 @@ io.on('connection', (socket) => {
       crashed: false
     })
   }
+  
 });
 
 // return subset of userPool
@@ -1224,8 +1261,7 @@ function getRndInteger(min, max) {
   return Math.floor(Math.random() * (max - min) ) + min;
 }
 
-function storeHIT() {
-  let currentHIT = mturk.returnCurrentHIT();
+function storeHIT(currentHIT = mturk.returnCurrentHIT()) {
   db.ourHITs.insert({HITId: currentHIT, batch:batchID}, (err, HITAdded) => {
     if(err) console.log("There's a problem adding HIT to the DB: ", err);
     else if(HITAdded) console.log("HIT added to the DB: ", currentHIT);
@@ -1245,4 +1281,21 @@ function parseResults(data) {
 
 const decode = (encoded) => {
   return unescape(encoded.replace(/\+/g,  " "));
+}
+
+const logTime = () => {
+  let timeNow = new Date(Date.now())
+  // console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.getHours()+":"+timeNow.getMinutes()+":"+timeNow.getSeconds()+".")
+  console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.toString());
+}
+
+function getRandomSubarray(arr, size) {
+  let shuffled = arr.slice(0), i = arr.length, min = i - size, temp, index;
+  while (i-- > min) {
+      index = Math.floor((i + 1) * Math.random());
+      temp = shuffled[index];
+      shuffled[index] = shuffled[i];
+      shuffled[i] = temp;
+  }
+  return shuffled.slice(min);
 }

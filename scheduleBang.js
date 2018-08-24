@@ -35,11 +35,11 @@ const taskURL = questionHTML
 // Assign willBang to people who have accepted recruiting HIT of last hour
 console.log("fs.exists()", fs.existsSync(recruitingHITstorage))
 if (fs.existsSync(recruitingHITstorage)) {
-  let HITId = fs.readFileSync(recruitingHITstorage).toString();
+  const HITId = fs.readFileSync(recruitingHITstorage).toString();
   console.log("HITID found in database", HITId)
   mturk.listAssignments(HITId, data => {
-    console.log("willBangers:", data.Assignments.map(a => a.WorkerId))
-    mturk.assignQualificationToUsers(data.Assignments.map(a => a.WorkerId), mturk.quals.willBang)
+    const willBangers = data.map(a => a.WorkerId)
+    willBangers.forEach(u => mturk.assignQuals(u, mturk.quals.willBang))
   })
 
   // Expire HIT to ensure no one else accepts
@@ -50,23 +50,18 @@ if (fs.existsSync(recruitingHITstorage)) {
     if (err) throw err;
     console.log('recruitingHITstorage was deleted');
   });
-
 }
 else {
   console.log("No recruitingHITstorage found. Perhaps this is your first time running.")
 }
 
-
-
-
 //Make new recruiting HIT
-mturk.makeHIT(title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, taskURL, (HIT) => {
+mturk.makeHIT('scheduleQuals', title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, taskURL, (HIT) => {
   const HITId = HIT.HITId;
+
   // Write new recruiting HIT id to file for next hour run
   fs.writeFile(recruitingHITstorage, HITId, (err) => {
     if(err) console.log("There's a problem writing HIT to the recruiting file: ", err);
   });
+  console.log("recruitment schedule HIT success")
 })
-
-//Expire HITs
-// mturk.workOnActiveHITs(H => H.forEach(mturk.expireHIT))
