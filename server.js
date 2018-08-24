@@ -909,7 +909,7 @@ io.on('connection', (socket) => {
         badUsers.forEach(u => {
           console.log("here's the user being processed:", u, "and their person", u.person)
             console.log("line 825 triggered. here's users[j].id:", u.id, "and person:", u.person)
-            issueFinish(u,emailingWorkers ? "Please click submit below and await further instructions from scaledhumanity@gmail.com." : "Thank you for participating in our task! Click the submit button below and you will be compensated at the promised rate for the time you have spent.")
+            issueFinish(u,runViaEmailOn ? "Please click submit below and await further instructions from scaledhumanity@gmail.com." : "Thank you for participating in our task! Click the submit button below and you will be compensated at the promised rate for the time you have spent.")
             u.connected = false
         })
       }
