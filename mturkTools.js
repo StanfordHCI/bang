@@ -622,13 +622,13 @@ const checkQualsRecursive = (qualObject, callback, paginationToken = null, passt
   })
 }
 
-checkQualsRecursive(quals.willBang, will => {
-  checkQualsRecursive(quals.hasBanged, has => {
-    has.filter(h => will.includes(h)).forEach(h => {
-      unassignQuals(h, quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!')
-    })
-  })
-})
+// checkQualsRecursive(quals.willBang, will => {
+//   checkQualsRecursive(quals.hasBanged, has => {
+//     has.filter(h => will.includes(h)).forEach(h => {
+//       unassignQuals(h, quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!')
+//     })
+//   })
+// })
 
 // hitIds.forEach(id => listAssignments(id,data => {
 //   data.map(u => u.WorkerId).forEach(u => assignQuals(u,quals.willBang))
