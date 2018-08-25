@@ -6,7 +6,7 @@ const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
 const teamSize = process.env.TEAM_SIZE = 4
 const roundMinutes = process.env.ROUND_MINUTES = 0.5
-const stayQuestionSeconds = 20 
+const stayQuestionSeconds = 400 
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse

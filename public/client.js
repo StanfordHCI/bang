@@ -138,13 +138,13 @@ $(function() {
         }, 1000*1)
         setTimeout(() => { 
           socket.emit('stay question')
-        }, 1000*1)
+        }, 1000*6)
+      $stayQuestionPopup.show()
       }, 1000*.5)
     } else {
       hideAll();
       $waitingPage.show();
     }
-
   }
 
   // Get permission to notify
