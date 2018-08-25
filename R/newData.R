@@ -389,6 +389,13 @@ ggplot(data=proportion, aes(proportion$freq)) +
                                   x="If you had the choice, would you like to work with the same team in a future round? 
                                   1=Yes , 2=no", y="Count") 
 
+## Proability / proportion table: 
+
+## Group by then: 
+
+prop.table(m, 1)
+prop.table(table(df))
+
 ## Basic exploratory stats testing: 
 ## Parametric inference: 
 hist(stats$sum,xlab="Sum of scores",main="")
@@ -433,7 +440,10 @@ baselineData %>% data %>% filter(condition=="basline")
 
 controlData <- data %>% filter(results.condition=="control")
 
+## Chat data import: 
+## visualize chat data: 
 
+## Chat data histogram: 
 
 
 
