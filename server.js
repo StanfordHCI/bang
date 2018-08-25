@@ -803,7 +803,7 @@ io.on('connection', (socket) => {
         if(timeCheckOn) {
           recordTime("postSurvey");
         }
-        user.bonus += mturk.bonusPrice
+        user.bonus = Number(user.bonus) + Number(mturk.bonusPrice)
         updateUserInDB(user,"bonus",user.bonus)
 
         storeHIT()
@@ -1115,7 +1115,7 @@ io.on('connection', (socket) => {
       crashed: false
     })
   }
-  
+
 });
 
 // return subset of userPool
