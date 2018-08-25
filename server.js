@@ -855,17 +855,6 @@ io.on('connection', (socket) => {
 
       console.log("user.rooms.length:", user.rooms.length)
 
-      //FOR DEBUGGING, DO NOT PUSH:
-      users.forEach(u => {
-        if(!tools.letters.slice(0, teamSize**2).includes(u.person)) {
-          socket.emit('new message', {
-            username: idToAlias(u, String(u.id)),
-            message: idToAlias(u, "this one!")
-            }
-          )
-        }
-      })
-
       if(extraRoundOn && user.rooms.length == 1) {
         users.forEach(u => {
           if(tools.letters.slice(0, teamSize**2).includes(u.person) && !u.connected) {
@@ -886,8 +875,7 @@ io.on('connection', (socket) => {
             })
           }
         })
-        //this part doesn't work
-        //this is wrong
+        //badUsers contains all of the users we don't need anymore. At most, this is 4 users. At minimum, it's 0.
         badUsers = []
         users.forEach(u => {
           if(u) {
@@ -902,20 +890,6 @@ io.on('connection', (socket) => {
           u.connected = false
         })
       }
-
-        // console.log("here's the filter:", users.filter(u => people.slice(teamSize**2, teamSize ** 2 + teamSize)).includes(u.person))
-        // console.log("here's the filter's length", users.filter(u => people.slice(teamSize**2, teamSize ** 2 + teamSize)).includes(u.person).length)
-        // users.filter(u => people.slice(teamSize**2, teamSize ** 2 + teamSize)).includes(u.person).forEach(u => {
-        //   console.log("here's the user being processed:", u, "and their person", u.person)
-        //   if(u) {
-        //     console.log("line 825 triggered. here's users[j].id:", u.id, "and person:", u.person)
-        //     issueFinish(u,emailingWorkers ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
-        //     u.connected = false
-        //   }
-        // })
-      // }
-
-
 
       Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
         users.filter(u => room.includes(u.person)).forEach(u => {
