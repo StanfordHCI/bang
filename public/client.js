@@ -5,7 +5,7 @@ $(function() {
   let colorAssignment = []
 
   //toggles
-  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -395,6 +395,16 @@ $(function() {
     $holdingPage.show()
     $('#midForm')[0].reset();
   })
+
+$('#selfConsistency').submit( (event) => {
+    event.preventDefault() //stops page reloading
+    socket.emit('selfConsistencySubmit', $('#selfConsistency').serialize()) //submits results alone
+    socket.emit('next event')
+    $midSurvey.hide()
+    $holdingPage.show()
+    $('#selfConsistencyForm')[0].reset();
+  })
+
 
   $('#psychologicalSafety').submit( (event) => {
     event.preventDefault() //stops page reloading
@@ -879,16 +889,6 @@ socket.on('selfConsistency',data => {
   //   }
 
   // })
-
- $('#selfConsistencyForm').submit( (event) => { //watches form element
-    event.preventDefault() //stops page reloading
-    socket.emit('selfConsistencySubmit', $('#selfConsistencyForm').serialize()) //submits results alone
-    socket.emit('next event')
-    $selfConsistency.hide()
-    $holdingPage.show()
-    $('#selfConsistencyForm')[0].reset();
-  })
-
 
   $('#postForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
