@@ -34,11 +34,13 @@
         
 
   <form name='mturk_form' method='post' id='mturk_form' action='https://www.mturk.com/mturk/externalSubmit'>
+    <br>
     <h3>What time can you come?</h3>
-        <input type='checkbox' value="morning" name="time"/>Morning<br>
-        <input type='checkbox' value="afternoon" name="time"/>Afternoon<br>
-        <input type='checkbox' value="evening" name="time"/>Evening<br>
-
+        <input type='radio' value="morning" name="time"/>7-9am PT, 8-10am MT, 9-11am CT, 10-12pm ET <br>
+        <input type='radio' value="afternoon" name="time"/>12-2pm PT, 1-3pm MT, 2-4pm CT, 3-5pm  ET <br>
+        <input type='radio' value="evening" name="time"/>3-5pm PT, 4-6pm MT, 5-7pm CT, 6-8pm ET <br>
+        <input type='radio' value="evening" name="time"/>6-8pm PT, 7-9pm MT, 8-10pm CT, 9-12 ET <br>
+<br>
     <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
     <input type='hidden' value='WorkerNotification' name='submitCode' id='submitCode'/>
     <input type='submit' id='submitButton' value='Submit' /></form>
