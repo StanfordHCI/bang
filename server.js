@@ -867,21 +867,17 @@ io.on('connection', (socket) => {
       })
 
       if(extraRoundOn && user.rooms.length == 1) {
-        console.log("line 803 triggered")
         users.forEach(u => {
           if(tools.letters.slice(0, teamSize**2).includes(u.person) && !u.connected) {
-            console.log("line 806 triggered")
             disconnectedsRoom = u.room
             Object.entries(teams[0]).forEach(([roomName,room]) => {
               if(roomName == disconnectedsRoom) {
-                console.log("line 810 triggered. here's room[teamSize]:", room[teamSize])
                 replacingPersonName = room[teamSize]
               }
             })
             //u is the user who left
             //replacingPersonName is the v.person of some v in users who will replace u
             users.filter(v => v.person == replacingPersonName).forEach(v => {
-              console.log("line 816 triggered. Before the switch, here's u.person:", u.person, "and v.person:", v.person)
               v.room = u.room
               v.rooms = u.rooms
               v.person = u.person
@@ -893,24 +889,17 @@ io.on('connection', (socket) => {
         //this part doesn't work
         //this is wrong
         badUsers = []
-        console.log("here are the users:", users)
         users.forEach(u => {
           if(u) {
-            console.log("log 2:", u.person)
             if (tools.letters.slice(teamSize**2, teamSize ** 2 + teamSize).includes(u.person)) {
               badUsers.push(u)
             }
           }
         })
 
-        console.log("here is badUsers:", badUsers)
-        console.log("here is the length of badUsers:", badUsers.length)
-
         badUsers.forEach(u => {
-          console.log("here's the user being processed:", u, "and their person", u.person)
-            console.log("line 825 triggered. here's users[j].id:", u.id, "and person:", u.person)
-            issueFinish(u,runViaEmailOn ? "Please click submit below and await further instructions from scaledhumanity@gmail.com." : "Thank you for participating in our task! Click the submit button below and you will be compensated at the promised rate for the time you have spent.")
-            u.connected = false
+          issueFinish(u,runViaEmailOn ? "Please click submit below and await further instructions from scaledhumanity@gmail.com." : "Thank you for participating in our task! Click the submit button below and you will be compensated at the promised rate for the time you have spent.")
+          u.connected = false
         })
       }
 
@@ -929,7 +918,6 @@ io.on('connection', (socket) => {
 
 
       Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
-        console.log("here are the teams for conditionRound", conditionRound, ":", teams[conditionRound])
         users.filter(u => room.includes(u.person)).forEach(u => {
           u.room = roomName
           u.rooms.push(roomName)
