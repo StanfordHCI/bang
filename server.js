@@ -6,6 +6,7 @@ const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
 const teamSize = process.env.TEAM_SIZE = 4
 const roundMinutes = process.env.ROUND_MINUTES = 0.5
+const stayQuestionSeconds = 20 
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
@@ -34,13 +35,14 @@ const randomRoundOrder = true
 const randomProduct = false
 
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
-const extraRoundOn = true //Only set to true if teamSize = 4, Requires waitChatOn = true.
+const extraRoundOn = false //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = true
 const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
+const stayQuestionOn = true 
 const timeCheckOn = false // tracks time user spends on task and updates payment - also tracks how long each task is taking
 const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/3
@@ -63,12 +65,14 @@ const feedbackFile = txt + "feedback-q.txt"
 const starterSurveyFile = txt + "startersurvey-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
 const botFile = txt + 'botquestions.txt'
+const stayQuestionFile = txt + 'stayQuestion.txt'
 const leaveHitFile = txt + "leave-hit-q.txt"
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
 const binaryAnswers = {answers: ['Keep this team', 'Do not keep this team'], answerType: 'radio', textValue: true}
 const leaveHitAnswers = {answers: ['End Task and Send Feedback', 'Return to Task'], answerType: 'radio', textValue: false}
+const stayQuestion = {answers: ['Yes, I agree to stay for the duration of the HIT', 'No, I do not agree to stay'], answerType: 'radio', textValue: false}
 
 // Setup basic express server
 let tools = require('./tools');
@@ -328,6 +332,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
       teamfeedbackOn: teamfeedbackOn,
       psychologicalSafetyOn : psychologicalSafetyOn,
       checkinOn: checkinOn,
+      stayQuestionOn: stayQuestionOn, 
       conditions: conditions,
       experimentRound: experimentRound,
       numRounds: numRounds,
@@ -495,6 +500,7 @@ io.on('connection', (socket) => {
         format: conditions[currentCondition],
         manipulation: {},
         checkin: {},
+        stayQuestion: {},
         starterCheck: {},
         viabilityCheck: {},
         psychologicalSafety: {},
@@ -615,6 +621,19 @@ io.on('connection', (socket) => {
       })
       updateUserInDB(user,"results.checkin",user.results.checkin)
     })
+  })
+
+  socket.on('stay question', function (data) {
+    useUser(socket,user => {
+      user.results.stayQuestion.push({
+        result:data
+      })
+      updateUserInDB(user,"results.stayQuestion",user.results.stayQuestion)
+    })
+  })
+
+  socket.on('load bot qs', () => {
+    io.in(socket.id).emit('chatbot', loadQuestions(botFile))
   })
 
   socket.on('load bot qs', () => {
@@ -740,6 +759,9 @@ io.on('connection', (socket) => {
         }
         if (checkinOn) {
           io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true, showHeaderBar: true});
+        }
+        if (stayQuestionOn) {
+          io.in(user.id).emit("load", {element: 'stayQuestion', questions: loadQuestions(stayQuestion), interstitial: true, showHeaderBar: true});
         }
         io.in(user.id).emit("load", {element: 'leave-hit', questions: loadQuestions(leaveHitFile), interstitial: true, showHeaderBar: true})
         io.in(user.id).emit("echo", "ready");
@@ -981,7 +1003,7 @@ io.on('connection', (socket) => {
         //Done with round
         setTimeout(() => {
           console.log('done with round', currentRound);
-          users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
+          users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (stayQuestionOn || midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
           currentRound += 1 // guard to only do this when a round is actually done.
           console.log(currentRound, "out of", numRounds)
         }, 1000 * 60 * 0.2 * roundMinutes)
@@ -998,7 +1020,12 @@ io.on('connection', (socket) => {
           }
         }, 1000 * 60 * checkinIntervalMinutes)
       }
-    })
+ }) 
+    if(stayQuestionOn) {
+        let interval = setInterval(() => {
+            socket.emit("stay question popup");
+        }, 1000 * 60 * stayQuestionSeconds) 
+    }
   })
 
   //if broken, tell users they're done and disconnect their socket
@@ -1088,6 +1115,8 @@ io.on('connection', (socket) => {
         answerObj = {answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 1 and Team 3"], answerType: 'radio', textValue: true};
       } else if (answerTag === "LH") { //leave hit yn
         answerObj = leaveHitAnswers;
+      } else if (answerTag === "SQ") { //leave hit yn
+        answerObj = stayQuestion; 
       } else {//chatbot qs
         answerObj={}
       }

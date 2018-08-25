@@ -17,6 +17,7 @@ $(function() {
 
   const $inputMessage = $('.inputMessage'); // Input message input box
   const $checkinPopup = $('#checkin');
+  const $stayQuestionPopup = $('#stayQuestion');
   const $headerBar = $('.header')
   const $headerText = $('#header-text')
   const $leaveHitButton = $('#leave-hit-button')
@@ -63,6 +64,7 @@ $(function() {
     $headerbarPage.hide()
     $checkinPopup.hide();
     $leaveHitPopup.hide()
+    $stayQuestionPopup.hide(); 
     $lockPage.hide();
     $waitingPage.hide();
     $chatPage.hide();
@@ -134,7 +136,9 @@ $(function() {
         setTimeout(() => {
           socket.emit('load bot qs')
         }, 1000*1)
-
+        setTimeout(() => { 
+          socket.emit('stay question')
+        }, 1000*1)
       }, 1000*.5)
     } else {
       hideAll();
@@ -386,6 +390,12 @@ $(function() {
     $checkinPopup.hide();
   })
 
+   $('#stayQuestion-form').submit( (event) => {
+    event.preventDefault() //stops page reloading
+    let selectedValue = $('input[name=stayQuestion]:checked').val();
+    socket.emit('stay question', selectedValue);
+    $stayQuestionPopup.hide();
+  })
 
   $('#midForm').submit( (event) => {
     event.preventDefault() //stops page reloading
@@ -396,6 +406,7 @@ $(function() {
     $('#midForm')[0].reset();
   })
 
+
   $('#psychologicalSafety').submit( (event) => {
     event.preventDefault() //stops page reloading
     socket.emit('psychologicalSafetySubmit', $('#psychologicalSafety-form').serialize()) //submits results alone
@@ -405,13 +416,14 @@ $(function() {
     $('#psychologicalSafety-form')[0].reset();
   })
 
-  $leaveHitButton.click((event) => {
+    $leaveHitButton.click((event) => {
     $leaveHitPopup.show();
     $currentInput = $("#leavetaskfeedbackInput").focus();
     $currentInput.focus();
     socket.emit('log', holdingUsername.innerText+ ' clicked leave hit button.');
 
   })
+
 
   //Simple autocomplete
   $inputMessage.autocomplete({
@@ -593,6 +605,10 @@ $(function() {
     $checkinPopup.show();
   });
 
+ socket.on('stay question popup', data => {
+    $stayQuestionPopup.show();
+  });
+
   // Whenever the server emits 'user joined', log it in the chat body
   socket.on('user joined', data => {
     log(data.username + ' joined');
@@ -625,7 +641,7 @@ $(function() {
     $chatPage.show();
     $leaveHitButton.show();
     $headerbarPage.show();
-    $('input[name=checkin-q1]').attr('checked',false);//reset checkin form
+    $('input[name=stayQuestion]').attr('checked',false);//reset checkin form
     LeavingAlert = data.runningLive; //leaving alert for users if running live
 
     setTimeout(()=>{
@@ -866,7 +882,6 @@ $(function() {
     $('#leave-hit-form')[0].reset();
   })
 
-
   // $('#leave-hit-form').submit((event) => {
   //   event.preventDefault() //stops page reloading
   //   let selectedValue = $('input[name=leave-hit-q1]:checked').val();
@@ -896,13 +911,11 @@ $(function() {
   })
 
 
-
   $('#blacklistForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
     socket.emit('blacklistSurveySubmit', $('#blacklistForm').serialize()) //submits results alone
     socket.emit('next event')
   })
-
 
 
   $('#teamfeedbackForm').submit( (event) => {
