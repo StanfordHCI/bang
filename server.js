@@ -36,7 +36,7 @@ const randomProduct = false
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = true //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false
-const starterSurveyOn = false
+const selfConsistencyOn = true
 const midSurveyOn = true
 const blacklistOn = false
 const teamfeedbackOn = false
@@ -60,7 +60,7 @@ const psychologicalSafetyFile = txt + "psychologicalsafety-q.txt"
 const checkinFile = txt + "checkin-q.txt"
 const blacklistFile = txt + "blacklist-q.txt"
 const feedbackFile = txt + "feedback-q.txt"
-const starterSurveyFile = txt + "startersurvey-q.txt"
+const selfConsistencyFile = txt + "selfConsistency-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
 const botFile = txt + 'botquestions.txt'
 const leaveHitFile = txt + "leave-hit-q.txt"
@@ -69,6 +69,7 @@ const leaveHitFile = txt + "leave-hit-q.txt"
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
 const binaryAnswers = {answers: ['Keep this team', 'Do not keep this team'], answerType: 'radio', textValue: true}
 const leaveHitAnswers = {answers: ['End Task and Send Feedback', 'Return to Task'], answerType: 'radio', textValue: false}
+const selfConsistencyAnswers = {answers: ['Yes, I agree', 'No, I disagree'], answerType: 'radio', textValue: false}
 
 // Setup basic express server
 let tools = require('./tools');
@@ -277,8 +278,8 @@ let taskTime = 0;
 // Building task list
 //if (runExperimentNow){
   let eventSchedule = []
-  if (starterSurveyOn) {
-    eventSchedule.push("starterSurvey")
+  if (selfConsistencyOn) {
+    eventSchedule.push("selfConsistency")
   }
   let roundSchedule = []
   roundSchedule.push("ready")
@@ -321,7 +322,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
     {
       batchID: batchID,
       batchComplete: false,
-      starterSurveyOn:starterSurveyOn,
+      selfConsistencyOn:selfConsistencyOn,
       midSurveyOn: midSurveyOn,
       blacklistOn: blacklistOn,
       teamfeedbackOn: teamfeedbackOn,
@@ -494,7 +495,7 @@ io.on('connection', (socket) => {
         format: conditions[currentCondition],
         manipulation: {},
         checkin: {},
-        starterCheck: {},
+        selfConsistency: {},
         viabilityCheck: {},
         psychologicalSafety: {},
         teamfeedback: {},
@@ -729,13 +730,13 @@ io.on('connection', (socket) => {
       let eventSchedule = user.eventSchedule;
       console.log ("Event " + currentEvent + ": " + eventSchedule[currentEvent] + " | User: " + user.name)
 
-      if (eventSchedule[currentEvent] == "starterSurvey") {
-        io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false, showHeaderBar: false});
+      if (eventSchedule[currentEvent] == "selfConsistency") {
+        io.in(user.id).emit("load", {element: 'selfConsistency', questions: loadQuestions(selfConsistencyFile), interstitial: false, showHeaderBar: false});
         taskStartTime = getSecondsPassed();
       }
       else if (eventSchedule[currentEvent] == "ready") {
-        if(starterSurveyOn && timeCheckOn) {
-          recordTime("starterSurvey");
+        if(selfConsistencyOn && timeCheckOn) {
+          recordTime("selfConsistency");
         }
         if (checkinOn) {
           io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true, showHeaderBar: true});
@@ -1005,11 +1006,11 @@ io.on('connection', (socket) => {
     issueFinish(socket, runViaEmailOn ? "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions." : "The task has finished early. You will be compensated by clicking submit below.", finishingCode = "broken")
   });
 
-  // Starter task
-  socket.on('starterSurveySubmit', (data) => {
+  // self consistency question 
+  socket.on('selfConsistencyQuestionSubmit', (data) => {
     useUser(socket,user => {
-      user.results.starterCheck = parseResults(data)
-      updateUserInDB(user,"results.starterCheck",user.results.starterCheck)
+      user.results.selfConsistency = parseResults(data)
+      updateUserInDB(user,"results.selfConsistency",user.results.selfConsistency)
     })
   });
 
@@ -1073,6 +1074,8 @@ io.on('connection', (socket) => {
         answerObj = answers;
       } else if (answerTag === "YN") { // yes no
         answerObj = binaryAnswers;
+      } else if (answerTag === "SC") { 
+        answerObj = selfConsistencyAnswers;
       } else if (answerTag === "TR") { //team radio
         getTeamMembers(user).forEach((team, index) => {
           questionObj['question']+=" Team " + (index+1) + " (" + team + '),'

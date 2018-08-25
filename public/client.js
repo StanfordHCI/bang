@@ -29,7 +29,7 @@ $(function() {
   const $chatPage = $('#chat'); // The chatroom page
   const $holdingPage = $('#holding'); // The holding page
   const $preSurvey = $('#preSurvey'); // The preSurvey page
-  const $starterSurvey = $('#starterSurvey'); // The starterSurvey page
+  const $selfConsistency = $('#selfConsistency'); // The self consistency page
   const $midSurvey = $('#midSurvey'); // the midSurvey page
   const $psychologicalSafety = $('#psychologicalSafety'); // the psych safety page
   const $postSurvey = $('#postSurvey'); // The postSurvey page
@@ -68,7 +68,7 @@ $(function() {
     $chatPage.hide();
     $holdingPage.hide();
     $preSurvey.hide();
-    $starterSurvey.hide();
+    $selfConsistency.hide();
     $midSurvey.hide();
     $psychologicalSafety.hide();
     $postSurvey.hide();
@@ -838,9 +838,9 @@ $(function() {
     socket.emit(data,{mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId});
   })
 
-  socket.on('starterSurvey',data => {
+socket.on('selfConsistency',data => {
     hideAll();
-    $starterSurvey.show();
+    $selfConsistency.show();
 
   })
 
@@ -880,14 +880,15 @@ $(function() {
 
   // })
 
-  $('#starterForm').submit( (event) => {
+ $('#selfConsistencyForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
-    socket.emit('starterSurveySubmit', $('#starterForm').serialize()) //submits results alone
+    socket.emit('selfConsistencySubmit', $('#selfConsistencyForm').serialize()) //submits results alone
     socket.emit('next event')
-    $starterSurvey.hide()
+    $selfConsistency.hide()
     $holdingPage.show()
-    $('#starterForm')[0].reset();
+    $('#selfConsistencyForm')[0].reset();
   })
+
 
   $('#postForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
@@ -896,13 +897,11 @@ $(function() {
   })
 
 
-
   $('#blacklistForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
     socket.emit('blacklistSurveySubmit', $('#blacklistForm').serialize()) //submits results alone
     socket.emit('next event')
   })
-
 
 
   $('#teamfeedbackForm').submit( (event) => {
@@ -937,8 +936,6 @@ $(function() {
   $('#mturk_form').submit( (event) => {
     socket.emit('mturk_formSubmit', $('#mturk_form').serialize())
   })
-
-
 
 });
 
