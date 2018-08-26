@@ -396,7 +396,7 @@ $(function() {
     $('#midForm')[0].reset();
   })
 
-$('#selfConsistency').submit( (event) => {
+$('#selfConsistencyForm').submit( (event) => {
     event.preventDefault() //stops page reloading
     socket.emit('selfConsistencySubmit', $('#selfConsistency').serialize()) //submits results alone
     socket.emit('next event')
