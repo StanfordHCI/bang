@@ -328,12 +328,40 @@ g <- ggplot(stats, aes(x=blacklist, fill=factor(blacklist, mean))) +
 stats$repeatTeam <- plyr::revalue(stats$repeatTeam, c("Yes"="1", "No"="0"))
 stats$repeatTeam <- as.numeric(stats$repeatTeam)
 stats$room <- unlist(stats$room) 
-
 groupedProportion<- stats %>%
   group_by(round, room, batch) %>% 
   summarise(n=n()) %>% 
   mutate(sum=sum(repeatTeam)/n) %>% 
   filter(n>1) 
+
+stats %>%
+  group_by(round, room, batch) %>% 
+  count(stats, repeatTeam) %>%
+  mutate(prop = prop.table(n))
+
+library(dplyr)
+df1 %>% 
+  group_by(round, room, batch) %>% 
+  mutate(proportion = count/sum(count))
+
+stats %>% group_by(round, room, batch) %>% mutate(proportion = prop.table(count))
+
+library(dplyr)
+stats %>% 
+  group_by(round, room, batch) %>% 
+  mutate(proportion = count/sum(count))
+
+with(stats, tapply(repeatTeam,list(stats$round, stats$room, stats$batch), function(x){prop.table(table(x))}))
+
+library(plyr)
+
+stats2 <- stats %>% 
+  group_by(round, room, batch) %>%
+  mutate(prop=sum(repeatTeam)/n) %>%
+  dplyr::summarise(n=n()) %>% 
+  filter(n>1)
+
+groupProportion2 <- ddply(stats2, c("room","batch", "round"), summarise, prop=prop.table(table(repeatTeam)))
 
 individualProportion <- stats %>% group_by(round, batch, room) %>% 
   mutate(sum=sum, mean=mean(sum), median=median(sum), n=n(),prop=sum(repeatTeam)/n) %>% filter(n>1)
@@ -443,11 +471,12 @@ chatFiles = lapply(completeBatches, function(batch){
 })
 
 allChatFiles <- ldply(chatFiles, data.frame)
-
 chatFreq <- allChatFiles  %>%
   group_by(round, room, batch) %>% 
   dplyr::summarise(n=n()) %>% 
-  filter(n>0)
+  filter(n>1, round<=2)
+
+allChatFiles$round[allChatFiles$round==3] <- 2 
 
 library(ggplot2)
 theme_set(theme_classic())
@@ -461,7 +490,6 @@ g + geom_histogram(aes(fill=factor(round)),
   fill = "Round") + 
   xlab(label="Number of lines from chat data per team") + 
   ylab(label="Count") 
-
 stats$room <- unlist(stats$room) 
 chatFreqStats <- right_join(x=chatFreq, y=stats)
 
