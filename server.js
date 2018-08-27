@@ -36,7 +36,11 @@ const randomProduct = false
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 const waitChatOn = false//MAKE SURE THIS IS THE SAME IN CLIENT
+=======
+const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
+>>>>>>> Stashed changes
 =======
 const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
 >>>>>>> Stashed changes
