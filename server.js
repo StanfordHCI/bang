@@ -224,13 +224,13 @@ if (runExperimentNow){
           // Get workers to notify from - all times are PT
           let currenttimePeriod = "";
           let currentHour = new Date(Date.now()).getHours();
-          if ((7 <= currentHour) && (currentHour < 12)) {
+          if ((7 <= currentHour) && (currentHour <= 9)) {
             currenttimePeriod = "morning"
           }
-          else if ((12 <= currentHour) && (currentHour < 15)) {
+          else if ((12 <= currentHour) && (currentHour <= 14)) {
             currenttimePeriod = "afternoon"
           }
-          else if ((15 <= currentHour) && (currentHour < 18)) {
+          else if ((15 <= currentHour) && (currentHour <= 17)) {
             currenttimePeriod = "evening"
           }
           else if ((18 <= currentHour) && (currentHour <= 20)) {
