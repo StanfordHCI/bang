@@ -4,8 +4,8 @@ var colors = require('colors')
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE
-const roundMinutes = process.env.ROUND_MINUTES
+const teamSize = process.env.TEAM_SIZE = 4
+const roundMinutes = process.env.ROUND_MINUTES = 0.5
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
@@ -34,10 +34,11 @@ const randomRoundOrder = true
 const randomProduct = false
 
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
+const extraRoundOn = true //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = true
-const blacklistOn = true
+const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
 const timeCheckOn = false // tracks time user spends on task and updates payment - also tracks how long each task is taking
@@ -66,7 +67,7 @@ const leaveHitFile = txt + "leave-hit-q.txt"
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
-const binaryAnswers = {answers: ['Yes', 'No'], answerType: 'radio', textValue: true}
+const binaryAnswers = {answers: ['Keep this team', 'Do not keep this team'], answerType: 'radio', textValue: true}
 const leaveHitAnswers = {answers: ['End Task and Send Feedback', 'Return to Task'], answerType: 'radio', textValue: false}
 
 // Setup basic express server
@@ -127,7 +128,10 @@ console.log = function(...msg) {
   let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
   let batchCompleteUpdated = false;
 
-  const roundOrdering = [
+  const roundOrdering = extraRoundOn ? [
+    {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]},
+    {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]},
+    {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [
     {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]},
     {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]},
     {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}]
@@ -141,9 +145,9 @@ console.log = function(...msg) {
 
   const numberOfRooms = teamSize * numRounds
   const rooms = tools.letters.slice(0,numberOfRooms)
-  const people = tools.letters.slice(0,teamSize ** 2)
+  const people = extraRoundOn ? tools.letters.slice(0,teamSize ** 2 + teamSize) : tools.letters.slice(0,teamSize ** 2)
   const population = people.length
-  const teams = tools.createTeams(teamSize,numRounds,people)
+  const teams = tools.createTeams(teamSize,numRounds,people,extraRoundOn)
 
 //}
 
@@ -207,8 +211,7 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
     let URL = ''
     mturk.getHITURL(HIT.HITId, function(url) {
       URL = url;
-      let message = "You’re invited to join our newly launched HIT on Mturk; \
-      there are limited spaces! You can join it by clicking this link " + URL;
+      let message = "You’re invited to join our newly launched HIT on Mturk; there are limited spaces and it will be closed to new participants in about 15 minutes!  Check out the HIT here: " + URL + " \n\nYou're receiving this message because you you indicated that you'd like to be notified of our upcoming HIT during this time window. If you'd like to stop receiving notifications please email your MTurk ID to: scaledhumanity@gmail.com";
       console.log("message to willBangers", message);
       if (!URL) {
         throw "URL not defined"
@@ -217,6 +220,7 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
         // Use this function to notify only x users <= 100
         let maxWorkersToNotify = 100; // cannot be more than 100
 
+<<<<<<< HEAD
         // Get workers to notify from 
         let currenttimePeriod = "";
         let currentHour = new Date(Date.now()).getHours();
@@ -254,6 +258,16 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
         // mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
 
         //   mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
+=======
+          mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
+          // randomize list
+          let notifyList = getRandomSubarray(data, maxWorkersToNotify)
+          mturk.notifyWorkers(notifyList, subject, message)
+        })
+        // unrandomized list
+        // mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
+        //   //mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
+>>>>>>> master
         // }); // must return from mturkTools
 
         // use this function to notify entire list of willBang workers
@@ -438,12 +452,14 @@ io.on('connection', (socket) => {
     function updateUsersActive() {
       userPool.forEach(user => {
         //PK: rename secondsToWait
-        if(secondsSince(user.timeAdded) > secondsToWait && secondsSince(user.timeLastActivity) < secondsSinceResponse) { // PK: make isUserOnCall fxn
+        if(secondsSince(user.timeAdded) > secondsToWait) {
+        // if(secondsSince(user.timeAdded) > secondsToWait && secondsSince(user.timeLastActivity) < secondsSinceResponse) { // PK: make isUserOnCall fxn
           user.active = true;
         } else {
           user.active = false;
         }
-        weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(teamSize**2 - getPoolUsersActive().length)) // PK: make isUserInactive fxn
+        let numUsersWanted = extraRoundOn ? teamSize ** 2 + teamSize : teamSize ** 2
+        weightedHoldingSeconds = secondsToHold1 + 0.33*(secondsToHold1/(numUsersWanted - getPoolUsersActive().length)) // PK: make isUserInactive fxn
         if (!user.removed && (secondsSince(user.timeAdded) > weightedHoldingSeconds || secondsSince(user.timeLastActivity) > secondsToHold2)) {
           user.removed = true;
           console.log('removing user because of inactivity:', user.id);
@@ -457,13 +473,14 @@ io.on('connection', (socket) => {
     console.log("Users active: " + usersActive.length)
     console.log("Users connected: " + getPoolUsersConnected().length)
     console.log("Users in pool: " + userPool.length)
+    let numUsersWanted = extraRoundOn ? teamSize ** 2 + teamSize : teamSize ** 2 //turn into const at start
     if(waitChatOn){
-      if(!hasAddedUsers && usersActive.length >= teamSize ** 2) {//if have enough active users and had not added users before
+      if(!hasAddedUsers && usersActive.length >= numUsersWanted) {//if have enough active users and had not added users before
         logTime()
         hasAddedUsers = true;
         for(let i = 0; i < usersActive.length; i ++){ //for every active user
           let user = usersActive[i];
-          if(i < teamSize ** 2) { //take the 1st teamssize **2 users and add them
+          if(i < numUsersWanted) { //take the 1st teamssize **2 users and add them
             io.in(user.id).emit("echo", "add user");
             io.in(user.id).emit('initiate experiment');
           } else { //else emit finish
@@ -539,7 +556,8 @@ io.on('connection', (socket) => {
     users.push(newUser)
     console.log(newUser.name + " added to users.\n" + "Total users: " + users.length)
     //add friends for each user once the correct number of users is reached
-    if(users.length === teamSize **2){ // if the last user was just added
+    numUsersRequired = extraRoundOn ? teamSize ** 2 + teamSize : teamSize ** 2
+    if(users.length === numUsersRequired){ // if the last user was just added
       console.log("USER POOL:\n" + userPool.map(u => u.mturkID))
       console.log('MTURK IDS: ')
       users.forEach(user => { //mutate the friend list of each user
@@ -561,6 +579,7 @@ io.on('connection', (socket) => {
       })
       // assign people to rooms/teams
       users.forEach(u => {
+        console.log("People length:", people.length, ", People:", people)
         u.person = people.pop();
       })
       userAcquisitionStage = false;
@@ -660,45 +679,55 @@ io.on('connection', (socket) => {
 
     // if (!users.every(user => socket.id !== user.id)) {//socket id is found in users
     //newMessage('has left the chatroom')
-    console.log(socket.username + "HAS LEFT")
+
     useUser(socket,user => {
       user.connected = false
       user.ready = suddenDeath ? false : true
+      notEnoughUsers = false
 
       // update DB with change
       updateUserInDB(user,'connected',false)
-
+      console.log(socket.username + " HAS LEFT")
       if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
       console.log("Connected users: " + getUsersConnected().length);
+      //if things don't work look at this part of the code?
       if (!experimentOver && suddenDeath && experimentStarted){
         storeHIT()
 
         console.log("User left, emitting cancel to all users");
         let totalTime = getSecondsPassed();
 
-        if(timeCheckOn) {
-          db.time.insert({totalTaskTime: totalTime}, (err, timeAdded) => {
-            if(err) console.log("There's a problem adding total time to the DB: ", err);
-            else if(timeAdded) console.log("Total time added to the DB");
+        if (!extraRoundOn || notEnoughUsers) {
+          storeHIT()
+
+          console.log("User left, emitting cancel to all users");
+          let totalTime = getSecondsPassed();
+
+          if(timeCheckOn) {
+            db.time.insert({totalTaskTime: totalTime}, (err, timeAdded) => {
+              if(err) console.log("There's a problem adding total time to the DB: ", err);
+              else if(timeAdded) console.log("Total time added to the DB");
+            })
+          }
+
+          users.filter(u => u.id != socket.id).forEach((u) => {
+            let cancelMessage = "<strong>Someone left the task.</strong><br> <br> \
+            Unfortunately, our group task requires a specific number of users to run, \
+            so once a user leaves, our task cannot proceed. <br><br> \
+            To complete the task, please provide suggestions of ways to \
+            prevent people leaving in future runs of the study. <br><br> \
+            Since the team activity had already started, you will be additionally \
+            bonused for the time spent working with the team."
+            if (experimentStarted) { // Add future bonus pay
+              u.bonus = currentBonus()
+              updateUserInDB(u,'bonus',u.bonus)
+              storeHIT()
+            }
+            issueFinish(u,cancelMessage,true)
           })
         }
 
-        users.filter(u => u.id != socket.id).forEach((u) => {
-          let cancelMessage = "<strong>Someone left the task.</strong><br> <br> \
-          Unfortunately, our group task requires a specific number of users to run, \
-          so once a user leaves, our task cannot proceed. <br><br> \
-          To complete the task, please provide suggestions of ways to \
-          prevent people leaving in future runs of the study. <br><br> \
-          Since the team activity had already started, you will be additionally \
-          bonused for the time spent working with the team."
-          if (experimentStarted) { // Add future bonus pay
-            u.bonus = currentBonus()
-            updateUserInDB(u,'bonus',u.bonus)
-            storeHIT()
-          }
-          issueFinish(u,cancelMessage,true)
-        })
       }
       if (!suddenDeath && !userAcquisitionStage) { // sets users to ready when they disconnect
         user.ready = true // TODO: remove user from users
@@ -710,6 +739,19 @@ io.on('connection', (socket) => {
     console.log("god is ready");
     io.sockets.emit('echo','ready')
   })
+
+  socket.on('active-to-all', (data) => {
+    console.log("god is active");
+    io.sockets.emit('echo','active')
+  })
+
+  socket.on('active', (data) => {
+    useUser(socket, user => {
+      user.active = true
+      console.log("users active:", users.filter(u => u.active == true).length)
+    })
+  })
+
   socket.on('kill-all', (data) => {
     console.log("god is angry")
     updateUserInDB(socket,"bonus",currentBonus())
@@ -801,7 +843,7 @@ io.on('connection', (socket) => {
         if(timeCheckOn) {
           recordTime("postSurvey");
         }
-        user.bonus += mturk.bonusPrice
+        user.bonus = Number(user.bonus) + Number(mturk.bonusPrice)
         updateUserInDB(user,"bonus",user.bonus)
 
         storeHIT()
@@ -849,6 +891,46 @@ io.on('connection', (socket) => {
       treatmentNow = (currentCondition == "treatment" && currentRound == experimentRound)
       const conditionRound = conditions[currentCondition][currentRound] - 1
 
+      // secondReadyIndex = eventSchedule.indexOf("ready", eventSchedule.indexOf("ready") + 1)
+
+      console.log("user.rooms.length:", user.rooms.length)
+
+      if(extraRoundOn && user.rooms.length == 1) {
+        users.forEach(u => {
+          if(tools.letters.slice(0, teamSize**2).includes(u.person) && !u.connected) {
+            disconnectedsRoom = u.room
+            Object.entries(teams[0]).forEach(([roomName,room]) => {
+              if(roomName == disconnectedsRoom) {
+                replacingPersonName = room[teamSize]
+              }
+            })
+            //u is the user who left
+            //replacingPersonName is the v.person of some v in users who will replace u
+            users.filter(v => v.person == replacingPersonName).forEach(v => {
+              v.room = u.room
+              v.rooms = u.rooms
+              v.person = u.person
+              v.name = u.name
+              v.friends = u.friends
+            })
+          }
+        })
+        //badUsers contains all of the users we don't need anymore. At most, this is 4 users. At minimum, it's 0.
+        badUsers = []
+        users.forEach(u => {
+          if(u) {
+            if (tools.letters.slice(teamSize**2, teamSize ** 2 + teamSize).includes(u.person)) {
+              badUsers.push(u)
+            }
+          }
+        })
+
+        badUsers.forEach(u => {
+          issueFinish(u,runViaEmailOn ? "Please click submit below and await further instructions from scaledhumanity@gmail.com." : "Thank you for participating in our task! Click the submit button below and you will be compensated at the promised rate for the time you have spent.")
+          u.connected = false
+        })
+      }
+
       Object.entries(teams[conditionRound]).forEach(([roomName,room]) => {
         users.filter(u => room.includes(u.person)).forEach(u => {
           u.room = roomName
@@ -884,9 +966,11 @@ io.on('connection', (socket) => {
         } else {
           // Dynamically generate teammate names
           // even if teamSize = 1 for testing, this still works
-
+          users.forEach(u => {
+            console.log(u.id, u.room)
+          })
           let teamMates = u.friends.filter(friend => { return (users.byID(friend.id)) && users.byID(friend.id).connected && (users.byID(friend.id).room == u.room) && (friend.id !== u.id)});
-
+          console.log(teamMates)
           let team_Aliases = tools.makeName(teamMates.length, u.friends_history)
           user.friends_history = u.friends_history.concat(team_Aliases)
           for (i = 0; i < teamMates.length; i++) {
@@ -1077,7 +1161,7 @@ io.on('connection', (socket) => {
       crashed: false
     })
   }
-  
+
 });
 
 // return subset of userPool
@@ -1207,7 +1291,7 @@ function parseResults(data) {
   data.split('&').forEach(responsePair => {
     let response = responsePair.split("=")
     index = response[0].split("-q")
-    parsedResults[index[1]] = decode(response[1])
+    parsedResults[index[1]] = response[1] ? decode(response[1]) : ""
   })
   return parsedResults;
 }
@@ -1222,3 +1306,16 @@ const logTime = () => {
   console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.toString());
 }
 
+<<<<<<< HEAD
+=======
+function getRandomSubarray(arr, size) {
+  let shuffled = arr.slice(0), i = arr.length, min = i - size, temp, index;
+  while (i-- > min) {
+      index = Math.floor((i + 1) * Math.random());
+      temp = shuffled[index];
+      shuffled[index] = shuffled[i];
+      shuffled[i] = temp;
+  }
+  return shuffled.slice(min);
+}
+>>>>>>> master
