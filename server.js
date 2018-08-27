@@ -224,13 +224,13 @@ if (runExperimentNow){
           // Get workers to notify from - all times are PT
           let currenttimePeriod = "";
           let currentHour = new Date(Date.now()).getHours();
-          if ((7 <= currentHour) && (currentHour <= 9)) {
+          if ((7 <= currentHour) && (currentHour < 12)) {
             currenttimePeriod = "morning"
           }
-          else if ((12 <= currentHour) && (currentHour <= 14)) {
+          else if ((12 <= currentHour) && (currentHour < 15)) {
             currenttimePeriod = "afternoon"
           }
-          else if ((15 <= currentHour) && (currentHour <= 17)) {
+          else if ((15 <= currentHour) && (currentHour < 18)) {
             currenttimePeriod = "evening"
           }
           else if ((18 <= currentHour) && (currentHour <= 20)) {
@@ -256,6 +256,27 @@ if (runExperimentNow){
                 mturk.notifyWorkers(workerstonotify, subject, message)
               }
             }
+
+            db.willBang.find({ timePreference: currenttimePeriod }, (err, currentTimePoolWorkers) => {
+              if (err) {console.log("DB for MTurk:" + err)}
+              else { //if we don't have enough people with current time preference to notify
+                let moreworkersneeded = maxWorkersToNotify - currentTimePoolWorkers.length
+                if (moreworkersneeded > 0) {
+                  db.willBang.find({ timePreference: '' }, (err, workersfromnullPool) => {
+                    if (err) {console.log("DB for MTurk:" + err)}
+                    else {
+                      workersfromnullPool = getRandomSubarray(workersfromnullPool, moreworkersneeded)
+                      let workerstonotify = currentTimePoolWorkers.concat(workersfromnullPool).map(u => u.id)
+                      mturk.notifyWorkers(workerstonotify, subject, message)
+                    }
+                  })
+                }
+                else {
+                  let workerstonotify = currentTimePoolWorkers.map(u => u.id)
+                  mturk.notifyWorkers(workerstonotify, subject, message)
+                }
+              }
+            })
           })
         }
       })
