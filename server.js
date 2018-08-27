@@ -217,7 +217,7 @@ if (runExperimentNow && runningLive){ mturk.launchBang(function(HIT) {
       }
       if(usingWillBang) {
         // Use this function to notify only x users <= 100
-        let maxWorkersToNotify = 200; // cannot be more than 100 if non-recursive
+        let maxWorkersToNotify = 100; // cannot be more than 100 
 
           mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
           // randomize list
