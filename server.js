@@ -221,18 +221,24 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
         let maxWorkersToNotify = 100; // cannot be more than 100
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         // Get workers to notify from 
+=======
+        // Get workers to notify from - all times are PT
+>>>>>>> ea43ade655c3c8731fe2630a83949de191d1b616
         let currenttimePeriod = "";
         let currentHour = new Date(Date.now()).getHours();
-        if ((6 <= currentHour) && (currentHour <= 12)) {
+        if ((7 <= currentHour) && (currentHour <= 9)) {
           currenttimePeriod = "morning"
         }
-        else if ((12 <= currentHour) && (currentHour <= 15)) {
+        else if ((12 <= currentHour) && (currentHour <= 14)) {
           currenttimePeriod = "afternoon"
         }
-        else if ((15 <= currentHour) && (currentHour <= 18)) {
+        else if ((15 <= currentHour) && (currentHour <= 17)) {
           currenttimePeriod = "evening"
         }
+        else if ((18 <= currentHour) && (currentHour <= 20)) {
+          currenttimePeriod = "late evening"
 
         db.willBang.find({ timePreference: currenttimePeriod }, (err, currentTimePoolWorkers) => {
           if (err) {console.log("DB for MTurk:" + err)}
