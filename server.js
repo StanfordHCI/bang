@@ -34,7 +34,7 @@ const randomRoundOrder = true
 const randomProduct = true
 
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
-const extraRoundOn = false //Only set to true if teamSize = 4, Requires waitChatOn = true.
+const extraRoundOn = true //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = true
@@ -165,6 +165,7 @@ db.chats = new Datastore({ filename:'.data/chats', autoload: true, timestampData
 db.batch = new Datastore({ filename:'.data/batch', autoload: true, timestampData: true});
 db.time = new Datastore({ filename:'.data/time', autoload: true, timestampData: true});
 db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true})
+db.debug = new Datastore({ filename: '.data/debug', autoload: true, timestampData: true})
 
 function updateUserInDB(user,field,value) {
   db.users.update( {id: user.id}, {$set: {[field]: value}}, {},
@@ -199,7 +200,7 @@ if (cleanHITs){
   })
 }
 
-if (runExperimentNow){ mturk.launchBang(function(HIT) {
+if (runExperimentNow && runningLive){ mturk.launchBang(function(HIT) {
   logTime()
   storeHIT(HIT.HITId)
   // Notify workers that a HIT has started if we're doing recruiting by email
@@ -646,6 +647,8 @@ io.on('connection', (socket) => {
       // update DB with change
       updateUserInDB(user,'connected',false)
       console.log(socket.username + " HAS LEFT")
+      mturk.notifyWorkers([user.mturkId], "Did you mean to disconnect?", "It seems like you've disconnected from our HIT. If this was a mistake, please email us at scaledhumanity@gmail.com with your Mturk ID and the last things you did in the HIT.")
+
       if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
       console.log("Connected users: " + getUsersConnected().length);
