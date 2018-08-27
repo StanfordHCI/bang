@@ -411,8 +411,7 @@ io.on('connection', (socket) => {
     function updateUsersActive() {
       userPool.forEach(user => {
         //PK: rename secondsToWait
-        if(secondsSince(user.timeAdded) > secondsToWait) {
-        // if(secondsSince(user.timeAdded) > secondsToWait && secondsSince(user.timeLastActivity) < secondsSinceResponse) { // PK: make isUserOnCall fxn
+        if(secondsSince(user.timeAdded) > secondsToWait && secondsSince(user.timeLastActivity) < secondsSinceResponse) { // PK: make isUserOnCall fxn
           user.active = true;
         } else {
           user.active = false;
@@ -458,7 +457,7 @@ io.on('connection', (socket) => {
         }
       }
     } else { // waitchat off
-      if(usersActive.length >= teamSize ** 2) {
+      if(usersActive.length >= numUsersWanted) {
         io.sockets.emit('update number waiting', {num: 0});
         console.log('there are ' + usersActive.length + ' users: ' + usersActive)
         for(let i = 0; i < usersActive.length; i ++){
