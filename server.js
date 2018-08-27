@@ -4,11 +4,7 @@ var colors = require('colors')
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-<<<<<<< HEAD
 const teamSize = process.env.TEAM_SIZE 
-=======
-const teamSize = process.env.TEAM_SIZE
->>>>>>> 8cc5801239486f7310adc45b9656b8bbef4a3063
 const roundMinutes = process.env.ROUND_MINUTES 
 
 //Parameters for waiting qualifications
