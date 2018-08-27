@@ -33,23 +33,7 @@ const randomCondition = true
 const randomRoundOrder = true
 const randomProduct = false
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-const waitChatOn = false//MAKE SURE THIS IS THE SAME IN CLIENT
-=======
 const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
->>>>>>> Stashed changes
-=======
-const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
->>>>>>> Stashed changes
-=======
-const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
->>>>>>> Stashed changes
-=======
-const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
->>>>>>> Stashed changes
 const extraRoundOn = true //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false
 const selfConsistencyOn = true
