@@ -544,6 +544,25 @@ const launchBang = (callback) => {
             currentHitId = data.HIT.HITId;
             currentHITTypeId = data.HIT.HITTypeId
             currentHITGroupId = data.HIT.HITGroupId
+
+            // notify here - randomize list - notify again each time a new HIT is posted if have not yet rolled over
+            let subject = "We launched our new ad writing HIT. Join now, spaces are limited."
+            console.log(data.HIT)
+            let URL = ''
+            getHITURL(currentHitId, function(url) {
+              URL = url;
+              let message = "You’re invited to join our newly launched HIT on Mturk; there are limited spaces and it will be closed to new participants in about 15 minutes!  Check out the HIT here: " + URL + " \n\nYou're receiving this message because you you indicated that you'd like to be notified of our upcoming HIT during this time window. If you'd like to stop receiving notifications please email your MTurk ID to: scaledhumanity@gmail.com";
+              console.log("message to willBangers", message);
+              if(!URL) {
+                throw "URL not defined"
+              }
+              let maxWorkersToNotify = 100; // cannot be more than 100
+              listUsersWithQualificationRecursively(quals.willBang, function(data) {
+                let notifyList = getRandomSubarray(data, maxWorkersToNotify)
+                notifyWorkers(notifyList, subject, message)
+              })
+            })
+
           }
       });
       delay++;
@@ -634,3 +653,14 @@ listAssignments(id,data => {
   console.log(data);
   console.log(data.length)
 })
+
+function getRandomSubarray(arr, size) {
+  let shuffled = arr.slice(0), i = arr.length, min = i - size, temp, index;
+  while (i-- > min) {
+      index = Math.floor((i + 1) * Math.random());
+      temp = shuffled[index];
+      shuffled[index] = shuffled[i];
+      shuffled[i] = temp;
+  }
+  return shuffled.slice(min);
+}
