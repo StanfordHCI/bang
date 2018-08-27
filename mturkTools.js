@@ -40,6 +40,7 @@ const hourlyWage = 10.50; // changes reward of experiment depending on length - 
 const rewardPrice = 0.01 // upfront cost
 const numHITs = 3;
 const maxAssignments = (2 * teamSize * teamSize) * 2;
+
 let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
 let usersAcceptedHIT = 0;
 let numAssignments = maxAssignments; // extra HITs for over-recruitment
@@ -434,7 +435,7 @@ const payBonuses = (users,callback) => {
           console.log("Already bonused",u.bonus ,u.id, u.mturkId)
           successfullyBonusedUsers.push(u)
         } else {
-          console.log("NOT bonused\t",u.bonus ,u.id, u.mturkId,err)
+          console.log("NOT bonused\t",u.bonus ,u.id, u.mturkId,err.message)
         }
       } else {
         successfullyBonusedUsers.push(u)
@@ -581,7 +582,7 @@ const launchBang = (callback) => {
 const notifyWorkers = (WorkerIds, subject, message) => {
  mturk.notifyWorkers({WorkerIds:WorkerIds, MessageText:message, Subject:subject}, function(err, data) {
    if (err) console.log("Error notifying workers:",err, err.stack); // an error occurred
-   else     console.log("Notified",WorkerIds.length,"workers:", subject);           // successful response
+   else     console.log("Notified ",WorkerIds.length," workers:", subject);           // successful response
  });
 }
 
