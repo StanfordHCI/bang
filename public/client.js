@@ -400,7 +400,7 @@ $('#selfConsistencyForm').submit( (event) => {
     event.preventDefault() //stops page reloading
     socket.emit('selfConsistencySubmit', $('#selfConsistency').serialize()) //submits results alone
     socket.emit('next event')
-    $midSurvey.hide()
+    $selfConsistency.hide()
     $holdingPage.show()
     $('#selfConsistencyForm')[0].reset();
   })
