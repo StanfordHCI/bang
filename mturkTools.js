@@ -434,7 +434,7 @@ const payBonuses = (users,callback) => {
           console.log("Already bonused",u.bonus ,u.id, u.mturkId)
           successfullyBonusedUsers.push(u)
         } else {
-          console.log("NOT bonused\t",u.bonus ,u.id, u.mturkId,err)
+          console.log("NOT bonused\t",u.bonus ,u.id, u.mturkId,err.message)
         }
       } else {
         successfullyBonusedUsers.push(u)
