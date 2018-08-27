@@ -31,7 +31,7 @@ let setPerson = false
 
 const randomCondition = true
 const randomRoundOrder = true
-const randomProduct = false
+const randomProduct = true
 
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false //Only set to true if teamSize = 4, Requires waitChatOn = true.
