@@ -537,7 +537,7 @@ io.on('connection', (socket) => {
       })
       // assign people to rooms/teams
       users.forEach(u => {
-        console.log("People length:", people.length, ", People:", people)
+        // console.log("People length:", people.length, ", People:", people)
         u.person = people.pop();
       })
       userAcquisitionStage = false;
