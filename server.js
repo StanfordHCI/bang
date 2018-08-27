@@ -223,13 +223,13 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
         // Get workers to notify from - all times are PT
         let currenttimePeriod = "";
         let currentHour = new Date(Date.now()).getHours();
-        if ((7 <= currentHour) && (currentHour <= 9)) {
+        if ((7 <= currentHour) && (currentHour < 12)) {
           currenttimePeriod = "morning"
         }
-        else if ((12 <= currentHour) && (currentHour <= 14)) {
+        else if ((12 <= currentHour) && (currentHour < 15)) {
           currenttimePeriod = "afternoon"
         }
-        else if ((15 <= currentHour) && (currentHour <= 17)) {
+        else if ((15 <= currentHour) && (currentHour < 18)) {
           currenttimePeriod = "evening"
         }
         else if ((18 <= currentHour) && (currentHour <= 20)) {
