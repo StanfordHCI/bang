@@ -1,10 +1,13 @@
-## Set-up and import: 
+## Set-up libraries and prepare for data import: 
+library(psych)
+library(likert)
+library(tidyverse)
+library(jsonlite)
 
 rm(list=ls())
 setwd("/Users/allieblaising/desktop/bang/R") 
 getwd()
 dataPath = "../.data"
-
 extractSurvey = function(frame,survey) {
   rounds = seq(1,length(frame$results.format[[1]]))
   roundResponses = lapply(rounds, function(round) {
@@ -23,8 +26,6 @@ extractSurvey = function(frame,survey) {
   })
   return(Reduce(rbind,roundResponses))
 }
-
-survey = 'viabilityCheck'
 batches = dir(dataPath, pattern = "^[0-9]+$" )
 completeBatches = Filter(function(batch) { 
   if (any(dir(paste(dataPath,batch,sep="/")) == "batch.json") && (any(dir(paste(dataPath,batch,sep="/")) == "users.json")) ) {
@@ -39,6 +40,7 @@ userFiles = lapply(completeBatches, function(batch) {
   return(flatten(userFile, recursive = TRUE))
 })
 
+## Retroactively find rooms from chat data: 
 overlappingFiles = Reduce(function(x,y) merge(x, y, all=TRUE), userFiles)
 roundsWithRooms = apply(overlappingFiles,1,function(x) {
   roomsForIndividual = lapply(seq(1,3),function(y) {
@@ -49,38 +51,45 @@ roundsWithRooms = apply(overlappingFiles,1,function(x) {
   return(Reduce(rbind,roomsForIndividual))
 })
 
+## Apply extract survey function to extract the right columns and rows for viability survey: 
+survey = 'viabilityCheck'
 frame <- extractSurvey(overlappingFiles, survey)
+## Reduce to vertically combine rows in roundwithRooms list:  
 finalRounds = as.data.frame(Reduce(rbind,roundsWithRooms))
 
-## to-do: *FIGURE OUT A BETTER WAY TO MERGE: THIS IS PURE JIBBERISH // WORST CODING EVER, BUT R SUCKS* 
+## Subset incomplete cases from viability survey dataframe: 
+  ## MSB: complete.cases doesn't work when there aren't NAs, but empty lists, alternatives rather than subsetting where 
+  ## blacklist is empty? Doens't work: test <- complete.cases(data)
+data <- data[frame$blacklist!="",]
+## Rename room to rooms so that both are retained in future merge: 
+data <- rename(data, rooms = room)
 
-
-## Is there a better way we can subset out complete observations then using blacklist? 
-data <- frame[frame$blacklist!="",]
-data <- rename(data, "rooms" = rooms)
+## Subset incomplete cases for final rounds dataframe: 
 data2 <- finalRounds[finalRounds$results.blacklistCheck!="", ]
+
+## Select only variables of interest from final rounds: 
 data2 = data2 %>% select(id, batch, room, bonus, name, friends, 
                          friends_history, results.condition, results.format,
                          results.manipulation,results.manipulationCheck,results.blacklistCheck, round)
 
-## Convert to compatible data type before merge (to-do: clean up)
-data2$id <- unlist(data2$id)
+## Convert to compatible data types before merge (this should be simplified)
 data$round <- unlist(data$round)
 data2$batch <- unlist(data2$batch)
 data$batch <- unlist(data$batch)
 data2$round <- unlist(data2$round)
+## Before merge, data and data2 should ahve the same # of observations
+## Merge columns by id, round and batch #s: 
 data <- left_join(data, data2, by=NULL)
+## Subset only observations with batch #s in complete batches 
 allConditions <- data[data$batch %in% completeBatches, ]
 
-## Subset complete batches only 
+## Conditionally assign conditions based on treatment and results column: 
 
-## Create new columns for 
-data <- allConditions %>% filter(results.condition=="treatment") %>% mutate(condition = case_when(round == 1 ~ "baseline",
-                                                                                                  round == 2  ~ "control",
-                                                                                                  round == 3 ~ "experiment"))
+  ##MSB: below works, but massive if, then doesn't. Ideas for setting up conditional data table to read it? 
 
-## Conditional for reading and assigning conditions: 
-
+# data <- allConditions %>% filter(results.condition=="treatment") %>% mutate(condition = case_when(round == 1 ~ "baseline",
+#                                                                                                   round == 2  ~ "control",
+#                                                                                                   round == 3 ~ "experiment"))
 
 data3 <- for (i in 1:nrow(data)) { 
   if (data$results.format[i]==x) {mutate(data, condition2 = case_when(round == 1 ~ "test",
@@ -88,42 +97,21 @@ data3 <- for (i in 1:nrow(data)) {
                                                                       round == 3 ~ "masked"))
   }} 
 
-x=as.character(list(c(1,2,1)))
-data$results.format <- as.character(data$results.format)
 
-identical(x, data$results.format[1])
 
-data3 <- for (i in 1:nrow(data)) { 
-  if (data$results.format[i]==x) { mutate(data, condition2[i] = case_when(round == 1 ~ "does this work",
-                                                                          round == 2  ~ "control",
-                                                                          round == 3 ~ "masked"))
-  }} 
-
-# 
-#  else if (data$results.format==c(2,1,1)) {mutate(data, condition = case_when(round == 1 ~ "control",
-#                                                            round == 2  ~ "unmasked",
-#                                                           round == 3 ~ "masked"))
-# } else if (data$results.format==c(1,1,2)) {mutate(data, condition = case_when(round == 1 ~ "unmasked",
-#                                                               round == 2  ~ "masked",
-#                                                                round == 3 ~ "control")) 
-#   
-#  } 
-
-## Extract observations only for unmasked and masked conditions: 
-
-## Set-up factors / levels: 
-
+## Assign factor levels for survey and graph visualizations: 
 data <- rename(data, "repeatTeam" = results.viabilityCheck.15)
+## Remove observations where viability survey wasn't on: 
 data <- na.omit(data)
 levels <- c("Strongly Disagree", "Disagree", "Neutral","Agree", "Strongly Agree") 
-levels2 <- c("1","2","3")
+levels2 <- c("0","1") 
 clean <- data %>% 
   mutate_at(.vars = vars(contains("results.viabilityCheck")), funs(factor(., levels = levels))) %>%
   mutate_at(.vars = vars(contains("blacklist")), funs(factor(., levels = levels2))) %>% 
   mutate_at(.vars = vars(contains("repeatTeam")), funs(factor(., levels=levels3))) 
 
 ## Viabilitylikert visuals: 
-
+## Subset only viabilitySurvey columns and condition column (condition column used to visualize likert responses for conditions)
 viabilityLikert <- select(clean, contains("results.viabilityCheck"), "condition")
 viabilityLabels = c("1. The members of this team could work for a long time together" 
                     , "2. Most of the members of this team would welcome the opportunity to work as a group again in the future." , 
@@ -138,76 +126,71 @@ viabilityLabels = c("1. The members of this team could work for a long time toge
                     " 11. This team is well positioned for growth over time. ", 
                     " 12. This team can develop to meet future challenges. ", 
                     " 13. This team has the capacity to sustain itself. ", 
-                    " 14. This team has what it takes to endure in future performance episodes.", "condition") 
+                    " 14. This team has what it takes to endure in future performance episodes.", "condition", "results.treatment") 
 names(viabilityLikert) <- rep(viabilityLabels) 
 
-## Likert graph for all viability responses from all rounds: control + masked + unmasked round: 
-likert.out <- likert(viabilityLikert[-c(15)]) 
+## Likert graph for all viability responses across all conditions (i.e. baseline, control and treatment): 
+likert.out <- likert(viabilityLikert[-c(15:16)]) 
 plot(likert.out)
 
-## Unmasked viability: 
-unMaskedViability <- subset(viabilityLikert, condition=="unmasked") 
-likert.unMasked <- likert(unMaskedViability[-c(15)])
-plot(likert.unMasked)
-plot(likert.unMasked,	type='density')
+## Subset A and Ap (i.e. A prime) responses for treatment group: 
+# Treatment + A: 
+treatmentA <- subset(viabilityLikert, condition=="A", results.treatment=="treatment") 
+likert.treatmentA <- likert(treatmentA[-c(15:16)])
+plot(likert.treatmentA)
+plot(likert.treatmentA,	type='density')
 
-## Round 2 // control viability: 
-controlViability <- subset(viabilityLikert, condition=="control") 
-likert.control <- likert(controlViability[-c(15)])
-plot(likert.control)
-plot(likert.control,	type='density')
+# Treatment + Ap: 
+treatmentAp <- subset(viabilityLikert, condition=="Ap", results.treatment=="treatment") 
+likert.treatmentAp <- likert(treatmentA[-c(15:16)])
+plot(likert.treatmentAp)
+plot(likert.treatmentAp,	type='density')
 
-## Masked viability: 
-maskedViability <- subset(viabilityLikert, condition=="masked") 
-likert.Masked <- likert(maskedViability[-c(15)])
-plot(likert.Masked)
-plot(likert.Masked,	type='density')
+## For all other condition + result combinations, customize above code: 
 
-
-## New data frame to numeric for stats tests: 
+## Create a new dataframe that converts factors to numeric for statistical analyses: 
 stats <- clean %>% mutate_if(is.factor, as.numeric)
 for (i in 1:nrow(stats)) {
   stats$sum[i] <- sum(stats[i,1:14])                          
 } 
 
-## Mean viability sum distribution graph: 
-unMaskedStats <- subset(stats, condition=="unmasked") 
-for (i in 1:nrow(unMaskedStats)) {
-  unMaskedStats$sum[i] <- sum(unMaskedStats[i,1:14])                          
+## Examples of how to subset visualize mean distribution for a specific condition and treatment (example case: treatment with all conditions)
+treatmentAStats <- subset(stats, results.treatment=="treatment", condition=="A") 
+for (i in 1:nrow(treatmentAStats)) {
+  treatmentAStatss$sum[i] <- sum(treatmentAStats[i,1:14])                          
 } 
-unMaskedStats$mean <- mean(unMaskedStats$sum) 
-unMaskedStats$median <- median(unMaskedStats$sum)
+treatmentAStats$mean <- mean(treatmentAStats$sum) 
+treatmentAStats$median <- median(treatmentAStats$sum)
 
-maskedStats <- subset(stats, condition=="masked")
-for (i in 1:nrow(maskedStats)) {
-  maskedStats$sum[i] <- sum(maskedStats[i,1:14])                          
+treatmentBStats <- subset(stats,results.treatment=="treatment",condition=="B")
+for (i in 1:nrow(treatmentBStats)) {
+  treatmentBStats$sum[i] <- sum(treatmentBStats[i,1:14])                          
 } 
-maskedStats$mean <- mean(maskedStats$sum) 
-maskedStats$median <- median(maskedStats$sum)
+treatmentBStats$mean <- mean(treatmentBStats$sum) 
+treatmentBStats$median <- median(treatmentBStats$sum)
 
-controlStats <- subset(stats, condition=="control")
-for (i in 1:nrow(controlStats)) {
-  controlStats$sum[i] <- sum(controlStats[i,1:14])                          
+treatmentApStats <- subset(stats, results.treatment=="treatment", condition=="Ap")
+for (i in 1:nrow(treatmentApStats)) {
+  treatmentApStats$sum[i] <- sum(treatmentApStats[i,1:14])                          
 } 
-controlStats$mean <- mean(controlStats$sum) 
-controlStats$median <- median(controlStats$sum)
+treatmentApStats$mean <- mean(treatmentApStats$sum) 
+treatmentApStats$median <- median(treatmentApStats$sum)
 
-## mean / median plot: 
-
+## Plot of mean and median distribution for viability: 
 plot(stats$mean, stats$median)
 
-## Mean viability distribution graph: unmasked condition
+## Mean viability distribution graph: treatment condition, A group 
 barfill <- "#4271AE"
 barlines <- "#1F3552"
-## Mean for unmasked: (##fill-in: 49.875 )
-meanViabilityDistributionUnMasked <- ggplot(unMaskedStats, aes(x = sum)) +
+## Mean for treatment and A group: ##fill-in) 
+meanViabilityDistributionUnMasked <- ggplot(treatmentAStats, aes(x = sum)) +
   geom_histogram(aes(y = ..count..), binwidth = 5,
                  colour = barlines, fill = barfill) +
-  scale_x_continuous(name = "Median viability sum \n across all teams in unmasked round",
+  scale_x_continuous(name = "Median viability sum",
                      breaks = seq(0, 100, 20),
-                     limits=c(14, 98)) +
+                     limits=c(0, 70)) +
   scale_y_continuous(name = "count") +
-  ggtitle("Frequency of sum of viability scores: unmasked condition, N=9") +
+  ggtitle("Frequency of sum of viability scores: N=##fill-in") +
   theme_bw() +
   theme(axis.line = element_line(size=1, colour = "black"),
         panel.grid.major = element_line(colour = "#d3d3d3"),
@@ -217,20 +200,20 @@ meanViabilityDistributionUnMasked <- ggplot(unMaskedStats, aes(x = sum)) +
         text=element_text(family="Tahoma"),
         axis.text.x=element_text(colour="black", size = 9),
         axis.text.y=element_text(colour="black", size = 9)) +
-  geom_vline(xintercept = 55.5, size = 1, colour = "#FF3721",
+  geom_vline(xintercept = ##fill-in, size = 1, colour = "#FF3721",
              linetype = "dashed")
 meanViabilityDistributionUnMasked 
 
-## Mean viability distribution graph: control
-## Mean for control: (fill-in)
-meanViabilityDistributionControl <- ggplot(controlStats, aes(x = sum)) +
+## Mean viability distribution graph: treatment condition, Aprime group 
+## Mean for treatment condition, Aprime group: (fill-in)
+meanViabilityDistributionControl <- ggplot(treatmentApStats, aes(x = sum)) +
   geom_histogram(aes(y = ..count..), binwidth = 5,
                  colour = barlines, fill = barfill) +
-  scale_x_continuous(name = "Median viability sum \n across all teams in control round",
+  scale_x_continuous(name = "Median viability sum",
                      breaks = seq(0, 100, 20),
-                     limits=c(14, 98)) +
+                     limits=c(0, 70)) +
   scale_y_continuous(name = "count") +
-  ggtitle("Frequency of sum of viability scores: control condition, N=9") +
+  ggtitle("Frequency of sum of viability scores:N=##fill-in") +
   theme_bw() +
   theme(axis.line = element_line(size=1, colour = "black"),
         panel.grid.major = element_line(colour = "#d3d3d3"),
@@ -240,22 +223,22 @@ meanViabilityDistributionControl <- ggplot(controlStats, aes(x = sum)) +
         text=element_text(family="Tahoma"),
         axis.text.x=element_text(colour="black", size = 9),
         axis.text.y=element_text(colour="black", size = 9)) +
-  geom_vline(xintercept = 56, size = 1, colour = "#FF3721",
+  geom_vline(xintercept = ##fill-in, size = 1, colour = "#FF3721",
              linetype = "dashed")
 meanViabilityDistributionControl
 
-## Mean viability distribution graph: masked 
-## Mean for masked: (fill-in)
+## Mean viability distribution graph: treatment condition, B group 
+## Mean for treatment condition, B group: 
 barfill <- "#4271AE"
 barlines <- "#1F3552"
-meanViabilityDistributionMasked <- ggplot(maskedStats, aes(x = sum)) +
+meanViabilityDistributionMasked <- ggplot(treatmentBStats, aes(x = sum)) +
   geom_histogram(aes(y = ..count..), binwidth = 5,
                  colour = barlines, fill = barfill) +
   scale_x_continuous(name = "Median viability sum \n across all teams in masked round",
                      breaks = seq(0, 98, 14),
-                     limits=c(14, 98)) +
+                     limits=c(7, 70)) +
   scale_y_continuous(name = "count") +
-  ggtitle("Frequency of sum of viability scores: masked condition, N=9") +
+  ggtitle("Frequency of sum of viability scores: masked condition, N=##fill-in") +
   theme_bw() +
   theme(axis.line = element_line(size=1, colour = "black"),
         panel.grid.major = element_line(colour = "#d3d3d3"),
@@ -265,75 +248,40 @@ meanViabilityDistributionMasked <- ggplot(maskedStats, aes(x = sum)) +
         text=element_text(family="Tahoma"),
         axis.text.x=element_text(colour="black", size = 9),
         axis.text.y=element_text(colour="black", size = 9)) +
-  geom_vline(xintercept = 59, size = 1, colour = "#FF3721",
+  geom_vline(xintercept = ##fill-in, size = 1, colour = "#FF3721",
              linetype = "dashed") 
 meanViabilityDistributionMasked
-
 stats$median <- median(stats$sum)
 stats$mean <- mean(stats$sum)
 
-## Boxplot distribution of viability scale sums: 
+## Boxplot distribution of viability scale sums and repeat team question (example case with treatment and A, Ap and B conditions): 
 
-## unmasked condition + repeat team question 
-
-g <- ggplot(unMaskedStats, aes(factor(repeatTeam, labels = c("Yes", "No")), sum))
+g <- ggplot(treatmentAStats, aes(factor(repeatTeam, labels = c("Yes", "No")), sum))
 g + geom_boxplot(varwidth=T, fill="plum") + 
-  labs(subtitle="Sum of viability measures grouped by repeat team question in unmasked condition", 
+  labs(subtitle="Sum of viability measures grouped by repeat team question in treatment condition, A group", 
        x="If you had the choice, would you like to work with the same team in a future round? ",
-       y="Numeric sum of viability measures questions (range: 14-98)")
+       y="Numeric sum of viability measures questions (range: 7-70)")
 
-g <- ggplot(unMaskedStats, aes(factor(repeatTeam, labels = c("Yes", "No")), sum))
+g <- ggplot(treatmentBStats, aes(factor(repeatTeam, labels = c("Yes", "No")), sum))
 g + geom_boxplot(varwidth=T, fill="plum") + 
-  labs(subtitle="Sum of viability measures grouped by repeat team question in unmasked condition", 
+  labs(subtitle="Sum of viability measures grouped by repeat team question in treatment condition, B group", 
        x="If you had the choice, would you like to work with the same team in a future round? ",
-       y="Numeric sum of viability measures questions (range: 14-98)")
+       y="Numeric sum of viability measures questions (range: 7-70)")
 
-## masked condition + repeat team question 
-
-g <- ggplot(maskedStats, aes(factor(repeatTeam, labels = c("Yes", "No")), sum))
+g <- ggplot(treatmentApStats, aes(factor(repeatTeam, labels = c("Yes", "No")), sum))
 g + geom_boxplot(varwidth=T, fill="plum") + 
-  labs(subtitle="Sum of viability measures grouped by repeat team question in masked condition", 
+  labs(subtitle="Sum of viability measures grouped by repeat team question in treatment condition, Ap group", 
        x="If you had the choice, would you like to work with the same team in a future round? ",
-       y="Numeric sum of viability measures questions (range: 14-98)")
-
-## conrol condition  + repeat team question 
-
-g <- ggplot(controlStats, aes(factor(repeatTeam, labels = c("Yes", "No")), sum))
-g + geom_boxplot(varwidth=T, fill="plum") + 
-  labs(subtitle="Sum of viability measures grouped by repeat team question in control condition", 
-       x="If you had the choice, would you like to work with the same team in a future round? ",
-       y="Numeric sum of viability measures questions (range: 14-98)")
-
-stats$room <- unlist(stats$room)
-g <- ggplot(blacklist, aes(factor(team), mean))
-g + geom_bar(varwidth=T, fill="plum")  + 
-  labs(subtitle="Sum of viability measures grouped by condition", 
-       x="Sum of viability measures grouped by condition", 
-       y="Numeric sum of viability measures questions (range: 14-98)")
-
-g <- ggplot(blacklist, aes(x=team, fill=factor(team), y=mean))
-g + geom_bar(stat="identity") + facet_grid(.~blacklist) + 
-  theme(
-    axis.text.x=element_blank(),
-    axis.ticks.x=element_blank()) + 
-  xlab(label="") + 
-  ylab(label="Mean viability results") + 
-  labs(title="Mean viability grouped by team and blacklist", fill = "Teams")
-
-g <- ggplot(stats, aes(x=blacklist, fill=factor(blacklist, mean))) + 
-  g + geom_bar() + facet_grid(.~repeatTeam) + 
-  theme(
-    axis.text.x=element_blank(),
-    axis.ticks.x=element_blank()) + 
-  xlab(label="If you had the choice, would you like to work with the same team in a future round?") + 
-  ylab(label="Count of blacklist choices") + 
-  labs(title="Distribution of repeat team question overlayed by blacklist response", fill = "Blacklist")
+       y="Numeric sum of viability measures questions (range: 7-70)")
 
 ## Proportion graphs for Q15: 
-
+## Revalue repeat team: 
 stats$repeatTeam <- revalue(stats$repeatTeam, c("Yes"="1", "No"="0"))
+## Convert to compatible classes for grouping: 
 stats$repeatTeam <- as.numeric(stats$repeatTeam)
 stats$room <- unlist(stats$room) 
+
+## MSB: is there another way to group_by teams using base R: I'm skeptical of dplyr. If not, triple check computations are accurate below: 
 
 groupedProportion <- stats %>%
   group_by(round, room, batch) %>% 
@@ -347,7 +295,7 @@ ggplot(data=groupedProportion, aes(groupedProportion$freq)) +
   geom_histogram(breaks=seq(0, 1, by=0.20), 
                  col="red", 
                  fill="green", 
-                 alpha=.2) + labs(title="Binary proportion of answers for question 15 per team (team size range: 2-4) N=49 teams", 
+                 alpha=.2) + labs(title="Binary proportion of answers for question 15 per team (team size range: 2-4) n=##fill-in teams", 
                                   x="If you had the choice, would you like to work with the same team in a future round? 
                                   1=Yes , 0=No", y="Count") 
 
@@ -355,7 +303,7 @@ ggplot(data=individualProportion, aes(individualProportion$prop)) +
   geom_histogram(breaks=seq(0, 1, by=0.20), 
                  col="red", 
                  fill="green", 
-                 alpha=.2) + labs(title="Binary proportion of answers for question 15 per team (team size range: 2-4) N=127 observations",
+                 alpha=.2) + labs(title="Binary proportion of answers for question 15 per team: n=##fill-in observations",
                                   x="If you had the choice, would you like to work with the same team in a future round? 
                                   1=Yes , 0=No", y="Count") 
 
@@ -368,30 +316,7 @@ summary(fit1)
 plot(sum ~ prop, data = proportionQ15)
 abline(fit1)
 
-qplot(prop, sum, data=Q15, 
-      main="Scatterplot of proportions for repeat team and viability sum responses per team",
-      xlab="Repeat team question proportion", ylab="viability sums") + 
-  geom_smooth(method='lm',se=TRUE)
-
-ggplot(data=proportion, aes(proportion$freq)) + 
-  geom_histogram(breaks=seq(0, 1, by=0.1), 
-                 col="red", 
-                 fill="green", 
-                 alpha=.2) + labs(title="Binary proportion of answers for question 15 per team (team size range: 2-4) N=49 teams", 
-                                  x="If you had the choice, would you like to work with the same team in a future round? 
-                                  1=Yes , 2=no", y="Count") 
-
-ggplot(data=proportion, aes(proportion$freq)) + 
-  geom_histogram(breaks=seq(0, 1, by=0.05), 
-                 col="red", 
-                 fill="green", 
-                 alpha=.2) + labs(title="Binary proportion of answers for question 15 per team (team size range: 2-4) N=49 teams", 
-                                  x="If you had the choice, would you like to work with the same team in a future round? 
-                                  1=Yes , 2=no", y="Count") 
-
-## Proability / proportion table: 
-
-## Group by then: 
+## Setup proability // proportion table based on grouping variable: 
 
 prop.table(m, 1)
 prop.table(table(df))
@@ -412,38 +337,8 @@ hist(stats$sum,xlab="Sum of scores",main="")
 pairedTest <-  subset(stats, condition=="masked" | condition=="unmasked") 
 t.test(sum~condition, data=pairedTest)
 
-## How to compare individual:
+## Import and clean chat data from database: 
 
-## facet_grid sums from masked vs. unmasked based on id? (rename id as individual) 
-
-g <- ggplot(stats, aes(factor(condition), sum))
-g + geom_boxplot(varwidth=T, fill="plum") + facet_grid(.~mturkId)
-labs(subtitle="Sum of viability measures grouped by condition", 
-     x="Sum of viability measures grouped by condition", 
-     y="Numeric sum of viability measures questions (range: 14-98)")
-
-blacklist$blacklist <- unlist(blacklist$blacklist)
-
-g <- ggplot(blacklist, aes(factor(team), mean, fill=blacklist)) 
-g + geom_boxplot(varwidth=T, fill="plum") +
-  labs(subtitle="Sum of viability measures grouped by condition", 
-       x="Sum of viability measures grouped by condition", 
-       y="Numeric sum of viability measures questions (range: 14-98)") 
-
-## Analyze data from control and basline conditions: 
-
-## subset data for baseline 
-
-baselineData %>% data %>% filter(condition=="basline")
-
-## subset data for control
-
-controlData <- data %>% filter(results.condition=="control")
-
-## Chat data import: 
-## visualize chat data: 
-
-## Chat data histogram: 
 
 
 
