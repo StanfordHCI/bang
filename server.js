@@ -34,7 +34,7 @@ const randomRoundOrder = true
 const randomProduct = true
 
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
-const extraRoundOn = false //Only set to true if teamSize = 4, Requires waitChatOn = true.
+const extraRoundOn = true //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = true
@@ -165,6 +165,7 @@ db.chats = new Datastore({ filename:'.data/chats', autoload: true, timestampData
 db.batch = new Datastore({ filename:'.data/batch', autoload: true, timestampData: true});
 db.time = new Datastore({ filename:'.data/time', autoload: true, timestampData: true});
 db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true})
+db.debug = new Datastore({ filename: '.data/debug', autoload: true, timestampData: true})
 
 function updateUserInDB(user,field,value) {
   db.users.update( {id: user.id}, {$set: {[field]: value}}, {},
@@ -199,7 +200,7 @@ if (cleanHITs){
   })
 }
 
-if (runExperimentNow){ mturk.launchBang(function(HIT) {
+if (runExperimentNow && runningLive){ mturk.launchBang(function(HIT) {
   logTime()
   storeHIT(HIT.HITId)
   // Notify workers that a HIT has started if we're doing recruiting by email
