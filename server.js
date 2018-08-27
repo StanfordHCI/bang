@@ -220,12 +220,7 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
         // Use this function to notify only x users <= 100
         let maxWorkersToNotify = 100; // cannot be more than 100
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-        // Get workers to notify from 
-=======
         // Get workers to notify from - all times are PT
->>>>>>> ea43ade655c3c8731fe2630a83949de191d1b616
         let currenttimePeriod = "";
         let currentHour = new Date(Date.now()).getHours();
         if ((7 <= currentHour) && (currentHour <= 9)) {
@@ -242,7 +237,7 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
 
         db.willBang.find({ timePreference: currenttimePeriod }, (err, currentTimePoolWorkers) => {
           if (err) {console.log("DB for MTurk:" + err)}
-          else { //if we don't have enough people with current time preference to notify 
+          else { //if we don't have enough people with current time preference to notify
             let moreworkersneeded = maxWorkersToNotify - currentTimePoolWorkers.length
             if (moreworkersneeded > 0) {
               db.willBang.find({ timePreference: '' }, (err, workersfromnullPool) => {
@@ -1009,7 +1004,7 @@ io.on('connection', (socket) => {
         const hasBangers = users.map(a => a.mturkId)
         hasBangers.forEach(u => mturk.assignQuals(u, mturk.quals.hasBanged))
       }
-      // remove willBang qualification from people who rolled over 
+      // remove willBang qualification from people who rolled over
       // remove people who rolled over from willBang database
       if(usingWillBang) {
         const hasBangers = users.map(a => a.mturkId)
@@ -1312,8 +1307,6 @@ const logTime = () => {
   console.log("This is as of " +  (Date.now()-batchID)/1000 + " seconds since starting the experiment. Printed at", timeNow.toString());
 }
 
-<<<<<<< HEAD
-=======
 function getRandomSubarray(arr, size) {
   let shuffled = arr.slice(0), i = arr.length, min = i - size, temp, index;
   while (i-- > min) {
@@ -1324,4 +1317,3 @@ function getRandomSubarray(arr, size) {
   }
   return shuffled.slice(min);
 }
->>>>>>> master
