@@ -54,6 +54,9 @@ if (fs.existsSync(recruitingHITstorage)) {
       else if (u.Answer.includes("evening")) {
         timePreference = "evening";
       }
+      else if (u.Answer.includes("late evening")) {
+        timePreference = "late evening";
+      }
       let db = {}
       db.willBang = new Datastore({ filename:'.data/willBang', autoload: true, timestampData: true});
       db.willBang.insert( {id: u.WorkerId, timePreference: timePreference},
