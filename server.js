@@ -200,85 +200,68 @@ if (cleanHITs){
   })
 }
 
-if (runExperimentNow){ mturk.launchBang(function(HIT) {
-  logTime()
-  storeHIT(HIT.HITId)
-  // Notify workers that a HIT has started if we're doing recruiting by email
-  if (notifyWorkersOn) {
-    // let HITId = process.argv[2];
-    let subject = "We launched our new ad writing HIT. Join now, spaces are limited."
-    console.log(HIT)
-    let URL = ''
-    mturk.getHITURL(HIT.HITId, function(url) {
-      URL = url;
-      let message = "You’re invited to join our newly launched HIT on Mturk; there are limited spaces and it will be closed to new participants in about 15 minutes!  Check out the HIT here: " + URL + " \n\nYou're receiving this message because you you indicated that you'd like to be notified of our upcoming HIT during this time window. If you'd like to stop receiving notifications please email your MTurk ID to: scaledhumanity@gmail.com";
-      console.log("message to willBangers", message);
-      if (!URL) {
-        throw "URL not defined"
-      }
-      if(usingWillBang) {
-        // Use this function to notify only x users <= 100
-        let maxWorkersToNotify = 100; // cannot be more than 100
+if (runExperimentNow){
+  mturk.launchBang(function(HIT) {
+    logTime()
+    storeHIT(HIT.HITId)
+    // Notify workers that a HIT has started if we're doing recruiting by email
+    if (notifyWorkersOn) {
+      // let HITId = process.argv[2];
+      let subject = "We launched our new ad writing HIT. Join now, spaces are limited."
+      console.log(HIT)
+      let URL = ''
+      mturk.getHITURL(HIT.HITId, function(url) {
+        URL = url;
+        let message = "You’re invited to join our newly launched HIT on Mturk; there are limited spaces and it will be closed to new participants in about 15 minutes!  Check out the HIT here: " + URL + " \n\nYou're receiving this message because you you indicated that you'd like to be notified of our upcoming HIT during this time window. If you'd like to stop receiving notifications please email your MTurk ID to: scaledhumanity@gmail.com";
+        console.log("message to willBangers", message);
+        if (!URL) {
+          throw "URL not defined"
+        }
+        if(usingWillBang) {
+          // Use this function to notify only x users <= 100
+          let maxWorkersToNotify = 100; // cannot be more than 100
 
-        // Get workers to notify from - all times are PT
-        let currenttimePeriod = "";
-        let currentHour = new Date(Date.now()).getHours();
-        if ((7 <= currentHour) && (currentHour <= 9)) {
-          currenttimePeriod = "morning"
-        }
-        else if ((12 <= currentHour) && (currentHour <= 14)) {
-          currenttimePeriod = "afternoon"
-        }
-        else if ((15 <= currentHour) && (currentHour <= 17)) {
-          currenttimePeriod = "evening"
-        }
-        else if ((18 <= currentHour) && (currentHour <= 20)) {
-          currenttimePeriod = "late evening"
-
-        db.willBang.find({ timePreference: currenttimePeriod }, (err, currentTimePoolWorkers) => {
-          if (err) {console.log("DB for MTurk:" + err)}
-          else { //if we don't have enough people with current time preference to notify
-            let moreworkersneeded = maxWorkersToNotify - currentTimePoolWorkers.length
-            if (moreworkersneeded > 0) {
-              db.willBang.find({ timePreference: '' }, (err, workersfromnullPool) => {
-                if (err) {console.log("DB for MTurk:" + err)}
-                else {
-                  workersfromnullPool = getRandomSubarray(workersfromnullPool, moreworkersneeded)
-                  let workerstonotify = currentTimePoolWorkers.concat(workersfromnullPool).map(u => u.id)
-                  mturk.notifyWorkers(workerstonotify, subject, message)
-                }
-              })
-            }
-            else {
-              let workerstonotify = currentTimePoolWorkers.map(u => u.id)
-              mturk.notifyWorkers(workerstonotify, subject, message)
-            }
+          // Get workers to notify from - all times are PT
+          let currenttimePeriod = "";
+          let currentHour = new Date(Date.now()).getHours();
+          if ((7 <= currentHour) && (currentHour <= 9)) {
+            currenttimePeriod = "morning"
           }
-        })
+          else if ((12 <= currentHour) && (currentHour <= 14)) {
+            currenttimePeriod = "afternoon"
+          }
+          else if ((15 <= currentHour) && (currentHour <= 17)) {
+            currenttimePeriod = "evening"
+          }
+          else if ((18 <= currentHour) && (currentHour <= 20)) {
+            currenttimePeriod = "late evening"
+          }
 
-        // mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
-
-        //   mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
-=======
-          mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
-          // randomize list
-          let notifyList = getRandomSubarray(data, maxWorkersToNotify)
-          mturk.notifyWorkers(notifyList, subject, message)
-        })
-        // unrandomized list
-        // mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
-        //   //mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
->>>>>>> master
-        // }); // must return from mturkTools
-
-        // use this function to notify entire list of willBang workers
-        // mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
-        //   mturk.notifyWorkers(data, subject, message)
-        // })
-      }
-    });
-  }
-}) }
+          db.willBang.find({ timePreference: currenttimePeriod }, (err, currentTimePoolWorkers) => {
+            if (err) {console.log("DB for MTurk:" + err)}
+            else { //if we don't have enough people with current time preference to notify
+              let moreworkersneeded = maxWorkersToNotify - currentTimePoolWorkers.length
+              if (moreworkersneeded > 0) {
+                db.willBang.find({ timePreference: '' }, (err, workersfromnullPool) => {
+                  if (err) {console.log("DB for MTurk:" + err)}
+                  else {
+                    workersfromnullPool = getRandomSubarray(workersfromnullPool, moreworkersneeded)
+                    let workerstonotify = currentTimePoolWorkers.concat(workersfromnullPool).map(u => u.id)
+                    mturk.notifyWorkers(workerstonotify, subject, message)
+                  }
+                })
+              }
+              else {
+                let workerstonotify = currentTimePoolWorkers.map(u => u.id)
+                mturk.notifyWorkers(workerstonotify, subject, message)
+              }
+            }
+          })
+        }
+      })
+    }
+  })
+}
 
 //Add more products
 let products = [
