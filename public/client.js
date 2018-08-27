@@ -398,11 +398,21 @@ $(function() {
 
 $('#selfConsistencyForm').submit( (event) => {
     event.preventDefault() //stops page reloading
-    socket.emit('selfConsistencySubmit', $('#selfConsistency').serialize()) //submits results alone
-    socket.emit('next event')
-    $selfConsistency.hide()
-    $holdingPage.show()
+    console.log("$('#selfConsistencyForm').serialize()", $('#selfConsistencyForm').serialize())
+    if ($('#selfConsistencyForm').serialize().includes("Yes%2C+I+agree")) {
+      socket.emit('selfConsistencySubmit', $('#selfConsistencyForm').serialize()) //submits results alone
+      socket.emit('next event')
+      $selfConsistency.hide()
+      $holdingPage.show()
+    }
+    else {
+      HandleFinish(finishingMessage = "You terminated the HIT. Thank you for your time.",
+          mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
+          assignmentId = mturkVariables.assignmentId, finishingcode = "LeftHit");
+      socket.disconnect(true);
+    }
     $('#selfConsistencyForm')[0].reset();
+    
   })
 
 
