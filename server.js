@@ -801,7 +801,7 @@ io.on('connection', (socket) => {
         if(timeCheckOn) {
           recordTime("postSurvey");
         }
-        user.bonus = Number(user.bonus) + Number(mturk.bonusPrice)
+        user.bonus = Number(mturk.bonusPrice)
         updateUserInDB(user,"bonus",user.bonus)
 
         storeHIT()
