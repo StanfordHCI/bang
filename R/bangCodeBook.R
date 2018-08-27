@@ -6,6 +6,9 @@ library(jsonlite)
 library(ggplot2)
 theme_set(theme_classic())
 
+## WARNING: make sure that plyr is detached before running dplyr stuff, other you're going to sit at your computer 
+## banging your head like I did, so....[detach(package:plyr) library(dplyr)]
+
 rm(list=ls())
 ## Change working directory: 
 setwd("/Users/allieblaising/desktop/bang/R") 
@@ -131,11 +134,8 @@ data <- rename(data, "repeatTeam" = results.viabilityCheck.15)
 ## Remove observations where viability survey wasn't on: 
 data <- na.omit(data)
 levels <- c("Strongly Disagree", "Disagree", "Neutral","Agree", "Strongly Agree") 
-levels2 <- c("0","1") 
 clean <- data %>% 
-  mutate_at(.vars = vars(contains("results.viabilityCheck")), funs(factor(., levels = levels))) %>%
-  mutate_at(.vars = vars(contains("blacklist")), funs(factor(., levels = levels2))) %>% 
-  mutate_at(.vars = vars(contains("repeatTeam")), funs(factor(., levels=levels3))) 
+  mutate_at(.vars = vars(contains("results.viabilityCheck")), funs(factor(., levels = levels)))  
 
 ## Viabilitylikert visuals: 
 ## Subset only viabilitySurvey columns and condition column (condition column used to visualize likert responses for conditions)
@@ -180,9 +180,12 @@ stats <- clean %>% mutate_if(is.factor, as.numeric)
 for (i in 1:nrow(stats)) {
   stats$sum[i] <- sum(stats[i,1:14])                          
 } 
+stats$mean <- mean(stats$sum)
+stats$mean <- median(stats$sum)
 
 ## Examples of how to subset visualize mean distribution for a specific condition and treatment (example case: treatment with all conditions)
-treatmentAStats <- subset(stats, results.condition=="treatment", condition=="A") 
+treatmentAStats <- stats %>% filter(results.condition=="treatment" & condition=="A") 
+
 for (i in 1:nrow(treatmentAStats)) {
   treatmentAStats$sum[i] <- sum(treatmentAStats[,1:14])                          
 } 
@@ -202,9 +205,6 @@ for (i in 1:nrow(treatmentApStats)) {
 } 
 treatmentApStats$mean <- mean(treatmentApStats$sum) 
 treatmentApStats$median <- median(treatmentApStats$sum)
-
-## Plot of mean and median distribution for viability: 
-plot(stats$mean, stats$median)
 
 ## Mean viability distribution graph: treatment condition, A group 
 barfill <- "#4271AE"
@@ -278,8 +278,6 @@ meanViabilityDistributionMasked <- ggplot(treatmentBStats, aes(x = sum)) +
   geom_vline(xintercept = ##fill-in, size = 1, colour = "#FF3721",
                linetype = "dashed") 
 meanViabilityDistributionMasked
-stats$median <- median(stats$sum)
-stats$mean <- mean(stats$sum)
 
 ## Boxplot distribution of viability scale sums and repeat team question (example case with treatment and A, Ap and B conditions): 
 
@@ -310,32 +308,34 @@ stats$room <- unlist(stats$room)
 
 ## MSB: is there another way to group_by teams using base R: I'm skeptical of dplyr. If not, triple check computations are accurate below: 
 
-## Possible options in base R: 
-
-aggregate(repeatTeam ~ round+room+batch, stats, prop.table(repeatTeam))
-stats[,list(mean=mean(sum),prop=prop.table(repeatTeam)),by=c(round, room, batch)]
-
-## Set-up for table with proportion for condition (i.e. treatment, baseline, control) and condition format (need to group by first) 
-xtabs(repeatTeam ~ condition, data=stats) 
 ## Table with mean sum for condition (i.e. treatment, baseline, control) and condition format:
 xtabs(mean ~ condition + results.format, data=stats) 
+
 ## Subset on the fly (from group_by data)
-xtabs(prop ~ group + batch + room, data=stats, subset = condition=="treatment")
+xtabs(prop ~ round + batch + room, data=groupedProportion, subset = condition=="treatment")
 xtabs(prop ~ group + batch + room, data=stats, subset = condition=="control")
 xtabs(prop ~ group + batch + room, data=stats, subset = condition=="baseline")
 
-## Proportion table: 
-prop.table(xtabs(repeatTeam ~ round + batch + room, data=stats, subset=condition=="treatment"), margin = 1) 
+## Subset proportions:  
 
-groupedProportion <- stats %>%
-  group_by(round, room, batch) %>% 
-  summarise(n=n()) %>% 
-  mutate(sum=sum(repeatTeam)/n) %>% filter(n>1)
+groupedProportion <- stats %>% group_by(round, room, batch, condition, results.condition) %>%
+  summarise(n=n(), prop=sum(repeatTeam)/n, mean=mean(sum), median=median(sum)) %>% filter(n>1)
+
+groupedProportion <- stats %>% group_by(round, room, batch) %>%
+  summarise(n=n(), prop=prop.table(repeatTeam) %>% filter(n>1))
 
 individualProportion <- stats %>% group_by(round, batch, room) %>% 
   mutate(sum=sum, mean=mean(sum), median=median(sum), n=n(),prop=sum(repeatTeam)/n) %>% filter(n>1)
 
-ggplot(data=groupedProportion, aes(groupedProportion$freq)) + 
+## Alternatives: 
+
+groupedProportion2 <- plyr::ddply(stats, .list(batch, round, room), summarise, n=n(), prop = sum(repeatTeam)/n)
+groupedProportion2 <- groupedProportion %>% filter(n>1)
+
+groupedProportion <- stats %>% group_by(round, room, batch, condition, results.condition) %>%
+  summarise(n=n(), prop=sum(repeatTeam)/n, mean=mean(sum), median=median(sum)) %>% filter(n>1)
+
+ggplot(data=groupedProportion, aes(groupedProportion$prop, fill=factor(condition))) + 
   geom_histogram(breaks=seq(0, 1, by=0.20), 
                  col="red", 
                  fill="green", 
@@ -351,19 +351,41 @@ ggplot(data=individualProportion, aes(individualProportion$prop)) +
                                   x="If you had the choice, would you like to work with the same team in a future round? 
                                   1=Yes , 0=No", y="Count") 
 
-qplot(sum, median, data=proportion, 
+## Distribution of median vs. mean per team: 
+qplot(mean, prop, data=groupedProportion, 
       main="Scatterplots median vs. mean for viability sum responses per team",
       xlab="mean", ylab="median")
 
-fit1 <- lm(sum ~ prop, data = proportionQ15)
+ggplot(groupedProportion, aes(x=prop, y=mean)) + 
+  geom_point() +
+  stat_smooth(method = "lm", col = "red")
+
+## Indivdiaul proportion with sum:  
+fit1 <- lm(mean ~ prop, data = individualProportion, se=TRUE)
 summary(fit1)
-plot(sum ~ prop, data = proportionQ15)
+plot(mean ~ prop, data = individualProportion)
+abline(fit1, )
+
+fit1 <- lm(sum ~ prop, data = individualProportion)
+summary(fit1)
+plot(sum ~ prop, data = individualProportion)
 abline(fit1)
 
-## Setup proability // proportion table based on grouping variable: 
+fit1 <- lm(median ~ prop, data = groupedProportion)
+summary(fit1)
+plot(median ~ prop, data = groupedProportion)
+abline(fit1)
 
-prop.table(m, 1)
-prop.table(table(df))
+## Group proportion with sum: 
+fit1 <- lm(mean ~ prop, data = groupedProportion)
+summary(fit1)
+plot(mean ~ prop, data = groupedProportion)
+abline(fit1)
+
+fit1 <- lm(median ~ prop, data = groupedProportion)
+summary(fit1)
+plot(median ~ prop, data = groupedProportion)
+abline(fit1)
 
 ## Basic exploratory stats testing: 
 ## Parametric inference: 
@@ -384,15 +406,17 @@ t.test(sum~condition, data=pairedTest)
 ## Import and clean chat data from database: 
 +## Chat data import: 
   
-  chatFiles = lapply(completeBatches, function(batch){
+chatFiles = lapply(completeBatches, function(batch){
     chatFile = read_json(paste(dataPath,batch,"chats.json",sep="/"), simplifyVector = TRUE)
     return(flatten(chatFile, recursive = TRUE))
   })
 
 allChatFiles <- ldply(chatFiles, data.frame)
 chatFreq <- allChatFiles  %>%
+  select(round, room, batch) %>% 
   group_by(round, room, batch) %>% 
   dplyr::summarise(n=n()) %>% 
+  mutate(sum=prop.table(repeatTeam)) %>% 
   filter(n>1, round<=2)
 
 ## Filter on round <=2, because round 3 in all but one case is only includes "X has left chat room" 
