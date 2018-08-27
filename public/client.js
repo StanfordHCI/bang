@@ -5,7 +5,7 @@ $(function() {
   let colorAssignment = []
 
   //toggles
-  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -122,20 +122,23 @@ $(function() {
     mturkVariables = { mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId, timeAdded: (new Date()).getTime()}
     socket.emit('accepted HIT', mturkVariables); //PK: thoughts on setting waitchat toggle in client and sending it to server in this emit?
     if(waitChatOn){
-      socket.emit('get username')
       hideAll();
-      $chatPage.show()
-      $headerbarPage.show()
-      $leaveHitButton.hide()
-      addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername +", welcome to our HIT!"})
-      addChatMessage({username: botUsername, message: "You must be able to stay for the amount of time allotted for this HIT, though we will likely finish before this. If you cannot stay, please leave now. You will not be compensated if you leave before all the tasks are over. As a reminder, do not refresh or close the page."})
-      setTimeout(()=> {
-        addChatMessage({username: botUsername, message: "For this first task, I need you to answer a sequence of questions. Thanks for cooperating!"})
-        setTimeout(() => {
-          socket.emit('load bot qs')
-        }, 1000*1)
+      socket.emit('load self consistency')
+      $selfConsistency.show();
+      // socket.emit('get username')
+      // hideAll();
+      // $chatPage.show()
+      // $headerbarPage.show()
+      // $leaveHitButton.hide()
+      // addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername +", welcome to our HIT!"})
+      // addChatMessage({username: botUsername, message: "You must be able to stay for the amount of time allotted for this HIT, though we will likely finish before this. If you cannot stay, please leave now. You will not be compensated if you leave before all the tasks are over. As a reminder, do not refresh or close the page."})
+      // setTimeout(()=> {
+      //   addChatMessage({username: botUsername, message: "For this first task, I need you to answer a sequence of questions. Thanks for cooperating!"})
+      //   setTimeout(() => {
+      //     socket.emit('load bot qs')
+      //   }, 1000*1)
 
-      }, 1000*.5)
+      // }, 1000*.5)
     } else {
       hideAll();
       $waitingPage.show();
@@ -400,12 +403,23 @@ $('#selfConsistencyForm').submit( (event) => {
     event.preventDefault() //stops page reloading
     console.log("$('#selfConsistencyForm').serialize()", $('#selfConsistencyForm').serialize())
     if ($('#selfConsistencyForm').serialize().includes("Yes%2C+I+agree")) {
-      socket.emit('selfConsistencySubmit', $('#selfConsistencyForm').serialize()) //submits results alone
-      socket.emit('next event')
-      $selfConsistency.hide()
-      $holdingPage.show()
-    }
-    else {
+      socket.emit('log', 'USER AGREED TO SELF CONSISTENCY')
+      socket.emit('get username')
+      hideAll();
+      $chatPage.show()
+      $headerbarPage.show()
+      $leaveHitButton.hide()
+      addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername +", welcome to our HIT!"})
+      addChatMessage({username: botUsername, message: "You must be able to stay for the amount of time allotted for this HIT, though we will likely finish before this. If you cannot stay, please leave now. You will not be compensated if you leave before all the tasks are over. As a reminder, do not refresh or close the page."})
+      setTimeout(()=> {
+        addChatMessage({username: botUsername, message: "For this first task, I need you to answer a sequence of questions. Thanks for cooperating!"})
+        setTimeout(() => {
+          socket.emit('load bot qs')
+        }, 1000*1)
+
+      }, 1000*.5)
+    }else {
+      socket.emit('log', 'USER DISAGREED TO SELF CONSISTENCY')
       HandleFinish(finishingMessage = "You terminated the HIT. Thank you for your time.",
           mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
           assignmentId = mturkVariables.assignmentId, finishingcode = "LeftHit");
@@ -856,12 +870,6 @@ $('#selfConsistencyForm').submit( (event) => {
     const URLvars = getUrlVars(location.href);
     //console.log('get IDs ran');
     socket.emit(data,{mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId});
-  })
-
-socket.on('selfConsistency',data => {
-    hideAll();
-    $selfConsistency.show();
-
   })
 
   $("#leave-hit-submit").click((event) => {

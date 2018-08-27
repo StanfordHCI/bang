@@ -4,8 +4,8 @@ var colors = require('colors')
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE = 4
-const roundMinutes = process.env.ROUND_MINUTES = 0.5
+const teamSize = process.env.TEAM_SIZE 
+const roundMinutes = process.env.ROUND_MINUTES 
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
@@ -18,9 +18,9 @@ const maxWaitChatMinutes = 20
 // Toggles
 const runExperimentNow = true
 const issueBonusesNow = true
-const notifyWorkersOn = true
+const notifyWorkersOn = false
 const runViaEmailOn = false
-const usingWillBang = true
+const usingWillBang = false
 
 const cleanHITs = false
 const assignQualifications = true
@@ -33,10 +33,9 @@ const randomCondition = true
 const randomRoundOrder = true
 const randomProduct = false
 
-const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
-const extraRoundOn = true //Only set to true if teamSize = 4, Requires waitChatOn = true.
+const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
+const extraRoundOn = false //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false
-const selfConsistencyOn = true
 const midSurveyOn = true
 const blacklistOn = false
 const teamfeedbackOn = false
@@ -95,31 +94,6 @@ function useUser(u,f,err = "Guarded against undefined user") {
   else { console.log(err.red,u.id) }
 }
 
-// Save debug logs for later review
-const util = require('util');
-const trueLog = console.log;
-const debugDir = ".data/debug/"
-
-if (!fs.existsSync(debugDir)) {
-  fs.mkdirSync(debugDir)
-}
-log_file = debugDir + "debug" + Date.now() + ".log";
-console.log = function(...msg) {
-  trueLog(msg.map(item => {return util.format(item)}).join(" ")); //uncomment if you want logs
-    msg.map(item => {
-      fs.appendFile(log_file, util.format(item) + " ", function(err) {
-        if(err) {
-            return trueLog(err);
-        }
-      });
-    })
-    fs.appendFile(log_file, "\n", function(err) {
-      if(err) {
-          return trueLog(err);
-      }
-    });
-}
-
 //if (runExperimentNow){
   // Experiment variables
   const conditionsAvailalbe = ['control','treatment','baseline']
@@ -166,6 +140,31 @@ db.chats = new Datastore({ filename:'.data/chats', autoload: true, timestampData
 db.batch = new Datastore({ filename:'.data/batch', autoload: true, timestampData: true});
 db.time = new Datastore({ filename:'.data/time', autoload: true, timestampData: true});
 db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true})
+
+// Save debug logs for later review
+// const util = require('util');
+// const trueLog = console.log;
+// const debugDir = ".data/debug/"
+
+// if (!fs.existsSync(debugDir)) {
+//   fs.mkdirSync(debugDir)
+// }
+// log_file = debugDir + "debug" + Date.now() + ".log";
+// console.log = function(...msg) {
+//   trueLog(msg.map(item => {return util.format(item)}).join(" ")); //uncomment if you want logs
+//     msg.map(item => {
+//       fs.appendFile(log_file, util.format(item) + " ", function(err) {
+//         if(err) {
+//             return trueLog(err);
+//         }
+//       });
+//     })
+//     fs.appendFile(log_file, "\n", function(err) {
+//       if(err) {
+//           return trueLog(err);
+//       }
+//     });
+// }
 
 function updateUserInDB(user,field,value) {
   db.users.update( {id: user.id}, {$set: {[field]: value}}, {},
@@ -278,9 +277,6 @@ let taskTime = 0;
 // Building task list
 //if (runExperimentNow){
   let eventSchedule = []
-  if (selfConsistencyOn) {
-    eventSchedule.push("selfConsistency")
-  }
   let roundSchedule = []
   roundSchedule.push("ready")
   if (midSurveyOn) {
@@ -322,7 +318,6 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
     {
       batchID: batchID,
       batchComplete: false,
-      selfConsistencyOn:selfConsistencyOn,
       midSurveyOn: midSurveyOn,
       blacklistOn: blacklistOn,
       teamfeedbackOn: teamfeedbackOn,
@@ -495,7 +490,6 @@ io.on('connection', (socket) => {
         format: conditions[currentCondition],
         manipulation: {},
         checkin: {},
-        selfConsistency: {},
         viabilityCheck: {},
         psychologicalSafety: {},
         teamfeedback: {},
@@ -621,6 +615,10 @@ io.on('connection', (socket) => {
     io.in(socket.id).emit('chatbot', loadQuestions(botFile))
   })
 
+  socket.on('load self consistency', () =>{
+    io.in(socket.id).emit("load", {element: 'selfConsistency', questions: loadQuestions(selfConsistencyFile), interstitial: false, showHeaderBar: false});
+  })
+
   // when the user disconnects.. perform this
   socket.on('disconnect', () => {
     // changes connected to false of disconnected user in userPool
@@ -729,15 +727,7 @@ io.on('connection', (socket) => {
       let currentEvent = user.currentEvent;
       let eventSchedule = user.eventSchedule;
       console.log ("Event " + currentEvent + ": " + eventSchedule[currentEvent] + " | User: " + user.name)
-
-      if (eventSchedule[currentEvent] == "selfConsistency") {
-        io.in(user.id).emit("load", {element: 'selfConsistency', questions: loadQuestions(selfConsistencyFile), interstitial: false, showHeaderBar: false});
-        taskStartTime = getSecondsPassed();
-      }
-      else if (eventSchedule[currentEvent] == "ready") {
-        if(selfConsistencyOn && timeCheckOn) {
-          recordTime("selfConsistency");
-        }
+      if (eventSchedule[currentEvent] == "ready") {
         if (checkinOn) {
           io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true, showHeaderBar: true});
         }
@@ -1004,14 +994,6 @@ io.on('connection', (socket) => {
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
     issueFinish(socket, runViaEmailOn ? "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions." : "The task has finished early. You will be compensated by clicking submit below.", finishingCode = "broken")
-  });
-
-  // self consistency question 
-  socket.on('selfConsistencyQuestionSubmit', (data) => {
-    useUser(socket,user => {
-      user.results.selfConsistency = parseResults(data)
-      updateUserInDB(user,"results.selfConsistency",user.results.selfConsistency)
-    })
   });
 
    // Task after each round - midSurvey - MAIKA
