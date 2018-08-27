@@ -256,27 +256,6 @@ if (runExperimentNow){
                 mturk.notifyWorkers(workerstonotify, subject, message)
               }
             }
-
-            db.willBang.find({ timePreference: currenttimePeriod }, (err, currentTimePoolWorkers) => {
-              if (err) {console.log("DB for MTurk:" + err)}
-              else { //if we don't have enough people with current time preference to notify
-                let moreworkersneeded = maxWorkersToNotify - currentTimePoolWorkers.length
-                if (moreworkersneeded > 0) {
-                  db.willBang.find({ timePreference: '' }, (err, workersfromnullPool) => {
-                    if (err) {console.log("DB for MTurk:" + err)}
-                    else {
-                      workersfromnullPool = getRandomSubarray(workersfromnullPool, moreworkersneeded)
-                      let workerstonotify = currentTimePoolWorkers.concat(workersfromnullPool).map(u => u.id)
-                      mturk.notifyWorkers(workerstonotify, subject, message)
-                    }
-                  })
-                }
-                else {
-                  let workerstonotify = currentTimePoolWorkers.map(u => u.id)
-                  mturk.notifyWorkers(workerstonotify, subject, message)
-                }
-              }
-            })
           })
         }
       })
