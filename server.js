@@ -4,8 +4,8 @@ var colors = require('colors')
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE = 4
-const roundMinutes = process.env.ROUND_MINUTES = 0.5
+const teamSize = process.env.TEAM_SIZE
+const roundMinutes = process.env.ROUND_MINUTES 
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
@@ -31,10 +31,10 @@ let setPerson = false
 
 const randomCondition = true
 const randomRoundOrder = true
-const randomProduct = false
+const randomProduct = true
 
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
-const extraRoundOn = true //Only set to true if teamSize = 4, Requires waitChatOn = true.
+const extraRoundOn = false //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = true
@@ -446,8 +446,7 @@ io.on('connection', (socket) => {
     function updateUsersActive() {
       userPool.forEach(user => {
         //PK: rename secondsToWait
-        if(secondsSince(user.timeAdded) > secondsToWait) {
-        // if(secondsSince(user.timeAdded) > secondsToWait && secondsSince(user.timeLastActivity) < secondsSinceResponse) { // PK: make isUserOnCall fxn
+        if(secondsSince(user.timeAdded) > secondsToWait && secondsSince(user.timeLastActivity) < secondsSinceResponse) { // PK: make isUserOnCall fxn
           user.active = true;
         } else {
           user.active = false;
@@ -493,7 +492,7 @@ io.on('connection', (socket) => {
         }
       }
     } else { // waitchat off
-      if(usersActive.length >= teamSize ** 2) {
+      if(usersActive.length >= numUsersWanted) {
         io.sockets.emit('update number waiting', {num: 0});
         console.log('there are ' + usersActive.length + ' users: ' + usersActive)
         for(let i = 0; i < usersActive.length; i ++){
