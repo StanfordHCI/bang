@@ -167,7 +167,6 @@ $(function() {
     } else {
       message += "there are " + data.numUsers + " participants";
     }
-    // log(message);
   }
 
   // Sends a chat message
@@ -193,7 +192,6 @@ $(function() {
   // Log a message
   function log (message, options) {
     const $el = $('<li>').addClass('log').html(message);
-    // const $el = $('<li>').addClass('log').(message);
     addMessageElement($el, options);
   }
 
@@ -219,7 +217,6 @@ $(function() {
       .text(data.username)
       .css({'color': getUsernameColor(data.username),
       'float':'left',
-      // 'height': $messageBodyDiv.css("height"),
       'display':'inline-block'
     });
 
@@ -631,7 +628,7 @@ $(function() {
     setTimeout(()=>{
       let totalLengthString = ""
       totalLengthString = Math.round(3*(data.duration) + 15) + " minutes"
-      log("Reminder: You will receive the bonus pay at the stated hourly rate only if you stay for all three rounds. This should take no more than " + totalLengthString)
+      log("Reminder: You will receive the bonus pay at the stated hourly rate only if you stay for all three rounds and answer any survey questions. This should take no more than " + totalLengthString)
       log("From now until when you receive a link to submit the HIT, <strong>DO NOT REFRESH OR LEAVE THE PAGE</strong>. This will kill the task for everyone and you will not be compensated.")
       log("Task: " + data.task)
       log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.")
@@ -865,20 +862,6 @@ $(function() {
     $currentInput.focus();
     $('#leave-hit-form')[0].reset();
   })
-
-
-  // $('#leave-hit-form').submit((event) => {
-  //   event.preventDefault() //stops page reloading
-  //   let selectedValue = $('input[name=leave-hit-q1]:checked').val();
-  //   if (selectedValue == 1) {
-
-  //   } else {
-  //     $leaveHitPopup.hide();
-  //     $currentInput = $inputMessage.focus();
-  //     $currentInput.focus();
-  //   }
-
-  // })
 
   $('#starterForm').submit( (event) => {
     event.preventDefault() //stops page reloading

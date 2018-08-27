@@ -1,5 +1,5 @@
 txt/currentrecruitingHIT.txt
-bang.log
+*.log
 .data
 node_modules
 package-lock.json
@@ -12,3 +12,5 @@ R/.RData
 .DS_Store
 *.png
 *.txt
+*.swp
+*.swo

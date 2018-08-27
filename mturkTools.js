@@ -19,7 +19,7 @@ if (runningLive) {
   submitTo = 'https://www.mturk.com'
 }
 
-let taskURL = 'https://mark.dmorina.com/';
+let taskURL = process.env.TASK_URL
 if (runningLocal) {
   taskURL = 'https://localhost:3000/';
 }
@@ -88,7 +88,7 @@ const quals = {
   },
 }
 
-const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged]
+const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(0), quals.hasBanged]
 const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged, quals.willNotBang]
 const qualsForTesting = [quals.onlyUSA, quals.hitsAccepted(0)]
 const safeQuals = runningLive ? qualsForLive : qualsForTesting
@@ -179,16 +179,13 @@ const makeHIT = (chooseQual, title, description, assignmentDuration, lifetime, r
 //
 // Takes HIT ID as parameter.
 
-const returnHIT = (hitId, callback) => {
+const returnHIT = (hitId) => {
   var returnHITParams = {
     HITId: hitId /* required */
   };
   mturk.getHIT(returnHITParams, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
-    else  {
-      // console.log(data);           // successful response
-      if (typeof callback === 'function') callback(data)
-    }   
+    else     console.log(data);           // successful response
   });
 }
 
@@ -221,7 +218,6 @@ const workOnActiveHITs = (callback) => {
     if (err) {console.log(err, err.stack)} else {
       if (typeof callback === 'function'){
         callback(data.HITs.filter(h => h.HITStatus == "Assignable").map(h => h.HITId))
-        // callback(data.HITs.filter(h => h.HITStatus == "Assignable"))
       }
     }
   })
@@ -604,7 +600,7 @@ module.exports = {
 // * checkQualsRecursive *
 // -------------------------------------------------------------------
 // Gets the total number of users that have a certain qualification. Uncomment the funciton underneath to call.
-// 
+//
 // Takes a qual object and callback(function) as parameters, returns an array of MTURK IDS
 //NOTE: CHANGED TO RETURN ARRAY OF MTURK IDS NOT USER OBJECTS
 const checkQualsRecursive = (qualObject, callback, paginationToken = null, passthrough = []) => {
@@ -630,6 +626,11 @@ const checkQualsRecursive = (qualObject, callback, paginationToken = null, passt
 //   })
 // })
 
-// hitIds.forEach(id => listAssignments(id,data => {
-//   data.map(u => u.WorkerId).forEach(u => assignQuals(u,quals.willBang))
-// }))
+// id = "3R5OYNIC2COM0SDDREBFKCHMOHATPE"
+// id = "3B9J25CZ25S2R3RUX9KJQ7MTNFDCSQ"
+
+id = '37A2SHHJCA6SGYI4KY3EX8T0Y97JKF'
+listAssignments(id,data => {
+  console.log(data);
+  console.log(data.length)
+})

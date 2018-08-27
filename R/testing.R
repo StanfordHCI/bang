@@ -54,6 +54,13 @@ userFiles = lapply(completeBatches, function(batch){
   return(flatten(userFile, recursive = TRUE))
 })
 
+chatFiles = lapply(completeBatches, function(batch){
+  chatFile = read_json(paste(dataPath,batch,"chats.json",sep="/"), simplifyVector = TRUE)
+  return(flatten(chatFile, recursive = TRUE))
+})
+
+lapply(chatFiles, function(x) dim(x))
+
 overlappingFiles = Reduce(function(x,y) merge(x, y, all=TRUE), userFiles)
 
 roundsWithRooms = apply(overlappingFiles,1,function(x) {

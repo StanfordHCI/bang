@@ -57,7 +57,7 @@ finalRounds = as.data.frame(Reduce(rbind,roundsWithRooms))
 
 ## Is there a better way we can subset out complete observations then using blacklist? 
 data <- frame[frame$blacklist!="",]
-data <- rename(data, "rooms" = rooms)
+data <- dplyr::rename(data, "rooms" = rooms)
 data2 <- finalRounds[finalRounds$results.blacklistCheck!="", ]
 data2 = data2 %>% select(id, batch, room, bonus, name, friends, 
                          friends_history, results.condition, results.format,
@@ -88,10 +88,6 @@ data3 <- for (i in 1:nrow(data)) {
                                                                       round == 3 ~ "masked"))
   }} 
 
-x=as.character(list(c(1,2,1)))
-data$results.format <- as.character(data$results.format)
-
-identical(x, data$results.format[1])
 
 data3 <- for (i in 1:nrow(data)) { 
   if (data$results.format[i]==x) { mutate(data, condition2[i] = case_when(round == 1 ~ "does this work",
@@ -113,7 +109,7 @@ data3 <- for (i in 1:nrow(data)) {
 
 ## Set-up factors / levels: 
 
-data <- rename(data, "repeatTeam" = results.viabilityCheck.15)
+data <- dplyr::rename(data, "repeatTeam" = results.viabilityCheck.15)
 data <- na.omit(data)
 levels <- c("Strongly Disagree", "Disagree", "Neutral","Agree", "Strongly Agree") 
 levels2 <- c("1","2","3")
@@ -269,8 +265,6 @@ meanViabilityDistributionMasked <- ggplot(maskedStats, aes(x = sum)) +
              linetype = "dashed") 
 meanViabilityDistributionMasked
 
-stats$median <- median(stats$sum)
-stats$mean <- mean(stats$sum)
 
 ## Boxplot distribution of viability scale sums: 
 
@@ -331,14 +325,43 @@ g <- ggplot(stats, aes(x=blacklist, fill=factor(blacklist, mean))) +
 
 ## Proportion graphs for Q15: 
 
-stats$repeatTeam <- revalue(stats$repeatTeam, c("Yes"="1", "No"="0"))
+stats$repeatTeam <- plyr::revalue(stats$repeatTeam, c("Yes"="1", "No"="0"))
 stats$repeatTeam <- as.numeric(stats$repeatTeam)
 stats$room <- unlist(stats$room) 
-
-groupedProportion <- stats %>%
+groupedProportion<- stats %>%
   group_by(round, room, batch) %>% 
   summarise(n=n()) %>% 
-  mutate(sum=sum(repeatTeam)) %>% filter(n>1)
+  mutate(sum=sum(repeatTeam)/n) %>% 
+  filter(n>1) 
+
+stats %>%
+  group_by(round, room, batch) %>% 
+  count(stats, repeatTeam) %>%
+  mutate(prop = prop.table(n))
+
+library(dplyr)
+df1 %>% 
+  group_by(round, room, batch) %>% 
+  mutate(proportion = count/sum(count))
+
+stats %>% group_by(round, room, batch) %>% mutate(proportion = prop.table(count))
+
+library(dplyr)
+stats %>% 
+  group_by(round, room, batch) %>% 
+  mutate(proportion = count/sum(count))
+
+with(stats, tapply(repeatTeam,list(stats$round, stats$room, stats$batch), function(x){prop.table(table(x))}))
+
+library(plyr)
+
+stats2 <- stats %>% 
+  group_by(round, room, batch) %>%
+  mutate(prop=sum(repeatTeam)/n) %>%
+  dplyr::summarise(n=n()) %>% 
+  filter(n>1)
+
+groupProportion2 <- ddply(stats2, c("room","batch", "round"), summarise, prop=prop.table(table(repeatTeam)))
 
 individualProportion <- stats %>% group_by(round, batch, room) %>% 
   mutate(sum=sum, mean=mean(sum), median=median(sum), n=n(),prop=sum(repeatTeam)/n) %>% filter(n>1)
@@ -389,6 +412,13 @@ ggplot(data=proportion, aes(proportion$freq)) +
                                   x="If you had the choice, would you like to work with the same team in a future round? 
                                   1=Yes , 2=no", y="Count") 
 
+## Proability / proportion table: 
+
+## Group by then: 
+
+prop.table(m, 1)
+prop.table(table(df))
+
 ## Basic exploratory stats testing: 
 ## Parametric inference: 
 hist(stats$sum,xlab="Sum of scores",main="")
@@ -432,6 +462,51 @@ baselineData %>% data %>% filter(condition=="basline")
 ## subset data for control
 
 controlData <- data %>% filter(results.condition=="control")
+
+## Chat data import: 
+
+chatFiles = lapply(completeBatches, function(batch){
+  chatFile = read_json(paste(dataPath,batch,"chats.json",sep="/"), simplifyVector = TRUE)
+  return(flatten(chatFile, recursive = TRUE))
+})
+
+allChatFiles <- ldply(chatFiles, data.frame)
+chatFreq <- allChatFiles  %>%
+  group_by(round, room, batch) %>% 
+  dplyr::summarise(n=n()) %>% 
+  filter(n>1, round<=2)
+
+allChatFiles$round[allChatFiles$round==3] <- 2 
+
+library(ggplot2)
+theme_set(theme_classic())
+# Histogram grouped by round: 
+g <- ggplot(chatFreq, aes(n)) + scale_fill_brewer(palette = "Spectral")
+g + geom_histogram(aes(fill=factor(round)), 
+                   bins=5, 
+                   col="black", 
+                   size=.1) +   # change number of bins
+  labs(title="Histogram of chat line length per team (includes teams with n=1)", 
+  fill = "Round") + 
+  xlab(label="Number of lines from chat data per team") + 
+  ylab(label="Count") 
+stats$room <- unlist(stats$room) 
+chatFreqStats <- right_join(x=chatFreq, y=stats)
+
+# Histogram grouped by round: 
+g <- ggplot(chatFreq, aes(n)) + scale_fill_brewer(palette = "Spectral")
+g + geom_histogram(aes(fill=factor(round)), 
+                   bins=5, 
+                   col="black", 
+                   size=.1) +   # change number of bins
+  labs(title="Histogram of chat line length per team (includes teams with n=1)", 
+       fill = "Round") + 
+  xlab(label="Number of lines from chat data per team") + 
+  ylab(label="Count") 
+
+stats$repeatTeam <- revalue(stats$repeatTeam, c("Yes"="1", "No"="0"))
+
+
 
 
 
