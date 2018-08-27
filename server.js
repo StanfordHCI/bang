@@ -11,7 +11,7 @@ const roundMinutes = process.env.ROUND_MINUTES
 //MAKE SURE secondsToWait > secondsSinceResponse
 const secondsToWait = 60 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
 const secondsSinceResponse = 59 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
-const secondsToHold1 = 1000 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
+const secondsToHold1 = 1200 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
 const secondsToHold2 = 200 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 const maxWaitChatMinutes = 20
 
@@ -217,7 +217,7 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
       }
       if(usingWillBang) {
         // Use this function to notify only x users <= 100
-        let maxWorkersToNotify = 100; // cannot be more than 100
+        let maxWorkersToNotify = 200; // cannot be more than 100 if non-recursive
 
           mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
           // randomize list
