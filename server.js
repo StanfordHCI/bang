@@ -97,27 +97,27 @@ function useUser(u,f,err = "Guarded against undefined user") {
 // Save debug logs for later review
 const util = require('util');
 const trueLog = console.log;
-// const debugDir = ".data/debug/"
+const debugDir = ".data/debug/"
 
-// if (!fs.existsSync(debugDir)) {
-//   fs.mkdirSync(debugDir)
-// }
-// log_file = debugDir + "debug" + Date.now() + ".log";
-// console.log = function(...msg) {
-//   trueLog(msg.map(item => {return util.format(item)}).join(" ")); //uncomment if you want logs
-//     msg.map(item => {
-//       fs.appendFile(log_file, util.format(item) + " ", function(err) {
-//         if(err) {
-//             return trueLog(err);
-//         }
-//       });
-//     })
-//     fs.appendFile(log_file, "\n", function(err) {
-//       if(err) {
-//           return trueLog(err);
-//       }
-//     });
-// }
+if (!fs.existsSync(debugDir)) {
+  fs.mkdirSync(debugDir)
+}
+log_file = debugDir + "debug" + Date.now() + ".log";
+console.log = function(...msg) {
+  trueLog(msg.map(item => {return util.format(item)}).join(" ")); //uncomment if you want logs
+    msg.map(item => {
+      fs.appendFile(log_file, util.format(item) + " ", function(err) {
+        if(err) {
+            return trueLog(err);
+        }
+      });
+    })
+    fs.appendFile(log_file, "\n", function(err) {
+      if(err) {
+          return trueLog(err);
+      }
+    });
+}
 
 //if (runExperimentNow){
   // Experiment variables
