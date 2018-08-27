@@ -4,7 +4,11 @@ var colors = require('colors')
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
+<<<<<<< HEAD
 const teamSize = process.env.TEAM_SIZE 
+=======
+const teamSize = process.env.TEAM_SIZE
+>>>>>>> 8cc5801239486f7310adc45b9656b8bbef4a3063
 const roundMinutes = process.env.ROUND_MINUTES 
 
 //Parameters for waiting qualifications
@@ -31,7 +35,7 @@ let setPerson = false
 
 const randomCondition = true
 const randomRoundOrder = true
-const randomProduct = false
+const randomProduct = true
 
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false //Only set to true if teamSize = 4, Requires waitChatOn = true.
@@ -537,7 +541,7 @@ io.on('connection', (socket) => {
       })
       // assign people to rooms/teams
       users.forEach(u => {
-        console.log("People length:", people.length, ", People:", people)
+        // console.log("People length:", people.length, ", People:", people)
         u.person = people.pop();
       })
       userAcquisitionStage = false;
@@ -801,7 +805,7 @@ io.on('connection', (socket) => {
         if(timeCheckOn) {
           recordTime("postSurvey");
         }
-        user.bonus = Number(user.bonus) + Number(mturk.bonusPrice)
+        user.bonus = Number(mturk.bonusPrice)
         updateUserInDB(user,"bonus",user.bonus)
 
         storeHIT()
@@ -924,11 +928,11 @@ io.on('connection', (socket) => {
         } else {
           // Dynamically generate teammate names
           // even if teamSize = 1 for testing, this still works
-          users.forEach(u => {
-            console.log(u.id, u.room)
-          })
+          // users.forEach(u => {
+          //   console.log(u.id, u.room)
+          // })
           let teamMates = u.friends.filter(friend => { return (users.byID(friend.id)) && users.byID(friend.id).connected && (users.byID(friend.id).room == u.room) && (friend.id !== u.id)});
-          console.log(teamMates)
+          // console.log(teamMates)
           let team_Aliases = tools.makeName(teamMates.length, u.friends_history)
           user.friends_history = u.friends_history.concat(team_Aliases)
           for (i = 0; i < teamMates.length; i++) {
