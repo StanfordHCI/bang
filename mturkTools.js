@@ -39,7 +39,7 @@ const timeActive = 4; //should be 10 // How long a task stays alive in minutes -
 const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
 const rewardPrice = 0.01 // upfront cost
 const numHITs = 3;
-const maxAssignments = (2 * teamSize * teamSize);
+const maxAssignments = (3 * teamSize * teamSize);
 let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
 let usersAcceptedHIT = 0;
 let numAssignments = maxAssignments; // extra HITs for over-recruitment
@@ -434,7 +434,7 @@ const payBonuses = (users,callback) => {
           console.log("Already bonused",u.bonus ,u.id, u.mturkId)
           successfullyBonusedUsers.push(u)
         } else {
-          console.log("NOT bonused\t",u.bonus ,u.id, u.mturkId,err)
+          console.log("NOT bonused\t",u.bonus ,u.id, u.mturkId,err.message)
         }
       } else {
         successfullyBonusedUsers.push(u)
