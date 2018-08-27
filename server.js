@@ -4,14 +4,14 @@ var colors = require('colors')
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE
+const teamSize = process.env.TEAM_SIZE 
 const roundMinutes = process.env.ROUND_MINUTES 
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
 const secondsToWait = 60 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
 const secondsSinceResponse = 59 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
-const secondsToHold1 = 1000 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
+const secondsToHold1 = 1200 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
 const secondsToHold2 = 200 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 const maxWaitChatMinutes = 20
 
@@ -34,7 +34,7 @@ const randomRoundOrder = true
 const randomProduct = true
 
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
-const extraRoundOn = false //Only set to true if teamSize = 4, Requires waitChatOn = true.
+const extraRoundOn = true //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = true
@@ -165,6 +165,7 @@ db.chats = new Datastore({ filename:'.data/chats', autoload: true, timestampData
 db.batch = new Datastore({ filename:'.data/batch', autoload: true, timestampData: true});
 db.time = new Datastore({ filename:'.data/time', autoload: true, timestampData: true});
 db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestampData: true})
+db.debug = new Datastore({ filename: '.data/debug', autoload: true, timestampData: true})
 
 function updateUserInDB(user,field,value) {
   db.users.update( {id: user.id}, {$set: {[field]: value}}, {},
@@ -199,7 +200,7 @@ if (cleanHITs){
   })
 }
 
-if (runExperimentNow){ mturk.launchBang(function(HIT) {
+if (runExperimentNow && runningLive){ mturk.launchBang(function(HIT) {
   logTime()
   storeHIT(HIT.HITId)
   // Notify workers that a HIT has started if we're doing recruiting by email
@@ -217,7 +218,7 @@ if (runExperimentNow){ mturk.launchBang(function(HIT) {
       }
       if(usingWillBang) {
         // Use this function to notify only x users <= 100
-        let maxWorkersToNotify = 100; // cannot be more than 100
+        let maxWorkersToNotify = 200; // cannot be more than 100 if non-recursive
 
           mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
           // randomize list
@@ -646,6 +647,8 @@ io.on('connection', (socket) => {
       // update DB with change
       updateUserInDB(user,'connected',false)
       console.log(socket.username + " HAS LEFT")
+      mturk.notifyWorkers([user.mturkId], "Did you mean to disconnect?", "It seems like you've disconnected from our HIT. If this was a mistake, please email us at scaledhumanity@gmail.com with your Mturk ID and the last things you did in the HIT.")
+
       if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
       console.log("Connected users: " + getUsersConnected().length);

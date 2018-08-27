@@ -39,7 +39,8 @@ const timeActive = 4; //should be 10 // How long a task stays alive in minutes -
 const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
 const rewardPrice = 0.01 // upfront cost
 const numHITs = 3;
-const maxAssignments = (2 * teamSize * teamSize);
+const maxAssignments = (2 * teamSize * teamSize) * 2;
+
 let bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
 let usersAcceptedHIT = 0;
 let numAssignments = maxAssignments; // extra HITs for over-recruitment
@@ -434,7 +435,7 @@ const payBonuses = (users,callback) => {
           console.log("Already bonused",u.bonus ,u.id, u.mturkId)
           successfullyBonusedUsers.push(u)
         } else {
-          console.log("NOT bonused\t",u.bonus ,u.id, u.mturkId,err)
+          console.log("NOT bonused\t",u.bonus ,u.id, u.mturkId,err.message)
         }
       } else {
         successfullyBonusedUsers.push(u)
@@ -544,6 +545,25 @@ const launchBang = (callback) => {
             currentHitId = data.HIT.HITId;
             currentHITTypeId = data.HIT.HITTypeId
             currentHITGroupId = data.HIT.HITGroupId
+
+            // // notify here - randomize list - notify again each time a new HIT is posted if have not yet rolled over
+            // let subject = "We launched our new ad writing HIT. Join now, spaces are limited."
+            // console.log(data.HIT)
+            // let URL = ''
+            // getHITURL(currentHitId, function(url) {
+            //   URL = url;
+            //   let message = "You’re invited to join our newly launched HIT on Mturk; there are limited spaces and it will be closed to new participants in about 15 minutes!  Check out the HIT here: " + URL + " \n\nYou're receiving this message because you you indicated that you'd like to be notified of our upcoming HIT during this time window. If you'd like to stop receiving notifications please email your MTurk ID to: scaledhumanity@gmail.com";
+            //   console.log("message to willBangers", message);
+            //   if(!URL) {
+            //     throw "URL not defined"
+            //   }
+            //   let maxWorkersToNotify = 100; // cannot be more than 100
+            //   listUsersWithQualificationRecursively(quals.willBang, function(data) {
+            //     let notifyList = getRandomSubarray(data, maxWorkersToNotify)
+            //     notifyWorkers(notifyList, subject, message)
+            //   })
+            // })
+
           }
       });
       delay++;
@@ -562,7 +582,7 @@ const launchBang = (callback) => {
 const notifyWorkers = (WorkerIds, subject, message) => {
  mturk.notifyWorkers({WorkerIds:WorkerIds, MessageText:message, Subject:subject}, function(err, data) {
    if (err) console.log("Error notifying workers:",err, err.stack); // an error occurred
-   else     console.log("Notified",WorkerIds.length,"workers:", subject);           // successful response
+   else     console.log("Notified ",WorkerIds.length," workers:", subject);           // successful response
  });
 }
 
@@ -634,3 +654,14 @@ listAssignments(id,data => {
   console.log(data);
   console.log(data.length)
 })
+
+function getRandomSubarray(arr, size) {
+  let shuffled = arr.slice(0), i = arr.length, min = i - size, temp, index;
+  while (i-- > min) {
+      index = Math.floor((i + 1) * Math.random());
+      temp = shuffled[index];
+      shuffled[index] = shuffled[i];
+      shuffled[i] = temp;
+  }
+  return shuffled.slice(min);
+}
