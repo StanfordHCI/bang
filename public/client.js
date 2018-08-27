@@ -167,7 +167,6 @@ $(function() {
     } else {
       message += "there are " + data.numUsers + " participants";
     }
-    // log(message);
   }
 
   // Sends a chat message
@@ -193,7 +192,6 @@ $(function() {
   // Log a message
   function log (message, options) {
     const $el = $('<li>').addClass('log').html(message);
-    // const $el = $('<li>').addClass('log').(message);
     addMessageElement($el, options);
   }
 
@@ -219,7 +217,6 @@ $(function() {
       .text(data.username)
       .css({'color': getUsernameColor(data.username),
       'float':'left',
-      // 'height': $messageBodyDiv.css("height"),
       'display':'inline-block'
     });
 
@@ -865,20 +862,6 @@ $(function() {
     $currentInput.focus();
     $('#leave-hit-form')[0].reset();
   })
-
-
-  // $('#leave-hit-form').submit((event) => {
-  //   event.preventDefault() //stops page reloading
-  //   let selectedValue = $('input[name=leave-hit-q1]:checked').val();
-  //   if (selectedValue == 1) {
-
-  //   } else {
-  //     $leaveHitPopup.hide();
-  //     $currentInput = $inputMessage.focus();
-  //     $currentInput.focus();
-  //   }
-
-  // })
 
   $('#starterForm').submit( (event) => {
     event.preventDefault() //stops page reloading
