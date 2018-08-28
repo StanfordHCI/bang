@@ -5,7 +5,7 @@ var colors = require('colors')
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
 const teamSize = parseInt(process.env.TEAM_SIZE)
-const roundMinutes = parseFloat(process.env.ROUND_MINUTES) 
+const roundMinutes = parseFloat(process.env.ROUND_MINUTES)
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
@@ -97,27 +97,27 @@ function useUser(u,f,err = "Guarded against undefined user") {
 // Save debug logs for later review
 const util = require('util');
 const trueLog = console.log;
-// const debugDir = ".data/debug/"
+const debugDir = "debug/"
 
-// if (!fs.existsSync(debugDir)) {
-//   fs.mkdirSync(debugDir)
-// }
-// log_file = debugDir + "debug" + Date.now() + ".log";
-// console.log = function(...msg) {
-//   trueLog(msg.map(item => {return util.format(item)}).join(" ")); //uncomment if you want logs
-//     msg.map(item => {
-//       fs.appendFile(log_file, util.format(item) + " ", function(err) {
-//         if(err) {
-//             return trueLog(err);
-//         }
-//       });
-//     })
-//     fs.appendFile(log_file, "\n", function(err) {
-//       if(err) {
-//           return trueLog(err);
-//       }
-//     });
-// }
+if (!fs.existsSync(debugDir)) {
+  fs.mkdirSync(debugDir)
+}
+log_file = debugDir + "debug" + Date.now() + ".log";
+console.log = function(...msg) {
+  trueLog(msg.map(item => {return util.format(item)}).join(" ")); //uncomment if you want logs
+    msg.map(item => {
+      fs.appendFile(log_file, util.format(item) + " ", function(err) {
+        if(err) {
+            return trueLog(err);
+        }
+      });
+    })
+    fs.appendFile(log_file, "\n", function(err) {
+      if(err) {
+          return trueLog(err);
+      }
+    });
+}
 
 //if (runExperimentNow){
   // Experiment variables
@@ -217,7 +217,7 @@ if (runExperimentNow && runningLive){ mturk.launchBang(function(HIT) {
       }
       if(usingWillBang) {
         // Use this function to notify only x users <= 100
-        let maxWorkersToNotify = 100; // cannot be more than 100 
+        let maxWorkersToNotify = 100; // cannot be more than 100
 
           mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
           // randomize list
