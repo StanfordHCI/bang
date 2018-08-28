@@ -91,7 +91,10 @@ Array.prototype.set = function() {
 function useUser(u,f,err = "Guarded against undefined user") {
   let user = users.byID(u.id)
   if (typeof user != 'undefined' && typeof f === "function") {f(user)}
-  else { console.log(err.red,u.id) }
+  else { 
+    console.log(err.red,u.id,"\n",err.stack) 
+    if (debugMode) {console.trace()}
+  }
 }
 
 // Save debug logs for later review
@@ -136,7 +139,7 @@ console.log = function(...msg) {
     {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]},
     {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}]
 
-  const experimentRoundIndicator = 1//PK: is this different that roundNum?
+  const experimentRoundIndicator = extraRoundOn ? 2 : 1 //This record what round of the ordering is the experimental round.
   const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
   const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
     console.log(currentCondition,'with',conditions[currentCondition]);
@@ -200,7 +203,7 @@ if (cleanHITs){
   })
 }
 
-if (runExperimentNow && runningLive){ 
+if (runExperimentNow && runningLive){
   mturk.launchBang(function(HIT) {
     logTime()
     storeHIT(HIT.HITId)
@@ -218,22 +221,42 @@ if (runExperimentNow && runningLive){
           throw "URL not defined"
         }
         if(usingWillBang) {
+          db.willBang.find({}, (err, willBangers) => {
+            if(err) {console.log("ERROR cleaning willBang db: " + err)
+            } else {
+              mturk.listUsersWithQualificationRecursively(mturk.quals.hasBanged, function(data) {
+                let willBangIds = willBangers.map(u => u.id)
+                willBangIds.forEach(willBangID => {
+                  if (data.includes(willBangID)) {
+                    db.willBang.remove({id: willBangID}, {multi: true}, function(err, numRemoved) {
+                      if(err) console.log("Error removing from willBang db: "+ err)
+                      else console.log(willBangID + "REMOVED FROM WILLBANG DB (" + numRemoved + ")")
+                    })
+                  }
+                })
+
+              })
+            }
+          })
           // Use this function to notify only x users <= 100
           let maxWorkersToNotify = 100; // cannot be more than 100
 
           // Get workers to notify from - all times are GMT (NOT PST!!) bc server time is GMT
           let currenttimePeriod = "";
           let currentHour = new Date(Date.now()).getHours();
-          if ((0 <= currentHour) && (currentHour <= 2)) {
+          if ((13 <= currentHour) && (currentHour <= 15)) {
             currenttimePeriod = "morning"
           }
-          else if ((5 <= currentHour) && (currentHour <= 7)) {
+          else if ((16 <= currentHour) && (currentHour <= 18)) {
+            currenttimePeriod = "midday"
+          }
+          else if ((19 <= currentHour) && (currentHour <= 21)) {
             currenttimePeriod = "afternoon"
           }
-          else if ((8 <= currentHour) && (currentHour <= 10)) {
+          else if (((22 <= currentHour) && (currentHour <= 23)) || currentHour == 0) {
             currenttimePeriod = "evening"
           }
-          else if ((11 <= currentHour) && (currentHour <= 13)) {
+          else if ((1 <= currentHour) && (currentHour <= 3)) {
             currenttimePeriod = "late evening"
           }
           else {
@@ -245,20 +268,33 @@ if (runExperimentNow && runningLive){
               mturk.notifyWorkers(notifyList, subject, message)
             })
           } else { // use the time buckets
+            console.log("Current Time Period: " + currenttimePeriod)
             db.willBang.find({ timePreference: currenttimePeriod }, (err, currentTimePoolWorkers) => {
               if (err) {console.log("DB for MTurk:" + err)}
-              else { 
+              else {
                 console.log("Time Pool Workers: " + currentTimePoolWorkers.length)
+                let timePoolNotifyList = currentTimePoolWorkers.map(u => u.id)
                 let moreworkersneeded = maxWorkersToNotify - currentTimePoolWorkers.length
                 if (moreworkersneeded > 0) { //if we don't have enough people with current time preference to notify
-                  db.willBang.find({ timePreference: '' }, (err, workersfromnullPool) => {
-                    if (err) {console.log("DB for MTurk:" + err)}
-                    else {
-                      workersfromnullPool = getRandomSubarray(workersfromnullPool, moreworkersneeded)
-                      let workerstonotify = currentTimePoolWorkers.concat(workersfromnullPool).map(u => u.id)
-                      mturk.notifyWorkers(workerstonotify, subject, message)
+                  mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
+                    let notifyList = getRandomSubarray(data, moreworkersneeded)
+                    let i = notifyList.length
+                    while (i--) {
+                        if (timePoolNotifyList.includes(notifyList[i])) {
+                          notifyList.splice(i, 1);
+                        }
                     }
+                    mturk.notifyWorkers(timePoolNotifyList, subject, message)
+                    mturk.notifyWorkers(notifyList, subject, message)
                   })
+                  // db.willBang.find({ timePreference: '' }, (err, workersfromnullPool) => {
+                  //   if (err) {console.log("DB for MTurk:" + err)}
+                  //   else {
+                  //     workersfromnullPool = getRandomSubarray(workersfromnullPool, moreworkersneeded)
+                  //     let workerstonotify = currentTimePoolWorkers.concat(workersfromnullPool).map(u => u.id)
+                  //     mturk.notifyWorkers(workerstonotify, subject, message)
+                  //   }
+                  // })
                 } else {
                   let workerstonotify = currentTimePoolWorkers.map(u => u.id)
                   mturk.notifyWorkers(workerstonotify, subject, message)
@@ -345,6 +381,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
   console.log(socketID)
   if (userPool.every(user => {return user.id !== socketID})) {
     console.log("Removing dead socket: " + socketID);
+    console.log("SOCKET DISCONNECT IN LEFTOVER USER");
     io.in(socketID).emit('get IDs', 'broken');
     io.in(socketID).disconnect(true)
   }
@@ -363,6 +400,8 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
       psychologicalSafetyOn : psychologicalSafetyOn,
       checkinOn: checkinOn,
       conditions: conditions,
+      condition: currentCondition,
+      format: conditions[currentCondition],
       experimentRound: experimentRound,
       numRounds: numRounds,
       teamSize: teamSize
@@ -372,6 +411,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
       console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
       if (!firstRun) {
         Object.keys(io.sockets.sockets).forEach(socketID => {
+          console.log('SOCKET DISCONNECT IN BATCH INSERT')
           io.sockets.sockets[socketID].disconnect(true);
         })
         firstRun = true;
@@ -575,6 +615,23 @@ io.on('connection', (socket) => {
         // console.log("People length:", people.length, ", People:", people)
         u.person = people.pop();
       })
+      // assigns hasBanged to new users
+      if(assignQualifications && runningLive) {
+        const hasBangers = users.map(a => a.mturkId)
+        hasBangers.forEach(u => mturk.assignQuals(u, mturk.quals.hasBanged))
+      }
+      // remove willBang qualification from people who rolled over
+      // remove people who rolled over from willBang database
+      if(usingWillBang) {
+        const hasBangers = users.map(a => a.mturkId)
+        hasBangers.forEach(u => {
+          mturk.unassignQuals(u, mturk.quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!')
+          db.willBang.remove({ id: u }, {multi: true}, function (err, numRemoved) {
+            if (err) console.log("Error removing from db.willBang: ", err)
+            else console.log(u + " REMOVED FROM WILLBANG DB (" + numRemoved + ")")
+          });
+        })
+      }
       userAcquisitionStage = false;
     }
 
@@ -655,9 +712,9 @@ io.on('connection', (socket) => {
   })
 
   // when the user disconnects.. perform this
-  socket.on('disconnect', () => {
+  socket.on('disconnect', function(reason){
     // changes connected to false of disconnected user in userPool
-    console.log("Disconnecting socket:", socket.id)
+    console.log("Disconnecting socket: " + socket.id + " because " + reason)
     if (userPool.find(function(element) {return element.id == socket.id})) {
       userPool.byID(socket.id).connected = false;
       let usersActive = getPoolUsersActive()
@@ -680,9 +737,9 @@ io.on('connection', (socket) => {
 
       // update DB with change
       updateUserInDB(user,'connected',false)
-      console.log(socket.username + " HAS LEFT")
+      console.log(socket.username + ": " + user.mturkId + " HAS LEFT")
       if (!experimentOver) {
-      mturk.notifyWorkers([user.mturkId], "Did you mean to disconnect?", "It seems like you've disconnected from our HIT. If this was a mistake, please email us at scaledhumanity@gmail.com with your Mturk ID and the last things you did in the HIT.")
+        mturk.notifyWorkers([user.mturkId], "Did you mean to disconnect?", "It seems like you've disconnected from our HIT. If this was a mistake, please email us at scaledhumanity@gmail.com with and let us know last things you did in the HIT.\n\nMturk ID: " + user.mturkId + "\nAssignment ID: " + user.assignmentId)
       }
       if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
@@ -1032,23 +1089,6 @@ io.on('connection', (socket) => {
       console.log('Issued task for:', currentProduct.name)
       console.log('Started round', currentRound, 'with,', roundMinutes, 'minute timer.');
 
-      // assignes hasBanged to new users
-      if(assignQualifications && runningLive) {
-        const hasBangers = users.map(a => a.mturkId)
-        hasBangers.forEach(u => mturk.assignQuals(u, mturk.quals.hasBanged))
-      }
-      // remove willBang qualification from people who rolled over
-      // remove people who rolled over from willBang database
-      if(usingWillBang) {
-        const hasBangers = users.map(a => a.mturkId)
-        hasBangers.forEach(u => {
-          mturk.unassignQuals(u, mturk.quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!')
-          db.willBang.remove({ id: u }, {}, function (err, numRemoved) {
-            if (err) console.log("Error removing willBanger from database", err)
-          });
-        })
-      }
-
       // save start time
       startTime = (new Date()).getTime();
 
@@ -1083,6 +1123,7 @@ io.on('connection', (socket) => {
 
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
+    console.log('ON BROKEN CALLED')
     issueFinish(socket, runViaEmailOn ? "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions." : "The task has finished early. You will be compensated by clicking submit below.", finishingCode = "broken")
   });
 
@@ -1189,6 +1230,8 @@ io.on('connection', (socket) => {
       console.log("Undefined user in issueFinish")
       return;
     }
+    console.log('ISSUE FINISH CALLED ON: ' + socket.id)
+
     io.in(socket.id).emit('finished', {
       message: message,
       finishingCode: finishingCode,
@@ -1278,12 +1321,18 @@ const getTeamMembers = (user) => {
 // This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
 const postSurveyGenerator = (user) => {
   const answers = getTeamMembers(user);
-  // Makes a list comtaining the 2 team same teams, or empty if none.
-  let correctAnswer = answers.filter((team,index) => {
-    return conditions[currentCondition][index] == experimentRoundIndicator })
-  if (correctAnswer.length == 1) {correctAnswer = ""}
-  console.log(answers,correctAnswer)
-
+  // Makes a list of teams that are the correct answer, e.g., "Team 1 and Team 3"
+  let correctAnswer = answers.map((team,index) => {
+    if (conditions[currentCondition][index] == experimentRoundIndicator) {
+      return "Team " + (index + 1)
+    } else { return "" }
+  }).filter(a => a.length != 0)
+  if (correctAnswer.length == 1) {
+    correctAnswer = "none"
+  } else {
+    correctAnswer = correctAnswer.join(" and ")
+  }
+  console.log("Manipulation check:",answers,correctAnswer)
   return {
     question:"Select teams you think consisted of the same people.",
     name: "postsurvey",

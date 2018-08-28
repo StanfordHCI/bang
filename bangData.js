@@ -49,13 +49,21 @@ function retroactiveBonus() {
   batchFolders.filter(f => fs.readdirSync(dir + f).includes('users.json')).forEach(f => {
     fs.readFile(dir + f + '/' + 'users.json',(err,usersJSON)=> {
       if (err) {return console.log(err)} else {
-        const allUsers = JSON.parse(usersJSON)
-        mturk.payBonuses(allUsers ,paidUsers => {
-          allUsers.filter(u => paidUsers.map(p => p.id).includes(u.id)).forEach(u => u.bonus = 0)
-          fs.writeFile(dir + f + '/' + 'users.json', JSON.stringify(allUsers,null,2) , (err) => {
-            if(err) { return console.log(err)} else { console.log("saved",f);}
-          });
-        })
+        try {
+          const allUsers = JSON.parse(usersJSON)
+          allUsers.forEach(u => {
+            if (u.bonus == "6.996.99") u.bonus = "6.99"
+            if (u.bonus == "2.002.00") u.bonus = "2.00"
+          })
+          mturk.payBonuses(allUsers ,paidUsers => {
+            allUsers.filter(u => paidUsers.map(p => p.id).includes(u.id)).forEach(u => u.bonus = 0)
+            fs.writeFile(dir + f + '/' + 'users.json', JSON.stringify(allUsers,null,2) , (err) => {
+              if(err) { return console.log(err)} else { 
+                /* console.log("saved",f); */
+              }
+            });
+          })
+        } catch(err) {console.log('File ending error at:',f)}
       }
     })
   })
@@ -183,13 +191,13 @@ function downloadData(url,callback) {
 }
 
 //Save from servers
-// downloadData("mark.dmorina.com",saveAllData)
-downloadData("bang.dmorina.com",saveAllData)
+/* downloadData("mark.dmorina.com",saveAllData) */
+/* downloadData("bang.dmorina.com",saveAllData) */
 
 //Save from local folder
 // saveAllData()
 
-// useEachBatch(renderChats)
+/* useEachBatch(renderChats) */
 
-retroactiveBonus()
-// retroactivelyFixRooms() 
+/* retroactiveBonus() */
+/* retroactivelyFixRooms() */ 
