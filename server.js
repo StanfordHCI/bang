@@ -693,7 +693,7 @@ io.on('connection', (socket) => {
 
       // update DB with change
       updateUserInDB(user,'connected',false)
-      console.log(socket.username + " HAS LEFT")
+      console.log(socket.username + ": " + user.mturkId + " HAS LEFT")
       if (!experimentOver) {
       mturk.notifyWorkers([user.mturkId], "Did you mean to disconnect?", "It seems like you've disconnected from our HIT. If this was a mistake, please email us at scaledhumanity@gmail.com with your Mturk ID and the last things you did in the HIT.")
       }
