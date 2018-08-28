@@ -867,7 +867,7 @@ $(function() {
   });
 
   socket.on('finished',data => {
-    socket.emit('log', 'SOCKET DISCONNECT IN ON FINISHED')
+    socket.emit('log', 'SOCKET DISCONNECT IN ON FINISHED: ' + data.finishingcode)
     HandleFinish(finishingMessage = data.message, mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
         assignmentId = mturkVariables.assignmentId, finishingcode = data.finishingCode);
     if (data.crashed) {

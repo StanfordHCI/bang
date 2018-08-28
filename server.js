@@ -1223,11 +1223,12 @@ io.on('connection', (socket) => {
   }
 
   function issueFinish(socket, message, crashed=false, finishingCode = socket.id) {
-    console.log('ISSUE FINISH CALLED')
     if (!socket) {
       console.log("Undefined user in issueFinish")
       return;
     }
+    console.log('ISSUE FINISH CALLED ON: ' + socket.id)
+
     io.in(socket.id).emit('finished', {
       message: message,
       finishingCode: finishingCode,
