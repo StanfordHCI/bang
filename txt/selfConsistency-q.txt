@@ -1,1 +1,1 @@
-SC|Our group task requires a specific number of users to run; do you agree to stay for the duration of our HIT (approximately 40-50 minutes total)? 
+SC|Our group task requires a specific number of users to run; do you agree to stay for the duration of our HIT (up-to 1 hour)? 
