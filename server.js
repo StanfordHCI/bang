@@ -17,13 +17,13 @@ const maxWaitChatMinutes = 20
 
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = false
-const notifyWorkersOn = false
+const issueBonusesNow = true
+const notifyWorkersOn = true
 const runViaEmailOn = false
-const usingWillBang = false
+const usingWillBang = truee
 
 const cleanHITs = false
-const assignQualifications = false
+const assignQualifications = truee
 const debugMode = !runningLive
 
 const suddenDeath = false
@@ -33,7 +33,7 @@ const randomCondition = true
 const randomRoundOrder = true
 const randomProduct = true
 
-const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
