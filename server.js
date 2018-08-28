@@ -17,13 +17,13 @@ const maxWaitChatMinutes = 20
 
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = true
-const notifyWorkersOn = true
+const issueBonusesNow = false
+const notifyWorkersOn = false
 const runViaEmailOn = false
-const usingWillBang = true
+const usingWillBang = false
 
 const cleanHITs = false
-const assignQualifications = true
+const assignQualifications = false
 const debugMode = !runningLive
 
 const suddenDeath = false
@@ -33,7 +33,7 @@ const randomCondition = true
 const randomRoundOrder = true
 const randomProduct = true
 
-const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
@@ -91,7 +91,10 @@ Array.prototype.set = function() {
 function useUser(u,f,err = "Guarded against undefined user") {
   let user = users.byID(u.id)
   if (typeof user != 'undefined' && typeof f === "function") {f(user)}
-  else { console.log(err.red,u.id) }
+  else { 
+    console.log(err.red,u.id,"\n",err.stack) 
+    if (debugMode) {console.trace()}
+  }
 }
 
 // Save debug logs for later review
