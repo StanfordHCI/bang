@@ -1120,6 +1120,7 @@ io.on('connection', (socket) => {
 
   //if broken, tell users they're done and disconnect their socket
   socket.on('broken', (data) => {
+    console.log('ON BROKEN CALLED')
     issueFinish(socket, runViaEmailOn ? "We've experienced an error. Please wait for an email from scaledhumanity@gmail.com with restart instructions." : "The task has finished early. You will be compensated by clicking submit below.", finishingCode = "broken")
   });
 
@@ -1222,6 +1223,7 @@ io.on('connection', (socket) => {
   }
 
   function issueFinish(socket, message, crashed=false, finishingCode = socket.id) {
+    console.log('ISSUE FINISH CALLED')
     if (!socket) {
       console.log("Undefined user in issueFinish")
       return;
