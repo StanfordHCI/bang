@@ -32,6 +32,9 @@ const keywords = "ad writing, qualification, future task"
 const maxAssignments = 200
 const taskURL = questionHTML
 
+let db = {}
+db.willBang = new Datastore({ filename:'.data/willBang', autoload: true, timestampData: true});
+
 // Assign willBang to people who have accepted recruiting HIT of last hour
 console.log("fs.exists()", fs.existsSync(recruitingHITstorage))
 if (fs.existsSync(recruitingHITstorage)) {
@@ -57,8 +60,7 @@ if (fs.existsSync(recruitingHITstorage)) {
       else if (u.Answer.includes("late evening")) {
         timePreference = "late evening";
       }
-      let db = {}
-      db.willBang = new Datastore({ filename:'.data/willBang', autoload: true, timestampData: true});
+      
       db.willBang.insert( {id: u.WorkerId, timePreference: timePreference},
         (err, usersAdded) => {
           if(err) console.log("There's a problem adding users to the willBang DB: ", err);
