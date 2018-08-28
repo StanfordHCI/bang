@@ -191,5 +191,5 @@ downloadData("bang.dmorina.com",saveAllData)
 
 // useEachBatch(renderChats)
 
-// retroactiveBonus()
+retroactiveBonus()
 // retroactivelyFixRooms() 

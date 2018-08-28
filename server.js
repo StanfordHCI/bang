@@ -4,14 +4,14 @@ var colors = require('colors')
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
-const teamSize = process.env.TEAM_SIZE
-const roundMinutes = process.env.ROUND_MINUTES 
+const teamSize = parseInt(process.env.TEAM_SIZE)
+const roundMinutes = parseFloat(process.env.ROUND_MINUTES)
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
 const secondsToWait = 60 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
 const secondsSinceResponse = 59 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
-const secondsToHold1 = 1000 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
+const secondsToHold1 = 1200 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
 const secondsToHold2 = 200 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 const maxWaitChatMinutes = 20
 
@@ -97,7 +97,7 @@ function useUser(u,f,err = "Guarded against undefined user") {
 // Save debug logs for later review
 const util = require('util');
 const trueLog = console.log;
-const debugDir = ".data/debug/"
+const debugDir = "debug/"
 
 if (!fs.existsSync(debugDir)) {
   fs.mkdirSync(debugDir)
@@ -200,7 +200,7 @@ if (cleanHITs){
   })
 }
 
-if (runExperimentNow){
+if (runExperimentNow && runningLive){ 
   mturk.launchBang(function(HIT) {
     logTime()
     storeHIT(HIT.HITId)
@@ -239,7 +239,6 @@ if (runExperimentNow){
           else {
             currenttimePeriod = "no bucket"
           }
-
           if(currenttimePeriod == "no bucket") { // randomize list
             mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
               let notifyList = getRandomSubarray(data, maxWorkersToNotify)
@@ -547,7 +546,7 @@ io.on('connection', (socket) => {
     if(users.byID(socket.id)) {console.log('ERR: ADDING A USER ALREADY IN USERS')}
     let newUser = makeUser(userPool.byID(socket.id));
     users.push(newUser)
-    console.log(newUser.name + " added to users.\n" + "Total users: " + users.length)
+    console.log(newUser.name + " (" + newUser.mturkId + ") added to users.\n" + "Total users: " + users.length)
     //add friends for each user once the correct number of users is reached
     numUsersRequired = extraRoundOn ? teamSize ** 2 + teamSize : teamSize ** 2
     if(users.length === numUsersRequired){ // if the last user was just added
@@ -572,7 +571,7 @@ io.on('connection', (socket) => {
       })
       // assign people to rooms/teams
       users.forEach(u => {
-        console.log("People length:", people.length, ", People:", people)
+        // console.log("People length:", people.length, ", People:", people)
         u.person = people.pop();
       })
       userAcquisitionStage = false;
@@ -681,6 +680,9 @@ io.on('connection', (socket) => {
       // update DB with change
       updateUserInDB(user,'connected',false)
       console.log(socket.username + " HAS LEFT")
+      if (!experimentOver) {
+      mturk.notifyWorkers([user.mturkId], "Did you mean to disconnect?", "It seems like you've disconnected from our HIT. If this was a mistake, please email us at scaledhumanity@gmail.com with your Mturk ID and the last things you did in the HIT.")
+      }
       if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
       console.log("Connected users: " + getUsersConnected().length);
@@ -812,6 +814,7 @@ io.on('connection', (socket) => {
         io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile,user), interstitial: false, showHeaderBar: false});
       }
       else if (eventSchedule[currentEvent] == "postSurvey") { //Launch post survey
+        experimentOver = true
         if(blacklistOn && timeCheckOn) {
           recordTime("blacklistSurvey");
         } else if(teamfeedbackOn && timeCheckOn) {
@@ -836,7 +839,7 @@ io.on('connection', (socket) => {
         if(timeCheckOn) {
           recordTime("postSurvey");
         }
-        user.bonus = Number(user.bonus) + Number(mturk.bonusPrice)
+        user.bonus = Number(mturk.bonusPrice)
         updateUserInDB(user,"bonus",user.bonus)
 
         storeHIT()
@@ -959,11 +962,11 @@ io.on('connection', (socket) => {
         } else {
           // Dynamically generate teammate names
           // even if teamSize = 1 for testing, this still works
-          users.forEach(u => {
-            console.log(u.id, u.room)
-          })
+          // users.forEach(u => {
+          //   console.log(u.id, u.room)
+          // })
           let teamMates = u.friends.filter(friend => { return (users.byID(friend.id)) && users.byID(friend.id).connected && (users.byID(friend.id).room == u.room) && (friend.id !== u.id)});
-          console.log(teamMates)
+          // console.log(teamMates)
           let team_Aliases = tools.makeName(teamMates.length, u.friends_history)
           user.friends_history = u.friends_history.concat(team_Aliases)
           for (i = 0; i < teamMates.length; i++) {
