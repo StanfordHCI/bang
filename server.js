@@ -621,8 +621,9 @@ io.on('connection', (socket) => {
         const hasBangers = users.map(a => a.mturkId)
         hasBangers.forEach(u => {
           mturk.unassignQuals(u, mturk.quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!')
-          db.willBang.remove({ id: u }, {}, function (err, numRemoved) {
-            if (err) console.log("Error removing willBanger from database", err)
+          db.willBang.remove({ id: u }, {multi: true}, function (err, numRemoved) {
+            if (err) console.log("Error removing from db.willBang: ", err)
+            else console.log(u + " REMOVED FROM WILLBANG DB (" + numRemoved + ")")
           });
         })
       }
