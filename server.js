@@ -20,10 +20,10 @@ const runExperimentNow = true
 const issueBonusesNow = true
 const notifyWorkersOn = true
 const runViaEmailOn = false
-const usingWillBang = truee
+const usingWillBang = true
 
 const cleanHITs = false
-const assignQualifications = truee
+const assignQualifications = true
 const debugMode = !runningLive
 
 const suddenDeath = false
