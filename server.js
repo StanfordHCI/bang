@@ -136,7 +136,7 @@ console.log = function(...msg) {
     {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]},
     {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}]
 
-  const experimentRoundIndicator = 1//PK: is this different that roundNum?
+  const experimentRoundIndicator = extraRoundOn ? 2 : 1 //This record what round of the ordering is the experimental round.
   const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
   const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
     console.log(currentCondition,'with',conditions[currentCondition]);
@@ -200,7 +200,7 @@ if (cleanHITs){
   })
 }
 
-if (runExperimentNow && runningLive){ 
+if (runExperimentNow && runningLive){
   mturk.launchBang(function(HIT) {
     logTime()
     storeHIT(HIT.HITId)
@@ -268,7 +268,7 @@ if (runExperimentNow && runningLive){
             console.log("Current Time Period: " + currenttimePeriod)
             db.willBang.find({ timePreference: currenttimePeriod }, (err, currentTimePoolWorkers) => {
               if (err) {console.log("DB for MTurk:" + err)}
-              else { 
+              else {
                 console.log("Time Pool Workers: " + currentTimePoolWorkers.length)
                 let timePoolNotifyList = currentTimePoolWorkers.map(u => u.id)
                 let moreworkersneeded = maxWorkersToNotify - currentTimePoolWorkers.length
@@ -277,9 +277,9 @@ if (runExperimentNow && runningLive){
                     let notifyList = getRandomSubarray(data, moreworkersneeded)
                     let i = notifyList.length
                     while (i--) {
-                        if (timePoolNotifyList.includes(notifyList[i])) { 
+                        if (timePoolNotifyList.includes(notifyList[i])) {
                           notifyList.splice(i, 1);
-                        } 
+                        }
                     }
                     mturk.notifyWorkers(timePoolNotifyList, subject, message)
                     mturk.notifyWorkers(notifyList, subject, message)
@@ -396,6 +396,8 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
       psychologicalSafetyOn : psychologicalSafetyOn,
       checkinOn: checkinOn,
       conditions: conditions,
+      condition: currentCondition,
+      format: conditions[currentCondition],
       experimentRound: experimentRound,
       numRounds: numRounds,
       teamSize: teamSize
@@ -1311,12 +1313,18 @@ const getTeamMembers = (user) => {
 // This function generates a post survey for a user (listing out each team they were part of), and then provides the correct answer to check against.
 const postSurveyGenerator = (user) => {
   const answers = getTeamMembers(user);
-  // Makes a list comtaining the 2 team same teams, or empty if none.
-  let correctAnswer = answers.filter((team,index) => {
-    return conditions[currentCondition][index] == experimentRoundIndicator })
-  if (correctAnswer.length == 1) {correctAnswer = ""}
-  console.log(answers,correctAnswer)
-
+  // Makes a list of teams that are the correct answer, e.g., "Team 1 and Team 3"
+  let correctAnswer = answers.map((team,index) => {
+    if (conditions[currentCondition][index] == experimentRoundIndicator) {
+      return "Team " + (index + 1)
+    } else { return "" }
+  }).filter(a => a.length != 0)
+  if (correctAnswer.length == 1) {
+    correctAnswer = "none"
+  } else {
+    correctAnswer = correctAnswer.join(" and ")
+  }
+  console.log("Manipulation check:",answers,correctAnswer)
   return {
     question:"Select teams you think consisted of the same people.",
     name: "postsurvey",
