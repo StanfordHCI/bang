@@ -221,19 +221,19 @@ if (runExperimentNow && runningLive){
           // Use this function to notify only x users <= 100
           let maxWorkersToNotify = 100; // cannot be more than 100
 
-          // Get workers to notify from - all times are PT
+          // Get workers to notify from - all times are GMT (NOT PST!!) bc server time is GMT
           let currenttimePeriod = "";
           let currentHour = new Date(Date.now()).getHours();
-          if ((7 <= currentHour) && (currentHour <= 9)) {
+          if ((0 <= currentHour) && (currentHour <= 2)) {
             currenttimePeriod = "morning"
           }
-          else if ((12 <= currentHour) && (currentHour <= 14)) {
+          else if ((5 <= currentHour) && (currentHour <= 7)) {
             currenttimePeriod = "afternoon"
           }
-          else if ((15 <= currentHour) && (currentHour <= 17)) {
+          else if ((8 <= currentHour) && (currentHour <= 10)) {
             currenttimePeriod = "evening"
           }
-          else if ((18 <= currentHour) && (currentHour <= 20)) {
+          else if ((11 <= currentHour) && (currentHour <= 13)) {
             currenttimePeriod = "late evening"
           }
           else {
