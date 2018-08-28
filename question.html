@@ -7,36 +7,29 @@
   <script type='text/javascript' src='https://s3.amazonaws.com/mturk-public/externalHIT_v1.js'></script>
  </head>
  <body>
-  <h2>Submit this HIT to be notified when our ad writing task launches. Space is limited in our ad writing task but we will run many iterations of it. If you submit this HIT you will receive notifications about our HITs until you have completed that task.</p>
-  <h3>By accepting this HIT you agree to the following consent form.</h3>
-        <h4>About the research:</h4>
-        <p> We are researchers at the Stanford HCI Group conducting research on team operations. As part of the research, you’ll join as a participant and perform individual and group tasks on several occasions. The task will take less than 2 hours of your time in total.</p>
+  <h2>We are planning to run an ad writing task on Tuesday, August 27 during the following timeslots. The task takes approximately 40-50 minutes and if you stay for the whole task, we bonus to approximately $10.50 per hour. If you submit this HIT, you may be notified when we launch the task and may receive future notifications about our HITs until you have completed that task. Space is limited and submitting this HIT does not guarantee you will be able to participate.</h2>
+  
 
-        <h4>Description:</h4>
-        <p>You are invited to participate in a research study that investigates team operations. As part of the research, you’ll join as a participant and perform a individual and group tasks on several occasions.</p>
-
-        <h4>Time:</h4>
-        <p>We expect less than three hours of your time.</p>
-
-        <h4>Risk and benefits: </h4>
-        <p>We anticipate no significant risks and no discomfort while you're participating in this program. If you find any part of the research uncomfortable or risky, you’re free to pause or stop partici-pating. You’ll be compensated for the time and work you contributed. We cannot and do not guarantee or promise that you will receive any benefits from this study.</p>
-
-        <h4>Payments:</h4>
-        <p>Participants will be paid through their online crowdsourcing marketplace according to the best practices laid out in the Dynamo Guidelines for Academic Requesters, found here: http://guide-lines.wearedynamo.org.</p>
-
-        <h4>Participant’s rights:</h4>
-        <p>If you have read this form and have decided to participate in this project, please understand your participation is voluntary and you have the right to withdraw your consent or discontinue participation at any time without penalty or loss of benefits to which you are otherwise entitled. The alternative is not to participate. You have the right to refuse to answer particular questions. The results of this research study may be presented at scientific or professional meetings or published in scientific journals. Your individual privacy will be maintained in all published and written data resulting from the study.</p>
-
-        <h4>Contact information:</h4>
-         <p>If you have any questions, concerns or complaints about this research, its procedures, risks and benefits, contact the Protocol Director, Mark Whiting, mwhiting@cs.stanford.edu, (352) 226-9212. If you are not satisfied with how this study is being conducted, or if you have any concerns, complaints, or general questions about the research or your rights as a participant, please contact the Stanford Institutional Review Board (IRB) to speak to someone independent of the research team at (650)-723-2480 or toll free at 1-866-680-2906, or email at IRB2-Manager@lists.stanford.edu. You can also write to the Stanford IRB, Stanford University, 3000 El Camino Real, Five Palo Alto Square, 4th Floor, Palo Alto, CA 94306.</p>
   <form name='mturk_form' method='post' id='mturk_form' action='https://www.mturk.com/mturk/externalSubmit'>
-  <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
-  <input type='hidden' value='WorkerNotification' name='submitCode' id='submitCode'/>
-  <p><input type='submit' id='submitButton' value='Submit' /></p></form>
-  <script language='Javascript'>turkSetAssignmentID();</script>
+    <br>
+    <h3>Please select one time slot when you are available to participate in our HIT. We may notify you at that time and at future times when our HIT launches. Timezones for each timeslot are listed.</h3>
+        <input type='radio' value="morning" name="time"/>7-9am PST, 8-10am MST, 9-11am CST, 10-12pm EST <br>
+        <input type='radio' value="afternoon" name="time"/>12-2pm PST, 1-3pm MST, 2-4pm CST, 3-5pm  EST <br>
+        <input type='radio' value="evening" name="time"/>3-5pm PST, 4-6pm MST, 5-7pm CST, 6-8pm EST <br>
+        <input type='radio' value="late evening" name="time"/>6-8pm PST, 7-9pm MST, 8-10pm CST, 9-12 EST <br>
+<br>
+    <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
+    <input type='hidden' value='WorkerNotification' name='submitCode' id='submitCode'/>
+    <input type='submit' id='submitButton' value='Submit' /></form>
+    <script language='Javascript'>turkSetAssignmentID();
+
+
+  </script>
  </body>
 </html>
 ]]>
   </HTMLContent>
   <FrameHeight>450</FrameHeight>
-</HTMLQuestion>
+  </HTMLQuestion>
+
+  
