@@ -218,6 +218,23 @@ if (runExperimentNow && runningLive){
           throw "URL not defined"
         }
         if(usingWillBang) {
+          db.willBang.find({}, (err, willBangers) => {
+            if(err) {console.log("ERROR cleaning willBang db: " + err)
+            } else {
+              mturk.listUsersWithQualificationRecursively(mturk.quals.hasBanged, function(data) {
+                let willBangIds = willBangers.map(u => u.id)
+                willBangIds.forEach(willBangID => {
+                  if (data.includes(willBangID)) {
+                    db.willBang.remove({id: willBangID}, {multi: true}, function(err, numRemoved) {
+                      if(err) console.log("Error removing from willBang db: "+ err)
+                      else console.log(willBangID + "REMOVED FROM WILLBANG DB (" + numRemoved + ")")
+                    })
+                  }
+                })
+
+              })
+            }
+          })
           // Use this function to notify only x users <= 100
           let maxWorkersToNotify = 100; // cannot be more than 100
 
