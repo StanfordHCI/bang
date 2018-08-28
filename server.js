@@ -216,23 +216,34 @@ if (runExperimentNow && runningLive){ mturk.launchBang(function(HIT) {
         throw "URL not defined"
       }
       if(usingWillBang) {
-        // Use this function to notify only x users <= 100
-        let maxWorkersToNotify = 100; // cannot be more than 100 
-
-          mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
-          // randomize list
-          let notifyList = getRandomSubarray(data, maxWorkersToNotify)
-          mturk.notifyWorkers(notifyList, subject, message)
+        // Use this function to notify only x users <= 100 - multiples of 100
+        let maxWorkersToNotify = 100; // cannot be more than 100 unless I do this cool thing where it bypasses API limits
+        mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
+          if(maxWorkersToNotify <= 100) {
+            let notifyList = getRandomSubarray(data, maxWorkersToNotify)
+            mturk.notifyWorkers(notifyList, subject, message)
+            console.log("Notified", notifyList.length, "workers")
+          } else if(maxWorkersToNotify > 100) {
+            let hasBCalled = []
+            let notifyList = getRandomSubarray(data, 100)
+            while(maxWorkersToNotify > 0) {
+              mturk.notifyWorkers(notifyList, subject, message)
+              hasBCalled = hasBCalled.concat(notifyList)
+              maxWorkersToNotify = maxWorkersToNotify - notifyList.length;
+              if(maxWorkersToNotify > 100) {
+                notifyList = getRandomSubarray(data, 100).filter(function(turker) {
+                  return !hasBCalled.includes(turker) // only includes people who have not been contacted
+                })
+                console.log("Notified", notifyList.length, "workers")
+              } else if(maxWorkersToNotify <= 100) {
+                notifyList = getRandomSubarray(data, maxWorkersToNotify).filter(function(turker) {
+                  return !hasBCalled.includes(turker) // only includes people who have not been contacted
+                })
+                console.log("Notified", notifyList.length, "workers")
+              }
+            }
+          }
         })
-        // unrandomized list
-        // mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
-        //   //mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
-        // }); // must return from mturkTools
-
-        // use this function to notify entire list of willBang workers
-        // mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
-        //   mturk.notifyWorkers(data, subject, message)
-        // })
       }
     });
   }
