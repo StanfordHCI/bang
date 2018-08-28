@@ -23,7 +23,7 @@ let recruitingHITstorage = './txt/currentrecruitingHIT.txt'
 const lifetime = 60 //calculate lifetime based on when runTime was
 
 //Set HIT Params
-const title = `Get notified when our ad writing task launches. If you stay for the whole task, we bonus to approximately $10.50 per hour.`
+const title = `Get notified when our ad writing task launches. If you stay for the whole task, we bonus to a rate of approximately $10.50 per hour.`
 const description = "Submit this HIT to be notified when our ad writing task launches. Space is limited."
 const assignmentDuration = 20
 const reward = 0.01
