@@ -5,12 +5,12 @@ var colors = require('colors')
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
 const teamSize = parseInt(process.env.TEAM_SIZE)
-const roundMinutes = parseFloat(process.env.ROUND_MINUTES) 
+const roundMinutes = parseFloat(process.env.ROUND_MINUTES)
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
-const secondsToWait = 40 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
-const secondsSinceResponse = 120 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
+const secondsToWait = 60 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+const secondsSinceResponse = 59 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
 const secondsToHold1 = 1200 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
 const secondsToHold2 = 200 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
 const maxWaitChatMinutes = 20
@@ -34,7 +34,7 @@ const randomRoundOrder = true
 const randomProduct = true
 
 const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
-const extraRoundOn = true //Only set to true if teamSize = 4, Requires waitChatOn = true.
+const extraRoundOn = false //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
 const midSurveyOn = true
@@ -97,7 +97,7 @@ function useUser(u,f,err = "Guarded against undefined user") {
 // Save debug logs for later review
 const util = require('util');
 const trueLog = console.log;
-const debugDir = ".data/debug/"
+const debugDir = "debug/"
 
 if (!fs.existsSync(debugDir)) {
   fs.mkdirSync(debugDir)
@@ -217,7 +217,7 @@ if (runExperimentNow && runningLive){ mturk.launchBang(function(HIT) {
       }
       if(usingWillBang) {
         // Use this function to notify only x users <= 100
-        let maxWorkersToNotify = 200; // cannot be more than 100 if non-recursive
+        let maxWorkersToNotify = 100; // cannot be more than 100
 
           mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
           // randomize list
@@ -513,7 +513,7 @@ io.on('connection', (socket) => {
     if(users.byID(socket.id)) {console.log('ERR: ADDING A USER ALREADY IN USERS')}
     let newUser = makeUser(userPool.byID(socket.id));
     users.push(newUser)
-    console.log(newUser.name + " added to users.\n" + "Total users: " + users.length)
+    console.log(newUser.name + " (" + newUser.mturkId + ") added to users.\n" + "Total users: " + users.length)
     //add friends for each user once the correct number of users is reached
     numUsersRequired = extraRoundOn ? teamSize ** 2 + teamSize : teamSize ** 2
     if(users.length === numUsersRequired){ // if the last user was just added
@@ -647,8 +647,9 @@ io.on('connection', (socket) => {
       // update DB with change
       updateUserInDB(user,'connected',false)
       console.log(socket.username + " HAS LEFT")
+      if (!experimentOver) {
       mturk.notifyWorkers([user.mturkId], "Did you mean to disconnect?", "It seems like you've disconnected from our HIT. If this was a mistake, please email us at scaledhumanity@gmail.com with your Mturk ID and the last things you did in the HIT.")
-
+      }
       if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
       console.log("Connected users: " + getUsersConnected().length);
@@ -816,6 +817,7 @@ io.on('connection', (socket) => {
         io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile,user), interstitial: false, showHeaderBar: false});
       }
       else if (eventSchedule[currentEvent] == "postSurvey") { //Launch post survey
+        experimentOver = true
         if(blacklistOn && timeCheckOn) {
           recordTime("blacklistSurvey");
         } else if(teamfeedbackOn && timeCheckOn) {
