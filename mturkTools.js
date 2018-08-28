@@ -185,7 +185,7 @@ const returnHIT = (hitId) => {
     HITId: hitId /* required */
   };
   mturk.getHIT(returnHITParams, function(err, data) {
-    if (err) console.log(err, err.stack); // an error occurred
+    if (err) console.log("Error: " + err.message); // an error occurred
     else     console.log(data);           // successful response
   });
 }
@@ -199,7 +199,7 @@ const returnHIT = (hitId) => {
 const getHITURL = (hitId, callback) => {
   let url = ""
   mturk.getHIT({HITId: hitId}, (err, data) => {
-    if (err) console.log(err, err.stack);
+    if (err) console.log("Error: " + err.message);
     else {
       url = "https://worker.mturk.com/projects/" + data.HIT.HITGroupId + "/tasks"
     }
@@ -216,7 +216,7 @@ const getHITURL = (hitId, callback) => {
 
 const workOnActiveHITs = (callback) => {
   mturk.listHITs({MaxResults: 100}, (err, data) => {
-    if (err) {console.log(err, err.stack)} else {
+    if (err) {console.log("Error: " + err.message)} else {
       if (typeof callback === 'function'){
         callback(data.HITs.filter(h => h.HITStatus == "Assignable").map(h => h.HITId))
       }
@@ -232,7 +232,7 @@ const workOnActiveHITs = (callback) => {
 
 const listAssignments = (HITId,callback, paginationToken = null, passthrough = []) => {
   mturk.listAssignmentsForHIT({HITId: HITId, MaxResults: 100, NextToken: paginationToken},(err,data) => {
-    if (err) console.log(err, err.stack)
+    if (err) console.log("Error: " + err.message)
     else {
       passthrough = passthrough.concat(data.Assignments)
       if (data.NumResults == 100) {
@@ -253,7 +253,7 @@ const listAssignments = (HITId,callback, paginationToken = null, passthrough = [
 
 const expireHIT = (HITId) => {
   mturk.updateExpirationForHIT({HITId: HITId,ExpireAt:0}, (err, data) => {
-    if (err) { console.log(err, err.stack)
+    if (err) { console.log("Error: " + err.message)
     } else {console.log("Expired HIT:", HITId)}
   });
 }
@@ -267,7 +267,7 @@ const expireHIT = (HITId) => {
 
 const deleteHIT = (theHITId) => {
    mturk.deleteHIT({HITId: theHITId}, (err, data) => {
-      if (err) console.log(err, err.stack)
+      if (err) console.log("Error: " + err.message)
       else console.log("Deleted HIT:", theHITId)
    });
 }
@@ -581,7 +581,7 @@ const launchBang = (callback) => {
 
 const notifyWorkers = (WorkerIds, subject, message) => {
  mturk.notifyWorkers({WorkerIds:WorkerIds, MessageText:message, Subject:subject}, function(err, data) {
-   if (err) console.log("Error notifying workers:",err, err.stack); // an error occurred
+   if (err) console.log("Error notifying workers:", err.message); // an error occurred
    else     console.log("Notified ",WorkerIds.length," workers:", subject);           // successful response
  });
 }
