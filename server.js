@@ -379,6 +379,8 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
       psychologicalSafetyOn : psychologicalSafetyOn,
       checkinOn: checkinOn,
       conditions: conditions,
+      condition: currentCondition,
+      format: conditions[currentCondition],
       experimentRound: experimentRound,
       numRounds: numRounds,
       teamSize: teamSize
