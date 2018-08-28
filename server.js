@@ -5,7 +5,7 @@ var colors = require('colors')
 const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
 const teamSize = parseInt(process.env.TEAM_SIZE)
-const roundMinutes = parseFloat(process.env.ROUND_MINUTES) 
+const roundMinutes = parseFloat(process.env.ROUND_MINUTES)
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
@@ -97,7 +97,7 @@ function useUser(u,f,err = "Guarded against undefined user") {
 // Save debug logs for later review
 const util = require('util');
 const trueLog = console.log;
-const debugDir = ".data/debug/"
+const debugDir = "debug/"
 
 if (!fs.existsSync(debugDir)) {
   fs.mkdirSync(debugDir)
@@ -523,7 +523,7 @@ io.on('connection', (socket) => {
     if(users.byID(socket.id)) {console.log('ERR: ADDING A USER ALREADY IN USERS')}
     let newUser = makeUser(userPool.byID(socket.id));
     users.push(newUser)
-    console.log(newUser.name + " added to users.\n" + "Total users: " + users.length)
+    console.log(newUser.name + " (" + newUser.mturkId + ") added to users.\n" + "Total users: " + users.length)
     //add friends for each user once the correct number of users is reached
     numUsersRequired = extraRoundOn ? teamSize ** 2 + teamSize : teamSize ** 2
     if(users.length === numUsersRequired){ // if the last user was just added
@@ -657,7 +657,7 @@ io.on('connection', (socket) => {
       // update DB with change
       updateUserInDB(user,'connected',false)
       console.log(socket.username + " HAS LEFT")
-      mturk.notifyWorkers([user.mturkId], "Did you mean to disconnect?", "It seems like you've disconnected from our HIT. If this was a mistake, please email us at scaledhumanity@gmail.com with your Mturk ID and the last things you did in the HIT.")
+      mturk.notifyWorkers([user.mturkId], "Did you mean to disconnect?", "It seems like you've disconnected from our HIT. If this was a mistake, please email us as soon as possible at scaledhumanity@gmail.com with your Mturk ID and the last things you did in the HIT.")
 
       if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 

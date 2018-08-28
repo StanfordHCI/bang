@@ -333,8 +333,8 @@ const assignQualificationToUsers = (users,qual) => {
 const assignQuals = (user,qual) => {
   var assignQualificationParams = {QualificationTypeId: qual.QualificationTypeId, WorkerId: user, IntegerValue: 1, SendNotification: false};
   mturk.associateQualificationWithWorker(assignQualificationParams, function(err, data) {
-    if (err) console.log(err, err.stack); // an error occurred
-    else     console.log("Assigned",qual.QualificationTypeId,"to",user);
+    if (err) console.log("Error assigning ", qual.QualificationTypeId, " to ", user); // an error occurred
+    else     console.log("Assigned ", qual.QualificationTypeId, " to ", user);
   })
 }
 
@@ -360,8 +360,8 @@ const unassignQualificationFromUsers = (users,qual) => {
 const unassignQuals = (user, qual, reason) => {
   var assignQualificationParams = {QualificationTypeId: qual.QualificationTypeId, WorkerId: user, Reason: reason};
   mturk.disassociateQualificationFromWorker(assignQualificationParams, function(err, data) {
-    if (err) console.log(err, err.stack); // an error occurred
-    else     console.log("Unassigned ",qual.QualificationTypeId," from ",user);
+    if (err) console.log("Error unassigning ", qual.QualificationTypeId, " from ", user); // an error occurred
+    else     console.log("Unassigned ", qual.QualificationTypeId, " from ", user);
   })
 }
 
