@@ -238,6 +238,7 @@ if (runExperimentNow && runningLive){ mturk.launchBang(function(HIT) {
   }
 }) }
 
+
 //Add more products
 let products = [
   {name:'KOSMOS ink - Magnetic Fountain Pen', url:'https://www.kickstarter.com/projects/stilform/kosmos-ink'},
@@ -705,6 +706,42 @@ io.on('connection', (socket) => {
     io.sockets.emit('echo','active')
   })
 
+  socket.on('notify-more', (data) => {
+    let HITId = mturk.returnCurrentHIT()
+    // let HITId = process.argv[2];
+    let subject = "We launched our new ad writing HIT. Join now, spaces are limited."
+    console.log(HITId)
+    let URL = ''
+    mturk.getHITURL(HITId, function(url) {
+      URL = url;
+      let message = "You’re invited to join our newly launched HIT on Mturk; there are limited spaces and it will be closed to new participants in about 15 minutes!  Check out the HIT here: " + URL + " \n\nYou're receiving this message because you you indicated that you'd like to be notified of our upcoming HIT during this time window. If you'd like to stop receiving notifications please email your MTurk ID to: scaledhumanity@gmail.com";
+      console.log("message to willBangers", message);
+      if (!URL) {
+        throw "URL not defined"
+      }
+      if(usingWillBang) {
+        // Use this function to notify only x users <= 100
+        let maxWorkersToNotify = 100; // cannot be more than 100 if non-recursive
+
+          mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
+          // randomize list
+          let notifyList = getRandomSubarray(data, maxWorkersToNotify)
+          mturk.notifyWorkers(notifyList, subject, message)
+        })
+        // unrandomized list
+        // mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
+        //   //mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
+        // }); // must return from mturkTools
+
+        // use this function to notify entire list of willBang workers
+        // mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
+        //   mturk.notifyWorkers(data, subject, message)
+        // })
+      }
+    });
+  })
+
+
   socket.on('active', (data) => {
     useUser(socket, user => {
       user.active = true
@@ -821,6 +858,7 @@ io.on('connection', (socket) => {
       user.currentEvent += 1
     })
   })
+
 
     // Main experiment run
   socket.on('ready', function (data) {

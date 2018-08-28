@@ -40,6 +40,8 @@ $(function() {
 
   $('#ready-to-all').click((e) => { socket.emit('ready-to-all',{}) })
   $('#kill-all').click((e) => { socket.emit('kill-all',{}) })
+  $('#active-to-all').click((e) => { socket.emit('active-to-all', {})})
+  $('#notify-more').click((e) => { socket.emit('notify-more', {})})
 
   Vue.component('question-component', {
     template: `
@@ -341,7 +343,6 @@ $(function() {
     // Auto-focus the current input when a key is typed
     if (!(event.ctrlKey || event.metaKey || event.altKey)) {
         $currentInput.focus();
-      // forcedComplete($currentInput)
     }
 
     // When the client hits ENTER on their keyboard
@@ -437,8 +438,6 @@ $(function() {
     $inputMessage.focus();
   });
 
-
-
   // Socket events
   socket.on('chatbot', data => {
     const questions = data
@@ -519,29 +518,6 @@ $(function() {
 }
 );
 
-  //checks if the user actually accepted or if they are previewing the task
-  // socket.on('check accept', data => {
-      // var assignmentId = location.search;
-      // if (assignmentId.includes("ASSIGNMENT_ID_NOT_AVAILABLE")) {
-      //   console.log("user has not accepted");
-      // } else {
-      //   console.log("user has accepted");
-      //   console.log(assignmentId);
-      //
-      //   //tell the server that the user has accepted the hit - server then adds this worker to array of accepted workers
-      //   socket.emit('accepted HIT',{
-      //     mturkId: turkGetParam("workerId","NONE",assignmentId),
-      //     turkSubmitTo: turkGetParam("turkSubmitTo","NONE",assignmentId),
-      //     assignmentId: turkGetParam("assignmentId","NONE",assignmentId)
-      //   });
-      // }
-  // });
-
-    //url = parent.document.URL;
-    //console.log('<iframe src="https://bang.dmorina.com?url=' + url + '"></iframe>');
-    //console.log(window.parent.document.getElementsByTagName("iframe")[0].src);
-
-
   // Whenever the server emits 'login', log the login message
   socket.on('login', data => {
     console.log('LOGIN CALLED')
@@ -577,7 +553,6 @@ $(function() {
       }
     }
   });
-
 
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', data => {
@@ -710,9 +685,6 @@ $(function() {
               }
             };
           }
-
-
-
       });
 
       // initiate spell check after space or enter is hit
@@ -720,7 +692,6 @@ $(function() {
         let terms_typed = $("#inputMessage").val().split(" ");
         let currentTerm = terms_typed.pop();
         let fuzzyMatches = [];
-
 
         // Match if users only type animal name
         Object.entries(teamAnimals).forEach(
@@ -731,12 +702,10 @@ $(function() {
           }
         );
 
-
         // Quick typists catch
         if (fuzzyMatches[0] === undefined) {
           fuzzyMatches = currentTeam.filter(member => (currentTerm.indexOf(member) >= 0))
         }
-
 
         // Run spell check only if animal name not detected
         if (fuzzyMatches[0] === undefined) {
@@ -746,7 +715,6 @@ $(function() {
             }
           }
         }
-
 
         // if there is only 1 possible match, correct the user
         if (fuzzyMatches.length === 1 && fuzzyMatches[0] !== undefined) {
@@ -785,7 +753,6 @@ $(function() {
     for(j = 0; j <= a.length; j++){
         matrix[0][j] = j;
     }
-
 
     // Fill in the rest of the matrix
     for(i = 1; i <= b.length; i++){
@@ -878,15 +845,11 @@ $(function() {
     socket.emit('next event')
   })
 
-
-
   $('#blacklistForm').submit( (event) => { //watches form element
     event.preventDefault() //stops page reloading
     socket.emit('blacklistSurveySubmit', $('#blacklistForm').serialize()) //submits results alone
     socket.emit('next event')
   })
-
-
 
   $('#teamfeedbackForm').submit( (event) => {
     event.preventDefault() //stops page reloading
@@ -920,8 +883,6 @@ $(function() {
   $('#mturk_form').submit( (event) => {
     socket.emit('mturk_formSubmit', $('#mturk_form').serialize())
   })
-
-
 
 });
 
@@ -970,7 +931,6 @@ const decodeURL = (toDecode) => {
   var encoded = toDecode;
   return unescape(encoded.replace(/\+/g,  " "));
 }
-
 
 var LeavingAlert = false;
 if (LeavingAlert) {
