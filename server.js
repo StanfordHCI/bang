@@ -712,9 +712,9 @@ io.on('connection', (socket) => {
   })
 
   // when the user disconnects.. perform this
-  socket.on('disconnect', () => {
+  socket.on('disconnect', function(reason) => {
     // changes connected to false of disconnected user in userPool
-    console.log("Disconnecting socket:", socket.id)
+    console.log("Disconnecting socket: " + socket.id + " because " + reason)
     if (userPool.find(function(element) {return element.id == socket.id})) {
       userPool.byID(socket.id).connected = false;
       let usersActive = getPoolUsersActive()
