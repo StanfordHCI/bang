@@ -512,7 +512,7 @@ io.on('connection', (socket) => {
     if(users.byID(socket.id)) {console.log('ERR: ADDING A USER ALREADY IN USERS')}
     let newUser = makeUser(userPool.byID(socket.id));
     users.push(newUser)
-    console.log(newUser.name + " added to users.\n" + "Total users: " + users.length)
+    console.log(newUser.name + " (" + newUser.mturkId + ") added to users.\n" + "Total users: " + users.length)
     //add friends for each user once the correct number of users is reached
     numUsersRequired = extraRoundOn ? teamSize ** 2 + teamSize : teamSize ** 2
     if(users.length === numUsersRequired){ // if the last user was just added
@@ -649,7 +649,6 @@ io.on('connection', (socket) => {
       if (!experimentOver) {
       mturk.notifyWorkers([user.mturkId], "Did you mean to disconnect?", "It seems like you've disconnected from our HIT. If this was a mistake, please email us at scaledhumanity@gmail.com with your Mturk ID and the last things you did in the HIT.")
       }
-
       if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
       console.log("Connected users: " + getUsersConnected().length);
