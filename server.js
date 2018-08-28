@@ -224,16 +224,16 @@ if (runExperimentNow && runningLive){
           // Get workers to notify from - all times are GMT (NOT PST!!) bc server time is GMT
           let currenttimePeriod = "";
           let currentHour = new Date(Date.now()).getHours();
-          if ((0 <= currentHour) && (currentHour <= 2)) {
+          if ((14 <= currentHour) && (currentHour <= 16)) {
             currenttimePeriod = "morning"
           }
-          else if ((5 <= currentHour) && (currentHour <= 7)) {
+          else if ((19 <= currentHour) && (currentHour <= 21)) {
             currenttimePeriod = "afternoon"
           }
-          else if ((8 <= currentHour) && (currentHour <= 10)) {
+          else if (((22 <= currentHour) && (currentHour <= 23)) || currentHour == 0) {
             currenttimePeriod = "evening"
           }
-          else if ((11 <= currentHour) && (currentHour <= 13)) {
+          else if ((1 <= currentHour) && (currentHour <= 3)) {
             currenttimePeriod = "late evening"
           }
           else {
