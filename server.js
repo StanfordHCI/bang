@@ -245,20 +245,33 @@ if (runExperimentNow && runningLive){
               mturk.notifyWorkers(notifyList, subject, message)
             })
           } else { // use the time buckets
+            console.log("Current Time Period: " + currenttimePeriod)
             db.willBang.find({ timePreference: currenttimePeriod }, (err, currentTimePoolWorkers) => {
               if (err) {console.log("DB for MTurk:" + err)}
               else { 
                 console.log("Time Pool Workers: " + currentTimePoolWorkers.length)
+                let timePoolNotifyList = currentTimePoolWorkers.map(u => u.id)
                 let moreworkersneeded = maxWorkersToNotify - currentTimePoolWorkers.length
                 if (moreworkersneeded > 0) { //if we don't have enough people with current time preference to notify
-                  db.willBang.find({ timePreference: '' }, (err, workersfromnullPool) => {
-                    if (err) {console.log("DB for MTurk:" + err)}
-                    else {
-                      workersfromnullPool = getRandomSubarray(workersfromnullPool, moreworkersneeded)
-                      let workerstonotify = currentTimePoolWorkers.concat(workersfromnullPool).map(u => u.id)
-                      mturk.notifyWorkers(workerstonotify, subject, message)
+                  mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
+                    let notifyList = getRandomSubarray(data, moreworkersneeded)
+                    let i = notifyList.length
+                    while (i--) {
+                        if (timePoolNotifyList.includes(notifyList[i])) { 
+                          notifyList.splice(i, 1);
+                        } 
                     }
+                    mturk.notifyWorkers(timePoolNotifyList, subject, message)
+                    mturk.notifyWorkers(notifyList, subject, message)
                   })
+                  // db.willBang.find({ timePreference: '' }, (err, workersfromnullPool) => {
+                  //   if (err) {console.log("DB for MTurk:" + err)}
+                  //   else {
+                  //     workersfromnullPool = getRandomSubarray(workersfromnullPool, moreworkersneeded)
+                  //     let workerstonotify = currentTimePoolWorkers.concat(workersfromnullPool).map(u => u.id)
+                  //     mturk.notifyWorkers(workerstonotify, subject, message)
+                  //   }
+                  // })
                 } else {
                   let workerstonotify = currentTimePoolWorkers.map(u => u.id)
                   mturk.notifyWorkers(workerstonotify, subject, message)
