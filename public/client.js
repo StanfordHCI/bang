@@ -813,6 +813,7 @@ $(function() {
     let feedbackMessage = $('#leavetaskfeedbackInput').val();
 
     if (feedbackMessage.length > 10) {
+      socket.emit('log', 'SOCKET DISCONNECT IN LEAVE HIT BUTTON')
       HandleFinish(finishingMessage = "You terminated the HIT. Thank you for your time.",
           mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
           assignmentId = mturkVariables.assignmentId, finishingcode = "LeftHit");
@@ -866,6 +867,7 @@ $(function() {
   });
 
   socket.on('finished',data => {
+    socket.emit('log', 'SOCKET DISCONNECT IN ON FINISHED')
     HandleFinish(finishingMessage = data.message, mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
         assignmentId = mturkVariables.assignmentId, finishingcode = data.finishingCode);
     if (data.crashed) {

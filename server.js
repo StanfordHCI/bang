@@ -378,6 +378,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
   console.log(socketID)
   if (userPool.every(user => {return user.id !== socketID})) {
     console.log("Removing dead socket: " + socketID);
+    console.log("SOCKET DISCONNECT IN LEFTOVER USER");
     io.in(socketID).emit('get IDs', 'broken');
     io.in(socketID).disconnect(true)
   }
@@ -407,6 +408,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
       console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
       if (!firstRun) {
         Object.keys(io.sockets.sockets).forEach(socketID => {
+          console.log('SOCKET DISCONNECT IN BATCH INSERT')
           io.sockets.sockets[socketID].disconnect(true);
         })
         firstRun = true;
