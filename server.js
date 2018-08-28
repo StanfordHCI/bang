@@ -97,7 +97,7 @@ function useUser(u,f,err = "Guarded against undefined user") {
 // Save debug logs for later review
 const util = require('util');
 const trueLog = console.log;
-const debugDir = ".data/debug/"
+const debugDir = "debug/"
 
 if (!fs.existsSync(debugDir)) {
   fs.mkdirSync(debugDir)
