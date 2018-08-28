@@ -512,7 +512,7 @@ io.on('connection', (socket) => {
     if(users.byID(socket.id)) {console.log('ERR: ADDING A USER ALREADY IN USERS')}
     let newUser = makeUser(userPool.byID(socket.id));
     users.push(newUser)
-    console.log(newUser.name + " added to users.\n" + "Total users: " + users.length)
+    console.log(newUser.name + " (" + newUser.mturkId + ") added to users.\n" + "Total users: " + users.length)
     //add friends for each user once the correct number of users is reached
     numUsersRequired = extraRoundOn ? teamSize ** 2 + teamSize : teamSize ** 2
     if(users.length === numUsersRequired){ // if the last user was just added
