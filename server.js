@@ -267,7 +267,7 @@ if (runExperimentNow && runningLive){
           if(currenttimePeriod == "no bucket") { // randomize list
             mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
               let notifyList = getRandomSubarray(data, maxWorkersToNotify)
-              mturk.notifyWorkers(notifyList, subject, message)
+              // mturk.notifyWorkers(notifyList, subject, message)
             })
           } else { // use the time buckets
             console.log("Current Time Period: " + currenttimePeriod)
@@ -286,8 +286,8 @@ if (runExperimentNow && runningLive){
                           notifyList.splice(i, 1);
                         }
                     }
-                    mturk.notifyWorkers(timePoolNotifyList, subject, message)
-                    mturk.notifyWorkers(notifyList, subject, message)
+                    // mturk.notifyWorkers(timePoolNotifyList, subject, message)
+                    // mturk.notifyWorkers(notifyList, subject, message)
                   })
                   // db.willBang.find({ timePreference: '' }, (err, workersfromnullPool) => {
                   //   if (err) {console.log("DB for MTurk:" + err)}
@@ -299,7 +299,7 @@ if (runExperimentNow && runningLive){
                   // })
                 } else {
                   let workerstonotify = currentTimePoolWorkers.map(u => u.id)
-                  mturk.notifyWorkers(workerstonotify, subject, message)
+                  // mturk.notifyWorkers(workerstonotify, subject, message)
                 }
               }
             })
@@ -742,7 +742,7 @@ io.on('connection', (socket) => {
       updateUserInDB(user,'connected',false)
       console.log(socket.username + ": " + user.mturkId + " HAS LEFT")
       if (!experimentOver) {
-        mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com and let us know the last things you did in the HIT.\n\nMturk ID: " + user.mturkId + "\nAssignment ID: " + user.assignmentId + '\nHIT ID: ' + mturk.returnCurrentHIT())
+        // mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com and let us know the last things you did in the HIT.\n\nMturk ID: " + user.mturkId + "\nAssignment ID: " + user.assignmentId + '\nHIT ID: ' + mturk.returnCurrentHIT())
       }
       if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
@@ -821,7 +821,7 @@ io.on('connection', (socket) => {
           mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
           // randomize list
           let notifyList = getRandomSubarray(data, maxWorkersToNotify)
-          mturk.notifyWorkers(notifyList, subject, message)
+          // mturk.notifyWorkers(notifyList, subject, message)
         })
         // unrandomized list
         // mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
