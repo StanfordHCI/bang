@@ -742,7 +742,7 @@ io.on('connection', (socket) => {
       updateUserInDB(user,'connected',false)
       console.log(socket.username + ": " + user.mturkId + " HAS LEFT")
       if (!experimentOver) {
-        mturk.notifyWorkers([user.mturkId], "Did you mean to disconnect?", "It seems like you've disconnected from our HIT. If this was a mistake, please email us at scaledhumanity@gmail.com with and let us know last things you did in the HIT.\n\nMturk ID: " + user.mturkId + "\nAssignment ID: " + user.assignmentId)
+        mturk.notifyWorkers([user.mturkId], "Did you mean to disconnect?", "It seems like you've disconnected from our HIT. If this was a mistake, please email us at scaledhumanity@gmail.com with and let us know last things you did in the HIT.\n\nMturk ID: " + user.mturkId + "\nAssignment ID: " + user.assignmentId + '\nHIT ID: ' + mturk.returnCurrentHIT())
       }
       if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
