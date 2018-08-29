@@ -12,4 +12,4 @@ S1|11. This team is well positioned for growth over time.
 S1|12. This team can develop to meet future challenges. 
 S1|13. This team has the capacity to sustain itself. 
 S1|14. This team has what it takes to endure in future performance episodes.
-YN|15. There is a chance that you will have a future task with one of the teams with which you have previously worked. The team would be selected at random, but you can choose to remove teams from the random selection. 
+YN|15. There is a chance that you will have a future task with one of the teams with which you have previously worked. The team would be selected at random, but you can choose to remove a team from the random selection. 
