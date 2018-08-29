@@ -221,16 +221,18 @@ if (runExperimentNow && runningLive){
           throw "URL not defined"
         }
         if(usingWillBang) {
+          // cleans db.willBang: removes people who no longer have willBang qual ()
           db.willBang.find({}, (err, willBangers) => {
-            if(err) {console.log("ERROR cleaning willBang db: " + err)
+            if(err) {
+              console.log("ERROR cleaning willBang db: " + err)
             } else {
-              mturk.listUsersWithQualificationRecursively(mturk.quals.hasBanged, function(data) {
+              mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
                 let willBangIds = willBangers.map(u => u.id)
                 willBangIds.forEach(willBangID => {
-                  if (data.includes(willBangID)) {
+                  if (!data.includes(willBangID)) { // if user in db.willBang no longer has willBang qual
                     db.willBang.remove({id: willBangID}, {multi: true}, function(err, numRemoved) {
                       if(err) console.log("Error removing from willBang db: "+ err)
-                      else console.log(willBangID + "REMOVED FROM WILLBANG DB (" + numRemoved + ")")
+                      else console.log(willBangID + " REMOVED FROM WILLBANG DB (" + numRemoved + ")")
                     })
                   }
                 })
@@ -740,7 +742,7 @@ io.on('connection', (socket) => {
       updateUserInDB(user,'connected',false)
       console.log(socket.username + ": " + user.mturkId + " HAS LEFT")
       if (!experimentOver) {
-        mturk.notifyWorkers([user.mturkId], "Did you mean to disconnect?", "It seems like you've disconnected from our HIT. If this was a mistake, please email us at scaledhumanity@gmail.com with and let us know last things you did in the HIT.\n\nMturk ID: " + user.mturkId + "\nAssignment ID: " + user.assignmentId)
+        mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com and let us know the last things you did in the HIT.\n\nMturk ID: " + user.mturkId + "\nAssignment ID: " + user.assignmentId + '\nHIT ID: ' + mturk.returnCurrentHIT())
       }
       if (!experimentOver && !suddenDeath) {console.log("Sudden death is off, so we will not cancel the run")}
 
