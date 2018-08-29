@@ -277,7 +277,7 @@ if (runExperimentNow && runningLive){
                 let moreworkersneeded = maxWorkersToNotify - currentTimePoolWorkers.length
                 if (moreworkersneeded > 0) { //if we don't have enough people with current time preference to notify
                   mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
-                    let notifyList = getRandomSubarray(data, moreworkersneeded)
+                    let notifyList = getRandomSubarray(data, maxWorkersToNotify)
                     let i = notifyList.length
                     while (i--) {
                         if (timePoolNotifyList.includes(notifyList[i])) {
