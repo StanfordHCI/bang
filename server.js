@@ -252,35 +252,6 @@ if (runExperimentNow && runningLive){
           // Use this function to notify only x users <= 100
           let maxWorkersToNotify = 175; // cannot be more than 100
 
-
-          mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
-            if(maxWorkersToNotify <= 100) {
-              let notifyList = getRandomSubarray(data, maxWorkersToNotify)
-              mturk.notifyWorkers(notifyList, subject, message)
-              console.log("Notified", notifyList.length, "workers")
-            } else if(maxWorkersToNotify > 100) {
-              let hasBCalled = []
-              let notifyList = getRandomSubarray(data, 100)
-              while(maxWorkersToNotify > 0) {
-                mturk.notifyWorkers(notifyList, subject, message)
-                hasBCalled = hasBCalled.concat(notifyList)
-                maxWorkersToNotify = maxWorkersToNotify - notifyList.length;
-                if(maxWorkersToNotify > 100) {
-                  notifyList = getRandomSubarray(data, 100).filter(function(turker) {
-                    return !hasBCalled.includes(turker) // only includes people who have not been contacted
-                  })
-                  console.log("Notified", notifyList.length, "workers")
-                } else if(maxWorkersToNotify <= 100) {
-                  notifyList = getRandomSubarray(data, maxWorkersToNotify).filter(function(turker) {
-                    return !hasBCalled.includes(turker) // only includes people who have not been contacted
-                  })
-                  console.log("Notified", notifyList.length, "workers")
-                }
-              }
-            }
-          })
-
-
           // Get workers to notify from - all times are GMT (NOT PST!!) bc server time is GMT
           let currenttimePeriod = "";
           let currentHour = new Date(Date.now()).getHours();
