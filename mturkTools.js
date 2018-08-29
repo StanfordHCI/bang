@@ -126,11 +126,13 @@ const updatePayment = (totalTime) => {
 // -------------------------------------------------------------------
 // Console-logs the balance of the associated account.
 // This will return $10,000.00 in the MTurk Developer Sandbox.
-
-const getBalance = () => {
+const getBalance = (callback) => {
   mturk.getAccountBalance((err, data) => {
     if (err) console.log(err, err.stack); // an error occurred
-    else console.log(data);           // successful response
+    else {
+      console.log(data);           // successful response
+      if (typeof callback === 'function') callback(data.AvailableBalance);
+    }
   });
 }
 

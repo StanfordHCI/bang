@@ -97,6 +97,13 @@ function useUser(u,f,err = "Guarded against undefined user") {
   }
 }
 
+// Check balance $$$
+mturk.getBalance(function(balance) {
+  if(runningLive && balance <= 400) {
+    console.log("\n!!! BROKE !!!\n".red.inverse.bold)
+  } 
+})
+
 // Save debug logs for later review
 const util = require('util');
 const trueLog = console.log;
