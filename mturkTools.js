@@ -180,13 +180,13 @@ const makeHIT = (chooseQual, title, description, assignmentDuration, lifetime, r
 //
 // Takes HIT ID as parameter.
 
-const returnHIT = (hitId) => {
+const returnHIT = (hitId, callback) => {
   var returnHITParams = {
     HITId: hitId /* required */
   };
   mturk.getHIT(returnHITParams, function(err, data) {
     if (err) console.log("Error: " + err.message); // an error occurred
-    else     console.log(data);           // successful response
+    else     callback(data);           // successful response
   });
 }
 
@@ -649,11 +649,7 @@ const checkQualsRecursive = (qualObject, callback, paginationToken = null, passt
 // id = "3R5OYNIC2COM0SDDREBFKCHMOHATPE"
 // id = "3B9J25CZ25S2R3RUX9KJQ7MTNFDCSQ"
 
-id = '37A2SHHJCA6SGYI4KY3EX8T0Y97JKF'
-listAssignments(id,data => {
-  console.log(data);
-  console.log(data.length)
-})
+
 
 function getRandomSubarray(arr, size) {
   let shuffled = arr.slice(0), i = arr.length, min = i - size, temp, index;
