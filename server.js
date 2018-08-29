@@ -221,13 +221,15 @@ if (runExperimentNow && runningLive){
           throw "URL not defined"
         }
         if(usingWillBang) {
+          // cleans db.willBang: removes people who no longer have willBang qual ()
           db.willBang.find({}, (err, willBangers) => {
-            if(err) {console.log("ERROR cleaning willBang db: " + err)
+            if(err) {
+              console.log("ERROR cleaning willBang db: " + err)
             } else {
-              mturk.listUsersWithQualificationRecursively(mturk.quals.hasBanged, function(data) {
+              mturk.listUsersWithQualificationRecursively(mturk.quals.willBanged, function(data) {
                 let willBangIds = willBangers.map(u => u.id)
                 willBangIds.forEach(willBangID => {
-                  if (data.includes(willBangID)) {
+                  if (!data.includes(willBangID)) { // if user in db.willBang no longer has willBang qual
                     db.willBang.remove({id: willBangID}, {multi: true}, function(err, numRemoved) {
                       if(err) console.log("Error removing from willBang db: "+ err)
                       else console.log(willBangID + "REMOVED FROM WILLBANG DB (" + numRemoved + ")")
