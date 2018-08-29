@@ -132,12 +132,12 @@ console.log = function(...msg) {
   let batchCompleteUpdated = false;
 
   const roundOrdering = extraRoundOn ? [
-    {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]},
-    {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]},
-    {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [
-    {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]},
-    {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]},
-    {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}]
+    {control: [1,2,3,2], /*treatment: [1,2,3,2],*/ baseline: [1,2,3,4]},
+    {control: [1,3,2,2], /*treatment: [1,3,2,2],*/ baseline: [1,2,3,4]},
+    {control: [1,2,2,3], /*treatment: [1,2,2,3],*/ baseline: [1,2,3,4]}] : [
+    {control: [1,2,1], /*treatment: [1,2,1],*/ baseline: [1,2,3]},
+    {control: [2,1,1], /*treatment: [2,1,1],*/ baseline: [1,2,3]},
+    {control: [1,1,2], /*treatment: [1,1,2],*/ baseline: [1,2,3]}]
 
   const experimentRoundIndicator = extraRoundOn ? 2 : 1 //This record what round of the ordering is the experimental round.
   const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
@@ -717,7 +717,7 @@ io.on('connection', (socket) => {
   // when the user disconnects.. perform this
   socket.on('disconnect', function(reason){
     // changes connected to false of disconnected user in userPool
-    console.log("Disconnecting socket: " + socket.id + " because " + reason)
+    console.log("Disconnecting socket: " + socket.id + " because " + reason.red)
     if (userPool.find(function(element) {return element.id == socket.id})) {
       userPool.byID(socket.id).connected = false;
       let usersActive = getPoolUsersActive()
