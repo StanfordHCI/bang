@@ -226,7 +226,7 @@ if (runExperimentNow && runningLive){
             if(err) {
               console.log("ERROR cleaning willBang db: " + err)
             } else {
-              mturk.listUsersWithQualificationRecursively(mturk.quals.willBanged, function(data) {
+              mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
                 let willBangIds = willBangers.map(u => u.id)
                 willBangIds.forEach(willBangID => {
                   if (!data.includes(willBangID)) { // if user in db.willBang no longer has willBang qual
