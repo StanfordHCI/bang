@@ -232,7 +232,7 @@ if (runExperimentNow && runningLive){
                   if (!data.includes(willBangID)) { // if user in db.willBang no longer has willBang qual
                     db.willBang.remove({id: willBangID}, {multi: true}, function(err, numRemoved) {
                       if(err) console.log("Error removing from willBang db: "+ err)
-                      else console.log(willBangID + "REMOVED FROM WILLBANG DB (" + numRemoved + ")")
+                      else console.log(willBangID + " REMOVED FROM WILLBANG DB (" + numRemoved + ")")
                     })
                   }
                 })
