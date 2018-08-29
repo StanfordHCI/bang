@@ -51,7 +51,7 @@ if (fs.existsSync(recruitingHITstorage)) {
       if(u.Answer.includes("morning")) { //current this only allows them to choose 1 time preference. Fix?
         timePreference = "morning";
       } else if (u.Answer.includes("midday")) {
-        timePreference = "late evening";
+        timePreference = "midday";
       }
       else if (u.Answer.includes("afternoon")) {
         timePreference = "afternoon";
