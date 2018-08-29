@@ -528,6 +528,7 @@ io.on('connection', (socket) => {
       } else {
         if(secondsSince(waitchatStart) / 60 >= maxWaitChatMinutes) {
           console.log("Waitchat time limit reached".red)
+          userAcquisitionStage = false
           io.in(socket.id).emit('echo', 'kill-all')
         }
       }
