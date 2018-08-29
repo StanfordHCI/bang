@@ -35,6 +35,7 @@ extractSurvey = function(frame,survey) {
     surveyFrame$round = round
     surveyFrame$batch = frame$batch
     surveyFrame$rooms = frame$rooms
+    surveyFrame$manipulation = frame$results.manipulationCheck
     surveyFrame$blacklist = frame$results.blacklistCheck
     return(surveyFrame)
   })
@@ -75,11 +76,11 @@ finalRounds = as.data.frame(Reduce(rbind,roundsWithRooms))
 ## Subset incomplete cases from viability survey dataframe: 
 ## MSB: complete.cases doesn't work when there aren't NAs, but empty lists, alternatives rather than subsetting where 
 ## blacklist is empty? Doens't work: test <- complete.cases(data)
-data <- frame[frame$blacklist!="",]
+data <- frame[frame$manipulation!="",]
 ## Rename room to rooms so that both are retained in future merge: 
 data <- rename(data, rooms = "rooms")
 ## Subset incomplete cases for final rounds dataframe: 
-data2 <- finalRounds[finalRounds$results.blacklistCheck!="", ]
+data2 <- finalRounds[finalRounds$results.manipulationCheck!="", ]
 ## Select only variables of interest from final rounds: 
 data2 = data2 %>% select(id, batch, room, bonus, name, friends, 
                          friends_history, results.condition, results.format,
@@ -95,6 +96,35 @@ data <- left_join(data, data2, by=NULL)
 ## Subset only observations with batch #s in complete batches 
 allConditions <- data[data$batch %in% completeBatches, ]
 ```
+## Conditionally assign conditions based on treatment and results column: 
+```{r}
+## Messy, but robust? Verify, verify, verify.  
+data <- data %>% mutate(
+  condition = case_when(
+    results.condition=='treatment' & results.format=="c(1, 2, 1)" & round==1 ~ "A", 
+    results.condition=='treatment' & results.format=="c(1, 2, 1)" & round==2 ~ "B", 
+    results.condition=='treatment' & results.format=="c(1, 2, 1)" & round==3 ~ "Ap", 
+    results.condition=='treatment' & results.format=="c(1, 1, 2)" & round==1 ~ "A", 
+    results.condition=='treatment' & results.format=="c(1, 1, 2)" & round==2 ~ "Ap", 
+    results.condition=='treatment' & results.format=="c(1, 1, 2)" & round==3 ~ "B", 
+    results.condition=='treatment' & results.format=="c(2, 1, 1)" & round==1 ~ "B", 
+    results.condition=='treatment' & results.format=="c(2, 1, 1)" & round==2 ~ "A", 
+    results.condition=='treatment' & results.format=="c(2, 1, 1)" & round==3 ~ "Ap" ,
+    results.condition=='control' & results.format=="c(1, 2, 1)" & round==1 ~ "A", 
+    results.condition=='control' & results.format=="c(1, 2, 1)" & round==2 ~ "B", 
+    results.condition=='control' & results.format=="c(1, 2, 1)" & round==3 ~ "Ap", 
+    results.condition=='control' & results.format=="c(1, 1, 2)" & round==1 ~ "A", 
+    results.condition=='control' & results.format=="c(1, 1, 2)" & round==2 ~ "Ap", 
+    results.condition=='control' & results.format=="c(1, 1, 2)" & round==3 ~ "B", 
+    results.condition=='control' & results.format=="c(2, 1, 1)" & round==1 ~ "B", 
+    results.condition=='control' & results.format=="c(2, 1, 1)" & round==2 ~ "A", 
+    results.condition=='control' & results.format=="c(2, 1, 1)" & round==3 ~ "Ap" , 
+    results.condition=='baseline' & results.format=="c(1, 2, 3)" & round==1 ~ "A" ,
+    results.condition=='baseline' & results.format=="c(1, 2, 3)" & round==2 ~ "B" ,
+    results.condition=='baseline' & results.format=="c(1, 2, 3)" & round==3 ~ "C" 
+  )) 
+```
+
 ## Set-up for factors for viability questions: 
 ```{r}
 data <- rename(data, "repeatTeam" = results.viabilityCheck.15)
@@ -133,46 +163,15 @@ plot(likert.out)
 treatmentA <- viabilityLikert %>% filter(condition=="A" & results.condition=="treatment") 
 likert.treatmentA <- likert(treatmentA[-c(15:16)])
 plot(likert.treatmentA)
-plot(likert.treatmentA,	type='density')
 # Treatment + Ap: 
 treatmentAp <- viabilityLikert %>% filter(condition=="Ap" & results.condition=="treatment") 
 likert.treatmentAp <- likert(treatmentA[-c(15:16)])
 plot(likert.treatmentAp)
-plot(likert.treatmentAp,	type='density')
 # Treatment + B: 
 treatmentAp <- viabilityLikert %>% filter(condition=="B" & results.condition=="treatment") 
 likert.treatmentAp <- likert(treatmentA[-c(15:16)])
 plot(likert.treatmentAp)
-plot(likert.treatmentAp,	type='density')
 ## Customize code above to filter on other conditions and treatments of interest. 
-```
-```{r}
-## Conditionally assign conditions based on treatment and results column: 
-## Messy, but robust? Verify, verify, verify.  
-clean <- clean %>% mutate(
-  condition = case_when(
-    results.condition=='treatment' & results.format=="c(1, 2, 1)" & round==1 ~ "A", 
-    results.condition=='treatment' & results.format=="c(1, 2, 1)" & round==2 ~ "B", 
-    results.condition=='treatment' & results.format=="c(1, 2, 1)" & round==3 ~ "Ap", 
-    results.condition=='treatment' & results.format=="c(1, 1, 2)" & round==1 ~ "A", 
-    results.condition=='treatment' & results.format=="c(1, 1, 2)" & round==2 ~ "Ap", 
-    results.condition=='treatment' & results.format=="c(1, 1, 2)" & round==3 ~ "B", 
-    results.condition=='treatment' & results.format=="c(2, 1, 1)" & round==1 ~ "B", 
-    results.condition=='treatment' & results.format=="c(2, 1, 1)" & round==2 ~ "A", 
-    results.condition=='treatment' & results.format=="c(2, 1, 1)" & round==3 ~ "Ap" ,
-    results.condition=='control' & results.format=="c(1, 2, 1)" & round==1 ~ "A", 
-    results.condition=='control' & results.format=="c(1, 2, 1)" & round==2 ~ "B", 
-    results.condition=='control' & results.format=="c(1, 2, 1)" & round==3 ~ "A", 
-    results.condition=='control' & results.format=="c(1, 1, 2)" & round==1 ~ "A", 
-    results.condition=='control' & results.format=="c(1, 1, 2)" & round==2 ~ "A", 
-    results.condition=='control' & results.format=="c(1, 1, 2)" & round==3 ~ "B", 
-    results.condition=='control' & results.format=="c(2, 1, 1)" & round==1 ~ "B", 
-    results.condition=='control' & results.format=="c(2, 1, 1)" & round==2 ~ "A", 
-    results.condition=='control' & results.format=="c(2, 1, 1)" & round==3 ~ "A" , 
-    results.condition=='baseline' & results.format=="c(1, 2, 3)" & round==1 ~ "A" ,
-    results.condition=='baseline' & results.format=="c(1, 2, 3)" & round==2 ~ "B" ,
-    results.condition=='baseline' & results.format=="c(1, 2, 3)" & round==3 ~ "C" 
-  )) 
 ```
 
 ## Exploratory data analysis part #1: 
@@ -186,11 +185,12 @@ stats$median <- median(stats$sum)
 stats$mean <- mean(stats$sum)
 ## Revalue repeat team: keep plyr b/c some weird R stuff requires library to be called directly: 
 stats$repeatTeam <- plyr::revalue(stats$repeatTeam, c("Yes"="1", "No"="0"))
+stats$repeatTeam <- plyr::revalue(stats$repeatTeam, c("Keep this team"="1", "Do not keep this team"="0"))
 ## Convert to compatible classes for grouping: 
 stats$repeatTeam <- as.numeric(stats$repeatTeam)
-stats$room <- unlist(stats$room) 
 stats$results.condition <- unlist(stats$results.condition)
 stats$results.format <- as.character(stats$results.format)
+stats$room <- unlist(stats$room)
 ## Dplyr to group teams and summarise variables for each group: 
 groupedProportion <- stats %>%
   group_by(room, batch, round, condition, results.condition, results.format) %>% 
@@ -219,9 +219,9 @@ fracture$prop1 <- 1-fracture$prop1
 
 ggplot(fracture, aes(prop, prop1)) +
   geom_point() +
-  geom_jitter() + coord_fixed() + xlim(0,1) + ylim(0,1) + labs(subtitle="Proportion of fracture in ", 
-       x="Fracture in round A: the first time a team interacts" + 
-       y="Fracture in round Ap: the second time a team interacts, without knowing it") 
+  geom_jitter() + coord_fixed() + xlim(0,1) + ylim(0,1) + labs(subtitle="Fracture proportions", 
+       x="Fracture round A: the first time a team interacts", 
+       y="Fracture round Ap: the second time a team interacts, without knowing it") 
 
 groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture)
 tally(~condition + fracture, data = groupedProportionFracture, format = "proportion")
@@ -310,6 +310,7 @@ groupedProportionFracture <- groupedProportion %>%
 groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture)
 tally(~condition + fracture, data = groupedProportionFracture, format = "proportion")
 tally(~fracture | condition, data = groupedProportionFracture, format = "proportion")
+
 ```
 
 ## Contingency tables for question 15 answers across teams and condition combinations: 
