@@ -206,22 +206,36 @@ table(groupedProportion$condition, groupedProportion$results.condition)
 
 ```{r}
 groupedProportionFracture <- groupedProportion %>%
-  mutate(fracture = case_when(prop<=.50 ~ "0", prop>.50 ~ "1")) %>% 
-  filter(results.condition=="treatment" & condition=="A" || condition=="Ap")
+  mutate(fracture = case_when(prop<=.50 ~ "0", prop>.50 ~ "1"))
 
-fracture1 <- groupedProportionFracture %>% filter(condition=="A")
-fracture2 <- groupedProportionFracture %>% filter(condition=="Ap")
-plot(fracture1$prop,fracture2$prop)
+groupedProportionFractureTreatment <- groupedProportionFracture %>% 
+filter(results.condition=="treatment")
+treatmentFracture1 <- groupedProportionFractureTreatment %>% filter(condition=="A")
+treatmentFracture2 <- groupedProportionFractureTreatment %>% filter(condition=="Ap")
+treatmentFracture1$prop1 <- 1-treatmentFracture1$prop
+treatmentFracture2$prop2 <- 1-treatmentFracture2$prop
+treatmentFracture <- cbind(treatmentFracture1, treatmentFracture2)
 
-fracture <- cbind(fracture1, fracture2)
-fracture$prop <- 1-fracture$prop
-fracture$prop1 <- 1-fracture$prop1
+groupedProportionFractureControl <- groupedProportion %>% 
+  filter(results.condition=="control") 
+controlFracture1 <- groupedProportionFractureControl %>% filter(condition=="A")
+controlFracture2 <- groupedProportionFractureControl %>% filter(condition=="Ap")
+controlFracture1$prop <- 1-controlFracture1$prop
+controlFracture2$prop <- 1-controlFracture2$prop
+controlFracture <- cbind(controlFracture1, controlFracture2)
 
-ggplot(fracture, aes(prop, prop1)) +
+ggplot(treatmentFracture, aes(prop, prop1)) +
   geom_point() +
-  geom_jitter() + coord_fixed() + xlim(0,1) + ylim(0,1) + labs(subtitle="Fracture proportions", 
-       x="Fracture round A: the first time a team interacts", 
-       y="Fracture round Ap: the second time a team interacts, without knowing it") 
+  geom_jitter() + coord_fixed() + xlim(0.0,1.0) + ylim(0.0,1.0) + labs(title="Team fracture in the first round vs. fracture in the experimental round", subtitle="Fracture scale 0=no fracture, 1=fracture",  
+       x="Fracture the first time a team interacts", 
+       y="Fracture the second time a team interacts, without knowing it") 
+
+ggplot(controlFracture, aes(prop, prop1)) +
+  geom_point() +
+  geom_jitter() + coord_fixed() + xlim(0.0,1.0) + ylim(0.0,1.0) + labs(title="Team fracture in the first round vs. fracture in the second control round", subtitle="Fracture scale 0=no fracture, 1=fracture",  
+                                                                       x="Fracture the first time a team interacts", 
+                                                                       y="Fracture the second time a team interacts, without knowing it") 
+
 
 groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture)
 tally(~condition + fracture, data = groupedProportionFracture, format = "proportion")
@@ -233,30 +247,28 @@ tally(~fracture | condition, data = groupedProportionFracture, format = "proport
 ## Plot of prop and mean per group with standard error: 
 ggplot(groupedProportion, aes(x=prop, y=mean)) + 
   geom_point() +
-  stat_smooth(method = "lm", col = "red")
+  stat_smooth(method = "lm", col = "red") + 
+  labs(subtitle="", 
+       x="Distribution of responses to Q15: ",
+       y="Numeric sum of viability measures questions (range: 7-70)") + facet_grid(condition ~ results.format)
+
 ## Unlist for condition for graph: 
 groupedProportion$results.condition <- unlist(groupedProportion$results.condition)
 ## Team viability sum and Q15 factor repeat team answers facet_grid by condition, results.condition and results.format (all users) 
 g <- ggplot(stats, aes(factor(repeatTeam), sum))
 g + geom_boxplot(varwidth=T, fill="plum") + 
   labs(subtitle="Sum of viability measures grouped by repeat team question:", 
-       x="There is a chance that you will have a future task with one of the teams with which you have previously worked. The         team would be selected at random, but you can choose to remove teams from the random selection.",
+       x="Distribution of responses to Q15: ",
        y="Numeric sum of viability measures questions (range: 7-70)") + facet_grid(condition ~ results.format)
-
-g <- ggplot(stats, aes(factor(repeatTeam), sum))
-g + geom_boxplot(varwidth=T, fill="plum") + 
-  labs(subtitle="Sum of viability measures grouped by repeat team question:", 
-       x="There is a chance that you will have a future task with one of the teams with which you have previously worked. The         team would be selected at random, but you can choose to remove teams from the random selection.",
-       y="Numeric sum of viability measures questions (range: 7-70)") + facet_grid(condition ~ results.condition)
 
 ## Team viability mean and repeat team answers facet_grid by results.condition, condition and results.format 
 g <- ggplot(stats, aes(factor(repeatTeam), mean))
 g + geom_boxplot(varwidth=T, fill="plum") + 
-  labs(subtitle="Sum of viability measures grouped by repeat team question:", 
-       x="There is a chance that you will have a future task with one of the teams with which you have previously worked. The         team would be selected at random, but you can choose to remove teams from the random selection.",
+  labs(subtitle="Mean of viability measures grouped by repeat team question across all conditions", 
+       x="Distribution of responses to Q15",
        y="Numeric sum of viability measures questions (range: 7-70)") + facet_grid(condition ~ results.format)
 
-g <- ggplot(stats, aes(factor(repeatTeam), mean))
+g <- ggplot(stats, aes(factor(repeatTeam), sum))
 g + geom_boxplot(varwidth=T, fill="plum") + 
   labs(subtitle="Sum of viability measures grouped by repeat team question:", 
        x="If you had the choice, would you like to work with the same team in a future round? 1=Yes, 0=No",
@@ -299,6 +311,14 @@ ggplot(data=groupedProportion, aes(groupedProportion$prop)) +
                                   1=Yes , 0=No", y="Count") + facet_grid(condition ~ results.condition)
 
 ```
+## Learning effect: 
+```{r}
+groupedProportion
+
+
+```
+
+
 
 ## Probability for question 15 answers across teams and condition combinations: 
 ```{r}
@@ -313,8 +333,20 @@ tally(~fracture | condition, data = groupedProportionFracture, format = "proport
 
 ```
 
-## Contingency tables for question 15 answers across teams and condition combinations: 
+## Learning effect: 
 ```{r}
+groupedProportionFractureLE <- groupedProportionFracture %>% filter(results.format=="c(1, 1, 2)" || results.format=="c(2, 1, 1)")
+fractureLE1 <- groupedProportionFractureLE %>% filter(round=="1")
+fractureLE2 <- groupedProportionFractureLE %>% filter(round=="3")
+fractureLE1$prop <- 1-fractureLE1$prop
+fractureLE2$prop <- 1-fractureLE2$prop
+fractureLE <- cbind(fractureLE1, fractureLE2)
+
+ggplot(fractureLE, aes(prop, prop1)) +
+  geom_point() +
+  geom_jitter() + coord_fixed() + xlim(0.0,1.0) + ylim(0.0,1.0) + labs(title="Team fracture in first round vs. third in learning effect condition", subtitle="Fracture scale 0=no fracture, 1=fracture",  
+       x="Fracture the first time a team interacts", 
+       y="Fracture the second time a team interacts, without knowing it") 
 
 ```
 
