@@ -9,7 +9,7 @@ db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestamp
 
 // What are we doing?
 var notification_type = process.argv[2]
-// var HITId = process.argv[3];
+var HITId = process.argv[3];
 
 // File paths
 var bonusworkersStorage = "./txt/bonusworkers.txt";
