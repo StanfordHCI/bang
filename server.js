@@ -747,7 +747,7 @@ io.on('connection', (socket) => {
 
       // update DB with change
       updateUserInDB(user,'connected',false)
-      console.log(socket.username + ": " + user.mturkId + " HAS LEFT")
+      console.log((socket.username + ": " + user.mturkId + " HAS LEFT").red)
       if (!experimentOver) {
         mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com and let us know the last things you did in the HIT.\n\nMturk ID: " + user.mturkId + "\nAssignment ID: " + user.assignmentId + '\nHIT ID: ' + mturk.returnCurrentHIT())
       }
@@ -799,16 +799,17 @@ io.on('connection', (socket) => {
   });
 
   socket.on('ready-to-all', (data) => {
-    console.log("god is ready");
+    console.log("god is ready".rainbow);
     io.sockets.emit('echo','ready')
   })
 
   socket.on('active-to-all', (data) => {
-    console.log("god is active");
+    console.log("god is active".rainbow);
     io.sockets.emit('echo','active')
   })
 
   socket.on('notify-more', (data) => {
+    console.log("god wants more humans".rainbow)
     let HITId = mturk.returnCurrentHIT()
     // let HITId = process.argv[2];
     let subject = "We launched our new ad writing HIT. Join now, spaces are limited."
@@ -852,7 +853,7 @@ io.on('connection', (socket) => {
   })
 
   socket.on('kill-all', (data) => {
-    console.log("god is angry")
+    console.log("god is angry".rainbow)
     updateUserInDB(socket,"bonus",currentBonus())
     io.sockets.emit('finished', {
       message: "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
@@ -987,7 +988,7 @@ io.on('connection', (socket) => {
       // }
 
       //can we move this into its own on.*** call //PK: still relevant?
-      console.log('all users ready -> starting experiment');
+      console.log('all users ready -> starting experiment'.blue.inverse);
 
       treatmentNow = (currentCondition == "treatment" && currentRound == experimentRound)
       const conditionRound = conditions[currentCondition][currentRound] - 1
@@ -1110,7 +1111,7 @@ io.on('connection', (socket) => {
 
         //Done with round
         setTimeout(() => {
-          console.log('done with round', currentRound);
+          console.log(('done with round', currentRound).blue.inverse);
           users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
           currentRound += 1 // guard to only do this when a round is actually done.
           console.log(currentRound, "out of", numRounds)
