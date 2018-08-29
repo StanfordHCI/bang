@@ -132,12 +132,12 @@ console.log = function(...msg) {
   let batchCompleteUpdated = false;
 
   const roundOrdering = extraRoundOn ? [
-    {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]},
-    {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]},
-    {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [
-    {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]},
-    {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]},
-    {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}]
+    {control: [1,2,3,2], /*treatment: [1,2,3,2],*/ baseline: [1,2,3,4]},
+    {control: [1,3,2,2], /*treatment: [1,3,2,2],*/ baseline: [1,2,3,4]},
+    {control: [1,2,2,3], /*treatment: [1,2,2,3],*/ baseline: [1,2,3,4]}] : [
+    {control: [1,2,1], /*treatment: [1,2,1],*/ baseline: [1,2,3]},
+    {control: [2,1,1], /*treatment: [2,1,1],*/ baseline: [1,2,3]},
+    {control: [1,1,2], /*treatment: [1,1,2],*/ baseline: [1,2,3]}]
 
   const experimentRoundIndicator = extraRoundOn ? 2 : 1 //This record what round of the ordering is the experimental round.
   const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
@@ -215,7 +215,7 @@ if (runExperimentNow && runningLive){
       let URL = ''
       mturk.getHITURL(HIT.HITId, function(url) {
         URL = url;
-        let message = "You’re invited to join our newly launched HIT on Mturk; there are limited spaces and it will be closed to new participants in about 15 minutes!  Check out the HIT here: " + URL + " \n\nYou're receiving this message because you you indicated that you'd like to be notified of our upcoming HIT during this time window. If you'd like to stop receiving notifications please email your MTurk ID to: scaledhumanity@gmail.com";
+        let message = "You’re invited to join our newly launched HIT on Mturk; there are limited spaces and it will be closed to new participants in about 15 minutes!  Check out the HIT here: " + URL + " \n\nYou're receiving this message because you indicated that you'd like to be notified of our upcoming HIT during this time window. If you'd like to stop receiving notifications please email your MTurk ID to: scaledhumanity@gmail.com";
         console.log("message to willBangers", message);
         if (!URL) {
           throw "URL not defined"
@@ -241,7 +241,7 @@ if (runExperimentNow && runningLive){
             }
           })
           // Use this function to notify only x users <= 100
-          let maxWorkersToNotify = 100; // cannot be more than 100
+          let maxWorkersToNotify = 175; // cannot be more than 100
 
           // Get workers to notify from - all times are GMT (NOT PST!!) bc server time is GMT
           let currenttimePeriod = "";
@@ -717,7 +717,7 @@ io.on('connection', (socket) => {
   // when the user disconnects.. perform this
   socket.on('disconnect', function(reason){
     // changes connected to false of disconnected user in userPool
-    console.log("Disconnecting socket: " + socket.id + " because " + reason)
+    console.log("Disconnecting socket: " + socket.id + " because " + reason.red)
     if (userPool.find(function(element) {return element.id == socket.id})) {
       userPool.byID(socket.id).connected = false;
       let usersActive = getPoolUsersActive()

@@ -35,6 +35,14 @@ const taskURL = questionHTML
 let db = {}
 db.willBang = new Datastore({ filename:'.data/willBang', autoload: true, timestampData: true});
 
+//Removes user from db.willBang
+// let removeId = ''
+// db.willBang.remove({id: removeId}, { multi: true }, function (err, numRemoved) {
+//   if(err) console.log(err)
+//   else console.log('Removed ' + numRemoved + ' from db.willBang: ' + removeId)
+// })
+return;
+
 // Assign willBang to people who have accepted recruiting HIT of last hour
 console.log("fs.exists()", fs.existsSync(recruitingHITstorage))
 if (fs.existsSync(recruitingHITstorage)) {

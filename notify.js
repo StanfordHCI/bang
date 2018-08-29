@@ -9,21 +9,26 @@ db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestamp
 
 // What are we doing?
 var notification_type = process.argv[2]
-var HITId = process.argv[3];
+// var HITId = process.argv[3];
 
 // File paths
 var bonusworkersStorage = "./txt/bonusworkers.txt";
-var repayworkersHITstorage = "./txt/currentrepayHIT.txt"
-var bonusworkersArray = fs.readFileSync(bonusworkersStorage).toString().split("\n");
+// var repayworkersHITstorage = "./txt/currentrepayHIT.txt"
+var bonusworkers = fs.readFileSync(bonusworkersStorage).toString().split("\n")
+var bonusworkersDict = {}
+bonusworkers.forEach(line => {bonusworkersDict[line.split(",")[0]] = parseFloat(line.split(",")[1])});
+console.log("bonusworkers", bonusworkers)
+console.log("bonusworkersDict", bonusworkersDict)
+console.log("key", Object.keys(bonusworkersDict))
 
 switch (notification_type) {
-  case "weCrashed":
-    mturk.listAssignments(HITId, data => {
-      let subject = "Our system crashed. You will be compensated for your time.";
-      let message = "You will be bonused for the time you spent on our task. Thank you for your time.";
-      mturk.notifyWorkers(data.map(a => a.WorkerId), subject, message);
-    });
-    break;
+  // case "weCrashed":
+  //   mturk.listAssignments(HITId, data => {
+  //     let subject = "Our system crashed. You will be compensated for your time.";
+  //     let message = "You will be bonused for the time you spent on our task. Thank you for your time.";
+  //     mturk.notifyWorkers(data.map(a => a.WorkerId), subject, message);
+  //   });
+  //   break;
   case "killTask":
     mturk.expireHIT(HITId);
     break;
@@ -74,12 +79,12 @@ switch (notification_type) {
           if (data.HIT.Title == "Hit to repay workers") {
             // Find people in our list of people to repay
             mturk.listAssignments(HITId, data => {
-              const repayacceptors = data.filter(a => bonusworkersArray.includes(a.WorkerId))
+              const repayacceptors = data.filter(a => (a.WorkerId in bonusworkers))
               .map(a => {
                 return {
                   mturkId: a.WorkerId,
                   assignmentId: a.AssignmentId, 
-                  bonus: 1,
+                  bonus: bonusworkers[a.WorkerId],
                   id: null
                 }
               })
@@ -87,7 +92,7 @@ switch (notification_type) {
             // Bonus Them and remove their name from repay list
               mturk.payBonuses(repayacceptors, (successfullyBonusedUsers) => {
                 let successfullyBonusedUsersID = successfullyBonusedUsers.map(u => u.mturkId);
-                let unsuccessfullyBonusedUsers = bonusworkersArray.filter(u => !successfullyBonusedUsersID.includes(u));
+                let unsuccessfullyBonusedUsers = bonusworkersDict.filter(u => !successfullyBonusedUsersID.includes(u));
                 fs.writeFile(bonusworkersStorage, unsuccessfullyBonusedUsers.join("\n"), (err) => {
                   if (err) throw err;
                   console.log(`Workers already bonused have been removed from ${bonusworkersStorage}!`);
@@ -114,7 +119,8 @@ switch (notification_type) {
                 console.log("You've got more than 1 repay HIT. Breaking to ensure you don't spam people!")
                 return;
               }
-              mturk.notifyWorkers(bonusworkersArray, subject, message)
+              console.log("The message is", message)
+              mturk.notifyWorkers(Object.keys(bonusworkersDict), subject, message)
             })
           }
         })
