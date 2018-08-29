@@ -217,14 +217,11 @@ fracture <- cbind(fracture1, fracture2)
 fracture$prop <- 1-fracture$prop
 fracture$prop1 <- 1-fracture$prop1
 
-fracture$is_fracture <- (fracture$prop >= .5)
-fracture$is_fracture1 <- (fracture$prop1 >= .5)
-
-table(fracture$fracture, fracture$fracture1)
-
 ggplot(fracture, aes(prop, prop1)) +
   geom_point() +
-  geom_jitter() + coord_fixed() + xlim(0,1) + ylim(0,1)
+  geom_jitter() + coord_fixed() + xlim(0,1) + ylim(0,1) + labs(subtitle="Proportion of fracture in ", 
+       x="Fracture in round A: the first time a team interacts" + 
+       y="Fracture in round Ap: the second time a team interacts, without knowing it") 
 
 groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture)
 tally(~condition + fracture, data = groupedProportionFracture, format = "proportion")

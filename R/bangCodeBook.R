@@ -351,6 +351,35 @@ ggplot(data=individualProportion, aes(individualProportion$prop)) +
                                   x="If you had the choice, would you like to work with the same team in a future round? 
                                   1=Yes , 0=No", y="Count") 
 
+
+groupedProportionFracture <- groupedProportion %>%
+  mutate(fracture = case_when(prop<=.50 ~ "0", prop>.50 ~ "1")) %>% 
+  filter(results.condition=="treatment" & condition=="A" || condition=="Ap")
+
+fracture1 <- groupedProportionFracture %>% filter(condition=="A")
+fracture2 <- groupedProportionFracture %>% filter(condition=="Ap")
+plot(fracture1$prop,fracture2$prop)
+
+fracture <- cbind(fracture1, fracture2)
+fracture$prop <- 1-fracture$prop
+fracture$prop1 <- 1-fracture$prop1
+
+## how many teams have a 1 in both columns 
+## how many have in both 
+## how many have none 
+
+
+ggplot(fracture, aes(prop, prop1)) +
+  geom_point() +
+  geom_jitter() + coord_fixed() + xlim(0,1) + ylim(0,1) + labs(subtitle="Fracture proportions", 
+                                                               x="Fracture round A: the first time a team interacts", 
+                                                               y="Fracture round Ap: the second time a team interacts, without knowing it") 
+
+groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture)
+tally(~condition + fracture, data = groupedProportionFracture, format = "proportion")
+tally(~fracture | condition, data = groupedProportionFracture, format = "proportion")
+
+
 ## Distribution of median vs. mean per team: 
 qplot(mean, prop, data=groupedProportion, 
       main="Scatterplots median vs. mean for viability sum responses per team",
