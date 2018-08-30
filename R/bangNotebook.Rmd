@@ -288,32 +288,42 @@ tally(~fracture | condition, data = groupedProportionFracture, format = "proport
 ## Fracture proportion scatterplots: 
 ```{r}
 ## Learning effect: 
-groupedProportionFractureLE <- groupedProportionFracture %>% filter(results.format=="c(1, 1, 2)" || results.format=="c(2, 1, 1)") 
-groupedProportionFractureLE <- groupedProportionFractureLE %>% filter(round=="1" || round=="3")
+groupedProportionFractureLE <- groupedProportionFracture %>% filter(results.format=="c(1, 1, 2)" | results.format=="c(2, 1, 1)") 
+groupedProportionFractureLE <- groupedProportionFractureLE %>% filter(round=="1" | round=="3")
 
 fractureLE1 <- groupedProportionFractureLE %>% filter(round=="1")
 fractureLE2 <- groupedProportionFractureLE %>% filter(round=="3")
 fractureLE1$prop <- 1-fractureLE1$prop
 fractureLE2$prop <- 1-fractureLE2$prop
-fractureLE <- cbind(fractureLE1, fractureLE2,)
+fractureLE <- cbind(fractureLE1, fractureLE2)
 
-ggplot(data=groupedProportionFractureLE, aes(prop, prop1)) + 
+
+ggplot(data=groupedProportionFractureTreatment, aes(prop)) + 
   geom_histogram(breaks=seq(0, 1, by=0.20), 
                  col="red", 
                  fill="green", 
-                 alpha=.2) + labs(title="Team fracture in first round vs. third in learning effect condition n=7-8", 
+                 alpha=.2) + labs(title="Team fracture in the first round vs. the experimental round in the treatment condition",
                                   x="Fracture proportion
-                                  1=Yes , 0=No", y="Count") + facet_grid(round ~ results.condition) 
+                                  1=Yes , 0=No", y="Count") + facet_grid(. ~ condition)
 
-ggplot(fractureLE, aes(prop, prop1)) +
+
+ggplot(data=groupedProportionFractureControl, aes(prop)) + 
+  geom_histogram(breaks=seq(0, 1, by=0.20), 
+                 col="red", 
+                 fill="green", 
+                 alpha=.2) + labs(title="Team fracture in the first round vs. the control condition",
+                                  x="Fracture proportion
+                                  1=Yes , 0=No", y="Count") + facet_grid(. ~ condition)
 
 ggplot(data=groupedProportionFractureLE, aes(prop)) + 
   geom_histogram(breaks=seq(0, 1, by=0.20), 
                  col="red", 
                  fill="green", 
-                 alpha=.2) + labs(title="Team fracture in the first round vs. the third round in the learning effect condition, n= ", 
+                 alpha=.2) + labs(title="Team fracture in the first round vs. the third round in the learning effect condition",
                                   x="Fracture proportion
-                                  1=Yes , 0=No", y="Count") + facet_grid(round ~ results.condition) 
+                                  1=Yes , 0=No", y="Count") + facet_grid(. ~ round)
+
+
 
 ggplot(treatmentFracture, aes(prop)) +
   geom_point(aes()) +
@@ -334,9 +344,9 @@ ggplot(treatmentFracture, aes(prop1, prop2)) +
   geom_point() +
   geom_jitter() + coord_fixed() + xlim(0.0,1.0) + ylim(0.0,1.0) + labs(title="Team fracture in the first round vs. third in the experimental condition:  n=34 teams", subtitle="Fracture scale 0=no fracture, 1=fracture",  
        x="Fracture the first time a team interacts", 
-       y="Fracture the second time a team interacts, without knowing it") 
+       y="Fracture the second time a team interacts, without knowing it")+  facet_grid(. ~ condition)
 
-## Control: 
+## Control:  
 groupedProportionFractureControl <- groupedProportionFracture %>% 
   filter(results.condition=="control") 
 controlFracture1 <- groupedProportionFractureControl %>% filter(condition=="A")
@@ -351,24 +361,57 @@ ggplot(controlFracture, aes(prop, prop1)) +
                                                                        x="Fracture the first time a team interacts", 
                                                                        y="Fracture the second time a team interacts, without knowing it") 
 
+## Fracture initial: true, false 
+## Fracture Ap: flipped: true, false 
+## Treatment, 
+
+sum(groupedProportionFractureTreatment$prop1)
+sum(groupedProportionFracture$prop)
+
+## Defining fracture: 
+
+## TREATMENT EFFECT: 
+## Overall fracture change: 
+sum(ifelse(treatmentFracture1$fracture==treatmentFracture2$fracture,0,1)) 
+# Results: 17/34 ~50% 
+## No fracture to fractre: 
+sum(ifelse(treatmentFracture1$fracture==0 & treatmentFracture2$fracture==1,1,0))
+# Results: 11/34 ~32% 
+
+## CONTROL EFFECT: 
+## Overall fracture change: 
+sum(ifelse(controlFracture1$fracture==controlFracture2$fracture,0,1))
+## Results: 1/7 ~0.14% 
+## No fracture to fracture: 
+sum(ifelse(controlFracture1$fracture==0 & controlFracture2$fracture==1,1,0))
+##  Results: 0/7 0% 
+
+## LEARNING EFFECT 
+## Overall fracture change: 
+sum(ifelse(fractureLE1$fracture==fractureLE2$fracture,0,1))
+# Results: 11/21 ~ 52% 
+## No fracture to fracture: 
+sum(ifelse(fractureLE1$fracture==0 & fractureLE2$fracture==1,1,0))
+# Results: 5/21 ~24% 
+  
 ```
 
 ## Histogram comparisons of fracture ratios across treatment, control and learning effect conditions
 
 ```{r}
-ggplot(data=groupedProportionFracture, aes(factor(fracture))) + 
+ggplot(data=groupedProportionFracture, aes(fracture)) + 
   geom_bar(breaks=seq(0, 1, by=0.20), 
                  col="red", 
                  fill="green", 
                  alpha=.2) + labs(title="Fracture ratios: treatment condition") + facet_grid(condition ~ results.condition)
 
-ggplot(data=groupedProportionFractureControl, aes(factor(fracture))) + 
+ggplot(data=groupedProportionFractureControl, aes(fracture)) + 
   geom_bar(breaks=seq(0, 1, by=0.20), 
                  col="red", 
                  fill="green", 
                  alpha=.2) + labs(title="Fracture ratios: control round") + facet_grid(condition ~ results.condition)
 
-ggplot(data=groupedProportionFractureLE, aes(factor(fracture))) + 
+ggplot(data=groupedProportionFractureLE, aes(fracture)) + 
   geom_bar(breaks=seq(0, 1, by=0.20), 
                  col="red", 
                  fill="green", 
@@ -502,6 +545,7 @@ p4 <- 10 / 34
 
   # Print out the probabilities
 round(c(p1, p2, p3, p4), digits = 2)  
+
 
 ```
 

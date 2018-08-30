@@ -97,6 +97,13 @@ function useUser(u,f,err = "Guarded against undefined user") {
   }
 }
 
+// Check balance $$$
+mturk.getBalance(function(balance) {
+  if(runningLive && balance <= 400) {
+    console.log("\n!!! BROKE !!!\n".red.inverse.bold)
+  } 
+})
+
 // Save debug logs for later review
 const util = require('util');
 const trueLog = console.log;
@@ -221,6 +228,8 @@ if (runExperimentNow && runningLive){
           throw "URL not defined"
         }
         if(usingWillBang) {
+
+
           // cleans db.willBang: removes people who no longer have willBang qual ()
           db.willBang.find({}, (err, willBangers) => {
             if(err) {
@@ -266,8 +275,30 @@ if (runExperimentNow && runningLive){
           }
           if(currenttimePeriod == "no bucket") { // randomize list
             mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
-              let notifyList = getRandomSubarray(data, maxWorkersToNotify)
-              mturk.notifyWorkers(notifyList, subject, message)
+              if(maxWorkersToNotify <= 100) {
+                let notifyList = getRandomSubarray(data, maxWorkersToNotify)
+                mturk.notifyWorkers(notifyList, subject, message)
+                console.log("Notified", notifyList.length, "workers")
+              } else if(maxWorkersToNotify > 100) {
+                let hasBCalled = []
+                let notifyList = getRandomSubarray(data, 100)
+                while(maxWorkersToNotify > 0) {
+                  mturk.notifyWorkers(notifyList, subject, message)
+                  hasBCalled = hasBCalled.concat(notifyList)
+                  maxWorkersToNotify = maxWorkersToNotify - notifyList.length;
+                  if(maxWorkersToNotify > 100) {
+                    notifyList = getRandomSubarray(data, 100).filter(function(turker) {
+                      return !hasBCalled.includes(turker) // only includes people who have not been contacted
+                    })
+                    console.log("Notified", notifyList.length, "workers")
+                  } else if(maxWorkersToNotify <= 100) {
+                    notifyList = getRandomSubarray(data, maxWorkersToNotify).filter(function(turker) {
+                      return !hasBCalled.includes(turker) // only includes people who have not been contacted
+                    })
+                    console.log("Notified", notifyList.length, "workers")
+                  }
+                }
+            }
             })
           } else { // use the time buckets
             console.log("Current Time Period: " + currenttimePeriod)
@@ -278,16 +309,41 @@ if (runExperimentNow && runningLive){
                 let timePoolNotifyList = currentTimePoolWorkers.map(u => u.id)
                 let moreworkersneeded = maxWorkersToNotify - currentTimePoolWorkers.length
                 if (moreworkersneeded > 0) { //if we don't have enough people with current time preference to notify
+                  mturk.notifyWorkers(timePoolNotifyList, subject, message)
                   mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
-                    let notifyList = getRandomSubarray(data, maxWorkersToNotify)
-                    let i = notifyList.length
-                    while (i--) {
-                        if (timePoolNotifyList.includes(notifyList[i])) {
-                          notifyList.splice(i, 1);
+                    if(moreworkersneeded <= 100) {
+                      let notifyList = getRandomSubarray(data, moreworkersneeded)
+                      mturk.notifyWorkers(notifyList, subject, message)
+                      console.log("Notified", notifyList.length, "workers")
+                    } else if(moreworkersneeded > 100) {
+                      let hasBCalled = []
+                      let notifyList = getRandomSubarray(data, 100)
+                      while(moreworkersneeded > 0) {
+                        mturk.notifyWorkers(notifyList, subject, message)
+                        hasBCalled = hasBCalled.concat(notifyList)
+                        moreworkersneeded = maxWorkersToNotify - notifyList.length - currentTimePoolWorkers.length;
+                        if(moreworkersneeded > 100) {
+                          notifyList = getRandomSubarray(data, 100).filter(function(turker) {
+                            return !hasBCalled.includes(turker) // only includes people who have not been contacted
+                          })
+                          console.log("Notified", notifyList.length, "workers")
+                        } else if(moreworkersneeded <= 100) {
+                          notifyList = getRandomSubarray(data, moreworkersneeded).filter(function(turker) {
+                            return !hasBCalled.includes(turker) // only includes people who have not been contacted
+                          })
+                          console.log("Notified", notifyList.length, "workers")
                         }
+                      }
                     }
-                    mturk.notifyWorkers(timePoolNotifyList, subject, message)
-                    mturk.notifyWorkers(notifyList, subject, message)
+                    // let notifyList = getRandomSubarray(data, maxWorkersToNotify)
+                    // let i = notifyList.length
+                    // while (i--) {
+                    //     if (timePoolNotifyList.includes(notifyList[i])) {
+                    //       notifyList.splice(i, 1);
+                    //     }
+                    // }
+                    // mturk.notifyWorkers(timePoolNotifyList, subject, message)
+                    // mturk.notifyWorkers(notifyList, subject, message)
                   })
                   // db.willBang.find({ timePreference: '' }, (err, workersfromnullPool) => {
                   //   if (err) {console.log("DB for MTurk:" + err)}
@@ -740,7 +796,7 @@ io.on('connection', (socket) => {
 
       // update DB with change
       updateUserInDB(user,'connected',false)
-      console.log(socket.username + ": " + user.mturkId + " HAS LEFT")
+      console.log(socket.username.red + ": ".red + user.mturkId.red + " HAS LEFT".red)
       if (!experimentOver) {
         mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com with your Mturk ID and the last things you did in the HIT.\n\nMturk ID: " + user.mturkId + "\nAssignment ID: " + user.assignmentId + '\nHIT ID: ' + mturk.returnCurrentHIT())
       }
@@ -792,16 +848,17 @@ io.on('connection', (socket) => {
   });
 
   socket.on('ready-to-all', (data) => {
-    console.log("god is ready");
+    console.log("god is ready".rainbow);
     io.sockets.emit('echo','ready')
   })
 
   socket.on('active-to-all', (data) => {
-    console.log("god is active");
+    console.log("god is active".rainbow);
     io.sockets.emit('echo','active')
   })
 
   socket.on('notify-more', (data) => {
+    console.log("god wants more humans".rainbow)
     let HITId = mturk.returnCurrentHIT()
     // let HITId = process.argv[2];
     let subject = "We launched our new ad writing HIT. Join now, spaces are limited."
@@ -845,7 +902,7 @@ io.on('connection', (socket) => {
   })
 
   socket.on('kill-all', (data) => {
-    console.log("god is angry")
+    console.log("god is angry".rainbow)
     updateUserInDB(socket,"bonus",currentBonus())
     io.sockets.emit('finished', {
       message: "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
@@ -980,7 +1037,7 @@ io.on('connection', (socket) => {
       // }
 
       //can we move this into its own on.*** call //PK: still relevant?
-      console.log('all users ready -> starting experiment');
+      console.log('all users ready -> starting experiment'.blue.inverse);
 
       treatmentNow = (currentCondition == "treatment" && currentRound == experimentRound)
       const conditionRound = conditions[currentCondition][currentRound] - 1
@@ -1103,7 +1160,7 @@ io.on('connection', (socket) => {
 
         //Done with round
         setTimeout(() => {
-          console.log('done with round', currentRound);
+          console.log('done with round'.blue.inverse, currentRound.blue.inverse);
           users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
           currentRound += 1 // guard to only do this when a round is actually done.
           console.log(currentRound, "out of", numRounds)
