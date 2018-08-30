@@ -50,6 +50,12 @@ userFiles = lapply(completeBatches, function(batch) {
   return(flatten(userFile, recursive = TRUE))
 })
 
+ggplot(fracture, aes(prop, prop1)) +
+  geom_point() +
+  geom_jitter() + coord_fixed() + xlim(0.0,1.0) + ylim(0.0,1.0) + labs(title="Team fracture in the first round vs. fracture in the experimental round", subtitle="Fracture scale 0=no fracture, 1=fracture",  
+                                                                       x="Fracture the first time a team interacts", 
+                                                                       y="Fracture the second time a team interacts, without knowing it") 
+
 ## Retroactively find rooms from chat data: 
 overlappingFiles = Reduce(function(x,y) merge(x, y, all=TRUE), userFiles)
 roundsWithRooms = apply(overlappingFiles,1,function(x) {
@@ -60,6 +66,13 @@ roundsWithRooms = apply(overlappingFiles,1,function(x) {
   })
   return(Reduce(rbind,roomsForIndividual))
 })
+
+ggplot(controlFracture, aes(prop, prop1)) +
+  geom_point() +
+  geom_jitter() + coord_fixed() + xlim(0.0,1.0) + ylim(0.0,1.0) + labs(title="Team fracture in the first round vs. fracture in the second control round", subtitle="Fracture scale 0=no fracture, 1=fracture",  
+                                                                       x="Fracture the first time a team interacts", 
+                                                                       y="Fracture the second time a team interacts, without knowing it") 
+
 
 ## Apply extract survey function to extract the right columns and rows for viability survey: 
 survey = 'viabilityCheck'
@@ -299,6 +312,38 @@ g + geom_boxplot(varwidth=T, fill="plum") +
        x="If you had the choice, would you like to work with the same team in a future round? ",
        y="Numeric sum of viability measures questions (range: 7-70)")
 
+ggplot(fractureLE, aes(prop, prop1)) +
+  geom_point(aes(shape=results.condition)) +
+  geom_jitter() + coord_fixed() + xlim(0.0,1.0) + ylim(0.0,1.0) + labs(title="Team fracture in first vs. third round in learning effect condition", subtitle="Fracture scale 0=no fracture, 1=fracture",  
+                                                                       x="Fracture the first time a team interacts", 
+                                                                       groupedProportionFracture <- groupedProportion %>%
+                                                                         mutate(fracture = case_when(prop<=.50 ~ "0", prop>.50 ~ "1")) %>% 
+                                                                         filter(results.condition=="treatment" & condition=="A" || condition=="Ap")                                                                 y="Fracture the second time a team interacts, without knowing it") 
+groupedProportionFracture <- groupedProportion %>%
+  mutate(fracture = case_when(prop<=.50 ~ "0", prop>.50 ~ "1")) %>% 
+  filter(results.condition=="treatment" & condition=="A" || condition=="Ap")
+fracture1 <- groupedProportionFracture %>% filter(condition=="A")
+fracture2 <- groupedProportionFracture %>% filter(condition=="Ap")
+
+fracture <- cbind(fracture1, fracture2)
+fracture$prop <- 1-fracture$prop
+fracture$prop1 <- 1-fracture$prop1
+
+ggplot(treatmentFracture, aes(prop1, prop2)) +
+  geom_point() +
+  geom_jitter() + coord_fixed() + xlim(0.0,1.0) + ylim(0.0,1.0) + labs(title="Team fracture in the first round vs. fracture in the experimental round", subtitle="Fracture scale 0=no fracture, 1=fracture",  
+                                                                       x="Fracture the first time a team interacts", 
+                                                                       y="Fracture the second time a team interacts, without knowing it") 
+
+
+ggplot(controlFracture, aes(prop, prop1)) +
+  geom_point() +
+  geom_jitter() + coord_fixed() + xlim(0.0,1.0) + ylim(0.0,1.0) + labs(title="Team fracture in the first vs. in the second, control round, n=7 teams", subtitle="Fracture scale 0=no fracture, 1=fracture",  
+                                                                       x="Fracture the first time a team interacts", 
+                                                                       y="Fracture the second time a team interacts, without knowing it") 
+
+
+
 ## Proportion graphs for Q15: 
 ## Revalue repeat team: keep plyr b/c some weird R stuff requires library to be called directly: 
 stats$repeatTeam <- plyr::revalue(stats$repeatTeam, c("Yes"="1", "No"="0"))
@@ -448,6 +493,12 @@ chatFreq <- allChatFiles  %>%
   mutate(sum=prop.table(repeatTeam)) %>% 
   filter(n>1, round<=2)
 
+ggplot(fractureLE, aes(prop, prop1)) +
+  geom_point(aes(shape=results.condition)) +
+  geom_jitter() + coord_fixed() + xlim(0.0,1.0) + ylim(0.0,1.0) + labs(title="Team fracture in first round vs. third in learning effect condition", subtitle="Fracture scale 0=no fracture, 1=fracture",  
+                                                                       x="Fracture the first time a team interacts", 
+                                                                       y="Fracture the second time a team interacts, without knowing it") 
+
 ## Filter on round <=2, because round 3 in all but one case is only includes "X has left chat room" 
 
 # Histogram grouped by round: 
@@ -474,6 +525,41 @@ g + geom_histogram(aes(fill=factor(round)),
   xlab(label="Number of lines from chat data per team") + 
   ylab(label="Count") 
 
+g <- ggplot(treatmentFracture, aes(abs)) + scale_fill_brewer(palette = "Spectral")
+g + geom_histogram(bins=7, 
+                   col="pink", 
+                   size=.4) + 
+  labs(title="Absolute value of change in team fracture proportions between unmasked and masked", 
+       fill = "Round") + 
+  xlab(label="Absolute value of change in team fracture proportions between unmasked and masked ") + 
+  ylab(label="Count") 
+
+library(ggplot2)
+theme_set(theme_bw())  
+
+# Data Prep
+
+mtcars$`car name` <- rownames(mtcars)  # create new column for car names
+mtcars$mpg_z <- round((groupedProportionFractureTreatment$fracture - mean(groupedProportionFractureTreatment$fracture))/sd(groupedProportionFractureTreatment$fracture), 2)  # compute normalized mpg
+mtcars$mpg_type <- ifelse(mtcars$mpg_z < 0, "below", "above")  # above / below avg flag
+mtcars <- mtcars[order(mtcars$mpg_z), ]  # sort
+mtcars$`car name` <- factor(mtcars$`car name`, levels = mtcars$`car name`)  # convert to factor to retain sorted order in plot.
+
+# Diverging Barcharts
+ggplot(mtcars, aes(x=`car name`, y=mpg_z, label=mpg_z)) + 
+  geom_bar(stat='identity', aes(fill=mpg_type), width=.5)  +
+  scale_fill_manual(name="Mileage", 
+                    labels = c("Above Average", "Below Average"), 
+                    values = c("above"="#00ba38", "below"="#f8766d")) + 
+  labs(subtitle="Normalised mileage from 'mtcars'", 
+       title= "Diverging Bars") + 
+  coord_flip()
+
+g <- ggplot(data, aes(x=main_category, fill=factor(state)))
+g+ geom_bar(position="dodge") +
+  xlab(label="Main Category") +
+  ylab(label="Number of Backers") + 
+  labs(title="Backers by Category" , fill = "State of Campaign")
 
 
 
