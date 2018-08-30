@@ -795,14 +795,14 @@ io.on('connection', (socket) => {
         console.log('PING TIMEOUT NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
         return;
       }
-      if(reason == 'transport error') { 
-        console.log('TRANSPORT ERROR NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
-        return;
-      }
-      if(reason == 'transport close') { 
-        console.log('TRANSPORT CLOSE NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
-        return;
-      }
+      // if(reason == 'transport error') { 
+      //   console.log('TRANSPORT ERROR NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
+      //   return;
+      // }
+      // if(reason == 'transport close') { 
+      //   console.log('TRANSPORT CLOSE NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
+      //   return;
+      // }
       user.connected = false
       user.ready = suddenDeath ? false : true
       notEnoughUsers = false
