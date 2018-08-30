@@ -124,7 +124,7 @@ console.log = function(...msg) {
 
 //if (runExperimentNow){
   // Experiment variables
-  const conditionsAvailalbe = ['control',/*'treatment',*/'baseline']
+  const conditionsAvailalbe = ['control',/* 'treatment',*/'baseline']
   const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
   let treatmentNow = false
   let firstRun = false;
