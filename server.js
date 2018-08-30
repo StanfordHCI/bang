@@ -210,6 +210,8 @@ if (cleanHITs){
   })
 }
 
+let hasBCalled = []
+
 if (runExperimentNow && runningLive){
   mturk.launchBang(function(HIT) {
     logTime()
@@ -280,7 +282,6 @@ if (runExperimentNow && runningLive){
                 mturk.notifyWorkers(notifyList, subject, message)
                 console.log("Notified", notifyList.length, "workers")
               } else if(maxWorkersToNotify > 100) {
-                let hasBCalled = []
                 let notifyList = getRandomSubarray(data, 100)
                 while(maxWorkersToNotify > 0) {
                   mturk.notifyWorkers(notifyList, subject, message)
@@ -316,7 +317,6 @@ if (runExperimentNow && runningLive){
                       mturk.notifyWorkers(notifyList, subject, message)
                       console.log("Notified", notifyList.length, "workers")
                     } else if(moreworkersneeded > 100) {
-                      let hasBCalled = []
                       let notifyList = getRandomSubarray(data, 100)
                       while(moreworkersneeded > 0) {
                         mturk.notifyWorkers(notifyList, subject, message)
@@ -887,11 +887,12 @@ io.on('connection', (socket) => {
       if(usingWillBang) {
         // Use this function to notify only x users <= 100
         let maxWorkersToNotify = 100; // cannot be more than 100 if non-recursive
-
-          mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
-          // randomize list
-          let notifyList = getRandomSubarray(data, maxWorkersToNotify)
+        mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
+          let notifyList = getRandomSubarray(data, maxWorkersToNotify).filter(function(turker) {
+            return !hasBCalled.includes(turker) // only includes people who have not been contacted
+          })
           mturk.notifyWorkers(notifyList, subject, message)
+          hasBCalled = hasBCalled.concat(notifyList)
         })
         // unrandomized list
         // mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang

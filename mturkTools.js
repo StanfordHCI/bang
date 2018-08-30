@@ -367,6 +367,8 @@ const unassignQuals = (user, qual, reason) => {
   })
 }
 
+//unassignQuals('A3S66648YDK2U5', quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!') ;
+
 // * disassociateQualification *
 // -------------------------------------------------------------------
 // Revokes a previously assigned qualification from a specified user.
