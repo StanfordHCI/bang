@@ -277,29 +277,9 @@ if (runExperimentNow && runningLive){
           }
           if(currenttimePeriod == "no bucket") { // randomize list
             mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
-              if(maxWorkersToNotify <= 100) {
-                let notifyList = getRandomSubarray(data, maxWorkersToNotify)
-                mturk.notifyWorkers(notifyList, subject, message)
-                console.log("Notified", notifyList.length, "workers")
-              } else if(maxWorkersToNotify > 100) {
-                let notifyList = getRandomSubarray(data, 100)
-                while(maxWorkersToNotify > 0) {
-                  mturk.notifyWorkers(notifyList, subject, message)
-                  hasBCalled = hasBCalled.concat(notifyList)
-                  maxWorkersToNotify = maxWorkersToNotify - notifyList.length;
-                  if(maxWorkersToNotify > 100) {
-                    notifyList = getRandomSubarray(data, 100).filter(function(turker) {
-                      return !hasBCalled.includes(turker) // only includes people who have not been contacted
-                    })
-                    console.log("Notified", notifyList.length, "workers")
-                  } else if(maxWorkersToNotify <= 100) {
-                    notifyList = getRandomSubarray(data, maxWorkersToNotify).filter(function(turker) {
-                      return !hasBCalled.includes(turker) // only includes people who have not been contacted
-                    })
-                    console.log("Notified", notifyList.length, "workers")
-                  }
-                }
-            }
+              let notifyList = getRandomSubarray(data, maxWorkersToNotify)
+              mturk.notifyWorkers(notifyList, subject, message)
+              console.log("Notified", notifyList.length, "workers")
             })
           } else { // use the time buckets
             console.log("Current Time Period: " + currenttimePeriod)
@@ -312,47 +292,16 @@ if (runExperimentNow && runningLive){
                 if (moreworkersneeded > 0) { //if we don't have enough people with current time preference to notify
                   mturk.notifyWorkers(timePoolNotifyList, subject, message)
                   mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
-                    if(moreworkersneeded <= 100) {
-                      let notifyList = getRandomSubarray(data, moreworkersneeded)
-                      mturk.notifyWorkers(notifyList, subject, message)
-                      console.log("Notified", notifyList.length, "workers")
-                    } else if(moreworkersneeded > 100) {
-                      let notifyList = getRandomSubarray(data, 100)
-                      while(moreworkersneeded > 0) {
-                        mturk.notifyWorkers(notifyList, subject, message)
-                        hasBCalled = hasBCalled.concat(notifyList)
-                        moreworkersneeded = maxWorkersToNotify - notifyList.length - currentTimePoolWorkers.length;
-                        if(moreworkersneeded > 100) {
-                          notifyList = getRandomSubarray(data, 100).filter(function(turker) {
-                            return !hasBCalled.includes(turker) // only includes people who have not been contacted
-                          })
-                          console.log("Notified", notifyList.length, "workers")
-                        } else if(moreworkersneeded <= 100) {
-                          notifyList = getRandomSubarray(data, moreworkersneeded).filter(function(turker) {
-                            return !hasBCalled.includes(turker) // only includes people who have not been contacted
-                          })
-                          console.log("Notified", notifyList.length, "workers")
+                    let notifyList = getRandomSubarray(data, moreworkersneeded)
+                    let i = notifyList.length
+                    while (i--) {
+                        if (timePoolNotifyList.includes(notifyList[i])) {
+                          notifyList.splice(i, 1);
                         }
-                      }
                     }
-                    // let notifyList = getRandomSubarray(data, maxWorkersToNotify)
-                    // let i = notifyList.length
-                    // while (i--) {
-                    //     if (timePoolNotifyList.includes(notifyList[i])) {
-                    //       notifyList.splice(i, 1);
-                    //     }
-                    // }
-                    // mturk.notifyWorkers(timePoolNotifyList, subject, message)
-                    // mturk.notifyWorkers(notifyList, subject, message)
+                    mturk.notifyWorkers(notifyList, subject, message)
+                    console.log("Notified", notifyList.length, "workers")
                   })
-                  // db.willBang.find({ timePreference: '' }, (err, workersfromnullPool) => {
-                  //   if (err) {console.log("DB for MTurk:" + err)}
-                  //   else {
-                  //     workersfromnullPool = getRandomSubarray(workersfromnullPool, moreworkersneeded)
-                  //     let workerstonotify = currentTimePoolWorkers.concat(workersfromnullPool).map(u => u.id)
-                  //     mturk.notifyWorkers(workerstonotify, subject, message)
-                  //   }
-                  // })
                 } else {
                   let workerstonotify = currentTimePoolWorkers.map(u => u.id)
                   mturk.notifyWorkers(workerstonotify, subject, message)
@@ -890,10 +839,11 @@ io.on('connection', (socket) => {
         let maxWorkersToNotify = 100; // cannot be more than 100 if non-recursive
         mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
           let notifyList = getRandomSubarray(data, maxWorkersToNotify).filter(function(turker) {
-            return !hasBCalled.includes(turker) // only includes people who have not been contacted
+            mturk.notifyWorkers(notifyList, subject, message)
+            //return !hasBCalled.includes(turker) // only includes people who have not been contacted
           })
           mturk.notifyWorkers(notifyList, subject, message)
-          hasBCalled = hasBCalled.concat(notifyList)
+          //hasBCalled = hasBCalled.concat(notifyList)
         })
         // unrandomized list
         // mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
