@@ -41,7 +41,10 @@ db.willBang = new Datastore({ filename:'.data/willBang', autoload: true, timesta
 //   if(err) console.log(err)
 //   else console.log('Removed ' + numRemoved + ' from db.willBang: ' + removeId)
 // })
-return;
+//return;
+
+console.log("Date: " + Date.now())
+
 
 // Assign willBang to people who have accepted recruiting HIT of last hour
 console.log("fs.exists()", fs.existsSync(recruitingHITstorage))
