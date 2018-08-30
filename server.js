@@ -789,7 +789,20 @@ io.on('connection', (socket) => {
     // if (!users.every(user => socket.id !== user.id)) {//socket id is found in users
     //newMessage('has left the chatroom')
 
-    useUser(socket,user => {
+    if (!users.find(function(element) {return element.id == socket.id})) return;
+    useUser(socket,user => {      
+      if(reason == 'ping timeout') { 
+        console.log('PING TIMEOUT NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
+        return;
+      }
+      if(reason == 'transport error') { 
+        console.log('TRANSPORT ERROR NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
+        return;
+      }
+      if(reason == 'transport close') { 
+        console.log('TRANSPORT CLOSE NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
+        return;
+      }
       user.connected = false
       user.ready = suddenDeath ? false : true
       notEnoughUsers = false
