@@ -862,7 +862,8 @@ io.on('connection', (socket) => {
 
   socket.on('ready-to-all', (data) => {
     console.log("god is ready".rainbow);
-    io.sockets.emit('echo','ready')
+    users.filter(user => !user.ready).forEach(user => io.in(user.id).emit('echo', 'ready'))
+    //io.sockets.emit('echo','ready')
   })
 
   socket.on('active-to-all', (data) => {
