@@ -934,7 +934,7 @@ const decodeURL = (toDecode) => {
   return unescape(encoded.replace(/\+/g,  " "));
 }
 
-var LeavingAlert = false;
+let LeavingAlert = true;
 if (LeavingAlert) {
   window.onbeforeunload = function(){
     return 'Are you sure you want to leave?';
