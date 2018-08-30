@@ -210,8 +210,6 @@ if (cleanHITs){
   })
 }
 
-let hasBCalled = []
-
 if (runExperimentNow && runningLive){
   mturk.launchBang(function(HIT) {
     logTime()
@@ -840,20 +838,9 @@ io.on('connection', (socket) => {
         mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
           let notifyList = getRandomSubarray(data, maxWorkersToNotify).filter(function(turker) {
             mturk.notifyWorkers(notifyList, subject, message)
-            //return !hasBCalled.includes(turker) // only includes people who have not been contacted
           })
           mturk.notifyWorkers(notifyList, subject, message)
-          //hasBCalled = hasBCalled.concat(notifyList)
         })
-        // unrandomized list
-        // mturk.listUsersWithQualification(mturk.quals.willBang, maxWorkersToNotify, function(data) { // notifies all willBang
-        //   //mturk.notifyWorkers(data.Qualifications.map(a => a.WorkerId), subject, message)
-        // }); // must return from mturkTools
-
-        // use this function to notify entire list of willBang workers
-        // mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
-        //   mturk.notifyWorkers(data, subject, message)
-        // })
       }
     });
   })
