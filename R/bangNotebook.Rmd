@@ -10,7 +10,6 @@ output: html_notebook
 
 library(psych)
 library(likert)
-library(tidyverse)
 library(jsonlite)
 library(ggplot2)
 library(mosaic)
@@ -55,9 +54,13 @@ completeBatches = Filter(function(batch) {
   return(FALSE)
 }, batches)
 userFiles = lapply(completeBatches, function(batch) {
-  userFile = read_json(paste(dataPath,batch,"users.json",sep="/"), simplifyVector = TRUE)
+  userFile = read_json(paste(dataPath,batch,"users.json",sep="/"))
+  print(batch)
+  print(class(userFile)) 
+  print(userFile)
   return(flatten(userFile, recursive = TRUE))
 })
+
 ## Retroactively find rooms from chat data: 
 overlappingFiles = Reduce(function(x,y) merge(x, y, all=TRUE), userFiles)
 roundsWithRooms = apply(overlappingFiles,1,function(x) {
@@ -67,7 +70,10 @@ roundsWithRooms = apply(overlappingFiles,1,function(x) {
     return(x)
   })
   return(Reduce(rbind,roomsForIndividual))
+  
 })
+
+library(tidyverse)
 ```
 
 ## More cleaning before visualizations: 
@@ -200,7 +206,7 @@ groupedProportion <- stats %>%
   group_by(room, batch, round, condition, results.condition, results.format) %>% 
   summarise(n=n(), mean=mean(sum), median=median(sum),prop=sum(repeatTeam)/n) %>% 
 ## Filter out all teams with n=1 (i.e. a person in a chat room alone)
-  filter(n>1)
+  filter(n>2)
 ## Individual proportion: 
 individualProportion <- stats %>% group_by(round, batch, room) %>% 
   mutate(sum=sum, mean=mean(sum), median=median(sum), n=n(),prop=sum(repeatTeam)/n) %>% filter(n>1)
@@ -224,8 +230,8 @@ groupedProportion$results.condition <- unlist(groupedProportion$results.conditio
 ## Team viability sum and Q15 factor repeat team answers facet_grid by condition, results.condition and results.format (all users) 
 g <- ggplot(stats, aes(factor(repeatTeam), sum))
 g + geom_boxplot(varwidth=T, fill="plum") + 
-  labs(subtitle="Sum of viability measures grouped by repeat team question:", 
-       x="Distribution of responses to Q15: ",
+  labs(subtitle="Sum of viability measures grouped by team fracture value", 
+       x="Binary fracture value",
        y="Numeric sum of viability measures questions (range: 7-70)") + facet_grid(condition ~ results.format)
 
 g <- ggplot(stats, aes(factor(repeatTeam), sum))
@@ -251,6 +257,7 @@ ggplot(data=groupedProportion, aes(groupedProportion$prop)) +
                  fill="green", 
                  alpha=.2) + labs(title="Count of team proportions of fracture value responses", 
                                   x="", y="Count") + facet_grid(condition ~ results.format)
+
 ```
 
 ## Probability of fracture across teams and condition combinations: 
@@ -258,35 +265,17 @@ ggplot(data=groupedProportion, aes(groupedProportion$prop)) +
 ## Define and initialize cut-off point for fracture: 
 groupedProportionFracture <- groupedProportion %>%
   group_by(results.condition, condition) %>% 
-  mutate(fracture = case_when (prop<.50 ~ "0", 
-                                prop>=.50~ "1"))
-
-## Probability of fracture given condition in treatment: 
-conditionalPropTreatment <- groupedProportionFractureTreatment %>% filter(condition=="A" | condition=="Ap")
-tally(~fracture | condition, data = conditionalPropTreatment, format = "proportion")
-```
-
-## Boxplot for fracture scores vs. viability score sum (7-70)
-```{r}
-groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture)
-g <- ggplot(groupedProportionFracture, aes(factor(fracture), median))
-g + geom_boxplot(varwidth=T, fill="plum") + 
-  labs(subtitle="Team median viability score in relation to binary fracture value", 
-       x="Binary fracture value",
-       y="Numeric sum of viability measures questions (range: 7-70)") + scale_x_discrete(labels=c("0" = "No Fracture", "1" = "Fracture")) + facet_grid(condition ~ results.condition)
-
-```
-
+  mutate(fractureGreater50 = case_when (prop<=.50 ~ "0", 
+                                prop>.50~ "1"), 
+         fractureGreaterEqual50 = case_when (prop<.50 ~ "0", 
+                                prop>=.50 ~ "1"))
 
 ## Fracture proportion scatterplots: 
-```{r}
 ## Learning effect // baseline: 
 ## Make new data that includes teams with different round 1 and round 3 teams: 
 groupedProportionFractureLE <- groupedProportionFracture %>% filter(results.format=="c(1, 1, 2)" | results.format=="c(2, 1, 1)" & round=="1" | round=="3") 
-
 fractureLE1 <- groupedProportionFractureLE %>% filter(round=="1")
 fractureLE2 <- groupedProportionFractureLE %>% filter(round=="3")
-fractureLE <- cbind(fractureLE1, fractureLE2)
 
 ## Treatment: 
 groupedProportionFractureTreatment <- groupedProportionFracture %>% 
@@ -294,6 +283,12 @@ filter(results.condition=="treatment")
 treatmentFracture1 <- groupedProportionFractureTreatment %>% filter(condition=="A")
 treatmentFracture2 <- groupedProportionFractureTreatment %>% filter(condition=="Ap")
 treatmentFracture <- cbind(treatmentFracture1, treatmentFracture2)
+
+ggplot(treatmentFracture, aes(prop, prop1)) +
+  geom_point() +
+  geom_jitter() + coord_fixed() + xlim(0.0,1.0) + ylim(0.0,1.0) + labs(title="Proportion of team fracture in the first vs. third in treatment", subtitle="No fracture=0, Fracture=1",  
+                                                                       x="Fracture the first time a team interacts", 
+                                                                       y="Fracture the second time a team interacts, without knowing it") 
 
 ## Control:  
 groupedProportionFractureControl <- groupedProportionFracture %>% 
@@ -304,88 +299,195 @@ controlFracture <- cbind(controlFracture1, controlFracture2)
 
 ggplot(controlFracture, aes(prop, prop1)) +
   geom_point() +
-  geom_jitter() + coord_fixed() + xlim(0.0,1.0) + ylim(0.0,1.0) + labs(title="Team fracture in the first vs. third in control", subtitle="No fracture=0, Fracture=1",  
+  geom_jitter() + coord_fixed() + xlim(0.0,1.0) + ylim(0.0,1.0) + labs(title="Proportion of team fracture in the first vs. third in control", subtitle="No fracture=0, Fracture=1",  
                                                                        x="Fracture the first time a team interacts", 
                                                                        y="Fracture the second time a team interacts, without knowing it") 
+
+
+g <- ggplot(groupedProportionFracture, aes(factor(fracture), mean))
+g + geom_boxplot(varwidth=T, fill="plum") + 
+  labs(subtitle="Team fracture value vs. mean viability score: fracture >0.50", 
+       x="",
+       y="Numeric sum of viability measures questions (range: 7-70)") 
+
+g <- ggplot(groupedProportionFracture, aes(factor(fracture), mean)) 
+g + geom_boxplot(varwidth=T, fill="plum") + 
+  labs(subtitle="Team fracture value vs. mean viability score: fracture >=0.50", 
+       x="",
+       y="Numeric sum of viability measures questions (range: 7-70)") 
+
+g <- ggplot(groupedProportionFractureTreatment, aes(factor(fracture), mean))
+g + geom_boxplot(varwidth=T, fill="plum") + 
+  labs(subtitle="Team fracture value vs. mean viability score: fracture >0.50", 
+       x="",
+       y="Numeric sum of viability measures questions (range: 7-70)") 
+
+
 ## Defining fracture: 
 
 ## TREATMENT EFFECT: 
-## Overall fracture change: 
-sum(ifelse(treatmentFracture1$fracture==treatmentFracture2$fracture,0,1)) 
-## No fracture to fracture: 
-sum(ifelse(treatmentFracture1$fracture==0 & treatmentFracture2$fracture==1,1,0))
-## Fracture to no fracture: 
-sum(ifelse(treatmentFracture1$fracture==1 & treatmentFracture2$fracture==0,1,0))
-## CONTROL EFFECT: 
-## Overall fracture change: 
-sum(ifelse(controlFracture1$fracture==controlFracture2$fracture,0,1))
-## No fracture to fracture: 
-sum(ifelse(controlFracture1$fracture==0 & controlFracture2$fracture==1,1,0))
-## Fracture to no fracture: 
-sum(ifelse(controlFracture1$fracture==1 & controlFracture2$fracture==0,1,0))
-## LEARNING EFFECT 
-## Overall fracture change: 
-sum(ifelse(fractureLE1$fracture==fractureLE2$fracture,0,1)) 
-## No fracture to fracture:
-sum(ifelse(fractureLE1$fracture==0 & fractureLE2$fracture==1,1,0))
-## Fracture to no fracture 
-sum(ifelse(fractureLE1$fracture==1 & fractureLE2$fracture==0,1,0))
+# ## Overall fracture change: 
+# sum(ifelse(treatmentFracture1$fracture==treatmentFracture2$fracture,0,1)) 
+# ## No fracture to fracture: 
+# sum(ifelse(treatmentFracture1$fracture==0 & treatmentFracture2$fracture==1,1,0))
+# ## Fracture to no fracture: 
+# sum(ifelse(treatmentFracture1$fracture==1 & treatmentFracture2$fracture==0,1,0))
+# ## CONTROL EFFECT: 
+# ## Overall fracture change: 
+# sum(ifelse(controlFracture1$fracture==controlFracture2$fracture,0,1))
+# ## No fracture to fracture: 
+# sum(ifelse(controlFracture1$fracture==0 & controlFracture2$fracture==1,1,0))
+# ## Fracture to no fracture: 
+# sum(ifelse(controlFracture1$fracture==1 & controlFracture2$fracture==0,1,0))
+# ## LEARNING EFFECT 
+# ## Overall fracture change: 
+# sum(ifelse(fractureLE1$fracture==fractureLE2$fracture,0,1)) 
+# ## No fracture to fracture:
+# sum(ifelse(fractureLE1$fracture==0 & fractureLE2$fracture==1,1,0))
+# ## Fracture to no fracture 
+# sum(ifelse(fractureLE1$fracture==1 & fractureLE2$fracture==0,1,0))
 ```
+
+## 
+
+
+## Probability of fracture given condition in treatment: 
+```{r}
+conditionalProbTreatment <- groupedProportionFractureTreatment %>% filter(condition=="A" | condition=="Ap")
+## Greater than 50: 
+tally(~fractureGreater50 | condition, data = conditionalProbTreatment, format = "proportion")
+## Greater or equal 50: 
+tally(~fractureGreaterEqual50 | condition, data = conditionalProbTreatment, format = "proportion")
+
+conditionalProbControl <- groupedProportionControl %>% filter(condition=="A" | condition=="Ap")
+## Greater than 50: 
+tally(~fractureGreater50 | condition, data = conditionalProbControl, format = "proportion")
+## Greater or equal 50: 
+tally(~fractureGreaterEqual50 | condition, data = conditionalProbControl, format = "proportion")
+
+```
+
+## Boxplot for fracture scores vs. viability score sum (7-70)
+```{r}
+groupedProportionFracture$fractureGreater50 <- as.numeric(groupedProportionFracture$fractureGreater50)
+groupedProportionFracture$fractureGreaterEqual50 <- as.numeric(groupedProportionFracture$fractureGreaterEqual50)
+
+g <- ggplot(groupedProportionFracture, aes(factor(fractureGreater50), median))
+g + geom_boxplot(varwidth=T, fill="plum") + 
+  labs(subtitle="Team median viability score in relation to binary fracture value (greater than 50)", 
+       x="Binary fracture value",
+       y="Numeric sum of viability measures questions (range: 7-70)") + scale_x_discrete(labels=c("0" = "No Fracture", "1" = "Fracture")) + facet_grid(condition ~ results.condition)
+
+g <- ggplot(groupedProportionFracture, aes(factor(fractureGreater50), median))
+g + geom_boxplot(varwidth=T, fill="plum") + 
+  labs(subtitle="Team median viability score in relation to binary fracture value (greater than or equal to 50)", 
+       x="Binary fracture value",
+       y="Numeric sum of viability measures questions (range: 7-70)") + scale_x_discrete(labels=c("0" = "No Fracture", "1" = "Fracture")) + facet_grid(condition ~ results.condition)
+
+treatmentFracture1$fractureGreater50 <- as.numeric(treatmentFracture1$fractureGreater50) 
+treatmentFracture1$fractureGreaterEqual50 <- as.numeric(treatmentFracture1$fractureGreaterEqual50) 
+treatmentFracture2$fractureGreater50 <- as.numeric(treatmentFracture2$fractureGreater50) 
+treatmentFracture2$fractureGreaterEqual50 <- as.numeric(treatmentFracture2$fractureGreaterEqual50) 
+controlFracture1$fractureGreater50 <- as.numeric(controlFracture1$fractureGreater50)
+controlFracture1$fractureGreaterEqual50 <- as.numeric(controlFracture1$fractureGreaterEqual50)
+controlFracture2$fractureGreater50 <- as.numeric(controlFracture2$fractureGreater50)
+controlFracture2$fractureGreaterEqual50 <- as.numeric(controlFracture2$fractureGreaterEqual50)
+```
+
 ## Absolute change in fracture proportions between conditions: 
 ```{r}
-fractureLE$abs <- abs(fractureLE2$prop-fractureLE1$prop)
-g <- ggplot(fractureLE, aes(abs)) + scale_fill_brewer(palette = "Spectral")
+treatmentFracture$absGreater50 <- abs(treatmentFracture2$fractureGreater50-treatmentFracture1$fractureGreater50)
+treatmentFracture$absEqualGreater50 <- abs(treatmentFracture2$fractureGreaterEqual50-treatmentFracture1$fractureGreaterEqual50)
+
+g <- ggplot(treatmentFracture, aes(absGreater50)) + scale_fill_brewer(palette = "Spectral")
 g + geom_histogram(bins=7, 
                    col="pink", 
                    size=.4) + 
-  labs(title="Absolute value of change in team fracture proportions in learning effect condition", 
+  labs(title="Absolute change in team fracture score in treatment condition (fracture >.50", 
        fill = "Round") + 
-  xlab(label="Absolute value of change in team fracture proportions in learning effect condition") + 
+  xlab(label="Absolute change in team fracture score in treatment condition") + 
   ylab(label="Count") 
 
-treatmentFracture$abs <- abs(treatmentFracture2$prop-treatmentFracture1$prop)
-g <- ggplot(treatmentFracture, aes(abs)) + scale_fill_brewer(palette = "Spectral")
+g <- ggplot(treatmentFracture, aes(absEqualGreater50)) + scale_fill_brewer(palette = "Spectral")
 g + geom_histogram(bins=7, 
                    col="pink", 
                    size=.4) + 
-  labs(title="Absolute change in team fracture proportions in treatment condition", 
+  labs(title="Absolute change in team fracture score in treatment condition (fracture>=.50)", 
        fill = "Round") + 
-  xlab(label="Absolute change in team fracture proportions in treatment condition") + 
+  xlab(label="Absolute change in team fracture score in treatment condition") + 
   ylab(label="Count") 
 
-controlFracture$abs <- abs(controlFracture2$prop-controlFracture1$prop)
+controlFracture$absGreater50 <- abs(controlFracture$fractureGreater50-controlFracture1$fractureGreater50)
+g <- ggplot(controlFracture, aes(absGreater50)) + scale_fill_brewer(palette = "Spectral")
+g + geom_histogram(bins=7, 
+                   col="pink", 
+                   size=.4) + 
+  labs(title="Absolute change in team fracture score in control condition (fracture >.50)", 
+       fill = "Round") + 
+  xlab(label="Absolute change in team fracture score in control condition") + 
+  ylab(label="Count") 
+
+controlFracture$absEqualGreater50 <- abs(controlFracture$fractureGreaterEqual50-controlFracture1$fractureGreaterEqual50)
+g <- ggplot(controlFracture, aes(absEqualGreater50)) + scale_fill_brewer(palette = "Spectral")
+g + geom_histogram(bins=7, 
+                   col="pink", 
+                   size=.4) + 
+  labs(title="Absolute change in team fracture score in control condition (fracture >=.50)", 
+       fill = "Round") + 
+  xlab(label="Absolute change in team fracture score in control condition") + 
+  ylab(label="Count") 
+
+controlFracture$absGreaterEqual50 <- abs(controlFracture$fractureGreaterEqual50-controlFracture1$fractureGreaterEqual50)
 g <- ggplot(controlFracture, aes(abs)) + scale_fill_brewer(palette = "Spectral")
 g + geom_histogram(bins=7, 
                    col="pink", 
                    size=.4) + 
-  labs(title="Absolute change in team fracture proportions in control condition", 
+  labs(title="Absolute change in team fracture score in control condition (fracture >=.50)", 
        fill = "Round") + 
-  xlab(label="Absolute change in team fracture proportions in control condition") + 
+  xlab(label="Absolute change in team fracture score in control condition") + 
   ylab(label="Count") 
 
-treatmentFractureAbsSum <- sum(treatmentFracture$abs) 
-controlFractureAbsSum <- sum(controlFracture$abs)
+treatmentFractureEqualGreaterAbsSum <- sum(treatmentFracture$absEqualGreater50) 
+treatmentFractureGreaterAbsSum <- sum(treatmentFracture$absGreater50)
 
-df1 <- data.frame(treatmentFractureAbsSum, controlFractureAbsSum) 
+## Visualize differences: 
 
-ggplot(df1, aes(x=controlFractureAbsSum, y=treatmentFractureAbsSum)) +
-    geom_bar(stat="identity") 
+dat <- data.frame(changesPerFractureDefinition = factor(c("Sum of absolute fracture change in treatment >.50","Sum of absolute fracture change in treatment >=.50"), levels=c("Sum of absolute fracture change in treatment >.50","Sum of absolute fracture change in treatment >=.50")),
+                  fractureValueChange = c(8, 19))
 
-g <- ggplot(test,aes(x, y)) + scale_fill_brewer(palette = "Spectral")
-g + geom_bar() + 
-  labs(title="Absolute change in team fracture proportions in control condition", 
-       fill = "Round") + 
-  xlab(label="Absolute change in team fracture proportions in control condition") + 
-  ylab(label="Count") 
+p <- ggplot(data=dat, aes(x=changesPerFractureDefinition, y=fractureValueChange)) +
+  geom_bar(stat="identity")
+p <- ggplotly(p)
+p
 
-dat <- data.frame(conditionChanges = factor(c("Sum of absolute fracture change in treatment","Sum of absolute fracture change in control"), levels=c("Sum of absolute fracture change in treatment","Sum of absolute fracture change in control")),
-    fractureProportionChange = c(13.083, 1.166))
+treatmentFractureEqualGreaterAbsSum <- sum(treatmentFracture$absEqualGreater50) 
+controlFractureEqualGreaterAbsSum <- sum(controlFracture$absGreaterEqual50)
+treatmentFractureGreaterAbsSum <- sum(treatmentFracture$absGreater50)
+controlFractureGreaterAbsSum <- sum(controlFracture$absGreater50)
 
-p <- ggplot(data=dat, aes(x=conditionChanges, y=fractureProportionChange)) +
-    geom_bar(stat="identity")
+dat <- data.frame(changesPerFractureDefinition = factor(c("Sum of absolute fracture change in treatment >.50","Sum of absolute fracture change in control >.50"), levels=c("Sum of absolute fracture change in treatment >.50","Sum of absolute fracture change in control >.50")),
+                  fractureValueChange = c(X, X))
+
+p <- ggplot(data=dat, aes(x=changesPerFractureDefinition, y=fractureValueChange)) +
+  geom_bar(stat="identity")
+p <- ggplotly(p)
+p
+
+dat <- data.frame(changesPerFractureDefinition = factor(c("Sum of absolute fracture change in treatment >=.50","Sum of absolute fracture change in control >=.50"), levels=c("Sum of absolute fracture change in treatment >=.50","Sum of absolute fracture change in control >=.50")),
+                  fractureValueChange = c(8, 19))
+
+p <- ggplot(data=dat, aes(x=changesPerFractureDefinition, y=fractureValueChange)) +
+  geom_bar(stat="identity")
 p <- ggplotly(p)
 p
 ```
+
+```{r}
+
+```
+
+
+
 
 ## Histogram comparisons of fracture ratios across treatment, control and learning effect conditions
 
@@ -514,6 +616,11 @@ g + geom_histogram(aes(fill=factor(round)),
   ylab(label="Count") 
 stats$room <- unlist(stats$room) 
 chatFreqStats <- right_join(x=chatFreq, y=stats)
+
+
+## Export chat data for Mav: 
+write.csv(allChatFiles, file = "allChatFiles.csv")
+
 ```
 
 ## Conditional probabilities: 
