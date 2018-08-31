@@ -718,19 +718,19 @@ io.on('connection', (socket) => {
   })
 
   socket.on('reconnect', function(attemptNumber) {
-    console.log('RECONNECT SUCCESS (attempt ' + attemptNumber + '): ' + socket.id
+    console.log('RECONNECT SUCCESS (attempt ' + attemptNumber + '): ' + socket.id)
   })
 
   socket.on('reconnect_attempt', function(attemptNumber) {
-    console.log('RECONNECT ATTEMPT (attempt ' + attemptNumber + '): ' + socket.id
+    console.log('RECONNECT ATTEMPT (attempt ' + attemptNumber + '): ' + socket.id)
   })
 
   socket.on('reconnect_error', function(error) {
-    console.log('RECONNECT ERROR (' + error + '): ' + socket.id
+    console.log('RECONNECT ERROR (' + error + '): ' + socket.id)
   })
 
   socket.on('reconnect_failure', function() {
-    console.log('RECONNECT FAILURE: ' + socket.id
+    console.log('RECONNECT FAILURE: ' + socket.id)
   })
   // when the user disconnects.. perform this
   socket.on('disconnect', function(reason){
