@@ -720,7 +720,7 @@ io.on('connection', (socket) => {
   // when the user disconnects.. perform this
   socket.on('disconnect', function(reason){
     // changes connected to false of disconnected user in userPool
-    console.log("Disconnecting socket: " + socket.id + " because " + reason.red)
+    console.log("Disconnecting socket: " + socket.id + " because " + reason)
     if (userPool.find(function(element) {return element.id == socket.id})) {
       userPool.byID(socket.id).connected = false;
       let usersActive = getPoolUsersActive()
@@ -756,7 +756,7 @@ io.on('connection', (socket) => {
 
       // update DB with change
       updateUserInDB(user,'connected',false)
-      console.log(socket.username.red + ": ".red + user.mturkId.red + " HAS LEFT".red)
+      console.log(socket.username + ": " + user.mturkId + " HAS LEFT")
       if (!experimentOver) {
         mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com with your Mturk ID and the last things you did in the HIT.\n\nMturk ID: " + user.mturkId + "\nAssignment ID: " + user.assignmentId + '\nHIT ID: ' + mturk.returnCurrentHIT())
       }
@@ -989,7 +989,7 @@ io.on('connection', (socket) => {
       // }
 
       //can we move this into its own on.*** call //PK: still relevant?
-      console.log('all users ready -> starting experiment'.blue.inverse);
+      console.log('all users ready -> starting experiment');
 
       treatmentNow = (currentCondition == "treatment" && currentRound == experimentRound)
       const conditionRound = conditions[currentCondition][currentRound] - 1
@@ -1112,7 +1112,7 @@ io.on('connection', (socket) => {
 
         //Done with round
         setTimeout(() => {
-          console.log('done with round'.blue.inverse, currentRound.blue.inverse);
+          console.log('done with round', currentRound);
           users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
           currentRound += 1 // guard to only do this when a round is actually done.
           console.log(currentRound, "out of", numRounds)
