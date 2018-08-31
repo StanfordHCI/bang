@@ -8,8 +8,6 @@ txt/bonusworkers.txt
 txt/currentrecruitingHIT.txt
 R/.RData
 R/.Rhistory
-*.txt
-*.png
 *.swp
 *.swo
 *.log
