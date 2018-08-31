@@ -406,14 +406,14 @@ $(function() {
     $('#psychologicalSafety-form')[0].reset();
   })
 
-  $('#qFifteen').submit( (event) => {
-    event.preventDefault() //stops page reloading
-    socket.emit('qFifteen', $('#qFifteen').serialize()) //submits results alone
-    socket.emit('next event')
-    $qFifteen.hide()
-    $holdingPage.show()
-    $('#qFifteen')[0].reset();
-  })
+  // $('#qFifteen').submit( (event) => {
+  //   event.preventDefault() //stops page reloading
+  //   socket.emit('qFifteenSubmit', $('#qFifteen').serialize()) //submits results alone
+  //   socket.emit('next event')
+  //   $qFifteen.hide()
+  //   $holdingPage.show()
+  //   $('#qFifteen')[0].reset();
+  // })
 
   $leaveHitButton.click((event) => {
     $leaveHitPopup.show();
