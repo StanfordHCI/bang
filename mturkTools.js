@@ -105,9 +105,7 @@ const mturk = new AWS.MTurk({ endpoint: endpoint });
 // -------------------------------------------------------------------
 // Notifies that task has started, cancel HIT posting.
 
-const startTask = () => {
-  taskStarted = true;
-}
+const startTask = () => { taskStarted = true; }
 
 // * updatePayment *
 // -------------------------------------------------------------------
@@ -117,9 +115,7 @@ const startTask = () => {
 
 const updatePayment = (totalTime) => {
   bonusPrice = (hourlyWage * (totalTime / 60) - rewardPrice).toFixed(2);
-  if(bonusPrice < 0) {
-    bonusPrice = 0;
-  }
+  if(bonusPrice < 0) { bonusPrice = 0;}
 }
 
 // * getBalance *
@@ -183,9 +179,7 @@ const makeHIT = (chooseQual, title, description, assignmentDuration, lifetime, r
 // Takes HIT ID as parameter.
 
 const returnHIT = (hitId, callback) => {
-  var returnHITParams = {
-    HITId: hitId /* required */
-  };
+  var returnHITParams = { HITId: hitId /* required */ };
   mturk.getHIT(returnHITParams, function(err, data) {
     if (err) console.log("Error: " + err.message); // an error occurred
     else     callback(data);           // successful response
@@ -202,9 +196,7 @@ const getHITURL = (hitId, callback) => {
   let url = ""
   mturk.getHIT({HITId: hitId}, (err, data) => {
     if (err) console.log("Error: " + err.message);
-    else {
-      url = "https://worker.mturk.com/projects/" + data.HIT.HITGroupId + "/tasks"
-    }
+    else { url = "https://worker.mturk.com/projects/" + data.HIT.HITGroupId + "/tasks" }
     console.log(url);
     if (typeof callback === 'function') callback(url)
   })
@@ -219,9 +211,7 @@ const getHITURL = (hitId, callback) => {
 const workOnActiveHITs = (callback) => {
   mturk.listHITs({MaxResults: 100}, (err, data) => {
     if (err) {console.log("Error: " + err.message)} else {
-      if (typeof callback === 'function'){
-        callback(data.HITs.filter(h => h.HITStatus == "Assignable").map(h => h.HITId))
-      }
+      if (typeof callback === 'function'){ callback(data.HITs.filter(h => h.HITStatus == "Assignable").map(h => h.HITId))}
     }
   })
 }
@@ -237,9 +227,8 @@ const listAssignments = (HITId,callback, paginationToken = null, passthrough = [
     if (err) console.log("Error: " + err.message)
     else {
       passthrough = passthrough.concat(data.Assignments)
-      if (data.NumResults == 100) {
-        listAssignments(HITId, callback, data.NextToken, passthrough)
-      } else {
+      if (data.NumResults == 100) { listAssignments(HITId, callback, data.NextToken, passthrough)} 
+      else { 
         if (typeof callback === 'function') callback(passthrough)
       }
     }
@@ -367,8 +356,6 @@ const unassignQuals = (user, qual, reason) => {
   })
 }
 
-//unassignQuals('A3S66648YDK2U5', quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!') ;
-
 // * disassociateQualification *
 // -------------------------------------------------------------------
 // Revokes a previously assigned qualification from a specified user.
@@ -493,9 +480,7 @@ const checkBlocks = (removeBlocks = false) => {
 // -------------------------------------------------------------------
 // Returns the current active HIT ID
 
-const returnCurrentHIT = () => {
-  return currentHitId;
-}
+const returnCurrentHIT = () => { return currentHitId; }
 
 // * launchBang *
 // -------------------------------------------------------------------
@@ -516,7 +501,6 @@ const launchBang = (callback) => {
   let hitContent = externalHIT(taskURL)
 
   makeHIT('safeQuals', HITTitle, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, function(HIT) {
-
     if (typeof callback === 'function') callback(HIT)
   });
 
@@ -633,11 +617,8 @@ const checkQualsRecursive = (qualObject, callback, paginationToken = null, passt
     if (err) console.log(err, err.stack)
     else {
       passthrough = passthrough.concat(data.Qualifications.map(a => a.WorkerId))
-      if (data.NumResults == 100) {
-        checkQualsRecursive(qualObject, callback, data.NextToken, passthrough)
-      } else {
-        callback(passthrough)
-      }
+      if (data.NumResults == 100) { checkQualsRecursive(qualObject, callback, data.NextToken, passthrough)} 
+      else { callback(passthrough) }
     }
   })
 }
@@ -650,11 +631,6 @@ const checkQualsRecursive = (qualObject, callback, paginationToken = null, passt
 //   })
 // })
 
-// id = "3R5OYNIC2COM0SDDREBFKCHMOHATPE"
-// id = "3B9J25CZ25S2R3RUX9KJQ7MTNFDCSQ"
-
-
-
 function getRandomSubarray(arr, size) {
   let shuffled = arr.slice(0), i = arr.length, min = i - size, temp, index;
   while (i-- > min) {
@@ -665,3 +641,6 @@ function getRandomSubarray(arr, size) {
   }
   return shuffled.slice(min);
 }
+
+// use to remove workers from notify list
+//unassignQuals('A28AX4H70DPKKK', quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!') ;
