@@ -54,10 +54,7 @@ completeBatches = Filter(function(batch) {
   return(FALSE)
 }, batches)
 userFiles = lapply(completeBatches, function(batch) {
-  userFile = read_json(paste(dataPath,batch,"users.json",sep="/"))
-  print(batch)
-  print(class(userFile)) 
-  print(userFile)
+  userFile = read_json(paste(dataPath,batch,"users.json",sep="/"), simplifyVector=TRUE)
   return(flatten(userFile, recursive = TRUE))
 })
 
@@ -70,10 +67,9 @@ roundsWithRooms = apply(overlappingFiles,1,function(x) {
     return(x)
   })
   return(Reduce(rbind,roomsForIndividual))
-  
 })
-
 library(tidyverse)
+
 ```
 
 ## More cleaning before visualizations: 
@@ -304,13 +300,13 @@ ggplot(controlFracture, aes(prop, prop1)) +
                                                                        y="Fracture the second time a team interacts, without knowing it") 
 
 
-g <- ggplot(groupedProportionFracture, aes(factor(fracture), mean))
+g <- ggplot(groupedProportionFracture, aes(factor(fractureGreater50), mean))
 g + geom_boxplot(varwidth=T, fill="plum") + 
   labs(subtitle="Team fracture value vs. mean viability score: fracture >0.50", 
        x="",
        y="Numeric sum of viability measures questions (range: 7-70)") 
 
-g <- ggplot(groupedProportionFracture, aes(factor(fracture), mean)) 
+g <- ggplot(groupedProportionFracture, aes(factor(fractureGreaterEqual50), mean)) 
 g + geom_boxplot(varwidth=T, fill="plum") + 
   labs(subtitle="Team fracture value vs. mean viability score: fracture >=0.50", 
        x="",
@@ -643,9 +639,11 @@ p4 <- 10 / 34
 
   # Print out the probabilities
 round(c(p1, p2, p3, p4), digits = 2)  
-
-
 ```
 
+## CHI Squared: 
+```{r}
+
+```
 
 
