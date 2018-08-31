@@ -817,7 +817,6 @@ $(function() {
   socket.on('starterSurvey',data => {
     hideAll();
     $starterSurvey.show();
-
   })
 
   $("#leave-hit-submit").click((event) => {
@@ -874,8 +873,12 @@ $(function() {
   })
 
   $('#qFifteenForm').submit( (event) => { //watches form element
+    hideAll();
+    $qFifteen.show();
     event.preventDefault() //stops page reloading
     socket.emit('qFifteenSubmit', $('#qFifteenForm').serialize()) //submits results alone
+    $qFifteen.hide();
+    $holdingPage.show()
     socket.emit('next event')
   })
 
