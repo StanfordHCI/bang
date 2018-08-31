@@ -44,6 +44,7 @@ const checkinOn = false
 const timeCheckOn = false // tracks time user spends on task and updates payment - also tracks how long each task is taking
 const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/3
+const qFifteenOn = true
 
 //Testing toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
@@ -64,6 +65,7 @@ const starterSurveyFile = txt + "startersurvey-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
 const botFile = txt + 'botquestions.txt'
 const leaveHitFile = txt + "leave-hit-q.txt"
+const qFifteenFile = txt + "q-fifteen.txt"
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
@@ -372,6 +374,9 @@ let taskTime = 0;
   if (blacklistOn) {
     eventSchedule.push("blacklistSurvey")
   }
+  if (qFifteenOn) {
+    eventSchedule.push("qFifteen")
+  }
   eventSchedule.push("postSurvey")
   eventSchedule.push("finished")
   console.log("This batch will include:",eventSchedule)
@@ -401,6 +406,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
       starterSurveyOn:starterSurveyOn,
       midSurveyOn: midSurveyOn,
       blacklistOn: blacklistOn,
+      qFifteenOn: qFifteenOn,
       teamfeedbackOn: teamfeedbackOn,
       psychologicalSafetyOn : psychologicalSafetyOn,
       checkinOn: checkinOn,
@@ -580,6 +586,7 @@ io.on('connection', (socket) => {
         teamfeedback: {},
         manipulationCheck: '',
         blacklistCheck: '',
+        qFifteenCheck: {},
         engagementFeedback: '',
       }
     };
@@ -919,9 +926,24 @@ io.on('connection', (socket) => {
         console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile,user), interstitial: false, showHeaderBar: false})
         io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile,user), interstitial: false, showHeaderBar: false});
       }
-      else if (eventSchedule[currentEvent] == "postSurvey") { //Launch post survey
+      else if (eventSchedule[currentEvent] == "qFifteen") {
         experimentOver = true
         if(blacklistOn && timeCheckOn) {
+          recordTime("blacklistSurvey");
+        } else if(teamfeedbackOn && timeCheckOn) {
+          recordTime("teamfeedbackSurvey");
+        } else if(midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if(timeCheckOn) {
+          recordTime("round");
+        }
+        io.in(user.id).emit("load", {element: 'qFifteen', questions: loadQuestions(qFifteenFile,user), interstitial: false, showHeaderBar: false});
+      }
+      else if (eventSchedule[currentEvent] == "postSurvey") { //Launch post survey
+        experimentOver = true
+        if(qFifteenOn && timeCheckOn) {
+          recordTime("qFifteen");
+        } else if(blacklistOn && timeCheckOn) {
           recordTime("blacklistSurvey");
         } else if(teamfeedbackOn && timeCheckOn) {
           recordTime("teamfeedbackSurvey");
@@ -1175,6 +1197,13 @@ io.on('connection', (socket) => {
       updateUserInDB(socket,"results.engagementFeedback",user.results.engagementFeedback)
     })
   });
+
+  socket.on('qFifteenSubmit', (data) => {
+    useUser(socket, user => {
+      user.results.qFifteenCheck = parseResults(data)
+      updateUserInDB(socket,"results.qFifteenCheck",user.results.qFifteenCheck)
+    })
+  })
 
   socket.on('postSurveySubmit', (data) => {
     useUser(socket, user => {

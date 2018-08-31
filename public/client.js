@@ -34,6 +34,7 @@ $(function() {
   const $psychologicalSafety = $('#psychologicalSafety'); // the psych safety page
   const $postSurvey = $('#postSurvey'); // The postSurvey page
   const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
+  const $qFifteen = $('#qFifteen') // The question fifteen page
   const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
   const $finishingPage = $('#finishing'); // The finishing page
   const botUsername = 'helperBot'
@@ -78,6 +79,7 @@ $(function() {
     $teamfeedbackSurvey.hide();
     $finishingPage.hide();
     $chatLink.hide();
+    $qFifteen.hide();
   };
 
   const HandleFinish = (finishingMessage, mturk_form, assignmentId, finishingcode) => {
@@ -98,7 +100,9 @@ $(function() {
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
   const $psychologicalSafetyQuestions = $('.psychologicalSafetyQuestions'); //pre survey
   const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
+  const $qFifteenQuestions = $('.qFifteenQuestions'); // Question Fifteen
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
+
 
   const socket = io();
 
@@ -384,7 +388,6 @@ $(function() {
     $checkinPopup.hide();
   })
 
-
   $('#midForm').submit( (event) => {
     event.preventDefault() //stops page reloading
     socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
@@ -401,6 +404,15 @@ $(function() {
     $psychologicalSafety.hide()
     $holdingPage.show()
     $('#psychologicalSafety-form')[0].reset();
+  })
+
+  $('#qFifteen').submit( (event) => {
+    event.preventDefault() //stops page reloading
+    socket.emit('qFifteen', $('#qFifteen').serialize()) //submits results alone
+    socket.emit('next event')
+    $qFifteen.hide()
+    $holdingPage.show()
+    $('#qFifteen')[0].reset();
   })
 
   $leaveHitButton.click((event) => {
@@ -858,6 +870,12 @@ $(function() {
     $teamfeedbackSurvey.hide()
     $holdingPage.show()
     $('#teamfeedbackForm')[0].reset();
+    socket.emit('next event')
+  })
+
+  $('#qFifteenForm').submit( (event) => { //watches form element
+    event.preventDefault() //stops page reloading
+    socket.emit('qFifteenSubmit', $('#qFifteenForm').serialize()) //submits results alone
     socket.emit('next event')
   })
 
