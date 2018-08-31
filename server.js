@@ -250,7 +250,7 @@ if (runExperimentNow && runningLive){
             }
           })
           // Use this function to notify only x users <= 100
-          let maxWorkersToNotify = 175; // cannot be more than 100
+          let maxWorkersToNotify = 100; // cannot be more than 100
 
           // Get workers to notify from - all times are GMT (NOT PST!!) bc server time is GMT
           let currenttimePeriod = "";
