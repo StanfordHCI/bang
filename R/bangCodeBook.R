@@ -46,8 +46,8 @@ completeBatches = Filter(function(batch) {
 }, batches)
 
 userFiles = lapply(completeBatches, function(batch) {
-  userFile = read_json(paste(dataPath,batch,"users.json",sep="/"), simplifyVector = TRUE)
-  return(flatten(userFile, recursive = TRUE))
+  userFile = fromJSON(paste(dataPath,batch,"users.json",sep="/"), flatten = TRUE) 
+  return(flatten(userFile, recursive = TRUE)) 
 })
 
 ggplot(fracture, aes(prop, prop1)) +
