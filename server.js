@@ -66,8 +66,8 @@ const starterSurveyFile = txt + "startersurvey-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
 const botFile = txt + 'botquestions.txt'
 const leaveHitFile = txt + "leave-hit-q.txt"
-const qFifteenFile = txt + "q-fifteen.txt"
-const qSixteenFile = txt + "q-sixteen.txt"
+const qFifteenFile = txt + "qfifteen-q.txt"
+const qSixteenFile = txt + "qsixteen-q.txt"
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
@@ -1282,6 +1282,10 @@ io.on('connection', (socket) => {
         answerObj = answers;
       } else if (answerTag === "YN") { // yes no
         answerObj = binaryAnswers;
+      } else if (answerTag === "YN15") { // yes no
+        answerObj = binaryAnswers;
+        let team = getTeamMembers(user)[i - 1]
+        questionObj['question']+=" Team " + (i) + " (" + team + ').'
       } else if (answerTag === "TR") { //team radio
         getTeamMembers(user).forEach((team, index) => {
           questionObj['question']+=" Team " + (index+1) + " (" + team + '),'

@@ -411,20 +411,25 @@ $(function() {
 
   $('#qFifteen').submit( (event) => {
     event.preventDefault() //stops page reloading
-    socket.emit('qFifteenSubmit', $('#qFifteen').serialize()) //submits results alone
-    socket.emit('next event')
-    $qFifteen.hide()
-    $holdingPage.show()
-    $('#qFifteen')[0].reset();
+    if (occurrences($('#qFifteenForm').serialize(), "Do+not") < 2) {
+      socket.emit('qFifteenSubmit', $('#qFifteenForm').serialize()) //submits results alone
+      socket.emit('next event')
+      $qFifteen.hide()
+      $holdingPage.show()
+    }
+    else {
+      alert("Please select only 1 team to remove from the pool for random selection.")
+    }
+    $('#qFifteenForm')[0].reset();
   })
 
   $('#qSixteen').submit( (event) => {
     event.preventDefault() //stops page reloading
-    socket.emit('qSixteenSubmit', $('#qSixteen').serialize()) //submits results alone
+    socket.emit('qSixteenSubmit', $('#qSixteenForm').serialize()) //submits results alone
     socket.emit('next event')
     $qSixteen.hide()
     $holdingPage.show()
-    $('#qSixteen')[0].reset();
+    $('#qSixteenForm')[0].reset();
   })
 
   $leaveHitButton.click((event) => {
@@ -800,6 +805,26 @@ $(function() {
     return isMatched;
   }
 
+  function occurrences(string, subString, allowOverlapping = false) {
+
+    string += "";
+    subString += "";
+    if (subString.length <= 0) return (string.length + 1);
+
+    var n = 0,
+        pos = 0,
+        step = allowOverlapping ? 1 : subString.length;
+
+    while (true) {
+        pos = string.indexOf(subString, pos);
+        if (pos >= 0) {
+            ++n;
+            pos += step;
+        } else break;
+    }
+    return n;
+  }
+
   socket.on('stop', data => {
     // log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
       hideAll();
@@ -894,15 +919,6 @@ $(function() {
     socket.emit('log', 'SOCKET DISCONNECT IN ON FINISHED: ' + data.finishingcode)
     HandleFinish(finishingMessage = data.message, mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
         assignmentId = mturkVariables.assignmentId, finishingcode = data.finishingCode);
-    if (data.crashed) {
-      if ($('#engagementfeedbackInput').length === 0) { //make sure element hasn't been already created
-        let input = document.createElement("textarea");
-        input.id = "engagementfeedbackInput";
-        input.name="engagementfeedbackInput"
-        input.required = true;
-        $("#submitButton_finish").before(input); //appendChild
-      }
-    }
     socket.disconnect(true);
   })
 
