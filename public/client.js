@@ -5,7 +5,7 @@ $(function() {
   let colorAssignment = []
 
   //toggles
-  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -877,8 +877,6 @@ $(function() {
     $qFifteen.show();
     event.preventDefault() //stops page reloading
     socket.emit('qFifteenSubmit', $('#qFifteenForm').serialize()) //submits results alone
-    $qFifteen.hide();
-    $holdingPage.show()
     socket.emit('next event')
   })
 
