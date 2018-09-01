@@ -29,11 +29,11 @@ const debugMode = !runningLive
 const suddenDeath = false
 let setPerson = false
 
-const randomCondition = true
+const randomCondition = false
 const randomRoundOrder = true
 const randomProduct = true
 
-const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
@@ -45,6 +45,7 @@ const timeCheckOn = false // tracks time user spends on task and updates payment
 const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/3
 const qFifteenOn = true
+const qSixteenOn = true
 
 //Testing toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
@@ -66,6 +67,7 @@ const postSurveyFile = txt + "postsurvey-q.txt"
 const botFile = txt + 'botquestions.txt'
 const leaveHitFile = txt + "leave-hit-q.txt"
 const qFifteenFile = txt + "q-fifteen.txt"
+const qSixteenFile = txt + "q-sixteen.txt"
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
@@ -377,6 +379,9 @@ let taskTime = 0;
   if (qFifteenOn) {
     eventSchedule.push("qFifteen")
   }
+  if (qSixteenOn) {
+    eventSchedule.push("qSixteen")
+  }
   eventSchedule.push("postSurvey")
   eventSchedule.push("finished")
   console.log("This batch will include:",eventSchedule)
@@ -407,6 +412,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
       midSurveyOn: midSurveyOn,
       blacklistOn: blacklistOn,
       qFifteenOn: qFifteenOn,
+      qSixteenOn: qSixteenOn,
       teamfeedbackOn: teamfeedbackOn,
       psychologicalSafetyOn : psychologicalSafetyOn,
       checkinOn: checkinOn,
@@ -587,6 +593,7 @@ io.on('connection', (socket) => {
         manipulationCheck: '',
         blacklistCheck: '',
         qFifteenCheck: {},
+        qSixteenCheck: {},
         engagementFeedback: '',
       }
     };
@@ -954,9 +961,26 @@ io.on('connection', (socket) => {
         }
         io.in(user.id).emit("load", {element: 'qFifteen', questions: loadQuestions(qFifteenFile,user), interstitial: false, showHeaderBar: false});
       }
-      else if (eventSchedule[currentEvent] == "postSurvey") { //Launch post survey
+      else if (eventSchedule[currentEvent] == "qSixteen") {
         experimentOver = true
         if(qFifteenOn && timeCheckOn) {
+          recordTime("qFifteen");
+        } else if(blacklistOn && timeCheckOn) {
+          recordTime("blacklistSurvey");
+        } else if(teamfeedbackOn && timeCheckOn) {
+          recordTime("teamfeedbackSurvey");
+        } else if(midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if(timeCheckOn) {
+          recordTime("round");
+        }
+        io.in(user.id).emit("load", {element: 'qSixteen', questions: loadQuestions(qSixteenFile,user), interstitial: false, showHeaderBar: false});
+      }
+      else if (eventSchedule[currentEvent] == "postSurvey") { //Launch post survey
+        experimentOver = true
+        if(qSixteenOn && timeCheckOn) {
+          recordTime("qSixteen");
+        } else if(qFifteenOn && timeCheckOn) {
           recordTime("qFifteen");
         } else if(blacklistOn && timeCheckOn) {
           recordTime("blacklistSurvey");
@@ -1217,6 +1241,13 @@ io.on('connection', (socket) => {
     useUser(socket, user => {
       user.results.qFifteenCheck = parseResults(data)
       updateUserInDB(socket,"results.qFifteenCheck",user.results.qFifteenCheck)
+    })
+  })
+
+  socket.on('qSixteenSubmit', (data) => {
+    useUser(socket, user => {
+      user.results.qSixteenCheck = parseResults(data)
+      updateUserInDB(socket,"results.qSixteenCheck",user.results.qSixteenCheck)
     })
   })
 

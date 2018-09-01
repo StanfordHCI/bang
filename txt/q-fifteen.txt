@@ -1,1 +1,1 @@
-YN|There is a chance that you will have a future task with one of the teams with which you have previously worked. The team would be selected at random, but you can choose to remove a team from the random selection. 
+TR|There is a chance that you will have a future task with one of the teams with which you have previously worked. The team would be selected at random, but you can choose to remove a team from the random selection: 

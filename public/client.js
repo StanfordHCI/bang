@@ -5,7 +5,7 @@ $(function() {
   let colorAssignment = []
 
   //toggles
-  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -35,6 +35,7 @@ $(function() {
   const $postSurvey = $('#postSurvey'); // The postSurvey page
   const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
   const $qFifteen = $('#qFifteen') // The question fifteen page
+  const $qSixteen = $('#qSixteen') // The question fifteen page
   const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
   const $finishingPage = $('#finishing'); // The finishing page
   const botUsername = 'helperBot'
@@ -80,6 +81,7 @@ $(function() {
     $finishingPage.hide();
     $chatLink.hide();
     $qFifteen.hide();
+    $qSixteen.hide();
   };
 
   const HandleFinish = (finishingMessage, mturk_form, assignmentId, finishingcode) => {
@@ -101,6 +103,7 @@ $(function() {
   const $psychologicalSafetyQuestions = $('.psychologicalSafetyQuestions'); //pre survey
   const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
   const $qFifteenQuestions = $('.qFifteenQuestions'); // Question Fifteen
+  const $qSixteenQuestions = $('.qFifteenQuestions'); // Question Fifteen
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
 
 
@@ -406,14 +409,23 @@ $(function() {
     $('#psychologicalSafety-form')[0].reset();
   })
 
-  // $('#qFifteen').submit( (event) => {
-  //   event.preventDefault() //stops page reloading
-  //   socket.emit('qFifteenSubmit', $('#qFifteen').serialize()) //submits results alone
-  //   socket.emit('next event')
-  //   $qFifteen.hide()
-  //   $holdingPage.show()
-  //   $('#qFifteen')[0].reset();
-  // })
+  $('#qFifteen').submit( (event) => {
+    event.preventDefault() //stops page reloading
+    socket.emit('qFifteenSubmit', $('#qFifteen').serialize()) //submits results alone
+    socket.emit('next event')
+    $qFifteen.hide()
+    $holdingPage.show()
+    $('#qFifteen')[0].reset();
+  })
+
+  $('#qSixteen').submit( (event) => {
+    event.preventDefault() //stops page reloading
+    socket.emit('qSixteenSubmit', $('#qSixteen').serialize()) //submits results alone
+    socket.emit('next event')
+    $qSixteen.hide()
+    $holdingPage.show()
+    $('#qSixteen')[0].reset();
+  })
 
   $leaveHitButton.click((event) => {
     $leaveHitPopup.show();
@@ -872,13 +884,6 @@ $(function() {
     socket.emit('next event')
   })
 
-  $('#qFifteenForm').submit( (event) => { //watches form element
-    hideAll();
-    $qFifteen.show();
-    event.preventDefault() //stops page reloading
-    socket.emit('qFifteenSubmit', $('#qFifteenForm').serialize()) //submits results alone
-    socket.emit('next event')
-  })
 
   //update waiting page with number of workers that must join until task can start
   socket.on('update number waiting', data => {
