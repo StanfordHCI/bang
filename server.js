@@ -228,9 +228,7 @@ if (runExperimentNow && runningLive){
           throw "URL not defined"
         }
         if(usingWillBang) {
-
-
-          // cleans db.willBang: removes people who no longer have willBang qual ()
+          // removes people who no longer have willBang qual from db.willBang
           db.willBang.find({}, (err, willBangers) => {
             if(err) {
               console.log("ERROR cleaning willBang db: " + err)
@@ -245,7 +243,6 @@ if (runExperimentNow && runningLive){
                     })
                   }
                 })
-
               })
             }
           })
