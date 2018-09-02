@@ -78,7 +78,7 @@ const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 const port = process.env.PORT || 3000;
-server.listen(port, () => { console.log('Server listening at port %d', port) });
+server.listen(port, () => { console.log('Server listening at port', port) });
 
 Array.prototype.pick = function() { return this[Math.floor(Math.random() * this.length)] };
 Array.prototype.byID = function(id) { return this.find(user => user.id === id) };
@@ -131,7 +131,7 @@ console.log = function(...msg) {
 
 //if (runExperimentNow){
   // Experiment variables
-  const conditionsAvailalbe = ['control',/* 'treatment',*/'baseline']
+  const conditionsAvailalbe = ['control','treatment','baseline']
   const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
   let treatmentNow = false
   let firstRun = false;
@@ -139,12 +139,12 @@ console.log = function(...msg) {
   let batchCompleteUpdated = false;
 
   const roundOrdering = extraRoundOn ? [
-    {control: [1,2,3,2], /*treatment: [1,2,3,2],*/ baseline: [1,2,3,4]},
-    {control: [1,3,2,2], /*treatment: [1,3,2,2],*/ baseline: [1,2,3,4]},
-    {control: [1,2,2,3], /*treatment: [1,2,2,3],*/ baseline: [1,2,3,4]}] : [
-    {control: [1,2,1], /*treatment: [1,2,1],*/ baseline: [1,2,3]},
-    {control: [2,1,1], /*treatment: [2,1,1],*/ baseline: [1,2,3]},
-    {control: [1,1,2], /*treatment: [1,1,2],*/ baseline: [1,2,3]}]
+    {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]},
+    {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]},
+    {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [
+    {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]},
+    {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]},
+    {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}]
 
   const experimentRoundIndicator = extraRoundOn ? 2 : 1 //This record what round of the ordering is the experimental round.
   const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
