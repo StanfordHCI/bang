@@ -8,8 +8,7 @@ txt/bonusworkers.txt
 txt/currentrecruitingHIT.txt
 R/.RData
 R/.Rhistory
-*.txt
-*.png
+R/allChatFiles.csv
 *.swp
 *.swo
 *.log
