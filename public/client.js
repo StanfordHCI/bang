@@ -439,6 +439,10 @@ $(function() {
   });
 
   // Socket events
+  socket.on('connect', function(){
+    socket.emit('log', 'CLIENT CONNECTED')
+  })
+  
   socket.on('chatbot', data => {
     const questions = data
     const questionIndex = permute(questions.length - 1).concat([questions.length])
