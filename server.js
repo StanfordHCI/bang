@@ -428,6 +428,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
 // Chatroom
 io.on('connection', (socket) => {
   //PK: what are these bools for?
+  console.log('MTURK ID SET IN SERVER: ' + socket.mturkId)
   let experimentStarted = false //NOTE: this will be set multiple times but I don't think that's what is wanted in this case
   let experimentOver = false
 
