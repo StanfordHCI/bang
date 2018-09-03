@@ -441,9 +441,33 @@ io.on('connection', (socket) => {
   
   socket.on('join', data => {
     console.log('JOINED CALLED')
-    socket.join(data)
-    socket.mturkId = data
-    console.log('joined room ' + data)
+    const mturkId = data.mturkId
+    const assignmentId = data.assignmentId
+    socket.join(mturkId)
+    socket.mturkId = mturkId
+    socket.assignmentId = assignmentId
+    console.log('joined room ' + mturkId)
+  })
+
+  socket.on('reconnect', data => {
+    console.log('RECONNECT IN SERVER')
+    const mturkId = data.mturkId
+    const assignmentId = data.assignmentId
+    if(users.byMturkId(mturkId)) {
+      console.log('found user ' + mturkId + 'in users')
+      let user = users.byMturkId(mturkId)
+      user.connected = true
+      user.assignmentId = assignmentId
+      user.id = socket.id
+    }
+    if(userPool.byMturkId(mturkId)) {
+      const user = userPool.byMturkId(mturkId)
+      user.connected = true
+      user.assignmentId = assignmentId
+      user.id = socket.id
+    } else {
+      console.log('reconnected untracked user'.red)
+    }
   })
 
   socket.on('get username', data => {
@@ -1091,7 +1115,7 @@ io.on('connection', (socket) => {
           // users.forEach(u => {
           //   console.log(u.id, u.room)
           // })
-          let teamMates = u.friends.filter(friend => { return (users.mturkId(friend.mturkId)) && users.byMturkId(friend.mturkId).connected && (users.byMturkId(friend.mturkId).room == u.room) && (friend.mturkId !== u.mturkId)});
+          let teamMates = u.friends.filter(friend => { return (users.byMturkId(friend.mturkId)) && users.byMturkId(friend.mturkId).connected && (users.byMturkId(friend.mturkId).room == u.room) && (friend.mturkId !== u.mturkId)});
           // console.log(teamMates)
           let team_Aliases = tools.makeName(teamMates.length, u.friends_history)
           user.friends_history = u.friends_history.concat(team_Aliases)

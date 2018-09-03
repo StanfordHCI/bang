@@ -441,10 +441,11 @@ $(function() {
   // Socket events
   socket.on('connect', function(){
     socket.emit('log', 'CLIENT CONNECTED')
-    socket.emit('join', URLvars.workerId)
+    socket.emit('join', { mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId})
   })
   socket.on('reconnect', function(attemptNumber) {
     socket.emit('log', 'CLIENT RECONNECT SUCCESS (attempt ' + attemptNumber + '): ' + socket.id)
+    socket.emit('reconnect', { mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId})
   })
 
   socket.on('reconnect_attempt', function(attemptNumber) {
