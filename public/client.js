@@ -439,7 +439,7 @@ $(function() {
   });
 
   // Socket events
-  socket.on('connect', function(socket){
+  socket.on('connect', function(){
     socket.emit('log', 'CLIENT CONNECTED')
     socket.mturkId = URLvars.workerId
     socket.join(URLvars.workerId)
