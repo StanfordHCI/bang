@@ -439,6 +439,8 @@ io.on('connection', (socket) => {
   
   socket.on('join', data => {
     socket.join(data)
+    socekt.mturkId = data
+    console.log('joined room ' + data)
   })
 
   socket.on('get username', data => {
