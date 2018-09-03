@@ -82,6 +82,7 @@ server.listen(port, () => { console.log('Server listening at port', port) });
 
 Array.prototype.pick = function() { return this[Math.floor(Math.random() * this.length)] };
 Array.prototype.byID = function(id) { return this.find(user => user.id === id) };
+Array.prototype.byMturkId = function(mturkId) { return this.find(user => user.mturkId == mturkId) };
 Array.prototype.set = function() {
   const setArray = []
   this.forEach(element => { if (!setArray.includes(element)) { setArray.push(element) } })
@@ -89,7 +90,8 @@ Array.prototype.set = function() {
 };
 
 function useUser(u,f,err = "Guarded against undefined user") {
-  let user = users.byID(u.id)
+  //let user = users.byID(u.id)
+  let user = users.byMturkId(u.mturkId)
   if (typeof user != 'undefined' && typeof f === "function") {f(user)}
   else { 
     console.log(err.red,u.id,"\n",err.stack) 
@@ -428,7 +430,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
 // Chatroom
 io.on('connection', (socket) => {
   //PK: what are these bools for?
-  console.log('MTURK ID SET IN SERVER: ' + socket.mturkId)
+  console.log('CONNECTION CALLED, MTURK ID SET IN SERVER: ' + socket.mturkId + ' with SOCKET: ' + socket.id)
   let experimentStarted = false //NOTE: this will be set multiple times but I don't think that's what is wanted in this case
   let experimentOver = false
 
@@ -438,6 +440,7 @@ io.on('connection', (socket) => {
   }
   
   socket.on('join', data => {
+    console.log('JOINED CALLED')
     socket.join(data)
     socket.mturkId = data
     console.log('joined room ' + data)
@@ -451,6 +454,7 @@ io.on('connection', (socket) => {
   })
 
   socket.on('accepted HIT', data => {
+    console.log('ACCEPTED HIT CALLED')
     if(!userAcquisitionStage) {
       //updateUserInDB(socket,'bonus',currentBonus())
       if (!socket) {
@@ -460,16 +464,27 @@ io.on('connection', (socket) => {
       issueFinish(socket,runViaEmailOn ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
       return;
     }
-    userPool.push({
-      id: socket.id,
-      mturkId: data.mturkId,
-      turkSubmitTo: data.turkSubmitTo,
-      assignmentId: data.assignmentId,
-      connected: true,
-      active: waitChatOn ? false : true,
-      timeAdded: data.timeAdded,
-      timeLastActivity: data.timeAdded
-    });
+    if(userPool.byMturkId(data.mturkId)) { //if it's a reconnected user
+      let user = userPool.byMturkId(data.mturkId)
+      console.log(data.mturkId + ' REJOINED USER POOL (' + user.id + ' => ' + socket.id +')')
+      
+      user.id = socket.id
+      user.connected = true
+      user.turkSubmitTo = data.turkSubmitTo
+      user.assignmentId = data.assignmentId
+    } else {
+      userPool.push({
+        id: socket.id,
+        mturkId: data.mturkId,
+        turkSubmitTo: data.turkSubmitTo,
+        assignmentId: data.assignmentId,
+        connected: true,
+        active: waitChatOn ? false : true,
+        timeAdded: data.timeAdded,
+        timeLastActivity: data.timeAdded
+      });
+    }
+
     if(userPool.length == 1){//first user entered waitchat
       waitchatStart = data.timeAdded
     }
@@ -530,7 +545,7 @@ io.on('connection', (socket) => {
             issueFinish(user, runViaEmailOn ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
           }
         }
-        userPool.filter(user => !usersActive.byID(user.id)).forEach(user => {//
+        userPool.filter(user => !usersActive.byMturkId(user.mturkId)).forEach(user => {//
           console.log('EMIT FINISH TO NONACTIVE OR DISCONNECTED WORKER')
           issueFinish(user, runViaEmailOn ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
         })
@@ -594,8 +609,8 @@ io.on('connection', (socket) => {
       issueFinish(socket, runViaEmailOn ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!")//PK: come back to this
       return;
     }
-    if(users.byID(socket.id)) {console.log('ERR: ADDING A USER ALREADY IN USERS')}
-    let newUser = makeUser(userPool.byID(socket.id));
+    if(users.byMturkId(socket.mturkId)) {console.log('ERR: ADDING A USER ALREADY IN USERS')}
+    let newUser = makeUser(userPool.byMturkId(socket.mturkId));
     users.push(newUser)
     console.log(newUser.name + " (" + newUser.mturkId + ") added to users.\n" + "Total users: " + users.length)
     //add friends for each user once the correct number of users is reached
@@ -655,16 +670,16 @@ io.on('connection', (socket) => {
   })
 
   socket.on('update user pool', (data) => {
-    if(!userPool.byID(socket.id)) {
+    if(!userPool.byMturkId(socket.mturkId)) {
       console.log("***USER UNDEFINED*** in update user pool ..this would crash our thing but haha whatever")
       console.log('SOCKET ID: ' + socket.id)
       return;
     }//PK: quick fix
-    if(!userPool.byID(socket.id).connected) {
+    if(!userPool.byMturkId(socket.mturkId).connected) {
       console.log("block ***USER NOT CONNECTED*** in update user pool")
       return;
     }
-    userPool.byID(socket.id).timeLastActivity = data.time;
+    userPool.byMturkId(socket.mturkId).timeLastActivity = data.time;
     updateUserPool()
   });
 
@@ -725,8 +740,8 @@ io.on('connection', (socket) => {
   socket.on('disconnect', function(reason){
     // changes connected to false of disconnected user in userPool
     console.log("Disconnecting socket: " + socket.id + " because " + reason)
-    if (userPool.find(function(element) {return element.id == socket.id})) {
-      userPool.byID(socket.id).connected = false;
+    if (userPool.find(function(element) {return socket.mturkId == socket.mturkId})) {
+      userPool.mturkId(socket.mturkId).connected = false;
       let usersActive = getPoolUsersActive()
       if(usersActive.length >= teamSize ** 2) {
         io.sockets.emit('update number waiting', {num: 0});
@@ -740,8 +755,8 @@ io.on('connection', (socket) => {
     // if (!users.every(user => socket.id !== user.id)) {//socket id is found in users
     //newMessage('has left the chatroom')
 
-    if (!users.find(function(element) {return element.id == socket.id})) return;
-    useUser(socket,user => {      
+    if (!users.find(function(element) {return element.mturkId == socket.mturkId})) return;
+    useUser(socket, user => {      
       if(reason == 'ping timeout') { 
         console.log('PING TIMEOUT NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
         return;
@@ -787,7 +802,7 @@ io.on('connection', (socket) => {
             })
           }
 
-          users.filter(u => u.id != socket.id).forEach((u) => {
+          users.filter(u => u.mturkId != socket.mturkId).forEach((u) => {
             let cancelMessage = "<strong>Someone left the task.</strong><br> <br> \
             Unfortunately, our group task requires a specific number of users to run, \
             so once a user leaves, our task cannot proceed. <br><br> \
@@ -1076,7 +1091,7 @@ io.on('connection', (socket) => {
           // users.forEach(u => {
           //   console.log(u.id, u.room)
           // })
-          let teamMates = u.friends.filter(friend => { return (users.byID(friend.id)) && users.byID(friend.id).connected && (users.byID(friend.id).room == u.room) && (friend.id !== u.id)});
+          let teamMates = u.friends.filter(friend => { return (users.mturkId(friend.mturkId)) && users.byMturkId(friend.mturkId).connected && (users.byMturkId(friend.mturkId).room == u.room) && (friend.mturkId !== u.mturkId)});
           // console.log(teamMates)
           let team_Aliases = tools.makeName(teamMates.length, u.friends_history)
           user.friends_history = u.friends_history.concat(team_Aliases)
