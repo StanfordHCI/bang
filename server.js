@@ -439,7 +439,7 @@ io.on('connection', (socket) => {
   
   socket.on('join', data => {
     socket.join(data)
-    socekt.mturkId = data
+    socket.mturkId = data
     console.log('joined room ' + data)
   })
 
