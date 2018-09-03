@@ -436,6 +436,10 @@ io.on('connection', (socket) => {
   const currentBonus = () => {
     mturk.updatePayment(getSecondsPassed() - workerStartTime)
   }
+  
+  socket.on('join', data => {
+    socket.join(data)
+  })
 
   socket.on('get username', data => {
     name_structure = tools.makeName();

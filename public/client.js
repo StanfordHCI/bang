@@ -442,7 +442,7 @@ $(function() {
   socket.on('connect', function(){
     socket.emit('log', 'CLIENT CONNECTED')
     socket.mturkId = URLvars.workerId
-    socket.join(URLvars.workerId)
+    socket.emit('join', URLvars.workerId)
   })
   socket.on('reconnect', function(attemptNumber) {
     console.log('CLIENT RECONNECT SUCCESS (attempt ' + attemptNumber + '): ' + socket.id)
