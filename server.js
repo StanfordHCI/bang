@@ -764,7 +764,8 @@ io.on('connection', (socket) => {
   socket.on('disconnect', function(reason){
     // changes connected to false of disconnected user in userPool
     console.log("Disconnecting socket: " + socket.id + " because " + reason)
-    if (userPool.find(function(element) {return socket.mturkId == socket.mturkId})) {
+    if (userPool.find(function(element) {return element.mturkId == socket.mturkId})) {
+      console.log('found ' + socket.mturkId + ' in user pool')
       userPool.byMturkId(socket.mturkId).connected = false;
       let usersActive = getPoolUsersActive()
       if(usersActive.length >= teamSize ** 2) {
