@@ -438,6 +438,13 @@ io.on('connection', (socket) => {
     mturk.updatePayment(getSecondsPassed() - workerStartTime)
   }
   
+  function createUsername () {
+    const name_structure = tools.makeName();
+    socket.name_structure = name_structure;
+    socket.username = name_structure.username;
+    socket.emit('set username', {username: socket.username})
+  }
+
   socket.on('connected', data => {
     const mturkId = data.mturkId
     const assignmentId = data.assignmentId
@@ -461,17 +468,18 @@ io.on('connection', (socket) => {
       user.id = socket.id
       //console.log(userPool.byMturkId(mturkId))
     } else {
+      createUsername()
       console.log('NEW USER CONNECTED'.blue)
     }
     console.log(('SOCKET: ' + socket.id + ' | MTURK ID: ' + socket.mturkId + ' | NAME: ' + socket.username + '| ASSIGNMENT ID: ' + socket.assignmentId).blue)
   })
 
-  socket.on('get username', data => {
-    name_structure = tools.makeName();
-    socket.name_structure = name_structure;
-    socket.username = name_structure.username;
-    socket.emit('set username', {username: socket.username})
-  })
+  // socket.on('get username', data => {
+  //   let name_structure = tools.makeName();
+  //   socket.name_structure = name_structure;
+  //   socket.username = name_structure.username;
+  //   socket.emit('set username', {username: socket.username})
+  // })
 
   socket.on('accepted HIT', data => {
     console.log('ACCEPTED HIT CALLED')
@@ -640,15 +648,15 @@ io.on('connection', (socket) => {
       console.log('MTURK IDS: ')
       users.forEach(user => { //mutate the friend list of each user
         user.friends = users.map(u => { //create the alias through which each user sees every other user
-          if (user.id != u.id) {
+          if (user.mturkId != u.mturkId) {
             return {
-              id: u.id,
+              mturkId: u.mturkId,
               alias: tools.makeName().username,
               tAlias:tools.makeName().username }
           }
           else {
             return {
-              id: u.id,
+              mturkId: u.mturkId,
               alias: u.name,
               tAlias: u.name }
           }
@@ -1293,7 +1301,7 @@ function aliasToID(user, newString) {
   user.friends.forEach(friend => {
     let currentAlias = treatmentNow ? friend.tAlias : friend.alias
     let aliasRegEx = new RegExp(currentAlias, 'g');
-    newString = newString.replace(aliasRegEx, friend.id)
+    newString = newString.replace(aliasRegEx, friend.mturkId)
   });
   return newString
 }
@@ -1301,7 +1309,7 @@ function aliasToID(user, newString) {
 //replaces other users IDs with user.friend alieses in string
 function idToAlias(user, newString) {
   user.friends.forEach(friend => {
-    let idRegEx = new RegExp(friend.id, 'g');
+    let idRegEx = new RegExp(friend.mturkId, 'g');
     let currentAlias = treatmentNow ? friend.tAlias : friend.alias
     newString = newString.replace(idRegEx, currentAlias)
   });
@@ -1349,7 +1357,7 @@ const getTeamMembers = (user) => {
 
   // Makes a human friendly string for each team with things like 'you' for the current user, commas and 'and' before the last name.
   const answers = roomTeams.map((team, tIndex) => team.reduce((total, current, pIndex, pArr)=>{
-    const friend = user.friends.find(friend => friend.id == current.id)
+    const friend = user.friends.find(friend => friend.mturkId == current.mturkId)
     let name = ((experimentRound == tIndex && currentCondition == "treatment") ? friend.tAlias : friend.alias)
     if (name == user.name) {name = "you"}
     return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total
