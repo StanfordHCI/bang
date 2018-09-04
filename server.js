@@ -441,33 +441,29 @@ io.on('connection', (socket) => {
   socket.on('connected', data => {
     const mturkId = data.mturkId
     const assignmentId = data.assignmentId
-
     socket.mturkId = mturkId
     socket.assignmentId = assignmentId
-    const connectStr = 
-    console.log(('CONNECTION\nSOCKET: ' + socket.id + ' | MTURK ID: ' + socket.mturkId + ' | ASSIGNMENT ID: ' + socket.assignmentId).blue)
-
     socket.join(mturkId)
 
     if(users.byMturkId(mturkId)) {
-      console.log(('Reconnected ' + mturkId + 'in users').blue)
+      console.log(('Reconnected ' + mturkId + ' in users').blue)
       let user = users.byMturkId(mturkId)
       user.connected = true
       user.assignmentId = assignmentId
       user.id = socket.id
-      console.log(users.byMturkId(mturkId))
+      //console.log(users.byMturkId(mturkId))
     }
     if(userPool.byMturkId(mturkId)) {
-      console.log(('Reconnected ' + mturkId + 'in user pool').blue)
+      console.log(('Reconnected ' + mturkId + ' in user pool').blue)
       const user = userPool.byMturkId(mturkId)
       user.connected = true
       user.assignmentId = assignmentId
       user.id = socket.id
-      console.log(userPool.byMturkId(mturkId))
+      //console.log(userPool.byMturkId(mturkId))
     } else {
       console.log('NEW USER CONNECTED'.blue)
     }
-
+    console.log(('SOCKET: ' + socket.id + ' | MTURK ID: ' + socket.mturkId + ' | ASSIGNMENT ID: ' + socket.assignmentId).blue)
   })
 
   socket.on('get username', data => {
@@ -782,18 +778,6 @@ io.on('connection', (socket) => {
 
     if (!users.find(function(element) {return element.mturkId == socket.mturkId})) return;
     useUser(socket, user => {      
-      // if(reason == 'ping timeout') { 
-      //   console.log('PING TIMEOUT NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
-      //   return;
-      // }
-      // if(reason == 'transport error') { 
-      //   console.log('TRANSPORT ERROR NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
-      //   return;
-      // }
-      // if(reason == 'transport close') { 
-      //   console.log('TRANSPORT CLOSE NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
-      //   return;
-      // }
       user.connected = false
       user.ready = suddenDeath ? false : true
       notEnoughUsers = false

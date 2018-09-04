@@ -443,19 +443,19 @@ $(function() {
     socket.emit('connected', { mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId})
   })
   socket.on('reconnect', function(attemptNumber) {
-    socket.emit('log', 'CLIENT RECONNECT SUCCESS (attempt ' + attemptNumber + '): ' + URLvars.workerId)
+    socket.emit('log', URLvars.workerId + 'RECONNECT SUCCESS (attempt ' + attemptNumber + ')')
   })
 
   socket.on('reconnect_attempt', function(attemptNumber) {
-    socket.emit('log', 'CLIENT RECONNECT ATTEMPT ' + attemptNumber + ': ' + URLvars.workerId)
+    socket.emit('log', URLvars.workerId + 'RECONNECT ATTEMPT ' + attemptNumber)
   })
 
   socket.on('reconnect_error', function(error) {
-    socket.emit('log', 'CLIENT RECONNECT ERROR (' + error + '): ' + URLvars.workerId)
+    socket.emit('log', URLvars.workerId + 'RECONNECT ' + error) 
   })
 
   socket.on('reconnect_failure', function() {
-    socket.emit('log', 'CLIENT RECONNECT FAILURE: ' + URLvars.workerId)
+    socket.emit('log', URLvars.workerId + 'RECONNECT FAILURE')
   })
   socket.on('chatbot', data => {
     const questions = data
