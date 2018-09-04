@@ -446,11 +446,12 @@ io.on('connection', (socket) => {
     socket.join(mturkId)
     socket.mturkId = mturkId
     socket.assignmentId = assignmentId
-    console.log('joined room ' + mturkId)
+    const joinedStr = 'Socket ' + socket.id + ' joined room ' + mturkId
+    console.log(joinedStr.blue)
   })
 
   socket.on('reconnect', data => {
-    console.log('RECONNECT IN SERVER')
+    console.log('RECONNECT IN SERVER'.blue)
     const mturkId = data.mturkId
     const assignmentId = data.assignmentId
     if(users.byMturkId(mturkId)) {
