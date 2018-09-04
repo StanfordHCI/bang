@@ -463,7 +463,7 @@ io.on('connection', (socket) => {
     } else {
       console.log('NEW USER CONNECTED'.blue)
     }
-    console.log(('SOCKET: ' + socket.id + ' | MTURK ID: ' + socket.mturkId + ' | ASSIGNMENT ID: ' + socket.assignmentId).blue)
+    console.log(('SOCKET: ' + socket.id + ' | MTURK ID: ' + socket.mturkId + ' | NAME: ' + socket.username + '| ASSIGNMENT ID: ' + socket.assignmentId).blue)
   })
 
   socket.on('get username', data => {
