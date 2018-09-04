@@ -430,7 +430,6 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
 // Chatroom
 io.on('connection', (socket) => {
   //PK: what are these bools for?
-  console.log('CONNECTION CALLED, MTURK ID SET IN SERVER: ' + socket.mturkId + ' with SOCKET: ' + socket.id)
   let experimentStarted = false //NOTE: this will be set multiple times but I don't think that's what is wanted in this case
   let experimentOver = false
 
@@ -440,13 +439,13 @@ io.on('connection', (socket) => {
   }
   
   socket.on('connected', data => {
-    console.log('CONNECTED CALLED')
     const mturkId = data.mturkId
     const assignmentId = data.assignmentId
 
     socket.mturkId = mturkId
     socket.assignmentId = assignmentId
-    console.log('SOCKET: ' + socket.id + ' | MTURK ID: ' + socket.mturkId + ' | ASSIGNMENT ID: ' + socket.assignmentId)
+    const connectStr = 
+    console.log(('CONNECTION\nSOCKET: ' + socket.id + ' | MTURK ID: ' + socket.mturkId + ' | ASSIGNMENT ID: ' + socket.assignmentId).blue)
 
     socket.join(mturkId)
     const joinedStr = socket.id + ' joined room ' + mturkId
