@@ -444,7 +444,7 @@ $(function() {
     socket.emit('join', { mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId})
   })
   socket.on('reconnect', function(attemptNumber) {
-    socket.emit('log', 'CLIENT RECONNECT SUCCESS (attempt ' + attemptNumber + '): ' + URLvars.workerId
+    socket.emit('log', 'CLIENT RECONNECT SUCCESS (attempt ' + attemptNumber + '): ' + URLvars.workerId)
     socket.emit('reconnect', { mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId})
   })
 
