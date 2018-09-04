@@ -448,11 +448,9 @@ io.on('connection', (socket) => {
     console.log(('CONNECTION\nSOCKET: ' + socket.id + ' | MTURK ID: ' + socket.mturkId + ' | ASSIGNMENT ID: ' + socket.assignmentId).blue)
 
     socket.join(mturkId)
-    const joinedStr = socket.id + ' joined room ' + mturkId
-    console.log(joinedStr.blue)
 
     if(users.byMturkId(mturkId)) {
-      console.log('Reconnected ' + mturkId + 'in users')
+      console.log(('Reconnected ' + mturkId + 'in users').blue)
       let user = users.byMturkId(mturkId)
       user.connected = true
       user.assignmentId = assignmentId
@@ -460,37 +458,16 @@ io.on('connection', (socket) => {
       console.log(users.byMturkId(mturkId))
     }
     if(userPool.byMturkId(mturkId)) {
-      console.log('Reconnected ' + mturkId + 'in user pool')
+      console.log(('Reconnected ' + mturkId + 'in user pool').blue)
       const user = userPool.byMturkId(mturkId)
       user.connected = true
       user.assignmentId = assignmentId
       user.id = socket.id
       console.log(userPool.byMturkId(mturkId))
     } else {
-      console.log('NEW USER CONNECTED'.red)
+      console.log('NEW USER CONNECTED'.blue)
     }
 
-  })
-
-  socket.on('reconnect', data => {
-    console.log('RECONNECT IN SERVER'.blue)
-    const mturkId = data.mturkId
-    const assignmentId = data.assignmentId
-    if(users.byMturkId(mturkId)) {
-      console.log('found user ' + mturkId + 'in users')
-      let user = users.byMturkId(mturkId)
-      user.connected = true
-      user.assignmentId = assignmentId
-      user.id = socket.id
-    }
-    if(userPool.byMturkId(mturkId)) {
-      const user = userPool.byMturkId(mturkId)
-      user.connected = true
-      user.assignmentId = assignmentId
-      user.id = socket.id
-    } else {
-      console.log('reconnected untracked user'.red)
-    }
   })
 
   socket.on('get username', data => {
@@ -805,10 +782,10 @@ io.on('connection', (socket) => {
 
     if (!users.find(function(element) {return element.mturkId == socket.mturkId})) return;
     useUser(socket, user => {      
-      if(reason == 'ping timeout') { 
-        console.log('PING TIMEOUT NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
-        return;
-      }
+      // if(reason == 'ping timeout') { 
+      //   console.log('PING TIMEOUT NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
+      //   return;
+      // }
       // if(reason == 'transport error') { 
       //   console.log('TRANSPORT ERROR NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
       //   return;
