@@ -439,15 +439,38 @@ io.on('connection', (socket) => {
     mturk.updatePayment(getSecondsPassed() - workerStartTime)
   }
   
-  socket.on('join', data => {
-    console.log('JOINED CALLED')
+  socket.on('connected', data => {
+    console.log('CONNECTED CALLED')
     const mturkId = data.mturkId
     const assignmentId = data.assignmentId
-    socket.join(mturkId)
+
     socket.mturkId = mturkId
     socket.assignmentId = assignmentId
-    const joinedStr = 'Socket ' + socket.id + ' joined room ' + mturkId
+    console.log('SOCKET: ' + socket.id + ' | MTURK ID: ' + socket.mturkId + ' | ASSIGNMENT ID: ' + socket.assignmentId)
+
+    socket.join(mturkId)
+    const joinedStr = socket.id + ' joined room ' + mturkId
     console.log(joinedStr.blue)
+
+    if(users.byMturkId(mturkId)) {
+      console.log('Reconnected ' + mturkId + 'in users')
+      let user = users.byMturkId(mturkId)
+      user.connected = true
+      user.assignmentId = assignmentId
+      user.id = socket.id
+      console.log(users.byMturkId(mturkId))
+    }
+    if(userPool.byMturkId(mturkId)) {
+      console.log('Reconnected ' + mturkId + 'in user pool')
+      const user = userPool.byMturkId(mturkId)
+      user.connected = true
+      user.assignmentId = assignmentId
+      user.id = socket.id
+      console.log(userPool.byMturkId(mturkId))
+    } else {
+      console.log('NEW USER CONNECTED'.red)
+    }
+
   })
 
   socket.on('reconnect', data => {
