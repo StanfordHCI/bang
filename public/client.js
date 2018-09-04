@@ -411,15 +411,10 @@ $(function() {
 
   $('#qFifteen').submit( (event) => {
     event.preventDefault() //stops page reloading
-    if (occurrences($('#qFifteenForm').serialize(), "Do+not") < 2) {
-      socket.emit('qFifteenSubmit', $('#qFifteenForm').serialize()) //submits results alone
-      socket.emit('next event')
-      $qFifteen.hide()
-      $holdingPage.show()
-    }
-    else {
-      alert("Please select only 1 team to remove from the pool for random selection.")
-    }
+    socket.emit('qFifteenSubmit', $('#qFifteenForm').serialize()) //submits results alone
+    socket.emit('next event')
+    $qFifteen.hide()
+    $holdingPage.show()
     $('#qFifteenForm')[0].reset();
   })
 
