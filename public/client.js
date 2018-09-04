@@ -124,7 +124,7 @@ $(function() {
     mturkVariables = { mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId, timeAdded: (new Date()).getTime()}
     socket.emit('accepted HIT', mturkVariables); //PK: thoughts on setting waitchat toggle in client and sending it to server in this emit?
     if(waitChatOn){
-      socket.emit('get username')
+      //socket.emit('get username')
       hideAll();
       $chatPage.show()
       $headerbarPage.show()
@@ -330,7 +330,7 @@ $(function() {
     event.preventDefault()
     hideAll();
     $holdingPage.show();
-    socket.emit('get username')
+    //socket.emit('get username')
     socket.emit('add user');
     socket.emit('next event')
   })
