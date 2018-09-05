@@ -1,3 +1,4 @@
-YN15|What answer you think a majority of Team 1 (including you) selected for the previous question?
-YN15|What answer you think a majority of Team 2 (including you) selected for the previous question?
-YN15|What answer you think a majority of Team 3 (including you) selected for the previous question?
+YN15|Do you think other participants in Team 1 would choose to remove it from the random selection for a future round?
+YN15|Do you think other participants in Team 2 would choose to remove it from the random selection for a future round?
+YN15|Do you think other participants in Team 3 would choose to remove it from the random selection for a future round?
+
