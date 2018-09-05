@@ -178,6 +178,9 @@ treatmentB <- viabilityLikert %>% filter(condition=="B" & results.condition=="tr
 likert.treatmentB <- likert(treatmentB[-c(15:16)])
 plot(likert.treatmentAp)
 ## Customize code above to filter on other conditions and treatments of interest. 
+
+
+
 ```
 
 ## Exploratory data analysis part #1: 
@@ -202,7 +205,7 @@ groupedProportion <- stats %>%
   group_by(room, batch, round, condition, results.condition, results.format) %>% 
   summarise(n=n(), mean=mean(sum), median=median(sum),prop=sum(repeatTeam)/n) %>% 
 ## Filter out all teams with n=1 (i.e. a person in a chat room alone)
-  filter(n>2)
+  filter(n>1)
 ## Individual proportion: 
 individualProportion <- stats %>% group_by(round, batch, room) %>% 
   mutate(sum=sum, mean=mean(sum), median=median(sum), n=n(),prop=sum(repeatTeam)/n) %>% filter(n>1)
@@ -273,7 +276,7 @@ groupedProportionFractureLE <- groupedProportionFracture %>% filter(results.form
 fractureLE1 <- groupedProportionFractureLE %>% filter(round=="1")
 fractureLE2 <- groupedProportionFractureLE %>% filter(round=="3")
 
-## Treatment: 
+
 groupedProportionFractureTreatment <- groupedProportionFracture %>% 
 filter(results.condition=="treatment")
 treatmentFracture1 <- groupedProportionFractureTreatment %>% filter(condition=="A")
@@ -312,12 +315,18 @@ g + geom_boxplot(varwidth=T, fill="plum") +
        x="",
        y="Numeric sum of viability measures questions (range: 7-70)") 
 
-g <- ggplot(groupedProportionFractureTreatment, aes(factor(fracture), mean))
+g <- ggplot(groupedProportionFractureTreatment, aes(factor(fractureGreater50), mean))
 g + geom_boxplot(varwidth=T, fill="plum") + 
   labs(subtitle="Team fracture value vs. mean viability score: fracture >0.50", 
        x="",
        y="Numeric sum of viability measures questions (range: 7-70)") 
 
+
+g <- ggplot(groupedProportionFractureTreatment, aes(factor(fractureGreaterEqual50), mean))
+g + geom_boxplot(varwidth=T, fill="plum") + 
+  labs(subtitle="Team fracture value vs. mean viability score: fracture >=0.50", 
+       x="",
+       y="Numeric sum of viability measures questions (range: 7-70)") 
 
 ## Defining fracture: 
 
@@ -343,8 +352,6 @@ g + geom_boxplot(varwidth=T, fill="plum") +
 # ## Fracture to no fracture 
 # sum(ifelse(fractureLE1$fracture==1 & fractureLE2$fracture==0,1,0))
 ```
-
-## 
 
 
 ## Probability of fracture given condition in treatment: 
@@ -413,6 +420,11 @@ g + geom_histogram(bins=7,
   xlab(label="Absolute change in team fracture score in treatment condition") + 
   ylab(label="Count") 
 
+controlFracture$fractureGreater50 <- as.numeric(controlFracture$fractureGreater50)
+controlFracture1$fractureGreater50 <- as.numeric(controlFracture1$fractureGreater50)
+controlFracture1$fractureGreaterEqual50 <- as.numeric(controlFracture1$fractureGreaterEqual50)
+controlFracture$fractureGreaterEqual50 <- as.numeric(controlFracture$fractureGreaterEqual50)
+
 controlFracture$absGreater50 <- abs(controlFracture$fractureGreater50-controlFracture1$fractureGreater50)
 g <- ggplot(controlFracture, aes(absGreater50)) + scale_fill_brewer(palette = "Spectral")
 g + geom_histogram(bins=7, 
@@ -434,7 +446,7 @@ g + geom_histogram(bins=7,
   ylab(label="Count") 
 
 controlFracture$absGreaterEqual50 <- abs(controlFracture$fractureGreaterEqual50-controlFracture1$fractureGreaterEqual50)
-g <- ggplot(controlFracture, aes(abs)) + scale_fill_brewer(palette = "Spectral")
+g <- ggplot(controlFracture, aes(absGreaterEqual50)) + scale_fill_brewer(palette = "Spectral")
 g + geom_histogram(bins=7, 
                    col="pink", 
                    size=.4) + 
@@ -488,11 +500,23 @@ p
 ## Histogram comparisons of fracture ratios across treatment, control and learning effect conditions
 
 ```{r}
-ggplot(data=groupedProportionFractureTreatment, aes(fracture)) + 
+ggplot(data=groupedProportionFractureTreatment, aes(fractureGreater50)) + 
   geom_bar(breaks=seq(0, 1, by=0.20), 
                  col="red", 
                  fill="green", 
-                 alpha=.2) + labs(title="Fracture ratios: treatment condition") + facet_grid(condition ~ results.condition)
+                 alpha=.2) + labs(title="Fracture ratios: treatment condition, fracture >.50") + facet_grid(condition ~ results.condition)
+
+ggplot(data=groupedProportionFractureTreatment, aes(fractureGreaterEqual50)) + 
+  geom_bar(breaks=seq(0, 1, by=0.20), 
+                 col="red", 
+                 fill="green", 
+                 alpha=.2) + labs(title="Fracture ratios: treatment condition, fracture >=.50") + facet_grid(condition ~ results.condition)
+
+ggplot(data=groupedProportionFractureTreatment, aes(fractureGreaterEqual50)) + 
+  geom_bar(breaks=seq(0, 1, by=0.20), 
+                 col="red", 
+                 fill="green", 
+                 alpha=.2) + labs(title="Fracture ratios: treatment condition, fracture >=.50") + facet_grid(condition ~ results.condition)
 
 ggplot(data=groupedProportionFractureControl, aes(fracture)) + 
   geom_bar(breaks=seq(0, 1, by=0.20), 
@@ -619,6 +643,22 @@ write.csv(allChatFiles, file = "allChatFiles.csv")
 
 ```
 
+## Manipulation check: 
+
+```{r}
+## Use individual proportion data frame b/c we're interested in looking at individuals that were in teams >n=1
+individualProportion$manipulationAnswerKey <- substr(individualProportion$results.manipulationCheck, 13, 29) 
+teamPatterns <- "Team 1 and Team 2|Team 1 and Team 3|Team 2 and Team 3"
+individualProportion$manipulationAnswers <- individualProportion$results.manipulation
+individualProportion$results.condition = unlist(individualProportion$results.condition)
+## Subset only observations with team strings//omit NAs and results that can't be processed: 
+cleanManipulation <- individualProportion[with(individualProportion, grepl(teamPatterns, manipulationAnswers) & grepl(teamPatterns, manipulationAnswerKey)),]
+cleanManipulation$manipulationAnswers = unlist(cleanManipulation$manipulationAnswers)
+treatmentManipulation <- cleanManipulation %>% group_by(id, results.condition, manipulationAnswers, manipulationAnswerKey) %>% filter(results.condition=="treatment") %>% 
+  summarise(n=n())
+sum(ifelse(treatmentManipulation$manipulationAnswers==treatmentManipulation$manipulationAnswerKey,1,0))
+## 10 out of 24
+```
 ## Conditional probabilities: 
 ```{r}
 groupedProportionFractureTreatment %>% 
