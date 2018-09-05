@@ -30,7 +30,7 @@ const debugMode = !runningLive
 const suddenDeath = false
 let setPerson = false
 
-const randomCondition = true
+const randomCondition = false
 const randomRoundOrder = true
 const randomProduct = true
 
