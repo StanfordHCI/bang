@@ -548,7 +548,6 @@ $(function() {
   })
   //if there are enough workers who have accepted the task, show link to chat page
   socket.on('initiate experiment', data => {
-    console.log('INITIATE EXPERIMENT CALLED')
     if(preChat) {
       notify("Moving you to another chatroom.", "Come and get started with the activity.")
       addChatMessage({username:botUsername, message:"Please wait a few seconds while we move you to another chatroom to begin the next task"})
@@ -562,7 +561,6 @@ $(function() {
 
   // Whenever the server emits 'login', log the login message
   socket.on('login', data => {
-    console.log('LOGIN CALLED')
     connected = true;
     // Display the welcome message
     const message = "Welcome";
@@ -860,7 +858,6 @@ $(function() {
 
   socket.on('get IDs', data => {
     const URLvars = getUrlVars(location.href);
-    //console.log('get IDs ran');
     socket.emit(data,{mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId});
   })
 
