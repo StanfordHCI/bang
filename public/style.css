@@ -208,7 +208,10 @@ ul {
   top: 0;
 }
 
-/* Survey Question buttons */
+/* Survey Questions */
+.survey-questions > p {
+  font-size: 1.2em;
+}
 .rb {
   padding: 16px 0;
   background: rgba(255,255,255,.03);

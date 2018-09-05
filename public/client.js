@@ -47,7 +47,7 @@ $(function() {
 
   Vue.component('question-component', {
     template: `
-      <h3>{{question.question}}</h3>
+      <p>{{question.question}}</p>
       <div id="{{question.name}}-rb-box" class='rb-box'>
         <template v-for="(index, answer) in question.answers" :answer="answer">
           <label for="{{question.name}}-{{index+1}}" class="rb-tab">
