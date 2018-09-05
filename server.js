@@ -30,7 +30,7 @@ const debugMode = !runningLive
 const suddenDeath = false
 let setPerson = false
 
-const randomCondition = false
+const randomCondition = true
 const randomRoundOrder = true
 const randomProduct = true
 
@@ -38,7 +38,7 @@ const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
-const midSurveyOn = false
+const midSurveyOn = true
 const blacklistOn = false
 const teamfeedbackOn = false
 const checkinOn = false
