@@ -180,8 +180,8 @@ db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestamp
 db.willBang = new Datastore({ filename:'.data/willBang', autoload: true, timestampData: true});
 
 function updateUserInDB(user,field,value) {
-  db.users.update( {id: user.id}, {$set: {[field]: value}}, {},
-    err => console.log(err ? "Err recording ".red +field+": "+err : "Updated " + field + " for " + user.id + " " + JSON.stringify(value,null,2))
+  db.users.update( {mturkId: user.mturkId}, {$set: {[field]: value}}, {},
+    err => console.log(err ? "Err recording ".red +field+": "+err : "Updated " + field + " for " + user.mturkId + " " + JSON.stringify(value,null,2))
   )
 }
 
@@ -740,8 +740,8 @@ io.on('connection', (socket) => {
       });
 
       users.filter(f => f.room == user.room).forEach(f => {
-        socket.broadcast.to(f.id).emit('new message', {
-          username: idToAlias(f, String(socket.id)),
+        socket.broadcast.to(f.mturkId).emit('new message', {
+          username: idToAlias(f, String(socket.mturkId)),
           message: idToAlias(f, cleanMessage)
         });
       });
