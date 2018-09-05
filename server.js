@@ -457,7 +457,9 @@ io.on('connection', (socket) => {
       let user = users.byMturkId(mturkId)
       user.connected = true
       user.assignmentId = assignmentId
-      user.id = socket.id
+      user.id = socket.id      
+      user.turkSubmitTo = data.turkSubmitTo
+
       //console.log(users.byMturkId(mturkId))
       mturk.setAssignmentsPending(getUsersConnected().length)
 
@@ -468,6 +470,8 @@ io.on('connection', (socket) => {
       user.connected = true
       user.assignmentId = assignmentId
       user.id = socket.id
+      user.turkSubmitTo = data.turkSubmitTo
+
       //console.log(userPool.byMturkId(mturkId))
     } else {
       createUsername()
@@ -507,7 +511,7 @@ io.on('connection', (socket) => {
       
       user.id = socket.id
       user.connected = true
-      //user.turkSubmitTo = data.turkSubmitTo
+      user.turkSubmitTo = data.turkSubmitTo
       user.assignmentId = data.assignmentId
     } else {
       userPool.push({

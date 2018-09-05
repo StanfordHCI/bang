@@ -440,7 +440,7 @@ $(function() {
 
   // Socket events
   socket.on('connect', function(){
-    socket.emit('connected', { mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId})
+    socket.emit('connected', { mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo)})
   })
   socket.on('reconnect', function(attemptNumber) {
     socket.emit('log', URLvars.workerId + ' RECONNECT SUCCESS (attempt ' + attemptNumber + ')')
