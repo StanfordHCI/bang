@@ -21,6 +21,7 @@ const issueBonusesNow = true
 const notifyWorkersOn = true
 const runViaEmailOn = false
 const usingWillBang = true
+const aggressiveNotifyOn = true
 
 const cleanHITs = false
 const assignQualifications = true
@@ -286,10 +287,10 @@ if (runExperimentNow && runningLive){
                 console.log("Time Pool Workers: " + currentTimePoolWorkers.length)
                 let timePoolNotifyList = currentTimePoolWorkers.map(u => u.id)
                 let moreworkersneeded = maxWorkersToNotify - currentTimePoolWorkers.length
-                if (moreworkersneeded > 0) { //if we don't have enough people with current time preference to notify
+                if (aggressiveNotifyOn ? true : moreworkersneeded > 0) { //if we don't have enough people with current time preference to notify
                   mturk.notifyWorkers(timePoolNotifyList, subject, message)
                   mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
-                    let notifyList = getRandomSubarray(data, moreworkersneeded)
+                    let notifyList = getRandomSubarray(data, aggressiveNotifyOn ? maxWorkersToNotify : moreworkersneeded)
                     let i = notifyList.length
                     while (i--) {
                         if (timePoolNotifyList.includes(notifyList[i])) {
