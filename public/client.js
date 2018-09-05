@@ -34,6 +34,8 @@ $(function() {
   const $psychologicalSafety = $('#psychologicalSafety'); // the psych safety page
   const $postSurvey = $('#postSurvey'); // The postSurvey page
   const $blacklistSurvey = $('#blacklistSurvey'); // The blacklist page
+  const $qFifteen = $('#qFifteen') // The question fifteen page
+  const $qSixteen = $('#qSixteen') // The question fifteen page
   const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
   const $finishingPage = $('#finishing'); // The finishing page
   const botUsername = 'helperBot'
@@ -78,6 +80,8 @@ $(function() {
     $teamfeedbackSurvey.hide();
     $finishingPage.hide();
     $chatLink.hide();
+    $qFifteen.hide();
+    $qSixteen.hide();
   };
 
   const HandleFinish = (finishingMessage, mturk_form, assignmentId, finishingcode) => {
@@ -98,7 +102,10 @@ $(function() {
   const $preSurveyQuestions = $('.preSurveyQuestions'); //pre survey
   const $psychologicalSafetyQuestions = $('.psychologicalSafetyQuestions'); //pre survey
   const $midSurveyQuestions = $('.midSurveyQuestions'); // mid survey
+  const $qFifteenQuestions = $('.qFifteenQuestions'); // Question Fifteen
+  const $qSixteenQuestions = $('.qFifteenQuestions'); // Question Fifteen
   const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
+
 
   const socket = io();
 
@@ -384,7 +391,6 @@ $(function() {
     $checkinPopup.hide();
   })
 
-
   $('#midForm').submit( (event) => {
     event.preventDefault() //stops page reloading
     socket.emit('midSurveySubmit', $('#midForm').serialize()) //submits results alone
@@ -401,6 +407,24 @@ $(function() {
     $psychologicalSafety.hide()
     $holdingPage.show()
     $('#psychologicalSafety-form')[0].reset();
+  })
+
+  $('#qFifteen').submit( (event) => {
+    event.preventDefault() //stops page reloading
+    socket.emit('qFifteenSubmit', $('#qFifteenForm').serialize()) //submits results alone
+    socket.emit('next event')
+    $qFifteen.hide()
+    $holdingPage.show()
+    $('#qFifteenForm')[0].reset();
+  })
+
+  $('#qSixteen').submit( (event) => {
+    event.preventDefault() //stops page reloading
+    socket.emit('qSixteenSubmit', $('#qSixteenForm').serialize()) //submits results alone
+    socket.emit('next event')
+    $qSixteen.hide()
+    $holdingPage.show()
+    $('#qSixteenForm')[0].reset();
   })
 
   $leaveHitButton.click((event) => {
@@ -794,6 +818,26 @@ $(function() {
     return isMatched;
   }
 
+  function occurrences(string, subString, allowOverlapping = false) {
+
+    string += "";
+    subString += "";
+    if (subString.length <= 0) return (string.length + 1);
+
+    var n = 0,
+        pos = 0,
+        step = allowOverlapping ? 1 : subString.length;
+
+    while (true) {
+        pos = string.indexOf(subString, pos);
+        if (pos >= 0) {
+            ++n;
+            pos += step;
+        } else break;
+    }
+    return n;
+  }
+
   socket.on('stop', data => {
     // log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
       hideAll();
@@ -823,7 +867,6 @@ $(function() {
   socket.on('starterSurvey',data => {
     hideAll();
     $starterSurvey.show();
-
   })
 
   $("#leave-hit-submit").click((event) => {
@@ -879,6 +922,7 @@ $(function() {
     socket.emit('next event')
   })
 
+
   //update waiting page with number of workers that must join until task can start
   socket.on('update number waiting', data => {
     usersWaiting.innerText = data.num;
@@ -888,15 +932,6 @@ $(function() {
     socket.emit('log', 'SOCKET DISCONNECT IN ON FINISHED: ' + data.finishingcode)
     HandleFinish(finishingMessage = data.message, mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
         assignmentId = mturkVariables.assignmentId, finishingcode = data.finishingCode);
-    if (data.crashed) {
-      if ($('#engagementfeedbackInput').length === 0) { //make sure element hasn't been already created
-        let input = document.createElement("textarea");
-        input.id = "engagementfeedbackInput";
-        input.name="engagementfeedbackInput"
-        input.required = true;
-        $("#submitButton_finish").before(input); //appendChild
-      }
-    }
     socket.disconnect(true);
   })
 

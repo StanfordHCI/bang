@@ -9,7 +9,7 @@ const roundMinutes = parseFloat(process.env.ROUND_MINUTES)
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
-const secondsToWait = 20 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+const secondsToWait = 10 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
 const secondsSinceResponse = 59 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
 const secondsToHold1 = 1200 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
 const secondsToHold2 = 200 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
@@ -45,6 +45,8 @@ const checkinOn = false
 const timeCheckOn = false // tracks time user spends on task and updates payment - also tracks how long each task is taking
 const requiredOn = runningLive
 const checkinIntervalMinutes = roundMinutes/3
+const qFifteenOn = true
+const qSixteenOn = true
 
 //Testing toggles
 const autocompleteTestOn = false //turns on fake team to test autocomplete
@@ -65,6 +67,8 @@ const starterSurveyFile = txt + "startersurvey-q.txt"
 const postSurveyFile = txt + "postsurvey-q.txt"
 const botFile = txt + 'botquestions.txt'
 const leaveHitFile = txt + "leave-hit-q.txt"
+const qFifteenFile = txt + "qfifteen-q.txt"
+const qSixteenFile = txt + "qsixteen-q.txt"
 
 // Answer Option Sets
 const answers = {answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'], answerType: 'radio', textValue: true}
@@ -298,7 +302,6 @@ if (runExperimentNow && runningLive){
                         }
                     }
                     mturk.notifyWorkers(notifyList, subject, message)
-                    console.log("Notified", notifyList.length, "workers")
                   })
                 } else {
                   let workerstonotify = getRandomSubarray(timePoolNotifyList, maxWorkersToNotify)
@@ -372,6 +375,12 @@ let taskTime = 0;
   if (blacklistOn) {
     eventSchedule.push("blacklistSurvey")
   }
+  if (qFifteenOn) {
+    eventSchedule.push("qFifteen")
+  }
+  if (qSixteenOn) {
+    eventSchedule.push("qSixteen")
+  }
   eventSchedule.push("postSurvey")
   eventSchedule.push("finished")
   console.log("This batch will include:",eventSchedule)
@@ -401,6 +410,8 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
       starterSurveyOn:starterSurveyOn,
       midSurveyOn: midSurveyOn,
       blacklistOn: blacklistOn,
+      qFifteenOn: qFifteenOn,
+      qSixteenOn: qSixteenOn,
       teamfeedbackOn: teamfeedbackOn,
       psychologicalSafetyOn : psychologicalSafetyOn,
       checkinOn: checkinOn,
@@ -641,6 +652,8 @@ io.on('connection', (socket) => {
         teamfeedback: {},
         manipulationCheck: '',
         blacklistCheck: '',
+        qFifteenCheck: {},
+        qSixteenCheck: {},
         engagementFeedback: '',
       }
     };
@@ -969,9 +982,41 @@ io.on('connection', (socket) => {
         console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile,user), interstitial: false, showHeaderBar: false})
         io.in(socket.mturkId).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile,user), interstitial: false, showHeaderBar: false});
       }
-      else if (eventSchedule[currentEvent] == "postSurvey") { //Launch post survey
+      else if (eventSchedule[currentEvent] == "qFifteen") {
         experimentOver = true
         if(blacklistOn && timeCheckOn) {
+          recordTime("blacklistSurvey");
+        } else if(teamfeedbackOn && timeCheckOn) {
+          recordTime("teamfeedbackSurvey");
+        } else if(midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if(timeCheckOn) {
+          recordTime("round");
+        }
+        io.in(user.id).emit("load", {element: 'qFifteen', questions: loadQuestions(qFifteenFile,user), interstitial: false, showHeaderBar: false});
+      }
+      else if (eventSchedule[currentEvent] == "qSixteen") {
+        experimentOver = true
+        if(qFifteenOn && timeCheckOn) {
+          recordTime("qFifteen");
+        } else if(blacklistOn && timeCheckOn) {
+          recordTime("blacklistSurvey");
+        } else if(teamfeedbackOn && timeCheckOn) {
+          recordTime("teamfeedbackSurvey");
+        } else if(midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if(timeCheckOn) {
+          recordTime("round");
+        }
+        io.in(user.id).emit("load", {element: 'qSixteen', questions: loadQuestions(qSixteenFile,user), interstitial: false, showHeaderBar: false});
+      }
+      else if (eventSchedule[currentEvent] == "postSurvey") { //Launch post survey
+        experimentOver = true
+        if(qSixteenOn && timeCheckOn) {
+          recordTime("qSixteen");
+        } else if(qFifteenOn && timeCheckOn) {
+          recordTime("qFifteen");
+        } else if(blacklistOn && timeCheckOn) {
           recordTime("blacklistSurvey");
         } else if(teamfeedbackOn && timeCheckOn) {
           recordTime("teamfeedbackSurvey");
@@ -1226,6 +1271,20 @@ io.on('connection', (socket) => {
     })
   });
 
+  socket.on('qFifteenSubmit', (data) => {
+    useUser(socket, user => {
+      user.results.qFifteenCheck = parseResults(data)
+      updateUserInDB(socket,"results.qFifteenCheck",user.results.qFifteenCheck)
+    })
+  })
+
+  socket.on('qSixteenSubmit', (data) => {
+    useUser(socket, user => {
+      user.results.qSixteenCheck = parseResults(data)
+      updateUserInDB(socket,"results.qSixteenCheck",user.results.qSixteenCheck)
+    })
+  })
+
   socket.on('postSurveySubmit', (data) => {
     useUser(socket, user => {
       user.results.manipulationCheck = parseResults(data)
@@ -1257,6 +1316,10 @@ io.on('connection', (socket) => {
         answerObj = answers;
       } else if (answerTag === "YN") { // yes no
         answerObj = binaryAnswers;
+      } else if (answerTag === "YN15") { // yes no
+        answerObj = binaryAnswers;
+        let team = getTeamMembers(user)[i - 1]
+        questionObj['question']+=" Team " + (i) + " (" + team + ').'
       } else if (answerTag === "TR") { //team radio
         getTeamMembers(user).forEach((team, index) => {
           questionObj['question']+=" Team " + (index+1) + " (" + team + '),'
