@@ -454,7 +454,7 @@ io.on('connection', (socket) => {
     const name_structure = tools.makeName();
     socket.name_structure = name_structure;
     socket.username = name_structure.username;
-    socket.emit('set username', {username: socket.username})
+    socket.emit('set username', {username: socket.username, name_structure: name_structure})
   }
 
   socket.on('connected', data => {
@@ -478,6 +478,9 @@ io.on('connection', (socket) => {
     }
     if(userPool.byMturkId(mturkId)) {
       console.log(('Reconnected ' + mturkId + ' in user pool').blue)
+
+      socket.name_structure = data.name_structure
+      socket.username = data.name_structure.username
       const user = userPool.byMturkId(mturkId)
       user.connected = true
       user.assignmentId = assignmentId

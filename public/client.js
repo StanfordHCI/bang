@@ -113,6 +113,7 @@ $(function() {
 
   // Prompt for setting a username
   let username = ""
+  let name_structure = {}
   let connected = /*false*/ true; //PK: changed to true for testing, is this bool necessary?
   let typing = false;
   let lastTypingTime;
@@ -464,7 +465,7 @@ $(function() {
 
   // Socket events
   socket.on('connect', function(){
-    socket.emit('connected', { mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo)})
+    socket.emit('connected', { mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), name_structure: name_structure })
   })
   socket.on('reconnect', function(attemptNumber) {
     socket.emit('log', URLvars.workerId + ' RECONNECT SUCCESS (attempt ' + attemptNumber + ')')
@@ -539,6 +540,7 @@ $(function() {
 
   socket.on('set username', data => {
     username = data.username;
+    name_structure = data.name_structure
     holdingUsername.innerText = username
   })
 
