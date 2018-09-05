@@ -302,7 +302,6 @@ if (runExperimentNow && runningLive){
                         }
                     }
                     mturk.notifyWorkers(notifyList, subject, message)
-                    console.log("Notified", notifyList.length, "workers")
                   })
                 } else {
                   let workerstonotify = getRandomSubarray(timePoolNotifyList, maxWorkersToNotify)
