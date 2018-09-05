@@ -459,6 +459,8 @@ io.on('connection', (socket) => {
       user.assignmentId = assignmentId
       user.id = socket.id
       //console.log(users.byMturkId(mturkId))
+      mturk.setAssignmentsPending(getUsersConnected().length)
+
     }
     if(userPool.byMturkId(mturkId)) {
       console.log(('Reconnected ' + mturkId + ' in user pool').blue)
@@ -489,6 +491,8 @@ io.on('connection', (socket) => {
         console.log("no socket in accepted HIT")
         return;
       }
+      if(users.byMturkId(socket.mturkId)) return;
+        
       issueFinish(socket,runViaEmailOn ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
       return;
     }
@@ -498,7 +502,7 @@ io.on('connection', (socket) => {
       
       user.id = socket.id
       user.connected = true
-      user.turkSubmitTo = data.turkSubmitTo
+      //user.turkSubmitTo = data.turkSubmitTo
       user.assignmentId = data.assignmentId
     } else {
       userPool.push({
@@ -767,7 +771,7 @@ io.on('connection', (socket) => {
   // when the user disconnects.. perform this
   socket.on('disconnect', function(reason){
     // changes connected to false of disconnected user in userPool
-    console.log("Disconnecting socket: " + socket.id + " because " + reason)
+    console.log(("Disconnecting socket: " + socket.id + " because " + reason).red)
     if (userPool.find(function(element) {return element.mturkId == socket.mturkId})) {
       console.log('found ' + socket.mturkId + ' in user pool')
       userPool.byMturkId(socket.mturkId).connected = false;
