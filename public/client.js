@@ -7,6 +7,7 @@ $(function() {
   //toggles
   let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
 
+ 
   //globals for prechat
   let preChat = waitChatOn;
   let answered = false;
@@ -932,6 +933,7 @@ $(function() {
     HandleFinish(finishingMessage = data.message, mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
         assignmentId = mturkVariables.assignmentId, finishingcode = data.finishingCode);
     socket.disconnect(true);
+    LeavingAlert = false;
   })
 
   $('#mturk_form').submit( (event) => {
@@ -987,8 +989,12 @@ const decodeURL = (toDecode) => {
 }
 
 let LeavingAlert = true;
-if (LeavingAlert) {
-  window.onbeforeunload = function(){
-    return 'Are you sure you want to leave?';
-  };
+window.onbeforeunload = function(event){
+  if (LeavingAlert) {
+    console.log("Leaving is true")
+    return "Leaving will stop this HIT for  all users. Are you sure you want to leave?"
+  } else { 
+    console.log("Leaving is false")
+    return null
+  } 
 }
