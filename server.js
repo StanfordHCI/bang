@@ -21,6 +21,7 @@ const issueBonusesNow = true
 const notifyWorkersOn = true
 const runViaEmailOn = false
 const usingWillBang = true
+const aggressiveNotifyOn = true
 
 const cleanHITs = false
 const assignQualifications = true
@@ -82,6 +83,7 @@ server.listen(port, () => { console.log('Server listening at port', port) });
 
 Array.prototype.pick = function() { return this[Math.floor(Math.random() * this.length)] };
 Array.prototype.byID = function(id) { return this.find(user => user.id === id) };
+Array.prototype.byMturkId = function(mturkId) { return this.find(user => user.mturkId == mturkId) };
 Array.prototype.set = function() {
   const setArray = []
   this.forEach(element => { if (!setArray.includes(element)) { setArray.push(element) } })
@@ -89,7 +91,8 @@ Array.prototype.set = function() {
 };
 
 function useUser(u,f,err = "Guarded against undefined user") {
-  let user = users.byID(u.id)
+  //let user = users.byID(u.id)
+  let user = users.byMturkId(u.mturkId)
   if (typeof user != 'undefined' && typeof f === "function") {f(user)}
   else { 
     console.log(err.red,u.id,"\n",err.stack) 
@@ -178,8 +181,8 @@ db.ourHITs = new Datastore({ filename:'.data/ourHITs', autoload: true, timestamp
 db.willBang = new Datastore({ filename:'.data/willBang', autoload: true, timestampData: true});
 
 function updateUserInDB(user,field,value) {
-  db.users.update( {id: user.id}, {$set: {[field]: value}}, {},
-    err => console.log(err ? "Err recording ".red +field+": "+err : "Updated " + field + " for " + user.id + " " + JSON.stringify(value,null,2))
+  db.users.update( {mturkId: user.mturkId}, {$set: {[field]: value}}, {},
+    err => console.log(err ? "Err recording ".red +field+": "+err : "Updated " + field + " for " + user.mturkId + " " + JSON.stringify(value,null,2))
   )
 }
 
@@ -284,10 +287,10 @@ if (runExperimentNow && runningLive){
                 console.log("Time Pool Workers: " + currentTimePoolWorkers.length)
                 let timePoolNotifyList = currentTimePoolWorkers.map(u => u.id)
                 let moreworkersneeded = maxWorkersToNotify - currentTimePoolWorkers.length
-                if (moreworkersneeded > 0) { //if we don't have enough people with current time preference to notify
+                if (aggressiveNotifyOn ? true : moreworkersneeded > 0) { //if we don't have enough people with current time preference to notify
                   mturk.notifyWorkers(timePoolNotifyList, subject, message)
                   mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function(data) {
-                    let notifyList = getRandomSubarray(data, moreworkersneeded)
+                    let notifyList = getRandomSubarray(data, aggressiveNotifyOn ? maxWorkersToNotify : moreworkersneeded)
                     let i = notifyList.length
                     while (i--) {
                         if (timePoolNotifyList.includes(notifyList[i])) {
@@ -435,34 +438,95 @@ io.on('connection', (socket) => {
   const currentBonus = () => {
     mturk.updatePayment(getSecondsPassed() - workerStartTime)
   }
-
-  socket.on('get username', data => {
-    name_structure = tools.makeName();
+  
+  function createUsername () {
+    const name_structure = tools.makeName();
     socket.name_structure = name_structure;
     socket.username = name_structure.username;
     socket.emit('set username', {username: socket.username})
+  }
+
+  socket.on('connected', data => {
+    const mturkId = data.mturkId
+    const assignmentId = data.assignmentId
+    socket.mturkId = mturkId
+    socket.assignmentId = assignmentId
+    socket.join(mturkId)
+
+    if(users.byMturkId(mturkId)) {
+      console.log(('Reconnected ' + mturkId + ' in users').blue)
+      let user = users.byMturkId(mturkId)
+      user.connected = true
+      user.assignmentId = assignmentId
+      user.id = socket.id      
+      user.turkSubmitTo = data.turkSubmitTo
+
+      //console.log(users.byMturkId(mturkId))
+      mturk.setAssignmentsPending(getUsersConnected().length)
+
+    }
+    if(userPool.byMturkId(mturkId)) {
+      console.log(('Reconnected ' + mturkId + ' in user pool').blue)
+      const user = userPool.byMturkId(mturkId)
+      user.connected = true
+      user.assignmentId = assignmentId
+      user.id = socket.id
+      user.turkSubmitTo = data.turkSubmitTo
+
+      //console.log(userPool.byMturkId(mturkId))
+    } else {
+      createUsername()
+      console.log('NEW USER CONNECTED'.blue)
+    }
+    console.log(('SOCKET: ' + socket.id + ' | MTURK ID: ' + socket.mturkId + ' | NAME: ' + socket.username + '| ASSIGNMENT ID: ' + socket.assignmentId).blue)
   })
 
+  // socket.on('get username', data => {
+  //   let name_structure = tools.makeName();
+  //   socket.name_structure = name_structure;
+  //   socket.username = name_structure.username;
+  //   socket.emit('set username', {username: socket.username})
+  // })
+
   socket.on('accepted HIT', data => {
+    console.log('ACCEPTED HIT CALLED')
     if(!userAcquisitionStage) {
       //updateUserInDB(socket,'bonus',currentBonus())
       if (!socket) {
         console.log("no socket in accepted HIT")
         return;
       }
+      // if(users.byMturkId(socket.mturkId)) { // disconnect due to trans err/close
+      //   let user = users.byMturkId(socket.mturkId)
+      //   user.currentEvent -= 1
+      //   io.in(socket.mturkId).emit('echo', 'next event')
+      //   return;
+      // }
+        
       issueFinish(socket,runViaEmailOn ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
       return;
     }
-    userPool.push({
-      id: socket.id,
-      mturkId: data.mturkId,
-      turkSubmitTo: data.turkSubmitTo,
-      assignmentId: data.assignmentId,
-      connected: true,
-      active: waitChatOn ? false : true,
-      timeAdded: data.timeAdded,
-      timeLastActivity: data.timeAdded
-    });
+    if(userPool.byMturkId(data.mturkId)) { //if it's a reconnected user
+      let user = userPool.byMturkId(data.mturkId)
+      console.log(data.mturkId + ' REJOINED USER POOL (' + user.id + ' => ' + socket.id +')')
+      
+      user.id = socket.id
+      user.connected = true
+      user.turkSubmitTo = data.turkSubmitTo
+      user.assignmentId = data.assignmentId
+    } else {
+      userPool.push({
+        id: socket.id,
+        mturkId: data.mturkId,
+        turkSubmitTo: data.turkSubmitTo,
+        assignmentId: data.assignmentId,
+        connected: true,
+        active: waitChatOn ? false : true,
+        timeAdded: data.timeAdded,
+        timeLastActivity: data.timeAdded
+      });
+    }
+
     if(userPool.length == 1){//first user entered waitchat
       waitchatStart = data.timeAdded
     }
@@ -498,7 +562,7 @@ io.on('connection', (socket) => {
         if (!user.removed && (secondsSince(user.timeAdded) > weightedHoldingSeconds || secondsSince(user.timeLastActivity) > secondsToHold2)) {
           user.removed = true;
           console.log('removing user because of inactivity:', user.id);
-          io.in(user.id).emit('get IDs', 'broken');
+          io.in(user.mturkId).emit('get IDs', 'broken');
         }
       })
     }
@@ -516,14 +580,14 @@ io.on('connection', (socket) => {
         for(let i = 0; i < usersActive.length; i ++){ //for every active user
           let user = usersActive[i];
           if(i < numUsersWanted) { //take the 1st teamssize **2 users and add them
-            io.in(user.id).emit("echo", "add user");
-            io.in(user.id).emit('initiate experiment');
+            io.in(user.mturkId).emit("echo", "add user");
+            io.in(user.mturkId).emit('initiate experiment');
           } else { //else emit finish
             console.log('EMIT FINISH TO EXTRA ACTIVE WORKER')
             issueFinish(user, runViaEmailOn ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
           }
         }
-        userPool.filter(user => !usersActive.byID(user.id)).forEach(user => {//
+        userPool.filter(user => !usersActive.byMturkId(user.mturkId)).forEach(user => {//
           console.log('EMIT FINISH TO NONACTIVE OR DISCONNECTED WORKER')
           issueFinish(user, runViaEmailOn ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
         })
@@ -531,7 +595,7 @@ io.on('connection', (socket) => {
         if(secondsSince(waitchatStart) / 60 >= maxWaitChatMinutes) {
           console.log("Waitchat time limit reached".red)
           userAcquisitionStage = false
-          io.in(socket.id).emit('echo', 'kill-all')
+          io.in(socket.mturkId).emit('echo', 'kill-all')
         }
       }
     } else { // waitchat off
@@ -539,7 +603,7 @@ io.on('connection', (socket) => {
         io.sockets.emit('update number waiting', {num: 0});
         console.log('there are ' + usersActive.length + ' users: ' + usersActive)
         for(let i = 0; i < usersActive.length; i ++){
-          io.in(usersActive[i].id).emit('show chat link');
+          io.in(usersActive[i].mturkId).emit('show chat link');
         }
       } else {
         io.sockets.emit('update number waiting', {num: teamSize ** 2 - usersActive.length});
@@ -587,8 +651,8 @@ io.on('connection', (socket) => {
       issueFinish(socket, runViaEmailOn ? "We don't need you to work at this specific moment, but we may have tasks for you soon. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Hit the button below and you will be compensated appropriately for your time. Thank you!")//PK: come back to this
       return;
     }
-    if(users.byID(socket.id)) {console.log('ERR: ADDING A USER ALREADY IN USERS')}
-    let newUser = makeUser(userPool.byID(socket.id));
+    if(users.byMturkId(socket.mturkId)) {console.log('ERR: ADDING A USER ALREADY IN USERS')}
+    let newUser = makeUser(userPool.byMturkId(socket.mturkId));
     users.push(newUser)
     console.log(newUser.name + " (" + newUser.mturkId + ") added to users.\n" + "Total users: " + users.length)
     //add friends for each user once the correct number of users is reached
@@ -598,15 +662,15 @@ io.on('connection', (socket) => {
       console.log('MTURK IDS: ')
       users.forEach(user => { //mutate the friend list of each user
         user.friends = users.map(u => { //create the alias through which each user sees every other user
-          if (user.id != u.id) {
+          if (user.mturkId != u.mturkId) {
             return {
-              id: u.id,
+              mturkId: u.mturkId,
               alias: tools.makeName().username,
               tAlias:tools.makeName().username }
           }
           else {
             return {
-              id: u.id,
+              mturkId: u.mturkId,
               alias: u.name,
               tAlias: u.name }
           }
@@ -648,16 +712,16 @@ io.on('connection', (socket) => {
   })
 
   socket.on('update user pool', (data) => {
-    if(!userPool.byID(socket.id)) {
+    if(!userPool.byMturkId(socket.mturkId)) {
       console.log("***USER UNDEFINED*** in update user pool ..this would crash our thing but haha whatever")
       console.log('SOCKET ID: ' + socket.id)
       return;
     }//PK: quick fix
-    if(!userPool.byID(socket.id).connected) {
+    if(!userPool.byMturkId(socket.mturkId).connected) {
       console.log("block ***USER NOT CONNECTED*** in update user pool")
       return;
     }
-    userPool.byID(socket.id).timeLastActivity = data.time;
+    userPool.byMturkId(socket.mturkId).timeLastActivity = data.time;
     updateUserPool()
   });
 
@@ -690,8 +754,8 @@ io.on('connection', (socket) => {
       });
 
       users.filter(f => f.room == user.room).forEach(f => {
-        socket.broadcast.to(f.id).emit('new message', {
-          username: idToAlias(f, String(socket.id)),
+        socket.broadcast.to(f.mturkId).emit('new message', {
+          username: idToAlias(f, String(socket.mturkId)),
           message: idToAlias(f, cleanMessage)
         });
       });
@@ -711,30 +775,16 @@ io.on('connection', (socket) => {
   })
 
   socket.on('load bot qs', () => {
-    io.in(socket.id).emit('chatbot', loadQuestions(botFile))
+    io.in(socket.mturkId).emit('chatbot', loadQuestions(botFile))
   })
 
-  socket.on('reconnect', function(attemptNumber) {
-    console.log('RECONNECT SUCCESS (attempt ' + attemptNumber + '): ' + socket.id)
-  })
-
-  socket.on('reconnect_attempt', function(attemptNumber) {
-    console.log('RECONNECT ATTEMPT (attempt ' + attemptNumber + '): ' + socket.id)
-  })
-
-  socket.on('reconnect_error', function(error) {
-    console.log('RECONNECT ERROR (' + error + '): ' + socket.id)
-  })
-
-  socket.on('reconnect_failure', function() {
-    console.log('RECONNECT FAILURE: ' + socket.id)
-  })
   // when the user disconnects.. perform this
   socket.on('disconnect', function(reason){
     // changes connected to false of disconnected user in userPool
-    console.log("Disconnecting socket: " + socket.id + " because " + reason)
-    if (userPool.find(function(element) {return element.id == socket.id})) {
-      userPool.byID(socket.id).connected = false;
+    console.log(("Disconnecting socket: " + socket.id + " because " + reason).red)
+    if (userPool.find(function(element) {return element.mturkId == socket.mturkId})) {
+      console.log('found ' + socket.mturkId + ' in user pool')
+      userPool.byMturkId(socket.mturkId).connected = false;
       let usersActive = getPoolUsersActive()
       if(usersActive.length >= teamSize ** 2) {
         io.sockets.emit('update number waiting', {num: 0});
@@ -748,20 +798,8 @@ io.on('connection', (socket) => {
     // if (!users.every(user => socket.id !== user.id)) {//socket id is found in users
     //newMessage('has left the chatroom')
 
-    if (!users.find(function(element) {return element.id == socket.id})) return;
-    useUser(socket,user => {      
-      if(reason == 'ping timeout') { 
-        console.log('PING TIMEOUT NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
-        return;
-      }
-      // if(reason == 'transport error') { 
-      //   console.log('TRANSPORT ERROR NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
-      //   return;
-      // }
-      // if(reason == 'transport close') { 
-      //   console.log('TRANSPORT CLOSE NOT MARKING CONNECTED FALSE: '.red + user.name + ': ' + user.mturkId)
-      //   return;
-      // }
+    if (!users.find(function(element) {return element.mturkId == socket.mturkId})) return;
+    useUser(socket, user => {      
       user.connected = false
       user.ready = suddenDeath ? false : true
       notEnoughUsers = false
@@ -795,7 +833,7 @@ io.on('connection', (socket) => {
             })
           }
 
-          users.filter(u => u.id != socket.id).forEach((u) => {
+          users.filter(u => u.mturkId != socket.mturkId).forEach((u) => {
             let cancelMessage = "<strong>Someone left the task.</strong><br> <br> \
             Unfortunately, our group task requires a specific number of users to run, \
             so once a user leaves, our task cannot proceed. <br><br> \
@@ -821,7 +859,7 @@ io.on('connection', (socket) => {
 
   socket.on('ready-to-all', (data) => {
     console.log("god is ready".rainbow);
-    users.filter(user => !user.ready).forEach(user => io.in(user.id).emit('echo', 'ready'))
+    users.filter(user => !user.ready).forEach(user => io.in(socket.mturkId).emit('echo', 'ready'))
     //io.sockets.emit('echo','ready')
   })
 
@@ -884,7 +922,7 @@ io.on('connection', (socket) => {
       console.log ("Event " + currentEvent + ": " + eventSchedule[currentEvent] + " | User: " + user.name)
 
       if (eventSchedule[currentEvent] == "starterSurvey") {
-        io.in(user.id).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false, showHeaderBar: false});
+        io.in(socket.mturkId).emit("load", {element: 'starterSurvey', questions: loadQuestions(starterSurveyFile), interstitial: false, showHeaderBar: false});
         taskStartTime = getSecondsPassed();
       }
       else if (eventSchedule[currentEvent] == "ready") {
@@ -892,23 +930,23 @@ io.on('connection', (socket) => {
           recordTime("starterSurvey");
         }
         if (checkinOn) {
-          io.in(user.id).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true, showHeaderBar: true});
+          io.in(socket.mturkId).emit("load", {element: 'checkin', questions: loadQuestions(checkinFile), interstitial: true, showHeaderBar: true});
         }
-        io.in(user.id).emit("load", {element: 'leave-hit', questions: loadQuestions(leaveHitFile), interstitial: true, showHeaderBar: true})
-        io.in(user.id).emit("echo", "ready");
+        io.in(socket.mturkId).emit("load", {element: 'leave-hit', questions: loadQuestions(leaveHitFile), interstitial: true, showHeaderBar: true})
+        io.in(socket.mturkId).emit("echo", "ready");
 
       }
       else if (eventSchedule[currentEvent] == "midSurvey") {
         if(timeCheckOn) {
           recordTime("round");
         }
-        io.in(user.id).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false, showHeaderBar: true});
+        io.in(socket.mturkId).emit("load", {element: 'midSurvey', questions: loadQuestions(midSurveyFile), interstitial: false, showHeaderBar: true});
       }
        else if (eventSchedule[currentEvent] == "psychologicalSafety") {
         if(timeCheckOn) {
           recordTime("round");
         }
-        io.in(user.id).emit("load", {element: 'psychologicalSafety', questions: loadQuestions(psychologicalSafetyFile), interstitial: false, showHeaderBar: true});
+        io.in(socket.mturkId).emit("load", {element: 'psychologicalSafety', questions: loadQuestions(psychologicalSafetyFile), interstitial: false, showHeaderBar: true});
       }
       else if (eventSchedule[currentEvent] == "teamfeedbackSurvey") {
         if(midSurveyOn && timeCheckOn) {
@@ -916,7 +954,7 @@ io.on('connection', (socket) => {
         } else if(timeCheckOn) {
           recordTime("round");
         }
-        io.in(user.id).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile,user), interstitial: false, showHeaderBar: true});
+        io.in(socket.mturkId).emit("load", {element: 'teamfeedbackSurvey', questions: loadQuestions(feedbackFile,user), interstitial: false, showHeaderBar: true});
       }
       else if (eventSchedule[currentEvent] == "blacklistSurvey") {
         experimentOver = true
@@ -929,7 +967,7 @@ io.on('connection', (socket) => {
         } else if(psychologicalSafetyOn) {
           recordTime("psychologicalSafety")}
         console.log({element: 'blacklistSurvey', questions: loadQuestions(blacklistFile,user), interstitial: false, showHeaderBar: false})
-        io.in(user.id).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile,user), interstitial: false, showHeaderBar: false});
+        io.in(socket.mturkId).emit("load", {element: 'blacklistSurvey', questions: loadQuestions(blacklistFile,user), interstitial: false, showHeaderBar: false});
       }
       else if (eventSchedule[currentEvent] == "postSurvey") { //Launch post survey
         experimentOver = true
@@ -945,7 +983,7 @@ io.on('connection', (socket) => {
         let survey = postSurveyGenerator(user)
         user.results.manipulation = survey.correctAnswer
         updateUserInDB(user,'results.manipulation',user.results.manipulation)
-        io.in(user.id).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile,user), interstitial: false, showHeaderBar: false});
+        io.in(socket.mturkId).emit("load", {element: 'postSurvey', questions: loadQuestions(postSurveyFile,user), interstitial: false, showHeaderBar: false});
       }
       else if (eventSchedule[currentEvent] == "finished" || currentEvent > eventSchedule.length) {
         if(!batchCompleteUpdated) {
@@ -965,7 +1003,7 @@ io.on('connection', (socket) => {
         usersFinished += 1
         console.log(usersFinished, "users have finished.")
 
-        io.in(socket.id).emit('finished', {
+        io.in(socket.mturkId).emit('finished', {
           message: "Thanks for participating, you're all done!",
           finishingCode: socket.id,
           turkSubmitTo: mturk.submitTo,
@@ -1077,14 +1115,14 @@ io.on('connection', (socket) => {
         if (autocompleteTestOn) {
           let teamNames = [tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username, tools.makeName().username]
           console.log(teamNames)
-          io.in(u.id).emit('initiate round', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1, runningLive: runningLive})//rounds are 0 indexed
+          io.in(u.mturkId).emit('initiate round', {task: taskText, team: teamNames, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1, runningLive: runningLive})//rounds are 0 indexed
         } else {
           // Dynamically generate teammate names
           // even if teamSize = 1 for testing, this still works
           // users.forEach(u => {
           //   console.log(u.id, u.room)
           // })
-          let teamMates = u.friends.filter(friend => { return (users.byID(friend.id)) && users.byID(friend.id).connected && (users.byID(friend.id).room == u.room) && (friend.id !== u.id)});
+          let teamMates = u.friends.filter(friend => { return (users.byMturkId(friend.mturkId)) && users.byMturkId(friend.mturkId).connected && (users.byMturkId(friend.mturkId).room == u.room) && (friend.mturkId !== u.mturkId)});
           // console.log(teamMates)
           let team_Aliases = tools.makeName(teamMates.length, u.friends_history)
           user.friends_history = u.friends_history.concat(team_Aliases)
@@ -1106,7 +1144,7 @@ io.on('connection', (socket) => {
           team_Aliases.push(u.name) //now push user for autocomplete
           //let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
           // io.in(user.id).emit('initiate round', {task: taskText, team: user.friends.filter(friend => { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow ? friend.tAlias : friend.alias }), duration: roundMinutes })
-          io.in(u.id).emit('initiate round', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//round 0 indexed
+          io.in(u.mturkId).emit('initiate round', {task: taskText, team: team_Aliases, duration: roundMinutes, randomAnimal: tools.randomAnimal, round: currentRound + 1})//round 0 indexed
         }
       })
 
@@ -1120,12 +1158,12 @@ io.on('connection', (socket) => {
       // make timers run in serial
       setTimeout(() => {
         console.log('time warning', currentRound);
-        users.forEach(user => { io.in(user.id).emit('timer', {time: roundMinutes * .1}) });
+        users.forEach(user => { io.in(user.mturkId).emit('timer', {time: roundMinutes * .1}) });
 
         //Done with round
         setTimeout(() => {
           console.log('done with round', currentRound);
-          users.forEach(user => { io.in(user.id).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
+          users.forEach(user => { io.in(user.mturkId).emit('stop', {round: currentRound, survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn) }) });
           currentRound += 1 // guard to only do this when a round is actually done.
           console.log(currentRound, "out of", numRounds)
         }, 1000 * 60 * 0.2 * roundMinutes)
@@ -1254,9 +1292,9 @@ io.on('connection', (socket) => {
       console.log("Undefined user in issueFinish")
       return;
     }
-    console.log('ISSUE FINISH CALLED ON: ' + socket.id)
+    console.log(('Issued finish to ' + socket.mturkId).red)
 
-    io.in(socket.id).emit('finished', {
+    io.in(socket.mturkId).emit('finished', {
       message: message,
       finishingCode: finishingCode,
       crashed: false
@@ -1277,7 +1315,7 @@ function aliasToID(user, newString) {
   user.friends.forEach(friend => {
     let currentAlias = treatmentNow ? friend.tAlias : friend.alias
     let aliasRegEx = new RegExp(currentAlias, 'g');
-    newString = newString.replace(aliasRegEx, friend.id)
+    newString = newString.replace(aliasRegEx, friend.mturkId)
   });
   return newString
 }
@@ -1285,7 +1323,7 @@ function aliasToID(user, newString) {
 //replaces other users IDs with user.friend alieses in string
 function idToAlias(user, newString) {
   user.friends.forEach(friend => {
-    let idRegEx = new RegExp(friend.id, 'g');
+    let idRegEx = new RegExp(friend.mturkId, 'g');
     let currentAlias = treatmentNow ? friend.tAlias : friend.alias
     newString = newString.replace(idRegEx, currentAlias)
   });
@@ -1333,7 +1371,7 @@ const getTeamMembers = (user) => {
 
   // Makes a human friendly string for each team with things like 'you' for the current user, commas and 'and' before the last name.
   const answers = roomTeams.map((team, tIndex) => team.reduce((total, current, pIndex, pArr)=>{
-    const friend = user.friends.find(friend => friend.id == current.id)
+    const friend = user.friends.find(friend => friend.mturkId == current.mturkId)
     let name = ((experimentRound == tIndex && currentCondition == "treatment") ? friend.tAlias : friend.alias)
     if (name == user.name) {name = "you"}
     return name + (pIndex == 0 ? "" : ((pIndex + 1) == pArr.length ? " and " : ", ")) + total

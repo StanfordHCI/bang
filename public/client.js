@@ -124,7 +124,7 @@ $(function() {
     mturkVariables = { mturkId: URLvars.workerId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo), assignmentId: URLvars.assignmentId, timeAdded: (new Date()).getTime()}
     socket.emit('accepted HIT', mturkVariables); //PK: thoughts on setting waitchat toggle in client and sending it to server in this emit?
     if(waitChatOn){
-      socket.emit('get username')
+      //socket.emit('get username')
       hideAll();
       $chatPage.show()
       $headerbarPage.show()
@@ -330,7 +330,7 @@ $(function() {
     event.preventDefault()
     hideAll();
     $holdingPage.show();
-    socket.emit('get username')
+    //socket.emit('get username')
     socket.emit('add user');
     socket.emit('next event')
   })
@@ -439,6 +439,24 @@ $(function() {
   });
 
   // Socket events
+  socket.on('connect', function(){
+    socket.emit('connected', { mturkId: URLvars.workerId, assignmentId: URLvars.assignmentId, turkSubmitTo: decodeURL(URLvars.turkSubmitTo)})
+  })
+  socket.on('reconnect', function(attemptNumber) {
+    socket.emit('log', URLvars.workerId + ' RECONNECT SUCCESS (attempt ' + attemptNumber + ')')
+  })
+
+  socket.on('reconnect_attempt', function(attemptNumber) {
+    socket.emit('log', URLvars.workerId + ' RECONNECT ATTEMPT ' + attemptNumber)
+  })
+
+  socket.on('reconnect_error', function(error) {
+    socket.emit('log', URLvars.workerId + ' RECONNECT ' + error) 
+  })
+
+  socket.on('reconnect_failure', function() {
+    socket.emit('log', URLvars.workerId + ' RECONNECT FAILURE')
+  })
   socket.on('chatbot', data => {
     const questions = data
     const questionIndex = permute(questions.length - 1).concat([questions.length])
