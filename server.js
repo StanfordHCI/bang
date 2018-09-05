@@ -593,6 +593,7 @@ io.on('connection', (socket) => {
         hasAddedUsers = true;
         for(let i = 0; i < usersActive.length; i ++){ //for every active user
           let user = usersActive[i];
+          console.log('active user ' + (i + 1) + ': ' + user.name)
           if(i < numUsersWanted) { //take the 1st teamssize **2 users and add them
             io.in(user.mturkId).emit("echo", "add user");
             io.in(user.mturkId).emit('initiate experiment');
@@ -672,7 +673,7 @@ io.on('connection', (socket) => {
     users.push(newUser)
     console.log(newUser.name + " (" + newUser.mturkId + ") added to users.\n" + "Total users: " + users.length)
     //add friends for each user once the correct number of users is reached
-    numUsersRequired = extraRoundOn ? teamSize ** 2 + teamSize : teamSize ** 2
+    let numUsersRequired = extraRoundOn ? teamSize ** 2 + teamSize : teamSize ** 2
     if(users.length === numUsersRequired){ // if the last user was just added
       console.log("USER POOL:\n" + userPool.map(u => u.mturkID))
       console.log('MTURK IDS: ')
