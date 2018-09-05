@@ -491,7 +491,12 @@ io.on('connection', (socket) => {
         console.log("no socket in accepted HIT")
         return;
       }
-      if(users.byMturkId(socket.mturkId)) return;
+      // if(users.byMturkId(socket.mturkId)) { // disconnect due to trans err/close
+      //   let user = users.byMturkId(socket.mturkId)
+      //   user.currentEvent -= 1
+      //   io.in(socket.mturkId).emit('echo', 'next event')
+      //   return;
+      // }
         
       issueFinish(socket,runViaEmailOn ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
       return;
@@ -1282,7 +1287,7 @@ io.on('connection', (socket) => {
       console.log("Undefined user in issueFinish")
       return;
     }
-    console.log('ISSUE FINISH CALLED ON: ' + socket.id)
+    console.log(('Issued finish to ' + socket.mturkId).red)
 
     io.in(socket.mturkId).emit('finished', {
       message: message,
