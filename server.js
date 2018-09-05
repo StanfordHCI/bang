@@ -346,6 +346,7 @@ let waitchatStart = 0
 let currentRound = 0 //PK: talk about 0-indexed v 1-indexed round numbers (note: if change -> change parts of code reliant on 0-indexed round num)
 let startTime = 0
 let userAcquisitionStage = true
+let experimentOver = false
 let usersFinished = 0
 
 // keeping track of time
@@ -443,7 +444,6 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
 io.on('connection', (socket) => {
   //PK: what are these bools for?
   let experimentStarted = false //NOTE: this will be set multiple times but I don't think that's what is wanted in this case
-  let experimentOver = false
 
   const workerStartTime = getSecondsPassed();
   const currentBonus = () => {
@@ -800,7 +800,6 @@ io.on('connection', (socket) => {
     // changes connected to false of disconnected user in userPool
     console.log(("Disconnecting socket: " + socket.id + " because " + reason).red)
     if (userPool.find(function(element) {return element.mturkId == socket.mturkId})) {
-      console.log('found ' + socket.mturkId + ' in user pool')
       userPool.byMturkId(socket.mturkId).connected = false;
       let usersActive = getPoolUsersActive()
       if(usersActive.length >= teamSize ** 2) {
@@ -808,8 +807,10 @@ io.on('connection', (socket) => {
       } else {
         io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersActive.length});
       }
-
-      mturk.setAssignmentsPending(getPoolUsersConnected().length)
+      if(userAcquisitionStage)
+        mturk.setAssignmentsPending(getPoolUsersConnected().length)
+      else
+        mturk.setAssignmentsPending(getUsersConnected().length)
     }
 
     // if (!users.every(user => socket.id !== user.id)) {//socket id is found in users
