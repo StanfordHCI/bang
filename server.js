@@ -9,7 +9,7 @@ const roundMinutes = parseFloat(process.env.ROUND_MINUTES)
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
-const secondsToWait = 10 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
+const secondsToWait = 20 //number of seconds users must have been on pretask to meet qualification (e.g. 120)
 const secondsSinceResponse = 59 //number of seconds since last message users sent to meet pretask qualification (e.g. 20)
 const secondsToHold1 = 1200 //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
 const secondsToHold2 = 200 //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
