@@ -42,9 +42,15 @@ extractSurvey = function(frame,survey) {
     surveyFrame$rooms = frame$rooms
     surveyFrame$manipulation = frame$results.manipulationCheck
     surveyFrame$blacklist = frame$results.blacklistCheck
+    # surveyFrame$results.qFifteenCheck.1 = frame$results.qFifteenCheck.1
+    # surveyFrame$results.qFifteenCheck.2 = frame$results.qFifteenCheck.2
+    # surveyFrame$results.qFifteenCheck.3 = frame$results.qFifteenCheck.3
+    # surveyFrame$results.qSixteenCheck.1 = frame$results.qSixteenCheck.1
+    # surveyFrame$results.qSixteenCheck.2 = frame$results.qSixteenCheck.2
+    # surveyFrame$results.qSixteenCheck.3 = frame$results.qSixteenCheck.3
     return(surveyFrame)
   })
-  return(Reduce(rbind,roundResponses))
+  return(Reduce(rbind, roundResponses))
 }
 #Find directory for import (be sure to verify that batch #s align from bangData import and imports below): 
 batches = dir(dataPath, pattern = "^[0-9]+$" )
@@ -68,9 +74,13 @@ roundsWithRooms = apply(overlappingFiles,1,function(x) {
     x$round = y
     return(x)
   })
-  return(Reduce(rbind,roomsForIndividual))
+  return(Reduce(rbind, roomsForIndividual))
 })
 library(tidyverse)
+
+## To filter the right batch numbers, add the first batch number for our runs (i.e. batch >= "first batch #") 
+
+## overlappingFiles <- overlappingFiles %>% filter(batch=="1536132233074")
 
 ```
 
@@ -78,7 +88,7 @@ library(tidyverse)
 ```{r}
 ## Apply extract survey function to extract the right columns and rows for viability survey: 
 survey = 'viabilityCheck'
-frame <- extractSurvey(overlappingFiles, survey)
+frame <- extractSurvey(overlappingFiles, survey) 
 ## Reduce to vertically combine rows in roundwithRooms list:  
 finalRounds = as.data.frame(Reduce(rbind,roundsWithRooms))
 ## Subset incomplete cases from viability survey dataframe, use manipulation check b/c required for complete observation: 
@@ -126,14 +136,11 @@ data <- data %>% mutate(
     results.condition=='control' & results.format=="c(2, 1, 1)" & round==1 ~ "B", 
     results.condition=='control' & results.format=="c(2, 1, 1)" & round==2 ~ "A", 
     results.condition=='control' & results.format=="c(2, 1, 1)" & round==3 ~ "Ap" , 
-    results.condition=='baseline' & results.format=="c(1, 2, 3)" & round==1 ~ "A" ,
-    results.condition=='baseline' & results.format=="c(1, 2, 3)" & round==2 ~ "B" ,
-    results.condition=='baseline' & results.format=="c(1, 2, 3)" & round==3 ~ "C" 
+    results.condition=='baseline' & results.format=="1:3" & round==1 ~ "A" ,
+    results.condition=='baseline' & results.format=="1:3" & round==2 ~ "B" ,
+    results.condition=='baseline' & results.format=="1:3" & round==3 ~ "C" 
   )) 
 
-## Make artifical baseline groups: 
-
-data$results.condition[(data$results.format=="c(1, 1, 2)" | data$results.format=="c(2, 1, 1)") & (data$round=="1" | data$round=="3")]  <- "baseline"
 
 ```
 
@@ -163,15 +170,18 @@ stats$results.format <- as.character(stats$results.format)
 stats$room <- unlist(stats$room)
 ## Dplyr to group teams and summarise variables for each group: group_by to find teams and summarise to compact individual results into group level results (i.e. one row of variable results per team)
 groupedProportion <- stats %>%
-  group_by(room, batch, round, condition, results.condition, results.format) %>% 
-  summarise(n=n(), mean=mean(sum), median=median(sum),prop=sum(repeatTeam)/n) %>% 
+  group_by(room, batch, round, condition, results.condition, results.format) %>%  ## to-do: add group ID in storage db. 
+  summarise(n=n(), mean=mean(sum), median=median(sum),prop=sum(repeatTeam)/n, groupID=runif(1,0,2)) %>% 
 ## Filter out all teams with n=1 (i.e. a person in a one person team) 
-  filter(n>1)
+  filter(n==2)
+
 ## Individual proportion: 
 individualProportion <- stats %>% group_by(round, batch, room) %>% 
-  mutate(sum=sum, mean=mean(sum), median=median(sum), n=n(),prop=sum(repeatTeam)/n) %>% filter(n>1)
+  mutate(sum=sum, mean=mean(sum), median=median(sum), n=n(),prop=sum(repeatTeam)/n) %>% 
+  filter(n>1)
+
 ## Table showing how many teams we've run in each condition combination:  
-table(groupedProportion$condition, groupedProportion$results.condition)
+## print(table(groupedProportion$condition, groupedProportion$results.condition)) 
 ```
 
 ## Probability of fracture across teams and condition combinations: 
@@ -182,13 +192,23 @@ groupedProportionFracture <- groupedProportion %>%
   mutate(fracture = case_when (prop<.50 ~ "0", 
                                 prop>=.50~ "1")) 
 
-## Baseline: 
-groupedProportionFractureBaseline <- 
-  groupedProportionFracture %>% 
-filter(results.condition=="baseline")
-baselineFracture1 <- groupedProportionFractureBaseline %>% filter(condition=="A")
-baselineFracture2 <- groupedProportionFractureBaseline %>% filter(condition=="B")
-baselineFracture <- cbind(baselineFracture1, baselineFracture2)
+## Baseline: (we probably won't need this since we are artificially making baseline conditions)
+# groupedProportionFractureBaseline <- 
+#   groupedProportionFracture %>% 
+# filter(results.condition=="baseline") %>% 
+#   filter(id %in% condition=="A" & condition=="C")
+# baselineFracture1 <- groupedProportionFractureBaseline %>% filter(condition=="A")
+# baselineFracture2 <- groupedProportionFractureBaseline %>% filter(condition=="C")
+
+# TO-DO: check if this is right--seems off
+
+groupedProportionFractureBaseline <- groupedProportionFracture %>% filter(results.format=="c(1, 1, 2)" | results.format=="c(2, 1, 1)") %>% filter(round=="1" | round=="3") 
+# baselineFracture1 <- groupedProportionFractureBaseline %>% filter(round=="1")
+# baselineFracture2 <- groupedProportionFractureBaseline %>% filter(round=="3")
+# baselineFracture1$fracture15 <- baselineFracture1$fracture
+# baselineFracture2$test2 <- baselineFracture2$fracture
+# ## Below only combines if teams are in both round 1 & 3 together: 
+# baselineFracture <- left_join(baselineFracture1, baselineFracture2, by=NULL, drop=TRUE)
 
 ## Treatment: 
 groupedProportionFractureTreatment <- groupedProportionFracture %>% 
@@ -214,7 +234,6 @@ individualProportion$results.condition = unlist(individualProportion$results.con
 cleanManipulation <- individualProportion[with(individualProportion, grepl(teamPatterns, manipulationAnswers) & grepl(teamPatterns, manipulationAnswerKey)),]
 ## Transform into compatiable form: 
 cleanManipulation$manipulationAnswers = unlist(cleanManipulation$manipulationAnswers)
- 
 ```
 
 ## Section #1: Does fracture have continuity with prior measures?
@@ -228,6 +247,7 @@ treatmentManipulation <- cleanManipulation %>% group_by(id, results.condition, m
 treatmentManipulation$correctAnswers <- sum(ifelse(treatmentManipulation$manipulationAnswers==treatmentManipulation$manipulationAnswerKey,1,0))
 ## Calculate percent of correct manipulation answers for treatment: 
 treatmentManipulation <- treatmentManipulation %>% mutate(percentCorrect = (correctAnswers/(nrow(treatmentManipulation))))
+print(treatmentManipulation)
 
 ## Control manipulation: 
 controlManipulation <- cleanManipulation %>% group_by(id, results.condition, manipulationAnswers, manipulationAnswerKey) %>% filter(results.condition=="control") %>% 
@@ -236,22 +256,23 @@ controlManipulation <- cleanManipulation %>% group_by(id, results.condition, man
 controlManipulation$correctAnswers <- sum(ifelse(controlManipulation$manipulationAnswers==controlManipulation$manipulationAnswerKey,1,0))
 ## Calculate percent of correct manipulation answers for control: 
 controlManipulation <- controlManipulation %>% mutate(percentCorrect = (correctAnswers/(nrow(controlManipulation))))
-
+print(controlManipulation)
 ## Proportion test comparing treatment manipulation percent correct with chance: 
 ```
 
 ## 1B: Proportion test comparing treatment manipulation percent correct with chance: 
 ```{r}
-## ⅓ ~ 33% = chance, ~43 = treatment 
+## ⅓ ~ 33% = chance, ~43 = treatment (FILL-IN EACH TIME YOU RUN WITH NEW DATA!)
 
 propManipulation <- prop.test(x = c(33, 43), n = c(100, 100))
+print(propManipulation)
 ```
 
 ## 1C: Logistic regression predicting binary fracture outcome from viability scales: 
 ```{r}
 ## Split data into 60% training and 40% testing data sets to test how well the model performs 
 set.seed(123)
-groupedProportionFracture$fractureGreater50 <- as.numeric(groupedProportionFracture$fractureGreater50) 
+groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture) 
 sample <- sample(c(TRUE, FALSE), nrow(groupedProportionFracture), replace = T, prob = c(0.6,0.4))
 train <- groupedProportionFracture[sample, ]
 test <- groupedProportionFracture[!sample, ]
@@ -259,7 +280,7 @@ test <- groupedProportionFracture[!sample, ]
 ## Simple logistic regression: we will fit a logistic regression model in order to predict 
 ## the probability of fracture based on a team's average viability sum: 
 
-model1 <- glm(fractureGreater50 ~ mean, family = "binomial", data = train)
+model1 <- glm(fracture ~ mean, family = "binomial", data = train)
 summary(model1)
 
 ## To assess the linear regression deviance, look at deviance in summary output, if 
@@ -276,9 +297,9 @@ tidy(model1)
 confint(model1)
 
 ## Making predictions: 
-## What is the probability of fracture given the following team mean viability scores: 40 and 65: 
+## What is the probability of fracture given the following team mean viability scores: for example purposes: 40 and 65: 
 
-predict(model1, data.frame(mean = c(40, 65)), type = "response")
+predict(model1, data.frame(mean = c(50, 65)), type = "response")
 
 ## From the output, we can see that the probability of fracture decreases by ~40% when mean viability sum increases from 40 to 65. 
 
@@ -309,22 +330,26 @@ table(test$mean, test.predicted.m1 > 0.5)
 ## 1D: Graph of fracture/no fracture vs. mean/stdev viability scale
 ```{r}
 ## Overall: 
-g <- ggplot(groupedProportionFracture, aes(factor(fractureGreaterEqual50), mean)) 
+g <- ggplot(groupedProportionFracture, aes(factor(fracture), mean)) 
 g + geom_boxplot(varwidth=T, fill="plum") + 
-  labs(subtitle="Team fracture value vs. mean viability score: fracture >=0.50", 
+  labs(subtitle="Team fracture value vs. mean viability score: fracture >=0.50 across all conditions (n=2)", 
        x="",
        y="Numeric sum of viability measures questions (range: 7-70)") 
 
 ## By condition + format: 
-g <- ggplot(groupedProportionFracture, aes(factor(fractureGreaterEqual50), mean)) 
+g <- ggplot(groupedProportionFracture, aes(factor(fracture), mean)) 
 g + geom_boxplot(varwidth=T, fill="plum") + 
-  labs(subtitle="Team fracture value vs. mean viability score: fracture >=0.50", 
+  labs(subtitle="Team fracture value vs. mean viability score: fracture >=0.50 (n=2)", 
        x="",
-       y="Numeric sum of viability measures questions (range: 7-70)") + facet_grid(condition ~ results.format)
+       y="Numeric sum of viability measures questions (range: 7-70)") + facet_grid(condition ~ results.condition) 
 
-ggplot(data=groupedProportionFracture, aes(fractureGreaterEqual50, mean)) + 
+ggplot(data=groupedProportionFracture, aes(fracture, mean)) + 
    geom_point() +
-  stat_smooth(method = "lm", col = "red") + labs(main="Scatterplot of fracture value vs. mean for team viability sums")
+  stat_smooth(method = "lm", col = "red") + labs(main="Scatterplot of fracture value vs. mean for team viability sums across all conditions (n=2)") +  facet_grid(condition ~ results.condition) 
+
+ggplot(data=groupedProportionFracture, aes(fracture, mean)) + 
+   geom_point() +
+  stat_smooth(method = "lm", col = "red") + labs(main="Scatterplot of fracture value vs. mean for team viability sums (n=2)") +  facet_grid(condition ~ results.condition) 
 ```
 
 ## Section #2: How often does fracture occur?
@@ -337,68 +362,67 @@ ggplot(data=groupedProportion, aes(groupedProportion$prop)) +
                  col="red", 
                  fill="green", 
                  alpha=.2) + labs(title="Frequency of team fracture proportions by condition and pattern sequence", 
-                                  x="team fracture proportion", y="Count") + facet_grid(results.condition ~ results.format) 
+                                  x="team fracture proportion", y="Count") + facet_grid(results.condition ~ .) 
 
-## Overall fracture rate: 
+library(MASS)     
 
+## Test if whether fracture smoking habit is independent of condition at .05 significance level: 
+
+chi = table(groupedProportionFracture$fracture, groupedProportionFracture$results.condition)  
+chi
+print(chisq.test(chi)) 
 ```
 
 ## 2B: What's the overall % of fracturing the second time? (by condition)
 ```{r}
 ## Filtering second time only: 
-groupedProportionFracture$fractureGreaterEqual50 <- as.numeric(groupedProportionFracture$fractureGreaterEqual50)
+groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture)
+
+## TO-DO: review below code, worried it's incorrect: 
 
 groupedProportionFractureSecond <- groupedProportionFracture %>% group_by(results.condition) %>% 
       filter(condition=="Ap") %>% 
-      mutate(overallPercent = sum(fractureGreaterEqual50)/nrow(groupedProportionFracture)) %>% 
-      summarise(n=n(), overallPercent=unique(overallPercent)) 
+      mutate(overallPercent = sum(as.numeric(fracture))) %>% 
+      summarise(n=n(), overallPercent=unique(overallPercent)/n) 
+print(groupedProportionFractureSecond)
+
+## For baseline theoretical distribution: (to-do: look over this, worried also that it's wrong)
+
+groupedProportionFractureSecondBase <- groupedProportionFractureBaseline %>% 
+      filter(round=="3") %>% 
+      summarise(n=n(), overallPercent=sum(as.numeric(fracture))/n) 
+print(mean(groupedProportionFractureSecondBase$overallPercent))
 
 ## Set-up separate groups for proportion tests to answer: does unmasked fracture more/less than masked 
 ## and more/less than new pairs? 
 
 ## Control: 
-groupedProportionFractureControl <- groupedProportionFracture %>% 
-  filter(results.condition=="control") 
-controlFracture1 <- groupedProportionFractureControl %>% filter(condition=="A")
-controlFracture2 <- groupedProportionFractureControl %>% filter(condition=="Ap")
-controlFracture <- cbind(controlFracture1, controlFracture2)
 
-## Baseline: 
-groupedProportionFractureBaseline <- groupedProportionFracture %>% 
-filter(results.condition=="baseline")
-treatmentFracture1 <- groupedProportionFractureBaseline %>% filter(condition=="A")
-treatmentFracture2 <- groupedProportionFractureBaseline %>% filter(condition=="Ap")
-treatmentFracture <- cbind(treatmentFracture1, treatmentFracture2)
+## Proportion tests for each (TO-DO, figure out argument stuff: this doesn't seem like the right test to run for the question we're asking?) also, fill-this in every time you get new data: 
 
-## Treatment: 
-groupedProportionFractureTreatment <- groupedProportionFracture %>% 
-filter(results.condition=="treatment")
-treatmentFracture1 <- groupedProportionFractureTreatment %>% filter(condition=="A")
-treatmentFracture2 <- groupedProportionFractureTreatment %>% filter(condition=="Ap")
-treatmentFracture <- cbind(treatmentFracture1, treatmentFracture2)
 
-## Proportion tests for each: 
+## Is the proportion of fracture in the second round significantly different in the two conditions (i.e. treatment + baseline) 
+treatmentvsBaselineChange <- c(48, 49)
+propFractureChangeTreatmentvsBase <- prop.test(x = c(treatmentvsBaselineChange), n = c(100, 100))
+print(propFractureChangeTreatmentvsBase) 
 
-propFractureChangeTreatment <- prop.test(x = c(), n = c(100, 100))
-
-propFractureChangeControl <- prop.test(x = c(), n = c(100, 100))
-
-propFractureChangeBaseline <- prop.test(x = c(), n = c(100, 100))
-
+## Is the proportion of fracture in the second round significantly different in the two conditions (i.e. control + baseline) 
+controlvsBaselineChange <- c(40, 49)
+propFractureChangeControlvsBase <- prop.test(x = c(controlvsBaselineChange), n = c(100, 100))
+print(propFractureChangeControlvsBase)
 ```
 ## Section 3: How consistent is fracture? 
 
 ## 3A: calculating the conditional probabilities of fracture for each condition: 
 ```{r}
 conditionalProbTreatment <- groupedProportionFractureTreatment %>% filter(condition=="A" | condition=="Ap")
-tally(~fractureGreaterEqual50 | condition, data = conditionalProbTreatment, format = "proportion")
+tally(~fracture | condition, data = conditionalProbTreatment, format = "proportion")
 
 conditionalProbControl <- groupedProportionFractureControl %>% filter(condition=="A" | condition=="Ap")
-tally(~fractureGreaterEqual50 | condition, data = conditionalProbControl, format = "proportion")
+tally(~fracture | condition, data = conditionalProbControl, format = "proportion")
 
-conditionalProbBaseline - groupedProportionFractureBaseline %>% filter(condition=="A" | condition=="Ap")
-tally(~fractureGreaterEqual50 | condition, data = conditionalProbControl, format = "proportion")
-
+conditionalProbBaseline <- groupedProportionFractureBaseline  %>% filter(condition=="A" | condition=="C")
+tally(~fracture | condition, data = conditionalProbBaseline, format = "proportion")
 
 ## If fractured the first time, what's the % of fracturing the second time? look at 1 and Ap combination for % in second time: 
 
@@ -409,34 +433,54 @@ tally(~fractureGreaterEqual50 | condition, data = conditionalProbControl, format
 
 ```{r}
 ## Convert format before merge: *this can be simplified*: 
-treatmentFracture2$fractureGreaterEqual50 <- as.numeric(treatmentFracture2$fractureGreaterEqual50) 
-treatmentFracture1$fractureGreaterEqual50 <- as.numeric(treatmentFracture1$fractureGreaterEqual50) 
-treatmentFracture$absEqualGreater50 <- abs(treatmentFracture2$fractureGreaterEqual50-treatmentFracture1$fractureGreaterEqual50)
 
-controlFracture1$fractureGreaterEqual50 <- as.numeric(controlFracture1$fractureGreaterEqual50)
-controlFracture$fractureGreaterEqual50 <- as.numeric(controlFracture$fractureGreaterEqual50)
-controlFracture$absGreaterEqual50 <- abs(controlFracture$fractureGreaterEqual50-controlFracture1$fractureGreaterEqual50)
+treatmentFracture2$fracture <- as.numeric(treatmentFracture2$fracture) 
+treatmentFracture1$fracture <- as.numeric(treatmentFracture1$fracture) 
+treatmentFracture$absFracture <- abs(treatmentFracture2$fracture-treatmentFracture1$fracture)
 
-baselineFracture2$fractureGreaterEqual50 <- as.numeric(baselineFracture2$fractureGreaterEqual50) 
-baselineFracture1$fractureGreaterEqual50 <- as.numeric(baselineFracture1$fractureGreaterEqual50) 
-baselineFracture$absEqualGreater50 <- abs(treatmentFracture2$baselineGreaterEqual50-baselineFracture1$fractureGreaterEqual50)
+controlFracture1$fracture <- as.numeric(controlFracture1$fracture)
+controlFracture2$fracture <- as.numeric(controlFracture2$fracture)
+controlFracture$absFracture <- abs(controlFracture2$fracture-controlFracture1$fracture)
 
-treatmentFractureEqualGreaterAbsSum <- sum(treatmentFracture$absEqualGreater50) 
-controlFractureEqualGreaterAbsSum <- sum(controlFracture$absGreaterEqual50)
-baselineFractureEqualGreaterAbsSum <- sum(baselineFractureEqualGreaterAbsSum) 
+baselineFracture$fracture1 <- as.numeric(baselineFracture$fracture1) 
+baselineFracture$fracture2 <- as.numeric(baselineFracture$fracture2) 
+baselineFracture$absFracture <- abs(baselineFracture$fracture1-baselineFracture$fracture2)
 
-treatmentAbsChange=c() 
-controlAbsChange=c()
-baselineAbsChange=c()
+## Results here seem fishy? Triple check my code for abs/sum? 
 
-## Using baseline as theoretical distribution 
+treatmentFractureAbsSum <- sum(treatmentFracture$absFracture) 
+print(treatmentFractureAbsSum)
+controlFractureAbsSum <- sum(controlFracture$absFracture)
+print(controlFractureAbsSum)
+## baselineFractureAbsSum <- sum(baselineFracture$absFracture) 
+
+
+## Don't we want a proportion test here before adding / trying chi-squared? 
+
+treatmentAbsChange=c(15) 
+controlAbsChange=c(1)
+
+## Using baseline as theoretical probability distribution 
 ## Treatment: 
 chisq.test(treatmentAbsChange,p=baselineAbsChange)
 
-## Control: 
+## Control:
 chisq.test(controlAbsChange,p=baselineAbsChange)
 ```
 
+## Visualizing change: 
+
+```{r}
+## Visualize differences: 
+
+dat <- data.frame(changesPerCondition= factor(c("Sum of absolute fracture change in treatment >=.50","Sum of absolute fracture change in control >=.50"), levels=c("Sum of absolute fracture change in treatment >=.50","Sum of absolute fracture change in control >=.50")),
+                  fractureValueSwitch = c(15, 1))
+
+p <- ggplot(data=dat, aes(x=changesPerCondition, y=fractureValueSwitch)) +
+  geom_bar(stat="identity")
+p <- ggplotly(p)
+p
+```
 
 
 
