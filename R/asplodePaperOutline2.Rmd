@@ -41,12 +41,6 @@ extractSurvey = function(frame,survey) {
     surveyFrame$rooms = frame$rooms
     surveyFrame$manipulation = frame$results.manipulationCheck
     surveyFrame$blacklist = frame$results.blacklistCheck
-    # surveyFrame$results.qFifteenCheck.1 = frame$results.qFifteenCheck.1
-    # surveyFrame$results.qFifteenCheck.2 = frame$results.qFifteenCheck.2
-    # surveyFrame$results.qFifteenCheck.3 = frame$results.qFifteenCheck.3
-    # surveyFrame$results.qSixteenCheck.1 = frame$results.qSixteenCheck.1
-    # surveyFrame$results.qSixteenCheck.2 = frame$results.qSixteenCheck.2
-    # surveyFrame$results.qSixteenCheck.3 = frame$results.qSixteenCheck.3
     return(surveyFrame)
   })
   return(Reduce(rbind, roundResponses))
@@ -78,17 +72,27 @@ roundsWithRooms = apply(overlappingFiles,1,function(x) {
 library(tidyverse)
 library(mosaic)
 
-## To filter the right batch numbers, add the first batch number for our runs (i.e. batch >= "first batch #") 
-
+## To filter the right batch numbers, add the first batch number for our runs (i.e. batch >= "first batch #")  
 ## overlappingFiles <- overlappingFiles %>% filter(batch=="1536132233074")
 
 ```
 
 ## More cleaning before visualizations: 
 ```{r}
-## Apply extract survey function to extract the right columns and rows for viability survey: 
-survey = 'viabilityCheck'
-frame <- extractSurvey(overlappingFiles, survey) 
+## For when we start inputting new batches only: 
+# overlappingFiles <- overlappingFiles %>% filter(batch>="1536276904547") 
+# qFifteen <- as.data.frame(extractSurvey(overlappingFiles, 'qFifteenCheck'))
+# qSixteen <- as.data.frame(extractSurvey(overlappingFiles, 'qSixteenCheck'))
+# viabilitySurvey <- as.data.frame(extractSurvey(overlappingFiles, 'viabilityCheck'))  
+# qFifteen <- qFifteen %>% select(id, results.qFifteenCheck)
+# qSixteen <- qSixteen %>% select(id, results.qSixteenCheck) 
+# qFifteen$id <-  unlist(qFifteen$id)
+# qSixteen$id <-  unlist(qSixteen$id)
+# postSurveyQs <- cbind(qFifteen, qSixteen) 
+# frame <- cbind(viabilitySurvey, postSurveyQs)  
+# frame <- frame[, !duplicated(colnames(frame))]
+
+frame <- extractSurvey(overlappingFiles, 'viabilityCheck')
 ## Reduce to vertically combine rows in roundwithRooms list:  
 finalRounds = as.data.frame(Reduce(rbind,roundsWithRooms))
 ## Subset incomplete cases from viability survey dataframe, use manipulation check b/c required for complete observation: 
@@ -135,7 +139,7 @@ data <- data %>% mutate(
     results.condition=='control' & results.format=="c(1, 1, 2)" & round==3 ~ "B", 
     results.condition=='control' & results.format=="c(2, 1, 1)" & round==1 ~ "B", 
     results.condition=='control' & results.format=="c(2, 1, 1)" & round==2 ~ "A", 
-    results.condition=='control' & results.format=="c(2, 1, 1)" & round==3 ~ "Ap" , 
+    results.condition=='control' & results.format=="c(2, 1, 1)" & round==3 ~ "Ap" ,
     results.condition=='baseline' & results.format=="1:3" & round==1 ~ "A" ,
     results.condition=='baseline' & results.format=="1:3" & round==2 ~ "B" ,
     results.condition=='baseline' & results.format=="1:3" & round==3 ~ "C" 
@@ -199,15 +203,14 @@ groupedProportionFracture <- groupedProportion %>%
 # baselineFracture1 <- groupedProportionFractureBaseline %>% filter(condition=="A")
 # baselineFracture2 <- groupedProportionFractureBaseline %>% filter(condition=="C")
 
-# TO-DO: check if this is right--seems off
+# TO-DO: check if this is right--seems off (why is baseline off?)
 
 groupedProportionFractureBaseline <- groupedProportionFracture %>% filter(results.format=="c(1, 1, 2)" | results.format=="c(2, 1, 1)") %>% filter(round=="1" | round=="3") 
-# baselineFracture1 <- groupedProportionFractureBaseline %>% filter(round=="1")
-# baselineFracture2 <- groupedProportionFractureBaseline %>% filter(round=="3")
-# baselineFracture1$fracture15 <- baselineFracture1$fracture
-# baselineFracture2$test2 <- baselineFracture2$fracture
-# ## Below only combines if teams are in both round 1 & 3 together: 
-# baselineFracture <- left_join(baselineFracture1, baselineFracture2, by=NULL, drop=TRUE)
+baselineFracture1 <- groupedProportionFractureBaseline %>% filter(round=="1")
+baselineFracture2 <- groupedProportionFractureBaseline %>% filter(round=="3")
+baselineFracture1$fracture1 <- baselineFracture1$fracture
+baselineFracture2$fracture2 <- baselineFracture2$fracture
+## Below only combines if teams are in both round 1 & 3 together: 
 
 ## Treatment: 
 groupedProportionFractureTreatment <- groupedProportionFracture %>% 
@@ -360,7 +363,6 @@ ggplot(data=groupedProportionFracture, aes(fracture, mean)) +
 ## Section #2: How often does fracture occur?
 
 ## 2A: P(binary fracture) histogram of fracture proportion (by team)
-
 ```{r}
 ## First make sure you've made ABC condition
 ggplot(data=groupedProportion, aes(groupedProportion$prop)) + 
@@ -370,7 +372,14 @@ ggplot(data=groupedProportion, aes(groupedProportion$prop)) +
                  alpha=.2) + labs(title="Frequency of team fracture proportions by condition and pattern sequence", 
                                   x="team fracture proportion", y="Count") + facet_grid(results.condition ~ .) 
 ```
-
+```{r}
+ggplot(data=groupedProportion, aes(groupedProportion$prop)) + 
+  geom_histogram(breaks=seq(0, 1, by=0.20), 
+                 col="red", 
+                 fill="green", 
+                 alpha=.2) + labs(title="Frequency of team fracture proportions by condition and pattern sequence", 
+                                  x="team fracture proportion", y="Count") + facet_grid(results.condition ~ condition)  
+```
 
 ```{r}
 library(MASS)     
@@ -402,13 +411,10 @@ groupedProportionFractureSecondBase <- groupedProportionFractureBaseline %>%
       summarise(n=n(), overallPercent=sum(as.numeric(fracture))/n) 
 print(mean(groupedProportionFractureSecondBase$overallPercent))
 
-## Set-up separate groups for proportion tests to answer: does unmasked fracture more/less than masked 
-## and more/less than new pairs? 
+## Set-up separate groups for proportion tests to answer: does unmasked fracture more/less than masked, and more/less than new pairs? 
 
 ## Control: 
-
 ## Proportion tests for each (TO-DO, figure out argument stuff: this doesn't seem like the right test to run for the question we're asking?) also, fill-this in every time you get new data: 
-
 
 ## Is the proportion of fracture in the second round significantly different in the two conditions (i.e. treatment + baseline) 
 treatmentvsBaselineChange <- c(48, 49)
@@ -424,18 +430,40 @@ print(propFractureChangeControlvsBase)
 
 ## 3A: calculating the conditional probabilities of fracture for each condition: 
 ```{r}
-conditionalProbTreatment <- groupedProportionFractureTreatment %>% filter(condition=="A" | condition=="Ap")
-tally(~fracture | condition, data = conditionalProbTreatment, format = "proportion")
-
-conditionalProbControl <- groupedProportionFractureControl %>% filter(condition=="A" | condition=="Ap")
-tally(~fracture | condition, data = conditionalProbControl, format = "proportion")
-
-conditionalProbBaseline <- groupedProportionFractureBaseline  %>% filter(condition=="A" | condition=="C")
-tally(~fracture | condition, data = conditionalProbBaseline, format = "proportion")
 
 ## If fractured the first time, what's the % of fracturing the second time? look at 1 and Ap combination for % in second time: 
 
 ## Compare both treatment and control with baseline as theoretical distribution: 
+
+## Conditional probability for masked: 
+# of groups who fractured 1 and 2
+treatmentFracture12 <- sum(ifelse(treatmentFracture1$fracture=="1" & treatmentFracture2$fracture=="1",1,0))/nrow(treatmentFracture)
+# of groups who fractured only 1
+treatmentFractureOnly1 <- sum(ifelse(treatmentFracture1$fracture=="1" & treatmentFracture2$fracture=="0",1,0))/nrow(treatmentFracture) 
+# of groups who fractured only 2
+treatmentFractureOnly2 <- sum(ifelse(treatmentFracture1$fracture=="0" & treatmentFracture2$fracture=="1",1,0))/nrow(treatmentFracture)
+# of groups who fractured never        
+treatmentFractureNever <- sum(ifelse(treatmentFracture1$fracture=="0" & treatmentFracture2$fracture=="0",1,0))/nrow(treatmentFracture)
+conditionalProbTreatment <- matrix(c(treatmentFracture12, treatmentFractureOnly1, treatmentFractureOnly2, treatmentFractureNever),ncol=2,byrow=TRUE)
+colnames(conditionalProbTreatment) <- c("Ap frac","Ap no frac") 
+rownames(conditionalProbTreatment) <- c("A frac","A no frac")
+conditionalProbTreatment <- as.table(conditionalProbTreatment)
+conditionalProbTreatment
+
+## Conditional proability for unmasked: 
+# of groups who fractured 1 and 2
+controlFracture12 <- sum(ifelse(controlFracture1$fracture=="1" & controlFracture2$fracture=="1",1,0))/nrow(controlFracture)
+# of groups who fractured only 1
+controlFractureOnly1 <- sum(ifelse(controlFracture1$fracture=="1" & controlFracture2$fracture=="0",1,0))/nrow(controlFracture) 
+# of groups who fractured only 2
+controlFractureOnly2 <- sum(ifelse(controlFracture1$fracture=="0" & controlFracture2$fracture=="1",1,0))/nrow(controlFracture)
+# of groups who fractured never        
+controlFractureNever <- sum(ifelse(controlFracture1$fracture=="0" & controlFracture2$fracture=="0",1,0))/nrow(controlFracture)
+conditionalProbControl <- matrix(c(controlFracture12, controlFractureOnly1, controlFractureOnly2, controlFractureNever),ncol=2,byrow=TRUE)
+colnames(conditionalProbControl) <- c("Ap frac","Ap no frac") 
+rownames(conditionalProbTreatment) <- c("A frac","A no frac")
+conditionalProbControl <- as.table(conditionalProbControl)
+conditionalProbControl
 ```
 
 ## 3B: Now investigating the big result: switch %: what's the % of pairs flipping their decisions?
@@ -463,11 +491,10 @@ controlFractureAbsSum <- sum(controlFracture$absFracture)
 print(controlFractureAbsSum)
 ## baselineFractureAbsSum <- sum(baselineFracture$absFracture) 
 
-
 ## Don't we want a proportion test here before adding / trying chi-squared? 
 
-treatmentAbsChange=c(15) 
-controlAbsChange=c(1)
+treatmentAbsChange=c() 
+controlAbsChange=c()
 
 ## Using baseline as theoretical probability distribution 
 ## Treatment: 
@@ -481,9 +508,11 @@ chisq.test(controlAbsChange,p=baselineAbsChange)
 
 ```{r}
 ## Visualize differences: 
+normalizedTreatmentChange <- treatmentFractureAbsSum/nrow(treatmentFracture)
+normalizedControlChange <- controlFractureAbsSum/nrow(controlFracture)
 
-dat <- data.frame(changesPerCondition= factor(c("Sum of absolute fracture change in treatment >=.50","Sum of absolute fracture change in control >=.50"), levels=c("Sum of absolute fracture change in treatment >=.50","Sum of absolute fracture change in control >=.50")),
-                  fractureValueSwitch = c(15, 1))
+dat <- data.frame(changesPerCondition= factor(c("Normalized percentage of absolute fracture change in masked >=.50","Normalized percentage of absolute fracture change in unmasked >=.50"), levels=c("Normalized percentage of absolute fracture change in masked >=.50","Normalized percentage of absolute fracture change in unmasked >=.50")),
+                  fractureValueSwitch = c(normalizedTreatmentChange, normalizedControlChange))
 
 p <- ggplot(data=dat, aes(x=changesPerCondition, y=fractureValueSwitch)) +
   geom_bar(stat="identity")
