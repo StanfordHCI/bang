@@ -98,8 +98,8 @@ function useUser(u,f,err = "Guarded against undefined user") {
   //let user = users.byID(u.id)
   let user = users.byMturkId(u.mturkId)
   if (typeof user != 'undefined' && typeof f === "function") {f(user)}
-  else { 
-    console.log(err.red,u.id,"\n",err.stack) 
+  else {
+    console.log(err.red,u.id,"\n",err.stack)
     if (debugMode) {console.trace()}
   }
 }
@@ -108,7 +108,7 @@ function useUser(u,f,err = "Guarded against undefined user") {
 mturk.getBalance(function(balance) {
   if(runningLive && balance <= 400) {
     console.log("\n!!! BROKE !!!\n".red.inverse.bold)
-  } 
+  }
 })
 
 // Save debug logs for later review
@@ -450,7 +450,7 @@ io.on('connection', (socket) => {
   const currentBonus = () => {
     mturk.updatePayment(getSecondsPassed() - workerStartTime)
   }
-  
+
   function createUsername () {
     const name_structure = tools.makeName();
     socket.name_structure = name_structure;
@@ -470,7 +470,7 @@ io.on('connection', (socket) => {
       let user = users.byMturkId(mturkId)
       user.connected = true
       user.assignmentId = assignmentId
-      user.id = socket.id      
+      user.id = socket.id
       user.turkSubmitTo = data.turkSubmitTo
 
       //console.log(users.byMturkId(mturkId))
@@ -517,14 +517,14 @@ io.on('connection', (socket) => {
       //   io.in(socket.mturkId).emit('echo', 'next event')
       //   return;
       // }
-        
+
       issueFinish(socket,runViaEmailOn ? "We don't need you to work right now. Please await further instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below and you will be compensated appropriately for your time. Thank you!")
       return;
     }
     if(userPool.byMturkId(data.mturkId)) { //if it's a reconnected user
       let user = userPool.byMturkId(data.mturkId)
       console.log(data.mturkId + ' REJOINED USER POOL (' + user.id + ' => ' + socket.id +')')
-      
+
       user.id = socket.id
       user.connected = true
       user.turkSubmitTo = data.turkSubmitTo
@@ -818,7 +818,7 @@ io.on('connection', (socket) => {
     //newMessage('has left the chatroom')
 
     if (!users.find(function(element) {return element.mturkId == socket.mturkId})) return;
-    useUser(socket, user => {      
+    useUser(socket, user => {
       user.connected = false
       user.ready = suddenDeath ? false : true
       notEnoughUsers = false
@@ -924,7 +924,7 @@ io.on('connection', (socket) => {
 
   socket.on('kill-all', (data) => {
     console.log("god is angry".rainbow)
-    updateUserInDB(socket,"bonus",currentBonus())
+    users.forEach(u => updateUserInDB(socket,"bonus",currentBonus()))
     io.sockets.emit('finished', {
       message: "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
       finishingCode: "kill-all",

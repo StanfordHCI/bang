@@ -26,18 +26,23 @@ function renderBatch(dbName, batch) {
 
 //Cleanly renders chats for a given batch
 function renderChats(batch) {
-  db.chats.find({batch: batch}, (err, data) => {
-    if (err) {console.log(err)} else {
-      console.log("\nChats for batch:",batch);
-      data.map(a => a.round).set().sort().forEach(currentRound => {
-        console.log("\nRound", currentRound);
-        data.map(a => a.room).set().sort().forEach(currentRoom => {
-          console.log("\nRoom",currentRoom,"in round",currentRound);
-          data.sort((a,b) => a.createdAt-b.createdAt).filter(a => a.room == currentRoom && a.round == currentRound).forEach(a => {
-            console.log("  " + a.userID.slice(0,5) + ": " + a.message);
-          });
+  const dir = "./.data/"
+  fs.readFile(dir + batch + '/' + 'chats.json',(err,chatsJSON) => {
+    if (err) {return console.log(err)} else {
+      try {
+        const chats = JSON.parse(chatsJSON)
+        console.log("\nChats for batch:",batch);
+        console.log(chats)
+        chats.map(a => a.round).set().sort().forEach(currentRound => {
+          console.log("\nRound", currentRound);
+          chats.map(a => a.room).set().sort().forEach(currentRoom => {
+            console.log("\nRoom",currentRoom,"in round",currentRound);
+            chats.sort((a,b) => a.createdAt-b.createdAt).filter(a => a.room == currentRoom && a.round == currentRound).forEach(a => {
+              console.log("  " + a.userID.slice(0,5) + ": " + a.message);
+            });
+          })
         })
-      })
+      } catch(err) {console.log('File ending error in batch',batch)}
     }
   })
 }
@@ -191,15 +196,15 @@ function downloadData(url,callback) {
 }
 
 //Save from servers
-// downloadData("mark.dmorina.com",saveAllData) 
-downloadData("bang.dmorina.com",saveAllData) 
+/* downloadData("mark.dmorina.com",saveAllData) */ 
+/* downloadData("bang.dmorina.com",saveAllData) */ 
 
 //Save from local folder
-//saveAllData()
+/* saveAllData() */
 
-// renderChats(1534965856368)
+renderChats(1535151954966)
 
 /* useEachBatch(renderChats) */
 
 /* retroactiveBonus() */
-retroactivelyFixRooms()
+/* retroactivelyFixRooms() */
