@@ -32,7 +32,6 @@ function renderChats(batch) {
       try {
         const chats = JSON.parse(chatsJSON)
         console.log("\nChats for batch:",batch);
-        console.log(chats)
         chats.map(a => a.round).set().sort().forEach(currentRound => {
           console.log("\nRound", currentRound);
           chats.map(a => a.room).set().sort().forEach(currentRoom => {
