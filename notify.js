@@ -12,7 +12,7 @@ var notification_type = process.argv[2]
 var HITId = process.argv[3];
 
 // File paths
-var bonusworkersStorage = "./txt/bonusworkers.txt";
+// var bonusworkersStorage = "./txt/bonusworkers.txt";
 // var repayworkersHITstorage = "./txt/currentrepayHIT.txt"
 var bonusworkers = fs.readFileSync(bonusworkersStorage).toString().split("\n")
 var bonusworkersDict = {}
@@ -20,6 +20,7 @@ bonusworkers.forEach(line => {bonusworkersDict[line.split(",")[0]] = parseFloat(
 console.log("bonusworkers", bonusworkers)
 console.log("bonusworkersDict", bonusworkersDict)
 console.log("key", Object.keys(bonusworkersDict))
+
 
 switch (notification_type) {
   // case "weCrashed":
