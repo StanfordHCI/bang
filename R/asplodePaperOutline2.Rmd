@@ -1,7 +1,9 @@
 ---
 title: "Asplode paper outline"
-output: html_notebook
-editor_options: 
+output:
+  html_document:
+    df_print: paged
+editor_options:
   chunk_output_type: console
 ---
 
@@ -80,23 +82,23 @@ library(tidyverse)
 library(mosaic)
 
 ## To filter the right batch numbers, add the first batch number for our runs (i.e. batch >= "first batch #")  
-## overlappingFiles <- overlappingFiles %>% filter(batch=="1536132233074")
+overlappingFiles <- overlappingFiles %>% filter(batch>="1536276904547")
 ```
 
 ## More cleaning before visualizations: 
 ```{r, include=TRUE} 
-## For when we start inputting new batches only: 
-# overlappingFiles <- overlappingFiles %>% filter(batch>="1536276904547") 
-# qFifteen <- as.data.frame(extractSurvey(overlappingFiles, 'qFifteenCheck'))
-# qSixteen <- as.data.frame(extractSurvey(overlappingFiles, 'qSixteenCheck'))
-# viabilitySurvey <- as.data.frame(extractSurvey(overlappingFiles, 'viabilityCheck'))  
-# qFifteen <- qFifteen %>% select(id, results.qFifteenCheck)
-# qSixteen <- qSixteen %>% select(id, results.qSixteenCheck) 
-# qFifteen$id <-  unlist(qFifteen$id)
-# qSixteen$id <-  unlist(qSixteen$id)
-# postSurveyQs <- cbind(qFifteen, qSixteen) 
-# frame <- cbind(viabilitySurvey, postSurveyQs)  
-# frame <- frame[, !duplicated(colnames(frame))]
+# For when we start inputting new batches only:
+overlappingFiles <- overlappingFiles %>% filter(batch>="1536276904547")
+qFifteen <- as.data.frame(extractSurvey(overlappingFiles, 'qFifteenCheck'))
+qSixteen <- as.data.frame(extractSurvey(overlappingFiles, 'qSixteenCheck'))
+viabilitySurvey <- as.data.frame(extractSurvey(overlappingFiles, 'viabilityCheck'))
+qFifteen <- qFifteen %>% select(id, results.qFifteenCheck)
+qSixteen <- qSixteen %>% select(id, results.qSixteenCheck)
+qFifteen$id <-  unlist(qFifteen$id)
+qSixteen$id <-  unlist(qSixteen$id)
+postSurveyQs <- cbind(qFifteen, qSixteen)
+frame <- cbind(viabilitySurvey, postSurveyQs)
+frame <- frame[, !duplicated(colnames(frame))]
 
 frame <- extractSurvey(overlappingFiles, 'viabilityCheck')
 ## Reduce to vertically combine rows in roundwithRooms list:  
@@ -257,6 +259,7 @@ treatmentManipulation <- cleanManipulation %>% group_by(id, results.condition, m
 treatmentManipulation$correctAnswers <- sum(ifelse(treatmentManipulation$manipulationAnswers==treatmentManipulation$manipulationAnswerKey,1,0))
 ## Calculate percent of correct manipulation answers for treatment: 
 treatmentManipulation <- treatmentManipulation %>% mutate(percentCorrect = (correctAnswers/(nrow(treatmentManipulation))))
+graphTreatment <- unique(round(treatmentManipulation$percentCorrect, 2))
 
 ## Control manipulation: 
 controlManipulation <- cleanManipulation %>% group_by(id, results.condition, manipulationAnswers, manipulationAnswerKey) %>% filter(results.condition=="control") %>% 
@@ -265,13 +268,27 @@ controlManipulation <- cleanManipulation %>% group_by(id, results.condition, man
 controlManipulation$correctAnswers <- sum(ifelse(controlManipulation$manipulationAnswers==controlManipulation$manipulationAnswerKey,1,0))
 ## Calculate percent of correct manipulation answers for control: 
 controlManipulation <- controlManipulation %>% mutate(percentCorrect = (correctAnswers/(nrow(controlManipulation))))
+graphControl <- unique(round(controlManipulation$percentCorrect, 2))
 
 controlManipulation2 <- unique(controlManipulation$percentCorrect)*100
 treatmentManipulation2 <- unique(treatmentManipulation$percentCorrect)*100
 chanceManipulation <- c(33)
-
-## Proportion test comparing treatment manipulation percent correct with chance: 
 ```
+
+```{r}
+dat <- data.frame(manipulationCheck=factor(c("Masked","Unmasked"), levels=c("Masked","Unmasked")),
+                  manipulation = c(graphTreatment, graphControl))
+
+p <- ggplot(data=dat, aes(x=manipulationCheck, y=manipulation)) +
+  geom_bar(stat="identity", fill="steelblue")+
+  geom_text(aes(label=manipulation), vjust=1.6, color="white", size=3.5)+
+  geom_hline(yintercept=0.33, size=0.4, color="black") + 
+  theme_minimal() + labs(subtitle="Manipulation check results", 
+       x="Conditions",
+       y="Percent correct on manipulation check")
+p
+```
+
 
 ## 1B: Proportion test comparing treatment manipulation percent correct with chance: 
 ```{r}
@@ -361,15 +378,16 @@ g + geom_boxplot(varwidth=T, fill="plum") +
 ## By condition + format: 
 g <- ggplot(groupedProportionFracture, aes(factor(fracture), mean)) 
 g + geom_boxplot(varwidth=T, fill="plum") + 
-  labs(subtitle="Team fracture value vs. mean viability score: fracture >=0.50 (n=2)", 
+  labs(subtitle="Binary team fracture value vs. mean viability score", 
        x="",
-       y="Numeric sum of viability measures questions (range: 7-70)") + facet_grid(condition ~ results.condition) 
+       y="Numeric sum of viability measures questions (range: 7-70)") + facet_grid( results.condition~.) 
 ```
 
 ```{r}
 ggplot(data=groupedProportionFracture, aes(fracture, mean)) + 
    geom_point() +
-  stat_smooth(method = "lm", col = "red") + labs(main="Scatterplot of fracture value vs. mean for team viability sums across all conditions (n=2)") +  facet_grid(condition ~ results.condition) 
+  stat_smooth(method = "lm", col = "red") + labs(main="Scatterplot of fracture value vs. mean for team viability sums across all conditions (n=2)", y="Mean of team viability surveys", x="Binary team fracture score") +  facet_grid(results.condition ~.) 
+
 ```
 
 ```{r}
@@ -387,9 +405,10 @@ ggplot(data=groupedProportion, aes(groupedProportion$prop)) +
   geom_histogram(breaks=seq(0, 1, by=0.20), 
                  col="red", 
                  fill="green", 
-                 alpha=.2) + labs(title="Frequency of team fracture proportions by condition and pattern sequence", 
-                                  x="team fracture proportion", y="Count") + facet_grid(results.condition ~ .) 
+                 alpha=.2) + labs(title="Frequency of team fracture proportions by condition", 
+                                  x="Proportion of team that fractured", y="Count") + facet_grid(results.condition ~ .) 
 ```
+
 ```{r}
 ggplot(data=groupedProportion, aes(groupedProportion$prop)) + 
   geom_histogram(breaks=seq(0, 1, by=0.20), 
@@ -507,8 +526,9 @@ rownames(conditionalProbBaseline) <- c("A frac","A no frac")
 conditionalProbBaseline
 ```
 
-```{r mylatextable, results = "asis"}
-stargazer(conditionalProbBaseline, type = 'text', title="Conditional fracture probability for baseline")
+```{r}
+kable(conditionalProbBaseline, "latex", caption = "Demo table", booktabs = T) %>%
+kable_styling(latex_options = c("striped", "hold_position"))
 ```
 
 ## 3B: Now investigating the big result: switch %: what's the % of pairs flipping their decisions?
@@ -540,11 +560,11 @@ print(baselineFractureAbsSum)
 
 normalizedTreatmentChange <- treatmentFractureAbsSum/nrow(treatmentFracture)
 normalizedControlChange <- controlFractureAbsSum/nrow(controlFracture)
-normalizedBaselineChange <- baselineFractureAbsSum/nrow(baselineFracture)
+normalizedBaselineChange <- round(baselineFractureAbsSum/nrow(baselineFracture), 2)
 
 treatmentAbsChange=c(normalizedTreatmentChange)*100
 controlAbsChange=c(normalizedControlChange)*100
-baselineAbsChange=c(normalizedBaselineChange)*100
+baselineAbsChange=c(normalizedBaselineChange)*100 
 
 ## Proportion test: 
 prop.test(x = c(treatmentAbsChange, baselineAbsChange), n = c(100, 100))
@@ -566,10 +586,15 @@ chisq.test(controlAbsChange,p=baselineAbsChange)
 dat <- data.frame(NormalizedAbsoluteFractureChange= factor(c("Masked","Baseline","Unmasked"), levels=c("Masked","Baseline","Unmasked")),
                   fractureValueSwitch = c(normalizedTreatmentChange, normalizedBaselineChange, normalizedControlChange))
 
+
 p <- ggplot(data=dat, aes(x=NormalizedAbsoluteFractureChange, y=fractureValueSwitch)) +
-  geom_bar(stat="identity")
-p <- ggplotly(p)
+  geom_bar(stat="identity", fill="steelblue")+
+  geom_text(aes(label=fractureValueSwitch), vjust=1.6, color="white", size=3.5)+
+  theme_minimal() + labs(subtitle="Normalized absolute value change in team fracture value", 
+       x="",
+       y="Percent of total fracture value change")
 p
+
 ```
 
 
