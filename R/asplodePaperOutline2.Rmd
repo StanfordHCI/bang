@@ -54,6 +54,26 @@ extractSurvey = function(frame,survey) {
   })
   return(Reduce(rbind, roundResponses))
 }
+
+extractSurvey2 = function(frame,survey) {
+  rounds = seq(1,length(frame$results.format[[1]]))
+  roundResponses = lapply(rounds, function(round) {
+    getCol = paste("results.",survey,".",round, sep="")
+    surveyCols = Filter(function(x) grepl(getCol,x),names(frame))
+    newCols = lapply(surveyCols, function(x) gsub(getCol,paste("results.",survey, sep=""),x) )
+    surveyFrame = frame[,surveyCols]
+    if (is.null(newCols)) {return("No newCols")}
+    names(surveyFrame) = newCols
+    surveyFrame$round = round
+    surveyFrame$batch = frame$batch
+    surveyFrame$rooms = frame$rooms
+    surveyFrame$manipulation = frame$results.manipulationCheck
+    surveyFrame$blacklist = frame$results.blacklistCheck
+    return(surveyFrame)
+  })
+  return(Reduce(rbind, roundResponses))
+}
+
 #Find directory for import (be sure to verify that batch #s align from bangData import and imports below): 
 batches = dir(dataPath, pattern = "^[0-9]+$" )
 completeBatches = Filter(function(batch) { 
@@ -80,17 +100,19 @@ roundsWithRooms = apply(overlappingFiles,1,function(x) {
 })
 library(tidyverse)
 library(mosaic)
+library(data.table)
 
 ## To filter the right batch numbers, add the first batch number for our runs (i.e. batch >= "first batch #")  
-overlappingFiles <- overlappingFiles %>% filter(batch>="1536276904547")
+overlappingFiles <- overlappingFiles %>% filter(batch=="1536335493362")
 ```
 
 ## More cleaning before visualizations: 
 ```{r, include=TRUE} 
 # For when we start inputting new batches only:
 overlappingFiles <- overlappingFiles %>% filter(batch>="1536276904547")
+setnames(overlappingFiles, old = c('results.qFifteenCheck.1','results.qFifteenCheck.2', 'results.qFifteenCheck.3', 'results.qSixteenCheck.1', 'results.qSixteenCheck.2','results.qSixteenCheck.3'), new = c('results.qFifteenCheck.1.1','results.qFifteenCheck.2.2', 'results.qFifteenCheck.3.3', 'results.qSixteenCheck.1.1', 'results.qSixteenCheck.2.2', 'results.qSixteenCheck.3.3'))
 qFifteen <- as.data.frame(extractSurvey(overlappingFiles, 'qFifteenCheck'))
-qSixteen <- as.data.frame(extractSurvey(overlappingFiles, 'qSixteenCheck'))
+qSixteen <- as.data.frame(extractSurvey(overlappingFiles, 'qSixteenCheck')) 
 viabilitySurvey <- as.data.frame(extractSurvey(overlappingFiles, 'viabilityCheck'))
 qFifteen <- qFifteen %>% select(id, results.qFifteenCheck)
 qSixteen <- qSixteen %>% select(id, results.qSixteenCheck)
@@ -99,6 +121,14 @@ qSixteen$id <-  unlist(qSixteen$id)
 postSurveyQs <- cbind(qFifteen, qSixteen)
 frame <- cbind(viabilitySurvey, postSurveyQs)
 frame <- frame[, !duplicated(colnames(frame))]
+
+Sinus<-c(1,0,0,0,0,0,12)
+ArrAHB<-c(1,0,0,0.1,0,0,20.9)
+Labels<-c("N11.1","N22.2","N33.1","N44.1","N21.1","N31.1","N32.1")
+ID<-c("Sinus","Arr/AHB")
+data.female<-data.frame(Sinus,ArrAHB,row.names=Labels)
+data.female<-as.data.frame(t(data.female))
+
 
 frame <- extractSurvey(overlappingFiles, 'viabilityCheck')
 ## Reduce to vertically combine rows in roundwithRooms list:  
