@@ -32,12 +32,11 @@ function renderChats(batch) {
       try {
         const chats = JSON.parse(chatsJSON)
         console.log("\nChats for batch:",batch);
-        console.log(chats)
         chats.map(a => a.round).set().sort().forEach(currentRound => {
           console.log("\nRound", currentRound);
           chats.map(a => a.room).set().sort().forEach(currentRoom => {
             console.log("\nRoom",currentRoom,"in round",currentRound);
-            chats.sort((a,b) => a.createdAt-b.createdAt).filter(a => a.room == currentRoom && a.round == currentRound).forEach(a => {
+            chats.sort((a,b) => a.time - b.time).filter(a => a.room == currentRoom && a.round == currentRound).forEach(a => {
               console.log("  " + a.userID.slice(0,5) + ": " + a.message);
             });
           })
@@ -202,7 +201,7 @@ function downloadData(url,callback) {
 //Save from local folder
 /* saveAllData() */
 
-renderChats(1535151954966)
+renderChats(1535043662301)
 
 /* useEachBatch(renderChats) */
 
