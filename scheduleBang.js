@@ -10,10 +10,39 @@ const runningLocal = process.env.RUNNING_LOCAL == "TRUE"
 const runningLive = process.env.RUNNING_LIVE == "TRUE" //ONLY CHANGE ON SERVER
 
 console.log(runningLive ? "\n RUNNING LIVE ".red.inverse : "\n RUNNING SANDBOXED ".green.inverse);
+var date = new Date(Date.now() + (1000 /*sec*/ * 60 /*min*/ * 60 /*hour*/ * 24 /*day*/ * 1)) //Actual HIT 1 day in the future
+    HITDATE = date.toLocaleString("en-us", {weekday: "long", month: "long", day: "numeric", year: "numeric"})
+console.log("Day of actual HIT", HITDATE)
 
-//Reference HIT file
-let questionHTML = fs.readFileSync('./question.html').toString()
+var generateTemplateString = (function(){
+  var cache = {};
+
+  function generateTemplate(template){
+      var fn = cache[template];
+
+      if (!fn){
+          // Replace ${expressions} (etc) with ${map.expressions}.
+
+          var sanitized = template
+              .replace(/\$\{([\s]*[^;\s\{]+[\s]*)\}/g, function(_, match){
+                  return `\$\{map.${match.trim()}\}`;
+                  })
+              // Afterwards, replace anything that's not ${map.expressions}' (etc) with a blank string.
+              .replace(/(\$\{(?!map\.)[^}]+\})/g, '');
+
+          fn = Function('map', `return \`${sanitized}\``);
+      }
+
+      return fn;
+  }
+
+  return generateTemplate;
+})();
+
+// //Reference HIT file
+let questionHTML = generateTemplateString(fs.readFileSync('./question.html').toString())
 let recruitingHITstorage = './txt/currentrecruitingHIT.txt'
+questionHTML = questionHTML({HIT_date: HITDATE})
 
 // Determine the lifetime of HIT
 // const runtimeString = process.argv.length > 2 ? process.argv[2] : "" //if we specify a flag
@@ -106,3 +135,4 @@ mturk.makeHIT('scheduleQuals', title, description, assignmentDuration, lifetime,
   });
   console.log("recruitment schedule HIT success")
 })
+
