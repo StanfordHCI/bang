@@ -1,16 +1,12 @@
 ---
-title: "Asplode paper outline"
-output:
-  html_document:
-    df_print: paged
-editor_options:
-  chunk_output_type: console
+title: "Asplode Paper Results >.5"
+output: html_notebook
 ---
 
 ## Set-up packages // libraries and prepare for data import: 
-```{r, include=TRUE, echo=TRUE} 
+```{r, include=TRUE, echo=FALSE} 
 ## Uncomment install.packages and run outside of notebook environment: 
-## install.packages(c("psych" ,"xtable", "tidyverse", "jsonlite", "likert", "ggplot2", "ploty", "mosaic", "modelr", "broom"))
+## install.packages(c("psych" ,"xtable", "tidyverse", "jsonlite", "likert", "ggplot2", "ploty", "mosaic", "modelr", "broom", "scales"))
 
 library(psych)
 library(likert)
@@ -19,6 +15,7 @@ library(ggplot2)
 library(plotly)
 library(modelr)
 library(broom)
+library(scales)
 source("http://pcwww.liv.ac.uk/~william/R/crosstab.r")
 theme_set(theme_classic())
 ```
@@ -29,7 +26,7 @@ library(stargazer)
 ```
 
 ## Set-up directories, import and clean data: 
-```{r, include=TRUE} 
+```{r, include=TRUE, echo=FALSE} 
 rm(list=ls())
 setwd("/Users/allieblaising/desktop/bang/R") 
 getwd()
@@ -41,7 +38,7 @@ extractSurvey = function(frame,survey) {
     getCol = paste("results.",survey,".",round, sep="")
     surveyCols = Filter(function(x) grepl(getCol,x),names(frame))
     newCols = lapply(surveyCols, function(x) gsub(getCol,paste("results.",survey, sep=""),x) )
-    surveyFrame = frame[,surveyCols]
+    surveyFrame = as.data.frame(frame[,surveyCols]) 
     if (is.null(newCols)) {return("No newCols")}
     names(surveyFrame) = newCols
     surveyFrame$id = frame$id
@@ -64,6 +61,7 @@ extractSurvey2 = function(frame,survey) {
     surveyFrame = frame[,surveyCols]
     if (is.null(newCols)) {return("No newCols")}
     names(surveyFrame) = newCols
+    surveyFrame$id = frame$id
     surveyFrame$round = round
     surveyFrame$batch = frame$batch
     surveyFrame$rooms = frame$rooms
@@ -102,33 +100,25 @@ library(tidyverse)
 library(mosaic)
 library(data.table)
 
-## To filter the right batch numbers, add the first batch number for our runs (i.e. batch >= "first batch #")  
-overlappingFiles <- overlappingFiles %>% filter(batch=="1536335493362")
+## To filter the right batch numbers, add the first batch number for our runs (i.e. batch >= "first batch #") 
+# overlappingFiles <- overlappingFiles %>% filter(batch=="1536335493362")
 ```
 
 ## More cleaning before visualizations: 
-```{r, include=TRUE} 
+```{r, include=TRUE, echo=TRUE, message=FALSE, warnings=FALSE, results=markup} 
 # For when we start inputting new batches only:
-overlappingFiles <- overlappingFiles %>% filter(batch>="1536276904547")
-setnames(overlappingFiles, old = c('results.qFifteenCheck.1','results.qFifteenCheck.2', 'results.qFifteenCheck.3', 'results.qSixteenCheck.1', 'results.qSixteenCheck.2','results.qSixteenCheck.3'), new = c('results.qFifteenCheck.1.1','results.qFifteenCheck.2.2', 'results.qFifteenCheck.3.3', 'results.qSixteenCheck.1.1', 'results.qSixteenCheck.2.2', 'results.qSixteenCheck.3.3'))
-qFifteen <- as.data.frame(extractSurvey(overlappingFiles, 'qFifteenCheck'))
-qSixteen <- as.data.frame(extractSurvey(overlappingFiles, 'qSixteenCheck')) 
+# overlappingFiles <- overlappingFiles %>% filter(batch>="1536276904547")
+# setnames(overlappingFiles, old = c('results.qFifteenCheck.1','results.qFifteenCheck.2', 'results.qFifteenCheck.3', 'results.qSixteenCheck.1', 'results.qSixteenCheck.2','results.qSixteenCheck.3'), new = c('results.qFifteenCheck.1.1','results.qFifteenCheck.2.2', 'results.qFifteenCheck.3.3', 'results.qSixteenCheck.1.1', 'results.qSixteenCheck.2.2', 'results.qSixteenCheck.3.3'))
+# qFifteen <- extractSurvey(overlappingFiles, 'qFifteenCheck')
+# qSixteen <- as.data.frame(extractSurvey(overlappingFiles, 'qSixteenCheck')) 
 viabilitySurvey <- as.data.frame(extractSurvey(overlappingFiles, 'viabilityCheck'))
-qFifteen <- qFifteen %>% select(id, results.qFifteenCheck)
-qSixteen <- qSixteen %>% select(id, results.qSixteenCheck)
-qFifteen$id <-  unlist(qFifteen$id)
-qSixteen$id <-  unlist(qSixteen$id)
-postSurveyQs <- cbind(qFifteen, qSixteen)
-frame <- cbind(viabilitySurvey, postSurveyQs)
-frame <- frame[, !duplicated(colnames(frame))]
-
-Sinus<-c(1,0,0,0,0,0,12)
-ArrAHB<-c(1,0,0,0.1,0,0,20.9)
-Labels<-c("N11.1","N22.2","N33.1","N44.1","N21.1","N31.1","N32.1")
-ID<-c("Sinus","Arr/AHB")
-data.female<-data.frame(Sinus,ArrAHB,row.names=Labels)
-data.female<-as.data.frame(t(data.female))
-
+# qFifteen <- qFifteen %>% select(id, results.qFifteenCheck)
+# qSixteen <- qSixteen %>% select(id, results.qSixteenCheck)
+# qFifteen$id <-  unlist(qFifteen$id)
+# qSixteen$id <-  unlist(qSixteen$id)
+# postSurveyQs <- cbind(qFifteen, qSixteen)
+# frame <- cbind(viabilitySurvey, postSurveyQs)
+# frame <- frame[, !duplicated(colnames(frame))]
 
 frame <- extractSurvey(overlappingFiles, 'viabilityCheck')
 ## Reduce to vertically combine rows in roundwithRooms list:  
@@ -156,7 +146,7 @@ data <- left_join(data, data2, by=NULL)
 allConditions <- data[data$batch %in% completeBatches, ]
 ```
 ## Conditionally assign conditions based on treatment and results column: 
-```{r, include=TRUE} 
+```{r, include=FALSE, echo=TRUE} 
 ## Messy, but robust? Verify, verify, verify people:   
 data <- data %>% mutate(
   condition = case_when(
@@ -220,6 +210,7 @@ groupedProportion <- stats %>%
 individualProportion <- stats %>% group_by(round, batch, room) %>% 
   mutate(sum=sum, mean=mean(sum), median=median(sum), n=n(),prop=sum(repeatTeam)/n) %>% 
   filter(n>1)
+print(individualProportion)
 
 ## Table showing how many teams we've run in each condition combination:  
 print(table(groupedProportion$condition, groupedProportion$results.condition)) 
@@ -231,7 +222,7 @@ print(table(groupedProportion$condition, groupedProportion$results.condition))
 groupedProportionFracture <- groupedProportion %>%
   group_by(results.condition, condition) %>% 
   mutate(fracture = case_when (prop<.50 ~ "0", 
-                                prop>=.50~ "1")) 
+                                prop>=.50~ "1"), sd=sd(fracture)) 
 
 ## Baseline: (we probably won't need this since we are artificially making baseline conditions)
 # groupedProportionFractureBaseline <- 
@@ -285,25 +276,34 @@ cleanManipulation$manipulationAnswers = unlist(cleanManipulation$manipulationAns
 ## Treatment manipulation: 
 treatmentManipulation <- cleanManipulation %>% group_by(id, results.condition, manipulationAnswers, manipulationAnswerKey) %>% filter(results.condition=="treatment") %>%
   summarise(n=n()) 
+print(treatmentManipulation)
 ## If user manipulation answers == manipulation answer key then add 1 
 treatmentManipulation$correctAnswers <- sum(ifelse(treatmentManipulation$manipulationAnswers==treatmentManipulation$manipulationAnswerKey,1,0))
 ## Calculate percent of correct manipulation answers for treatment: 
 treatmentManipulation <- treatmentManipulation %>% mutate(percentCorrect = (correctAnswers/(nrow(treatmentManipulation))))
 graphTreatment <- unique(round(treatmentManipulation$percentCorrect, 2))
+print(treatmentManipulation)
+print(graphTreatment)
 
 ## Control manipulation: 
 controlManipulation <- cleanManipulation %>% group_by(id, results.condition, manipulationAnswers, manipulationAnswerKey) %>% filter(results.condition=="control") %>% 
   summarise(n=n()) 
+print(controlManipulation)
 ## If user manipulation answers == manipulation answer key then add 1 
 controlManipulation$correctAnswers <- sum(ifelse(controlManipulation$manipulationAnswers==controlManipulation$manipulationAnswerKey,1,0))
 ## Calculate percent of correct manipulation answers for control: 
 controlManipulation <- controlManipulation %>% mutate(percentCorrect = (correctAnswers/(nrow(controlManipulation))))
 graphControl <- unique(round(controlManipulation$percentCorrect, 2))
+print(controlManipulation)
+print(graphControl)
 
 controlManipulation2 <- unique(controlManipulation$percentCorrect)*100
 treatmentManipulation2 <- unique(treatmentManipulation$percentCorrect)*100
 chanceManipulation <- c(33)
+print(c(controlManipulation2, treatmentManipulation2, chanceManipulation))
 ```
+
+## Create a data 
 
 ```{r}
 dat <- data.frame(manipulationCheck=factor(c("Masked","Unmasked"), levels=c("Masked","Unmasked")),
@@ -327,12 +327,22 @@ treatmentChanceManipulation <- prop.test(x = c(chanceManipulation, treatmentMani
 print(treatmentChanceManipulation)
 
 ## Proportion test with treatment and control: 
-treatmentControlManipulation <- prop.test(x = c(controlManipulation2, treatmentManipulation2), n = c(100, 100))
+treatmentControlManipulation <- prop.test(x = c(controlManipulation2, chanceManipulation), n = c(100, 100))
 print(treatmentControlManipulation)
 ```
 
 ## 1C: Logistic regression predicting binary fracture outcome from viability scales: 
 ```{r}
+## Simple logistic regression: we will fit a logistic regression model in order to predict 
+## the probability of fracture based on a team's average viability sum: 
+model1 <- glm(fracture ~ mean, family = "binomial", data = groupedProportionFracture)
+stargazer(model1, title="Results", align=TRUE)
+summary(model1)
+print(model1)
+## From output we see that a one unit decrease in mean viability score is associated with a decreasein the log odds of fracture by 0.26 units. 
+
+## Check predictive power: 
+
 ## Split data into 60% training and 40% testing data sets to test how well the model performs 
 set.seed(123)
 groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture) 
@@ -340,17 +350,15 @@ sample <- sample(c(TRUE, FALSE), nrow(groupedProportionFracture), replace = T, p
 train <- groupedProportionFracture[sample, ]
 test <- groupedProportionFracture[!sample, ]
 
-## Simple logistic regression: we will fit a logistic regression model in order to predict 
-## the probability of fracture based on a team's average viability sum: 
-model1 <- glm(fracture ~ mean, family = "binomial", data = train)
-summary(model1)
-
-## From output we see that a one unit decrease in mean viability score is associated with a decreasein the log odds of fracture by 0.26 units. 
-
+model2 <- glm(fracture ~ mean, family = "binomial", data = train)
+stargazer(model2, title="Training Results", align=TRUE)
+summary(model2)
+print(model2)
 ## To assess the linear regression deviance, look at deviance in summary output, if 
 ## deviance == sum of sqaures in linear regression, null deviance == difference between. a model with only the intercept ("no mean predictors") and the a saturated model a model with a theoretically perfect fit. Model deviance (residual deviance) should be lower (i.e. small values == better fit). 
 
-tidy(model1)
+print(tidy(model1)) 
+print(tidy(model2))
 ## Coefficient estimtes from log regression characterize relationship between the predictor and 
 ## response variable on a log-odds scale, so binary increase from no fracture - fracture can be interpreted as associated with a decrease in mean viability sum. 
 
@@ -360,13 +368,13 @@ confint(model1)
 ## Making predictions: 
 ## What is the probability of fracture given the following team mean viability scores: for example purposes: 55 and 65: 
 
-predict(model1, data.frame(mean = c(55, 65)), type = "response")
+predict(model2, data.frame(mean = c(55, 65)), type = "response")
 
 ## From the output, we can see that the probability of fracture decreases from 0.31% to 0.03% when mean viability sum increases from 55 to 65. 
 
 ## Another example, with means 45 and 60: 
 
-predict(model1, data.frame(mean = c(40, 60)), type = "response")
+predict(model2, data.frame(mean = c(40, 60)), type = "response")
 
 ## From the output, we can see that the probability of fracture decreases from 0.96% to 0.10% when mean viability sum increases from 40 to 60. 
 
@@ -394,36 +402,65 @@ list(
 table(test$mean, test.predicted.m1 > 0.5)
 ```
 ## 1D: Graph of fracture/no fracture vs. mean/stdev viability scale
-
-```{r}
-## Overall: 
-g <- ggplot(groupedProportionFracture, aes(factor(fracture), mean)) 
-g + geom_boxplot(varwidth=T, fill="plum") + 
-  labs(subtitle="Team fracture value vs. mean viability score: fracture >=0.50 across all conditions (n=2)", 
-       x="",
-       y="Numeric sum of viability measures questions (range: 7-70)") 
-```
-
+# Boxplot: 
 ```{r}
 ## By condition + format: 
 g <- ggplot(groupedProportionFracture, aes(factor(fracture), mean)) 
-g + geom_boxplot(varwidth=T, fill="plum") + 
-  labs(subtitle="Binary team fracture value vs. mean viability score", 
+g + geom_boxplot(varwidth=T, fill="steelblue") + 
+  labs(subtitle="Binary team fracture value vs. mean viability score across all conditions", 
        x="",
-       y="Numeric sum of viability measures questions (range: 7-70)") + facet_grid( results.condition~.) 
+       y="Mean of team viability surveys (score range: 7-70)") +
+ scale_x_discrete(labels=c("0" = "Keep this team", "1" = "Do not keep this team")) + theme_grey()
 ```
-
+#Scatterplot: 
 ```{r}
 ggplot(data=groupedProportionFracture, aes(fracture, mean)) + 
    geom_point() +
-  stat_smooth(method = "lm", col = "red") + labs(main="Scatterplot of fracture value vs. mean for team viability sums across all conditions (n=2)", y="Mean of team viability surveys", x="Binary team fracture score") +  facet_grid(results.condition ~.) 
+  stat_smooth(method = "lm", col = "red") + labs(title="Binary team fracture value vs. mean viability score across all conditions", y="Mean of team viability surveys", x="Binary team fracture score") +  theme_grey() + 
+scale_x_continuous(labels=c("0.00" = "Keep this team", "0.25", "0.50", "0.75" ,"1.00" = "Do not keep this team"))
+```
+## Group by and summarise fracture percentage by condition: 
+```{r}
+resultsPercent <- groupedProportionFracture %>% group_by(results.condition) %>% summarise(n=n(), fracture=sum(fracture), percent=fracture/n) %>% filter(results.condition=="control" | results.condition=="treatment")
+dat <- data.frame(conditionFracturePercent= factor(c("Unmasked","Masked"), levels=c("Unmasked","Masked")),
+                  fractureTotal = c(resultsPercent$percent))
+dat$fractureTotal <- round(dat$fractureTotal, 3)
 
+p <- ggplot(data=dat, aes(x=conditionFracturePercent, y=fractureTotal)) +
+  geom_bar(stat="identity", fill="steelblue")+
+  geom_text(aes(label=fractureTotal), vjust=1.6, color="white", size=3.5)+
+  theme_grey() + labs(subtitle="Percentage of total fracture across three rounds for unmasked and masked conditions", 
+       x="",
+       y="Percent of fracture per condition") 
+p
 ```
 
 ```{r}
-ggplot(data=groupedProportionFracture, aes(fracture, mean)) + 
-   geom_point() +
-  stat_smooth(method = "lm", col = "red") + labs(main="Scatterplot of fracture value vs. mean for team viability sums (n=2)") +  facet_grid(condition ~ results.condition) 
+resultsRound <- groupedProportionFracture %>% group_by(round) %>% summarise(n=n(), fracture=sum(fracture), percent=fracture/n) 
+
+dat <- data.frame(roundFracturePercent= factor(c("Round 1","Round 2", "Round 3"), levels=c("Round 1","Round 2", "Round 3")),
+                  fractureTotal = c(resultsRound$percent))
+
+dat$fractureTotal <- round(dat$fractureTotal, 3)
+
+p <- ggplot(data=dat, aes(x=roundFracturePercent, y=fractureTotal)) +
+  geom_bar(stat="identity", fill="steelblue")+
+  geom_text(aes(label=fractureTotal), vjust=1.6, color="white", size=3.5)+
+  theme_grey() + labs(subtitle="Percentage of total fracture across three rounds for all conditions", 
+       x="",
+       y="Percent of fracture per round") 
+p
+```
+
+```{r}
+ggplot(groupedProportionFracture, aes(x = factor(fracture))) + 
+    geom_bar(fill="steel blue", aes(y = (..count..)/sum(..count..))) +
+scale_y_continuous(labels = scales::percent)  + 
+  scale_x_discrete(labels=c("0"="Keep this team", "1"="Do not keep this team")) + labs(title="Percent of binary team fracture value scores across all conditions", y="Percent of fracture value", x="Binary team fracture score") +  facet_grid(.~results.condition) + theme_gray()
+
+ggplot(groupedProportionFracture, aes(x = prop)) + 
+    geom_bar(fill="steel blue", aes(y = (..count..)/sum(..count..))) +
+  scale_y_continuous(labels = scales::percent)  + scale_x_continuous()+  labs(title="Percent of binary team fracture value scores across all conditions", y="Percent of fracture value", x="Binary team fracture score") +  facet_grid(.~round) + theme_gray()
 ```
 
 ## Section #2: How often does fracture occur?
@@ -431,28 +468,32 @@ ggplot(data=groupedProportionFracture, aes(fracture, mean)) +
 ## 2A: P(binary fracture) histogram of fracture proportion (by team)
 ```{r}
 ## First make sure you've made ABC condition
-ggplot(data=groupedProportion, aes(groupedProportion$prop)) + 
+ggplot(data=groupedProportionFracture, aes(groupedProportionFracture$fracture)) + 
   geom_histogram(breaks=seq(0, 1, by=0.20), 
                  col="red", 
                  fill="green", 
-                 alpha=.2) + labs(title="Frequency of team fracture proportions by condition", 
-                                  x="Proportion of team that fractured", y="Count") + facet_grid(results.condition ~ .) 
+                 alpha=.2) + labs(title="Overall fracture rate", 
+                                  x="Binary fracture value", y="Count") +
+  geom_errorbar(width=.5, aes(ymin=fracture-sd, ymax=fracture-sd), colour="red") 
 ```
 
+
 ```{r}
-ggplot(data=groupedProportion, aes(groupedProportion$prop)) + 
+ggplot(data=groupedProportionFracture, aes(groupedProportionFracture$prop)) + 
   geom_histogram(breaks=seq(0, 1, by=0.20), 
-                 col="red", 
-                 fill="green", 
-                 alpha=.2) + labs(title="Frequency of team fracture proportions by condition and pattern sequence", 
-                                  x="team fracture proportion", y="Count") + facet_grid(results.condition ~ condition)  
+                 col="white", 
+                 fill="blue", 
+                 alpha=.5) + labs(title="The proportions a team fracture proportions by condition and pattern sequence", 
+                                  x="team fracture proportion", y="Count") +  theme_minimal() + 
+  facet_grid(.~results.condition) 
+
 ```
 
 ```{r}
 library(MASS)     
 ## Test if whether fracture is independent of condition (i.e. baseline, control & treatment) at .05 significance level: 
 
-chi = table(groupedProportionFracture$fracture, groupedProportionFracture$results.condition)  
+chi = table(groupedProportionFracture$results.condition, groupedProportionFracture$fracture)  
 chi
 print(chisq.test(chi)) 
 ```
@@ -461,6 +502,20 @@ print(chisq.test(chi))
 ```{r}
 ## Filtering second time only: 
 groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture)
+
+
+groupedProportionFractureOverall <- groupedProportionFracture %>% 
+      mutate(overallPercent = sum(as.numeric(fracture))) %>% 
+      summarise(n=n(), overallPercent=unique(overallPercent/n))  
+
+mean(groupedProportionFractureOverall$overallPercent)
+
+groupedProportionFractureB <- groupedProportionFracture %>% 
+      filter(condition=="B") %>% 
+      mutate(overallPercent = sum(as.numeric(fracture))) %>% 
+      summarise(n=n(), overallPercent=unique(overallPercent/n))  
+print(groupedProportionFractureB) 
+mean(groupedProportionFractureB$overallPercent)
 
 ## To-do: review below code, worried it's incorrect: 
 
@@ -472,9 +527,10 @@ print(groupedProportionFractureSecond)
 
 ## For baseline theoretical distribution: (to-do: look over this, worried also that it's wrong)
 
-groupedProportionFractureSecondBase <- groupedProportionFractureBaseline %>% 
-      filter(round=="3") %>% 
+groupedProportionFractureSecondBase <- groupedProportionFractureBaseline %>%
+      filter(condition=="B") %>% 
       summarise(n=n(), overallPercent=sum(as.numeric(fracture))/n) 
+
 print(groupedProportionFractureSecondBase$overallPercent)
 
 ## Set-up separate groups for proportion tests to answer: does unmasked fracture more/less than masked, and more/less than new pairs? 
@@ -513,11 +569,7 @@ conditionalProbTreatment <- matrix(c(treatmentFracture12, treatmentFractureOnly1
 colnames(conditionalProbTreatment) <- c("Ap frac","Ap no frac") 
 rownames(conditionalProbTreatment) <- c("A frac","A no frac")
 conditionalProbTreatment <- as.table(conditionalProbTreatment)
-conditionalProbTreatment
-```
-
-```{r mylatextable, results = "asis"}
-stargazer(conditionalProbTreatment, type = 'text', title="Conditional fracture probability for masked")
+print(conditionalProbTreatment) 
 ```
 
 ```{r}
@@ -533,11 +585,7 @@ controlFractureNever <- sum(ifelse(controlFracture1$fracture=="0" & controlFract
 conditionalProbControl <- matrix(c(controlFracture12, controlFractureOnly1, controlFractureOnly2, controlFractureNever),ncol=2,byrow=TRUE)
 colnames(conditionalProbControl) <- c("Ap frac","Ap no frac") 
 rownames(conditionalProbControl) <- c("A frac","A no frac")
-conditionalProbControl
-```
-
-```{r mylatextable, results = "asis"}
-stargazer(conditionalProbControl, type = 'text', title="Conditional fracture probability for unmasked")
+print(conditionalProbControl) 
 ```
 
 ```{r}
@@ -557,8 +605,8 @@ conditionalProbBaseline
 ```
 
 ```{r}
-kable(conditionalProbBaseline, "latex", caption = "Demo table", booktabs = T) %>%
-kable_styling(latex_options = c("striped", "hold_position"))
+# kable(conditionalProbBaseline, "latex", caption = "Demo table", booktabs = T) %>%
+# kable_styling(latex_options = c("striped", "hold_position"))
 ```
 
 ## 3B: Now investigating the big result: switch %: what's the % of pairs flipping their decisions?
@@ -597,13 +645,13 @@ controlAbsChange=c(normalizedControlChange)*100
 baselineAbsChange=c(normalizedBaselineChange)*100 
 
 ## Proportion test: 
-prop.test(x = c(treatmentAbsChange, baselineAbsChange), n = c(100, 100))
+prop.test(x = c(treatmentAbsChange, controlAbsChange), n = c(100, 100))
 
 ## Chi goodness xof fit: 
 
 ## Using baseline as theoretical probability distribution 
 ## Treatment: 
- chisq.test(treatmentAbsChange, p = baselineAbsChange/sum(baselineAbsChange)) 
+chisq.test(treatmentAbsChange, p = baselineAbsChange/sum(baselineAbsChange)) 
 chisq.test(treatmentAbsChange, controlAbsChange, p=baselineAbsChange)
 ## Control:
 chisq.test(controlAbsChange,p=baselineAbsChange)
@@ -613,18 +661,20 @@ chisq.test(controlAbsChange,p=baselineAbsChange)
 
 ```{r}
 ## Visualize differences: 
-dat <- data.frame(NormalizedAbsoluteFractureChange= factor(c("Masked","Baseline","Unmasked"), levels=c("Masked","Baseline","Unmasked")),
-                  fractureValueSwitch = c(normalizedTreatmentChange, normalizedBaselineChange, normalizedControlChange))
+dat <- data.frame(NormalizedAbsoluteFractureChange= factor(c("Masked","Unmasked"), levels=c("Masked","Baseline","Unmasked")),
+                  fractureValueSwitch = c(normalizedTreatmentChange, normalizedControlChange))
 
+dat$sd <- sd(dat$fractureValueSwitch)
 
 p <- ggplot(data=dat, aes(x=NormalizedAbsoluteFractureChange, y=fractureValueSwitch)) +
   geom_bar(stat="identity", fill="steelblue")+
   geom_text(aes(label=fractureValueSwitch), vjust=1.6, color="white", size=3.5)+
-  theme_minimal() + labs(subtitle="Normalized absolute value change in team fracture value", 
+  theme_grey() + labs(subtitle="Normalized absolute value change in team fracture value", 
        x="",
        y="Percent of total fracture value change")
-p
 
+# geom_errorbar(width=.1, aes(ymin=fractureValueSwitch-sd, ymax=fractureValueSwitch+sd), #colour="red")
+p
 ```
 
 
