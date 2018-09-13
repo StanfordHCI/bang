@@ -13,3 +13,4 @@ R/allChatFiles.csv
 *.swo
 *.log
 .Rhistory
+*.icloud
