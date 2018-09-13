@@ -17,24 +17,24 @@ const maxWaitChatMinutes = 20
 
 // Toggles
 const runExperimentNow = true
-const issueBonusesNow = true
-const notifyWorkersOn = true
+const issueBonusesNow = false
+const notifyWorkersOn = false
 const runViaEmailOn = false
-const usingWillBang = true
-const aggressiveNotifyOn = true
+const usingWillBang = false
+const aggressiveNotifyOn = false
 
 const cleanHITs = false
-const assignQualifications = true
+const assignQualifications = false
 const debugMode = !runningLive
 
 const suddenDeath = false
 let setPerson = false
 
-const randomCondition = false
+const randomCondition = true
 const randomRoundOrder = true
 const randomProduct = true
 
-const waitChatOn = true //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = false //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false
 const starterSurveyOn = false
@@ -146,16 +146,20 @@ console.log = function(...msg) {
   let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
   let batchCompleteUpdated = false;
 
-  const roundOrdering = extraRoundOn ? [
-    {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]},
-    {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]},
-    {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [
-    {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]},
-    {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]},
-    {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}]
+  /* const roundOrdering = extraRoundOn ? [ */
+  /*   {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]}, */
+  /*   {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]}, */
+  /*   {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [ */
+  /*   {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]}, */
+  /*   {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]}, */
+  /*   {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}] */
+  /* const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0] */
+
+  // Settings for 4 rounds.
+  const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
+  const conditions = {control: ordering, treatment: ordering, baseline: [1,2,3,4]}
 
   const experimentRoundIndicator = extraRoundOn ? 2 : 1 //This record what round of the ordering is the experimental round.
-  const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
   const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
     console.log(currentCondition,'with',conditions[currentCondition]);
 
@@ -166,7 +170,6 @@ console.log = function(...msg) {
   const people = extraRoundOn ? tools.letters.slice(0,teamSize ** 2 + teamSize) : tools.letters.slice(0,teamSize ** 2)
   const population = people.length
   const teams = tools.createTeams(teamSize,numRounds,people,extraRoundOn)
-
 //}
 
 //if (runExperimentNow) {
@@ -1331,13 +1334,13 @@ io.on('connection', (socket) => {
           questionObj['question']+=" Team " + (index+1) + " (" + team + '),'
         })
         questionObj['question'] = questionObj['question'].slice(0,-1)
-        answerObj = {answers: ["Team 1", "Team 2", "Team 3"], answerType: 'radio', textValue: true};
+        answerObj = {answers: ["Team 1", "Team 2", "Team 3", "Team 4"], answerType: 'radio', textValue: true};
       } else if (answerTag === "MTR") { //team checkbox
         getTeamMembers(user).forEach(function(team, index){
           questionObj['question']+=" Team " + (index+1) + " (" + team + '),'
         })
         questionObj['question'] = questionObj['question'].slice(0,-1)
-        answerObj = {answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 1 and Team 3"], answerType: 'radio', textValue: true};
+        answerObj = {answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 3 and Team 4", "Team 1 and Team 3", "Team 1 and Team 4", "Team 2 and Team 4", ], answerType: 'radio', textValue: true};
       } else if (answerTag === "LH") { //leave hit yn
         answerObj = leaveHitAnswers;
       } else {//chatbot qs
