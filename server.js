@@ -292,6 +292,7 @@ if (runExperimentNow && runningLive){
             db.willBang.find({ timePreference: currenttimePeriod }, (err, currentTimePoolWorkers) => {
               if (err) {console.log("DB for MTurk:" + err)}
               else {
+                if (currentTimePoolWorkers.length > maxWorkersToNotify) { currentTimePoolWorkers = getRandomSubarray(currentTimePoolWorkers, maxWorkersToNotify) }
                 console.log("Time Pool Workers: " + currentTimePoolWorkers.length)
                 let timePoolNotifyList = currentTimePoolWorkers.map(u => u.id)
                 let moreworkersneeded = maxWorkersToNotify - currentTimePoolWorkers.length
