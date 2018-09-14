@@ -89,7 +89,7 @@ let mturk = require('./mturkTools');
 let express = require('express');
 const app = express();
 const server = require('http').createServer(app);
-const io = require('socket.io')(server);
+const io = require('socket.io')(server); //, {transports: ['websocket']}
 const port = process.env.PORT || 3000;
 server.listen(port, () => {
     console.log('Server listening at port', port)
@@ -113,6 +113,14 @@ Array.prototype.set = function () {
     });
     return setArray
 };
+
+function ioSocketsEmit(event, message) {
+    return io.sockets.emit(event, message);
+}
+
+function ioEmitById(socketId, event, message) {
+    return io.in(socketId).emit(event, message);
+}
 
 function useUser(u, f, err = "Guarded against undefined user") {
     //let user = users.byID(u.id)
@@ -329,7 +337,9 @@ if (runExperimentNow && runningLive) {
                                 console.log("DB for MTurk:" + err)
                             }
                             else {
-                                if (currentTimePoolWorkers.length > maxWorkersToNotify) { currentTimePoolWorkers = getRandomSubarray(currentTimePoolWorkers, maxWorkersToNotify) }
+                                if (currentTimePoolWorkers.length > maxWorkersToNotify) {
+                                    currentTimePoolWorkers = getRandomSubarray(currentTimePoolWorkers, maxWorkersToNotify)
+                                }
                                 console.log("Time Pool Workers: " + currentTimePoolWorkers.length);
                                 let timePoolNotifyList = currentTimePoolWorkers.map(u => u.id);
                                 let moreworkersneeded = maxWorkersToNotify - currentTimePoolWorkers.length;
@@ -601,7 +611,10 @@ io.on('connection', (socket) => {
     //   socket.username = name_structure.username;
     //   socket.emit('set username', {username: socket.username})
     // })
-
+    socket.on("heartbeat", data => {
+        console.log("HEARTBEAT " + socket.id);
+        io.in(socket.id).emit('heartbeat');
+    });
     socket.on('accepted HIT', data => {
         console.log('ACCEPTED HIT CALLED');
         if (!userAcquisitionStage) {
@@ -702,8 +715,10 @@ io.on('connection', (socket) => {
                     let user = usersActive[i];
                     console.log('active user ' + (i + 1) + ': ' + user.name);
                     if (i < numUsersWanted) { //take the 1st teamssize **2 users and add them
-                        io.in(user.mturkId).emit("echo", "add user");
-                        io.in(user.mturkId).emit('initiate experiment');
+                        ioEmitById(user.mturkId, "echo", "add user");
+                        ioEmitById(user.mturkId, 'initiate experiment', null);
+                        // io.in(user.mturkId).emit("echo", "add user");
+                        // io.in(user.mturkId).emit('initiate experiment');
                     } else { //else emit finish
                         console.log('EMIT FINISH TO EXTRA ACTIVE WORKER');
                         issueFinish(user, runViaEmailOn ? "We don't need you to work at this specific moment, " +
@@ -726,13 +741,15 @@ io.on('connection', (socket) => {
             }
         } else { // waitchat off
             if (usersActive.length >= numUsersWanted) {
-                io.sockets.emit('update number waiting', {num: 0});
+                // io.sockets.emit('update number waiting', {num: 0});
+                ioSocketsEmit('update number waiting', {num: 0});
                 console.log('there are ' + usersActive.length + ' users: ' + usersActive);
                 for (let i = 0; i < usersActive.length; i++) {
                     io.in(usersActive[i].mturkId).emit('show chat link');
                 }
             } else {
-                io.sockets.emit('update number waiting', {num: teamSize ** 2 - usersActive.length});
+                // io.sockets.emit('update number waiting', {num: teamSize ** 2 - usersActive.length});
+                ioSocketsEmit('update number waiting', {num: teamSize ** 2 - usersActive.length});
             }
         }
 
@@ -898,7 +915,7 @@ io.on('connection', (socket) => {
             });
 
             users.filter(f => f.room === user.room).forEach(f => {
-                socket.broadcast.to(f.mturkId).emit('new message', {
+                socket.broadcast.to(f.mturkId).emit('new message', { // TODO
                     username: idToAlias(f, String(socket.mturkId)),
                     message: idToAlias(f, cleanMessage)
                 });
@@ -919,22 +936,29 @@ io.on('connection', (socket) => {
     });
 
     socket.on('load bot qs', () => {
-        io.in(socket.mturkId).emit('chatbot', loadQuestions(botFile))
+        ioEmitById(socket.mturkId, 'chatbot', loadQuestions(botFile))
     });
 
     // when the user disconnects.. perform this
     socket.on('disconnect', function (reason) {
         // changes connected to false of disconnected user in userPool
-        console.log(("Disconnecting socket: " + socket.id + " because " + reason).red);
+        console.log(("[" + (new Date()).toISOString() + "]: Disconnecting socket: " + socket.id + " because " + reason).red);
+        if (reason === "transport error") {
+            //console.log(socket);
+            console.log("TRANSPORT");
+        }
         if (userPool.find(function (element) {
             return element.mturkId === socket.mturkId
         })) {
             userPool.byMturkId(socket.mturkId).connected = false;
             let usersActive = getPoolUsersActive();
             if (usersActive.length >= teamSize ** 2) {
-                io.sockets.emit('update number waiting', {num: 0});
+
+                ioSocketsEmit('update number waiting', {num: 0});
+                // io.sockets.emit('update number waiting', {num: 0});
             } else {
-                io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersActive.length});
+                ioSocketsEmit('update number waiting', {num: (teamSize ** 2) - usersActive.length});
+                // io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersActive.length});
             }
             if (userAcquisitionStage)
                 mturk.setAssignmentsPending(getPoolUsersConnected().length);
@@ -1012,13 +1036,17 @@ io.on('connection', (socket) => {
 
     socket.on('ready-to-all', (data) => {
         console.log("god is ready".rainbow);
-        users.filter(user => !user.ready).forEach(user => io.in(socket.mturkId).emit('echo', 'ready'))
+        users.filter(user => !user.ready).forEach(user =>
+                ioEmitById(socket.mturkId, 'echo', 'ready')
+            // io.in(socket.mturkId).emit('echo', 'ready')
+        )
         //io.sockets.emit('echo','ready')
     });
 
     socket.on('active-to-all', (data) => {
         console.log("god is active".rainbow);
-        io.sockets.emit('echo', 'active')
+        ioSocketsEmit('echo', 'active');
+        // io.sockets.emit('echo', 'active');
     });
 
     socket.on('notify-more', (data) => {
@@ -1063,7 +1091,7 @@ io.on('connection', (socket) => {
     socket.on('kill-all', (data) => {
         console.log("god is angry".rainbow);
         users.forEach(u => updateUserInDB(socket, "bonus", currentBonus()));
-        io.sockets.emit('finished', {
+        ioSocketsEmit('finished', {
             message: "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
             finishingCode: "kill-all",
             turkSubmitTo: "",
@@ -1079,7 +1107,7 @@ io.on('connection', (socket) => {
             console.log("Event " + currentEvent + ": " + eventSchedule[currentEvent] + " | User: " + user.name);
 
             if (eventSchedule[currentEvent] === "starterSurvey") {
-                io.in(socket.mturkId).emit("load", {
+                ioEmitById(socket.mturkId, "load", {
                     element: 'starterSurvey',
                     questions: loadQuestions(starterSurveyFile),
                     interstitial: false,
@@ -1092,27 +1120,27 @@ io.on('connection', (socket) => {
                     recordTime("starterSurvey");
                 }
                 if (checkinOn) {
-                    io.in(socket.mturkId).emit("load", {
+                    ioEmitById(socket.mturkId, "load", {
                         element: 'checkin',
                         questions: loadQuestions(checkinFile),
                         interstitial: true,
                         showHeaderBar: true
                     });
                 }
-                io.in(socket.mturkId).emit("load", {
+                ioEmitById(socket.mturkId, "load", {
                     element: 'leave-hit',
                     questions: loadQuestions(leaveHitFile),
                     interstitial: true,
                     showHeaderBar: true
                 });
-                io.in(socket.mturkId).emit("echo", "ready");
+                ioEmitById(socket.mturkId, "echo", "ready");
 
             }
             else if (eventSchedule[currentEvent] === "midSurvey") {
                 if (timeCheckOn) {
                     recordTime("round");
                 }
-                io.in(socket.mturkId).emit("load", {
+                ioEmitById(socket.mturkId, "load", {
                     element: 'midSurvey',
                     questions: loadQuestions(midSurveyFile),
                     interstitial: false,
@@ -1123,7 +1151,7 @@ io.on('connection', (socket) => {
                 if (timeCheckOn) {
                     recordTime("round");
                 }
-                io.in(socket.mturkId).emit("load", {
+                ioEmitById(socket.mturkId, "load", {
                     element: 'psychologicalSafety',
                     questions: loadQuestions(psychologicalSafetyFile),
                     interstitial: false,
@@ -1136,7 +1164,7 @@ io.on('connection', (socket) => {
                 } else if (timeCheckOn) {
                     recordTime("round");
                 }
-                io.in(socket.mturkId).emit("load", {
+                ioEmitById(socket.mturkId, "load", {
                     element: 'teamfeedbackSurvey',
                     questions: loadQuestions(feedbackFile, user),
                     interstitial: false,
@@ -1160,7 +1188,7 @@ io.on('connection', (socket) => {
                     interstitial: false,
                     showHeaderBar: false
                 });
-                io.in(socket.mturkId).emit("load", {
+                ioEmitById(socket.mturkId, "load", {
                     element: 'blacklistSurvey',
                     questions: loadQuestions(blacklistFile, user),
                     interstitial: false,
@@ -1178,7 +1206,7 @@ io.on('connection', (socket) => {
                 } else if (timeCheckOn) {
                     recordTime("round");
                 }
-                io.in(user.id).emit("load", {
+                ioEmitById(user.mturkId, "load", {
                     element: 'qFifteen',
                     questions: loadQuestions(qFifteenFile, user),
                     interstitial: false,
@@ -1198,7 +1226,7 @@ io.on('connection', (socket) => {
                 } else if (timeCheckOn) {
                     recordTime("round");
                 }
-                io.in(user.id).emit("load", {
+                ioEmitById(user.mturkId, "load", {
                     element: 'qSixteen',
                     questions: loadQuestions(qSixteenFile, user),
                     interstitial: false,
@@ -1223,7 +1251,7 @@ io.on('connection', (socket) => {
                 let survey = postSurveyGenerator(user);
                 user.results.manipulation = survey.correctAnswer;
                 updateUserInDB(user, 'results.manipulation', user.results.manipulation);
-                io.in(socket.mturkId).emit("load", {
+                ioEmitById(socket.mturkId, "load", {
                     element: 'postSurvey',
                     questions: loadQuestions(postSurveyFile, user),
                     interstitial: false,
@@ -1248,7 +1276,7 @@ io.on('connection', (socket) => {
                 usersFinished += 1;
                 console.log(usersFinished, "users have finished.");
 
-                io.in(socket.mturkId).emit('finished', {
+                ioEmitById(socket.mturkId, 'finished', {
                     message: "Thanks for participating, you're all done!",
                     finishingCode: socket.id,
                     turkSubmitTo: mturk.submitTo,
@@ -1369,14 +1397,15 @@ io.on('connection', (socket) => {
                     let teamNames = [tools.makeName().username, tools.makeName().username, tools.makeName().username,
                         tools.makeName().username, tools.makeName().username];
                     console.log(teamNames);
-                    io.in(u.mturkId).emit('initiate round', {
-                        task: taskText,
-                        team: teamNames,
-                        duration: roundMinutes,
-                        randomAnimal: tools.randomAnimal,
-                        round: currentRound + 1,
-                        runningLive: runningLive
-                    })//rounds are 0 indexed
+                    ioEmitById(u.mturkId, 'initiate round', {
+                            task: taskText,
+                            team: teamNames,
+                            duration: roundMinutes,
+                            randomAnimal: tools.randomAnimal,
+                            round: currentRound + 1,
+                            runningLive: runningLive
+                        }
+                    )//rounds are 0 indexed
                 } else {
                     // Dynamically generate teammate names
                     // even if teamSize = 1 for testing, this still works
@@ -1410,7 +1439,7 @@ io.on('connection', (socket) => {
                     // io.in(user.id).emit('initiate round', {task: taskText, team: user.friends.filter(friend =>
                     // { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow
                     // ? friend.tAlias : friend.alias }), duration: roundMinutes })
-                    io.in(u.mturkId).emit('initiate round', {
+                    ioEmitById(u.mturkId, 'initiate round', {
                         task: taskText,
                         team: team_Aliases,
                         duration: roundMinutes,
@@ -1431,14 +1460,14 @@ io.on('connection', (socket) => {
             setTimeout(() => {
                 console.log('time warning', currentRound);
                 users.forEach(user => {
-                    io.in(user.mturkId).emit('timer', {time: roundMinutes * .1})
+                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .1})
                 });
 
                 //Done with round
                 setTimeout(() => {
                     console.log('done with round', currentRound);
                     users.forEach(user => {
-                        io.in(user.mturkId).emit('stop', {
+                        ioEmitById(user.mturkId, 'stop', {
                             round: currentRound,
                             survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn)
                         })
@@ -1595,7 +1624,7 @@ io.on('connection', (socket) => {
         }
         console.log(('Issued finish to ' + socket.mturkId).red);
 
-        io.in(socket.mturkId).emit('finished', {
+        ioEmitById(socket.mturkId, 'finished', {
             message: message,
             finishingCode: finishingCode,
             crashed: false
