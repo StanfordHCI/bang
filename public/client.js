@@ -1,3 +1,15 @@
+let LeavingAlert = true;
+window.onbeforeunload = function (event) {
+    if (LeavingAlert) {
+        console.log("Leaving is true");
+        return "Leaving will stop this HIT for  all users. Are you sure you want to leave?"
+    } else {
+        console.log("Leaving is false");
+        return null
+    }
+};
+
+
 $(function () {
     const FADE_TIME = 150; // ms
     const TYPING_TIMER_LENGTH = 400; // ms
@@ -100,6 +112,7 @@ $(function () {
         document.getElementById("finishingMessage").innerHTML = finishingMessage;
         document.getElementById("mturk_form").action = mturk_form;
         document.getElementById("assignmentId").value = assignmentId;
+        LeavingAlert = false;
         finishingcode.value = finishingcode
     };
 
@@ -1001,6 +1014,12 @@ $(function () {
         socket.emit('mturk_formSubmit', $('#mturk_form').serialize())
     })
 
+    io.connect().on('disconnect', function () {
+        HandleFinish(finishingMessage = "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
+                mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
+                assignmentId = mturkVariables.assignmentId, finishingcode = "LeftHit")
+      });
+
 });
 
 function startTimer(duration, display) {
@@ -1049,13 +1068,3 @@ const decodeURL = (toDecode) => {
     return unescape(encoded.replace(/\+/g, " "));
 };
 
-let LeavingAlert = true;
-window.onbeforeunload = function (event) {
-    if (LeavingAlert) {
-        console.log("Leaving is true");
-        return "Leaving will stop this HIT for  all users. Are you sure you want to leave?"
-    } else {
-        console.log("Leaving is false");
-        return null
-    }
-};
