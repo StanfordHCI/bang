@@ -1206,7 +1206,7 @@ io.on('connection', (socket) => {
                 } else if (timeCheckOn) {
                     recordTime("round");
                 }
-                ioEmitById(user.id, "load", {
+                ioEmitById(user.mturkId, "load", {
                     element: 'qFifteen',
                     questions: loadQuestions(qFifteenFile, user),
                     interstitial: false,
@@ -1226,7 +1226,7 @@ io.on('connection', (socket) => {
                 } else if (timeCheckOn) {
                     recordTime("round");
                 }
-                ioEmitById(user.id, "load", {
+                ioEmitById(user.mturkId, "load", {
                     element: 'qSixteen',
                     questions: loadQuestions(qSixteenFile, user),
                     interstitial: false,
