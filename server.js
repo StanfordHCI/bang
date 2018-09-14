@@ -215,7 +215,7 @@ db.ourHITs = new Datastore({filename: '.data/ourHITs', autoload: true, timestamp
 db.willBang = new Datastore({filename: '.data/willBang', autoload: true, timestampData: true});
 
 function updateUserInDB(user, field, value) {
-    db.users.update({mturkId: user.mturkId}, {$set: {[field]: value}}, {},
+    db.users.update({mturkId: user.mturkId, batch: batchID}, {$set: {[field]: value}}, {},
         err => console.log(err ? "Err recording ".red + field + ": " + err : "Updated " + field + " for " +
             user.mturkId + " " + JSON.stringify(value, null, 2))
     )
@@ -1505,28 +1505,28 @@ io.on('connection', (socket) => {
     socket.on('mturk_formSubmit', (data) => {
         useUser(socket, user => {
             user.results.engagementFeedback = parseResults(data);
-            updateUserInDB(socket, "results.engagementFeedback", user.results.engagementFeedback)
+            updateUserInDB(user, "results.engagementFeedback", user.results.engagementFeedback)
         })
     });
 
     socket.on('qFifteenSubmit', (data) => {
         useUser(socket, user => {
             user.results.qFifteenCheck = parseResults(data);
-            updateUserInDB(socket, "results.qFifteenCheck", user.results.qFifteenCheck)
+            updateUserInDB(user, "results.qFifteenCheck", user.results.qFifteenCheck)
         })
     });
 
     socket.on('qSixteenSubmit', (data) => {
         useUser(socket, user => {
             user.results.qSixteenCheck = parseResults(data);
-            updateUserInDB(socket, "results.qSixteenCheck", user.results.qSixteenCheck)
+            updateUserInDB(user, "results.qSixteenCheck", user.results.qSixteenCheck)
         })
     });
 
     socket.on('postSurveySubmit', (data) => {
         useUser(socket, user => {
             user.results.manipulationCheck = parseResults(data);
-            updateUserInDB(socket, "results.manipulationCheck", user.results.manipulationCheck)
+            updateUserInDB(user, "results.manipulationCheck", user.results.manipulationCheck)
         })
     });
 
