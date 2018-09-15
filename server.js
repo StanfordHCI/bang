@@ -1598,7 +1598,7 @@ io.on('connection', (socket) => {
                     questionObj['question'] += " Team " + (index + 1) + " (" + team + '),'
                 });
                 questionObj['question'] = questionObj['question'].slice(0, -1);
-                answerObj = {answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 3 and Team 4", "Team 1 and Team 3", "Team 1 and Team 4", "Team 2 and Team 4", ], answerType: 'radio', textValue: true};
+                answerObj = {answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 3 and Team 4", "Team 1 and Team 3", "Team 1 and Team 4", "Team 2 and Team 4"], answerType: 'radio', textValue: true};
             } else if (answerTag === "LH") { //leave hit yn
                 answerObj = leaveHitAnswers;
             } else {//chatbot qs
