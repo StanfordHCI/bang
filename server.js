@@ -18,7 +18,7 @@ const maxWaitChatMinutes = 20;
 
 // Toggles
 const runExperimentNow = true;
-const issueBonusesNow = true;
+const issueBonusesNow = false;
 const notifyWorkersOn = true;
 const runViaEmailOn = false;
 const usingWillBang = true;
@@ -588,7 +588,7 @@ io.on('connection', (socket) => {
 
         }
         if (userPool.byMturkId(mturkId)) {
-            const user = userPool.byMturkId(mturkId);
+            let user = userPool.byMturkId(mturkId);
             console.log(('RECONNECTED ' + mturkId + ' in user pool ('+ user.id + ' => ' + socket.id +')').blue);
             socket.name_structure = data.name_structure;
             socket.username = data.name_structure.username;

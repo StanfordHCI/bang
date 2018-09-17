@@ -196,7 +196,7 @@ function downloadData(url,callback) {
 
 //Save from servers
 downloadData("mark.dmorina.com",saveAllData) 
-/* downloadData("bang.dmorina.com",saveAllData) */ 
+downloadData("bang.dmorina.com",saveAllData)
 
 //Save from local folder
 /* saveAllData() */

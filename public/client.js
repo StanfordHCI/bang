@@ -1014,11 +1014,13 @@ $(function () {
         socket.emit('mturk_formSubmit', $('#mturk_form').serialize())
     })
 
-    io.connect().on('disconnect', function () {
-        HandleFinish(finishingMessage = "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
+    socket.on('disconnect', function () {
+        HandleFinish(
+		finishingMessage = "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
                 mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
-                assignmentId = mturkVariables.assignmentId, finishingcode = "LeftHit")
-      });
+                assignmentId = mturkVariables.assignmentId, 
+		finishingcode = "LeftHit")
+    });
 
 });
 
