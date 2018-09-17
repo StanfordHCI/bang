@@ -18,7 +18,7 @@ const maxWaitChatMinutes = 20;
 
 // Toggles
 const runExperimentNow = true;
-const issueBonusesNow = true;
+const issueBonusesNow = false;
 const notifyWorkersOn = true;
 const runViaEmailOn = false;
 const usingWillBang = true;
@@ -30,7 +30,7 @@ const debugMode = !runningLive;
 
 const suddenDeath = false;
 
-const randomCondition = false;
+const randomCondition = true;
 const randomRoundOrder = true;
 const randomProduct = true;
 
@@ -171,37 +171,39 @@ console.log = function (...msg) {
 };
 
 //if (runExperimentNow){
-// Experiment variables
-/* const conditionsAvailalbe = ['control','treatment','baseline'] */
-const conditionsAvailalbe = ['control', 'treatment'];
-const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1];
-let treatmentNow = false;
-let firstRun = false;
-let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
-let batchCompleteUpdated = false;
+  // Experiment variables
+  /* const conditionsAvailalbe = ['control','treatment','baseline'] */
+  const conditionsAvailalbe = ['control','treatment']
+  const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
+  let treatmentNow = false
+  let firstRun = false;
+  let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
+  let batchCompleteUpdated = false;
 
-const roundOrdering = extraRoundOn ? [
-    {control: [1, 2, 3, 2], treatment: [1, 2, 3, 2], baseline: [1, 2, 3, 4]},
-    {control: [1, 3, 2, 2], treatment: [1, 3, 2, 2], baseline: [1, 2, 3, 4]},
-    {control: [1, 2, 2, 3], treatment: [1, 2, 2, 3], baseline: [1, 2, 3, 4]}] : [
-    {control: [1, 2, 1], treatment: [1, 2, 1], baseline: [1, 2, 3]},
-    {control: [2, 1, 1], treatment: [2, 1, 1], baseline: [1, 2, 3]},
-    {control: [1, 1, 2], treatment: [1, 1, 2], baseline: [1, 2, 3]}];
+  /* const roundOrdering = extraRoundOn ? [ */
+  /*   {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]}, */
+  /*   {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]}, */
+  /*   {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [ */
+  /*   {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]}, */
+  /*   {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]}, */
+  /*   {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}] */
+  /* const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0] */
 
-const experimentRoundIndicator = extraRoundOn ? 2 : 1; //This record what round of the ordering is the
-// experimental round.
-const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0];
-const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator); //assumes that
-// the manipulation is always the last instance of team 1's interaction.
-console.log(currentCondition, 'with', conditions[currentCondition]);
+  // Settings for 4 rounds.
+  const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
+  const conditions = {control: ordering, treatment: ordering, baseline: [1,2,3,2]} //,4]} modified extra roudn to deal with createTeams 
 
-const numRounds = conditions.baseline.length;
+  const experimentRoundIndicator = extraRoundOn ? 2 : 1 //This record what round of the ordering is the experimental round.
+  const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
+    console.log(currentCondition,'with',conditions[currentCondition]);
 
-const numberOfRooms = teamSize * numRounds;
-const rooms = tools.letters.slice(0, numberOfRooms);
-const people = extraRoundOn ? tools.letters.slice(0, teamSize ** 2 + teamSize) : tools.letters.slice(0, teamSize ** 2);
-const teams = tools.createTeams(teamSize, numRounds, people, extraRoundOn);
+  const numRounds = conditions.baseline.length
 
+  const numberOfRooms = teamSize * numRounds
+  const rooms = tools.letters.slice(0,numberOfRooms)
+  const people = extraRoundOn ? tools.letters.slice(0,teamSize ** 2 + teamSize) : tools.letters.slice(0,teamSize ** 2)
+  const population = people.length
+  const teams = tools.createTeams(teamSize,numRounds-1,people,extraRoundOn) //added '-1' to numRounds
 //}
 
 //if (runExperimentNow) {
@@ -221,7 +223,7 @@ db.ourHITs = new Datastore({filename: '.data/ourHITs', autoload: true, timestamp
 db.willBang = new Datastore({filename: '.data/willBang', autoload: true, timestampData: true});
 
 function updateUserInDB(user, field, value) {
-    db.users.update({mturkId: user.mturkId}, {$set: {[field]: value}}, {},
+    db.users.update({mturkId: user.mturkId, batch: batchID}, {$set: {[field]: value}}, {},
         err => console.log(err ? "Err recording ".red + field + ": " + err : "Updated " + field + " for " +
             user.mturkId + " " + JSON.stringify(value, null, 2))
     )
@@ -586,7 +588,7 @@ io.on('connection', (socket) => {
 
         }
         if (userPool.byMturkId(mturkId)) {
-            const user = userPool.byMturkId(mturkId);
+            let user = userPool.byMturkId(mturkId);
             console.log(('RECONNECTED ' + mturkId + ' in user pool ('+ user.id + ' => ' + socket.id +')').blue);
             socket.name_structure = data.name_structure;
             socket.username = data.name_structure.username;
@@ -1532,28 +1534,28 @@ io.on('connection', (socket) => {
     socket.on('mturk_formSubmit', (data) => {
         useUser(socket, user => {
             user.results.engagementFeedback = parseResults(data);
-            updateUserInDB(socket, "results.engagementFeedback", user.results.engagementFeedback)
+            updateUserInDB(user, "results.engagementFeedback", user.results.engagementFeedback)
         })
     });
 
     socket.on('qFifteenSubmit', (data) => {
         useUser(socket, user => {
             user.results.qFifteenCheck = parseResults(data);
-            updateUserInDB(socket, "results.qFifteenCheck", user.results.qFifteenCheck)
+            updateUserInDB(user, "results.qFifteenCheck", user.results.qFifteenCheck)
         })
     });
 
     socket.on('qSixteenSubmit', (data) => {
         useUser(socket, user => {
             user.results.qSixteenCheck = parseResults(data);
-            updateUserInDB(socket, "results.qSixteenCheck", user.results.qSixteenCheck)
+            updateUserInDB(user, "results.qSixteenCheck", user.results.qSixteenCheck)
         })
     });
 
     socket.on('postSurveySubmit', (data) => {
         useUser(socket, user => {
             user.results.manipulationCheck = parseResults(data);
-            updateUserInDB(socket, "results.manipulationCheck", user.results.manipulationCheck)
+            updateUserInDB(user, "results.manipulationCheck", user.results.manipulationCheck)
         })
     });
 
@@ -1590,17 +1592,13 @@ io.on('connection', (socket) => {
                     questionObj['question'] += " Team " + (index + 1) + " (" + team + '),'
                 });
                 questionObj['question'] = questionObj['question'].slice(0, -1);
-                answerObj = {answers: ["Team 1", "Team 2", "Team 3"], answerType: 'radio', textValue: true};
+                answerObj = {answers: ["Team 1", "Team 2", "Team 3", "Team 4"], answerType: 'radio', textValue: true};
             } else if (answerTag === "MTR") { //team checkbox
                 getTeamMembers(user).forEach(function (team, index) {
                     questionObj['question'] += " Team " + (index + 1) + " (" + team + '),'
                 });
                 questionObj['question'] = questionObj['question'].slice(0, -1);
-                answerObj = {
-                    answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 1 and Team 3"],
-                    answerType: 'radio',
-                    textValue: true
-                };
+                answerObj = {answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 3 and Team 4", "Team 1 and Team 3", "Team 1 and Team 4", "Team 2 and Team 4"], answerType: 'radio', textValue: true};
             } else if (answerTag === "LH") { //leave hit yn
                 answerObj = leaveHitAnswers;
             } else {//chatbot qs
