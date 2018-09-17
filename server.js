@@ -30,7 +30,7 @@ const debugMode = !runningLive;
 
 const suddenDeath = false;
 
-const randomCondition = false;
+const randomCondition = true;
 const randomRoundOrder = true;
 const randomProduct = true;
 
@@ -191,7 +191,7 @@ console.log = function (...msg) {
 
   // Settings for 4 rounds.
   const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
-  const conditions = {control: ordering, treatment: ordering, baseline: [1,2,3,4]}
+  const conditions = {control: ordering, treatment: ordering, baseline: [1,2,3,2]} //,4]} modified extra roudn to deal with createTeams 
 
   const experimentRoundIndicator = extraRoundOn ? 2 : 1 //This record what round of the ordering is the experimental round.
   const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
@@ -203,7 +203,7 @@ console.log = function (...msg) {
   const rooms = tools.letters.slice(0,numberOfRooms)
   const people = extraRoundOn ? tools.letters.slice(0,teamSize ** 2 + teamSize) : tools.letters.slice(0,teamSize ** 2)
   const population = people.length
-  const teams = tools.createTeams(teamSize,numRounds,people,extraRoundOn)
+  const teams = tools.createTeams(teamSize,numRounds-1,people,extraRoundOn) //added '-1' to numRounds
 //}
 
 //if (runExperimentNow) {
