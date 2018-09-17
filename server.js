@@ -588,12 +588,12 @@ io.on('connection', (socket) => {
 
         }
         if (userPool.byMturkId(mturkId)) {
-            console.log(('Reconnected ' + mturkId + ' in user pool').blue);
-
+            const user = userPool.byMturkId(mturkId);
+            console.log(('RECONNECTED ' + mturkId + ' in user pool ('+ user.id + ' => ' + socket.id +')').blue);
             socket.name_structure = data.name_structure;
             socket.username = data.name_structure.username;
-            const user = userPool.byMturkId(mturkId);
             user.connected = true;
+            user.active = false;
             user.assignmentId = assignmentId;
             user.id = socket.id;
             user.turkSubmitTo = data.turkSubmitTo
