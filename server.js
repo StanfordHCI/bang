@@ -191,7 +191,7 @@ console.log = function (...msg) {
 
   // Settings for 4 rounds.
   const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
-  const conditions = {control: ordering, treatment: ordering, baseline: [1,2,3,2]} //,4]} modified extra roudn to deal with createTeams 
+  const conditions = {control: ordering, treatment: ordering, baseline: [1,2,3,2]} //,4]} modified extra roudn to deal with createTeams
 
   const experimentRoundIndicator = extraRoundOn ? 2 : 1 //This record what round of the ordering is the experimental round.
   const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
@@ -614,8 +614,9 @@ io.on('connection', (socket) => {
     //   socket.emit('set username', {username: socket.username})
     // })
     socket.on("heartbeat", data => {
-        console.log("HEARTBEAT " + socket.id);
-        io.in(socket.id).emit('heartbeat');
+        if (socket.connected) {
+            io.in(socket.id).emit('heartbeat');
+        }
     });
     socket.on('accepted HIT', data => {
         console.log('ACCEPTED HIT CALLED');

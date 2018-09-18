@@ -51,6 +51,7 @@ $(function () {
     const $qSixteen = $('#qSixteen'); // The question fifteen page
     const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
     const $finishingPage = $('#finishing'); // The finishing page
+    const $disconnectedMessage = $('._disconnected');
     const botUsername = 'helperBot';
 
     $('#ready-to-all').click((e) => {
@@ -130,9 +131,13 @@ $(function () {
     const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
 
 
-    const socket = io();
+    const socket = io({transports: ['websocket']});
 
     hideAll();
+
+    window.setInterval(function () {
+        sendHeartBeat();
+    }, 5000);
 
     // Prompt for setting a username
     let username = "";
@@ -507,8 +512,15 @@ $(function () {
         $inputMessage.focus();
     });
 
+    function sendHeartBeat() {
+        if (socket.connected) {
+            socket.emit('heartbeat', {});
+        }
+    }
+
     // Socket events
     socket.on('connect', function () {
+        $disconnectedMessage.hide();
         socket.emit('connected', {
             mturkId: URLvars.workerId,
             assignmentId: URLvars.assignmentId,
@@ -517,19 +529,27 @@ $(function () {
         })
     });
     socket.on('reconnect', function (attemptNumber) {
+        $disconnectedMessage.hide();
         socket.emit('log', URLvars.workerId + ' RECONNECT SUCCESS (attempt ' + attemptNumber + ')')
     });
 
     socket.on('reconnect_attempt', function (attemptNumber) {
-        socket.emit('log', URLvars.workerId + ' RECONNECT ATTEMPT ' + attemptNumber)
+        socket.io.opts.transports = ['websocket'];
+        if (socket.connected) {
+            socket.emit('log', URLvars.workerId + ' RECONNECT ATTEMPT ' + attemptNumber);
+        }
     });
 
     socket.on('reconnect_error', function (error) {
-        socket.emit('log', URLvars.workerId + ' RECONNECT ' + error)
+        if (socket.connected) {
+            socket.emit('log', URLvars.workerId + ' RECONNECT ' + error);
+        }
     });
 
     socket.on('reconnect_failure', function () {
-        socket.emit('log', URLvars.workerId + ' RECONNECT FAILURE')
+        if (socket.connected) {
+            socket.emit('log', URLvars.workerId + ' RECONNECT FAILURE');
+        }
     });
     socket.on('chatbot', data => {
         const questions = data;
@@ -1012,14 +1032,15 @@ $(function () {
 
     $('#mturk_form').submit((event) => {
         socket.emit('mturk_formSubmit', $('#mturk_form').serialize())
-    })
+    });
 
     socket.on('disconnect', function () {
+        $disconnectedMessage.show();
         HandleFinish(
-		finishingMessage = "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
-                mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
-                assignmentId = mturkVariables.assignmentId, 
-		finishingcode = "LeftHit")
+            finishingMessage = "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
+            mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
+            assignmentId = mturkVariables.assignmentId,
+            finishingcode = "LeftHit")
     });
 
 });
