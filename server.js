@@ -1078,10 +1078,8 @@ io.on('connection', (socket) => {
             if (usingWillBang) {
                 // Use this function to notify only x users <= 100
                 let maxWorkersToNotify = 100; // cannot be more than 100 if non-recursive
-                mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function (data) {
-                    let notifyList = getRandomSubarray(data, maxWorkersToNotify).filter(function (turker) {
-                        mturk.notifyWorkers(notifyList, subject, message)
-                    });
+                mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function (qualifiedWorkers) {
+                    let notifyList = getRandomSubarray(qualifiedWorkers, maxWorkersToNotify)
                     mturk.notifyWorkers(notifyList, subject, message)
                 })
             }
