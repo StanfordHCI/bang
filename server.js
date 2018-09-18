@@ -118,6 +118,8 @@ function ioSocketsEmit(event, message) {
     return io.sockets.emit(event, message);
 }
 
+function messageClients(message) { ioSocketsEmit("message clients",message ) }
+
 function ioEmitById(socketId, event, message) {
     return io.in(socketId).emit(event, message);
 }
@@ -191,7 +193,7 @@ console.log = function (...msg) {
 
   // Settings for 4 rounds.
   const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
-  const conditions = {control: ordering, treatment: ordering, baseline: [1,2,3,2]} //,4]} modified extra roudn to deal with createTeams 
+  const conditions = {control: ordering, treatment: ordering, baseline: [1,2,3,2]} //,4]} modified extra roudn to deal with createTeams
 
   const experimentRoundIndicator = extraRoundOn ? 2 : 1 //This record what round of the ordering is the experimental round.
   const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
@@ -1457,10 +1459,25 @@ io.on('connection', (socket) => {
             // save start time
             startTime = (new Date()).getTime();
 
+            // task details
+            taskInstructions = [
+              "1. List out ideas you like. Shoot for at least 5 per person.",
+              "2. As a group choose about 3 favorite ideas and discuss why you like them",
+              "3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?",
+              "4. Submit the idea you all like most."
+            ]
+
+            taskInstructions.forEach(instruction => {
+              setTimeout(() => {
+                messageClients(instruction)
+              }, instruction.time * roundMinutes * 60 * 1000)
+            })
+
             //Round warning
             // make timers run in serial
             setTimeout(() => {
                 console.log('time warning', currentRound);
+                messageClients("You have 1 miniute remaining.")
                 users.forEach(user => {
                     ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .1})
                 });

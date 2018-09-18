@@ -910,6 +910,8 @@ $(function () {
         return n;
     }
 
+    socket.on('message clients', message => { log(message) })
+
     socket.on('stop', data => {
         // log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
         hideAll();
@@ -1018,7 +1020,7 @@ $(function () {
         HandleFinish(
 		finishingMessage = "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
                 mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
-                assignmentId = mturkVariables.assignmentId, 
+                assignmentId = mturkVariables.assignmentId,
 		finishingcode = "LeftHit")
     });
 
@@ -1069,4 +1071,3 @@ const decodeURL = (toDecode) => {
     var encoded = toDecode;
     return unescape(encoded.replace(/\+/g, " "));
 };
-
