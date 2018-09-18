@@ -534,7 +534,7 @@ $(function () {
     });
 
     socket.on('reconnect_attempt', function (attemptNumber) {
-        socket.io.opts.transports = ['polling', 'websocket'];
+        socket.io.opts.transports = ['websocket'];
         socket.emit('log', URLvars.workerId + ' RECONNECT ATTEMPT ' + attemptNumber)
     });
 
