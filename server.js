@@ -171,39 +171,39 @@ console.log = function (...msg) {
 };
 
 //if (runExperimentNow){
-  // Experiment variables
-  /* const conditionsAvailalbe = ['control','treatment','baseline'] */
-  const conditionsAvailalbe = ['control','treatment']
-  const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
-  let treatmentNow = false
-  let firstRun = false;
-  let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
-  let batchCompleteUpdated = false;
+// Experiment variables
+/* const conditionsAvailalbe = ['control','treatment','baseline'] */
+const conditionsAvailalbe = ['control', 'treatment']
+const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
+let treatmentNow = false
+let firstRun = false;
+let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
+let batchCompleteUpdated = false;
 
-  /* const roundOrdering = extraRoundOn ? [ */
-  /*   {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]}, */
-  /*   {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]}, */
-  /*   {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [ */
-  /*   {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]}, */
-  /*   {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]}, */
-  /*   {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}] */
-  /* const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0] */
+/* const roundOrdering = extraRoundOn ? [ */
+/*   {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]}, */
+/*   {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]}, */
+/*   {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [ */
+/*   {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]}, */
+/*   {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]}, */
+/*   {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}] */
+/* const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0] */
 
-  // Settings for 4 rounds.
-  const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
-  const conditions = {control: ordering, treatment: ordering, baseline: [1,2,3,2]} //,4]} modified extra roudn to deal with createTeams 
+// Settings for 4 rounds.
+const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1, 2, 1, 3]
+const conditions = {control: ordering, treatment: ordering, baseline: [1, 2, 3, 2]} //,4]} modified extra roudn to deal with createTeams
 
-  const experimentRoundIndicator = extraRoundOn ? 2 : 1 //This record what round of the ordering is the experimental round.
-  const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
-    console.log(currentCondition,'with',conditions[currentCondition]);
+const experimentRoundIndicator = extraRoundOn ? 2 : 1 //This record what round of the ordering is the experimental round.
+const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
+console.log(currentCondition, 'with', conditions[currentCondition]);
 
-  const numRounds = conditions.baseline.length
+const numRounds = conditions.baseline.length
 
-  const numberOfRooms = teamSize * numRounds
-  const rooms = tools.letters.slice(0,numberOfRooms)
-  const people = extraRoundOn ? tools.letters.slice(0,teamSize ** 2 + teamSize) : tools.letters.slice(0,teamSize ** 2)
-  const population = people.length
-  const teams = tools.createTeams(teamSize,numRounds-1,people,extraRoundOn) //added '-1' to numRounds
+const numberOfRooms = teamSize * numRounds
+const rooms = tools.letters.slice(0, numberOfRooms)
+const people = extraRoundOn ? tools.letters.slice(0, teamSize ** 2 + teamSize) : tools.letters.slice(0, teamSize ** 2)
+const population = people.length
+const teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn) //added '-1' to numRounds
 //}
 
 //if (runExperimentNow) {
@@ -589,7 +589,7 @@ io.on('connection', (socket) => {
         }
         if (userPool.byMturkId(mturkId)) {
             let user = userPool.byMturkId(mturkId);
-            console.log(('RECONNECTED ' + mturkId + ' in user pool ('+ user.id + ' => ' + socket.id +')').blue);
+            console.log(('RECONNECTED ' + mturkId + ' in user pool (' + user.id + ' => ' + socket.id + ')').blue);
             socket.name_structure = data.name_structure;
             socket.username = data.name_structure.username;
             user.connected = true;
@@ -614,8 +614,9 @@ io.on('connection', (socket) => {
     //   socket.emit('set username', {username: socket.username})
     // })
     socket.on("heartbeat", data => {
-        console.log("HEARTBEAT " + socket.id);
-        io.in(socket.id).emit('heartbeat');
+        if (socket.connected) {
+            io.in(socket.id).emit('heartbeat');
+        }
     });
     socket.on('accepted HIT', data => {
         console.log('ACCEPTED HIT CALLED');
@@ -1598,7 +1599,11 @@ io.on('connection', (socket) => {
                     questionObj['question'] += " Team " + (index + 1) + " (" + team + '),'
                 });
                 questionObj['question'] = questionObj['question'].slice(0, -1);
-                answerObj = {answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 3 and Team 4", "Team 1 and Team 3", "Team 1 and Team 4", "Team 2 and Team 4"], answerType: 'radio', textValue: true};
+                answerObj = {
+                    answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 3 and Team 4", "Team 1 and Team 3", "Team 1 and Team 4", "Team 2 and Team 4"],
+                    answerType: 'radio',
+                    textValue: true
+                };
             } else if (answerTag === "LH") { //leave hit yn
                 answerObj = leaveHitAnswers;
             } else {//chatbot qs
