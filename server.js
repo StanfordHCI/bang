@@ -616,8 +616,9 @@ io.on('connection', (socket) => {
     //   socket.emit('set username', {username: socket.username})
     // })
     socket.on("heartbeat", data => {
-        console.log("HEARTBEAT " + socket.id);
-        io.in(socket.id).emit('heartbeat');
+        if (socket.connected) {
+            io.in(socket.id).emit('heartbeat');
+        }
     });
     socket.on('accepted HIT', data => {
         console.log('ACCEPTED HIT CALLED');
