@@ -535,15 +535,21 @@ $(function () {
 
     socket.on('reconnect_attempt', function (attemptNumber) {
         socket.io.opts.transports = ['websocket'];
-        socket.emit('log', URLvars.workerId + ' RECONNECT ATTEMPT ' + attemptNumber)
+        if (socket.connected) {
+            socket.emit('log', URLvars.workerId + ' RECONNECT ATTEMPT ' + attemptNumber);
+        }
     });
 
     socket.on('reconnect_error', function (error) {
-        socket.emit('log', URLvars.workerId + ' RECONNECT ' + error)
+        if (socket.connected) {
+            socket.emit('log', URLvars.workerId + ' RECONNECT ' + error);
+        }
     });
 
     socket.on('reconnect_failure', function () {
-        socket.emit('log', URLvars.workerId + ' RECONNECT FAILURE')
+        if (socket.connected) {
+            socket.emit('log', URLvars.workerId + ' RECONNECT FAILURE');
+        }
     });
     socket.on('chatbot', data => {
         const questions = data;
