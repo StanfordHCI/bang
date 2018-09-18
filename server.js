@@ -1463,26 +1463,32 @@ io.on('connection', (socket) => {
             // save start time
             startTime = (new Date()).getTime();
 
-            // task steps
+            // Initialize steps
             const taskSteps = [
-              {time: 0.01, message:"Follow the steps to design compelling ads."},
-              {time: 0.011, message:"1. List out ideas you like. Shoot for at least 5 per person."},
-              {time: 0.3, message:"2. As a group choose about 3 favorite ideas and discuss why you like them."},
-              {time: 0.6, message:"3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?"},
-              {time: 0.8, message:"4. Submit the idea you all like most."},
-              {time: 0.9, action: () => ioEmitById(user.mturkId, "timer", {
-                time: roundMinutes * 0.1
-              })},
-              {time: 1, action: () => {
-                ioEmitById(user.mturkId, "stop", {
-                  round: currentRound,
-                  survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn)
-                })
-                currentRound += 1; // guard to only do this when a round is actually done.
-                console.log(currentRound, "out of", numRounds)
-              }}
+              {time: 0.01, message:"<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"},
+              {time: 0.3, message:"<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"},
+              {time: 0.6, message:"<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"},
+              {
+                time: 0.9,
+                action: () => {
+                  ioEmitById(user.mturkId, "timer", {
+                    time: roundMinutes * 0.1
+                  })
+                }
+              },{
+                time: 1,
+                action: () => {
+                  ioEmitById(user.mturkId, "stop", {
+                    round: currentRound,
+                    survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn)
+                  })
+                  currentRound += 1; // guard to only do this when a round is actually done.
+                  console.log(currentRound, "out of", numRounds)
+                }
+              }
             ]
 
+            // Execute steps
             taskSteps.forEach(step => {
               setTimeout(() => {
                 if (step.message) ioEmitById(user.mturkId, "message clients" ,step.message)

@@ -719,32 +719,22 @@ $(function () {
         setTimeout(() => {
             let totalLengthString = "";
             totalLengthString = Math.round(3 * (data.duration) + 15) + " minutes";
-            log("Reminder: You will receive the bonus pay at the stated hourly rate only if you stay for " +
-                "all three rounds and answer any survey questions. This should take no more than " + totalLengthString);
-            log("From now until when you receive a link to submit the HIT, " +
-                "<strong>DO NOT REFRESH OR LEAVE THE PAGE</strong>. This will kill the task for everyone and you " +
-                "will not be compensated.");
+            log("<strong>Reminder</strong>: You will receive the bonus pay at the stated hourly rate <strong>only</strong> if you stay for " +
+                "all three rounds and answer any survey questions. This should take no more than " + totalLengthString + " total.");
+            log("<strong>DO NOT REFRESH OR LEAVE THE PAGE</strong>. This will stop the task for everyone and you will not be compensated.");
             log("Task: " + data.task);
-            log("Start by checking out the link above, then work together in this chat room to develop a short " +
-                "advertisement of no more than <strong>30 characters in length</strong>.");
-            let durationString = "";
-            if (data.duration < 1) {
-                durationString = Math.round(data.duration * 60) + " seconds"
-            } else if (data.duration === 1) {
-                durationString = "one minute"
-            } else {
-                durationString = data.duration + " minutes"
-            }
-            log("You will have <strong>" + durationString + "</strong> to brainstorm for this round. Near the end of " +
-                "the time we will tell you how to submit your final result.");
+            log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.");
+
+            log("You will have <strong>" + textifyTime(data.duration) + "</strong> to brainstorm for this round. You will receive instructions about how to collaborate to write a compelling add.");
             log("We will run your final advertisement online. <strong>The more successful it is, the larger the " +
                 "bonus each of your team members will receive.</strong>");
             log("<br>For example, here are text advertisements for a golf club called Renaissance: <br>\
-      <ul style='list-style-type:disc'> \
-        <li><strong>An empowering modern club</strong><br></li> \
-        <li><strong>A private club with reach</strong><br></li> \
-        <li><strong>Don't Wait. Discover Renaissance Today</strong></li> \
-      </ul>")
+                <ul style='list-style-type:disc'> \
+                  <li><strong>An empowering modern club</strong><br></li> \
+                  <li><strong>A private club with reach</strong><br></li> \
+                  <li><strong>Don't Wait. Discover Renaissance Today</strong></li> \
+                </ul>"
+            )
         }, 500);
 
         setTimeout(() => {
@@ -942,12 +932,10 @@ $(function () {
     });
 
     socket.on('timer', data => {
-        log("You're about <strong>90% done with this session</strong>. Enter your final result now.");
-        log("Remember, it needs to be <strong>maximum 30 characters long</strong>.");
-        log("To indicate your final result, <strong>start the line with an exclamation mark (i.e., '!')</strong>. " +
-            "We will not count that character toward your length limit.");
-        log("<br>If you enter more than one line starting with an exclamation mark, we'll only use the last one in " +
-            "the chat. This result will count equally for all members of the team.")
+        log("<strong>You'll be done with this round in about " + textifyTime(data.time) + ". Enter your final result now.</strong>");
+        log("Remember, it can't be more than <strong>maximum 30 characters long</strong>.");
+        log("To indicate your final result, <strong>start the line with an exclamation mark (i.e., '!')</strong>. We will not count that character toward your length limit.");
+        log("If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat. This result will count equally for all members of the team.")
     });
 
     socket.on('echo', data => {
@@ -1092,3 +1080,15 @@ const decodeURL = (toDecode) => {
     var encoded = toDecode;
     return unescape(encoded.replace(/\+/g, " "));
 };
+
+function textifyTime(duration) {
+  let durationString = "";
+  if (duration < 1) {
+      durationString = Math.round(duration * 60) + " seconds"
+  } else if (duration === 1) {
+      durationString = "one minute"
+  } else {
+      durationString = duration + " minutes"
+  }
+  return durationString
+}
