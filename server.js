@@ -18,19 +18,19 @@ const maxWaitChatMinutes = 20;
 
 // Toggles
 const runExperimentNow = true;
-const issueBonusesNow = false;
-const notifyWorkersOn = false;
+const issueBonusesNow = runningLive;
+const notifyWorkersOn = runningLive;
 const runViaEmailOn = false;
-const usingWillBang = true;
-const aggressiveNotifyOn = false;
+const usingWillBang = runningLive;
+const aggressiveNotifyOn = runningLive;
 
 const cleanHITs = false;
-const assignQualifications = true;
+const assignQualifications = runningLive;
 const debugMode = !runningLive;
 
 const suddenDeath = false;
 
-const randomCondition = true;
+const randomCondition = false;
 const randomRoundOrder = true;
 const randomProduct = true;
 
