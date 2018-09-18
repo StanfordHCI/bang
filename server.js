@@ -19,10 +19,10 @@ const maxWaitChatMinutes = 20;
 // Toggles
 const runExperimentNow = true;
 const issueBonusesNow = false;
-const notifyWorkersOn = true;
+const notifyWorkersOn = false;
 const runViaEmailOn = false;
 const usingWillBang = true;
-const aggressiveNotifyOn = true;
+const aggressiveNotifyOn = false;
 
 const cleanHITs = false;
 const assignQualifications = true;
@@ -34,7 +34,7 @@ const randomCondition = true;
 const randomRoundOrder = true;
 const randomProduct = true;
 
-const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
@@ -118,7 +118,10 @@ function ioSocketsEmit(event, message) {
     return io.sockets.emit(event, message);
 }
 
-function messageClients(message) { ioSocketsEmit("message clients",message ) }
+function messageClients(message) {
+  ioSocketsEmit("message clients",message )
+  console.log("Messaged all clients:".red ,message);
+}
 
 function ioEmitById(socketId, event, message) {
     return io.in(socketId).emit(event, message);
@@ -985,7 +988,7 @@ io.on('connection', (socket) => {
             // update DB with change
             updateUserInDB(user, 'connected', false);
             console.log(socket.username + ": " + user.mturkId + " HAS LEFT");
-            if (!experimentOver) {
+            if (!experimentOver && !debugMode) {
                 mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our" +
                     " HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com"
                     + " with your Mturk ID and the last things you did in the HIT.\n\nMturk ID: " + user.mturkId +
@@ -1460,42 +1463,55 @@ io.on('connection', (socket) => {
             // save start time
             startTime = (new Date()).getTime();
 
-            // task details
-            taskInstructions = [
-              "1. List out ideas you like. Shoot for at least 5 per person.",
-              "2. As a group choose about 3 favorite ideas and discuss why you like them",
-              "3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?",
-              "4. Submit the idea you all like most."
+            // task steps
+            const taskSteps = [
+              {time: 0.01, message:"Follow the steps to design compelling ads."},
+              {time: 0.011, message:"1. List out ideas you like. Shoot for at least 5 per person."},
+              {time: 0.3, message:"2. As a group choose about 3 favorite ideas and discuss why you like them."},
+              {time: 0.6, message:"3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?"},
+              {time: 0.8, message:"4. Submit the idea you all like most."},
+              {time: 0.9, action: () => ioEmitById(user.mturkId, "timer", {
+                time: roundMinutes * 0.1
+              })},
+              {time: 1, action: () => {
+                ioEmitById(user.mturkId, "stop", {
+                  round: currentRound,
+                  survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn)
+                })
+                currentRound += 1; // guard to only do this when a round is actually done.
+                console.log(currentRound, "out of", numRounds)
+              }}
             ]
 
-            taskInstructions.forEach(instruction => {
+            taskSteps.forEach(step => {
               setTimeout(() => {
-                messageClients(instruction)
-              }, instruction.time * roundMinutes * 60 * 1000)
+                if (step.message) ioEmitById(user.mturkId, "message clients" ,step.message)
+                if (typeof step.action === "function") step.action()
+              },step.time * roundMinutes * 60 * 1000)
             })
 
             //Round warning
             // make timers run in serial
-            setTimeout(() => {
-                console.log('time warning', currentRound);
-                messageClients("You have 1 miniute remaining.")
-                users.forEach(user => {
-                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .1})
-                });
-
-                //Done with round
-                setTimeout(() => {
-                    console.log('done with round', currentRound);
-                    users.forEach(user => {
-                        ioEmitById(user.mturkId, 'stop', {
-                            round: currentRound,
-                            survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn)
-                        })
-                    });
-                    currentRound += 1; // guard to only do this when a round is actually done.
-                    console.log(currentRound, "out of", numRounds)
-                }, 1000 * 60 * 0.2 * roundMinutes)
-            }, 1000 * 60 * 0.8 * roundMinutes);
+            // setTimeout(() => {
+            //     // console.log('time warning', currentRound);
+            //     // messageClients("You have 1 miniute remaining.")
+            //     // users.forEach(user => {
+            //     //     ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .1})
+            //     // });
+            //
+            //     //Done with round
+            //     setTimeout(() => {
+            //         console.log('done with round', currentRound);
+            //         users.forEach(user => {
+            //             ioEmitById(user.mturkId, 'stop', {
+            //                 round: currentRound,
+            //                 survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn)
+            //             })
+            //         });
+            //         currentRound += 1; // guard to only do this when a round is actually done.
+            //         console.log(currentRound, "out of", numRounds)
+            //     }, 1000 * 60 * 0.2 * roundMinutes)
+            // }, 1000 * 60 * 0.8 * roundMinutes);
 
             if (checkinOn) {
                 let numPopups = 0;
