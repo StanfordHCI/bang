@@ -1466,8 +1466,8 @@ io.on('connection', (socket) => {
             // Initialize steps
             const taskSteps = [
               {time: 0.01, message:"<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"},
-              {time: 0.3, message:"<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"},
-              {time: 0.6, message:"<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"},
+              {time: 0.4, message:"<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"},
+              {time: 0.7, message:"<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"},
               {
                 time: 0.9,
                 action: () => {
