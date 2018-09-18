@@ -47,6 +47,7 @@ extractBlacklistSurvey = function(frame,survey) {
     surveyFrame$round = round
     surveyFrame$batch = frame$batch
     surveyFrame$rooms = frame$rooms
+    surveyFrame$manipulationCheck <- frame$results.manipulationCheck
     surveyFrame$blacklist = frame$results.blacklistCheck
     return(surveyFrame)
   })
@@ -105,7 +106,7 @@ extractViabilitySurvey = function(frame,survey) {
     surveyFrame$round = round
     surveyFrame$batch = frame$batch
     surveyFrame$rooms = frame$rooms
-    surveyFrame$manipulation = frame$results.manipulationCheck
+    surveyFrame$manipulationCheck = frame$results.manipulationCheck
     surveyFrame$blacklist = frame$results.blacklistCheck
     return(surveyFrame)
     print(surveyFrame)
@@ -127,14 +128,15 @@ data <- frame[, !duplicated(colnames(frame))]
 ## Reduce to vertically combine rows in roundwithRooms list:  
 finalRounds = as.data.frame(Reduce(rbind,roundsWithRooms))
 ## Subset incomplete cases from viability survey dataframe, use manipulation check b/c required for complete observation: 
-data <- data[data$manipulation!="",]
+data <- data[data$manipulationCheck!="",]
+data <- data[ , ! colnames(data) %in% c("manipulationCheck") ]
 ## Rename room to rooms so that both are retained in future merge: 
 data <- rename(data, rooms = "rooms")
 ## Subset incomplete cases for final rounds dataframe: 
 data2 <- finalRounds[finalRounds$results.manipulationCheck!="", ]
 ## Select only variables of interest from final rounds: 
 data2 = data2 %>% select(id, batch, room, bonus, name, friends, 
-                         friends_history, results.condition, results.format,results.blacklistCheck, round)
+                         friends_history, results.manipulation, results.condition, results.format,results.blacklistCheck, results.manipulationCheck, round)
 ## Convert to compatible data types before merge: 
 data2$batch <- unlist(data2$batch)
 data2$round <- unlist(data2$round)
@@ -216,7 +218,6 @@ data <- rename(data, "blacklistMeta" = results.qSixteenCheck)
 levels <- c("Strongly Disagree", "Disagree", "Neutral","Agree", "Strongly Agree") 
 clean <- data %>% 
   mutate_at(.vars = vars(contains("results.viabilityCheck")), funs(factor(., levels = levels))) 
-clean <- clean %>% filter(results.manipulation!="") 
 data$blacklistIndividual <- as.character(data$blacklistIndividual) 
 data$blacklistMeta <- as.character(data$blacklistMeta) 
 ## Create a new dataframe that converts factors to numeric for statistical analyses:
@@ -231,11 +232,12 @@ stats$results.condition <- unlist(stats$results.condition)
 stats$results.format <- as.character(stats$results.format)
 ## to-do: apply function is best 
 ## Revalue repeat team: keep plyr b/c some weird R stuff requires library to be called directly (recode values to )
-stats$blacklistMeta <-car::recode(stats$blacklistMeta,"1=0;2=1")
-stats$blacklistIndividual <-car::recode(stats$blacklistIndividual,"1=0;2=1")
+stats$blacklistIndividual <- plyr::revalue(stats$blacklistIndividual, c("Keep this team"="0", "Do not keep this team"="1"))
+stats$blacklistMeta <- plyr::revalue(stats$blacklistMeta, c("Keep this team"="0", "Do not keep this team"="1"))
+stats$blacklistIndividual <- as.numeric(stats$blacklistIndividual)
 groupedProportion <- stats %>%
   group_by(room, batch, round, condition, results.condition, results.format) %>%  ## to-do: add group ID in storage db. 
-  summarise(n=n(), mean=mean(sum), median=median(sum),prop=sum(blacklistIndividual)/n) %>%
+  summarise(n=n(), mean=mean(sum), median=median(sum), prop=sum(blacklistIndividual)/n) %>% 
 ## Filter out all teams with n=1 (i.e. a person in a one person team) 
   filter(n>1)
 
@@ -302,10 +304,7 @@ controlFracture <- cbind(controlFracture1, controlFracture2)
 ## Use individual proportion data frame b/c we're interested in looking at individuals that were in teams >n=1
 teamPatterns <- "Team 1 and Team 2|Team 2 and Team 3|Team 3 and Team 4|Team 1 and Team 3|Team 1 and Team 4|Team 2 and Team 4"
 individualProportion$manipulationAnswerKey <- str_extract(individualProportion$results.manipulation,teamPatterns) 
-
-print("## WARNING: FIGURE OUT WHICH MANIPULATION COLUMN ARE THE RIGHT USER ANSWERS"): 
-
-individualProportion$manipulationAnswers <- individualProportion$manipulation
+individualProportion$manipulationAnswers <- individualProportion$results.manipulationCheck
 individualProportion$results.condition = unlist(individualProportion$results.condition)
 ## Omit NAs and results that can't be processed: 
 cleanManipulation <- individualProportion[with(individualProportion, grepl(teamPatterns, manipulationAnswers) & grepl(teamPatterns, manipulationAnswerKey)),]
@@ -318,7 +317,7 @@ cleanManipulation$manipulationAnswers = unlist(cleanManipulation$manipulationAns
 ## 1A: Report the % of correct guesses on the manipulation check: 
 ```{r}
 ## Subset just one observation per person (right now there are four b/c rounds)
-cleanManipulation <- cleanManipulation[!duplicated(cleanManipulation$id),]
+## cleanManipulation <- cleanManipulation[!duplicated(cleanManipulation$id),]
 
 ## Treatment manipulation: 
 treatmentManipulation <- cleanManipulation %>%  filter(results.condition=="treatment") %>%
