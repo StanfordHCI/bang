@@ -34,7 +34,7 @@ const randomCondition = true;
 const randomRoundOrder = true;
 const randomProduct = true;
 
-const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
@@ -1295,7 +1295,6 @@ io.on('connection', (socket) => {
         })
     });
 
-
     // Main experiment run
     socket.on('ready', function (data) {
         useUser(socket, user => {
@@ -1465,59 +1464,45 @@ io.on('connection', (socket) => {
 
             // Initialize steps
             const taskSteps = [
-              {time: 0.01, message:"<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"},
+              {time: 0.1, message:"<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"},
               {time: 0.4, message:"<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"},
-              {time: 0.7, message:"<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"},
-              {
-                time: 0.9,
-                action: () => {
-                  ioEmitById(user.mturkId, "timer", {
-                    time: roundMinutes * 0.1
-                  })
-                }
-              },{
-                time: 1,
-                action: () => {
-                  ioEmitById(user.mturkId, "stop", {
-                    round: currentRound,
-                    survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn)
-                  })
-                  currentRound += 1; // guard to only do this when a round is actually done.
-                  console.log(currentRound, "out of", numRounds)
-                }
-              }
+              {time: 0.7, message:"<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"}
             ]
 
             // Execute steps
-            taskSteps.forEach(step => {
+            taskSteps.forEach((step, index) => {
               setTimeout(() => {
-                if (step.message) ioEmitById(user.mturkId, "message clients" ,step.message)
+                if (step.message) {
+                  console.log("Task step:".red, step.message);
+                  ioSocketsEmit("message clients", step.message)
+                  // ioEmitById(user.mturkId, "message clients", step.message)
+                }
                 if (typeof step.action === "function") step.action()
               },step.time * roundMinutes * 60 * 1000)
             })
 
             //Round warning
             // make timers run in serial
-            // setTimeout(() => {
-            //     // console.log('time warning', currentRound);
-            //     // messageClients("You have 1 miniute remaining.")
-            //     // users.forEach(user => {
-            //     //     ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .1})
-            //     // });
-            //
-            //     //Done with round
-            //     setTimeout(() => {
-            //         console.log('done with round', currentRound);
-            //         users.forEach(user => {
-            //             ioEmitById(user.mturkId, 'stop', {
-            //                 round: currentRound,
-            //                 survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn)
-            //             })
-            //         });
-            //         currentRound += 1; // guard to only do this when a round is actually done.
-            //         console.log(currentRound, "out of", numRounds)
-            //     }, 1000 * 60 * 0.2 * roundMinutes)
-            // }, 1000 * 60 * 0.8 * roundMinutes);
+            setTimeout(() => {
+                console.log('time warning', currentRound);
+                messageClients("You have 1 miniute remaining.")
+                users.forEach(user => {
+                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .2})
+                });
+
+                //Done with round
+                setTimeout(() => {
+                    console.log('done with round', currentRound);
+                    users.forEach(user => {
+                        ioEmitById(user.mturkId, 'stop', {
+                            round: currentRound,
+                            survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn)
+                        })
+                    });
+                    currentRound += 1; // guard to only do this when a round is actually done.
+                    console.log(currentRound, "out of", numRounds)
+                }, 1000 * 60 * 0.2 * roundMinutes)
+            }, 1000 * 60 * 0.8 * roundMinutes);
 
             if (checkinOn) {
                 let numPopups = 0;
