@@ -2,6 +2,8 @@ const fs = require('fs');
 var exec = require('child_process').exec;
 let mturk = require('./mturkTools');
 
+const dir = "./.data/"
+
 Array.prototype.set = function() {
   const setArray = []
   this.forEach(element => { if (!setArray.includes(element)) { setArray.push(element) } })
@@ -26,7 +28,6 @@ function renderBatch(dbName, batch) {
 
 //Cleanly renders chats for a given batch
 function renderChats(batch) {
-  const dir = "./.data/"
   fs.readFile(dir + batch + '/' + 'chats.json',(err,chatsJSON) => {
     if (err) {return console.log(err)} else {
       try {
@@ -48,7 +49,6 @@ function renderChats(batch) {
 
 //Goes through stored data and checks for bonuses. Bonuses any remaining work.
 function retroactiveBonus() {
-  const dir = "./.data/"
   const batchFolders = fs.readdirSync(dir).filter(f => fs.statSync(dir + f).isDirectory())
   batchFolders.filter(f => fs.readdirSync(dir + f).includes('users.json')).forEach(f => {
     fs.readFile(dir + f + '/' + 'users.json',(err,usersJSON)=> {
@@ -62,7 +62,7 @@ function retroactiveBonus() {
           mturk.payBonuses(allUsers ,paidUsers => {
             allUsers.filter(u => paidUsers.map(p => p.id).includes(u.id)).forEach(u => u.bonus = 0)
             fs.writeFile(dir + f + '/' + 'users.json', JSON.stringify(allUsers,null,2) , (err) => {
-              if(err) { return console.log(err)} else { 
+              if(err) { return console.log(err)} else {
                 /* console.log("saved",f); */
               }
             });
@@ -75,7 +75,6 @@ function retroactiveBonus() {
 
 // Add qualification to all users
 function retroactiveQualification(qualification) {
-  const dir = "./.data/"
   const batchFolders = fs.readdirSync(dir).filter(f => fs.statSync(dir + f).isDirectory())
   batchFolders.filter(f => fs.readdirSync(dir + f).includes('users.json')).forEach(f => {
     fs.readFile(dir + f + '/' + 'users.json',(err,usersJSON)=> {
@@ -89,7 +88,6 @@ function retroactiveQualification(qualification) {
 
 //Goes through stored data and adds rooms from chats if they are not propperly stored.
 function retroactivelyFixRooms() {
-  const dir = "./.data/"
   const batchFolders = fs.readdirSync(dir).filter(f => fs.statSync(dir + f).isDirectory())
   batchFolders.filter(f => fs.readdirSync(dir + f).includes('users.json') && fs.readdirSync(dir + f).includes('chats.json')).forEach(f => {
     fs.readFile(dir + f + '/' + 'users.json',(err,usersJSON)=> {
@@ -132,12 +130,12 @@ function retroactivelyFixRooms() {
 
 //Renders a full db by name.
 function saveOutBatch(dbName,batch) {
-  const dir = "./.data/"+ batch
-  if (!fs.existsSync(dir)){
-    fs.mkdirSync(dir);
+  const batchDir = dir + batch
+  if (!fs.existsSync(batchDir)){
+    fs.mkdirSync(batchDir);
   }
   db[dbName].find({}, (err, data) => {
-    fs.writeFile(dir +"/"+ dbName + ".json", JSON.stringify(data.filter(u => u.batch == batch || u.batchID == batch),null,2) , function(err) {
+    fs.writeFile(batchDir +"/"+ dbName + ".json", JSON.stringify(data.filter(u => u.batch == batch || u.batchID == batch),null,2) , function(err) {
       if(err) { return console.log(err)}
       console.log("Batch", batch, dbName,"saved!");
     });
@@ -155,7 +153,7 @@ function useLatestBatch(callback) {
   return console.log("None");
 }
 
-function useEachBatch(callback) {
+function useEachBatchDB(callback) {
   db.batch.find({}, (err,data) => {
     if (err) {console.log(err)} else {
       const batches = data.map(b => b.batchID).sort()
@@ -168,7 +166,7 @@ function useEachBatch(callback) {
 }
 
 function saveAllData() {
-  useEachBatch(batch => {
+  useEachBatchDB(batch => {
     ['users','chats','batch'].forEach(data => {
       saveOutBatch(data,batch)
     })
@@ -194,9 +192,63 @@ function downloadData(url,callback) {
   })
 }
 
+function manipulationCheck(batch) {
+  fs.readFile(dir + batch + '/' + 'users.json',(err,usersJSON) => {
+    if (err) {return console.log(err)} else {
+      try {
+        const users = JSON.parse(usersJSON)
+        let results = {
+          batch: batch,
+          condition: users[0].results.condition,
+          format: users[0].results.format,
+          empty: users.filter(user => user.results.manipulationCheck.length === 0).length,
+          correct: users.filter(user => user.results.manipulationCheck["1"] === user.results.manipulation).length,
+          total: users.length
+        }
+
+        if (results.format.length === 4 && results.condition === 'treatment' && results.total >= 9) {
+
+          console.log(results);
+        }
+        return results
+      } catch(err) {
+        console.log('File ending error in batch',batch, JSON.parse(usersJSON))
+      }
+    }
+  })
+}
+
+function useCompleteBatches(callback) {
+  const batchFolders = fs.readdirSync(dir).filter(f => fs.statSync(dir + f).isDirectory())
+  return batchFolders.filter(f => fs.readdirSync(dir + f).includes('users.json') && fs.readdirSync(dir + f).includes('chats.json')).filter(f => {
+    fs.readFile(dir + f + '/' + 'batch.json',(err,batchJSON)=> {
+      if (err) {
+        console.log(err)
+        return false
+      } else {
+        const batch = JSON.parse(batchJSON)[0]
+        if (batch) {
+          if (batch.batchComplete === true) {
+            if (typeof(callback) == 'function') {
+              callback(batch.batchID)
+            }
+            return true
+          }
+        }
+      }
+    })
+  })
+}
+
+let correctCount = 0
+let totalCount = 0
+
+// manipulationCheck(1537292004662)
+useCompleteBatches(manipulationCheck)
+
 //Save from servers
-downloadData("mark.dmorina.com",saveAllData) 
-downloadData("bang.dmorina.com",saveAllData)
+// downloadData("mark.dmorina.com",saveAllData)
+// downloadData("bang.dmorina.com",saveAllData)
 
 //Save from local folder
 /* saveAllData() */

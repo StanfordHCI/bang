@@ -195,7 +195,8 @@ console.log = function (...msg) {
   /* const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0] */
 
   // Settings for 4 rounds.
-  const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
+  // const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
+  const ordering = randomRoundOrder ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick() : [1,2,1,3]
   const conditions = {control: ordering, treatment: ordering, baseline: [1,2,3,2]} //,4]} modified extra roudn to deal with createTeams
 
   const experimentRoundIndicator = extraRoundOn ? 2 : 1 //This record what round of the ordering is the experimental round.

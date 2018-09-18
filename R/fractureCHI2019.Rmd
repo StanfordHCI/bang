@@ -29,7 +29,7 @@ library(stargazer)
 ## Set-up directories, import and clean data: 
 ```{r, include=TRUE, echo=TRUE, results='hide'} 
 rm(list=ls())
-setwd("/Users/allieblaising/desktop/bang/R") 
+setwd("/Users/mark/Documents/Academia/Stanford/scaled-humanity/bang/R") 
 getwd()
 dataPath = "../.data"
 
