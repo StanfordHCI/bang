@@ -1821,7 +1821,7 @@ const logTime = () => {
 };
 
 function getRandomSubarray(arr, size) {
-    return shuffle(arr).slice(0,min);
+    return shuffle(arr).slice(0,size);
 }
 
 function shuffle(array) {
