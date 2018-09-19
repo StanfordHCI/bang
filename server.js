@@ -1484,7 +1484,6 @@ io.on('connection', (socket) => {
             // make timers run in serial
             setTimeout(() => {
                 console.log('time warning', currentRound);
-                messageClients("You have 1 miniute remaining.")
                 users.forEach(user => {
                     ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .2})
                 });
