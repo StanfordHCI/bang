@@ -252,6 +252,11 @@ db.users.find({}, (err, usersInDB) => {
                 console.log("Number of users with qualification hasBanged:", data.length)
             });
         }
+        if (notifyWorkersOn && runningLive) {
+            mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, (data) => {
+                console.log("Number of users with qualification willBang:", data.length)
+            });
+        }
     }
 });
 
