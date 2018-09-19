@@ -18,19 +18,19 @@ const maxWaitChatMinutes = 20;
 
 // Toggles
 const runExperimentNow = true;
-const issueBonusesNow = false;
-const notifyWorkersOn = true;
+const issueBonusesNow = runningLive;
+const notifyWorkersOn = runningLive;
 const runViaEmailOn = false;
-const usingWillBang = true;
-const aggressiveNotifyOn = true;
+const usingWillBang = runningLive;
+const aggressiveNotifyOn = runningLive;
 
 const cleanHITs = false;
-const assignQualifications = true;
+const assignQualifications = runningLive;
 const debugMode = !runningLive;
 
 const suddenDeath = false;
 
-const randomCondition = true;
+const randomCondition = false;
 const randomRoundOrder = true;
 const randomProduct = true;
 
@@ -118,6 +118,11 @@ function ioSocketsEmit(event, message) {
     return io.sockets.emit(event, message);
 }
 
+function messageClients(message) {
+  ioSocketsEmit("message clients",message )
+  console.log("Messaged all clients:".red ,message);
+}
+
 function ioEmitById(socketId, event, message) {
     return io.in(socketId).emit(event, message);
 }
@@ -190,7 +195,8 @@ console.log = function (...msg) {
   /* const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0] */
 
   // Settings for 4 rounds.
-  const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
+  // const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
+  const ordering = randomRoundOrder ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick() : [1,2,1,3]
   const conditions = {control: ordering, treatment: ordering, baseline: [1,2,3,2]} //,4]} modified extra roudn to deal with createTeams
 
   const experimentRoundIndicator = extraRoundOn ? 2 : 1 //This record what round of the ordering is the experimental round.
@@ -983,7 +989,7 @@ io.on('connection', (socket) => {
             // update DB with change
             updateUserInDB(user, 'connected', false);
             console.log(socket.username + ": " + user.mturkId + " HAS LEFT");
-            if (!experimentOver) {
+            if (!experimentOver && !debugMode) {
                 mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our" +
                     " HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com"
                     + " with your Mturk ID and the last things you did in the HIT.\n\nMturk ID: " + user.mturkId +
@@ -1073,10 +1079,8 @@ io.on('connection', (socket) => {
             if (usingWillBang) {
                 // Use this function to notify only x users <= 100
                 let maxWorkersToNotify = 100; // cannot be more than 100 if non-recursive
-                mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function (data) {
-                    let notifyList = getRandomSubarray(data, maxWorkersToNotify).filter(function (turker) {
-                        mturk.notifyWorkers(notifyList, subject, message)
-                    });
+                mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function (qualifiedWorkers) {
+                    let notifyList = getRandomSubarray(qualifiedWorkers, maxWorkersToNotify)
                     mturk.notifyWorkers(notifyList, subject, message)
                 })
             }
@@ -1290,7 +1294,6 @@ io.on('connection', (socket) => {
         })
     });
 
-
     // Main experiment run
     socket.on('ready', function (data) {
         useUser(socket, user => {
@@ -1458,12 +1461,32 @@ io.on('connection', (socket) => {
             // save start time
             startTime = (new Date()).getTime();
 
+            // Initialize steps
+            const taskSteps = [
+              {time: 0.1, message:"<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"},
+              {time: 0.4, message:"<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"},
+              {time: 0.7, message:"<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"}
+            ]
+
+            // Execute steps
+            taskSteps.forEach((step, index) => {
+              setTimeout(() => {
+                if (step.message) {
+                  console.log("Task step:".red, step.message);
+                  ioSocketsEmit("message clients", step.message)
+                  // ioEmitById(user.mturkId, "message clients", step.message)
+                }
+                if (typeof step.action === "function") step.action()
+              },step.time * roundMinutes * 60 * 1000)
+            })
+
             //Round warning
             // make timers run in serial
             setTimeout(() => {
                 console.log('time warning', currentRound);
+                messageClients("You have 1 miniute remaining.")
                 users.forEach(user => {
-                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .1})
+                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .2})
                 });
 
                 //Done with round
