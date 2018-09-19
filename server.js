@@ -1,5 +1,6 @@
 require('dotenv').config();
 require('colors');
+const args = require('yargs').argv;
 
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL === "TRUE";
@@ -18,19 +19,19 @@ const maxWaitChatMinutes = 20;
 
 // Toggles
 const runExperimentNow = true;
-const issueBonusesNow = false;
-const notifyWorkersOn = true;
+const issueBonusesNow = runningLive;
+const notifyWorkersOn = runningLive;
 const runViaEmailOn = false;
-const usingWillBang = true;
-const aggressiveNotifyOn = true;
+const usingWillBang = runningLive;
+const aggressiveNotifyOn = runningLive;
 
 const cleanHITs = false;
-const assignQualifications = true;
+const assignQualifications = runningLive;
 const debugMode = !runningLive;
 
 const suddenDeath = false;
 
-const randomCondition = true;
+const randomCondition = false;
 const randomRoundOrder = true;
 const randomProduct = true;
 
@@ -38,7 +39,7 @@ const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
-const midSurveyOn = true;
+const midSurveyOn = runningLive;
 const blacklistOn = false;
 const teamfeedbackOn = false;
 const checkinOn = false;
@@ -90,7 +91,7 @@ let express = require('express');
 const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server); //, {transports: ['websocket']}
-const port = process.env.PORT || 3000;
+const port = args.port || 3000;
 server.listen(port, () => {
     console.log('Server listening at port', port)
 });
@@ -116,6 +117,11 @@ Array.prototype.set = function () {
 
 function ioSocketsEmit(event, message) {
     return io.sockets.emit(event, message);
+}
+
+function messageClients(message) {
+    ioSocketsEmit("message clients", message)
+    console.log("Messaged all clients:".red, message);
 }
 
 function ioEmitById(socketId, event, message) {
@@ -171,39 +177,41 @@ console.log = function (...msg) {
 };
 
 //if (runExperimentNow){
-  // Experiment variables
-  /* const conditionsAvailalbe = ['control','treatment','baseline'] */
-  const conditionsAvailalbe = ['control','treatment']
-  const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
-  let treatmentNow = false
-  let firstRun = false;
-  let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
-  let batchCompleteUpdated = false;
+// Experiment variables
+/* const conditionsAvailalbe = ['control','treatment','baseline'] */
+const conditionsAvailalbe = ['control', 'treatment']
+const presetCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
+const currentCondition = args.condition || presetCondition
+let treatmentNow = false
+let firstRun = false;
+let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
+let batchCompleteUpdated = false;
 
-  /* const roundOrdering = extraRoundOn ? [ */
-  /*   {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]}, */
-  /*   {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]}, */
-  /*   {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [ */
-  /*   {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]}, */
-  /*   {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]}, */
-  /*   {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}] */
-  /* const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0] */
+/* const roundOrdering = extraRoundOn ? [ */
+/*   {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]}, */
+/*   {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]}, */
+/*   {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [ */
+/*   {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]}, */
+/*   {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]}, */
+/*   {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}] */
+/* const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0] */
 
-  // Settings for 4 rounds.
-  const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
-  const conditions = {control: ordering, treatment: ordering, baseline: [1,2,3,2]} //,4]} modified extra roudn to deal with createTeams
+// Settings for 4 rounds.
+// const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
+const ordering = randomRoundOrder ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick() : [1, 2, 1, 3]
+const conditions = {control: ordering, treatment: ordering, baseline: [1, 2, 3, 2]} //,4]} modified extra roudn to deal with createTeams
 
-  const experimentRoundIndicator = extraRoundOn ? 2 : 1 //This record what round of the ordering is the experimental round.
-  const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
-    console.log(currentCondition,'with',conditions[currentCondition]);
+const experimentRoundIndicator = extraRoundOn ? 2 : 1 //This record what round of the ordering is the experimental round.
+const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
+console.log(currentCondition, 'with', conditions[currentCondition]);
 
-  const numRounds = conditions.baseline.length
+const numRounds = conditions.baseline.length
 
-  const numberOfRooms = teamSize * numRounds
-  const rooms = tools.letters.slice(0,numberOfRooms)
-  const people = extraRoundOn ? tools.letters.slice(0,teamSize ** 2 + teamSize) : tools.letters.slice(0,teamSize ** 2)
-  const population = people.length
-  const teams = tools.createTeams(teamSize,numRounds-1,people,extraRoundOn) //added '-1' to numRounds
+const numberOfRooms = teamSize * numRounds
+const rooms = tools.letters.slice(0, numberOfRooms)
+const people = extraRoundOn ? tools.letters.slice(0, teamSize ** 2 + teamSize) : tools.letters.slice(0, teamSize ** 2)
+const population = people.length
+const teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn) //added '-1' to numRounds
 //}
 
 //if (runExperimentNow) {
@@ -242,6 +250,11 @@ db.users.find({}, (err, usersInDB) => {
         if (assignQualifications && runningLive) {
             mturk.listUsersWithQualificationRecursively(mturk.quals.hasBanged, (data) => {
                 console.log("Number of users with qualification hasBanged:", data.length)
+            });
+        }
+        if (notifyWorkersOn && runningLive) {
+            mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, (data) => {
+                console.log("Number of users with qualification willBang:", data.length)
             });
         }
     }
@@ -375,28 +388,28 @@ if (runExperimentNow && runningLive) {
 
 //Add more products
 let products = [
-    {name: 'KOSMOS ink - Magnetic Fountain Pen', url: 'https://www.kickstarter.com/projects/stilform/kosmos-ink'},
-    {
-        name: 'Projka: Multi-Function Accessory Pouches',
-        url: 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches'
-    },
-    {
-        name: "First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC",
-        url: 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono'
-    },
-    {
-        name: "Nomad Energy- Radically Sustainable Energy Drink",
-        url: 'https://www.kickstarter.com/projects/1273663738/nomad-energy-radically-sustainable-energy-drink'
-    },
+    // {name: 'KOSMOS ink - Magnetic Fountain Pen', url: 'https://www.kickstarter.com/projects/stilform/kosmos-ink'},
+    // {
+    //     name: 'Projka: Multi-Function Accessory Pouches',
+    //     url: 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches'
+    // },
+    // {
+    //     name: "First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC",
+    //     url: 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono'
+    // },
+    // {
+    //     name: "Nomad Energy- Radically Sustainable Energy Drink",
+    //     url: 'https://www.kickstarter.com/projects/1273663738/nomad-energy-radically-sustainable-energy-drink'
+    // },
     {
         name: "Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
         url: 'https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw'
     },
-    {
-        name: "The Travel Line: Versatile Travel Backpack + Packing Tools",
-        url: 'https://www.kickstarter.com/projects/peak-design/the-travel-line-versatile-travel-backpack-packing'
-    },
-    {name: "Stool Nº1", url: 'https://www.kickstarter.com/projects/390812913/stool-no1'},
+    // {
+    //     name: "The Travel Line: Versatile Travel Backpack + Packing Tools",
+    //     url: 'https://www.kickstarter.com/projects/peak-design/the-travel-line-versatile-travel-backpack-packing'
+    // },
+    // {name: "Stool Nº1", url: 'https://www.kickstarter.com/projects/390812913/stool-no1'},
     {
         name: "LetB Color - take a look at time in different ways",
         url: 'https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways'
@@ -405,48 +418,52 @@ let products = [
         name: "FLECTR 360 OMNI – cycling at night with full 360° visibility",
         url: 'https://www.kickstarter.com/projects/outsider-team/flectr-360-omni'
     },
-    {
-        name: "Make perfect cold brew coffee at home with the BrewCub",
-        url: 'https://www.kickstarter.com/projects/1201993039/make-perfect-cold-brew-coffee-at-home-with-the-bre'
-    },
-    {
-        name: 'NanoPen | Worlds Smallest & Indestructible EDC Pen Tool',
-        url: 'https://www.kickstarter.com/projects/bullet/nanopen-worlds-smallest-and-indestructible-edc-pen?' +
-            'ref=section_design-tech_popular'
-    },
-    {
-        name: "The EVERGOODS MQD24 and CTB40 Crossover Backpacks",
-        url: 'https://www.kickstarter.com/projects/1362258351/the-evergoods-mqd24-and-ctb40-crossover-backpacks'
-    },
-    {
-        name: "Hexgears X-1 Mechanical Keyboard",
-        url: 'https://www.kickstarter.com/projects/hexgears/hexgears-x-1-mechanical-keyboard'
-    },
-    {
-        name: "KARVD - Modular Wood Carved Wall Panel System",
-        url: 'https://www.kickstarter.com/projects/karvdwalls/karvd-modular-wood-carved-wall-panel-system'
-    },
-    {
-        name: "PARA: Stationary l Pythagorean l Easy-to-Use Laser Measurer",
-        url: 'https://www.kickstarter.com/projects/1619356127/para-stationary-l-pythagorean-l-easy-to-use-laser'
-    },
-    {
-        name: "Blox: organize your world!",
-        url: 'https://www.kickstarter.com/projects/onehundred/blox-organize-your-world'
-    },
-    {
-        name: "Moment - World's Best Lenses For Mobile Photography",
-        url: 'https://www.kickstarter.com/projects/moment/moment-amazing-lenses-for-mobile-photography'
-    },
+    // {
+    //     name: "Make perfect cold brew coffee at home with the BrewCub",
+    //     url: 'https://www.kickstarter.com/projects/1201993039/make-perfect-cold-brew-coffee-at-home-with-the-bre'
+    // },
+    // {
+    //     name: 'NanoPen | Worlds Smallest & Indestructible EDC Pen Tool',
+    //     url: 'https://www.kickstarter.com/projects/bullet/nanopen-worlds-smallest-and-indestructible-edc-pen?' +
+    //         'ref=section_design-tech_popular'
+    // },
+    // {
+    //     name: "The EVERGOODS MQD24 and CTB40 Crossover Backpacks",
+    //     url: 'https://www.kickstarter.com/projects/1362258351/the-evergoods-mqd24-and-ctb40-crossover-backpacks'
+    // },
+    // {
+    //     name: "Hexgears X-1 Mechanical Keyboard",
+    //     url: 'https://www.kickstarter.com/projects/hexgears/hexgears-x-1-mechanical-keyboard'
+    // },
+    // {
+    //     name: "KARVD - Modular Wood Carved Wall Panel System",
+    //     url: 'https://www.kickstarter.com/projects/karvdwalls/karvd-modular-wood-carved-wall-panel-system'
+    // },
+    // {
+    //     name: "PARA: Stationary l Pythagorean l Easy-to-Use Laser Measurer",
+    //     url: 'https://www.kickstarter.com/projects/1619356127/para-stationary-l-pythagorean-l-easy-to-use-laser'
+    // },
+    // {
+    //     name: "Blox: organize your world!",
+    //     url: 'https://www.kickstarter.com/projects/onehundred/blox-organize-your-world'
+    // },
+    // {
+    //     name: "Moment - World's Best Lenses For Mobile Photography",
+    //     url: 'https://www.kickstarter.com/projects/moment/moment-amazing-lenses-for-mobile-photography'
+    // },
     {
         name: "The Ollie Chair: Shape-Shifting Seating",
         url: 'https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating'
-    },
-    {
-        name: "Fave: the ideal all-purpose knife!",
-        url: 'https://www.kickstarter.com/projects/onehundred/fave-the-ideal-all-purpose-knife'
-    },
+    }
+    // {
+    //     name: "Fave: the ideal all-purpose knife!",
+    //     url: 'https://www.kickstarter.com/projects/onehundred/fave-the-ideal-all-purpose-knife'
+    // },
 ];
+
+if (randomProduct) {
+  products = shuffle(products)
+}
 
 let users = []; //the main local user storage
 let userPool = []; //accumulates users pre-experiment
@@ -589,7 +606,7 @@ io.on('connection', (socket) => {
         }
         if (userPool.byMturkId(mturkId)) {
             let user = userPool.byMturkId(mturkId);
-            console.log(('RECONNECTED ' + mturkId + ' in user pool ('+ user.id + ' => ' + socket.id +')').blue);
+            console.log(('RECONNECTED ' + mturkId + ' in user pool (' + user.id + ' => ' + socket.id + ')').blue);
             socket.name_structure = data.name_structure;
             socket.username = data.name_structure.username;
             user.connected = true;
@@ -983,7 +1000,7 @@ io.on('connection', (socket) => {
             // update DB with change
             updateUserInDB(user, 'connected', false);
             console.log(socket.username + ": " + user.mturkId + " HAS LEFT");
-            if (!experimentOver) {
+            if (!experimentOver && !debugMode) {
                 mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our" +
                     " HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com"
                     + " with your Mturk ID and the last things you did in the HIT.\n\nMturk ID: " + user.mturkId +
@@ -1073,10 +1090,8 @@ io.on('connection', (socket) => {
             if (usingWillBang) {
                 // Use this function to notify only x users <= 100
                 let maxWorkersToNotify = 100; // cannot be more than 100 if non-recursive
-                mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function (data) {
-                    let notifyList = getRandomSubarray(data, maxWorkersToNotify).filter(function (turker) {
-                        mturk.notifyWorkers(notifyList, subject, message)
-                    });
+                mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function (qualifiedWorkers) {
+                    let notifyList = getRandomSubarray(qualifiedWorkers, maxWorkersToNotify)
                     mturk.notifyWorkers(notifyList, subject, message)
                 })
             }
@@ -1290,7 +1305,6 @@ io.on('connection', (socket) => {
         })
     });
 
-
     // Main experiment run
     socket.on('ready', function (data) {
         useUser(socket, user => {
@@ -1382,11 +1396,6 @@ io.on('connection', (socket) => {
 
             let currentProduct = products[currentRound];
 
-            if (randomProduct) {
-                let productInt = getRndInteger(0, products.length);
-                let currentProduct = products[productInt];
-                products.splice(productInt, 1)
-            }
             console.log('Current Product:', currentProduct);
 
             let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url +
@@ -1458,12 +1467,40 @@ io.on('connection', (socket) => {
             // save start time
             startTime = (new Date()).getTime();
 
+            // Initialize steps
+            const taskSteps = [
+                {
+                    time: 0.1,
+                    message: "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
+                },
+                {
+                    time: 0.4,
+                    message: "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
+                },
+                {
+                    time: 0.7,
+                    message: "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
+                }
+            ]
+
+            // Execute steps
+            taskSteps.forEach((step, index) => {
+                setTimeout(() => {
+                    if (step.message) {
+                        console.log("Task step:".red, step.message);
+                        ioSocketsEmit("message clients", step.message)
+                        // ioEmitById(user.mturkId, "message clients", step.message)
+                    }
+                    if (typeof step.action === "function") step.action()
+                }, step.time * roundMinutes * 60 * 1000)
+            })
+
             //Round warning
             // make timers run in serial
             setTimeout(() => {
                 console.log('time warning', currentRound);
                 users.forEach(user => {
-                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .1})
+                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .2})
                 });
 
                 //Done with round
@@ -1599,7 +1636,11 @@ io.on('connection', (socket) => {
                     questionObj['question'] += " Team " + (index + 1) + " (" + team + '),'
                 });
                 questionObj['question'] = questionObj['question'].slice(0, -1);
-                answerObj = {answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 3 and Team 4", "Team 1 and Team 3", "Team 1 and Team 4", "Team 2 and Team 4"], answerType: 'radio', textValue: true};
+                answerObj = {
+                    answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 3 and Team 4", "Team 1 and Team 3", "Team 1 and Team 4", "Team 2 and Team 4"],
+                    answerType: 'radio',
+                    textValue: true
+                };
             } else if (answerTag === "LH") { //leave hit yn
                 answerObj = leaveHitAnswers;
             } else {//chatbot qs
@@ -1785,12 +1826,17 @@ const logTime = () => {
 };
 
 function getRandomSubarray(arr, size) {
-    let shuffled = arr.slice(0), i = arr.length, min = i - size, temp, index;
-    while (i-- > min) {
-        index = Math.floor((i + 1) * Math.random());
-        temp = shuffled[index];
-        shuffled[index] = shuffled[i];
-        shuffled[i] = temp;
-    }
-    return shuffled.slice(min);
+    return shuffle(arr).slice(0,size);
+}
+
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex;
+  while (0 !== currentIndex) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+  return array;
 }

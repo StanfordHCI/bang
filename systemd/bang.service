@@ -1,0 +1,14 @@
+[Unit]
+Description=Node instance which serves the Bang Application
+After=syslog.target
+
+[Service]
+ExecStart=/bin/bash -c 'cd /home/ubuntu/bang; node server.js --port==3000 --url=https://bang.dmorina.com/'
+Restart=no
+KillSignal=SIGQUIT
+Type=notify
+StandardError=syslog
+NotifyAccess=all
+
+[Install]
+WantedBy=multi-user.target
