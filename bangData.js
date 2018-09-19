@@ -174,7 +174,10 @@ function saveAllData() {
 }
 
 function downloadData(url,callback) {
-  const pemFile = '~/.ssh/sh-server.pem'
+  let pemFile = '~/.ssh/sh-batch.pem'
+  if (url.includes("mark") || url.includes("bang")) {
+    pemFile = '~/.ssh/sh-server.pem'
+  }
   const destination = ".data"
   const names = ['users','chats','batch']
   names.forEach(name => {
@@ -244,11 +247,14 @@ let correctCount = 0
 let totalCount = 0
 
 // manipulationCheck(1537292004662)
-useCompleteBatches(manipulationCheck)
+// useCompleteBatches(manipulationCheck)
 
 //Save from servers
 // downloadData("mark.dmorina.com",saveAllData)
 // downloadData("bang.dmorina.com",saveAllData)
+downloadData("b01.dmorina.com",saveAllData)
+
+
 
 //Save from local folder
 /* saveAllData() */

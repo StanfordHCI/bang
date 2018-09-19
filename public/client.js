@@ -1016,8 +1016,8 @@ $(function () {
         HandleFinish(finishingMessage = data.message, mturk_form = mturkVariables.turkSubmitTo +
             "/mturk/externalSubmit",
             assignmentId = mturkVariables.assignmentId, finishingcode = data.finishingCode);
-        socket.disconnect(true);
         LeavingAlert = false;
+        socket.disconnect(true);
     });
 
     $('#mturk_form').submit((event) => {
