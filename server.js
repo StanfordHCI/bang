@@ -1296,7 +1296,7 @@ io.on('connection', (socket) => {
 
                 usersFinished += 1;
                 console.log(usersFinished, "users have finished.");
-
+                mturk.notifyWorkers(["A19MTSLG2OYDLZ"], "Completed " + currentCondition + " on " + taskURL , "Batch " + batchID + " completed: " + currentCondition + " on port " + port + " at " + taskURL + ".");
                 ioEmitById(socket.mturkId, 'finished', {
                     message: "Thanks for participating, you're all done!",
                     finishingCode: socket.id,
