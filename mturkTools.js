@@ -252,7 +252,7 @@ const listAssignments = (HITId, callback, paginationToken = null, passthrough = 
 
 // * expireHIT *
 // -------------------------------------------------------------------
-// Expires all active HITs by updating the time-until-expiration to 0.
+// Expires HIT by updating the time-until-expiration to 0.
 // Users who have already accepted the HIT should still be able to finish and submit.
 //
 // Takes a HIT ID as a parameter
@@ -260,7 +260,7 @@ const listAssignments = (HITId, callback, paginationToken = null, passthrough = 
 const expireHIT = (HITId) => {
     mturk.updateExpirationForHIT({HITId: HITId, ExpireAt: 0}, (err, data) => {
         if (err) {
-            console.log("Error: " + err.message)
+            console.log("Error in expireHIT: " + err.message)
         } else {
             console.log("Expired HIT:", HITId)
         }

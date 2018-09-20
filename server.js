@@ -9,7 +9,6 @@ const teamSize = parseInt(process.env.TEAM_SIZE);
 const roundMinutes = parseFloat(process.env.ROUND_MINUTES);
 let taskURL = args.url || process.env.TASK_URL;
 
-
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
 const secondsToWait = 20; //number of seconds users must have been on pretask to meet qualification (e.g. 120)
@@ -26,6 +25,7 @@ const notifyWorkersOn = runningLive;
 const runViaEmailOn = false;
 const usingWillBang = runningLive;
 const aggressiveNotifyOn = runningLive;
+const notifyUs = runningLive;
 
 const cleanHITs = false;
 const assignQualifications = runningLive;
@@ -159,6 +159,7 @@ const debugDir = "debug/";
 if (!fs.existsSync(debugDir)) {
     fs.mkdirSync(debugDir)
 }
+
 log_file = debugDir + "debug" + Date.now() + ".log";
 console.log = function (...msg) {
     trueLog(msg.map(item => {
@@ -521,9 +522,7 @@ app.use(express.static('public'));
 // Disconnect leftover users
 Object.keys(io.sockets.sockets).forEach(socketID => {
     console.log(socketID);
-    if (userPool.every(user => {
-        return user.id !== socketID
-    })) {
+    if (userPool.every(user => user.id !== socketID)) {
         console.log("Removing dead socket: " + socketID);
         console.log("SOCKET DISCONNECT IN LEFTOVER USER");
         io.in(socketID).emit('get IDs', 'broken');
@@ -554,7 +553,7 @@ db.batch.insert(
     }, (err, usersAdded) => {
         if (err) console.log("There's a problem adding batch to the DB: ", err);
         else if (usersAdded) console.log("Batch added to the DB");
-        console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
+        console.log("Leftover sockets from previous run: " + Object.keys(io.sockets.sockets));
         if (!firstRun) {
             Object.keys(io.sockets.sockets).forEach(socketID => {
                 console.log('SOCKET DISCONNECT IN BATCH INSERT');
@@ -565,9 +564,6 @@ db.batch.insert(
     }
 );// eventSchedule instead of all of the toggles? (missing checkinOn) //PK: what does this comment mean?
 //}
-
-
-// Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
 
 // Chatroom
 io.on('connection', (socket) => {
@@ -877,7 +873,9 @@ io.on('connection', (socket) => {
                     });
                 })
             }
-            mturk.notifyWorkers(["A19MTSLG2OYDLZ"], "Rolled " + currentCondition + " on " + taskURL , "Rolled over with: " + currentCondition + " on port " + port + " at " + taskURL + ".");
+            if (notifyUs) {
+              mturk.notifyWorkers(["A19MTSLG2OYDLZ"], "Rolled " + currentCondition + " on " + taskURL , "Rolled over with: " + currentCondition + " on port " + port + " at " + taskURL + ".");
+            }
             userAcquisitionStage = false;
         }
 
@@ -964,7 +962,7 @@ io.on('connection', (socket) => {
 
     // when the user disconnects.. perform this
     socket.on('disconnect', function (reason) {
-        // changes connected to false of disconnected user in userPool
+        // changes connected to false if disconnected user in userPool
         console.log(("[" + (new Date()).toISOString() + "]: Disconnecting socket: " + socket.id + " because " + reason).red);
         if (reason === "transport error") {
             //console.log(socket);
@@ -1282,7 +1280,7 @@ io.on('connection', (socket) => {
             else if (eventSchedule[currentEvent] === "finished" || currentEvent > eventSchedule.length) {
                 if (!batchCompleteUpdated) {
                     db.batch.update({batchID: batchID}, {$set: {batchComplete: true}}, {},
-                        err => console.log(err ? "Err updating batch completion" + err : "Updated batch for complete ")
+                        err => console.log(err ? "Err updating batch completion" + err : "Marked batch " + batchID + " competed in DB")
                     );
                     batchCompleteUpdated = true;
                 }
@@ -1296,7 +1294,9 @@ io.on('connection', (socket) => {
 
                 usersFinished += 1;
                 console.log(usersFinished, "users have finished.");
-                mturk.notifyWorkers(["A19MTSLG2OYDLZ"], "Completed " + currentCondition + " on " + taskURL , "Batch " + batchID + " completed: " + currentCondition + " on port " + port + " at " + taskURL + ".");
+                if (notifyUs) {
+                  mturk.notifyWorkers(["A19MTSLG2OYDLZ"], "Completed " + currentCondition + " on " + taskURL , "Batch " + batchID + " completed: " + currentCondition + " on port " + port + " at " + taskURL + ".");
+                }
                 ioEmitById(socket.mturkId, 'finished', {
                     message: "Thanks for participating, you're all done!",
                     finishingCode: socket.id,
@@ -1342,6 +1342,7 @@ io.on('connection', (socket) => {
 
             console.log("user.rooms.length:", user.rooms.length);
 
+            // Replaceing user with extraRound
             if (extraRoundOn && user.rooms.length === 1) {
                 users.forEach(u => {
                     if (tools.letters.slice(0, teamSize ** 2).includes(u.person) && !u.connected) {

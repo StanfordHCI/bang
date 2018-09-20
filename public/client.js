@@ -130,7 +130,6 @@ $(function () {
     const $qSixteenQuestions = $('.qFifteenQuestions'); // Question Fifteen
     const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
 
-
     const socket = io({transports: ['websocket']});
 
     hideAll();
@@ -1012,7 +1011,7 @@ $(function () {
     });
 
     socket.on('finished', data => {
-        socket.emit('log', 'SOCKET DISCONNECT IN ON FINISHED: ' + data.finishingcode);
+        socket.emit('log', 'SOCKET DISCONNECT ON FINISHED: ' + data.finishingcode);
         HandleFinish(finishingMessage = data.message, mturk_form = mturkVariables.turkSubmitTo +
             "/mturk/externalSubmit",
             assignmentId = mturkVariables.assignmentId, finishingcode = data.finishingCode);
