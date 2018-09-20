@@ -526,7 +526,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
         console.log("Removing dead socket: " + socketID);
         console.log("SOCKET DISCONNECT IN LEFTOVER USER");
         io.in(socketID).emit('get IDs', 'broken');
-        io.in(socketID).disconnect(true)
+        // io.in(socketID).disconnect(true)
     }
 });
 
@@ -1009,7 +1009,7 @@ io.on('connection', (socket) => {
                     "\nAssignment ID: " + user.assignmentId + '\nHIT ID: ' + mturk.returnCurrentHIT())
             }
             if (!experimentOver && !suddenDeath) {
-                console.log("Sudden death is off, so we will not cancel the run")
+                // console.log("Sudden death is off, so we will not cancel the run")
             }
 
             console.log("Connected users: " + getUsersConnected().length);

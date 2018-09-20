@@ -961,7 +961,7 @@ $(function () {
                 mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
                 assignmentId = mturkVariables.assignmentId, finishingcode = "LeftHit");
             socket.emit('mturk_formSubmit', $('#leave-hit-form').serialize());
-            socket.disconnect(true);
+            // socket.disconnect(true);
             $('#leave-hit-form')[0].reset();
         }
     });
@@ -1016,21 +1016,21 @@ $(function () {
             "/mturk/externalSubmit",
             assignmentId = mturkVariables.assignmentId, finishingcode = data.finishingCode);
         LeavingAlert = false;
-        socket.disconnect(true);
+        // socket.disconnect(true);
     });
 
     $('#mturk_form').submit((event) => {
         socket.emit('mturk_formSubmit', $('#mturk_form').serialize())
     });
 
-    socket.on('disconnect', function () {
-        $disconnectedMessage.show();
-        HandleFinish(
-            finishingMessage = "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
-            mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
-            assignmentId = mturkVariables.assignmentId,
-            finishingcode = "LeftHit")
-    });
+    // socket.on('disconnect', function () {
+    //     $disconnectedMessage.show();
+    //     HandleFinish(
+    //         finishingMessage = "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
+    //         mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
+    //         assignmentId = mturkVariables.assignmentId,
+    //         finishingcode = "LeftHit")
+    // });
 
 });
 
