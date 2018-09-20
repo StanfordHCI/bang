@@ -51,6 +51,7 @@ $(function () {
     const $qSixteen = $('#qSixteen'); // The question fifteen page
     const $teamfeedbackSurvey = $('#teamfeedbackSurvey'); // Feedback for team page
     const $finishingPage = $('#finishing'); // The finishing page
+    const $disconnectedMessage = $('._disconnected');
     const botUsername = 'helperBot';
 
     $('#ready-to-all').click((e) => {
@@ -72,7 +73,7 @@ $(function () {
       <div id="{{question.name}}-rb-box" class='rb-box'>
         <template v-for="(index, answer) in question.answers" :answer="answer">
           <label for="{{question.name}}-{{index+1}}" class="rb-tab">
-            <input v-bind:type="question.answerType" name="{{question.name}}" id="{{question.name}}-{{index+1}}" 
+            <input v-bind:type="question.answerType" name="{{question.name}}" id="{{question.name}}-{{index+1}}"
             v-bind:value="question.textValue ? answer : index + 1" v-bind:required="question.required ? true : false"/>
             <span class='rb-spot'>{{index+1}}</span>
             <label for='{{question.name}}-{{index+1}}'>{{answer}}</label>
@@ -129,10 +130,13 @@ $(function () {
     const $qSixteenQuestions = $('.qFifteenQuestions'); // Question Fifteen
     const $postSurveyQuestions = $('.postSurveyQuestions'); //post survey
 
-
-    const socket = io();
+    const socket = io({transports: ['websocket']});
 
     hideAll();
+
+    window.setInterval(function () {
+        sendHeartBeat();
+    }, 5000);
 
     // Prompt for setting a username
     let username = "";
@@ -507,8 +511,15 @@ $(function () {
         $inputMessage.focus();
     });
 
+    function sendHeartBeat() {
+        if (socket.connected) {
+            socket.emit('heartbeat', {});
+        }
+    }
+
     // Socket events
     socket.on('connect', function () {
+        $disconnectedMessage.hide();
         socket.emit('connected', {
             mturkId: URLvars.workerId,
             assignmentId: URLvars.assignmentId,
@@ -517,19 +528,27 @@ $(function () {
         })
     });
     socket.on('reconnect', function (attemptNumber) {
+        $disconnectedMessage.hide();
         socket.emit('log', URLvars.workerId + ' RECONNECT SUCCESS (attempt ' + attemptNumber + ')')
     });
 
     socket.on('reconnect_attempt', function (attemptNumber) {
-        socket.emit('log', URLvars.workerId + ' RECONNECT ATTEMPT ' + attemptNumber)
+        socket.io.opts.transports = ['websocket'];
+        if (socket.connected) {
+            socket.emit('log', URLvars.workerId + ' RECONNECT ATTEMPT ' + attemptNumber);
+        }
     });
 
     socket.on('reconnect_error', function (error) {
-        socket.emit('log', URLvars.workerId + ' RECONNECT ' + error)
+        if (socket.connected) {
+            socket.emit('log', URLvars.workerId + ' RECONNECT ' + error);
+        }
     });
 
     socket.on('reconnect_failure', function () {
-        socket.emit('log', URLvars.workerId + ' RECONNECT FAILURE')
+        if (socket.connected) {
+            socket.emit('log', URLvars.workerId + ' RECONNECT FAILURE');
+        }
     });
     socket.on('chatbot', data => {
         const questions = data;
@@ -699,32 +718,22 @@ $(function () {
         setTimeout(() => {
             let totalLengthString = "";
             totalLengthString = Math.round(3 * (data.duration) + 15) + " minutes";
-            log("Reminder: You will receive the bonus pay at the stated hourly rate only if you stay for " +
-                "all three rounds and answer any survey questions. This should take no more than " + totalLengthString);
-            log("From now until when you receive a link to submit the HIT, " +
-                "<strong>DO NOT REFRESH OR LEAVE THE PAGE</strong>. This will kill the task for everyone and you " +
-                "will not be compensated.");
+            log("<strong>Reminder</strong>: You will receive the bonus pay at the stated hourly rate <strong>only</strong> if you stay for " +
+                "all three rounds and answer any survey questions. This should take no more than " + totalLengthString + " total.");
+            log("<strong>DO NOT REFRESH OR LEAVE THE PAGE</strong>. This will stop the task for everyone and you will not be compensated.");
             log("Task: " + data.task);
-            log("Start by checking out the link above, then work together in this chat room to develop a short " +
-                "advertisement of no more than <strong>30 characters in length</strong>.");
-            let durationString = "";
-            if (data.duration < 1) {
-                durationString = Math.round(data.duration * 60) + " seconds"
-            } else if (data.duration === 1) {
-                durationString = "one minute"
-            } else {
-                durationString = data.duration + " minutes"
-            }
-            log("You will have <strong>" + durationString + "</strong> to brainstorm for this round. Near the end of " +
-                "the time we will tell you how to submit your final result.");
+            log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.");
+
+            log("You will have <strong>" + textifyTime(data.duration) + "</strong> to brainstorm for this round. You will receive instructions about how to collaborate to write a compelling add.");
             log("We will run your final advertisement online. <strong>The more successful it is, the larger the " +
                 "bonus each of your team members will receive.</strong>");
             log("<br>For example, here are text advertisements for a golf club called Renaissance: <br>\
-      <ul style='list-style-type:disc'> \
-        <li><strong>An empowering modern club</strong><br></li> \
-        <li><strong>A private club with reach</strong><br></li> \
-        <li><strong>Don't Wait. Discover Renaissance Today</strong></li> \
-      </ul>")
+                <ul style='list-style-type:disc'> \
+                  <li><strong>An empowering modern club</strong><br></li> \
+                  <li><strong>A private club with reach</strong><br></li> \
+                  <li><strong>Don't Wait. Discover Renaissance Today</strong></li> \
+                </ul>"
+            )
         }, 500);
 
         setTimeout(() => {
@@ -910,6 +919,8 @@ $(function () {
         return n;
     }
 
+    socket.on('message clients', message => { log(message) })
+
     socket.on('stop', data => {
         // log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
         hideAll();
@@ -920,12 +931,10 @@ $(function () {
     });
 
     socket.on('timer', data => {
-        log("You're about <strong>90% done with this session</strong>. Enter your final result now.");
-        log("Remember, it needs to be <strong>maximum 30 characters long</strong>.");
-        log("To indicate your final result, <strong>start the line with an exclamation mark (i.e., '!')</strong>. " +
-            "We will not count that character toward your length limit.");
-        log("<br>If you enter more than one line starting with an exclamation mark, we'll only use the last one in " +
-            "the chat. This result will count equally for all members of the team.")
+        log("<strong>You'll be done with this round in about " + textifyTime(data.time) + ". Enter your final result now.</strong>");
+        log("Remember, it can't be more than <strong>maximum 30 characters long</strong>.");
+        log("To indicate your final result, <strong>start the line with an exclamation mark (i.e., '!')</strong>. We will not count that character toward your length limit.");
+        log("If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat. This result will count equally for all members of the team.")
     });
 
     socket.on('echo', data => {
@@ -1002,23 +1011,26 @@ $(function () {
     });
 
     socket.on('finished', data => {
-        socket.emit('log', 'SOCKET DISCONNECT IN ON FINISHED: ' + data.finishingcode);
+        socket.emit('log', 'SOCKET DISCONNECT ON FINISHED: ' + data.finishingcode);
         HandleFinish(finishingMessage = data.message, mturk_form = mturkVariables.turkSubmitTo +
             "/mturk/externalSubmit",
             assignmentId = mturkVariables.assignmentId, finishingcode = data.finishingCode);
-        socket.disconnect(true);
         LeavingAlert = false;
+        socket.disconnect(true);
     });
 
     $('#mturk_form').submit((event) => {
         socket.emit('mturk_formSubmit', $('#mturk_form').serialize())
-    })
+    });
 
-    io.connect().on('disconnect', function () {
-        HandleFinish(finishingMessage = "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
-                mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
-                assignmentId = mturkVariables.assignmentId, finishingcode = "LeftHit")
-      });
+    socket.on('disconnect', function () {
+        $disconnectedMessage.show();
+        HandleFinish(
+            finishingMessage = "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
+            mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
+            assignmentId = mturkVariables.assignmentId,
+            finishingcode = "LeftHit")
+    });
 
 });
 
@@ -1068,3 +1080,14 @@ const decodeURL = (toDecode) => {
     return unescape(encoded.replace(/\+/g, " "));
 };
 
+function textifyTime(duration) {
+  let durationString = "";
+  if (duration < 1) {
+      durationString = Math.round(duration * 60) + " seconds"
+  } else if (duration === 1) {
+      durationString = "one minute"
+  } else {
+      durationString = duration + " minutes"
+  }
+  return durationString
+}

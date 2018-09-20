@@ -89,7 +89,11 @@ module.exports = {
         for (i = 0; i < friends_history.length; i++) {
           // make sure that teamSize * 3rounds < 17 (length of randomAnimals)
           // we could throw an error message?
-          animals.splice(animals.indexOf(friends_history[i][1]), 1)
+          try {
+              animals.splice(animals.indexOf(friends_history[i][1]), 1)
+          } catch (err) {
+              console.log("Problem with friend history:", friends_history, err);
+          }
         }
       }
       // Pick from remaining names

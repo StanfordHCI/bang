@@ -1,11 +1,13 @@
 require('dotenv').config();
 require('colors');
+const args = require('yargs').argv;
 
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL === "TRUE";
 const runningLive = process.env.RUNNING_LIVE === "TRUE"; //ONLY CHANGE ON SERVER
 const teamSize = parseInt(process.env.TEAM_SIZE);
 const roundMinutes = parseFloat(process.env.ROUND_MINUTES);
+let taskURL = args.url || process.env.TASK_URL;
 
 //Parameters for waiting qualifications
 //MAKE SURE secondsToWait > secondsSinceResponse
@@ -18,14 +20,15 @@ const maxWaitChatMinutes = 20;
 
 // Toggles
 const runExperimentNow = true;
-const issueBonusesNow = true;
-const notifyWorkersOn = true;
+const issueBonusesNow = runningLive;
+const notifyWorkersOn = runningLive;
 const runViaEmailOn = false;
-const usingWillBang = true;
-const aggressiveNotifyOn = true;
+const usingWillBang = runningLive;
+const aggressiveNotifyOn = runningLive;
+const notifyUs = runningLive;
 
 const cleanHITs = false;
-const assignQualifications = true;
+const assignQualifications = runningLive;
 const debugMode = !runningLive;
 
 const suddenDeath = false;
@@ -38,7 +41,7 @@ const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
-const midSurveyOn = true;
+const midSurveyOn = runningLive;
 const blacklistOn = false;
 const teamfeedbackOn = false;
 const checkinOn = false;
@@ -90,7 +93,7 @@ let express = require('express');
 const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server); //, {transports: ['websocket']}
-const port = process.env.PORT || 3000;
+const port = args.port || process.env.PORT || 3000;
 server.listen(port, () => {
     console.log('Server listening at port', port)
 });
@@ -116,6 +119,11 @@ Array.prototype.set = function () {
 
 function ioSocketsEmit(event, message) {
     return io.sockets.emit(event, message);
+}
+
+function messageClients(message) {
+    ioSocketsEmit("message clients", message)
+    console.log("Messaged all clients:".red, message);
 }
 
 function ioEmitById(socketId, event, message) {
@@ -151,6 +159,7 @@ const debugDir = "debug/";
 if (!fs.existsSync(debugDir)) {
     fs.mkdirSync(debugDir)
 }
+
 log_file = debugDir + "debug" + Date.now() + ".log";
 console.log = function (...msg) {
     trueLog(msg.map(item => {
@@ -173,35 +182,39 @@ console.log = function (...msg) {
 //if (runExperimentNow){
 // Experiment variables
 /* const conditionsAvailalbe = ['control','treatment','baseline'] */
-const conditionsAvailalbe = ['control', 'treatment'];
-const currentCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1];
-let treatmentNow = false;
+const conditionsAvailalbe = ['control', 'treatment']
+const presetCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1]
+const currentCondition = args.condition || presetCondition
+let treatmentNow = false
 let firstRun = false;
 let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
 let batchCompleteUpdated = false;
 
-const roundOrdering = extraRoundOn ? [
-    {control: [1, 2, 3, 2], treatment: [1, 2, 3, 2], baseline: [1, 2, 3, 4]},
-    {control: [1, 3, 2, 2], treatment: [1, 3, 2, 2], baseline: [1, 2, 3, 4]},
-    {control: [1, 2, 2, 3], treatment: [1, 2, 2, 3], baseline: [1, 2, 3, 4]}] : [
-    {control: [1, 2, 1], treatment: [1, 2, 1], baseline: [1, 2, 3]},
-    {control: [2, 1, 1], treatment: [2, 1, 1], baseline: [1, 2, 3]},
-    {control: [1, 1, 2], treatment: [1, 1, 2], baseline: [1, 2, 3]}];
+/* const roundOrdering = extraRoundOn ? [ */
+/*   {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]}, */
+/*   {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]}, */
+/*   {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [ */
+/*   {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]}, */
+/*   {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]}, */
+/*   {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}] */
+/* const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0] */
 
-const experimentRoundIndicator = extraRoundOn ? 2 : 1; //This record what round of the ordering is the
-// experimental round.
-const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0];
-const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator); //assumes that
-// the manipulation is always the last instance of team 1's interaction.
+// Settings for 4 rounds.
+// const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
+const ordering = randomRoundOrder ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick() : [1, 2, 1, 3]
+const conditions = {control: ordering, treatment: ordering, baseline: [1, 2, 3, 2]} //,4]} modified extra roudn to deal with createTeams
+
+const experimentRoundIndicator = extraRoundOn ? 2 : 1 //This record what round of the ordering is the experimental round.
+const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator) //assumes that the manipulation is always the last instance of team 1's interaction.
 console.log(currentCondition, 'with', conditions[currentCondition]);
 
-const numRounds = conditions.baseline.length;
+const numRounds = conditions.baseline.length
 
-const numberOfRooms = teamSize * numRounds;
-const rooms = tools.letters.slice(0, numberOfRooms);
-const people = extraRoundOn ? tools.letters.slice(0, teamSize ** 2 + teamSize) : tools.letters.slice(0, teamSize ** 2);
-const teams = tools.createTeams(teamSize, numRounds, people, extraRoundOn);
-
+const numberOfRooms = teamSize * numRounds
+const rooms = tools.letters.slice(0, numberOfRooms)
+const people = extraRoundOn ? tools.letters.slice(0, teamSize ** 2 + teamSize) : tools.letters.slice(0, teamSize ** 2)
+const population = people.length
+const teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn) //added '-1' to numRounds
 //}
 
 //if (runExperimentNow) {
@@ -221,7 +234,7 @@ db.ourHITs = new Datastore({filename: '.data/ourHITs', autoload: true, timestamp
 db.willBang = new Datastore({filename: '.data/willBang', autoload: true, timestampData: true});
 
 function updateUserInDB(user, field, value) {
-    db.users.update({mturkId: user.mturkId}, {$set: {[field]: value}}, {},
+    db.users.update({mturkId: user.mturkId, batch: batchID}, {$set: {[field]: value}}, {},
         err => console.log(err ? "Err recording ".red + field + ": " + err : "Updated " + field + " for " +
             user.mturkId + " " + JSON.stringify(value, null, 2))
     )
@@ -242,6 +255,11 @@ db.users.find({}, (err, usersInDB) => {
                 console.log("Number of users with qualification hasBanged:", data.length)
             });
         }
+        if (notifyWorkersOn && runningLive) {
+            mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, (data) => {
+                console.log("Number of users with qualification willBang:", data.length)
+            });
+        }
     }
 });
 
@@ -258,7 +276,7 @@ if (cleanHITs) {
     })
 }
 
-if (runExperimentNow && runningLive) {
+if (runExperimentNow) {
     mturk.launchBang(function (HIT) {
         logTime();
         storeHIT(HIT.HITId);
@@ -373,28 +391,28 @@ if (runExperimentNow && runningLive) {
 
 //Add more products
 let products = [
-    {name: 'KOSMOS ink - Magnetic Fountain Pen', url: 'https://www.kickstarter.com/projects/stilform/kosmos-ink'},
-    {
-        name: 'Projka: Multi-Function Accessory Pouches',
-        url: 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches'
-    },
-    {
-        name: "First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC",
-        url: 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono'
-    },
-    {
-        name: "Nomad Energy- Radically Sustainable Energy Drink",
-        url: 'https://www.kickstarter.com/projects/1273663738/nomad-energy-radically-sustainable-energy-drink'
-    },
+    // {name: 'KOSMOS ink - Magnetic Fountain Pen', url: 'https://www.kickstarter.com/projects/stilform/kosmos-ink'},
+    // {
+    //     name: 'Projka: Multi-Function Accessory Pouches',
+    //     url: 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches'
+    // },
+    // {
+    //     name: "First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC",
+    //     url: 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono'
+    // },
+    // {
+    //     name: "Nomad Energy- Radically Sustainable Energy Drink",
+    //     url: 'https://www.kickstarter.com/projects/1273663738/nomad-energy-radically-sustainable-energy-drink'
+    // },
     {
         name: "Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
         url: 'https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw'
     },
-    {
-        name: "The Travel Line: Versatile Travel Backpack + Packing Tools",
-        url: 'https://www.kickstarter.com/projects/peak-design/the-travel-line-versatile-travel-backpack-packing'
-    },
-    {name: "Stool Nº1", url: 'https://www.kickstarter.com/projects/390812913/stool-no1'},
+    // {
+    //     name: "The Travel Line: Versatile Travel Backpack + Packing Tools",
+    //     url: 'https://www.kickstarter.com/projects/peak-design/the-travel-line-versatile-travel-backpack-packing'
+    // },
+    // {name: "Stool Nº1", url: 'https://www.kickstarter.com/projects/390812913/stool-no1'},
     {
         name: "LetB Color - take a look at time in different ways",
         url: 'https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways'
@@ -403,48 +421,52 @@ let products = [
         name: "FLECTR 360 OMNI – cycling at night with full 360° visibility",
         url: 'https://www.kickstarter.com/projects/outsider-team/flectr-360-omni'
     },
-    {
-        name: "Make perfect cold brew coffee at home with the BrewCub",
-        url: 'https://www.kickstarter.com/projects/1201993039/make-perfect-cold-brew-coffee-at-home-with-the-bre'
-    },
-    {
-        name: 'NanoPen | Worlds Smallest & Indestructible EDC Pen Tool',
-        url: 'https://www.kickstarter.com/projects/bullet/nanopen-worlds-smallest-and-indestructible-edc-pen?' +
-            'ref=section_design-tech_popular'
-    },
-    {
-        name: "The EVERGOODS MQD24 and CTB40 Crossover Backpacks",
-        url: 'https://www.kickstarter.com/projects/1362258351/the-evergoods-mqd24-and-ctb40-crossover-backpacks'
-    },
-    {
-        name: "Hexgears X-1 Mechanical Keyboard",
-        url: 'https://www.kickstarter.com/projects/hexgears/hexgears-x-1-mechanical-keyboard'
-    },
-    {
-        name: "KARVD - Modular Wood Carved Wall Panel System",
-        url: 'https://www.kickstarter.com/projects/karvdwalls/karvd-modular-wood-carved-wall-panel-system'
-    },
-    {
-        name: "PARA: Stationary l Pythagorean l Easy-to-Use Laser Measurer",
-        url: 'https://www.kickstarter.com/projects/1619356127/para-stationary-l-pythagorean-l-easy-to-use-laser'
-    },
-    {
-        name: "Blox: organize your world!",
-        url: 'https://www.kickstarter.com/projects/onehundred/blox-organize-your-world'
-    },
-    {
-        name: "Moment - World's Best Lenses For Mobile Photography",
-        url: 'https://www.kickstarter.com/projects/moment/moment-amazing-lenses-for-mobile-photography'
-    },
+    // {
+    //     name: "Make perfect cold brew coffee at home with the BrewCub",
+    //     url: 'https://www.kickstarter.com/projects/1201993039/make-perfect-cold-brew-coffee-at-home-with-the-bre'
+    // },
+    // {
+    //     name: 'NanoPen | Worlds Smallest & Indestructible EDC Pen Tool',
+    //     url: 'https://www.kickstarter.com/projects/bullet/nanopen-worlds-smallest-and-indestructible-edc-pen?' +
+    //         'ref=section_design-tech_popular'
+    // },
+    // {
+    //     name: "The EVERGOODS MQD24 and CTB40 Crossover Backpacks",
+    //     url: 'https://www.kickstarter.com/projects/1362258351/the-evergoods-mqd24-and-ctb40-crossover-backpacks'
+    // },
+    // {
+    //     name: "Hexgears X-1 Mechanical Keyboard",
+    //     url: 'https://www.kickstarter.com/projects/hexgears/hexgears-x-1-mechanical-keyboard'
+    // },
+    // {
+    //     name: "KARVD - Modular Wood Carved Wall Panel System",
+    //     url: 'https://www.kickstarter.com/projects/karvdwalls/karvd-modular-wood-carved-wall-panel-system'
+    // },
+    // {
+    //     name: "PARA: Stationary l Pythagorean l Easy-to-Use Laser Measurer",
+    //     url: 'https://www.kickstarter.com/projects/1619356127/para-stationary-l-pythagorean-l-easy-to-use-laser'
+    // },
+    // {
+    //     name: "Blox: organize your world!",
+    //     url: 'https://www.kickstarter.com/projects/onehundred/blox-organize-your-world'
+    // },
+    // {
+    //     name: "Moment - World's Best Lenses For Mobile Photography",
+    //     url: 'https://www.kickstarter.com/projects/moment/moment-amazing-lenses-for-mobile-photography'
+    // },
     {
         name: "The Ollie Chair: Shape-Shifting Seating",
         url: 'https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating'
-    },
-    {
-        name: "Fave: the ideal all-purpose knife!",
-        url: 'https://www.kickstarter.com/projects/onehundred/fave-the-ideal-all-purpose-knife'
-    },
+    }
+    // {
+    //     name: "Fave: the ideal all-purpose knife!",
+    //     url: 'https://www.kickstarter.com/projects/onehundred/fave-the-ideal-all-purpose-knife'
+    // },
 ];
+
+if (randomProduct) {
+  products = shuffle(products)
+}
 
 let users = []; //the main local user storage
 let userPool = []; //accumulates users pre-experiment
@@ -500,9 +522,7 @@ app.use(express.static('public'));
 // Disconnect leftover users
 Object.keys(io.sockets.sockets).forEach(socketID => {
     console.log(socketID);
-    if (userPool.every(user => {
-        return user.id !== socketID
-    })) {
+    if (userPool.every(user => user.id !== socketID)) {
         console.log("Removing dead socket: " + socketID);
         console.log("SOCKET DISCONNECT IN LEFTOVER USER");
         io.in(socketID).emit('get IDs', 'broken');
@@ -533,7 +553,7 @@ db.batch.insert(
     }, (err, usersAdded) => {
         if (err) console.log("There's a problem adding batch to the DB: ", err);
         else if (usersAdded) console.log("Batch added to the DB");
-        console.log("Leftover sockets from previous run:" + Object.keys(io.sockets.sockets));
+        console.log("Leftover sockets from previous run: " + Object.keys(io.sockets.sockets));
         if (!firstRun) {
             Object.keys(io.sockets.sockets).forEach(socketID => {
                 console.log('SOCKET DISCONNECT IN BATCH INSERT');
@@ -544,9 +564,6 @@ db.batch.insert(
     }
 );// eventSchedule instead of all of the toggles? (missing checkinOn) //PK: what does this comment mean?
 //}
-
-
-// Timer to catch ID after HIT has been posted - this is sketchy, as unknown when HIT will be posted
 
 // Chatroom
 io.on('connection', (socket) => {
@@ -586,8 +603,8 @@ io.on('connection', (socket) => {
 
         }
         if (userPool.byMturkId(mturkId)) {
-            const user = userPool.byMturkId(mturkId);
-            console.log(('RECONNECTED ' + mturkId + ' in user pool ('+ user.id + ' => ' + socket.id +')').blue);
+            let user = userPool.byMturkId(mturkId);
+            console.log(('RECONNECTED ' + mturkId + ' in user pool (' + user.id + ' => ' + socket.id + ')').blue);
             socket.name_structure = data.name_structure;
             socket.username = data.name_structure.username;
             user.connected = true;
@@ -612,8 +629,9 @@ io.on('connection', (socket) => {
     //   socket.emit('set username', {username: socket.username})
     // })
     socket.on("heartbeat", data => {
-        console.log("HEARTBEAT " + socket.id);
-        io.in(socket.id).emit('heartbeat');
+        if (socket.connected) {
+            io.in(socket.id).emit('heartbeat');
+        }
     });
     socket.on('accepted HIT', data => {
         console.log('ACCEPTED HIT CALLED');
@@ -855,7 +873,11 @@ io.on('connection', (socket) => {
                     });
                 })
             }
+            if (notifyUs) {
+              mturk.notifyWorkers(["A19MTSLG2OYDLZ"], "Rolled " + currentCondition + " on " + taskURL , "Rolled over with: " + currentCondition + " on port " + port + " at " + taskURL + ".");
+            }
             userAcquisitionStage = false;
+            mturk.startTask();
         }
 
         db.users.insert(newUser, (err, usersAdded) => {
@@ -941,7 +963,7 @@ io.on('connection', (socket) => {
 
     // when the user disconnects.. perform this
     socket.on('disconnect', function (reason) {
-        // changes connected to false of disconnected user in userPool
+        // changes connected to false if disconnected user in userPool
         console.log(("[" + (new Date()).toISOString() + "]: Disconnecting socket: " + socket.id + " because " + reason).red);
         if (reason === "transport error") {
             //console.log(socket);
@@ -980,7 +1002,7 @@ io.on('connection', (socket) => {
             // update DB with change
             updateUserInDB(user, 'connected', false);
             console.log(socket.username + ": " + user.mturkId + " HAS LEFT");
-            if (!experimentOver) {
+            if (!experimentOver && !debugMode) {
                 mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our" +
                     " HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com"
                     + " with your Mturk ID and the last things you did in the HIT.\n\nMturk ID: " + user.mturkId +
@@ -1070,10 +1092,8 @@ io.on('connection', (socket) => {
             if (usingWillBang) {
                 // Use this function to notify only x users <= 100
                 let maxWorkersToNotify = 100; // cannot be more than 100 if non-recursive
-                mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function (data) {
-                    let notifyList = getRandomSubarray(data, maxWorkersToNotify).filter(function (turker) {
-                        mturk.notifyWorkers(notifyList, subject, message)
-                    });
+                mturk.listUsersWithQualificationRecursively(mturk.quals.willBang, function (qualifiedWorkers) {
+                    let notifyList = getRandomSubarray(qualifiedWorkers, maxWorkersToNotify)
                     mturk.notifyWorkers(notifyList, subject, message)
                 })
             }
@@ -1261,7 +1281,7 @@ io.on('connection', (socket) => {
             else if (eventSchedule[currentEvent] === "finished" || currentEvent > eventSchedule.length) {
                 if (!batchCompleteUpdated) {
                     db.batch.update({batchID: batchID}, {$set: {batchComplete: true}}, {},
-                        err => console.log(err ? "Err updating batch completion" + err : "Updated batch for complete ")
+                        err => console.log(err ? "Err updating batch completion" + err : "Marked batch " + batchID + " competed in DB")
                     );
                     batchCompleteUpdated = true;
                 }
@@ -1275,7 +1295,9 @@ io.on('connection', (socket) => {
 
                 usersFinished += 1;
                 console.log(usersFinished, "users have finished.");
-
+                if (notifyUs) {
+                  mturk.notifyWorkers(["A19MTSLG2OYDLZ"], "Completed " + currentCondition + " on " + taskURL , "Batch " + batchID + " completed: " + currentCondition + " on port " + port + " at " + taskURL + ".");
+                }
                 ioEmitById(socket.mturkId, 'finished', {
                     message: "Thanks for participating, you're all done!",
                     finishingCode: socket.id,
@@ -1286,7 +1308,6 @@ io.on('connection', (socket) => {
             user.currentEvent += 1
         })
     });
-
 
     // Main experiment run
     socket.on('ready', function (data) {
@@ -1322,6 +1343,7 @@ io.on('connection', (socket) => {
 
             console.log("user.rooms.length:", user.rooms.length);
 
+            // Replaceing user with extraRound
             if (extraRoundOn && user.rooms.length === 1) {
                 users.forEach(u => {
                     if (tools.letters.slice(0, teamSize ** 2).includes(u.person) && !u.connected) {
@@ -1379,18 +1401,12 @@ io.on('connection', (socket) => {
 
             let currentProduct = products[currentRound];
 
-            if (randomProduct) {
-                let productInt = getRndInteger(0, products.length);
-                let currentProduct = products[productInt];
-                products.splice(productInt, 1)
-            }
             console.log('Current Product:', currentProduct);
 
             let taskText = "Design text advertisement for <strong><a href='" + currentProduct.url +
                 "' target='_blank'>" + currentProduct.name + "</a></strong>!";
 
             experimentStarted = true;
-            mturk.startTask();
 
             users.forEach(u => {
                 if (autocompleteTestOn) {
@@ -1455,12 +1471,40 @@ io.on('connection', (socket) => {
             // save start time
             startTime = (new Date()).getTime();
 
+            // Initialize steps
+            const taskSteps = [
+                {
+                    time: 0.1,
+                    message: "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
+                },
+                {
+                    time: 0.4,
+                    message: "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
+                },
+                {
+                    time: 0.7,
+                    message: "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
+                }
+            ]
+
+            // Execute steps
+            taskSteps.forEach((step, index) => {
+                setTimeout(() => {
+                    if (step.message) {
+                        console.log("Task step:".red, step.message);
+                        ioSocketsEmit("message clients", step.message)
+                        // ioEmitById(user.mturkId, "message clients", step.message)
+                    }
+                    if (typeof step.action === "function") step.action()
+                }, step.time * roundMinutes * 60 * 1000)
+            })
+
             //Round warning
             // make timers run in serial
             setTimeout(() => {
                 console.log('time warning', currentRound);
                 users.forEach(user => {
-                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .1})
+                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .2})
                 });
 
                 //Done with round
@@ -1532,28 +1576,28 @@ io.on('connection', (socket) => {
     socket.on('mturk_formSubmit', (data) => {
         useUser(socket, user => {
             user.results.engagementFeedback = parseResults(data);
-            updateUserInDB(socket, "results.engagementFeedback", user.results.engagementFeedback)
+            updateUserInDB(user, "results.engagementFeedback", user.results.engagementFeedback)
         })
     });
 
     socket.on('qFifteenSubmit', (data) => {
         useUser(socket, user => {
             user.results.qFifteenCheck = parseResults(data);
-            updateUserInDB(socket, "results.qFifteenCheck", user.results.qFifteenCheck)
+            updateUserInDB(user, "results.qFifteenCheck", user.results.qFifteenCheck)
         })
     });
 
     socket.on('qSixteenSubmit', (data) => {
         useUser(socket, user => {
             user.results.qSixteenCheck = parseResults(data);
-            updateUserInDB(socket, "results.qSixteenCheck", user.results.qSixteenCheck)
+            updateUserInDB(user, "results.qSixteenCheck", user.results.qSixteenCheck)
         })
     });
 
     socket.on('postSurveySubmit', (data) => {
         useUser(socket, user => {
             user.results.manipulationCheck = parseResults(data);
-            updateUserInDB(socket, "results.manipulationCheck", user.results.manipulationCheck)
+            updateUserInDB(user, "results.manipulationCheck", user.results.manipulationCheck)
         })
     });
 
@@ -1590,14 +1634,14 @@ io.on('connection', (socket) => {
                     questionObj['question'] += " Team " + (index + 1) + " (" + team + '),'
                 });
                 questionObj['question'] = questionObj['question'].slice(0, -1);
-                answerObj = {answers: ["Team 1", "Team 2", "Team 3"], answerType: 'radio', textValue: true};
+                answerObj = {answers: ["Team 1", "Team 2", "Team 3", "Team 4"], answerType: 'radio', textValue: true};
             } else if (answerTag === "MTR") { //team checkbox
                 getTeamMembers(user).forEach(function (team, index) {
                     questionObj['question'] += " Team " + (index + 1) + " (" + team + '),'
                 });
                 questionObj['question'] = questionObj['question'].slice(0, -1);
                 answerObj = {
-                    answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 1 and Team 3"],
+                    answers: ["Team 1 and Team 2", "Team 2 and Team 3", "Team 3 and Team 4", "Team 1 and Team 3", "Team 1 and Team 4", "Team 2 and Team 4"],
                     answerType: 'radio',
                     textValue: true
                 };
@@ -1786,12 +1830,17 @@ const logTime = () => {
 };
 
 function getRandomSubarray(arr, size) {
-    let shuffled = arr.slice(0), i = arr.length, min = i - size, temp, index;
-    while (i-- > min) {
-        index = Math.floor((i + 1) * Math.random());
-        temp = shuffled[index];
-        shuffled[index] = shuffled[i];
-        shuffled[i] = temp;
-    }
-    return shuffled.slice(min);
+    return shuffle(arr).slice(0,size);
+}
+
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex;
+  while (0 !== currentIndex) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+  return array;
 }
