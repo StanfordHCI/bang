@@ -93,7 +93,7 @@ let express = require('express');
 const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server); //, {transports: ['websocket']}
-const port = args.port || 3000;
+const port = args.port || process.env.PORT || 3000;
 server.listen(port, () => {
     console.log('Server listening at port', port)
 });
@@ -276,7 +276,7 @@ if (cleanHITs) {
     })
 }
 
-if (runExperimentNow && runningLive) {
+if (runExperimentNow) {
     mturk.launchBang(function (HIT) {
         logTime();
         storeHIT(HIT.HITId);
