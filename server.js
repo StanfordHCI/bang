@@ -118,6 +118,7 @@ Array.prototype.set = function () {
 };
 
 function ioSocketsEmit(event, message) {
+    console.log(event, message);
     return io.sockets.emit(event, message);
 }
 
@@ -126,7 +127,14 @@ function messageClients(message) {
     console.log("Messaged all clients:".red, message);
 }
 
-function ioEmitById(socketId, event, message) {
+function ioEmitById(socketId, event, message, socket, user) {
+    let isActive = null
+    let isConnected = null
+    if (user) {
+      isActive = user.active
+      isConnected = user.connected
+    }
+    console.log(socket.id, socket.mturkId, isActive, isConnected, event, message);
     return io.in(socketId).emit(event, message);
 }
 
@@ -162,6 +170,7 @@ if (!fs.existsSync(debugDir)) {
 
 log_file = debugDir + "debug" + Date.now() + ".log";
 console.log = function (...msg) {
+    msg.unshift("[" + (new Date()).toISOString() + "]")
     trueLog(msg.map(item => {
         return util.format(item)
     }).join(" ")); //uncomment if you want logs
