@@ -742,8 +742,8 @@ io.on('connection', (socket) => {
                     let user = usersActive[i];
                     console.log('active user ' + (i + 1) + ': ' + user.name);
                     if (i < numUsersWanted) { //take the 1st teamssize **2 users and add them
-                        ioEmitById(user.mturkId, "echo", "add user");
-                        ioEmitById(user.mturkId, 'initiate experiment', null);
+                        ioEmitById(user.mturkId, "echo", "add user", socket, user);
+                        ioEmitById(user.mturkId, 'initiate experiment', null, socket, user);
                         // io.in(user.mturkId).emit("echo", "add user");
                         // io.in(user.mturkId).emit('initiate experiment');
                     } else { //else emit finish
@@ -967,7 +967,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('load bot qs', () => {
-        ioEmitById(socket.mturkId, 'chatbot', loadQuestions(botFile))
+        ioEmitById(socket.mturkId, 'chatbot', loadQuestions(botFile), socket)
     });
 
     // when the user disconnects.. perform this
@@ -1068,7 +1068,7 @@ io.on('connection', (socket) => {
     socket.on('ready-to-all', (data) => {
         console.log("god is ready".rainbow);
         users.filter(user => !user.ready).forEach(user =>
-                ioEmitById(socket.mturkId, 'echo', 'ready')
+                ioEmitById(socket.mturkId, 'echo', 'ready', socket, user)
             // io.in(socket.mturkId).emit('echo', 'ready')
         )
         //io.sockets.emit('echo','ready')
@@ -1141,7 +1141,7 @@ io.on('connection', (socket) => {
                     questions: loadQuestions(starterSurveyFile),
                     interstitial: false,
                     showHeaderBar: false
-                });
+                }, socket, user);
                 taskStartTime = getSecondsPassed();
             }
             else if (eventSchedule[currentEvent] === "ready") {
@@ -1154,15 +1154,15 @@ io.on('connection', (socket) => {
                         questions: loadQuestions(checkinFile),
                         interstitial: true,
                         showHeaderBar: true
-                    });
+                    }, socket, user);
                 }
                 ioEmitById(socket.mturkId, "load", {
                     element: 'leave-hit',
                     questions: loadQuestions(leaveHitFile),
                     interstitial: true,
                     showHeaderBar: true
-                });
-                ioEmitById(socket.mturkId, "echo", "ready");
+                }, socket, user);
+                ioEmitById(socket.mturkId, "echo", "ready", socket, user);
 
             }
             else if (eventSchedule[currentEvent] === "midSurvey") {
@@ -1174,7 +1174,7 @@ io.on('connection', (socket) => {
                     questions: loadQuestions(midSurveyFile),
                     interstitial: false,
                     showHeaderBar: true
-                });
+                }, socket, user);
             }
             else if (eventSchedule[currentEvent] === "psychologicalSafety") {
                 if (timeCheckOn) {
@@ -1185,7 +1185,7 @@ io.on('connection', (socket) => {
                     questions: loadQuestions(psychologicalSafetyFile),
                     interstitial: false,
                     showHeaderBar: true
-                });
+                }, socket, user);
             }
             else if (eventSchedule[currentEvent] === "teamfeedbackSurvey") {
                 if (midSurveyOn && timeCheckOn) {
@@ -1198,7 +1198,7 @@ io.on('connection', (socket) => {
                     questions: loadQuestions(feedbackFile, user),
                     interstitial: false,
                     showHeaderBar: true
-                });
+                }, socket, user);
             }
             else if (eventSchedule[currentEvent] === "blacklistSurvey") {
                 experimentOver = true;
@@ -1222,7 +1222,7 @@ io.on('connection', (socket) => {
                     questions: loadQuestions(blacklistFile, user),
                     interstitial: false,
                     showHeaderBar: false
-                });
+                }, socket, user);
             }
             else if (eventSchedule[currentEvent] === "qFifteen") {
                 experimentOver = true;
@@ -1240,7 +1240,7 @@ io.on('connection', (socket) => {
                     questions: loadQuestions(qFifteenFile, user),
                     interstitial: false,
                     showHeaderBar: false
-                });
+                }, socket, user);
             }
             else if (eventSchedule[currentEvent] === "qSixteen") {
                 experimentOver = true;
@@ -1260,7 +1260,7 @@ io.on('connection', (socket) => {
                     questions: loadQuestions(qSixteenFile, user),
                     interstitial: false,
                     showHeaderBar: false
-                });
+                }, socket, user);
             }
             else if (eventSchedule[currentEvent] === "postSurvey") { //Launch post survey
                 experimentOver = true;
@@ -1285,7 +1285,7 @@ io.on('connection', (socket) => {
                     questions: loadQuestions(postSurveyFile, user),
                     interstitial: false,
                     showHeaderBar: false
-                });
+                }, socket, user);
             }
             else if (eventSchedule[currentEvent] === "finished" || currentEvent > eventSchedule.length) {
                 if (!batchCompleteUpdated) {
@@ -1312,7 +1312,7 @@ io.on('connection', (socket) => {
                     finishingCode: socket.id,
                     turkSubmitTo: mturk.submitTo,
                     assignmentId: user.assignmentId
-                })
+                }, socket, user)
             }
             user.currentEvent += 1
         })
@@ -1429,8 +1429,7 @@ io.on('connection', (socket) => {
                             randomAnimal: tools.randomAnimal,
                             round: currentRound + 1,
                             runningLive: runningLive
-                        }
-                    )//rounds are 0 indexed
+                        }, socket, u)//rounds are 0 indexed
                 } else {
                     // Dynamically generate teammate names
                     // even if teamSize = 1 for testing, this still works
@@ -1470,7 +1469,7 @@ io.on('connection', (socket) => {
                         duration: roundMinutes,
                         randomAnimal: tools.randomAnimal,
                         round: currentRound + 1
-                    })//round 0 indexed
+                    }, socket, u)//round 0 indexed
                 }
             });
 
@@ -1513,7 +1512,7 @@ io.on('connection', (socket) => {
             setTimeout(() => {
                 console.log('time warning', currentRound);
                 users.forEach(user => {
-                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .2})
+                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .2}, socket, user)
                 });
 
                 //Done with round
@@ -1523,7 +1522,7 @@ io.on('connection', (socket) => {
                         ioEmitById(user.mturkId, 'stop', {
                             round: currentRound,
                             survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn)
-                        })
+                        }, socket, user)
                     });
                     currentRound += 1; // guard to only do this when a round is actually done.
                     console.log(currentRound, "out of", numRounds)
@@ -1681,7 +1680,7 @@ io.on('connection', (socket) => {
             message: message,
             finishingCode: finishingCode,
             crashed: false
-        })
+        }, socket, user)
     }
 
 });
