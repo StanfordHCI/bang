@@ -877,6 +877,7 @@ io.on('connection', (socket) => {
               mturk.notifyWorkers(["A19MTSLG2OYDLZ"], "Rolled " + currentCondition + " on " + taskURL , "Rolled over with: " + currentCondition + " on port " + port + " at " + taskURL + ".");
             }
             userAcquisitionStage = false;
+            mturk.startTask();
         }
 
         db.users.insert(newUser, (err, usersAdded) => {
@@ -1406,7 +1407,6 @@ io.on('connection', (socket) => {
                 "' target='_blank'>" + currentProduct.name + "</a></strong>!";
 
             experimentStarted = true;
-            mturk.startTask();
 
             users.forEach(u => {
                 if (autocompleteTestOn) {

@@ -311,6 +311,7 @@ const createQualification = (name) => {
 const setAssignmentsPending = (data) => {
     usersAcceptedHIT = data;
     hitsLeft = maxAssignments - usersAcceptedHIT;
+    if (taskStarted) hitsLeft = 0
     console.log('users accepted: ', usersAcceptedHIT);
     console.log('hits left: ', hitsLeft);
     if (taskStarted) {
