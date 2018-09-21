@@ -793,6 +793,17 @@ stargazer(consistencyLogit,
 #chisq.test(treatmentAbsChange, controlAbsChange, p=baselineAbsChange)
 ## Control:
 #chisq.test(controlAbsChange,p=baselineAbsChange)
+
+library(lme4)
+library(lmerTest)
+library(pROC)
+
+prob <- predict(consistencyLogit, type=c("response"))
+allFracture$prob <- prob
+
+g <- roc(consistent ~ prob, data=allFracture, plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,  print.auc=TRUE, show.thres=TRUE)
+g
+
 ```
 
 ## Visualizing change: 
@@ -829,10 +840,11 @@ dev.off();
 ## Visualizing meta-cognition differences: 
 # R metaGraph
 ```{r}
-individualProportionFracture$correctAnswers <- sum(individualProportionFracture$metaGuessedCorrectly) 
-
-metaAnswersCorrect <- round(unique(individualProportionFracture$correctAnswers /nrow(individualProportionFracture)),2) 
-metaAnswersSE <- round(unique(sqrt(metaAnswersCorrect*(1-metaAnswersCorrect)/nrow(individualProportionFracture))), 2)  
+chanceAccuracy <- sum(individualProportionFracture$fracture == 0)/nrow(individualProportionFracture)
+chanceAccuracy
+accuracy <- sum(individualProportionFracture$metaGuessedCorrectly) / nrow(individualProportionFracture)
+accuracy
+metaAnswersSE <- sqrt(accuracy*(1-accuracy)/nrow(individualProportionFracture))
 
 ## Visualize differences: 
 dat <- data.frame(fracturePrediction= factor(c("Correct fracture prediction"), levels=c("Correct fracture prediction")),
@@ -863,8 +875,6 @@ library(lme4)
 library(lmerTest)
 library(pROC)
 
-
-
 didpartnerfracture <- individualProportionFracture %>% 
   inner_join(individualProportionFracture, by = c("round", "batch", "room")) %>% 
   filter(id.x != id.y, condition.x != "Ap") %>%
@@ -874,12 +884,12 @@ numrounds <- didpartnerfracture %>%
   summarise(count = n())
 didpartnerfracture <- didpartnerfracture %>%
   inner_join(numrounds, by = c("id.x")) %>%
-  filter(count > 1)
+  filter(count >= 3)
 
 didpartnerfracture$partnerFractured.x.logical <- as.logical(didpartnerfracture$partnerFractured.x)
 didpartnerfracture$id.x <- as.factor(didpartnerfracture$id.x)
 didpartnerfracture$results.condition.x <- as.factor(didpartnerfracture$results.condition.x)
-personlogit <- glmer(data = didpartnerfracture, partnerFractured.x ~ results.condition.x + (1|id.x), family="binomial")
+personlogit <- glm(data = didpartnerfracture, partnerFractured.x ~ results.condition.x + id.x, family="binomial")
 summary(personlogit)
 prob <- predict(personlogit, type=c("response"))
 didpartnerfracture$prob <- prob
