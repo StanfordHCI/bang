@@ -829,7 +829,7 @@ dev.off();
 ## Visualizing meta-cognition differences: 
 # R metaGraph
 ```{r}
-individualProportionFracture$correctAnswers <- sum(ifelse(individualProportionFracture$metaGuessedCorrectly==individualProportionFracture$blacklistMeta,1,0))
+individualProportionFracture$correctAnswers <- sum(individualProportionFracture$metaGuessedCorrectly) 
 
 metaAnswersCorrect <- round(unique(individualProportionFracture$correctAnswers /nrow(individualProportionFracture)),2) 
 metaAnswersSE <- round(unique(sqrt(metaAnswersCorrect*(1-metaAnswersCorrect)/nrow(individualProportionFracture))), 2)  
