@@ -118,8 +118,10 @@ Array.prototype.set = function () {
 };
 
 function ioSocketsEmit(event, message) {
+  if (debugMode) {
     console.log(event, message);
-    return io.sockets.emit(event, message);
+  }
+  return io.sockets.emit(event, message);
 }
 
 function messageClients(message) {
@@ -128,31 +130,35 @@ function messageClients(message) {
 }
 
 function ioEmitById(socketId, event, message, socket, user) {
+  if (debugMode) {
     let isActive = null
     let isConnected = null
     if (user) {
       isActive = user.active
       isConnected = user.connected
     }
-    console.log(socket.id, socket.mturkId, isActive, isConnected, event, message);
+    let printMessage =  message
+    if (event ===  'chatbot') {printMessage = "all the questions"}
++   console.log(socket.id, socket.mturkId, isActive, isConnected, event, printMessage);
+  }
     return io.in(socketId).emit(event, message);
 }
 
-function useUser(u, f, err = "Guarded against undefined user") {
+function useUser(socket, callback, err = "Guarded against undefined user") {
     //let user = users.byID(u.id)
-    let user = users.byMturkId(u.mturkId);
-    if (typeof user !== 'undefined' && typeof f === "function") {
-        f(user)
+    let user = users.byMturkId(socket.mturkId);
+    if (typeof user !== 'undefined' && typeof callback === "function") {
+        callback(user)
     }
     else {
-        console.log(err.red, u.id, "\n", err.stack);
+        console.log(err.red, socket.id, "\n", err.stack);
         if (debugMode) {
             console.trace()
         }
     }
 }
 
-// Check balance $$$
+// Check balance
 mturk.getBalance(function (balance) {
     if (runningLive && balance <= 400) {
         console.log("\n!!! BROKE !!!\n".red.inverse.bold)
@@ -182,7 +188,7 @@ console.log = function (...msg) {
         });
     });
     fs.appendFile(log_file, "\n", function (err) {
-        if (err) {
+        if (err) {f
             return trueLog(err);
         }
     });
@@ -1675,12 +1681,7 @@ io.on('connection', (socket) => {
             return;
         }
         console.log(('Issued finish to ' + socket.mturkId).red);
-
-        ioEmitById(socket.mturkId, 'finished', {
-            message: message,
-            finishingCode: finishingCode,
-            crashed: false
-        }, socket, user)
+        ioEmitById(socket.mturkId, 'finished', { message: message, finishingCode: finishingCode, crashed: false }, socket)
     }
 
 });

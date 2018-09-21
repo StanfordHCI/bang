@@ -409,7 +409,7 @@ const disassociateQualification = (qualificationId, workerId, reason) => {
 
 const listUsersWithQualification = (qual, max, callback) => {
     if (max > 100) max = 100;
-    var userWithQualificationParams = {QualificationTypeId: qual.QualificationTypeId, MaxResults: max};
+    var userWithQualificationParams = {QualificationTypeId: qual.QualificationTypeId, MaxResults: max, Status: "Granted"};
     mturk.listWorkersWithQualificationType(userWithQualificationParams, function (err, data) {
         if (err) console.log(err, err.stack); // an error occurred
         else {
@@ -423,7 +423,8 @@ const listUsersWithQualificationRecursively = (qual, callback, paginationToken =
     mturk.listWorkersWithQualificationType({
         QualificationTypeId: qual.QualificationTypeId,
         MaxResults: 100,
-        NextToken: paginationToken
+        NextToken: paginationToken,
+        Status: "Granted"
     }, (err, data) => {
         if (err) console.log(err, err.stack);
         else {
@@ -657,7 +658,8 @@ const checkQualsRecursive = (qualObject, callback, paginationToken = null, passt
     var userWithQualificationParams = {
         QualificationTypeId: qualObject.QualificationTypeId,
         MaxResults: 100,
-        NextToken: paginationToken
+        NextToken: paginationToken,
+        Status: "Granted"
     };
     mturk.listWorkersWithQualificationType(userWithQualificationParams, function (err, data) {
         if (err) console.log(err, err.stack);
