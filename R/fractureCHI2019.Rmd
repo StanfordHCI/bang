@@ -258,7 +258,8 @@ individualProportionFracture <- individualProportion %>%
 
 individualProportionFracture$partnerFractured <- ifelse(individualProportionFracture$prop == 0, FALSE,
                                                         ifelse(individualProportionFracture$prop == 1, TRUE, 
-                                                               ifelse(individualProportionFracture$blacklistIndividual == 0, TRUE, FALSE)))
+                                       ifelse(individualProportionFracture$blacklistIndividual == 0, TRUE, FALSE)))
+
 individualProportionFracture$metaGuessedCorrectly <- individualProportionFracture$blacklistMeta == individualProportionFracture$partnerFractured
 
 ## Baseline: (we probably won't need this since we are artificially making baseline conditions)
@@ -828,11 +829,10 @@ dev.off();
 ## Visualizing meta-cognition differences: 
 # R metaGraph
 ```{r}
-individualProportionMeta <- unique(setDT(individualProportionFracture), by = c('id')) 
-individualProportionMeta$correctAnswers <- sum(ifelse(individualProportionMeta$blacklistMeta==individualProportionMeta$fracture,1,0))
+individualProportionFracture$correctAnswers <- sum(ifelse(individualProportionFracture$metaGuessedCorrectly==individualProportionFracture$blacklistMeta,1,0))
 
-metaAnswersCorrect <- round(unique(individualProportionMeta$correctAnswers /nrow(individualProportionMeta)),2) 
-metaAnswersSE <- round(unique(sqrt(metaAnswersCorrect*(1-metaAnswersCorrect)/nrow(individualProportionMeta))), 2)  
+metaAnswersCorrect <- round(unique(individualProportionFracture$correctAnswers /nrow(individualProportionFracture)),2) 
+metaAnswersSE <- round(unique(sqrt(metaAnswersCorrect*(1-metaAnswersCorrect)/nrow(individualProportionFracture))), 2)  
 
 ## Visualize differences: 
 dat <- data.frame(fracturePrediction= factor(c("Correct fracture prediction"), levels=c("Correct fracture prediction")),
@@ -845,12 +845,12 @@ p <- ggplot(data=dat, aes(x=fracturePrediction, y=fracturePredictionCorrect)) +
                     ymax=c(metaAnswersCorrect+metaAnswersSE), width = 0.1)) +
   geom_text(aes(label=sprintf("%1.0f%%", round(fracturePredictionCorrect, 2)*100)), vjust=4.6, color="white")+ #size=8)+
   theme_classic() + labs(x="",
-       y="Percent of individuals who accurately predicted \n \n their teams' fracture score") + theme_classic() 
+       y="Percent of individuals who accurately predicted \n \n partner's fracture score") + theme_classic() 
   #theme(text = element_text(size=25),
   #      axis.text.x = element_text(size=16 )
   #      ) 
 p
-pdf('consistency.pdf', width=3.5, height=2.5)
+pdf('metaPredictionQuestion.pdf', width=3.5, height=2.5)
 p
 dev.off();
 ```
