@@ -856,7 +856,22 @@ dev.off();
 ```
 
 
+## How much does individual predict fracture? 
+# R baddudes
+```{r}
+library(lme4)
+library(lmerTest)
 
+didpartnerfracture <- individualProportionFracture %>% 
+  inner_join(individualProportionFracture, by = c("round", "batch", "room")) %>% 
+  filter(id.x != id.y) %>%
+  select(id.x, id.y, partnerFractured.x, results.condition.x, condition.x)
+didpartnerfracture$partnerFractured.x.logical <- as.logical(didpartnerfracture$partnerFractured.x)
+didpartnerfracture$id.x <- as.factor(didpartnerfracture$id.x)
+didpartnerfracture$results.condition.x <- as.factor(didpartnerfracture$results.condition.x)
+personlogit <- glmer(data = didpartnerfracture, partnerFractured.x ~ results.condition.x + (1|id.x), family="binomial")
+summary(personlogit)
 
+summary(glm(data = didpartnerfracture, partnerFractured.x ~ results.condition.x, family="binomial"))
 
-
+```
