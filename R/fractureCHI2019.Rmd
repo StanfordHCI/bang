@@ -821,36 +821,36 @@ dev.off();
 ```
 
 ## Visualizing meta-cognition differences: 
-```{r, echo=TRUE}
-tbl <- c(
-  "unmasked" = "control",
-  "masked" = "treatment"
-)
+# R metaGraph
+```{r}
+individualProportionMeta <- unique(setDT(individualProportionFracture), by = c('id')) 
+individualProportionMeta$correctAnswers <- sum(ifelse(individualProportionMeta$blacklistMeta==individualProportionMeta$fracture,1,0))
 
-ggplot(individualProportionFracture, aes(x = factor(blacklistIndividual))) + 
-    geom_bar(fill="#2853C2", alpha=0.7, aes(y = (..count..)/sum(..count..))) +
-scale_y_continuous(labels = scales::percent_format(10))  + 
-  scale_x_discrete(labels=c("0"="Keep this team", "1"="Do not keep this team")) + labs(y="", x="Answers for individual team fracture question") + facet_grid(.~results.condition, labeller = labeller(tbl)) + theme_classic() + theme(text = element_text(size=20),
-        axis.text.x = element_text( )) 
+metaAnswersCorrect <- round(unique(individualProportionMeta$correctAnswers /nrow(individualProportionMeta)),2) 
+metaAnswersSE <- round(unique(sqrt(metaAnswersCorrect*(1-metaAnswersCorrect)/nrow(individualProportionMeta))), 2)  
 
-ggplot(individualProportionFracture, aes(x = factor(blacklistMeta))) + 
-    geom_bar(fill="#2853C2", alpha=0.7, aes(y = (..count..)/sum(..count..))) +
-scale_y_continuous(labels = scales::percent_format(10))  + 
-  scale_x_discrete(labels=c("0"="Keep this team", "1"="Do not keep this team")) + labs(y="", x="Answers to team fracture question") +  facet_grid(.~results.condition) + theme_classic() + theme(text = element_text(size=20),
-        axis.text.x = element_text(size=16 )) 
+## Visualize differences: 
+dat <- data.frame(fracturePrediction= factor(c("Correct fracture prediction"), levels=c("Correct fracture prediction")),
+                  fracturePredictionCorrect = c(metaAnswersCorrect), SE=c(metaAnswersSE)) 
+
+p <- ggplot(data=dat, aes(x=fracturePrediction, y=fracturePredictionCorrect)) +
+  geom_bar(stat="identity", fill="#2853C2", alpha=0.7)+
+  scale_y_continuous(labels = scales::percent_format(10)) + 
+  geom_errorbar(aes(ymin=c(metaAnswersCorrect-metaAnswersSE),
+                    ymax=c(metaAnswersCorrect+metaAnswersSE), width = 0.1)) +
+  geom_text(aes(label=sprintf("%1.0f%%", round(fracturePredictionCorrect, 2)*100)), vjust=4.6, color="white")+ #size=8)+
+  theme_classic() + labs(x="",
+       y="Percent of individuals who accurately predicted \n \n their teams' fracture score") + theme_classic() 
+  #theme(text = element_text(size=25),
+  #      axis.text.x = element_text(size=16 )
+  #      ) 
+p
+pdf('consistency.pdf', width=3.5, height=2.5)
+p
+dev.off();
 ```
 
-```{r, echo=TRUE}
-individualProportion$equalAnswers <- sum(ifelse(individualProportion$blacklistIndividual==individualProportion$blacklistMeta,1,0))
-## Calculate percent of correct manipulation answers for treatment: 
-individualProportion <- individualProportion %>% mutate(percentCorrect = (equalAnswers/(nrow(individualProportion))))
-graphTreatment <- unique(round(individualProportion$percentCorrect, 2))
 
-ggplot(individualProportionFracture, aes(x = factor(blacklistIndividual))) + 
-    geom_bar(fill="#2853C2", alpha=0.7, aes(y = (..count..)/sum(..count..))) +
-scale_y_continuous(labels = scales::percent_format(10))  + 
-  scale_x_discrete(labels=c("0"="Keep this team", "1"="Do not keep this team")) + labs(y="", x="Answers to individual fracture question") +  facet_grid(.~results.condition) + theme_classic() 
-```
 
 
 
