@@ -338,23 +338,30 @@ treatmentTotal <- sum(treatmentManipulation$correctAnswer)
 controlTotal <- sum(controlManipulation$correctAnswer)
 controlManipulation2 <- unique(controlManipulation$percentCorrect)*100
 treatmentManipulation2 <- unique(treatmentManipulation$percentCorrect)*100
-chanceManipulation <- c(16)
+chanceManipulation <- c(1/6*100)
 print(c(controlManipulation2, treatmentManipulation2, chanceManipulation))
+
+treatmentSE <- sqrt((treatmentTotal/nrow(treatmentManipulation) * (1 - (treatmentTotal/nrow(treatmentManipulation))))/nrow(treatmentManipulation))
 ```
 ## Plot for manipulation check results: 
 ```{r, echo=TRUE}
-dat <- data.frame(manipulationCheck=factor(c("Masked","Unmasked"), levels=c("Masked","Unmasked")),
-                  manipulation = c(graphTreatment, graphControl))
+dat <- data.frame(manipulationCheck=factor(c("Masked condition"), levels=c("Masked condition")),
+                  manipulation = c(graphTreatment))
 
 p <- ggplot(data=dat, aes(x=manipulationCheck, y=manipulation)) +
   geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
-  geom_text(aes(label=manipulation), vjust=1.6, color="white", size=5)+
-  geom_hline(yintercept=0.16, size=1, color="grey") + 
-  scale_y_continuous(labels = scales::percent_format(10)) + 
+  geom_hline(yintercept=1/6, size=1, color="grey") +   
+  geom_errorbar(aes(ymin=manipulation-treatmentSE, ymax=manipulation+treatmentSE), width = 0.1)+
+  #geom_text(aes(label=manipulation), vjust=1.6, color="white", size=5)+
+  scale_y_continuous(labels = scales::percent_format(1)) + 
   theme_classic() + labs(subtitle="", 
        x="",
-       y="% correct") + theme(text = element_text(size=25),
-        axis.text.x = element_text(size=16))
+       y="Accuracy at identifying\n the repeat collaborators") +
+  #theme(text = element_text(size=22), axis.text.x = element_text(size=22))
+
+pdf('manipulationcheck.pdf', width=3.5, height=2.5)
+p
+dev.off();
 p
 ```
 
