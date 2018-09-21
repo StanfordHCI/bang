@@ -235,7 +235,7 @@ print(groupedProportion)
 ## Individual proportion: 
 individualProportion <- stats %>% group_by(round, batch, room) %>% 
   mutate(sum=sum, mean=mean(sum), median=median(sum), n=n(),prop=sum(blacklistIndividual)/n) %>% 
-  filter(n>1)
+  filter(n==2)
 print(individualProportion)
 
 ## Table showing how many teams we've run in each condition combination:  
@@ -380,11 +380,25 @@ print(treatmentControlManipulation)
 
 ## 1C: Logistic regression predicting binary fracture outcome from viability scales: 
 ```{r}
+describe(groupedProportionFracture$mean)
+hist(groupedProportionFracture$mean)
 ## Simple logistic regression: we will fit a logistic regression model in order to predict 
 ## the probability of fracture based on a team's average viability sum: 
+# R viabilitycheck
 groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture)
-model1 <- glm(fracture ~ mean, family = "binomial", data = groupedProportionFracture)
-stargazer(model1, title="Results", align=TRUE)
+groupedProportionFracture$logicalfracture <- as.logical(groupedProportionFracture$fracture)
+model1 <- glm(logicalfracture ~ mean, family = "binomial", data = groupedProportionFracture)
+stargazer(model1,
+          covariate.labels = c("Average viability scale", "(Intercept)"),
+          dep.var.labels=c("Fracture"), 
+          no.space=TRUE, 
+          title="The relationship between the viability scale and fracture. Higher viability was significantly associated with lower log odds of fracture.", 
+          label="tab:viability", 
+          #keep.stat="n",
+          table.placement = "tb",
+          star.cutoffs = c(0.05, 0.01, 0.001)
+          )
+
 summary(model1)
 print(model1)
 ```
@@ -533,6 +547,11 @@ resultsOverall
 
 resultsRound <- groupedProportionFracture %>% filter(condition=="B") %>% group_by(round) %>% summarise(n=n(),fracture=sum(fracture), notfracture=n()-fracture, percent=fracture/n, se=sqrt(percent*(1-percent)/n)) 
 resultsRound
+
+chisqinput <- subset(groupedProportionFracture, condition=="B")
+chisqresults <- table(chisqinput$round, chisqinput$fracture)
+chisqresults
+chisq.test(chisqresults)
 
 dat <- data.frame(roundFracturePercent= factor(c("Round 1","Round 2", "Round 3", "Round 4"), levels=c("Round 1","Round 2", "Round 3", "Round 4")),
                   fractureTotal = c(resultsRound$percent), se=c(resultsRound$se))
