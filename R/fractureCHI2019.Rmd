@@ -861,17 +861,38 @@ dev.off();
 ```{r}
 library(lme4)
 library(lmerTest)
+library(pROC)
+
+
 
 didpartnerfracture <- individualProportionFracture %>% 
   inner_join(individualProportionFracture, by = c("round", "batch", "room")) %>% 
-  filter(id.x != id.y) %>%
+  filter(id.x != id.y, condition.x != "Ap") %>%
   select(id.x, id.y, partnerFractured.x, results.condition.x, condition.x)
+numrounds <- didpartnerfracture %>% 
+  group_by(id.x) %>%
+  summarise(count = n())
+didpartnerfracture <- didpartnerfracture %>%
+  inner_join(numrounds, by = c("id.x")) %>%
+  filter(count > 1)
+
 didpartnerfracture$partnerFractured.x.logical <- as.logical(didpartnerfracture$partnerFractured.x)
 didpartnerfracture$id.x <- as.factor(didpartnerfracture$id.x)
 didpartnerfracture$results.condition.x <- as.factor(didpartnerfracture$results.condition.x)
 personlogit <- glmer(data = didpartnerfracture, partnerFractured.x ~ results.condition.x + (1|id.x), family="binomial")
 summary(personlogit)
+prob <- predict(personlogit, type=c("response"))
+didpartnerfracture$prob <- prob
 
-summary(glm(data = didpartnerfracture, partnerFractured.x ~ results.condition.x, family="binomial"))
+reduced <- glm(data = didpartnerfracture, partnerFractured.x ~ results.condition.x, family="binomial")
+reducedprob <- predict(reduced, type=c("response"))
+didpartnerfracture$reducedprob <- reducedprob
+
+g <- roc(partnerFractured.x ~ prob, data=didpartnerfracture,plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,  print.auc=TRUE, show.thres=TRUE)
+g
+
+g <- roc(partnerFractured.x ~ reducedprob, data=didpartnerfracture,plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,  print.auc=TRUE, show.thres=TRUE)
+g
+
 
 ```
