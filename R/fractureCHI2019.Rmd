@@ -9,6 +9,7 @@ fig_caption: yes
 ```{r echo=FALSE, include=FALSE, results='hide'}
 ## Uncomment install.packages and run outside of notebook environment: 
 ## install.packages(c("psych" ,"xtable", "tidyverse", "jsonlite", "likert", "ggplot2", "ploty", "mosaic", "modelr", "broom", "scales", "tinytex"))
+library(MASS)
 library(psych)
 library(likert)
 library(jsonlite)
@@ -18,6 +19,9 @@ library(modelr)
 library(broom)
 library(scales)
 library(tinytex)
+library(lme4)
+library(lmerTest)
+library(pROC)
 ```
 
 ```{r setup, include=FALSE}
@@ -58,7 +62,7 @@ batches = dir(dataPath, pattern = "^[0-9]+$" )
 completeBatches = Filter(function(batch) { 
   if (any(dir(paste(dataPath,batch,sep="/")) == "batch.json") && (any(dir(paste(dataPath,batch,sep="/")) == "users.json")) ) {
     batchData = read_json(paste(dataPath,batch,"batch.json",sep="/"), simplifyVector = TRUE)
-    return(any(batchData$batchComplete == TRUE))
+    return(batchData$batchComplete == TRUE)
   } 
   return(FALSE)
 }, batches)
@@ -68,11 +72,17 @@ completeBatches <- as.numeric(completeBatches)
 options(scipen=999)
 completeBatches = completeBatches[completeBatches>"1537366991708"]
 
+# onebatch <- flatten(read_json(paste(dataPath,1537471221018,'users.json', sep="/"), simplifyVector=TRUE), recursive=TRUE)
+
 userFiles = lapply(completeBatches, function(batch) {
   userFile = read_json(paste(dataPath,batch,"users.json",sep="/"), simplifyVector=TRUE)
   return(flatten(userFile, recursive = TRUE))
 })
 ## Retroactively find rooms from chat data: 
+#foo <- rbind.fill(userFiles)
+#foo2 <- userFiles %>% rbindlist(., fill=TRUE, use.names=TRUE)
+#foo3 <- Reduce(function(x,y) merge(x, y, all=TRUE), head(userFiles, 9))
+
 overlappingFiles = Reduce(function(x,y) merge(x, y, all=TRUE), userFiles)
 ## Important: below is where you define the scope of your analysis, make sure this is set to include the right batches: 
 
@@ -97,6 +107,7 @@ library(tidyverse)
 library(mosaic)
 library(data.table)
 library(car)
+library(dplyr)
 ```
 
 ```{r, include=TRUE, echo=TRUE} 
@@ -117,7 +128,7 @@ extractViabilitySurvey = function(frame,survey) {
     surveyFrame$round = round
     surveyFrame$batch = frame$batch
     surveyFrame$rooms = frame$rooms
-    surveyFrame$manipulationCheck = frame$results.manipulationCheck
+    surveyFrame$manipulationCheck.1 = frame$results.manipulationCheck.1
     surveyFrame$blacklist = frame$results.blacklistCheck
     return(surveyFrame)
     print(surveyFrame)
@@ -138,21 +149,32 @@ frame <- cbind(viabilitySurvey, postSurveyQs)
 data <- frame[, !duplicated(colnames(frame))]
 ## Reduce to vertically combine rows in roundwithRooms list:  
 finalRounds = as.data.frame(Reduce(rbind,roundsWithRooms))
+
+# it works here
+#testing <- finalRounds %>% select(results.manipulationCheck.1)
+#foo <- finalRounds %>% mutate(missingManipulationCheck = is.na(results.manipulationCheck.1), round=unlist(round), room=unlist(room), batch=unlist(batch)) %>% group_by(round, room, batch, missingManipulationCheck) %>% summarise(count = n()) %>% group_by(count, missingManipulationCheck) %>% summarise(metacount=n())
+
 ## Subset incomplete cases from viability survey dataframe, use manipulation check b/c required for complete observation:
-data <- data[data$manipulationCheck!="NULL",]
-data <- data[data$manipulationCheck!="",]
+data <- data[!is.na(data$manipulationCheck.1),]
+#data <- data[data$manipulationCheck!="",]
 ##
 data <- data[ , ! colnames(data) %in% c("manipulationCheck") ]
 ## Rename room to rooms so that both are retained in future merge: 
 data <- rename(data, rooms = "rooms")
 ## Subset incomplete cases for final rounds dataframe: 
-data2 <- finalRounds[finalRounds$results.manipulationCheck!="", ]
+data2 <- finalRounds[!is.na(finalRounds$results.manipulationCheck.1), ]
+
+# AS OF HERE THERE ARE LOTS OF 1s
+
+
 ## Select only variables of interest from final rounds: 
-data2 = data2 %>% select(id, batch, room, round, results.condition, results.format, results.manipulation, results.manipulationCheck)
+data2 = data2 %>% select(id, batch, room, round, results.condition, results.format, results.manipulation, results.manipulationCheck.1)
 ## Convert to compatible data types before merge: 
-data2 <- data2 %>% mutate(batch=unlist(batch), round=unlist(round), id=as.character(id), room=unlist(room)) 
-data2 <- data2[data2$results.manipulationCheck!="NULL",]
-data <- data %>% mutate(batch=unlist(batch), id=as.character(id), round=unlist(round))  
+#data2 <- data2 %>% mutate(batch=unlist(batch), round=unlist(round), id=as.character(id), room=unlist(room)) 
+data2 <- data2 %>% mutate(id=as.character(id), round=as.character(round), batch=as.character(batch)) 
+#data2 <- data2[data2$results.manipulationCheck!="NULL",]
+#data <- data %>% mutate(batch=unlist(batch), id=as.character(id), round=unlist(round))  
+data <- data %>% mutate(id=as.character(id), round=as.character(round), batch=as.character(batch))  
 ## Before merge, data and data2 should have the same # of observations
 ## Merge columns by id, round and batch #s: 
 data <- full_join(data, data2, by=NULL)
@@ -162,6 +184,7 @@ allConditions <- data[data$batch %in% completeBatches, ]
 ## Convert unique names: 
 data <- data[, !duplicated(colnames(data))]
 ```
+
 ## Conditionally assign conditions based on treatment and results column: 
 ```{r, echo=TRUE} 
 ## Messy, but robust? Verify, verify, verify people:   
@@ -219,7 +242,7 @@ stats <- stats %>%
   mutate(median = median(sum), mean = mean(sum), room = unlist(room), results.condition = unlist(results.condition), results.format=as.character(results.format), blacklistIndividual)
 
 ## Simplify by only selecting specific variables of interest: 
-stats <- stats %>% select(contains("results.viabilityCheck"), id, round, batch, batch, room, blacklistIndividual, blacklistMeta, results.manipulation, results.condition, results.manipulationCheck, results.format, condition, sum, median, mean)
+stats <- stats %>% select(contains("results.viabilityCheck"), id, round, batch, batch, room, blacklistIndividual, blacklistMeta, results.manipulation, results.condition, results.manipulationCheck.1, results.format, condition, sum, median, mean)
 
 stats$blacklistMeta <- plyr::revalue(stats$blacklistMeta, c("Keep this team"="0", "Do not keep this team"="1"))
 stats$blacklistIndividual <- plyr::revalue(stats$blacklistIndividual, c("Keep this team"="0", "Do not keep this team"="1"))
@@ -288,6 +311,9 @@ treatmentFracture2 <- groupedProportionFractureTreatment %>% filter(condition=="
 ## To deal with unequal round # of teams: 
 treatmentFracture1 <- treatmentFracture1 %>% semi_join(treatmentFracture2, by=c("results.format", "batch", "n"))
 treatmentFracture <- cbind(treatmentFracture1, treatmentFracture2)
+foo <- treatmentFracture %>% select(fracture, fracture1)
+foo$consistent <- foo$fracture == foo$fracture1
+sum(foo$consistent)
 
 ## Control:  
 groupedProportionFractureControl <- groupedProportionFracture %>% 
@@ -297,12 +323,16 @@ controlFracture2 <- groupedProportionFractureControl %>% filter(condition=="Ap")
 ## To deal with unequal round # of teams: 
 controlFracture2 <- controlFracture2 %>% semi_join(controlFracture2, by=c("results.format", "batch", "condition"))
 controlFracture <- cbind(controlFracture1, controlFracture2)
+foo2 <- controlFracture %>% select(fracture, fracture1)
+foo2$consistent <- foo2$fracture == foo2$fracture1
+sum(foo2$consistent)
+
 
 ## Manipulation check: 
 ## Use individual proportion data frame b/c we're interested in looking at individuals that were in teams >n=1
 teamPatterns <- "Team 1 and Team 2|Team 2 and Team 3|Team 3 and Team 4|Team 1 and Team 3|Team 1 and Team 4|Team 2 and Team 4"
 individualProportion$manipulationAnswerKey <- str_extract(individualProportion$results.manipulation,teamPatterns) 
-individualProportion$manipulationAnswers <- individualProportion$results.manipulationCheck
+individualProportion$manipulationAnswers <- individualProportion$results.manipulationCheck.1
 individualProportion$results.condition = unlist(individualProportion$results.condition)
 ## Omit NAs and results that can't be processed: 
 cleanManipulation <- individualProportion[with(individualProportion, grepl(teamPatterns, manipulationAnswers) & grepl(teamPatterns, manipulationAnswerKey)),]
@@ -381,9 +411,9 @@ treatmentChanceManipulation <- prop.test(treatmentTotal, nrow(treatmentManipulat
 print(treatmentChanceManipulation)
 
 ## Proportion test with treatment and control: 
-treatmentControlManipulation <- prop.test(controlTotal, nrow(controlManipulation), chanceManipulation/100)
+#treatmentControlManipulation <- prop.test(controlTotal, nrow(controlManipulation), chanceManipulation/100)
 #prop.test(x = c(controlManipulation2, chanceManipulation), n = c(100, 100))
-print(treatmentControlManipulation)
+#print(treatmentControlManipulation)
 ```
 
 ## 1C: Logistic regression predicting binary fracture outcome from viability scales: 
@@ -396,6 +426,7 @@ viabilityDescriptive
 
 # R viabilitycheck
 ```{r}
+groupedProportionFracture$logicalfracture <- groupedProportionFracture$fracture == "1"
 describe(subset(groupedProportionFracture, logicalfracture == TRUE)$mean)
 describe(subset(groupedProportionFracture, logicalfracture == FALSE)$mean)
 t.test(groupedProportionFracture$mean ~ groupedProportionFracture$logicalfracture)
@@ -619,7 +650,7 @@ ggplot(groupedProportionFracture, aes(x = factor(mean))) +
     geom_bar(fill="#2853C2", alpha=0.7, aes(y = (..count..)/sum(..count..))) +
 scale_y_continuous(labels = scales::percent) + 
   scale_x_discrete(limits=c("30", "50", "70")) + 
-     + labs(subtitle="% of mean viability scores", 
+     labs(subtitle="% of mean viability scores", 
        x="range of means",
        y="frequency") + facet_grid(.~results.condition) +  theme_classic()
 ```
@@ -628,7 +659,6 @@ scale_y_continuous(labels = scales::percent) +
 
 ## CHI squared tests: 
 ```{r, echo=TRUE}
-library(MASS)  
 ## Test if whether fracture is independent of condition (i.e. baseline, control & treatment) at .05 significance level: 
 chi = table(groupedProportionFracture$results.condition, groupedProportionFracture$fracture)  
 chi
@@ -794,10 +824,6 @@ stargazer(consistencyLogit,
 ## Control:
 #chisq.test(controlAbsChange,p=baselineAbsChange)
 
-library(lme4)
-library(lmerTest)
-library(pROC)
-
 prob <- predict(consistencyLogit, type=c("response"))
 allFracture$prob <- prob
 
@@ -862,7 +888,7 @@ metaAnswersSE <- sqrt(accuracy*(1-accuracy)/nrow(accuracydf))
 a <- subset(individualProportionFracture, condition == "A")
 ap <- subset(individualProportionFracture, condition == "Ap")
 joined <- a %>% inner_join(ap, by=c("id")) %>%
-  filter(results.condition.x == "treatment") %>%
+  filter(results.condition.x == "treatment") %>% 
   select(id, results.condition.x, condition.x, condition.y, blacklistMeta.x, blacklistMeta.y, blacklistIndividual.x, blacklistIndividual.y)
 joined$consistentGuess <- joined$blacklistMeta.x == joined$blacklistMeta.y
 joined$consistentIndividual <- joined$blacklistIndividual.x == joined$blacklistIndividual.y
@@ -885,25 +911,25 @@ consistentIndividualPercent <- sum(joined$consistentIndividual) / nrow(joined)
 consistentIndividualPercent
 prop.test(x = c(sum(joined$consistentGuess), sum(joined$consistentIndividual)), n = c(nrow(joined), nrow(joined)))
 
-## Visualize differences: 
-dat <- data.frame(fracturePrediction= factor(c("Correct fracture prediction"), levels=c("Correct fracture prediction")),
-                  fracturePredictionCorrect = c(metaAnswersCorrect), SE=c(metaAnswersSE)) 
-
-p <- ggplot(data=dat, aes(x=fracturePrediction, y=fracturePredictionCorrect)) +
-  geom_bar(stat="identity", fill="#2853C2", alpha=0.7)+
-  scale_y_continuous(labels = scales::percent_format(10)) + 
-  geom_errorbar(aes(ymin=c(metaAnswersCorrect-metaAnswersSE),
-                    ymax=c(metaAnswersCorrect+metaAnswersSE), width = 0.1)) +
-  geom_text(aes(label=sprintf("%1.0f%%", round(fracturePredictionCorrect, 2)*100)), vjust=4.6, color="white")+ #size=8)+
-  theme_classic() + labs(x="",
-       y="Percent of individuals who accurately predicted \n \n partner's fracture score") + theme_classic() 
-  #theme(text = element_text(size=25),
-  #      axis.text.x = element_text(size=16 )
-  #      ) 
-p
-pdf('metaPredictionQuestion.pdf', width=3.5, height=2.5)
-p
-dev.off();
+# ## Visualize differences: 
+# dat <- data.frame(fracturePrediction= factor(c("Correct fracture prediction"), levels=c("Correct fracture prediction")),
+#                   fracturePredictionCorrect = c(metaAnswersCorrect), SE=c(metaAnswersSE)) 
+# 
+# p <- ggplot(data=dat, aes(x=fracturePrediction, y=fracturePredictionCorrect)) +
+#   geom_bar(stat="identity", fill="#2853C2", alpha=0.7)+
+#   scale_y_continuous(labels = scales::percent_format(10)) + 
+#   geom_errorbar(aes(ymin=c(metaAnswersCorrect-metaAnswersSE),
+#                     ymax=c(metaAnswersCorrect+metaAnswersSE), width = 0.1)) +
+#   geom_text(aes(label=sprintf("%1.0f%%", round(fracturePredictionCorrect, 2)*100)), vjust=4.6, color="white")+ #size=8)+
+#   theme_classic() + labs(x="",
+#        y="Percent of individuals who accurately predicted \n \n partner's fracture score") + theme_classic() 
+#   #theme(text = element_text(size=25),
+#   #      axis.text.x = element_text(size=16 )
+#   #      ) 
+# p
+# pdf('metaPredictionQuestion.pdf', width=3.5, height=2.5)
+# p
+# dev.off();
 ```
 
 
