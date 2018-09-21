@@ -838,13 +838,52 @@ dev.off();
 ```
 
 ## Visualizing meta-cognition differences: 
-# R metaGraph
+# R metacognition
 ```{r}
-chanceAccuracy <- sum(individualProportionFracture$fracture == 0)/nrow(individualProportionFracture)
+# how accurate are they at guessing in general
+accuracydf <- subset(individualProportionFracture, condition != "Ap")
+chanceAccuracy <- sum(accuracydf$fracture == 0)/nrow(accuracydf)
 chanceAccuracy
-accuracy <- sum(individualProportionFracture$metaGuessedCorrectly) / nrow(individualProportionFracture)
+# how accurate would they be if they guessed their own opinion
+ownaccuracy <- sum(accuracydf$blacklistIndividual == accuracydf$partnerFractured) / nrow(accuracydf)
+ownaccuracy
+# how accurate were they actually
+accuracy <- sum(accuracydf$metaGuessedCorrectly) / nrow(accuracydf)
 accuracy
-metaAnswersSE <- sqrt(accuracy*(1-accuracy)/nrow(individualProportionFracture))
+
+# are they better than just stating their own opinion
+prop.test(x = c(sum(accuracydf$blacklistIndividual == accuracydf$partnerFractured), sum(accuracydf$metaGuessedCorrectly)), n = c(nrow(accuracydf), nrow(accuracydf)))
+# are they better than just guessing the most common outcome
+prop.test(sum(accuracydf$metaGuessedCorrectly), nrow(accuracydf), chanceAccuracy)
+
+metaAnswersSE <- sqrt(accuracy*(1-accuracy)/nrow(accuracydf))
+
+# how consistent are their guesses
+a <- subset(individualProportionFracture, condition == "A")
+ap <- subset(individualProportionFracture, condition == "Ap")
+joined <- a %>% inner_join(ap, by=c("id")) %>%
+  filter(results.condition.x == "treatment") %>%
+  select(id, results.condition.x, condition.x, condition.y, blacklistMeta.x, blacklistMeta.y, blacklistIndividual.x, blacklistIndividual.y)
+joined$consistentGuess <- joined$blacklistMeta.x == joined$blacklistMeta.y
+joined$consistentIndividual <- joined$blacklistIndividual.x == joined$blacklistIndividual.y
+consistentGuessPercent <- sum(joined$consistentGuess) / nrow(joined)
+consistentGuessPercent
+consistentIndividualPercent <- sum(joined$consistentIndividual) / nrow(joined)
+consistentIndividualPercent
+prop.test(x = c(sum(joined$consistentGuess), sum(joined$consistentIndividual)), n = c(nrow(joined), nrow(joined)))
+
+a <- subset(individualProportionFracture, condition == "A")
+ap <- subset(individualProportionFracture, condition == "Ap")
+joined <- a %>% inner_join(ap, by=c("id")) %>%
+  filter(results.condition.x == "control") %>%
+  select(id, results.condition.x, condition.x, condition.y, blacklistMeta.x, blacklistMeta.y, blacklistIndividual.x, blacklistIndividual.y)
+joined$consistentGuess <- joined$blacklistMeta.x == joined$blacklistMeta.y
+joined$consistentIndividual <- joined$blacklistIndividual.x == joined$blacklistIndividual.y
+consistentGuessPercent <- sum(joined$consistentGuess) / nrow(joined)
+consistentGuessPercent
+consistentIndividualPercent <- sum(joined$consistentIndividual) / nrow(joined)
+consistentIndividualPercent
+prop.test(x = c(sum(joined$consistentGuess), sum(joined$consistentIndividual)), n = c(nrow(joined), nrow(joined)))
 
 ## Visualize differences: 
 dat <- data.frame(fracturePrediction= factor(c("Correct fracture prediction"), levels=c("Correct fracture prediction")),
@@ -884,7 +923,7 @@ numrounds <- didpartnerfracture %>%
   summarise(count = n())
 didpartnerfracture <- didpartnerfracture %>%
   inner_join(numrounds, by = c("id.x")) %>%
-  filter(count >= 3)
+  filter(count >= 2)
 
 didpartnerfracture$partnerFractured.x.logical <- as.logical(didpartnerfracture$partnerFractured.x)
 didpartnerfracture$id.x <- as.factor(didpartnerfracture$id.x)
@@ -905,4 +944,41 @@ g <- roc(partnerFractured.x ~ reducedprob, data=didpartnerfracture,plot=TRUE, au
 g
 
 
+```
+
+
+## Performance
+```{r}
+votes <- read.csv("ad performance - product performance.csv")
+# rounds seem zero-indexed here
+votes$round <- votes$round + 1
+votes$room <- votes$team
+votestats <- votes %>% group_by(product) %>%
+  summarise(votemean = mean(score), votesd = sd(score), votecount=n())
+votes <- votes %>% left_join(votestats, by="product") %>%
+  mutate(zscore = (score-votemean)/votesd)
+
+votecondition <- groupedProportionFracture %>%
+  left_join(votes, by=c("round", "room", "batch")) %>%
+  filter(!is.na(zscore)) %>%
+  select(zscore, results.condition, fracture, condition, round, room, batch)
+
+# Do fractured teams do worse than non-fractured teams?
+t.test(zscore ~ fracture, data=votecondition)
+```
+
+```{r}
+voteconsistency <- individualProportionFracture %>% 
+  inner_join(individualProportionFracture, by = c("id")) %>% 
+  filter(condition.x=="A", condition.y=="Ap") %>%
+  select(condition.x, condition.y, id, fracture.x, fracture.y, results.condition.x, round.x, room.x, batch.x, room.y, round.y, batch.y) %>%
+  left_join(votes, by=c("round.x" = "round", "room.x" = "room", "batch.x"=  "batch")) %>%
+  left_join(votes, by=c("round.y" = "round", "room.y" = "room", "batch.y"=  "batch"), suffix=c(".x", ".y")) %>%
+  filter(!is.na(zscore.x), !is.na(zscore.y)) %>%
+  mutate(zdiff = abs(zscore.x - zscore.y))
+
+voteconsistencysummary <- voteconsistency %>%
+  summarise(by="results.condition.x", avg_zdiff = mean(zdiff), sd_zdiff=sd(zdiff))
+
+t.test(zdiff ~ results.condition.x, data=voteconsistency)
 ```
