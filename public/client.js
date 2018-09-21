@@ -719,7 +719,7 @@ $(function () {
             let totalLengthString = "";
             totalLengthString = Math.round(3 * (data.duration) + 15) + " minutes";
             log("<strong>Reminder</strong>: You will receive the bonus pay at the stated hourly rate <strong>only</strong> if you stay for " +
-                "all three rounds and answer any survey questions. This should take no more than " + totalLengthString + " total.");
+                "all rounds and answer any survey questions. This should take no more than " + totalLengthString + " total.");
             log("<strong>DO NOT REFRESH OR LEAVE THE PAGE</strong>. This will stop the task for everyone and you will not be compensated.");
             log("Task: " + data.task);
             log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.");

@@ -564,6 +564,7 @@ db.batch.insert(
         format: conditions[currentCondition],
         experimentRound: experimentRound,
         numRounds: numRounds,
+        products: products,
         teamSize: teamSize
     }, (err, usersAdded) => {
         if (err) console.log("There's a problem adding batch to the DB: ", err);

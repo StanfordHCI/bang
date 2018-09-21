@@ -33,7 +33,7 @@ AWS.config = {
 };
 
 // Declaration of variables
-const numRounds = 3;
+const numRounds = 4;
 const taskDuration = roundMinutes * numRounds * 2;
 //const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
 const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
@@ -697,4 +697,5 @@ function getRandomSubarray(arr, size) {
 // use to remove workers from notify list
 //unassignQuals('A28AX4H70DPKKK', quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!') ;
 
-// disassociateQualification(quals.willBang.QualificationTypeId, 'ID', "Requested to be removed.")
+//Remove qualification from user.
+//disassociateQualification(quals.willBang.QualificationTypeId, 'A2M18DZEPD1XGA', "Requested to be removed.")
