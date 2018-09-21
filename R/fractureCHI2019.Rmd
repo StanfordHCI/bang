@@ -343,7 +343,8 @@ print(c(controlManipulation2, treatmentManipulation2, chanceManipulation))
 
 treatmentSE <- sqrt((treatmentTotal/nrow(treatmentManipulation) * (1 - (treatmentTotal/nrow(treatmentManipulation))))/nrow(treatmentManipulation))
 ```
-## Plot for manipulation check results: 
+## Plot for manipulation check results:
+# R manipulationcheck
 ```{r, echo=TRUE}
 dat <- data.frame(manipulationCheck=factor(c("Masked condition"), levels=c("Masked condition")),
                   manipulation = c(graphTreatment))
@@ -366,6 +367,7 @@ p
 ```
 
 ## 1B: Proportion test comparing treatment manipulation percent correct with chance: 
+# R manipulationcheckprop
 ```{r}
 ## Proportion test with treatment and chance: 
 treatmentChanceManipulation <- prop.test(treatmentTotal, nrow(treatmentManipulation), chanceManipulation/100)
@@ -379,12 +381,21 @@ print(treatmentControlManipulation)
 ```
 
 ## 1C: Logistic regression predicting binary fracture outcome from viability scales: 
+# R viabilitydescriptive
 ```{r}
-describe(groupedProportionFracture$mean)
-hist(groupedProportionFracture$mean)
+viabilityDescriptive <- describe(groupedProportionFracture$mean)
+viabilityDescriptive
+
+```
+
+# R viabilitycheck
+```{r}
+describe(subset(groupedProportionFracture, logicalfracture == TRUE)$mean)
+describe(subset(groupedProportionFracture, logicalfracture == FALSE)$mean)
+t.test(groupedProportionFracture$mean ~ groupedProportionFracture$logicalfracture)
+
 ## Simple logistic regression: we will fit a logistic regression model in order to predict 
 ## the probability of fracture based on a team's average viability sum: 
-# R viabilitycheck
 groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture)
 groupedProportionFracture$logicalfracture <- as.logical(groupedProportionFracture$fracture)
 model1 <- glm(logicalfracture ~ mean, family = "binomial", data = groupedProportionFracture)
@@ -400,7 +411,8 @@ stargazer(model1,
           )
 
 summary(model1)
-print(model1)
+
+exp(cbind(coef(model1), confint(model1)))
 ```
 
 ## Test predictive power of logistic regression: 
@@ -481,14 +493,18 @@ individualTreatmentFracture <- cbind(individualTreatmentFracture1, individualTre
 ## 1D: Graph of fracture/no fracture vs. mean/stdev viability scale
 
 ## Boxplot: mean viability survey scores + fracture value (group level + individual level)
+# R viabilityplot
 ```{r, include=TRUE, echo=TRUE}
-g <- ggplot(groupedProportionFracture, aes(factor(fracture), mean)) 
-g + geom_boxplot(varwidth=T, fill="#2853C2", alpha=0.7) + 
+g <- ggplot(groupedProportionFracture, aes(factor(fracture), mean)) +
+  geom_boxplot(varwidth=T, fill="#2853C2", alpha=0.7) + 
   labs( 
        x="",
-       y="Teams' viability score") +
- scale_x_discrete(labels=c("0" = "Keep this team", "1" = "Do not keep this team")) + theme_classic() + theme(text = element_text(size=25),
-        axis.text.x = element_text(size=16))
+       y="Average viability score") +
+  scale_x_discrete(labels=c("0" = "No fracture", "1" = "Fracture")) + theme_classic()
+  #theme(text = element_text(size=25), axis.text.x = element_text(size=16))
+pdf('viabilityplot.pdf', width=3.5, height=2)
+g
+dev.off();
 
 g <- ggplot(individualProportionFracture, aes(factor(fracture), sum)) 
 g + geom_boxplot(varwidth=T, fill="#2853C2", alpha=0.7) + 
@@ -504,19 +520,19 @@ g + geom_boxplot(varwidth=T, fill="#2853C2", alpha=0.7) +
 ## Grouped fracture correlation: 
 ggplot(data=groupedProportionFracture, aes(fracture, mean)) + 
    geom_point() +
-  stat_smooth(method = "lm", col = "red") + labs(title="Scatterplot correlation between teams' mean viability and binary fracture scores", y="Teams' mean viability survey score (range 14-70) ", x="Teams' binary fracture score") +    + 
+  stat_smooth(method = "lm", col = "red") + labs(title="Scatterplot correlation between teams' mean viability and binary fracture scores", y="Teams' mean viability survey score (range 14-70) ", x="Teams' binary fracture score") + 
 scale_x_discrete(labels=c("0" = "Keep this team", "1" = "Do not keep this team"))
 
 ## Individual fracture correlation: 
 ggplot(data=individualProportionFracture, aes(fracture, mean)) + 
    geom_point() +
-  stat_smooth(method = "lm", col = "red") + labs(subtitle="Scatterplot correlation between individuals' mean viability and binary fracture scores", y="Individual mean viability survey scores (range 14-70) ", x="Individual binary fracture score") +    + 
+  stat_smooth(method = "lm", col = "red") + labs(subtitle="Scatterplot correlation between individuals' mean viability and binary fracture scores", y="Individual mean viability survey scores (range 14-70) ", x="Individual binary fracture score") +
 scale_x_discrete(labels=c("0" = "Keep this team", "1" = "Do not keep this team"))
 
 ## Grouped fracture proportion correlation: 
 ggplot(data=individualProportionFracture, aes(prop, mean)) + 
    geom_point() +
-  stat_smooth(method = "lm", col = "red") + labs(subtitle="Scatterplot correlation between teams' mean viability and team fracture proportion", y="Individual mean viability survey scores (range 14-70 ", x="Teams' fracture proportion") +    + 
+  stat_smooth(method = "lm", col = "red") + labs(subtitle="Scatterplot correlation between teams' mean viability and team fracture proportion", y="Individual mean viability survey scores (range 14-70 ", x="Teams' fracture proportion") + 
 scale_x_continuous(labels=c("0" = "Keep this team", "0.40", "0.60", "0.80" ,"1.00" = "Do not keep this team"))
 ```
 
@@ -539,12 +555,19 @@ p
 ```
 
 ## Plot of total fracture percentages in the baseline condition: 
+# R baselinefracture
 ```{r, echo=TRUE}
 groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture) 
 
 resultsOverall <- groupedProportionFracture %>% filter(condition=="B") %>% group_by(n) %>%  summarise(count=n(),fracture=sum(fracture), percent=fracture/count, se=sqrt(percent*(1-percent)/count)) 
 resultsOverall
 
+baselineConsistency <- resultsOverall[1,]$percent^2 + (1-resultsOverall[1,]$percent)^2
+baselineConsistency
+```
+
+# R baselinebyround
+```{r, echo=TRUE}
 resultsRound <- groupedProportionFracture %>% filter(condition=="B") %>% group_by(round) %>% summarise(n=n(),fracture=sum(fracture), notfracture=n()-fracture, percent=fracture/n, se=sqrt(percent*(1-percent)/n)) 
 resultsRound
 
@@ -657,6 +680,7 @@ print(propFractureChangeControlvsBase)
 ## Section 3: How consistent is fracture? 
 
 ## 3A: calculating the conditional probabilities of fracture for each condition: 
+# R conditionaltreatment
 ```{r, echo=TRUE}
 ## If fractured the first time, what's the % of fracturing the second time? look at 1 and Ap combination for % in second time: 
 ## Compare both treatment and control with baseline as theoretical distribution: 
@@ -676,6 +700,7 @@ conditionalProbTreatment <- as.table(conditionalProbTreatment)
 print(conditionalProbTreatment) 
 ```
 
+# R conditionalcontrol
 ```{r, echo=TRUE}
 ## Conditional proability for unmasked: 
 # of groups who fractured 1 and 2
@@ -714,7 +739,7 @@ print(conditionalProbControl)
 ```
 
 ## 3B: Now investigating the big result: switch %: what's the % of pairs flipping their decisions?
-
+# R consistencyprop
 ```{r, echo=TRUE}
 ## Convert format before merge: *this can be simplified*: 
 treatmentFracture2$fracture <- as.numeric(treatmentFracture2$fracture) 
@@ -737,7 +762,10 @@ allFracture <- rbind(treatmentFracture, controlFracture)
 consistencyTable <- table(allFracture$results.condition, allFracture$consistent)
 allFracture$results.condition <- factor(x=allFracture$results.condition, levels=c("control", "treatment"))
 chisq.test(consistencyTable)
+```
 
+# R consistencylogit
+```{r, echo=TRUE}
 ## Logistic regression because Chi-square needs more observations in each cell
 consistencyLogit <- glm(data=allFracture, consistent ~ results.condition, family="binomial")
 summary(consistencyLogit)
@@ -762,6 +790,7 @@ stargazer(consistencyLogit,
 ```
 
 ## Visualizing change: 
+# R consistencygraph
 ```{r, echo=TRUE}
 normalizedControlConsistency <- controlConsistentSum /nrow(controlFracture)
 normalizedTreatmentConsistency <- treatmentConsistentSum / nrow(treatmentFracture)
