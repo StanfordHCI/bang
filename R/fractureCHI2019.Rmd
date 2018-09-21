@@ -1,5 +1,5 @@
 ---
-title: "Fracture CHI 2019 Results: n>=2"
+title: "Fracture CHI 2019 Results: n=2"
 output: html_document
 fig_width: 3.5
 fig_caption: yes
@@ -230,7 +230,7 @@ groupedProportion <- stats %>%
   group_by(room, batch, round, condition, results.condition, results.format) %>%  ## to-do: add group ID in storage db. 
   summarise(n=n(), mean=mean(sum), median=median(sum), prop=sum(blacklistIndividual)/n) %>% 
 ## Filter out all teams with n=1 (i.e. a person in a one person team) 
-  filter(n>=2)
+  filter(n==2)
 print(groupedProportion)
 ## Individual proportion: 
 individualProportion <- stats %>% group_by(round, batch, room) %>% 
@@ -524,10 +524,16 @@ p <- ggplot(data=dat, aes(x=conditionFracturePercent, y=fractureTotal)) +
 p
 ```
 
-## Plot of total fracture percentages across four rounds all conditions: 
+## Plot of total fracture percentages in the baseline condition: 
 ```{r, echo=TRUE}
 groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture) 
-resultsRound <- groupedProportionFracture %>% group_by(round) %>% summarise(n=n(),fracture=sum(fracture), percent=fracture/n, se=sqrt(percent*(1-percent)/n)) 
+
+resultsOverall <- groupedProportionFracture %>% filter(condition=="B") %>% group_by(n) %>%  summarise(count=n(),fracture=sum(fracture), percent=fracture/count, se=sqrt(percent*(1-percent)/count)) 
+resultsOverall
+
+resultsRound <- groupedProportionFracture %>% filter(condition=="B") %>% group_by(round) %>% summarise(n=n(),fracture=sum(fracture), notfracture=n()-fracture, percent=fracture/n, se=sqrt(percent*(1-percent)/n)) 
+resultsRound
+
 dat <- data.frame(roundFracturePercent= factor(c("Round 1","Round 2", "Round 3", "Round 4"), levels=c("Round 1","Round 2", "Round 3", "Round 4")),
                   fractureTotal = c(resultsRound$percent), se=c(resultsRound$se))
 dat$fractureTotal <- round(dat$fractureTotal, 3)
@@ -694,37 +700,38 @@ print(conditionalProbControl)
 ## Convert format before merge: *this can be simplified*: 
 treatmentFracture2$fracture <- as.numeric(treatmentFracture2$fracture) 
 treatmentFracture1$fracture <- as.numeric(treatmentFracture1$fracture) 
-treatmentFracture$absFracture <- abs(treatmentFracture2$fracture-treatmentFracture1$fracture)
+treatmentFracture$consistent <- treatmentFracture2$fracture == treatmentFracture1$fracture
 
 controlFracture1$fracture <- as.numeric(controlFracture1$fracture)
 controlFracture2$fracture <- as.numeric(controlFracture2$fracture)
-controlFracture$absFracture <- abs(controlFracture2$fracture-controlFracture1$fracture)
+controlFracture$consistent <- controlFracture2$fracture == controlFracture1$fracture
 
-# baselineFracture$fracture1 <- as.numeric(baselineFracture$fracture1) 
-# baselineFracture$fracture2 <- as.numeric(baselineFracture$fracture2) 
-# baselineFracture$absFracture <- abs(baselineFracture$fracture1-baselineFracture$fracture2)
-
-## Results here seem fishy? Triple check my code for abs/sum? 
-
-treatmentFractureAbsSum <- sum(treatmentFracture$absFracture) 
-print(treatmentFractureAbsSum)
-controlFractureAbsSum <- sum(controlFracture$absFracture)
-print(controlFractureAbsSum)
-# baselineFractureAbsSum <- sum(baselineFracture$absFracture) 
-# print(baselineFractureAbsSum)
-
-## Don't we want a proportion test here before adding / trying chi-squared? 
-
-normalizedTreatmentChange <- round(treatmentFractureAbsSum/nrow(treatmentFracture),2) 
-normalizedControlChange <- round(controlFractureAbsSum/nrow(controlFracture), 2) 
-## normalizedBaselineChange <- round(baselineFractureAbsSum/nrow(baselineFracture), 2)
-
-treatmentAbsChange=c(normalizedTreatmentChange)*100
-controlAbsChange=c(normalizedControlChange)*100
-# baselineAbsChange=c(normalizedBaselineChange)*100 
+treatmentConsistentSum <- sum(treatmentFracture$consistent) 
+print(treatmentConsistentSum)
+controlConsistentSum <- sum(controlFracture$consistent)
+print(controlConsistentSum)
 
 ## Proportion test: 
-prop.test(x = c(treatmentAbsChange, controlAbsChange), n = c(100, 100))
+prop.test(x = c(treatmentConsistentSum, controlConsistentSum), n = c(nrow(treatmentFracture), nrow(controlFracture)))
+
+allFracture <- rbind(treatmentFracture, controlFracture)
+consistencyTable <- table(allFracture$results.condition, allFracture$consistent)
+allFracture$results.condition <- factor(x=allFracture$results.condition, levels=c("control", "treatment"))
+chisq.test(consistencyTable)
+
+## Logistic regression because Chi-square needs more observations in each cell
+consistencyLogit <- glm(data=allFracture, consistent ~ results.condition, family="binomial")
+summary(consistencyLogit)
+stargazer(consistencyLogit, 
+          covariate.labels = c("Masked (1: true)", "(Intercept)"),
+          dep.var.labels=c("Consistent fracture"), 
+          no.space=TRUE, 
+          title="Consistency of fracture outcomes by condition. Masked teams decrease the log odds of a consistent outcome.", 
+          label="tab:consistency", 
+          #keep.stat="n",
+          table.placement = "tb",
+          star.cutoffs = c(0.05, 0.01, 0.001)
+          )
 
 ## Chi goodness of fit: 
 ## Using baseline as theoretical probability distribution 
@@ -737,21 +744,32 @@ prop.test(x = c(treatmentAbsChange, controlAbsChange), n = c(100, 100))
 
 ## Visualizing change: 
 ```{r, echo=TRUE}
-normalizedControlChangeSe <- round(sqrt(normalizedControlChange*(1-normalizedControlChange)/nrow(controlFracture)), 2) 
-normalizedTreatmentChangeSe <- round(sqrt(normalizedTreatmentChange*(1-normalizedTreatmentChange)/nrow(treatmentFracture)), 2)
+normalizedControlConsistency <- controlConsistentSum /nrow(controlFracture)
+normalizedTreatmentConsistency <- treatmentConsistentSum / nrow(treatmentFracture)
+normalizedControlConsistencySe <- sqrt(normalizedControlConsistency*(1-normalizedControlConsistency)/nrow(controlFracture))
+normalizedTreatmentConsistencySe <- sqrt(normalizedTreatmentConsistency*(1-normalizedTreatmentConsistency)/nrow(treatmentFracture))
 
 ## Visualize differences: 
-dat <- data.frame(NormalizedAbsoluteFractureChange= factor(c("Masked","Unmasked"), levels=c("Masked","Baseline","Unmasked")),
-                  fractureValueSwitch = c(normalizedTreatmentChange, normalizedControlChange), SE=c(normalizedTreatmentChangeSe, normalizedControlChangeSe)) 
+dat <- data.frame(FractureConsistency= factor(c("Masked","Unmasked"), levels=c("Masked","Unmasked")),
+                  fractureValueSwitch = c(normalizedTreatmentConsistency, normalizedControlConsistency), SE=c(normalizedTreatmentConsistencySe, normalizedControlConsistencySe)) 
 
-p <- ggplot(data=dat, aes(x=NormalizedAbsoluteFractureChange, y=fractureValueSwitch)) +
+p <- ggplot(data=dat, aes(x=FractureConsistency, y=fractureValueSwitch)) +
   geom_bar(stat="identity", fill="#2853C2", alpha=0.7)+
   scale_y_continuous(labels = scales::percent_format(10)) + 
-  geom_text(aes(label=fractureValueSwitch), vjust=1.6, color="white", size=8)+
+  geom_errorbar(aes(ymin=c(normalizedTreatmentConsistency-normalizedTreatmentConsistencySe,
+                          normalizedControlConsistency-normalizedControlConsistencySe),
+                    ymax=c(normalizedTreatmentConsistency+normalizedTreatmentConsistencySe,
+                           normalizedControlConsistency+normalizedControlConsistencySe)), width = 0.1) +
+  geom_text(aes(label=sprintf("%1.0f%%", round(fractureValueSwitch, 2)*100)), vjust=4.6, color="white")+ #size=8)+
   theme_classic() + labs(x="",
-       y="% of change in fracture scores") + theme_classic() + theme(text = element_text(size=25),
-        axis.text.x = element_text(size=16 )) 
+       y="Percent of repeated\n collaborations with consistent\n fracture outcomes") + theme_classic() 
+  #theme(text = element_text(size=25),
+  #      axis.text.x = element_text(size=16 )
+  #      ) 
 p
+pdf('consistency.pdf', width=3.5, height=2.5)
+p
+dev.off();
 ```
 
 ## Visualizing meta-cognition differences: 
