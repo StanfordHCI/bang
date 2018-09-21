@@ -29,9 +29,9 @@ library(stargazer)
 ## Set-up directories, import and clean data: 
 ```{r, include=TRUE, echo=TRUE, results='hide'} 
 rm(list=ls())
-setwd("/Users/mark/Documents/Academia/Stanford/scaled-humanity/bang/R") 
+setwd("/Users/msb/Dropbox (Stanford HCI)/projects/asplode/bang/R") 
 getwd()
-dataPath = "../.data"
+dataPath = "../data"
 
 ## Function to extract blacklist surveys: 
 extractBlacklistSurvey = function(frame,survey) {

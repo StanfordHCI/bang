@@ -15,3 +15,4 @@ R/allChatFiles.csv
 *.icloud
 .idea/*
 .DS_Store
+.Rproj.user
