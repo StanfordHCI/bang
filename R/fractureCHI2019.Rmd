@@ -9,24 +9,25 @@ fig_caption: yes
 ```{r echo=FALSE, include=FALSE, results='hide'}
 ## Uncomment install.packages and run outside of notebook environment: 
 ## install.packages(c("psych" ,"xtable", "tidyverse", "jsonlite", "likert", "ggplot2", "ploty", "mosaic", "modelr", "broom", "scales", "tinytex"))
-library(MASS)
-library(psych)
-library(likert)
+#library(MASS)
+#library(psych)
+#library(likert)
 library(jsonlite)
 library(ggplot2)
-library(plotly)
-library(modelr)
-library(broom)
-library(scales)
-library(tinytex)
+#library(plotly)
+#library(modelr)
+#library(broom)
+#library(scales)
+#library(tinytex)
 library(lme4)
 library(lmerTest)
 library(pROC)
-```
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
 library(stargazer)
+#library(tidyverse)
+#library(mosaic)
+#library(data.table)
+#library(car)
+library(dplyr)
 ```
 
 ## Set-up directories, import and clean data: 
@@ -35,6 +36,8 @@ rm(list=ls())
 setwd("/Users/msb/Dropbox (Stanford HCI)/projects/asplode/bang/R") 
 getwd()
 dataPath = "../data"
+
+MINIMUM_BATCH_NUMBER = 1537366991708
 
 ## Function to extract blacklist surveys: 
 extractBlacklistSurvey = function(frame,survey) {
@@ -49,6 +52,7 @@ extractBlacklistSurvey = function(frame,survey) {
     surveyFrame$id = frame$id
     surveyFrame$round = round
     surveyFrame$batch = frame$batch
+    #surveyFrame$room = frame$room
     surveyFrame$rooms = frame$rooms
     surveyFrame$manipulationCheck <- frame$results.manipulationCheck
     surveyFrame$blacklist = frame$results.blacklistCheck
@@ -56,63 +60,6 @@ extractBlacklistSurvey = function(frame,survey) {
   })
   return(Reduce(rbind, roundResponses))
 }
-
-#Find directory for import (be sure to verify that batch #s align from bangData import and imports below):
-batches = dir(dataPath, pattern = "^[0-9]+$" )
-completeBatches = Filter(function(batch) { 
-  if (any(dir(paste(dataPath,batch,sep="/")) == "batch.json") && (any(dir(paste(dataPath,batch,sep="/")) == "users.json")) ) {
-    batchData = read_json(paste(dataPath,batch,"batch.json",sep="/"), simplifyVector = TRUE)
-    return(batchData$batchComplete == TRUE)
-  } 
-  return(FALSE)
-}, batches)
-## Debug: if you get error with flatten, you need to unload tidyverse in package column to the right:  
-completeBatches <- as.numeric(completeBatches)
-## To filter later on batch ##: 
-options(scipen=999)
-completeBatches = completeBatches[completeBatches>"1537366991708"]
-
-# onebatch <- flatten(read_json(paste(dataPath,1537471221018,'users.json', sep="/"), simplifyVector=TRUE), recursive=TRUE)
-
-userFiles = lapply(completeBatches, function(batch) {
-  userFile = read_json(paste(dataPath,batch,"users.json",sep="/"), simplifyVector=TRUE)
-  return(flatten(userFile, recursive = TRUE))
-})
-## Retroactively find rooms from chat data: 
-#foo <- rbind.fill(userFiles)
-#foo2 <- userFiles %>% rbindlist(., fill=TRUE, use.names=TRUE)
-#foo3 <- Reduce(function(x,y) merge(x, y, all=TRUE), head(userFiles, 9))
-
-overlappingFiles = Reduce(function(x,y) merge(x, y, all=TRUE), userFiles)
-## Important: below is where you define the scope of your analysis, make sure this is set to include the right batches: 
-
-overlappingFiles <- overlappingFiles %>% filter(batch>"1537366991708")
-
-## Ignore weird batches: 
-# overlappingFiles <- overlappingFiles %>% filter(batch!=1537389651302 | 1537392885929)
-
-roundsWithRooms = apply(overlappingFiles,1,function(x) {
-  roomsForIndividual = lapply(seq(1,4),function(y) {
-    x$room = x$rooms[y]
-    x$round = y
-    return(x)
-  })
-  return(Reduce(rbind, roomsForIndividual))
-})
-```
-
-```{r, include=FALSE}
-## Libraries that we'll need but conflict with other stuff: 
-library(tidyverse)
-library(mosaic)
-library(data.table)
-library(car)
-library(dplyr)
-```
-
-```{r, include=TRUE, echo=TRUE} 
-## To filter the right batch numbers, add the first batch number for our runs (i.e. batch >= "first batch #") 
-# overlappingFiles <- overlappingFiles %>% filter(batch=="1536335493362")
 
 ## Seperate viability function to deal with different column types 
 extractViabilitySurvey = function(frame,survey) {
@@ -128,6 +75,7 @@ extractViabilitySurvey = function(frame,survey) {
     surveyFrame$round = round
     surveyFrame$batch = frame$batch
     surveyFrame$rooms = frame$rooms
+    #surveyFrame$room = frame$room
     surveyFrame$manipulationCheck.1 = frame$results.manipulationCheck.1
     surveyFrame$blacklist = frame$results.blacklistCheck
     return(surveyFrame)
@@ -136,57 +84,61 @@ extractViabilitySurvey = function(frame,survey) {
   })
   return(Reduce(bind_rows, roundResponses))
 }
-```
 
-## More cleaning before visualizations: 
-```{r, include=TRUE, echo=TRUE, message=FALSE} 
+# Filter batches and convert JSON to data frames
+options(scipen=999)
+batches = dir(dataPath, pattern = "^[0-9]+$" )
+batches <- as.numeric(batches)
+batches = batches[batches>MINIMUM_BATCH_NUMBER]
+completeBatches = Filter(function(batch) { 
+  if (any(dir(paste(dataPath,batch,sep="/")) == "batch.json") && (any(dir(paste(dataPath,batch,sep="/")) == "users.json")) ) {
+      batchData = read_json(paste(dataPath,batch,"batch.json",sep="/"), simplifyVector = TRUE)
+      return(batchData$batchComplete == TRUE)
+    } 
+    return(FALSE)
+}, batches)
+
+userFiles = lapply(completeBatches, function(batch) {
+  userFile = read_json(paste(dataPath,batch,"users.json",sep="/"), simplifyVector=TRUE)
+  return(flatten(userFile, recursive = TRUE))
+})
+users <- Reduce(function(x,y) merge(x, y, all=TRUE), userFiles)
+users <- users %>% filter(batch>MINIMUM_BATCH_NUMBER)
+
+roundsWithRooms = apply(users,1,function(x) {
+  roomsForIndividual = lapply(seq(1,4),function(y) {
+    x$room = x$rooms[y]
+    x$round = y
+    return(x)
+  })
+  return(Reduce(rbind, roomsForIndividual))
+})
+roundsWithRooms = as.data.frame(Reduce(rbind,roundsWithRooms))
+roundsWithRooms = roundsWithRooms %>% mutate(id = as.character(id), batch=as.numeric(batch), round=as.numeric(round), room=as.character(room))
+roundsWithRooms = roundsWithRooms %>% select(id, batch, round, room, rooms)
+
 ## Use extract survey function to reformat survey data: 
-qFifteen <- extractBlacklistSurvey(overlappingFiles, 'qFifteenCheck')
-qSixteen <- extractBlacklistSurvey(overlappingFiles, 'qSixteenCheck')
-viabilitySurvey <- extractViabilitySurvey(overlappingFiles, 'viabilityCheck')
-postSurveyQs <- cbind(qFifteen, qSixteen)
-frame <- cbind(viabilitySurvey, postSurveyQs)
-data <- frame[, !duplicated(colnames(frame))]
-## Reduce to vertically combine rows in roundwithRooms list:  
-finalRounds = as.data.frame(Reduce(rbind,roundsWithRooms))
+manipulationCheck <- roundsWithRooms %>% 
+  left_join(users, by=c("id", "batch")) %>% 
+  mutate(room=room.x, rooms=rooms.x) %>% 
+  select(id, batch, room, round, results.manipulation, results.manipulationCheck.1, results.format)
+qFifteen <- extractBlacklistSurvey(users, 'qFifteenCheck')
+qSixteen <- extractBlacklistSurvey(users, 'qSixteenCheck')
+viabilitySurvey <- extractViabilitySurvey(users, 'viabilityCheck')
 
-# it works here
-#testing <- finalRounds %>% select(results.manipulationCheck.1)
-#foo <- finalRounds %>% mutate(missingManipulationCheck = is.na(results.manipulationCheck.1), round=unlist(round), room=unlist(room), batch=unlist(batch)) %>% group_by(round, room, batch, missingManipulationCheck) %>% summarise(count = n()) %>% group_by(count, missingManipulationCheck) %>% summarise(metacount=n())
+# Now merge everything
+
+data <- manipulationCheck %>%
+  left_join(qFifteen, by=c("id", "batch", "round")) %>%
+  left_join(qSixteen, by=c("id", "batch", "round")) %>%
+  left_join(viabilitySurvey, by=c("id", "batch", "round")) %>%
+  mutate(rooms = rooms.x) %>%
+  select(-manipulationCheck.1, -manipulationCheck.x, -manipulationCheck.y, -blacklist.x, -blacklist.y, -rooms.x, -rooms.y)
 
 ## Subset incomplete cases from viability survey dataframe, use manipulation check b/c required for complete observation:
-data <- data[!is.na(data$manipulationCheck.1),]
-#data <- data[data$manipulationCheck!="",]
-##
-data <- data[ , ! colnames(data) %in% c("manipulationCheck") ]
-## Rename room to rooms so that both are retained in future merge: 
-data <- rename(data, rooms = "rooms")
-## Subset incomplete cases for final rounds dataframe: 
-data2 <- finalRounds[!is.na(finalRounds$results.manipulationCheck.1), ]
+data <- data %>% filter(!is.na(results.manipulationCheck.1))
 
-# AS OF HERE THERE ARE LOTS OF 1s
-
-
-## Select only variables of interest from final rounds: 
-data2 = data2 %>% select(id, batch, room, round, results.condition, results.format, results.manipulation, results.manipulationCheck.1)
-## Convert to compatible data types before merge: 
-#data2 <- data2 %>% mutate(batch=unlist(batch), round=unlist(round), id=as.character(id), room=unlist(room)) 
-data2 <- data2 %>% mutate(id=as.character(id), round=as.character(round), batch=as.character(batch)) 
-#data2 <- data2[data2$results.manipulationCheck!="NULL",]
-#data <- data %>% mutate(batch=unlist(batch), id=as.character(id), round=unlist(round))  
-data <- data %>% mutate(id=as.character(id), round=as.character(round), batch=as.character(batch))  
-## Before merge, data and data2 should have the same # of observations
-## Merge columns by id, round and batch #s: 
-data <- full_join(data, data2, by=NULL)
-## Check what this error is: 
-## Subset only observations with batch #s in complete batches 
-allConditions <- data[data$batch %in% completeBatches, ]
-## Convert unique names: 
-data <- data[, !duplicated(colnames(data))]
-```
-
-## Conditionally assign conditions based on treatment and results column: 
-```{r, echo=TRUE} 
+# Conditionally assign conditions based on treatment and results column: 
 ## Messy, but robust? Verify, verify, verify people:   
 ## For runs with 4 rounds: 
 data <- data %>% mutate(
@@ -216,11 +168,13 @@ data <- data %>% mutate(
     results.format=="c(1, 2, 3, 1)" & round==3 ~ "B", 
     results.format=="c(1, 2, 3, 1)" & round==4 ~ "Ap"
   )) 
-```
 
-```{r, echo=TRUE}
+# MSB resume here
+
+
 ## Rename Q15 + Q16: 
 data <- data %>% rename("blacklistIndividual"=results.qFifteenCheck) %>% rename("blacklistMeta"=results.qSixteenCheck) 
+
 ## Factor for visualizations: 
 levels <- c("Strongly Disagree", "Disagree", "Neutral","Agree", "Strongly Agree") 
 clean <- data %>% 
