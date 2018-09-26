@@ -12,8 +12,6 @@ fig_caption: yes
 library(psych)
 library(likert)
 library(jsonlite)
-library(ggplot2)
-library(plotly)
 library(modelr)
 library(broom)
 library(scales)
@@ -28,9 +26,9 @@ library(stargazer)
 ## Set-up directories, import and clean data: 
 ```{r, include=TRUE, echo=TRUE} 
 rm(list=ls())
-setwd("/Users/msb/Dropbox (Stanford HCI)/projects/asplode/bang/R") 
+setwd("/Users/mark/Documents/Academia/Stanford/scaled-humanity/bang/R") 
 getwd()
-dataPath = "../data"
+dataPath = "../.data"
 
 ## Function to extract blacklist surveys: 
 extractBlacklistSurvey = function(frame,survey) {
@@ -97,6 +95,8 @@ library(tidyverse)
 library(mosaic)
 library(data.table)
 library(car)
+library(ggplot2)
+library(plotly)
 ```
 
 ```{r, include=TRUE, echo=TRUE} 
