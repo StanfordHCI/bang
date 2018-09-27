@@ -133,7 +133,7 @@ data <- manipulationCheck %>%
   left_join(qSixteen, by=c("id", "batch", "round")) %>%
   left_join(viabilitySurvey, by=c("id", "batch", "round")) %>%
   mutate(rooms = rooms.x) %>%
-  select(-manipulationCheck.1, -manipulationCheck.x, -manipulationCheck.y, -blacklist.x, -blacklist.y, -rooms.x, -rooms.y)
+  select(-manipulationCheck.1, -manipulationCheck.x, -manipulationCheck.y, -rooms.x, -rooms.y)
 
 ## Subset incomplete cases from viability survey dataframe, use manipulation check b/c required for complete observation:
 data <- data %>% filter(!is.na(results.manipulationCheck.1))
@@ -186,25 +186,13 @@ data$viabilityScale <- data %>%
 data <- data %>%
   select(-contains("results.viabilityCheck"))
 
-## Simplify by only selecting specific variables of interest: 
-stats <- stats %>% select(contains("results.viabilityCheck"), id, round, batch, batch, room, blacklistIndividual, blacklistMeta, results.manipulation, results.condition, results.manipulationCheck.1, results.format, condition, sum, median, mean)
+groupedProportion <- data %>%
+  group_by(room, batch, round, condition, results.condition) %>%
+  summarise(n=n(), meanViability=mean(viabilityScale), medianViability=median(viabilityScale), proportionBlacklisted=sum(blacklistIndividual=="Do not keep this team")/n())
 
-stats$blacklistMeta <- plyr::revalue(stats$blacklistMeta, c("Keep this team"="0", "Do not keep this team"="1"))
-stats$blacklistIndividual <- plyr::revalue(stats$blacklistIndividual, c("Keep this team"="0", "Do not keep this team"="1"))
-stats$blacklistIndividual <- as.numeric(stats$blacklistIndividual)
-stats$blacklistMeta <- as.numeric(stats$blacklistMeta)
-
-groupedProportion <- stats %>%
-  group_by(room, batch, round, condition, results.condition, results.format) %>%  ## to-do: add group ID in storage db. 
-  summarise(n=n(), mean=mean(sum), median=median(sum), prop=sum(blacklistIndividual)/n) %>% 
-## Filter out all teams with n=1 (i.e. a person in a one person team) 
+# Filter down to only partners (dyads)
+groupedProportion <- groupedProportion %>%
   filter(n==2)
-print(groupedProportion)
-## Individual proportion: 
-individualProportion <- stats %>% group_by(round, batch, room) %>% 
-  mutate(sum=sum, mean=mean(sum), median=median(sum), n=n(),prop=sum(blacklistIndividual)/n) %>% 
-  filter(n==2)
-print(individualProportion)
 
 ## Table showing how many teams we've run in each condition combination:  
 print(table(groupedProportion$condition, groupedProportion$results.condition)) 
