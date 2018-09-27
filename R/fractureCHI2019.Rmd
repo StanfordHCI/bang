@@ -169,12 +169,6 @@ data <- data %>% mutate(
     results.format=="c(1, 2, 3, 1)" & round==4 ~ "Ap"
   )) 
 
-## Rename Q15 + Q16: 
-data <- data %>% 
-  rename("blacklistIndividual"=results.qFifteenCheck) %>% 
-  rename("blacklistMeta"=results.qSixteenCheck) %>%
-  mutate(blacklistIndividual = as.character(blacklistIndividual), blacklistMeta = as.character(blacklistMeta))
-
 ## Factor for visualizations: 
 levels <- c("Strongly Disagree", "Disagree", "Neutral","Agree", "Strongly Agree") 
 data <- data %>% 
@@ -186,31 +180,41 @@ data$viabilityScale <- data %>%
 data <- data %>%
   select(-contains("results.viabilityCheck"))
 
+## Rename Q15 + Q16: 
+data <- data %>% 
+  mutate(fracture = results.qFifteenCheck == "Do not keep this team",
+         fractureMeta = results.qSixteenCheck == "Do not keep this team") %>%
+  select(-results.qFifteenCheck, -results.qSixteenCheck)
+
+# clean up names
+data <- data %>% rename(manipulation = results.manipulation, manipulationCheck = results.manipulationCheck.1, 
+                teamOrder = results.format, team = condition, condition = results.condition)
+
+
 groupedProportion <- data %>%
-  group_by(room, batch, round, condition, results.condition) %>%
-  summarise(n=n(), meanViability=mean(viabilityScale), medianViability=median(viabilityScale), proportionBlacklisted=sum(blacklistIndividual=="Do not keep this team")/n())
+  group_by(room, batch, round, condition, team) %>%
+  summarise(n=n(), meanViability=mean(viabilityScale), medianViability=median(viabilityScale), proportionFracture=sum(fracture/n()))
 
 # Filter down to only partners (dyads)
 groupedProportion <- groupedProportion %>%
   filter(n==2)
+data <- groupedProportion %>%
+  select(room, batch, round, proportionFracture, condition) %>%
+  left_join(data, by=c("room", "batch", "round", "condition"))
 
 ## Table showing how many teams we've run in each condition combination:  
-print(table(groupedProportion$condition, groupedProportion$results.condition)) 
+print(table(groupedProportion$condition, groupedProportion$team)) 
 ```
 
 ## Probability of fracture across teams and condition combinations: 
 ```{r, echo=TRUE}
 ## Define and initialize cut-off point for fracture: 
-groupedProportionFracture <- groupedProportion %>%
-  group_by(results.condition, condition) %>% 
-  mutate(fracture = case_when (prop<.50 ~ "0", 
-                                prop>=.50~ "1"), sd=sd(fracture)) 
+teamFracture <- groupedProportion %>%
+  group_by(room, batch, round, condition) %>% 
+  mutate(teamFracture = case_when (proportionFracture<.50 ~ 0, 
+                                proportionFracture>=.50 ~ 1))
 
-## Define and initialize cut-off point for fracture: 
-individualProportionFracture <- individualProportion %>%
-  group_by(results.condition, condition) %>% 
-  mutate(fracture = case_when (prop<.50 ~ "0", 
-                                prop>=.50~ "1"), sd=sd(fracture)) 
+#MSB TODO next: rejoin with data to add otherFractured
 
 individualProportionFracture$partnerFractured <- ifelse(individualProportionFracture$prop == 0, FALSE,
                                                         ifelse(individualProportionFracture$prop == 1, TRUE, 
