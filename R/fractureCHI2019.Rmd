@@ -133,8 +133,11 @@ data <- manipulationCheck %>%
   left_join(qFifteen, by=c("id", "batch", "round")) %>%
   left_join(qSixteen, by=c("id", "batch", "round")) %>%
   left_join(viabilitySurvey, by=c("id", "batch", "round")) %>%
-  mutate(rooms = rooms.x) %>%
+  mutate(rooms = rooms.x, results.manipulation = as.character(results.manipulation)) %>%
   select(-manipulationCheck.1, -manipulationCheck.x, -manipulationCheck.y, -rooms.x, -rooms.y)
+
+
+
 
 ## Subset incomplete cases from viability survey dataframe, use manipulation check b/c required for complete observation:
 data <- data %>% filter(!is.na(results.manipulationCheck.1))
@@ -214,8 +217,8 @@ teamFracture <- groupedProportion %>%
 
 # now add whether the team fractured to data
 data <- data %>%
-  select(-teamProportionFracture, -team, -condition) %>%
-  left_join(teamFracture, by=c("room", "batch", "round"))
+  select(-teamProportionFracture, -team) %>%
+  left_join(teamFracture, by=c("room", "batch", "round", "condition"))
 
 # did they guess correctly?
 data$partnerFractured <- ifelse(data$teamProportionFracture == 0, FALSE,
@@ -239,7 +242,7 @@ data$metaGuessedCorrectly <- data$fractureMeta == data$partnerFractured
 
 # To-do: triple check if this is right:  
 
-groupedProportionFractureBaseline <- groupedProportionFracture %>% filter(results.format=="c(1, 1, 2, 3)" | results.format=="c(1, 2, 1, 3)" | results.format=="c(2, 1, 1, 3)" | results.format=="c(2, 3, 1, 1)" | results.format=="c(2, 1, 3, 1)") %>% filter(round=="1" | round=="4") 
+groupedProportionFractureBaseline <- groupedProportionFracture %>% filter(teamOrder=="c(1, 1, 2, 3)" | teamOrder=="c(1, 2, 1, 3)" | teamOrder=="c(2, 1, 1, 3)" | teamOrder=="c(2, 3, 1, 1)" | teamOrder=="c(2, 1, 3, 1)") %>% filter(round=="1" | round=="4") 
 baselineFracture1 <- groupedProportionFractureBaseline %>% filter(round=="1")
 baselineFracture2 <- groupedProportionFractureBaseline %>% filter(round=="4")
 ##baselineFracture1$fracture1 <- baselineFracture1$fracture
@@ -284,64 +287,32 @@ cleanManipulation <- individualProportion[with(individualProportion, grepl(teamP
 cleanManipulation$manipulationAnswers = unlist(cleanManipulation$manipulationAnswers)
 ```
 
-## Section #1: Does fracture have continuity with prior measures?
+### Manipulation Check
 
-## 1A: Report the % of correct guesses on the manipulation check: 
-```{r}
-## Subset just one observation per person (right now there are four b/c rounds)
-## cleanManipulation <- cleanManipulation[!duplicated(cleanManipulation$id),]
-
-## Treatment manipulation ## need to figure out why filter doesn't work here. 
-treatmentManipulation <- cleanManipulation %>%  filter(results.condition=="treatment")
-## Each user has three observations, we really just need one for manipulation: 
-treatmentManipulation <- unique(setDT(treatmentManipulation), by = c('id')) 
-
-## If user manipulation answers == manipulation answer key then add 1 
-treatmentManipulation$correctAnswer <- treatmentManipulation$manipulationAnswers==treatmentManipulation$manipulationAnswerKey
-treatmentManipulation$correctAnswers <- sum(ifelse(treatmentManipulation$manipulationAnswers==treatmentManipulation$manipulationAnswerKey,1,0))
-## Calculate percent of correct manipulation answers for treatment: 
-treatmentManipulation <- treatmentManipulation %>% mutate(percentCorrect = (correctAnswers/(nrow(treatmentManipulation))))
-graphTreatment <- unique(round(treatmentManipulation$percentCorrect, 2))
-
-## Control manipulation: 
-controlManipulation <- cleanManipulation %>% filter(results.condition=="control") 
-controlManipulation <- unique(setDT(controlManipulation), by = c('id')) 
-
-## If user manipulation answers == manipulation answer key then add 1 
-controlManipulation$correctAnswer <- controlManipulation$manipulationAnswers==controlManipulation$manipulationAnswerKey
-controlManipulation$correctAnswers <- sum(ifelse(controlManipulation$manipulationAnswers==controlManipulation$manipulationAnswerKey,1,0))
-## Calculate percent of correct manipulation answers for control: 
-controlManipulation <- controlManipulation %>% mutate(percentCorrect = (correctAnswers/(nrow(controlManipulation))))
-graphControl <- unique(round(controlManipulation$percentCorrect, 2))
-
-treatmentTotal <- sum(treatmentManipulation$correctAnswer)
-controlTotal <- sum(controlManipulation$correctAnswer)
-controlManipulation2 <- unique(controlManipulation$percentCorrect)*100
-treatmentManipulation2 <- unique(treatmentManipulation$percentCorrect)*100
-chanceManipulation <- c(1/6*100)
-print(c(controlManipulation2, treatmentManipulation2, chanceManipulation))
-
-treatmentSE <- sqrt((treatmentTotal/nrow(treatmentManipulation) * (1 - (treatmentTotal/nrow(treatmentManipulation))))/nrow(treatmentManipulation))
-```
-## Plot for manipulation check results:
 # R manipulationcheck
 ```{r, echo=TRUE}
-dat <- data.frame(manipulationCheck=factor(c("Masked condition"), levels=c("Masked condition")),
-                  manipulation = c(graphTreatment))
+manipulationCheckAccuracy = data %>%
+  ungroup() %>%
+  distinct(id, batch, condition, manipulation, manipulationCheck) %>%
+  mutate(manipulationCheckCorrect = manipulation == manipulationCheck)
 
-p <- ggplot(data=dat, aes(x=manipulationCheck, y=manipulation)) +
+manipulationCheckAccuracyByCondition <- manipulationCheckAccuracy %>%
+  group_by(condition) %>%
+  summarise(numCorrect = sum(manipulationCheckCorrect), n=n(), accuracy = numCorrect/n, se = sqrt(accuracy*(1-accuracy)/n))
+print(manipulationCheckAccuracyByCondition)
+
+
+p <- ggplot(data=filter(manipulationCheckAccuracyByCondition, condition=="treatment"), aes(x=condition, y=accuracy)) +
   geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
   geom_hline(yintercept=1/6, size=1, color="grey") +   
-  geom_errorbar(aes(ymin=manipulation-treatmentSE, ymax=manipulation+treatmentSE), width = 0.1)+
-  #geom_text(aes(label=manipulation), vjust=1.6, color="white", size=5)+
+  geom_errorbar(aes(ymin=accuracy-se, ymax=accuracy+se), width = 0.1) +
+  scale_x_discrete(labels=c("Masked teams")) +
   scale_y_continuous(labels = scales::percent_format(1)) + 
   theme_classic() + labs(subtitle="", 
        x="",
-       y="Accuracy at identifying\n the repeat collaborators") +
-  #theme(text = element_text(size=22), axis.text.x = element_text(size=22))
+       y="Accuracy at identifying\n the repeat collaborators")
 
 pdf('manipulationcheck.pdf', width=3.5, height=2.5)
-p
 dev.off();
 p
 ```
@@ -350,16 +321,18 @@ p
 # R manipulationcheckprop
 ```{r}
 ## Proportion test with treatment and chance: 
-treatmentChanceManipulation <- prop.test(treatmentTotal, nrow(treatmentManipulation), chanceManipulation/100)
-#prop.test(x = c(chanceManipulation, treatmentManipulation2), n = c(100, 100))
-print(treatmentChanceManipulation)
+numRounds = lengths(data$teamOrder)[1]
+numSameTeam = 2
+chanceManipulation <- (1/choose(numRounds, numSameTeam))
+treatmentAccuracy <- filter(manipulationCheckAccuracyByCondition, condition=="treatment")
+manipulationCheckChanceComparison <- prop.test(treatmentAccuracy[1,]$numCorrect, treatmentAccuracy[1,]$n, chanceManipulation)
+print(manipulationCheckChanceComparison)
 
-## Proportion test with treatment and control: 
-#treatmentControlManipulation <- prop.test(controlTotal, nrow(controlManipulation), chanceManipulation/100)
-#prop.test(x = c(controlManipulation2, chanceManipulation), n = c(100, 100))
-#print(treatmentControlManipulation)
+
 ```
 
+
+## Section #1: Does fracture have continuity with prior measures?
 ## 1C: Logistic regression predicting binary fracture outcome from viability scales: 
 # R viabilitydescriptive
 ```{r}
