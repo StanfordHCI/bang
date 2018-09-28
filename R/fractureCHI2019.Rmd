@@ -196,8 +196,13 @@ data <- data %>% rename(manipulation = results.manipulation, manipulationCheck =
 
 
 groupedProportion <- data %>%
+  arrange(id) %>%
   group_by(room, batch, round, condition, team) %>%
-  summarise(n=n(), teamMeanViability=mean(viabilityScale), teamMedianViability=median(viabilityScale), teamProportionFracture=sum(fracture/n()))
+  summarise(n=n(), 
+            teamMeanViability=mean(viabilityScale), 
+            teamMedianViability=median(viabilityScale), 
+            teamProportionFracture=sum(fracture/n()),
+            teamMembers = paste(id, collapse=", "))
 
 # Filter down to only partners (dyads)
 groupedProportion <- groupedProportion %>%
@@ -228,6 +233,7 @@ data$partnerFractured <- ifelse(data$teamProportionFracture == 0, FALSE,
 data$metaGuessedCorrectly <- data$fractureMeta == data$partnerFractured
 ```
 
+## SKIP THIS FOR NOW
 ## Probability of fracture across teams and condition combinations: 
 ```{r, echo=TRUE}
 
@@ -330,6 +336,28 @@ print(manipulationCheckChanceComparison)
 
 
 ```
+
+
+
+### Consistency of fracture
+```{r}
+fractureFirst <- teamFracture %>%
+  filter(team=="A")
+fractureSecond <- teamFracture %>%
+  filter(team=="Ap")
+fractureConsistency <- fractureFirst %>%
+  ungroup() %>%
+  left_join(fractureSecond, by=c("teamMembers", "batch", "condition"), suffix=c(".first", ".second"))
+fractureConsistency$consistent <- fractureConsistency$teamFracture.first == fractureConsistency$teamFracture.second
+
+conditionConsistency <- fractureConsistency %>%
+  group_by(condition) %>%
+  summarise(numConsistent = sum(consistent), n=n(), percentConsistent=numConsistent/n, se=sqrt(percentConsistent*(1-percentConsistent))/n)
+```
+
+
+
+
 
 
 ## Section #1: Does fracture have continuity with prior measures?
