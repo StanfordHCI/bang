@@ -7,26 +7,12 @@ fig_caption: yes
 
 ## Set-up packages // libraries and prepare for data import:
 ```{r echo=FALSE, include=FALSE, results='hide'}
-## Uncomment install.packages and run outside of notebook environment:
-## install.packages(c("psych" ,"xtable", "tidyverse", "jsonlite", "likert", "ggplot2", "ploty", "mosaic", "modelr", "broom", "scales", "tinytex"))
-#library(MASS)
-#library(psych)
-#library(likert)
 library(jsonlite)
 library(ggplot2)
-#library(plotly)
-#library(modelr)
-#library(broom)
-#library(scales)
-#library(tinytex)
 library(lme4)
 library(lmerTest)
 library(pROC)
 library(stargazer)
-#library(tidyverse)
-#library(mosaic)
-#library(data.table)
-#library(car)
 library(dplyr)
 ```
 
@@ -38,6 +24,7 @@ getwd()
 dataPath = "../data"
 
 MINIMUM_BATCH_NUMBER = 1537366991708
+TEAM_SIZE = 2
 
 ## Function to extract blacklist surveys:
 extractBlacklistSurvey = function(frame,survey) {
@@ -206,7 +193,7 @@ groupedProportion <- data %>%
 
 # Filter down to only partners (dyads)
 groupedProportion <- groupedProportion %>%
-  filter(n==2)
+  filter(n==TEAM_SIZE)
 data <- groupedProportion %>%
   select(room, batch, round, teamProportionFracture, condition) %>%
   left_join(data, by=c("room", "batch", "round", "condition"))
@@ -248,10 +235,13 @@ manipulationCheckAccuracyByCondition <- manipulationCheckAccuracy %>%
   summarise(numCorrect = sum(manipulationCheckCorrect), n=n(), accuracy = numCorrect/n, se = sqrt(accuracy*(1-accuracy)/n))
 print(manipulationCheckAccuracyByCondition)
 
+numRounds = lengths(data$teamOrder)[1] # split up the list of teams in order to figure out how many rounds they had
+numSameTeam = 2 # number of times they meet with the same team
+chanceManipulation <- (1/choose(numRounds, numSameTeam))
 
 p <- ggplot(data=filter(manipulationCheckAccuracyByCondition, condition=="treatment"), aes(x=condition, y=accuracy)) +
   geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
-  geom_hline(yintercept=1/6, size=1, color="grey") +   
+  geom_hline(yintercept=chanceManipulation, size=1, color="grey") +   
   geom_errorbar(aes(ymin=accuracy-se, ymax=accuracy+se), width = 0.1) +
   scale_x_discrete(labels=c("Masked teams")) +
   scale_y_continuous(labels = scales::percent_format(1)) + 
@@ -268,9 +258,6 @@ p
 # R manipulationcheckprop
 ```{r}
 ## Proportion test with treatment and chance: 
-numRounds = lengths(data$teamOrder)[1]
-numSameTeam = 2
-chanceManipulation <- (1/choose(numRounds, numSameTeam))
 treatmentAccuracy <- filter(manipulationCheckAccuracyByCondition, condition=="treatment")
 manipulationCheckChanceComparison <- prop.test(treatmentAccuracy[1,]$numCorrect, treatmentAccuracy[1,]$n, chanceManipulation)
 print(manipulationCheckChanceComparison)
@@ -294,6 +281,7 @@ fractureConsistency$consistent <- fractureConsistency$teamFracture.first == frac
 conditionConsistency <- fractureConsistency %>%
   group_by(condition) %>%
   summarise(numConsistent = sum(consistent), n=n(), percentConsistent=numConsistent/n, se=sqrt(percentConsistent*(1-percentConsistent))/n)
+print(conditionConsistency)
 ```
 
 
