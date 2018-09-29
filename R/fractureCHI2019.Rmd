@@ -29,7 +29,7 @@ library(stargazer)
 ## Set-up directories, import and clean data: 
 ```{r, include=TRUE, echo=TRUE, results='hide'} 
 rm(list=ls())
-setwd("/Users/mark/Documents/Academia/Stanford/scaled-humanity/bang/R") 
+setwd("/Users/allieblaising/desktop/bang/R") 
 getwd()
 dataPath = "../.data"
 
@@ -72,7 +72,6 @@ userFiles = lapply(completeBatches, function(batch) {
 overlappingFiles = Reduce(function(x,y) merge(x, y, all=TRUE), userFiles)
 
 ## Important: below is where you define the scope of your analysis, make sure this is set to include the right batches: 
-overlappingFiles <- overlappingFiles %>% filter(batch=="1536960730305")
 roundsWithRooms = apply(overlappingFiles,1,function(x) {
   roomsForIndividual = lapply(seq(1,4),function(y) {
     x$room = x$rooms[y]
@@ -244,12 +243,12 @@ groupedProportion <- stats %>%
   group_by(room, batch, round, condition, results.condition, results.format) %>%  ## to-do: add group ID in storage db. 
   summarise(n=n(), mean=mean(sum), median=median(sum), prop=sum(blacklistIndividual)/n) %>% 
 ## Filter out all teams with n=1 (i.e. a person in a one person team) 
-  filter(n>1)
+  filter(n==2)
 print(groupedProportion)
 ## Individual proportion: 
 individualProportion <- stats %>% group_by(round, batch, room) %>% 
   mutate(sum=sum, mean=mean(sum), median=median(sum), n=n(),prop=sum(blacklistIndividual)/n) %>% 
-  filter(n>1)
+  filter(n==2)
 print(individualProportion)
 
 ## Table showing how many teams we've run in each condition combination:  

@@ -318,12 +318,12 @@ let totalCount = 0
 // manipulationCheck(1537292004662)
 // useCompleteBatches(manipulationCheck)
 
-useCompleteBatches(manipulationFix)
+// useCompleteBatches(manipulationFix)
 
 //Save from servers
 // downloadData("mark.dmorina.com",saveAllData)
 // downloadData("bang.dmorina.com",saveAllData)
-// downloadData("b01.dmorina.com",saveAllData)
+ downloadData("b01.dmorina.com",saveAllData)
 
 
 
