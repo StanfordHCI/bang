@@ -246,14 +246,39 @@ function useCompleteBatches(callback) {
 let correctCount = 0
 let totalCount = 0
 
+function manipulationFix(batch) {
+  fs.readFile(dir + batch + '/' + 'users.json',(err,usersJSON) => {
+    if (err) {return console.log(err)} else {
+      try {
+        const users = JSON.parse(usersJSON)
+        let newUsers = users.map(u => {
+          if (u.results.manipulationCheck === "") {
+            u.results.manipulationCheck = {"1":null}
+          }
+          console.log(u.results.manipulationCheck);
+          return u
+        })
+
+        fs.writeFile(dir + batch + '/' + 'users.json', JSON.stringify(newUsers,null,2) , (err) => {
+          if(err) { return console.log(err)} else {
+            /* console.log("saved",f); */
+          }
+        });
+
+      } catch(err) {
+        console.log('File ending error in batch',batch, JSON.parse(usersJSON))
+      }
+    }
+  })
+}
+
+
 // manipulationCheck(1537292004662)
 // useCompleteBatches(manipulationCheck)
 
 //Save from servers
 // downloadData("mark.dmorina.com",saveAllData)
 // downloadData("bang.dmorina.com",saveAllData)
-downloadData("b01.dmorina.com",saveAllData)
-
 
 
 //Save from local folder
@@ -263,5 +288,12 @@ downloadData("b01.dmorina.com",saveAllData)
 
 /* useEachBatch(renderChats) */
 
+
 /* retroactiveBonus() */
 /* retroactivelyFixRooms() */
+
+
+// downloadData("b01.dmorina.com",saveAllData)
+useCompleteBatches(manipulationFix)
+
+

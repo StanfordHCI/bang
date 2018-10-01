@@ -19,11 +19,13 @@ library(dplyr)
 ## Set-up directories, import and clean data:
 ```{r, include=TRUE, echo=TRUE}
 rm(list=ls())
-setwd("/Users/msb/Dropbox\ (Stanford\ HCI)/projects/asplode/bang/R/")
+setwd("/Users/mark/Documents/Academia/Stanford/scaled-humanity/bang/R")
 getwd()
-dataPath = "../data"
+dataPath = "../.data"
+MINIMUM_BATCH_NUMBER = 0  
+# last 2 days 1537366991708
+# start of final day  1537514940000
 
-MINIMUM_BATCH_NUMBER = 1537366991708
 TEAM_SIZE = 2
 
 ## Function to extract blacklist surveys:
@@ -77,38 +79,44 @@ options(scipen=999)
 batches = dir(dataPath, pattern = "^[0-9]+$" )
 batches <- as.numeric(batches)
 batches = batches[batches>MINIMUM_BATCH_NUMBER]
-completeBatches = Filter(function(batch) {
+batches = Filter(function(batch) {
   if (any(dir(paste(dataPath,batch,sep="/")) == "batch.json") && (any(dir(paste(dataPath,batch,sep="/")) == "users.json")) ) {
       batchData = read_json(paste(dataPath,batch,"batch.json",sep="/"), simplifyVector = TRUE)
-      return(batchData$batchComplete == TRUE)
+      return(any(batchData$batchComplete == TRUE))
     }
     return(FALSE)
 }, batches)
 
-userFiles = lapply(completeBatches, function(batch) {
+users <- Reduce(function(x,y) merge(x, y, all=TRUE), lapply(batches, function(batch) {
   userFile = read_json(paste(dataPath,batch,"users.json",sep="/"), simplifyVector=TRUE)
   return(flatten(userFile, recursive = TRUE))
-})
-users <- Reduce(function(x,y) merge(x, y, all=TRUE), userFiles)
-users <- users %>% filter(batch>MINIMUM_BATCH_NUMBER)
+}))
 
-roundsWithRooms = apply(users,1,function(x) {
+users <- users %>%
+  select(-results.engagementFeedback.undefined, -results.qSixteenCheck.undefined, -results.qFifteenCheck.undefined)
+users <- na.omit(users)
+
+usersRounds = as.data.frame(Reduce(rbind, apply(users,1,function(x) {
   roomsForIndividual = lapply(seq(1,4),function(y) {
     x$room = x$rooms[y]
     x$round = y
     return(x)
   })
   return(Reduce(rbind, roomsForIndividual))
-})
-roundsWithRooms = as.data.frame(Reduce(rbind,roundsWithRooms))
-roundsWithRooms = roundsWithRooms %>% mutate(id = as.character(id), batch=as.numeric(batch), round=as.numeric(round), room=as.character(room))
-roundsWithRooms = roundsWithRooms %>% select(id, batch, round, room, rooms)
+})))
+
+usersRounds <- usersRounds %>% mutate(id = as.character(id), batch=as.numeric(batch), round=as.numeric(round), room=as.character(room))
+usersRounds <- usersRounds %>% select(id, batch, round, room)
 
 ## Use extract survey function to reformat survey data:
-manipulationCheck <- roundsWithRooms %>%
+manipulationCheck <- usersRounds %>%
   left_join(users, by=c("id", "batch")) %>%
-  mutate(room=room.x, rooms=rooms.x) %>%
-  select(id, batch, room, round, results.manipulation, results.manipulationCheck.1, results.format, results.condition)
+  mutate(room=room.x) %>%
+  mutate(manipulation=results.manipulation) %>%
+  mutate(manipulationCheck=results.manipulationCheck.1) %>%
+  mutate(teamOrder=results.format) %>%
+  mutate(condition=results.condition) %>%
+  select(id, batch, room, round, manipulation, manipulationCheck, teamOrder, condition)
 qFifteen <- extractBlacklistSurvey(users, 'qFifteenCheck')
 qSixteen <- extractBlacklistSurvey(users, 'qSixteenCheck')
 viabilitySurvey <- extractViabilitySurvey(users, 'viabilityCheck')
@@ -116,73 +124,70 @@ viabilitySurvey <- extractViabilitySurvey(users, 'viabilityCheck')
 
 # Now merge everything
 ```{r}
-data <- manipulationCheck %>%
+usersRounds <- manipulationCheck %>%
   left_join(qFifteen, by=c("id", "batch", "round")) %>%
   left_join(qSixteen, by=c("id", "batch", "round")) %>%
   left_join(viabilitySurvey, by=c("id", "batch", "round")) %>%
-  mutate(rooms = rooms.x, results.manipulation = as.character(results.manipulation)) %>%
-  select(-manipulationCheck.1, -manipulationCheck.x, -manipulationCheck.y, -rooms.x, -rooms.y)
+  mutate(rooms = rooms.x, manipulation = as.character(manipulation)) %>%
+  select(-manipulationCheck.1, -manipulationCheck.x, -manipulationCheck.y, -rooms, -rooms.x, -rooms.y)
+rm(list=c("qFifteen","qSixteen","viabilitySurvey","manipulationCheck"))
 
-
-
-
-## Subset incomplete cases from viability survey dataframe, use manipulation check b/c required for complete observation:
-data <- data %>% filter(!is.na(results.manipulationCheck.1))
+usersRounds <- usersRounds %>% 
+  mutate(condition = case_when(
+    condition=="treatment" ~ "masked",
+    condition=="control" ~ "unmasked"
+  ))
 
 # Conditionally assign conditions based on treatment and results column:
 ## Messy, but robust? Verify, verify, verify people:   
 ## For runs with 4 rounds:
-data <- data %>% mutate(
-  condition = case_when(
-    results.format=="c(1, 1, 2, 3)" & round==1 ~ "A",
-    results.format=="c(1, 1, 2, 3)" & round==2 ~ "Ap",
-    results.format=="c(1, 1, 2, 3)" & round==3 ~ "B",
-    results.format=="c(1, 1, 2, 3)" & round==4 ~ "B",
-    results.format=="c(1, 2, 1, 3)" & round==1 ~ "A",
-    results.format=="c(1, 2, 1, 3)" & round==2 ~ "B",
-    results.format=="c(1, 2, 1, 3)" & round==3 ~ "Ap",
-    results.format=="c(1, 2, 1, 3)" & round==4 ~ "B",
-    results.format=="c(2, 1, 1, 3)" & round==1 ~ "B",
-    results.format=="c(2, 1, 1, 3)" & round==2 ~ "A",
-    results.format=="c(2, 1, 1, 3)" & round==3 ~ "Ap",
-    results.format=="c(2, 1, 1, 3)" & round==4 ~ "B",
-    results.format=="c(2, 3, 1, 1)" & round==1 ~ "B",
-    results.format=="c(2, 3, 1, 1)" & round==2 ~ "B",
-    results.format=="c(2, 3, 1, 1)" & round==3 ~ "A",
-    results.format=="c(2, 3, 1, 1)" & round==4 ~ "Ap",
-    results.format=="c(2, 1, 3, 1)" & round==1 ~ "B",
-    results.format=="c(2, 1, 3, 1)" & round==2 ~ "A",
-    results.format=="c(2, 1, 3, 1)" & round==3 ~ "B",
-    results.format=="c(2, 1, 3, 1)" & round==4 ~ "Ap",
-    results.format=="c(1, 2, 3, 1)" & round==1 ~ "A",
-    results.format=="c(1, 2, 3, 1)" & round==2 ~ "B",
-    results.format=="c(1, 2, 3, 1)" & round==3 ~ "B",
-    results.format=="c(1, 2, 3, 1)" & round==4 ~ "Ap"
+usersRounds <- usersRounds %>% mutate(
+  team = case_when(
+    teamOrder=="c(1, 1, 2, 3)" & round==1 ~ "A",
+    teamOrder=="c(1, 1, 2, 3)" & round==2 ~ "Ap",
+    teamOrder=="c(1, 1, 2, 3)" & round==3 ~ "B",
+    teamOrder=="c(1, 1, 2, 3)" & round==4 ~ "B",
+    teamOrder=="c(1, 2, 1, 3)" & round==1 ~ "A",
+    teamOrder=="c(1, 2, 1, 3)" & round==2 ~ "B",
+    teamOrder=="c(1, 2, 1, 3)" & round==3 ~ "Ap",
+    teamOrder=="c(1, 2, 1, 3)" & round==4 ~ "B",
+    teamOrder=="c(2, 1, 1, 3)" & round==1 ~ "B",
+    teamOrder=="c(2, 1, 1, 3)" & round==2 ~ "A",
+    teamOrder=="c(2, 1, 1, 3)" & round==3 ~ "Ap",
+    teamOrder=="c(2, 1, 1, 3)" & round==4 ~ "B",
+    teamOrder=="c(2, 3, 1, 1)" & round==1 ~ "B",
+    teamOrder=="c(2, 3, 1, 1)" & round==2 ~ "B",
+    teamOrder=="c(2, 3, 1, 1)" & round==3 ~ "A",
+    teamOrder=="c(2, 3, 1, 1)" & round==4 ~ "Ap",
+    teamOrder=="c(2, 1, 3, 1)" & round==1 ~ "B",
+    teamOrder=="c(2, 1, 3, 1)" & round==2 ~ "A",
+    teamOrder=="c(2, 1, 3, 1)" & round==3 ~ "B",
+    teamOrder=="c(2, 1, 3, 1)" & round==4 ~ "Ap",
+    teamOrder=="c(1, 2, 3, 1)" & round==1 ~ "A",
+    teamOrder=="c(1, 2, 3, 1)" & round==2 ~ "B",
+    teamOrder=="c(1, 2, 3, 1)" & round==3 ~ "B",
+    teamOrder=="c(1, 2, 3, 1)" & round==4 ~ "Ap"
   ))
 
 ## Factor for visualizations:
 levels <- c("Strongly Disagree", "Disagree", "Neutral","Agree", "Strongly Agree")
-data <- data %>%
-  mutate_at(.vars = vars(contains("results.viabilityCheck")), funs(factor(., levels = levels)))
-data$viabilityScale <- data %>%
+usersRounds <- usersRounds %>%
+  mutate_at(.vars = vars(contains("viabilityCheck")), funs(factor(., levels = levels)))
+usersRounds$viabilityScale <- usersRounds %>%
   select(contains("viabilityCheck")) %>%
   mutate_all(as.numeric) %>%
   rowSums()
-data <- data %>%
-  select(-contains("results.viabilityCheck"))
+usersRounds <- usersRounds %>%
+  select(-contains("viabilityCheck"))
+rm("levels")
 
 ## Rename Q15 + Q16:
-data <- data %>%
+usersRounds <- usersRounds %>%
   mutate(fracture = results.qFifteenCheck == "Do not keep this team",
          fractureMeta = results.qSixteenCheck == "Do not keep this team") %>%
   select(-results.qFifteenCheck, -results.qSixteenCheck)
 
-# clean up names
-data <- data %>% rename(manipulation = results.manipulation, manipulationCheck = results.manipulationCheck.1,
-                teamOrder = results.format, team = condition, condition = results.condition)
-
-
-groupedProportion <- data %>%
+teamStats <- usersRounds %>%
   arrange(id) %>%
   group_by(room, batch, round, condition, team) %>%
   summarise(n=n(), 
@@ -192,32 +197,34 @@ groupedProportion <- data %>%
             teamMembers = paste(id, collapse=", "))
 
 # Filter down to only partners (dyads)
-groupedProportion <- groupedProportion %>%
+teamStats <- teamStats %>%
   filter(n==TEAM_SIZE)
-data <- groupedProportion %>%
+usersRounds <- teamStats %>%
   select(room, batch, round, teamProportionFracture, condition) %>%
-  left_join(data, by=c("room", "batch", "round", "condition"))
+  left_join(usersRounds, by=c("room", "batch", "round", "condition"))
 
 ## Table showing how many teams we've run in each condition combination:  
-print(table(groupedProportion$condition, groupedProportion$team))
+print(table(teamStats$condition, teamStats$team))
 
 ## Define and initialize cut-off point for fracture:
-teamFracture <- groupedProportion %>%
+teamStats <- teamStats %>%
   group_by(room, batch, round, condition) %>%
   mutate(teamFracture = case_when (teamProportionFracture<.50 ~ FALSE,
                                 teamProportionFracture>=.50 ~ TRUE))
 
 # now add whether the team fractured to data
-data <- data %>%
+usersRounds <- usersRounds %>%
   select(-teamProportionFracture, -team) %>%
-  left_join(teamFracture, by=c("room", "batch", "round", "condition"))
+  left_join(teamStats, by=c("room", "batch", "round", "condition"))
 
 # did they guess correctly?
-data$partnerFractured <- ifelse(data$teamProportionFracture == 0, FALSE,
-                                ifelse(data$teamProportionFracture == 1, TRUE,
-                                       ifelse(data$fracture, FALSE, TRUE)))
+usersRounds$partnerFractured <- ifelse(usersRounds$teamProportionFracture == 0, FALSE,
+                                ifelse(usersRounds$teamProportionFracture == 1, TRUE,
+                                       ifelse(usersRounds$fracture, FALSE, TRUE)))
+usersRounds$metaGuessedCorrectly <- usersRounds$fractureMeta == usersRounds$partnerFractured
 
-data$metaGuessedCorrectly <- data$fractureMeta == data$partnerFractured
+data = usersRounds
+
 ```
 
 
@@ -239,7 +246,7 @@ numRounds = lengths(data$teamOrder)[1] # split up the list of teams in order to 
 numSameTeam = 2 # number of times they meet with the same team
 chanceManipulation <- (1/choose(numRounds, numSameTeam))
 
-p <- ggplot(data=filter(manipulationCheckAccuracyByCondition, condition=="treatment"), aes(x=condition, y=accuracy)) +
+p <- ggplot(data=filter(manipulationCheckAccuracyByCondition, condition=="masked"), aes(x=condition, y=accuracy)) +
   geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
   geom_hline(yintercept=chanceManipulation, size=1, color="grey") +   
   geom_errorbar(aes(ymin=accuracy-se, ymax=accuracy+se), width = 0.1) +
@@ -258,8 +265,8 @@ p
 # R manipulationcheckprop
 ```{r}
 ## Proportion test with treatment and chance: 
-treatmentAccuracy <- filter(manipulationCheckAccuracyByCondition, condition=="treatment")
-manipulationCheckChanceComparison <- prop.test(treatmentAccuracy[1,]$numCorrect, treatmentAccuracy[1,]$n, chanceManipulation)
+maskedAccuracy <- filter(manipulationCheckAccuracyByCondition, condition=="masked")
+manipulationCheckChanceComparison <- prop.test(maskedAccuracy[1,]$numCorrect, maskedAccuracy[1,]$n, chanceManipulation)
 print(manipulationCheckChanceComparison)
 
 
@@ -269,25 +276,35 @@ print(manipulationCheckChanceComparison)
 
 ### Consistency of fracture
 ```{r}
-fractureFirst <- teamFracture %>%
+fractureFirst <- teamStats %>%
   filter(team=="A")
-fractureSecond <- teamFracture %>%
+fractureSecond <- teamStats %>%
   filter(team=="Ap")
 fractureConsistency <- fractureFirst %>%
   ungroup() %>%
   left_join(fractureSecond, by=c("teamMembers", "batch", "condition"), suffix=c(".first", ".second"))
 fractureConsistency$consistent <- fractureConsistency$teamFracture.first == fractureConsistency$teamFracture.second
+rm("fractureFirst","fractureSecond")
 
 conditionConsistency <- fractureConsistency %>%
   group_by(condition) %>%
   summarise(numConsistent = sum(consistent), n=n(), percentConsistent=numConsistent/n, se=sqrt(percentConsistent*(1-percentConsistent))/n)
 print(conditionConsistency)
+
+p <- ggplot(data=filter(conditionConsistency), aes(x=condition, y=percentConsistent)) +
+  geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
+  geom_errorbar(aes(ymin=percentConsistent-se, ymax=percentConsistent+se), width = 0.1) +
+  scale_x_discrete(labels=c("Masked teams","Unmasked teams")) +
+  scale_y_continuous(labels = scales::percent_format(1)) + 
+  theme_classic() + labs(subtitle="", 
+       x="",
+       y="Accuracy at identifying\n the repeat collaborators")
+
+pdf('manipulationcheck.pdf', width=3.5, height=2.5)
+dev.off();
+p
+
 ```
-
-
-
-
-
 
 ## Section #1: Does fracture have continuity with prior measures?
 ## 1C: Logistic regression predicting binary fracture outcome from viability scales: 
