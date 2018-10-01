@@ -27,6 +27,7 @@ MINIMUM_BATCH_NUMBER = 0
 # start of final day  1537514940000
 
 TEAM_SIZE = 2
+MIN_FRACTURE_PERCENT = 0.5
 
 ## Function to extract blacklist surveys:
 extractBlacklistSurvey = function(frame,survey) {
@@ -209,8 +210,8 @@ print(table(teamStats$condition, teamStats$team))
 ## Define and initialize cut-off point for fracture:
 teamStats <- teamStats %>%
   group_by(room, batch, round, condition) %>%
-  mutate(teamFracture = case_when (teamProportionFracture<.50 ~ FALSE,
-                                teamProportionFracture>=.50 ~ TRUE))
+  mutate(teamFracture = case_when (teamProportionFracture<MIN_FRACTURE_PERCENT ~ FALSE,
+                                teamProportionFracture>=MIN_FRACTURE_PERCENT ~ TRUE))
 
 # now add whether the team fractured to data
 usersRounds <- usersRounds %>%
