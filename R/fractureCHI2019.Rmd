@@ -22,7 +22,7 @@ rm(list=ls())
 setwd("/Users/mark/Documents/Academia/Stanford/scaled-humanity/bang/R")
 getwd()
 dataPath = "../.data"
-MINIMUM_BATCH_NUMBER = 0  
+MINIMUM_BATCH_NUMBER = 1537266991708  
 # last 2 days 1537366991708
 # start of final day  1537514940000
 
