@@ -176,9 +176,7 @@ $(function () {
             addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername + ", welcome to our HIT!"});
             addChatMessage({
                 username: botUsername,
-                message: "You must be able to stay for the amount of time allotted for this HIT, though we will " +
-                    "likely finish before this. If you cannot stay, please leave now. You will not be compensated " +
-                    "if you leave before all the tasks are over. As a reminder, do not refresh or close the page."
+                message: "You must be able to stay for the duration of this task, around 1 hour. If you cannot stay for the entire time, please leave now. You will not be compensated if you leave preemptively. As a reminder, please do not refresh or close the page."
             });
             setTimeout(() => {
                 addChatMessage({
@@ -720,7 +718,7 @@ $(function () {
             totalLengthString = Math.round(3 * (data.duration) + 15) + " minutes";
             log("<strong>Reminder</strong>: You will receive the bonus pay at the stated hourly rate <strong>only</strong> if you stay for " +
                 "all rounds and answer any survey questions. This should take no more than " + totalLengthString + " total.");
-            log("<strong>DO NOT REFRESH OR LEAVE THE PAGE</strong>. This will stop the task for everyone and you will not be compensated.");
+            log("<strong>DO NOT REFRESH OR LEAVE THE PAGE</strong>. If you do you will not be compensated, and it may terminate the task for other workers.");
             log("Task: " + data.task);
             log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.");
 

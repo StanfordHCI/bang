@@ -1018,12 +1018,12 @@ io.on('connection', (socket) => {
             // update DB with change
             updateUserInDB(user, 'connected', false);
             console.log(socket.username + ": " + user.mturkId + " HAS LEFT");
-            if (!experimentOver && !debugMode) {
-                mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our" +
-                    " HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com"
-                    + " with your Mturk ID and the last things you did in the HIT.\n\nMturk ID: " + user.mturkId +
-                    "\nAssignment ID: " + user.assignmentId + '\nHIT ID: ' + mturk.returnCurrentHIT())
-            }
+            // if (!experimentOver && !debugMode) {
+            //     mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our" +
+            //         " HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com"
+            //         + " with your Mturk ID and the last things you did in the HIT.\n\nMturk ID: " + user.mturkId +
+            //         "\nAssignment ID: " + user.assignmentId + '\nHIT ID: ' + mturk.returnCurrentHIT())
+            // }
             if (!experimentOver && !suddenDeath) {
                 // console.log("Sudden death is off, so we will not cancel the run")
             }
