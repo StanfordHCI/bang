@@ -293,7 +293,5 @@ function manipulationFix(batch) {
 /* retroactivelyFixRooms() */
 
 
-// downloadData("b01.dmorina.com",saveAllData)
-useCompleteBatches(manipulationFix)
-
-
+downloadData("b01.dmorina.com",saveAllData)
+// useCompleteBatches(manipulationFix)

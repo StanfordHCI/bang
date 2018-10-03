@@ -695,3 +695,4 @@ function getRandomSubarray(arr, size) {
 // use to remove workers from notify list
 // unassignQuals('A392Q6IRAQ9NZ3', quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!') ;
 
+unassignQuals('AZNNPGW3VNPQ2', quals.willBang, 'You  asked to be removed from notifications about these HITs. Thanks.') ;

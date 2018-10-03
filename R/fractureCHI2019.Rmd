@@ -94,7 +94,7 @@ users <- Reduce(function(x,y) merge(x, y, all=TRUE), lapply(batches, function(ba
 }))
 
 users <- users %>%
-  select(-results.engagementFeedback.undefined, -results.qSixteenCheck.undefined, -results.qFifteenCheck.undefined)
+  select(-results.engagementFeedback.undefined, -results.qSixteenCheck.undefined, -results.qFifteenCheck.undefined, -contains("results.viabilityCheck.0"))
 users <- na.omit(users)
 
 usersRounds = as.data.frame(Reduce(rbind, apply(users,1,function(x) {
@@ -304,6 +304,8 @@ p <- ggplot(data=filter(conditionConsistency), aes(x=condition, y=percentConsist
 pdf('manipulationcheck.pdf', width=3.5, height=2.5)
 dev.off();
 p
+
+# chisq.test(conditionConsistency$)
 
 ```
 
