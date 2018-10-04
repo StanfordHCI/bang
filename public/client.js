@@ -2,13 +2,12 @@ let LeavingAlert = true;
 window.onbeforeunload = function (event) {
     if (LeavingAlert) {
         console.log("Leaving is true");
-        return "Leaving will stop this HIT for  all users. Are you sure you want to leave?"
+        return "Leaving will stop this HIT for all users. Are you sure you want to leave?"
     } else {
         console.log("Leaving is false");
         return null
     }
 };
-
 
 $(function () {
     const FADE_TIME = 150; // ms

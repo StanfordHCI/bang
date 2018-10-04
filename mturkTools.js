@@ -698,4 +698,4 @@ function getRandomSubarray(arr, size) {
 //unassignQuals('A28AX4H70DPKKK', quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!') ;
 
 //Remove qualification from user.
-disassociateQualification(quals.willBang.QualificationTypeId, 'AWIQFS5VFFLVR', "Requested to be removed.")
+// disassociateQualification(quals.willBang.QualificationTypeId, 'AWIQFS5VFFLVR', "Requested to be removed.")
