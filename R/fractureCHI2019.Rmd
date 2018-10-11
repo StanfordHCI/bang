@@ -26,7 +26,7 @@ MINIMUM_BATCH_NUMBER = 0
 # last 2 days 1537366991708
 # start of final day  1537514940000
 
-TEAM_SIZE = 2
+TEAM_SIZE = 3
 MIN_FRACTURE_PERCENT = 0.5
 
 ## Function to extract blacklist surveys:
@@ -112,6 +112,9 @@ users <- users %>%
                                                  ifelse(results.viabilityCheck.3.15 == "Yes","Keep this team",results.viabilityCheck.3.15)))) %>%
   mutate(results.qFifteenCheck.3 = ifelse(!is.na(results.qFifteenCheck.3) , results.qFifteenCheck.3, results.viabilityCheck.3.15)) %>%
   select(-contains("15"), -contains("manipulation"), -contains("Sixteen"), -contains(".4."), -results.qFifteenCheck.4)
+
+users <- users %>%
+  select(-contains("results.viabilityCheck.0"))
 users <- na.omit(users)
 
 usersRounds = as.data.frame(Reduce(rbind, apply(users,1,function(x) {

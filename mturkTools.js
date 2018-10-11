@@ -693,5 +693,14 @@ function getRandomSubarray(arr, size) {
 }
 
 // use to remove workers from notify list
-// unassignQuals('A392Q6IRAQ9NZ3', quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!') ;
+// unassignQuals('A34XVNVOL49Y8C', quals.willBang, 'Qualification being removed upon request.') ;
 
+mturk.sendBonus({
+    AssignmentId: "3L6L49WXW1C0CHEYI06V3IWYFCY45B",
+    BonusAmount: String(5),
+    Reason: "Thanks for participating in our HIT, sorry about the delay.",
+    WorkerId: "A5NHP0N1XC09K",
+    UniqueRequestToken: "Repay"
+}, (err, data) => {
+  console.log(err ? err.message : "Completed payment: ",data)
+})
