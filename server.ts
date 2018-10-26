@@ -1,45 +1,38 @@
+//Setting up env
 import * as dotenv from 'dotenv'
 dotenv.config()
-import * as chalk from 'chalk'
-import * as args from 'yargs'
-// args.argv
-// this is required but needs some change to work with TS. 
 
-//Environmental settings, set in .env
+//Setting up args
+import * as yargs from 'yargs'
+// import {Argv} from "yargs"
+let args =  yargs.argv;
+
+//Setting up terminal formatting
+import chalk from 'chalk'
+
+//Initializing variables
 const runningLocal = process.env.RUNNING_LOCAL === "TRUE";
 const runningLive = process.env.RUNNING_LIVE === "TRUE"; //ONLY CHANGE ON SERVER
 const teamSize = parseInt(process.env.TEAM_SIZE);
 const roundMinutes = parseFloat(process.env.ROUND_MINUTES);
 let taskURL = args.url || process.env.TASK_URL;
 
-//Parameters for waiting qualifications
-//MAKE SURE secondsToWait > secondsSinceResponse
-const secondsToWait = 20; //number of seconds users must have been on pretask to meet qualification (e.g. 120)
-const secondsSinceResponse = 59; //number of seconds since last message users sent to meet pretask
-// qualification (e.g. 20)
-const secondsToHold1 = 1200; //maximum number of seconds we allow someone to stay in the pretask (e.g. 720)
-const secondsToHold2 = 200; //maximum number of seconds of inactivity that we allow in pretask (e.g. 60)
-const maxWaitChatMinutes = 20;
-
-// Toggles
 const runExperimentNow = true;
+const runViaEmailOn = false;
+const cleanHITs = false;
 const issueBonusesNow = runningLive;
 const notifyWorkersOn = runningLive;
-const runViaEmailOn = false;
 const usingWillBang = runningLive;
 const aggressiveNotifyOn = runningLive;
 const notifyUs = runningLive;
-
-const cleanHITs = false;
 const assignQualifications = runningLive;
-const debugMode = !runningLive;
 
-const suddenDeath = false;
-
+//Randomization
 const randomCondition = false;
 const randomRoundOrder = true;
 const randomProduct = true;
 
+const suddenDeath = false;
 const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
@@ -56,10 +49,23 @@ const qFifteenOn = true;
 const qSixteenOn = true;
 
 //Testing toggles
+const debugMode = !runningLive;
 const autocompleteTestOn = false; //turns on fake team to test autocomplete
 
-console.log(runningLive ? "\n RUNNING LIVE ".red.inverse : "\n RUNNING SANDBOXED ".green.inverse);
+//Waitchat settings
+const waitChatParms = {
+  minTime: 20, //seconds
+  lastActivity: 59, //seconds
+  maxTime: 1200, //seconds
+  maxInactivity: 200, //seconds
+}
+
+//Launch reporting
+console.log(runningLive ? chalk.red.inverse("\n RUNNING LIVE ") : chalk.green.inverse("\n RUNNING SANDBOXED "));
 console.log(runningLocal ? "Running locally" : "Running remotely");
+
+const batchID = Date.now();
+console.log("Launching batch", batchID);
 
 // Question Files
 import fs = require('fs');
@@ -93,6 +99,7 @@ const leaveHitAnswers = {
 let tools = require('./tools');
 let mturk = require('./mturkTools');
 let express = require('express');
+import * as bodyParser from 'body-parser';
 const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server); //, {transports: ['websocket']}
@@ -101,22 +108,12 @@ server.listen(port, () => {
     console.log('Server listening at port', port)
 });
 
-function pick<T>(list: T[]): T {
+function chooseOne<T>(list: T[]): T {
   return list[Math.floor(Math.random() * list.length)]
 }
 
-function set<T>(list: T[]): T[] {
-  const set = [];
-  list.forEach(e =>{ if (set.indexOf(e) === -1) {set.push(e)} });
-  return set
-}
-
-function byID(users, id) {
-  return users.find(user => user.id === id)
-}
-
-function byMturkId(users, MturkId) {
-  return users.find(user => user.mturkId === mturkId)
+function userByMturkId(users, MturkId) {
+  return users.find(user => user.mturkId === MturkId)
 }
 
 //
@@ -161,13 +158,12 @@ function ioEmitById(socketId, event, message, socket, user) {
 }
 
 function useUser(socket, callback, err = "Guarded against undefined user") {
-    //let user = users.byID(u.id)
-    let user = users.byMturkId(socket.mturkId);
+    let user =  userByMturkId(users, socket.mturkId);
     if (typeof user !== 'undefined' && typeof callback === "function") {
         callback(user)
     }
     else {
-        console.log(err.red, socket.id, "\n");
+        console.log(chalk.red(err), socket.id, "\n");
         if (debugMode) {
             console.trace()
         }
@@ -177,7 +173,7 @@ function useUser(socket, callback, err = "Guarded against undefined user") {
 // Check balance
 mturk.getBalance(function (balance) {
     if (runningLive && balance <= 400) {
-        console.log("\n!!! BROKE !!!\n".red.inverse.bold)
+        console.log(chalk.red.inverse.bold("\n!!! BROKE !!!\n"))
     }
 });
 
@@ -190,7 +186,7 @@ if (!fs.existsSync(debugDir)) {
     fs.mkdirSync(debugDir)
 }
 
-log_file = debugDir + "debug" + Date.now() + ".log";
+let log_file = debugDir + "debug" + Date.now() + ".log";
 console.log = function (...msg) {
     msg.unshift("[" + (new Date()).toISOString() + "]")
     trueLog(msg.map(item => {
@@ -204,7 +200,7 @@ console.log = function (...msg) {
         });
     });
     fs.appendFile(log_file, "\n", function (err) {
-        if (err) {f
+        if (err) {
             return trueLog(err);
         }
     });
@@ -245,25 +241,21 @@ const people = extraRoundOn ? tools.letters.slice(0, teamSize ** 2 + teamSize) :
 const teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn) //added '-1' to numRounds
 //}
 
-//if (runExperimentNow) {
-const batchID = Date.now();
 
-console.log("Launching batch", batchID);
-//}
-
-// Setting up DB
+// Setting up the databases
 import Datastore = require('nedb');
-const db = {};
-db.users = new Datastore({filename: '.data/users', autoload: true, timestampData: true});
-db.chats = new Datastore({filename: '.data/chats', autoload: true, timestampData: true});
-db.batch = new Datastore({filename: '.data/batch', autoload: true, timestampData: true});
-db.time = new Datastore({filename: '.data/time', autoload: true, timestampData: true});
-db.ourHITs = new Datastore({filename: '.data/ourHITs', autoload: true, timestampData: true});
-db.willBang = new Datastore({filename: '.data/willBang', autoload: true, timestampData: true});
+const db = {
+  users: new Datastore({filename: '.data/users', autoload: true, timestampData: true}),
+  chats: new Datastore({filename: '.data/chats', autoload: true, timestampData: true}),
+  batch: new Datastore({filename: '.data/batch', autoload: true, timestampData: true}),
+  time: new Datastore({filename: '.data/time', autoload: true, timestampData: true}),
+  ourHITs: new Datastore({filename: '.data/ourHITs', autoload: true, timestampData: true}),
+  willBang: new Datastore({filename: '.data/willBang', autoload: true, timestampData: true}),
+};
 
 function updateUserInDB(user, field, value) {
     db.users.update({mturkId: user.mturkId, batch: batchID}, {$set: {[field]: value}}, {},
-        err => console.log(err ? "Err recording ".red + field + ": " + err : "Updated " + field + " for " +
+        err => console.log(err ? chalk.red("Err recording ") + field + ": " + err : "Updated " + field + " for " +
             user.mturkId + " " + JSON.stringify(value, null, 2))
     )
 }
@@ -544,8 +536,9 @@ eventSchedule.push("finished");
 console.log("This batch will include:", eventSchedule);
 //}
 
-
 app.use(express.static('public'));
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json())
 
 // Disconnect leftover users
 Object.keys(io.sockets.sockets).forEach(socketID => {
@@ -645,10 +638,10 @@ io.on('connection', (socket) => {
             //console.log(userPool.byMturkId(mturkId))
         } else {
             createUsername();
-            console.log('NEW USER CONNECTED'.blue)
+            console.log(chalk.blue('NEW USER CONNECTED'))
         }
-        console.log(('SOCKET: ' + socket.id + ' | MTURK ID: ' + socket.mturkId + ' | NAME: ' + socket.username +
-            '| ASSIGNMENT ID: ' + socket.assignmentId).blue)
+        console.log(chalk.blue('SOCKET: ' + socket.id + ' | MTURK ID: ' + socket.mturkId + ' | NAME: ' + socket.username +
+            '| ASSIGNMENT ID: ' + socket.assignmentId))
     });
 
     // socket.on('get username', data => {
@@ -732,14 +725,12 @@ io.on('connection', (socket) => {
 
         function updateUsersActive() {
             userPool.forEach(user => {
-                //PK: rename secondsToWait
-                user.active = secondsSince(user.timeAdded) > secondsToWait && secondsSince(user.timeLastActivity)
-                    < secondsSinceResponse;
+                user.active = secondsSince(user.timeAdded) > waitChatParms.minTime && secondsSince(user.timeLastActivity) < waitChatParms.lastActivity;
                 let numUsersWanted = extraRoundOn ? teamSize ** 2 + teamSize : teamSize ** 2;
-                let weightedHoldingSeconds = secondsToHold1 + 0.33 * (secondsToHold1 / (numUsersWanted -
+                let weightedHoldingSeconds = waitChatParms.maxTime + 0.33 * (waitChatParms.maxTime / (numUsersWanted -
                     getPoolUsersActive().length)); // PK: make isUserInactive fxn
                 if (!user.removed && (secondsSince(user.timeAdded) > weightedHoldingSeconds ||
-                    secondsSince(user.timeLastActivity) > secondsToHold2)) {
+                    secondsSince(user.timeLastActivity) > waitChatParms.maxInactivity)) {
                     user.removed = true;
                     console.log('removing user because of inactivity:', user.id);
                     io.in(user.mturkId).emit('get IDs', 'broken');
@@ -780,8 +771,8 @@ io.on('connection', (socket) => {
                         "scaledhumanity@gmail.com." : "Thanks for participating, you're all done!")
                 })
             } else {
-                if (secondsSince(waitchatStart) / 60 >= maxWaitChatMinutes) {
-                    console.log("Waitchat time limit reached".red);
+                if (secondsSince(waitchatStart) / 60 >= waitChatParms.maxTime / 60 ) {
+                    console.log(chalk.red("Waitchat time limit reached"));
                     userAcquisitionStage = false;
                     io.in(socket.mturkId).emit('echo', 'kill-all')
                 }
@@ -987,13 +978,15 @@ io.on('connection', (socket) => {
     });
 
     socket.on('load bot qs', () => {
-        ioEmitById(socket.mturkId, 'chatbot', loadQuestions(botFile), socket)
+      useUser(socket, user => {
+        ioEmitById(socket.mturkId, 'chatbot', loadQuestions(botFile), socket, user)
+      })
     });
 
     // when the user disconnects.. perform this
     socket.on('disconnect', function (reason) {
         // changes connected to false if disconnected user in userPool
-        console.log(("[" + (new Date()).toISOString() + "]: Disconnecting socket: " + socket.id + " because " + reason).red);
+        console.log(chalk.red("[" + (new Date()).toISOString() + "]: Disconnecting socket: " + socket.id + " because " + reason));
         if (reason === "transport error") {
             //console.log(socket);
             console.log("TRANSPORT");
@@ -1020,13 +1013,11 @@ io.on('connection', (socket) => {
         // if (!users.every(user => socket.id !== user.id)) {//socket id is found in users
         //newMessage('has left the chatroom')
 
-        if (!users.find(function (element) {
-            return element.mturkId === socket.mturkId
-        })) return;
+        if (!users.find(i => i.mturkId === socket.mturkId )) return;
         useUser(socket, user => {
             user.connected = false;
             user.ready = !suddenDeath;
-            notEnoughUsers = false;
+            let notEnoughUsers = false;
 
             // update DB with change
             updateUserInDB(user, 'connected', false);
@@ -1086,7 +1077,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('ready-to-all', (_data) => {
-        console.log("god is ready".rainbow);
+        console.log(chalk.red("god is ready"));
         users.filter(user => !user.ready).forEach(user =>
                 ioEmitById(socket.mturkId, 'echo', 'ready', socket, user)
             // io.in(socket.mturkId).emit('echo', 'ready')
@@ -1095,13 +1086,13 @@ io.on('connection', (socket) => {
     });
 
     socket.on('active-to-all', (_data) => {
-        console.log("god is active".rainbow);
+        console.log(chalk.red("god is active"));
         ioSocketsEmit('echo', 'active');
         // io.sockets.emit('echo', 'active');
     });
 
     socket.on('notify-more', (_data) => {
-        console.log("god wants more humans".rainbow);
+        console.log(chalk.red("god wants more humans"));
         let HITId = mturk.returnCurrentHIT();
         // let HITId = process.argv[2];
         let subject = "We launched our new ad writing HIT. Join now, spaces are limited.";
@@ -1138,7 +1129,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('kill-all', (_data) => {
-        console.log("god is angry".rainbow);
+        console.log(chalk.red("god is angry"));
         users.forEach(() => updateUserInDB(socket, "bonus", currentBonus()));
         ioSocketsEmit('finished', {
             message: "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
@@ -1376,10 +1367,10 @@ io.on('connection', (socket) => {
             if (extraRoundOn && user.rooms.length === 1) {
                 users.forEach(u => {
                     if (tools.letters.slice(0, teamSize ** 2).includes(u.person) && !u.connected) {
-                        disconnectedsRoom = u.room;
+                        let disconnectedsRoom = u.room;
                         Object.entries(teams[0]).forEach(([roomName, room]) => {
                             if (roomName === disconnectedsRoom) {
-                                replacingPersonName = room[teamSize]
+                                let replacingPersonName = room[teamSize]
                             }
                         });
                         //u is the user who left
@@ -1395,7 +1386,7 @@ io.on('connection', (socket) => {
                 });
                 //badUsers contains all of the users we don't need anymore. At most, this is 4 users.
                 // At minimum, it's 0.
-                badUsers = [];
+                let badUsers = [];
                 users.forEach(u => {
                     if (u) {
                         if (tools.letters.slice(teamSize ** 2, teamSize ** 2 + teamSize).includes(u.person)) {
@@ -1463,6 +1454,7 @@ io.on('connection', (socket) => {
                     // console.log(teamMates)
                     let team_Aliases = tools.makeName(teamMates.length, u.friends_history);
                     user.friends_history = u.friends_history.concat(team_Aliases);
+                    let i = 0
                     for (i = 0; i < teamMates.length; i++) {
                         if (treatmentNow) {
                             teamMates[i].tAlias = team_Aliases[i].join("");
@@ -1516,14 +1508,13 @@ io.on('connection', (socket) => {
             ]
 
             // Execute steps
-            taskSteps.forEach((step) => {
+            taskSteps.forEach(step => {
                 setTimeout(() => {
                     if (step.message) {
-                        console.log("Task step:".red, step.message);
+                        console.log(chalk.red("Task step:"), step.message);
                         ioSocketsEmit("message clients", step.message)
                         // ioEmitById(user.mturkId, "message clients", step.message)
                     }
-                    if (typeof step.action === "function") step.action()
                 }, step.time * roundMinutes * 60 * 1000)
             })
 
@@ -1568,7 +1559,7 @@ io.on('connection', (socket) => {
         console.log('ON BROKEN CALLED');
         issueFinish(socket, runViaEmailOn ? "We've experienced an error. Please wait for an email from " +
             "scaledhumanity@gmail.com with restart instructions." : "The task has finished early. " +
-            "You will be compensated by clicking submit below.", finishingCode = "broken")
+            "You will be compensated by clicking submit below.", false, "broken")
     });
 
     // Starter task
@@ -1695,8 +1686,10 @@ io.on('connection', (socket) => {
             console.log("Undefined user in issueFinish");
             return;
         }
-        console.log(('Issued finish to ' + socket.mturkId).red);
-        ioEmitById(socket.mturkId, 'finished', { message: message, finishingCode: finishingCode, crashed: crashed }, socket)
+        console.log(chalk.red('Issued finish to ' + socket.mturkId));
+        useUser(socket, user => {
+          ioEmitById(socket.mturkId, 'finished', { message: message, finishingCode: finishingCode, crashed: crashed }, socket,user)
+        })
     }
 
 });
@@ -1821,7 +1814,7 @@ function parseResults(data) {
     let parsedResults = {};
     data.split('&').forEach(responsePair => {
         let response = responsePair.split("=");
-        index = response[0].split("-q");
+        let  index = response[0].split("-q");
         parsedResults[index[1]] = response[1] ? decode(response[1]) : ""
     });
     return parsedResults;

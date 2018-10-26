@@ -8,9 +8,12 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "@types/body-parser": "^1.17.0",
+    "@types/chalk": "^2.2.0",
     "@types/dotenv": "^4.0.3",
     "@types/node": "^10.11.7",
     "@types/yargs": "^12.0.1",
+    "body-parser": "^1.18.3",
     "chalk": "^2.4.1",
     "coffeescript": "^2.3.2",
     "dotenv": "^6.1.0",
@@ -33,7 +36,7 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "aws-sdk": "^2.332.0",
+    "aws-sdk": "^2.343.0",
     "pm2": "^3.2.2"
   },
   "repository": {
