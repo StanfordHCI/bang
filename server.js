@@ -1,13 +1,14 @@
 "use strict";
 exports.__esModule = true;
-//Setting up env
+//Setting up utilities
 var dotenv = require("dotenv");
 dotenv.config();
-//Setting up args
 var yargs = require("yargs");
 var args = yargs.argv;
-//Setting up terminal formatting
 var chalk_1 = require("chalk");
+//importing our libraries
+var tools = require('./tools');
+var mturk = require('./mturkTools');
 //Initializing variables
 var runningLocal = process.env.RUNNING_LOCAL === "TRUE";
 var runningLive = process.env.RUNNING_LIVE === "TRUE"; //ONLY CHANGE ON SERVER
@@ -84,9 +85,7 @@ var leaveHitAnswers = {
     textValue: false
 };
 // Setup basic express server
-var tools = require('./tools');
-var mturk = require('./mturkTools');
-var express = require('express');
+var express = require("express");
 var bodyParser = require("body-parser");
 var app = express();
 var server = require('http').createServer(app);

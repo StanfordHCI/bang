@@ -21,6 +21,16 @@ let nameCount = 2
 
 const createTeams = (teamSize, numRounds, people, extraRoundOn) => {
 
+    function set (array) {
+      const setArray = [];
+      array.forEach(element => {
+        if (!setArray.includes(element)) {
+          setArray.push(element)
+        }
+      })
+      return setArray
+    }
+
     realPeople = people.slice(0, teamSize ** 2) //working here
     console.log(!extraRoundOn && people.length != teamSize **2 ? "Can't create teams. Wrong number of people" : "Building teams")
     console.log(teamSize > numRounds+1 ? "Error" : "")
@@ -39,7 +49,7 @@ const createTeams = (teamSize, numRounds, people, extraRoundOn) => {
       while (unUsedPeople.length) {
         let team = [unUsedPeople.pop()] // Add first person to team
         while (team.length < teamSize) {
-          let teamCollaborators = team.map(member => collaborators[member]).reduce((a,b) => a.concat(b) ).set() //find all prior collaborators
+          let teamCollaborators = set(team.map(member => collaborators[member]).reduce((a,b) => a.concat(b) )) //find all prior collaborators
           let remainingOptions = unUsedPeople.filter(person => !teamCollaborators.includes(person) ) //find all remaining options
           if (!remainingOptions.length) { return createTeams(teamSize, numRounds, realPeople, extraRoundOn) } // deal with random selection overlap
           let newCollaborator = remainingOptions.pick()
@@ -48,10 +58,9 @@ const createTeams = (teamSize, numRounds, people, extraRoundOn) => {
           team.push(newCollaborator) // add new collaborator into the team
         }
 
-        team.forEach(member => { collaborators[member] = collaborators[member].concat(team).set() }) //Add collaborators from new team
+        team.forEach(member => { collaborators[member] = set(collaborators[member].concat(team)) }) //Add collaborators from new team
         teams[teamNames[Object.keys(teams).length]] = team //Add new team
       }
-      //console.log(teams)
       roundTeams.push(teams)
     }
 

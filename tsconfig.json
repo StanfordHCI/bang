@@ -3,7 +3,9 @@
         "outDir": "./built",
         "allowJs": true,
         "target": "es5",
-        "moduleResolution": "node"
+        "moduleResolution": "node",
+        "pretty":true,
+        "lib": ["dom", "es2017"],
     },
     "typeRoots": ["./node_modules/@types"]
 }

@@ -1,13 +1,13 @@
-//Setting up env
+//Setting up utilities
 import * as dotenv from 'dotenv'
 dotenv.config()
-
-//Setting up args
 import * as yargs from 'yargs'
 let args =  yargs.argv;
-
-//Setting up terminal formatting
 import chalk from 'chalk'
+
+//importing our libraries
+let tools = require('./tools');
+let mturk = require('./mturkTools');
 
 //Initializing variables
 const runningLocal = process.env.RUNNING_LOCAL === "TRUE";
@@ -95,9 +95,7 @@ const leaveHitAnswers = {
 };
 
 // Setup basic express server
-let tools = require('./tools');
-let mturk = require('./mturkTools');
-let express = require('express');
+import * as express from 'express';
 import * as bodyParser from 'body-parser';
 const app = express();
 const server = require('http').createServer(app);
@@ -106,6 +104,12 @@ const port = args.port || process.env.PORT || 3000;
 server.listen(port, () => {
     console.log('Server listening at port', port)
 });
+
+declare global {
+  interface Array<T> {
+      find(predicate: (search: T) => boolean) : T;
+  }
+}
 
 if (!Array.prototype.find) {
   Array.prototype.find = function(predicate) {
@@ -127,10 +131,6 @@ if (!Array.prototype.find) {
     }
     return undefined;
   };
-}
-
-interface Array<T> {
-    find(predicate: (search: T) => boolean) : T;
 }
 
 function chooseOne<T>(list: T[]): T {
