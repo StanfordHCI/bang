@@ -5,7 +5,6 @@ var dotenv = require("dotenv");
 dotenv.config();
 //Setting up args
 var yargs = require("yargs");
-// import {Argv} from "yargs"
 var args = yargs.argv;
 //Setting up terminal formatting
 var chalk_1 = require("chalk");
