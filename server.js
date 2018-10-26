@@ -96,30 +96,33 @@ var port = args.port || process.env.PORT || 3000;
 server.listen(port, function () {
     console.log('Server listening at port', port);
 });
+if (!Array.prototype.find) {
+    Array.prototype.find = function (predicate) {
+        if (this == null) {
+            throw new TypeError('Array.prototype.find called on null or undefined');
+        }
+        if (typeof predicate !== 'function') {
+            throw new TypeError('predicate must be a function');
+        }
+        var list = Object(this);
+        var length = list.length >>> 0;
+        var thisArg = arguments[1];
+        var value;
+        for (var i = 0; i < length; i++) {
+            value = list[i];
+            if (predicate.call(thisArg, value, i, list)) {
+                return value;
+            }
+        }
+        return undefined;
+    };
+}
 function chooseOne(list) {
     return list[Math.floor(Math.random() * list.length)];
 }
 function userByMturkId(users, MturkId) {
     return users.find(function (user) { return user.mturkId === MturkId; });
 }
-//
-// Array.prototype.pick = function () {
-//     return this[Math.floor(Math.random() * this.length)]
-// };
-// Array.prototype.byID = function (id) {
-//     return this.find(user => user.id === id)
-// };
-// Array.prototype.byMturkId = function (mturkId) {
-//     return this.find(user => user.mturkId === mturkId)
-// };
-// Array.prototype.set = function () {
-//     const set = [];
-//     this.forEach(e =>{ if (set.indexOf(e) === -1) {set.push(e)} });
-//     return set
-// };
-// Array.prototype.includes = function (e) {
-//   return this.indexOf(e) !== -1
-// }
 function ioSocketsEmit(event, message) {
     if (debugMode) {
         console.log(event, message);
@@ -191,32 +194,20 @@ console.log = function () {
         }
     });
 };
-//if (runExperimentNow){
 // Experiment variables
-/* const conditionsAvailalbe = ['control','treatment','baseline'] */
-var conditionsAvailalbe = ['control', 'treatment'];
-var presetCondition = randomCondition ? conditionsAvailalbe.pick() : conditionsAvailalbe[1];
-var currentCondition = args.condition || presetCondition;
+var conditionOptions = ['control', 'treatment'];
+var roundOrderOptions = [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]];
+var currentCondition = args.condition || randomCondition ? chooseOne(conditionOptions) : conditionOptions[1];
+var roundOrdering = randomRoundOrder ? chooseOne(roundOrderOptions) : roundOrderOptions[0];
+//TODO Move somewhere better
 var treatmentNow = false;
 var firstRun = false;
 var hasAddedUsers = false; //lock on adding users to db/experiment for experiment
 var batchCompleteUpdated = false;
-/* const roundOrdering = extraRoundOn ? [ */
-/*   {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]}, */
-/*   {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]}, */
-/*   {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [ */
-/*   {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]}, */
-/*   {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]}, */
-/*   {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}] */
-/* const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0] */
-// Settings for 4 rounds.
-// const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
-var ordering = randomRoundOrder ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick() : [1, 2, 1, 3];
-var conditions = { control: ordering, treatment: ordering, baseline: [1, 2, 3, 2] }; //,4]} modified extra roudn to deal with createTeams
-var experimentRoundIndicator = extraRoundOn ? 2 : 1; //This record what round of the ordering is the experimental round.
-var experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator); //assumes that the manipulation is always the last instance of team 1's interaction.
-console.log(currentCondition, 'with', conditions[currentCondition]);
-var numRounds = conditions.baseline.length;
+var experimentRoundIndicator = 1; //This record what round of the roundOrdering is the experimental round.
+var experimentRound = roundOrdering.lastIndexOf(experimentRoundIndicator); //assumes that the manipulation is always the last instance of team 1's interaction.
+console.log(currentCondition, 'with', roundOrdering);
+var numRounds = roundOrdering.length;
 var people = extraRoundOn ? tools.letters.slice(0, Math.pow(teamSize, 2) + teamSize) : tools.letters.slice(0, Math.pow(teamSize, 2));
 var teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn); //added '-1' to numRounds
 //}
@@ -534,9 +525,8 @@ db.batch.insert({
     teamfeedbackOn: teamfeedbackOn,
     psychologicalSafetyOn: psychologicalSafetyOn,
     checkinOn: checkinOn,
-    conditions: conditions,
     condition: currentCondition,
-    format: conditions[currentCondition],
+    format: roundOrdering,
     experimentRound: experimentRound,
     numRounds: numRounds,
     products: products,
@@ -577,18 +567,17 @@ io.on('connection', function (socket) {
         socket.mturkId = mturkId;
         socket.assignmentId = assignmentId;
         socket.join(mturkId);
-        if (users.byMturkId(mturkId)) {
+        if (userByMturkId(users, mturkId)) {
             console.log(chalk_1["default"].blue('Reconnected ' + mturkId + ' in users'));
-            var user = users.byMturkId(mturkId);
+            var user = userByMturkId(users, mturkId);
             user.connected = true;
             user.assignmentId = assignmentId;
             user.id = socket.id;
             user.turkSubmitTo = data.turkSubmitTo;
-            //console.log(users.byMturkId(mturkId))
             mturk.setAssignmentsPending(getUsersConnected().length);
         }
-        if (userPool.byMturkId(mturkId)) {
-            var user = userPool.byMturkId(mturkId);
+        if (userByMturkId(userPool, mturkId)) {
+            var user = userByMturkId(userPool, mturkId);
             console.log(chalk_1["default"].blue('RECONNECTED ' + mturkId + ' in user pool (' + user.id + ' => ' + socket.id + ')'));
             socket.name_structure = data.name_structure;
             socket.username = data.name_structure.username;
@@ -597,7 +586,6 @@ io.on('connection', function (socket) {
             user.assignmentId = assignmentId;
             user.id = socket.id;
             user.turkSubmitTo = data.turkSubmitTo;
-            //console.log(userPool.byMturkId(mturkId))
         }
         else {
             createUsername();
@@ -606,12 +594,6 @@ io.on('connection', function (socket) {
         console.log(chalk_1["default"].blue('SOCKET: ' + socket.id + ' | MTURK ID: ' + socket.mturkId + ' | NAME: ' + socket.username +
             '| ASSIGNMENT ID: ' + socket.assignmentId));
     });
-    // socket.on('get username', data => {
-    //   let name_structure = tools.makeName();
-    //   socket.name_structure = name_structure;
-    //   socket.username = name_structure.username;
-    //   socket.emit('set username', {username: socket.username})
-    // })
     socket.on("heartbeat", function (_data) {
         if (socket.connected) {
             io["in"](socket.id).emit('heartbeat');
@@ -625,19 +607,13 @@ io.on('connection', function (socket) {
                 console.log("no socket in accepted HIT");
                 return;
             }
-            // if(users.byMturkId(socket.mturkId)) { // disconnect due to trans err/close
-            //   let user = users.byMturkId(socket.mturkId)
-            //   user.currentEvent -= 1
-            //   io.in(socket.mturkId).emit('echo', 'next event')
-            //   return;
-            // }
             issueFinish(socket, runViaEmailOn ? "We don't need you to work right now. Please await further" +
                 " instructions from scaledhumanity@gmail.com." : "We have enough users on this task. Submit below" +
                 " and you will be compensated appropriately for your time. Thank you!");
             return;
         }
-        if (userPool.byMturkId(data.mturkId)) { //if it's a reconnected user
-            var user = userPool.byMturkId(data.mturkId);
+        if (userByMturkId(userPool, data.mturkId)) { //if it's a reconnected user
+            var user = userByMturkId(userPool, data.mturkId);
             console.log(data.mturkId + ' REJOINED USER POOL (' + user.id + ' => ' + socket.id + ')');
             user.id = socket.id;
             user.connected = true;
@@ -721,7 +697,7 @@ io.on('connection', function (socket) {
                             "scaledhumanity@gmail.com." : "Thanks for participating, you're all done!");
                     }
                 }
-                userPool.filter(function (user) { return !usersActive.byMturkId(user.mturkId); }).forEach(function (user) {
+                userPool.filter(function (user) { return !userByMturkId(usersActive, user.mturkId); }).forEach(function (user) {
                     console.log('EMIT FINISH TO NONACTIVE OR DISCONNECTED WORKER');
                     issueFinish(user, runViaEmailOn ? "We don't need you to work at this specific moment, " +
                         "but we may have tasks for you soon. Please await further instructions from " +
@@ -773,7 +749,7 @@ io.on('connection', function (socket) {
             currentEvent: 0,
             results: {
                 condition: currentCondition,
-                format: conditions[currentCondition],
+                format: roundOrdering,
                 manipulation: {},
                 checkin: {},
                 starterCheck: {},
@@ -796,10 +772,10 @@ io.on('connection', function (socket) {
                     "for your time. Thank you!"); //PK: come back to this
             return;
         }
-        if (users.byMturkId(socket.mturkId)) {
+        if (userByMturkId(users, socket.mturkId)) {
             console.log('ERR: ADDING A USER ALREADY IN USERS');
         }
-        var newUser = makeUser(userPool.byMturkId(socket.mturkId));
+        var newUser = makeUser(userByMturkId(userPool, socket.mturkId));
         users.push(newUser);
         console.log(newUser.name + " (" + newUser.mturkId + ") added to users.\n" + "Total users: " + users.length);
         //add friends for each user once the correct number of users is reached
@@ -866,16 +842,16 @@ io.on('connection', function (socket) {
         //io.in(user.id).emit('login', {numUsers: numUsers(user.room)})
     });
     socket.on('update user pool', function (data) {
-        if (!userPool.byMturkId(socket.mturkId)) {
+        if (!userByMturkId(userPool, socket.mturkId)) {
             console.log("***USER UNDEFINED*** in update user pool ..this would crash our thing but haha whatever");
             console.log('SOCKET ID: ' + socket.id);
             return;
         } //PK: quick fix
-        if (!userPool.byMturkId(socket.mturkId).connected) {
+        if (!userByMturkId(userPool, socket.mturkId).connected) {
             console.log("block ***USER NOT CONNECTED*** in update user pool");
             return;
         }
-        userPool.byMturkId(socket.mturkId).timeLastActivity = data.time;
+        userByMturkId(userPool, socket.mturkId).timeLastActivity = data.time;
         updateUserPool();
     });
     socket.on('log', function (data) {
@@ -943,7 +919,7 @@ io.on('connection', function (socket) {
         if (userPool.find(function (element) {
             return element.mturkId === socket.mturkId;
         })) {
-            userPool.byMturkId(socket.mturkId).connected = false;
+            userByMturkId(userPool, socket.mturkId).connected = false;
             var usersActive = getPoolUsersActive();
             if (usersActive.length >= Math.pow(teamSize, 2)) {
                 ioSocketsEmit('update number waiting', { num: 0 });
@@ -1297,7 +1273,7 @@ io.on('connection', function (socket) {
             //can we move this into its own on.*** call //PK: still relevant?
             console.log('all users ready -> starting experiment');
             treatmentNow = (currentCondition === "treatment" && currentRound === experimentRound);
-            var conditionRound = conditions[currentCondition][currentRound] - 1;
+            var conditionRound = roundOrdering[currentRound] - 1;
             // secondReadyIndex = eventSchedule.indexOf("ready", eventSchedule.indexOf("ready") + 1)
             console.log("user.rooms.length:", user.rooms.length);
             // Replaceing user with extraRound
@@ -1374,16 +1350,10 @@ io.on('connection', function (socket) {
                     }, socket, u); //rounds are 0 indexed
                 }
                 else {
-                    // Dynamically generate teammate names
-                    // even if teamSize = 1 for testing, this still works
-                    // users.forEach(u => {
-                    //   console.log(u.id, u.room)
-                    // })
                     var teamMates = u.friends.filter(function (friend) {
-                        return (users.byMturkId(friend.mturkId)) && users.byMturkId(friend.mturkId).connected
-                            && (users.byMturkId(friend.mturkId).room === u.room) && (friend.mturkId !== u.mturkId);
+                        return (userByMturkId(users, friend.mturkId)) && userByMturkId(users, friend.mturkId).connected
+                            && (userByMturkId(users, friend.mturkId).room === u.room) && (friend.mturkId !== u.mturkId);
                     });
-                    // console.log(teamMates)
                     var team_Aliases = tools.makeName(teamMates.length, u.friends_history);
                     user.friends_history = u.friends_history.concat(team_Aliases);
                     var i = 0;
@@ -1689,9 +1659,9 @@ var getTeamMembers = function (user) {
 var postSurveyGenerator = function (user) {
     var answers = getTeamMembers(user);
     // Makes a list of teams that are the correct answer, e.g., "Team 1 and Team 3"
-    var correctAnswer = answers.map(function (_team, index) {
-        if (conditions[currentCondition][index] === experimentRoundIndicator) {
-            return "Team " + (index + 1);
+    var correctAnswer = answers.map(function (_team, round) {
+        if (roundOrdering[round] === experimentRoundIndicator) {
+            return "Team " + (round + 1);
         }
         else {
             return "";
