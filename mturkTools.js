@@ -37,7 +37,7 @@ const numRounds = 3;
 const taskDuration = roundMinutes * numRounds * 2;
 //const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
 const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
-const hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
+const hourlyWage = 9.00; // changes reward of experiment depending on length - change to 6?
 const rewardPrice = 0.01; // upfront cost
 const numHITs = 3;
 const maxAssignments = (2 * teamSize * teamSize) * 2;
@@ -80,12 +80,12 @@ const quals = {
         Comparator: 'DoesNotExist',
         ActionsGuarded: "DiscoverPreviewAndAccept"
     },
-    willBang: { // those who plan to complete our HIT
+    willBang: { // those who will be invited to complete our HIT
         QualificationTypeId: runningLive ? "3H3KEN1OLSVM98I05ACTNWVOM3JBI9" : "3Q14PV9RQ817STQZOSBE3H0UXC7M1J",
         Comparator: 'Exists',
         ActionsGuarded: "DiscoverPreviewAndAccept"
     },
-    willNotBang: { // those who plan to complete our HIT
+    willNotBang: { // people deliberately removed (e.g. for international testing/testing in general)
         QualificationTypeId: runningLive ? "3H3KEN1OLSVM98I05ACTNWVOM3JBI9" : "3Q14PV9RQ817STQZOSBE3H0UXC7M1J",
         Comparator: 'DoesNotExist',
         ActionsGuarded: "DiscoverPreviewAndAccept"
@@ -94,7 +94,7 @@ const quals = {
 
 const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(0), quals.hasBanged];
 const scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(0), quals.hasBanged, quals.willNotBang];
-const qualsForTesting = [quals.onlyUSA, quals.hitsAccepted(0)];
+const qualsForTesting = [quals.onlyUSA, quals.hitsAccepted(-1)];
 const safeQuals = runningLive ? qualsForLive : qualsForTesting;
 
 // Makes the MTurk externalHIT object, defaults to 700 px tall.
@@ -532,13 +532,13 @@ const launchBang = (callback) => {
     // HIT Parameters
     let time = Date.now();
 
-    let HITTitle = 'Write online ads - bonus up to $' + hourlyWage + ' / hour (' + time + ')';
-    let description = 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10) + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.';
+    let HITTitle = 'Negotiate prices - bonus up to $' + (hourlyWage + 1) + ' / hour (' + time + ')';
+    let description = 'Work in groups to reach a compromies on buyer/seller prices of commodities. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10) + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.';
     let assignmentDuration = 60 * taskDuration;
     let lifetime = 60 * (timeActive);
     let reward = String(rewardPrice);
     let autoApprovalDelay = 60 * taskDuration;
-    let keywords = 'ads, writing, copy editing, advertising';
+    let keywords = 'prices, negotiation, profit, buyer, seller';
     let maxAssignments = numAssignments;
     let hitContent = externalHIT(taskURL);
 
@@ -553,15 +553,15 @@ const launchBang = (callback) => {
         if (hitsLeft > 0 && !taskStarted) {
             time = Date.now();
             numAssignments = hitsLeft;
-            let HITTitle = 'Write online ads - bonus up to $' + hourlyWage + ' / hour (' + time + ')';
+            let HITTitle = 'Negotiate prices - bonus up to $' + (hourlyWage + 1) + ' / hour (' + time + ')';
             let params2 = {
                 Title: HITTitle,
-                Description: 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10) + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
+                Description: 'Work in groups to reach a compromise on buyer/seller prices of commodities. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10) + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
                 AssignmentDurationInSeconds: 60 * taskDuration, // 30 minutes?
                 LifetimeInSeconds: 60 * (timeActive),  // short lifetime, deletes and reposts often
                 Reward: String(rewardPrice),
                 AutoApprovalDelayInSeconds: 60 * taskDuration,
-                Keywords: 'ads, writing, copy editing, advertising',
+                Keywords: 'prices, negotiation, profit, buyer, seller',
                 MaxAssignments: numAssignments,
                 QualificationRequirements: safeQuals,
                 Question: externalHIT(taskURL)
