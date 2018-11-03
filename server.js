@@ -406,23 +406,23 @@ if (runExperimentNow) {
 let products = [
     {
         name: "Negotiate prices for televisions, DVD players, and air conditioners.",
-        buyerurl: taskURL + "/QnV5ZXIx.html",
-        sellerurl: taskURL + "/U2VsbGVyMQ==.html"
+        buyerurl: taskURL + "/public/QnV5ZXJPbmU=.html",
+        sellerurl: taskURL + "/public/U2VsbGVyT25l.html"
     },
     {
         name: "Negotiate prices for iron, sulfur, coal.",
-        buyerurl: taskURL + "/Buyer1.html",
-        sellerurl: taskURL + "/Seller1.html"
+        buyerurl: taskURL + "/public/QnV5ZXJUd28=.html",
+        sellerurl: taskURL + "/public/U2VsbGVyVHdv.html"
     },
     {
         name: "Negotiate prices for strawberries, kiwi, and mangoes.",
-        buyerurl: "/public/Buyer3.html",
-        sellerurl: "/public/Seller3.html"
+        buyerurl: taskURL + "/public/QnV5ZXJUaHJlZQ==.html",
+        sellerurl: taskURL + "/public/U2VsbGVyVGhyZWU=.html"
     },
     {
         name: "Negotiate prices for calculators, pencils, and notebooks.",
-        buyerurl: "/public/Buyer4.html",
-        sellerurl: "/public/Seller4.html"
+        buyerurl: taskURL + "/public/QnV5ZXJGb3Vy.html",
+        sellerurl: taskURL + "/public/U2VsbGVyRm91cg==.html"
     }
 ];
 
@@ -1369,6 +1369,9 @@ io.on('connection', (socket) => {
             //Notify user 'initiate round' and send task.
 
             let currentProduct = products[currentRound];
+
+            console.log(taskURL)
+            console.log(typeof taskURL)
 
             console.log('Current Product:', currentProduct);
 
