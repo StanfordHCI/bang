@@ -406,23 +406,23 @@ if (runExperimentNow) {
 let products = [
     {
         name: "Negotiate prices for televisions, DVD players, and air conditioners.",
-        buyerurl: taskURL + "/public/QnV5ZXJPbmU=.html",
-        sellerurl: taskURL + "/public/U2VsbGVyT25l.html"
+        buyerurl: taskURL + "/Buyer 1.pdf",
+        sellerurl: taskURL + "/Seller 1.pdf"
     },
     {
         name: "Negotiate prices for iron, sulfur, coal.",
-        buyerurl: taskURL + "/public/QnV5ZXJUd28=.html",
-        sellerurl: taskURL + "/public/U2VsbGVyVHdv.html"
+        buyerurl: taskURL + "/Buyer 2.pdf",
+        sellerurl: taskURL + "/Seller 2.pdf"
     },
     {
         name: "Negotiate prices for strawberries, kiwi, and mangoes.",
-        buyerurl: taskURL + "/public/QnV5ZXJUaHJlZQ==.html",
-        sellerurl: taskURL + "/public/U2VsbGVyVGhyZWU=.html"
+        buyerurl: taskURL + "/Buyer 3.pdf",
+        sellerurl: taskURL + "/Seller 3.pdf"
     },
     {
         name: "Negotiate prices for calculators, pencils, and notebooks.",
-        buyerurl: taskURL + "/public/QnV5ZXJGb3Vy.html",
-        sellerurl: taskURL + "/public/U2VsbGVyRm91cg==.html"
+        buyerurl: taskURL + "/Buyer 4.pdf",
+        sellerurl: taskURL + "/Seller 4.pdf"
     }
 ];
 
@@ -1477,11 +1477,11 @@ io.on('connection', (socket) => {
             // Initialize steps
             const taskSteps = [
                 {
-                    time: 0.33,
+                    time: 0.25,
                     message: "<strong>Step 1. Read instructions.</strong>"
                 },
                 {
-                    time: 0.67,
+                    time: 0.75,
                     message: "<strong>Step 2. Begin negotiations.</strong>"
                 }
             ]

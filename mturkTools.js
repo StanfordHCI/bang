@@ -37,7 +37,7 @@ const numRounds = 3;
 const taskDuration = roundMinutes * numRounds * 2;
 //const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
 const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
-const hourlyWage = 9.00; // changes reward of experiment depending on length - change to 6?
+const hourlyWage = 5.00; // changes reward of experiment depending on length - change to 6?
 const rewardPrice = 0.01; // upfront cost
 const numHITs = 3;
 const maxAssignments = (2 * teamSize * teamSize) * 2;
@@ -119,6 +119,7 @@ const startTask = () => {
 // Takes a number as a parameter.
 
 const updatePayment = (totalTime) => {
+    // totalTime (numseconds) / 60 = num minutes passed * hourly wage
     bonusPrice = (hourlyWage * (totalTime / 60) - rewardPrice).toFixed(2);
     if (bonusPrice < 0) {
         bonusPrice = 0;
@@ -532,7 +533,7 @@ const launchBang = (callback) => {
     // HIT Parameters
     let time = Date.now();
 
-    let HITTitle = 'Negotiate prices - bonus up to $' + (hourlyWage + 1) + ' / hour (' + time + ')';
+    let HITTitle = 'Negotiate prices - bonus up to $' + (hourlyWage) + ' / hour (' + time + ')';
     let description = 'Work in groups to reach a compromies on buyer/seller prices of commodities. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10) + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.';
     let assignmentDuration = 60 * taskDuration;
     let lifetime = 60 * (timeActive);
@@ -553,7 +554,7 @@ const launchBang = (callback) => {
         if (hitsLeft > 0 && !taskStarted) {
             time = Date.now();
             numAssignments = hitsLeft;
-            let HITTitle = 'Negotiate prices - bonus up to $' + (hourlyWage + 1) + ' / hour (' + time + ')';
+            let HITTitle = 'Negotiate prices - bonus up to $' + (hourlyWage) + ' / hour (' + time + ')';
             let params2 = {
                 Title: HITTitle,
                 Description: 'Work in groups to reach a compromise on buyer/seller prices of commodities. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10) + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
