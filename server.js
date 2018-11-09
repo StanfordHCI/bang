@@ -295,7 +295,7 @@ if (runExperimentNow) {
         // Notify workers that a HIT has started if we're doing recruiting by email
         if (notifyWorkersOn) {
             // let HITId = process.argv[2];
-            let subject = "We launched our new ad writing HIT. Join now, spaces are limited.";
+            let subject = "We launched our new negotiation HIT. Join now, spaces are limited.";
             console.log(HIT);
             let URL = '';
             mturk.getHITURL(HIT.HITId, function (url) {
@@ -1040,7 +1040,7 @@ io.on('connection', (socket) => {
         console.log("god wants more humans".rainbow);
         let HITId = mturk.returnCurrentHIT();
         // let HITId = process.argv[2];
-        let subject = "We launched our new ad writing HIT. Join now, spaces are limited.";
+        let subject = "We launched our new negotiation HIT. Join now, spaces are limited.";
         console.log(HITId);
         let URL = '';
         mturk.getHITURL(HITId, function (url) {
