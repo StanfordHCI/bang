@@ -406,23 +406,23 @@ if (runExperimentNow) {
 let products = [
     {
         name: "Negotiate prices for refrigerators, microwaves, and sinks.",
-        buyerurl: taskURL + "/mwmF1qzGnO+aDxAq57mMRrdFNtFdKIBV9O6DF0Ft8=.pdf",
-        sellerurl: taskURL + "/SHG63a2Wv9ZmZh9MEB158ARUDCiddlO/y1DQeH8hK1g=.pdf"
+        buyerurl: taskURL + "mwmF1qzGnO+aDxAq57mMRrdFNtFdKIBV9O6DF0Ft8=.pdf",
+        sellerurl: taskURL + "SHG63a2Wv9ZmZh9MEB158ARUDCiddlOy1DQeH8hK1g=.pdf"
     },
     {
         name: "Negotiate prices for iron, sulfur, coal.",
-        buyerurl: taskURL + "/lIdh07rs9CA4X++tHGcAYfkv9VbgxePiglvUXKtntDc=.pdf",
-        sellerurl: taskURL + "/IEKZh2rPicyIQjP5ncnKkIvfMpD60SC5d76c0bV3O0Q=.pdf"
+        buyerurl: taskURL + "lIdh07rs9CA4X++tHGcAYfkv9VbgxePiglvUXKtntDc=.pdf",
+        sellerurl: taskURL + "IEKZh2rPicyIQjP5ncnKkIvfMpD60SC5d76c0bV3O0Q=.pdf"
     },
     {
         name: "Negotiate prices for strawberries, kiwi, and mangoes.",
-        buyerurl: taskURL + "/lvrCODe5pxoSe2WVNcBlIFQEgqrar68AN9NkmNPRPwU=.pdf",
-        sellerurl: taskURL + "/3sZso2hm3QKe5mmfOgsWezvDGvBl2TlLAMWaJgbUXyk=.pdf"
+        buyerurl: taskURL + "lvrCODe5pxoSe2WVNcBlIFQEgqrar68AN9NkmNPRPwU=.pdf",
+        sellerurl: taskURL + "3sZso2hm3QKe5mmfOgsWezvDGvBl2TlLAMWaJgbUXyk=.pdf"
     },
     {
         name: "Negotiate prices for calculators, pencils, and notebooks.",
-        buyerurl: taskURL + "/zRdRU9JX412PYPwGV7xVEfPmez4FahnEmYnfz9Tecl8=.pdf",
-        sellerurl: taskURL + "/54v6RWk9vSRvPjIqJlhQ7LAUpeMkW64CvA42RFxF2A8=.pdf"
+        buyerurl: taskURL + "zRdRU9JX412PYPwGV7xVEfPmez4FahnEmYnfz9Tecl8=.pdf",
+        sellerurl: taskURL + "54v6RWk9vSRvPjIqJlhQ7LAUpeMkW64CvA42RFxF2A8=.pdf"
     }
 ];
 
