@@ -695,7 +695,8 @@ function getRandomSubarray(arr, size) {
 }
 
 // use to remove workers from notify list
-//unassignQuals('A28AX4H70DPKKK', quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!') ;
 
 //Remove qualification from user.
 // disassociateQualification(quals.willBang.QualificationTypeId, 'AWIQFS5VFFLVR', "Requested to be removed.")
+
+unassignQuals('A392Q6IRAQ9NZ3', quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!') ;
