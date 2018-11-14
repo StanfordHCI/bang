@@ -29,7 +29,7 @@ var randomCondition = false;
 var randomRoundOrder = true;
 var randomProduct = true;
 var suddenDeath = false;
-var waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT
+var waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT
 var extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 var psychologicalSafetyOn = false;
 var starterSurveyOn = false;
@@ -61,17 +61,19 @@ console.log("Launching batch", batchID);
 // Question Files
 var fs = require("fs");
 var txt = "txt/";
-var midSurveyFile = txt + "midsurvey-q.txt";
-var psychologicalSafetyFile = txt + "psychologicalsafety-q.txt";
-var checkinFile = txt + "checkin-q.txt";
-var blacklistFile = txt + "blacklist-q.txt";
-var feedbackFile = txt + "feedback-q.txt";
-var starterSurveyFile = txt + "startersurvey-q.txt";
-var postSurveyFile = txt + "postsurvey-q.txt";
-var botFile = txt + 'botquestions.txt';
-var leaveHitFile = txt + "leave-hit-q.txt";
-var qFifteenFile = txt + "qfifteen-q.txt";
-var qSixteenFile = txt + "qsixteen-q.txt";
+var extension = ".txt";
+function getTXT(filename) { return txt + filename + extension; }
+var midSurveyFile = getTXT("midsurvey-q");
+var psychologicalSafetyFile = getTXT("psychologicalsafety-q");
+var checkinFile = getTXT("checkin-q");
+var blacklistFile = getTXT("blacklist-q");
+var feedbackFile = getTXT("feedback-q");
+var starterSurveyFile = getTXT("startersurvey-q");
+var postSurveyFile = getTXT("postsurvey-q");
+var botFile = getTXT("botquestions");
+var leaveHitFile = getTXT("leave-hit-q");
+var qFifteenFile = getTXT("qfifteen-q");
+var qSixteenFile = getTXT("qsixteen-q");
 // Answer Option Sets
 var answers = {
     answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'],
@@ -89,10 +91,42 @@ var express = require("express");
 var bodyParser = require("body-parser");
 var app = express();
 var server = require('http').createServer(app);
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 var io = require('socket.io')(server); //, {transports: ['websocket']}
 var port = args.port || process.env.PORT || 3000;
 server.listen(port, function () {
     console.log('Server listening at port', port);
+});
+function authenticate(user) {
+    return user.workerId == "A19MTSLG2OYDLZ";
+    // if user in db, is it for this session?
+    // if user not in db, is the session full?
+}
+//authenticate
+app.use(function (req, res, next) {
+    if (!req.query.workerId) {
+        next();
+    }
+    else if (authenticate(req.query)) {
+        next();
+    }
+    else {
+        res.redirect("/leave");
+    }
+});
+app.get("/admin", function (_req, res) {
+    res.redirect("/god.html");
+});
+app.get("/test", function (_req, res) {
+    var assignmentId = String(Math.pow(Date.now(), 2));
+    var workerId = String(Date.now());
+    var hitId = String(Date.now() / 5);
+    var submitTo = "https%3A%2F%2Fworkersandbox.mturk.com";
+    res.redirect("/?assignmentId=" + assignmentId + "&hitId=" + hitId + "&workerId=" + workerId + "&turkSubmitTo=" + submitTo);
+});
+app.get("/leave", function (_req, res) {
+    res.send("Thanks for trying our task. You can't participate at this time. Please return the HIT.");
 });
 if (!Array.prototype.find) {
     Array.prototype.find = function (predicate) {

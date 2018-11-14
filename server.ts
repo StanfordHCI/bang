@@ -32,7 +32,7 @@ const randomRoundOrder = true;
 const randomProduct = true;
 
 const suddenDeath = false;
-const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
@@ -69,41 +69,90 @@ console.log("Launching batch", batchID);
 // Question Files
 import fs = require('fs');
 const txt = "txt/";
-const midSurveyFile = txt + "midsurvey-q.txt";
-const psychologicalSafetyFile = txt + "psychologicalsafety-q.txt";
-const checkinFile = txt + "checkin-q.txt";
-const blacklistFile = txt + "blacklist-q.txt";
-const feedbackFile = txt + "feedback-q.txt";
-const starterSurveyFile = txt + "startersurvey-q.txt";
-const postSurveyFile = txt + "postsurvey-q.txt";
-const botFile = txt + 'botquestions.txt';
-const leaveHitFile = txt + "leave-hit-q.txt";
-const qFifteenFile = txt + "qfifteen-q.txt";
-const qSixteenFile = txt + "qsixteen-q.txt";
+const extension = ".txt"
+function getTXT(filename){ return txt + filename + extension }
+
+const midSurveyFile = getTXT("midsurvey-q")
+const psychologicalSafetyFile = getTXT("psychologicalsafety-q")
+const checkinFile = getTXT("checkin-q")
+const blacklistFile = getTXT("blacklist-q")
+const feedbackFile = getTXT("feedback-q")
+const starterSurveyFile = getTXT("startersurvey-q")
+const postSurveyFile = getTXT("postsurvey-q")
+const botFile = getTXT("botquestions")
+const leaveHitFile = getTXT("leave-hit-q")
+const qFifteenFile = getTXT("qfifteen-q")
+const qSixteenFile = getTXT("qsixteen-q")
 
 // Answer Option Sets
 const answers = {
     answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'],
     answerType: 'radio',
     textValue: true
-};
+}
+
 const binaryAnswers = {answers: ['Keep this team', 'Do not keep this team'], answerType: 'radio', textValue: true};
 const leaveHitAnswers = {
     answers: ['End Task and Send Feedback', 'Return to Task'],
     answerType: 'radio',
     textValue: false
-};
+}
 
 // Setup basic express server
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 const app = express();
 const server = require('http').createServer(app);
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json())
 const io = require('socket.io')(server); //, {transports: ['websocket']}
 const port = args.port || process.env.PORT || 3000;
 server.listen(port, () => {
     console.log('Server listening at port', port)
 });
+
+function authenticate(user) {
+
+  return user.workerId == "A19MTSLG2OYDLZ"
+  // if user in db, is it for this session?
+  // if user not in db, is the session full?
+}
+
+//authenticate
+app.use((req, res, next) => {
+  if (!req.query.workerId) {
+    next()
+  } else if (authenticate(req.query)) {
+    next()
+  } else {
+    res.redirect("/leave")
+  }
+})
+
+app.get("/admin",(_req, res) => {
+  res.redirect("/god.html")
+})
+
+app.get("/test",(_req, res) => {
+  let assignmentId = String(Date.now()**2)
+  let workerId = String(Date.now())
+  let hitId = String(Date.now() / 5)
+  let submitTo = "https%3A%2F%2Fworkersandbox.mturk.com"
+  res.redirect("/?assignmentId=" + assignmentId + "&hitId=" + hitId + "&workerId=" + workerId + "&turkSubmitTo=" + submitTo)
+})
+
+app.get("/leave",(_req, res) => {
+  res.send("Thanks for trying our task. You can't participate at this time. Please return the HIT.")
+})
+
+//starting sequence
+  //onboard user - check identity, move to position if needed, show IRB if needed
+  //waitchat - put user in chat context, store answers
+//group task sequence
+  //group task - realtime interaction, incremental messages
+  //follow up surveys
+//closing sequence
+  //closing surveys
 
 declare global {
   interface Array<T> {
@@ -401,7 +450,6 @@ if (runExperimentNow) {
 }
 
 
-//Add more products
 let products = [
     // {name: 'KOSMOS ink - Magnetic Fountain Pen', url: 'https://www.kickstarter.com/projects/stilform/kosmos-ink'},
     // {
