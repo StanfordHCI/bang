@@ -1,0 +1,44 @@
+0 13,16,19 * * * cd bang && kill $(ps aux | grep '[h]ttps://b01.dmorina.com/' | awk '{print $2}') >> b01.log 2>&1
+30 14,17,20 * * * cd bang && kill $(ps aux | grep '[h]ttps://b01.dmorina.com/' | awk '{print $2}') >> b01.log 2>&1
+1 13,16,19 * * * cd bang && /usr/bin/node server.js --port=3001 --url=https://b01.dmorina.com/ --condition=treatment >> b01.log 2>&1
+31 14,17,20 * * * cd bang && /usr/bin/node server.js --port=3001 --url=https://b01.dmorina.com/ --condition=treatment >> b01.log 2>&1
+
+10 13,16,19 * * * cd bang && kill $(ps aux | grep '[h]ttps://b02.dmorina.com/' | awk '{print $2}') >> b02.log 2>&1
+40 14,17,20 * * * cd bang && kill $(ps aux | grep '[h]ttps://b02.dmorina.com/' | awk '{print $2}') >> b02.log 2>&1
+11 13,16,19 * * * cd bang && /usr/bin/node server.js --port=3002 --url=https://b02.dmorina.com/ --condition=control >> b02.log 2>&1
+41 14,17,20 * * * cd bang && /usr/bin/node server.js --port=3002 --url=https://b02.dmorina.com/ --condition=control >> b02.log 2>&1
+
+20 13,16,19 * * * cd bang && kill $(ps aux | grep '[h]ttps://b03.dmorina.com/' | awk '{print $2}') >> b03.log 2>&1
+50 14,17,20 * * * cd bang && kill $(ps aux | grep '[h]ttps://b03.dmorina.com/' | awk '{print $2}') >> b03.log 2>&1
+21 13,16,19 * * * cd bang && /usr/bin/node server.js --port=3003 --url=https://b03.dmorina.com/ --condition=treatment >> b03.log 2>&1
+51 14,17,20 * * * cd bang && /usr/bin/node server.js --port=3003 --url=https://b03.dmorina.com/ --condition=treatment >> b03.log 2>&1
+
+30 13,16,19 * * * cd bang && kill $(ps aux | grep '[h]ttps://b04.dmorina.com/' | awk '{print $2}') >> b04.log 2>&1
+0 12,15,18 * * * cd bang && kill $(ps aux | grep '[h]ttps://b04.dmorina.com/' | awk '{print $2}') >> b04.log 2>&1
+31 13,16,19 * * * cd bang && /usr/bin/node server.js --port=3004 --url=https://b04.dmorina.com/ --condition=control >> b04.log 2>&1
+1 12,15,18 * * * cd bang && /usr/bin/node server.js --port=3004 --url=https://b04.dmorina.com/ --condition=control >> b04.log 2>&1
+
+40 13,16,19 * * * cd bang && kill $(ps aux | grep '[h]ttps://b05.dmorina.com/' | awk '{print $2}') >> b05.log 2>&1
+10 12,15,18 * * * cd bang && kill $(ps aux | grep '[h]ttps://b05.dmorina.com/' | awk '{print $2}') >> b05.log 2>&1
+41 13,16,19 * * * cd bang && /usr/bin/node server.js --port=3005 --url=https://b05.dmorina.com/ --condition=treatment >> b05.log 2>&1
+11 12,15,18 * * * cd bang && /usr/bin/node server.js --port=3005 --url=https://b05.dmorina.com/ --condition=treatment >> b05.log 2>&1
+
+50 13,16,19 * * * cd bang && kill $(ps aux | grep '[h]ttps://b06.dmorina.com/' | awk '{print $2}') >> b06.log 2>&1
+20 12,15,18 * * * cd bang && kill $(ps aux | grep '[h]ttps://b06.dmorina.com/' | awk '{print $2}') >> b06.log 2>&1
+51 13,16,19 * * * cd bang && /usr/bin/node server.js --port=3006 --url=https://b06.dmorina.com/ --condition=control >> b06.log 2>&1
+21 12,15,18 * * * cd bang && /usr/bin/node server.js --port=3006 --url=https://b06.dmorina.com/ --condition=control >> b06.log 2>&1
+
+0 14,17,20 * * * cd bang && kill $(ps aux | grep '[h]ttps://b07.dmorina.com/' | awk '{print $2}') >> b07.log 2>&1
+30 12,15,18 * * * cd bang && kill $(ps aux | grep '[h]ttps://b07.dmorina.com/' | awk '{print $2}') >> b07.log 2>&1
+1 14,17,20 * * * cd bang && /usr/bin/node server.js --port=3007 --url=https://b07.dmorina.com/ --condition=treatment >> b07.log 2>&1
+31 12,15,18 * * * cd bang && /usr/bin/node server.js --port=3007 --url=https://b07.dmorina.com/ --condition=treatment >> b07.log 2>&1
+
+10 14,17,20 * * * cd bang && kill $(ps aux | grep '[h]ttps://b08.dmorina.com/' | awk '{print $2}') >> b08.log 2>&1
+40 12,15,18 * * * cd bang && kill $(ps aux | grep '[h]ttps://b08.dmorina.com/' | awk '{print $2}') >> b08.log 2>&1
+11 14,17,20 * * * cd bang && /usr/bin/node server.js --port=3008 --url=https://b08.dmorina.com/ --condition=control >> b08.log 2>&1
+41 12,15,18 * * * cd bang && /usr/bin/node server.js --port=3008 --url=https://b08.dmorina.com/ --condition=control >> b08.log 2>&1
+
+20 14,17,20 * * * cd bang && kill $(ps aux | grep '[h]ttps://b09.dmorina.com/' | awk '{print $2}') >> b09.log 2>&1
+50 12,15,18 * * * cd bang && kill $(ps aux | grep '[h]ttps://b09.dmorina.com/' | awk '{print $2}') >> b09.log 2>&1
+21 14,17,20 * * * cd bang && /usr/bin/node server.js --port=3009 --url=https://b09.dmorina.com/ --condition=treatment >> b09.log 2>&1
+51 12,15,18 * * * cd bang && /usr/bin/node server.js --port=3009 --url=https://b09.dmorina.com/ --condition=treatment >> b09.log 2>&1

@@ -32,17 +32,61 @@ function renderChats(batch) {
     if (err) {return console.log(err)} else {
       try {
         const chats = JSON.parse(chatsJSON)
-        console.log("\nChats for batch:",batch);
+        // console.log("\nChats for batch:",batch);
         chats.map(a => a.round).set().sort().forEach(currentRound => {
-          console.log("\nRound", currentRound);
+          // console.log("\nRound", currentRound);
           chats.map(a => a.room).set().sort().forEach(currentRoom => {
-            console.log("\nRoom",currentRoom,"in round",currentRound);
-            chats.sort((a,b) => a.time - b.time).filter(a => a.room == currentRoom && a.round == currentRound).forEach(a => {
-              console.log("  " + a.userID.slice(0,5) + ": " + a.message);
-            });
+            // console.log("\nRoom",currentRoom,"in round",currentRound);
+            let ads = chats.sort((a,b) => a.time - b.time).filter(a => a.room == currentRoom && a.round == currentRound).filter(a => a.message[0] === "!")
+            // ads.forEach(m => console.log("  ",m.message))
+            let chosenAd = ads[ads.length -1]
+            ad = {
+              batch: chosenAd.batch,
+              round: chosenAd.round,
+              room: chosenAd.room,
+              text: chosenAd.message.slice(1),
+              user: chosenAd.userID
+            }
+            console.log(ad.batch, ad.round, ad.room, ad.text)
           })
         })
-      } catch(err) {console.log('File ending error in batch',batch)}
+      } catch(err) {
+        // console.log('File ending error in batch',batch)
+      }
+    }
+  })
+}
+
+//Cleanly renders ads for a given batch
+function renderAds(batch) {
+  fs.readFile(dir + batch + '/' + 'chats.json',(err,chatsJSON) => {
+    if (err) {return console.log(err)} else {
+      try {
+        const chats = JSON.parse(chatsJSON)
+        // console.log("\nChats for batch:",batch);
+        chats.map(a => a.round).set().sort().forEach(currentRound => {
+          // console.log("\nRound", currentRound);
+          chats.map(a => a.room).set().sort().forEach(currentRoom => {
+            // console.log("\nRoom",currentRoom,"in round",currentRound);
+            let ads = chats.sort((a,b) => a.time - b.time).filter(a => a.room == currentRoom && a.round == currentRound) //.filter(a => a.message[0] === "!")
+            ads = ads.slice(ads.length - 5)
+            ads.forEach(m => console.log("  ",m.message))
+            let chosenAd = ads[ads.length -1]
+            ad = {
+              batch: chosenAd.batch,
+              round: chosenAd.round,
+              room: chosenAd.room,
+              text: chosenAd.message.slice(1,31),
+              user: chosenAd.userID
+            }
+
+            console.log([ad.batch,ad.round,ad.room,ad.text].join("|"))
+            // console.log(ad.text);
+          })
+        })
+      } catch(err) {
+        // console.log('File ending error in batch',batch)
+      }
     }
   })
 }
@@ -158,8 +202,7 @@ function useEachBatchDB(callback) {
     if (err) {console.log(err)} else {
       const batches = data.map(b => b.batchID).sort()
       if (typeof(callback) == 'function') {
-        batches.forEach(callback)
-        return batches
+        return batches.map(callback)
       }
     }
   })
@@ -221,6 +264,32 @@ function manipulationCheck(batch) {
   })
 }
 
+function manipulationFix(batch) {
+  fs.readFile(dir + batch + '/' + 'users.json',(err,usersJSON) => {
+    if (err) {return console.log(err)} else {
+      try {
+        const users = JSON.parse(usersJSON)
+        let newUsers = users.map(u => {
+          if (u.results.manipulationCheck === "") {
+            u.results.manipulationCheck = {"1":null}
+          }
+          console.log(u.results.manipulationCheck);
+          return u
+        })
+
+        fs.writeFile(dir + batch + '/' + 'users.json', JSON.stringify(newUsers,null,2) , (err) => {
+          if(err) { return console.log(err)} else {
+            /* console.log("saved",f); */
+          }
+        });
+
+      } catch(err) {
+        console.log('File ending error in batch',batch, JSON.parse(usersJSON))
+      }
+    }
+  })
+}
+
 function useCompleteBatches(callback) {
   const batchFolders = fs.readdirSync(dir).filter(f => fs.statSync(dir + f).isDirectory())
   return batchFolders.filter(f => fs.readdirSync(dir + f).includes('users.json') && fs.readdirSync(dir + f).includes('chats.json')).filter(f => {
@@ -249,19 +318,17 @@ let totalCount = 0
 // manipulationCheck(1537292004662)
 // useCompleteBatches(manipulationCheck)
 
+useCompleteBatches(manipulationFix)
+
 //Save from servers
 // downloadData("mark.dmorina.com",saveAllData)
 // downloadData("bang.dmorina.com",saveAllData)
-downloadData("b01.dmorina.com",saveAllData)
-
-
+ // downloadData("b01.dmorina.com",saveAllData)
 
 //Save from local folder
 /* saveAllData() */
 
 // renderChats(1534356049092)
-
-/* useEachBatch(renderChats) */
-
+// useEachBatchDB(renderAds)
 /* retroactiveBonus() */
 /* retroactivelyFixRooms() */

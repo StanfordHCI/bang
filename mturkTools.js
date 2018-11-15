@@ -33,11 +33,11 @@ AWS.config = {
 };
 
 // Declaration of variables
-const numRounds = 3;
+const numRounds = 4;
 const taskDuration = roundMinutes * numRounds * 2;
 //const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
 const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
-const hourlyWage = 5.00; // changes reward of experiment depending on length - change to 6?
+const hourlyWage = 10.00; // changes reward of experiment depending on length - change to 6?
 const rewardPrice = 0.01; // upfront cost
 const numHITs = 3;
 const maxAssignments = (2 * teamSize * teamSize) * 2;
@@ -410,7 +410,7 @@ const disassociateQualification = (qualificationId, workerId, reason) => {
 
 const listUsersWithQualification = (qual, max, callback) => {
     if (max > 100) max = 100;
-    var userWithQualificationParams = {QualificationTypeId: qual.QualificationTypeId, MaxResults: max};
+    var userWithQualificationParams = {QualificationTypeId: qual.QualificationTypeId, MaxResults: max, Status: "Granted"};
     mturk.listWorkersWithQualificationType(userWithQualificationParams, function (err, data) {
         if (err) console.log(err, err.stack); // an error occurred
         else {
@@ -424,7 +424,8 @@ const listUsersWithQualificationRecursively = (qual, callback, paginationToken =
     mturk.listWorkersWithQualificationType({
         QualificationTypeId: qual.QualificationTypeId,
         MaxResults: 100,
-        NextToken: paginationToken
+        NextToken: paginationToken,
+        Status: "Granted"
     }, (err, data) => {
         if (err) console.log(err, err.stack);
         else {
@@ -658,7 +659,8 @@ const checkQualsRecursive = (qualObject, callback, paginationToken = null, passt
     var userWithQualificationParams = {
         QualificationTypeId: qualObject.QualificationTypeId,
         MaxResults: 100,
-        NextToken: paginationToken
+        NextToken: paginationToken,
+        Status: "Granted"
     };
     mturk.listWorkersWithQualificationType(userWithQualificationParams, function (err, data) {
         if (err) console.log(err, err.stack);
@@ -694,5 +696,8 @@ function getRandomSubarray(arr, size) {
 }
 
 // use to remove workers from notify list
-unassignQuals('A392Q6IRAQ9NZ3', quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!') ;
 
+//Remove qualification from user.
+// disassociateQualification(quals.willBang.QualificationTypeId, 'AWIQFS5VFFLVR', "Requested to be removed.")
+
+unassignQuals('A392Q6IRAQ9NZ3', quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!') ;

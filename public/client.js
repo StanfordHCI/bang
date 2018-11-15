@@ -2,13 +2,12 @@ let LeavingAlert = true;
 window.onbeforeunload = function (event) {
     if (LeavingAlert) {
         console.log("Leaving is true");
-        return "Leaving will stop this HIT for  all users. Are you sure you want to leave?"
+        return "Leaving will stop this HIT for all users. Are you sure you want to leave?"
     } else {
         console.log("Leaving is false");
         return null
     }
 };
-
 
 $(function () {
     const FADE_TIME = 150; // ms
@@ -177,9 +176,7 @@ $(function () {
             addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername + ", welcome to our HIT!"});
             addChatMessage({
                 username: botUsername,
-                message: "You must be able to stay for the amount of time allotted for this HIT, though we will " +
-                    "likely finish before this. If you cannot stay, please leave now. You will not be compensated " +
-                    "if you leave before all the tasks are over. As a reminder, do not refresh or close the page."
+                message: "You must be able to stay for the duration of this task, around 1 hour. If you cannot stay for the entire time, please leave now. You will not be compensated if you leave preemptively. As a reminder, please do not refresh or close the page."
             });
             setTimeout(() => {
                 addChatMessage({
@@ -719,7 +716,7 @@ $(function () {
         setTimeout(() => {
             let totalLengthString = "";
             totalLengthString = Math.round(3 * (data.duration) + 15) + " minutes";
-            log("<strong>Reminder</strong>: You will receive the bonus pay at the stated hourly rate <strong>only</strong> if you stay for " +
+            log("<strong>Reminder</strong>: You will receive the bonus pay at an hourly rate of $6/hour <strong>only</strong> if you stay for " +
                 "all three rounds and answer all survey questions. This should take no more than " + totalLengthString + " total.");
             log("There is also potential for up to $1.00 in performance bonus per round. <strong>Read instructions carefully.</strong>");
             log("<strong>KEEP THE FIRST INSTRUCTION LINK OPEN.</strong>");
@@ -728,16 +725,7 @@ $(function () {
             // log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.");
 
             // log("You will have <strong>" + textifyTime(data.duration) + "</strong> to brainstorm for this round. You will receive instructions about how to collaborate to write a compelling add.");
-            log("You will have <strong>" + textifyTime(data.duration) + "</strong> to negotiate for this round. Please follow the steps.");
-            // log("We will run your final advertisement online. <strong>The more successful it is, the larger the " +
-            //     "bonus each of your team members will receive.</strong>");
-            // log("<br>For example, here are text advertisements for a golf club called Renaissance: <br>\
-            //     <ul style='list-style-type:disc'> \
-            //       <li><strong>An empowering modern club</strong><br></li> \
-            //       <li><strong>A private club with reach</strong><br></li> \
-            //       <li><strong>Don't Wait. Discover Renaissance Today</strong></li> \
-            //     </ul>"
-            //)
+            log("You will have <strong>" + textifyTime(data.duration) + "</strong> to read instructions and negotiate for this round.");
         }, 500);
 
         setTimeout(() => {
@@ -967,7 +955,7 @@ $(function () {
                 mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
                 assignmentId = mturkVariables.assignmentId, finishingcode = "LeftHit");
             socket.emit('mturk_formSubmit', $('#leave-hit-form').serialize());
-            socket.disconnect(true);
+            // socket.disconnect(true);
             $('#leave-hit-form')[0].reset();
         }
     });
@@ -1022,21 +1010,21 @@ $(function () {
             "/mturk/externalSubmit",
             assignmentId = mturkVariables.assignmentId, finishingcode = data.finishingCode);
         LeavingAlert = false;
-        socket.disconnect(true);
+        // socket.disconnect(true);
     });
 
     $('#mturk_form').submit((event) => {
         socket.emit('mturk_formSubmit', $('#mturk_form').serialize())
     });
 
-    socket.on('disconnect', function () {
-        $disconnectedMessage.show();
-        HandleFinish(
-            finishingMessage = "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
-            mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
-            assignmentId = mturkVariables.assignmentId,
-            finishingcode = "LeftHit")
-    });
+    // socket.on('disconnect', function () {
+    //     $disconnectedMessage.show();
+    //     HandleFinish(
+    //         finishingMessage = "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
+    //         mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
+    //         assignmentId = mturkVariables.assignmentId,
+    //         finishingcode = "LeftHit")
+    // });
 
 });
 

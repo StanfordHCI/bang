@@ -126,7 +126,10 @@ Array.prototype.set = function () {
 
 // send to all clients, including sender
 function ioSocketsEmit(event, message) {
-    return io.sockets.emit(event, message);
+  if (debugMode) {
+    console.log(event, message);
+  }
+  return io.sockets.emit(event, message);
 }
 
 // send message to all clients
@@ -135,27 +138,37 @@ function messageClients(message) {
     console.log("Messaged all clients:".red, message);
 }
 
-// send to all clients in "scoketId" room, including sender
-function ioEmitById(socketId, event, message) {
+
+function ioEmitById(socketId, event, message, socket, user) {
+  if (debugMode) {
+    let isActive = null
+    let isConnected = null
+    if (user) {
+      isActive = user.active
+      isConnected = user.connected
+    }
+    let printMessage =  message
+    if (event ===  'chatbot') {printMessage = "all the questions"}
++   console.log(socket.id, socket.mturkId, isActive, isConnected, event, printMessage);
+  }
     return io.in(socketId).emit(event, message);
 }
 
-// apply function f on user u
-function useUser(u, f, err = "Guarded against undefined user") {
+function useUser(socket, callback, err = "Guarded against undefined user") {
     //let user = users.byID(u.id)
-    let user = users.byMturkId(u.mturkId);
-    if (typeof user !== 'undefined' && typeof f === "function") {
-        f(user)
+    let user = users.byMturkId(socket.mturkId);
+    if (typeof user !== 'undefined' && typeof callback === "function") {
+        callback(user)
     }
     else {
-        console.log(err.red, u.id, "\n", err.stack);
+        console.log(err.red, socket.id, "\n", err.stack);
         if (debugMode) {
             console.trace()
         }
     }
 }
 
-// Check balance $$$
+// Check balance
 mturk.getBalance(function (balance) {
     if (runningLive && balance <= 400) {
         console.log("\n!!! BROKE !!!\n".red.inverse.bold)
@@ -173,6 +186,7 @@ if (!fs.existsSync(debugDir)) {
 
 log_file = debugDir + "debug" + Date.now() + ".log";
 console.log = function (...msg) {
+    msg.unshift("[" + (new Date()).toISOString() + "]")
     trueLog(msg.map(item => {
         return util.format(item)
     }).join(" ")); //uncomment if you want logs
@@ -184,7 +198,7 @@ console.log = function (...msg) {
         });
     });
     fs.appendFile(log_file, "\n", function (err) {
-        if (err) {
+        if (err) {f
             return trueLog(err);
         }
     });
@@ -488,7 +502,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
         console.log("Removing dead socket: " + socketID);
         console.log("SOCKET DISCONNECT IN LEFTOVER USER");
         io.in(socketID).emit('get IDs', 'broken');
-        io.in(socketID).disconnect(true)
+        // io.in(socketID).disconnect(true)
     }
 });
 
@@ -511,6 +525,7 @@ db.batch.insert(
         format: conditions[currentCondition],
         experimentRound: experimentRound,
         numRounds: numRounds,
+        products: products,
         teamSize: teamSize
     }, (err, usersAdded) => {
         if (err) console.log("There's a problem adding batch to the DB: ", err);
@@ -697,8 +712,8 @@ io.on('connection', (socket) => {
                     let user = usersActive[i];
                     console.log('active user ' + (i + 1) + ': ' + user.name);
                     if (i < numUsersWanted) { //take the 1st teamssize **2 users and add them
-                        ioEmitById(user.mturkId, "echo", "add user");
-                        ioEmitById(user.mturkId, 'initiate experiment', null);
+                        ioEmitById(user.mturkId, "echo", "add user", socket, user);
+                        ioEmitById(user.mturkId, 'initiate experiment', null, socket, user);
                         // io.in(user.mturkId).emit("echo", "add user");
                         // io.in(user.mturkId).emit('initiate experiment');
                     } else { //else emit finish
@@ -923,7 +938,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('load bot qs', () => {
-        ioEmitById(socket.mturkId, 'chatbot', loadQuestions(botFile))
+        ioEmitById(socket.mturkId, 'chatbot', loadQuestions(botFile), socket)
     });
 
     // when the user disconnects.. perform this
@@ -967,14 +982,14 @@ io.on('connection', (socket) => {
             // update DB with change
             updateUserInDB(user, 'connected', false);
             console.log(socket.username + ": " + user.mturkId + " HAS LEFT");
-            if (!experimentOver && !debugMode) {
-                mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our" +
-                    " HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com"
-                    + " with your Mturk ID and the last things you did in the HIT.\n\nMturk ID: " + user.mturkId +
-                    "\nAssignment ID: " + user.assignmentId + '\nHIT ID: ' + mturk.returnCurrentHIT())
-            }
+            // if (!experimentOver && !debugMode) {
+            //     mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our" +
+            //         " HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com"
+            //         + " with your Mturk ID and the last things you did in the HIT.\n\nMturk ID: " + user.mturkId +
+            //         "\nAssignment ID: " + user.assignmentId + '\nHIT ID: ' + mturk.returnCurrentHIT())
+            // }
             if (!experimentOver && !suddenDeath) {
-                console.log("Sudden death is off, so we will not cancel the run")
+                // console.log("Sudden death is off, so we will not cancel the run")
             }
 
             console.log("Connected users: " + getUsersConnected().length);
@@ -1024,7 +1039,7 @@ io.on('connection', (socket) => {
     socket.on('ready-to-all', (data) => {
         console.log("god is ready".rainbow);
         users.filter(user => !user.ready).forEach(user =>
-                ioEmitById(socket.mturkId, 'echo', 'ready')
+                ioEmitById(socket.mturkId, 'echo', 'ready', socket, user)
             // io.in(socket.mturkId).emit('echo', 'ready')
         )
         //io.sockets.emit('echo','ready')
@@ -1097,7 +1112,7 @@ io.on('connection', (socket) => {
                     questions: loadQuestions(starterSurveyFile),
                     interstitial: false,
                     showHeaderBar: false
-                });
+                }, socket, user);
                 taskStartTime = getSecondsPassed();
             }
             else if (eventSchedule[currentEvent] === "ready") {
@@ -1110,15 +1125,15 @@ io.on('connection', (socket) => {
                         questions: loadQuestions(checkinFile),
                         interstitial: true,
                         showHeaderBar: true
-                    });
+                    }, socket, user);
                 }
                 ioEmitById(socket.mturkId, "load", {
                     element: 'leave-hit',
                     questions: loadQuestions(leaveHitFile),
                     interstitial: true,
                     showHeaderBar: true
-                });
-                ioEmitById(socket.mturkId, "echo", "ready");
+                }, socket, user);
+                ioEmitById(socket.mturkId, "echo", "ready", socket, user);
 
             }
             else if (eventSchedule[currentEvent] === "midSurvey") {
@@ -1130,7 +1145,7 @@ io.on('connection', (socket) => {
                     questions: loadQuestions(midSurveyFile),
                     interstitial: false,
                     showHeaderBar: true
-                });
+                }, socket, user);
             }
             else if (eventSchedule[currentEvent] === "psychologicalSafety") {
                 if (timeCheckOn) {
@@ -1141,7 +1156,7 @@ io.on('connection', (socket) => {
                     questions: loadQuestions(psychologicalSafetyFile),
                     interstitial: false,
                     showHeaderBar: true
-                });
+                }, socket, user);
             }
             else if (eventSchedule[currentEvent] === "teamfeedbackSurvey") {
                 if (midSurveyOn && timeCheckOn) {
@@ -1154,7 +1169,7 @@ io.on('connection', (socket) => {
                     questions: loadQuestions(feedbackFile, user),
                     interstitial: false,
                     showHeaderBar: true
-                });
+                }, socket, user);
             }
             else if (eventSchedule[currentEvent] === "blacklistSurvey") {
                 experimentOver = true;
@@ -1178,7 +1193,7 @@ io.on('connection', (socket) => {
                     questions: loadQuestions(blacklistFile, user),
                     interstitial: false,
                     showHeaderBar: false
-                });
+                }, socket, user);
             }
             else if (eventSchedule[currentEvent] === "qFifteen") {
                 experimentOver = true;
@@ -1196,7 +1211,7 @@ io.on('connection', (socket) => {
                     questions: loadQuestions(qFifteenFile, user),
                     interstitial: false,
                     showHeaderBar: false
-                });
+                }, socket, user);
             }
             else if (eventSchedule[currentEvent] === "qSixteen") {
                 experimentOver = true;
@@ -1216,7 +1231,7 @@ io.on('connection', (socket) => {
                     questions: loadQuestions(qSixteenFile, user),
                     interstitial: false,
                     showHeaderBar: false
-                });
+                }, socket, user);
             }
             else if (eventSchedule[currentEvent] === "postSurvey") { //Launch post survey
                 experimentOver = true;
@@ -1241,7 +1256,7 @@ io.on('connection', (socket) => {
                     questions: loadQuestions(postSurveyFile, user),
                     interstitial: false,
                     showHeaderBar: false
-                });
+                }, socket, user);
             }
             else if (eventSchedule[currentEvent] === "finished" || currentEvent > eventSchedule.length) {
                 if (!batchCompleteUpdated) {
@@ -1268,7 +1283,7 @@ io.on('connection', (socket) => {
                     finishingCode: socket.id,
                     turkSubmitTo: mturk.submitTo,
                     assignmentId: user.assignmentId
-                })
+                }, socket, user)
             }
             user.currentEvent += 1
         })
@@ -1399,8 +1414,7 @@ io.on('connection', (socket) => {
                             randomAnimal: tools.randomAnimal,
                             round: currentRound + 1,
                             runningLive: runningLive
-                        }
-                    )//rounds are 0 indexed
+                        }, socket, u)//rounds are 0 indexed
                 } else {
                     // Dynamically generate teammate names
                     // even if teamSize = 1 for testing, this still works
@@ -1464,7 +1478,7 @@ io.on('connection', (socket) => {
                         duration: roundMinutes,
                         randomAnimal: tools.randomAnimal,
                         round: currentRound + 1
-                    })//round 0 indexed
+                    }, socket, u)//round 0 indexed
                 }
             });
 
@@ -1503,7 +1517,7 @@ io.on('connection', (socket) => {
             setTimeout(() => {
                 console.log('time warning', currentRound);
                 users.forEach(user => {
-                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .2})
+                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .2}, socket, user)
                 });
 
                 //Done with round
@@ -1513,7 +1527,7 @@ io.on('connection', (socket) => {
                         ioEmitById(user.mturkId, 'stop', {
                             round: currentRound,
                             survey: (midSurveyOn || teamfeedbackOn || psychologicalSafetyOn)
-                        })
+                        }, socket, user)
                     });
                     currentRound += 1; // guard to only do this when a round is actually done.
                     console.log(currentRound, "out of", numRounds)
@@ -1666,12 +1680,7 @@ io.on('connection', (socket) => {
             return;
         }
         console.log(('Issued finish to ' + socket.mturkId).red);
-
-        ioEmitById(socket.mturkId, 'finished', {
-            message: message,
-            finishingCode: finishingCode,
-            crashed: false
-        })
+        ioEmitById(socket.mturkId, 'finished', { message: message, finishingCode: finishingCode, crashed: false }, socket)
     }
 
 });
