@@ -1388,8 +1388,6 @@ io.on('connection', (socket) => {
 
             experimentStarted = true;
 
-            let positions = ["buyer", "seller"]
-
             // sending each user appropriate message
             users.forEach(u => {
                 if (autocompleteTestOn) {
@@ -1461,27 +1459,27 @@ io.on('connection', (socket) => {
             // Initialize steps
             const taskSteps = [
                 {
-                    time: 0.83,
+                    time: 0.01,
                     message: "<strong>Pleae read instructions and begin deliberations.</strong>"
                 },
                 {
-                    time: 0.033,
+                    time: 0.863,
                     message: "<strong>Final Decision: Which option should the university go with for Jack's grade in the course and why?</strong>"
                 },
                 {
-                    time: 0.033,
+                    time: 0.896,
                     message: "<strong>Final Decision: Which option should the university go with for Jack's status on the basketball team and why?</strong>"
                 },
                 {
-                    time: 0.033,
+                    time: 0.926,
                     message: "<strong>Final Decision: Which option should the university go with for Jack's status as a college student and why?</strong>"
                 },
                 {
-                    time: 0.033,
+                    time: 0.956,
                     message: "<strong>Final Decision: Which option should the university go with for Tom's status as a T.A. and why?</strong>"
                 },
                 {
-                    time: 0.033,
+                    time: 0.989,
                     message: "<strong>Final Decision: Which option should the university go with for Tom's status as a graduate student and why?</strong>"
                 }
             ]
