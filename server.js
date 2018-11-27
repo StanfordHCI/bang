@@ -309,7 +309,7 @@ if (runExperimentNow) {
         // Notify workers that a HIT has started if we're doing recruiting by email
         if (notifyWorkersOn) {
             // let HITId = process.argv[2];
-            let subject = "We launched our new negotiation HIT. Join now, spaces are limited.";
+            let subject = "We launched our new disciplinary action case study HIT. Join now, spaces are limited.";
             console.log(HIT);
             let URL = '';
             mturk.getHITURL(HIT.HITId, function (url) {
@@ -416,27 +416,11 @@ if (runExperimentNow) {
 
 
 // Add more products
-// Four separate buyer-seller rounds possible
+// Repeat same tasks with different people
 let products = [
     {
-        name: "Negotiate prices for refrigerators, microwaves, and sinks",
-        buyerurl: taskURL + "mwmF1qzGnO+aDxAq57mMRrdFNtFdKIBV9O6DF0Ft8=.pdf",
-        sellerurl: taskURL + "SHG63a2Wv9ZmZh9MEB158ARUDCiddlOy1DQeH8hK1g=.pdf"
-    },
-    {
-        name: "Negotiate prices for iron, sulfur, coal",
-        buyerurl: taskURL + "lIdh07rs9CA4X++tHGcAYfkv9VbgxePiglvUXKtntDc=.pdf",
-        sellerurl: taskURL + "IEKZh2rPicyIQjP5ncnKkIvfMpD60SC5d76c0bV3O0Q=.pdf"
-    },
-    {
-        name: "Negotiate prices for strawberries, kiwi, and mangoes",
-        buyerurl: taskURL + "lvrCODe5pxoSe2WVNcBlIFQEgqrar68AN9NkmNPRPwU=.pdf",
-        sellerurl: taskURL + "3sZso2hm3QKe5mmfOgsWezvDGvBl2TlLAMWaJgbUXyk=.pdf"
-    },
-    {
-        name: "Negotiate prices for calculators, pencils, and notebooks",
-        buyerurl: taskURL + "zRdRU9JX412PYPwGV7xVEfPmez4FahnEmYnfz9Tecl8=.pdf",
-        sellerurl: taskURL + "54v6RWk9vSRvPjIqJlhQ7LAUpeMkW64CvA42RFxF2A8=.pdf"
+        name: "instructions",
+        url: taskURL + "instructions.pdf"
     }
 ];
 
@@ -760,7 +744,6 @@ io.on('connection', (socket) => {
             batch: batchID,
             room: '',
             rooms: [],
-            positions: [], // add to list their current position
             bonus: mturk.bonusPrice,
             person: '',
             name: socket.username,
@@ -1055,7 +1038,7 @@ io.on('connection', (socket) => {
         console.log("god wants more humans".rainbow);
         let HITId = mturk.returnCurrentHIT();
         // let HITId = process.argv[2];
-        let subject = "We launched our new negotiation HIT. Join now, spaces are limited.";
+        let subject = "We launched our new disciplinary action case study HIT. Join now, spaces are limited.";
         console.log(HITId);
         let URL = '';
         mturk.getHITURL(HITId, function (url) {
@@ -1385,16 +1368,10 @@ io.on('connection', (socket) => {
 
             let currentProduct = products[currentRound];
 
-            console.log(taskURL)
-            console.log(typeof taskURL)
-
             console.log('Current Product:', currentProduct);
 
-            let buyerTaskText = "<strong><a href='" + currentProduct.buyerurl +
-                "' target='_blank'>" + currentProduct.name + "</a></strong>!";
-
-            let sellerTaskText = "<strong><a href='" + currentProduct.sellerurl +
-                "' target='_blank'>" + currentProduct.name + "</a></strong>!";
+            let taskText = "Decide on disciplinary actions based on these <strong><a href='" + currentProduct.url +
+                "' target='_blank'>" + currentProduct.name + "</a></strong>!"
 
 
             experimentStarted = true;
@@ -1423,29 +1400,10 @@ io.on('connection', (socket) => {
                     // })
 
                     // find out which people you will work with in this round
-                    const teamMates = u.friends.filter(friend => {
+                    let teamMates = u.friends.filter(friend => {
                         return (users.byMturkId(friend.mturkId)) && users.byMturkId(friend.mturkId).connected
                             && (users.byMturkId(friend.mturkId).room === u.room) && (friend.mturkId !== u.mturkId)
                     });
-
-                    // for each member on the team, assign a position if not already assigned
-                    // TODO: DONT USE FRIENDS!!!
-                    let used = []
-                    let wholeTeam = teamMates.slice()
-                    wholeTeam.push(u)
-                    wholeTeam.forEach(member => {
-                        // pick random position to be assigned a user if not already assigned
-                        individual = users.byMturkId(member.mturkId)
-                        if (individual.positions.length != currentRound + 1) {
-                            randomposition = positions.pick()
-                            while(used.indexOf(randomposition) != -1) {
-                                randomposition = positions.pick()
-
-                            }
-                            individual.positions.push(randomposition)
-                            used.push(randomposition)
-                        }
-                    })
 
                     // console.log(teamMates)
                     let team_Aliases = tools.makeName(teamMates.length, u.friends_history);
@@ -1473,7 +1431,7 @@ io.on('connection', (socket) => {
 
                     // ASSIGN TASK HERE
                     ioEmitById(u.mturkId, 'initiate round', {
-                        task: u.positions[u.positions.length-1] == "buyer" ? buyerTaskText :  sellerTaskText,
+                        task: taskText,
                         team: team_Aliases,
                         duration: roundMinutes,
                         randomAnimal: tools.randomAnimal,
@@ -1491,12 +1449,28 @@ io.on('connection', (socket) => {
             // Initialize steps
             const taskSteps = [
                 {
-                    time: 0.33,
-                    message: "<strong>Step 1. Read instructions.</strong>"
+                    time: 0.83,
+                    message: "<strong>Pleae read instructions and begin deliberations.</strong>"
                 },
                 {
-                    time: 0.67,
-                    message: "<strong>Step 2. Begin negotiations.</strong>"
+                    time: 0.033,
+                    message: "<strong>Final Decision: Which option should the university go with for Jack's grade in the course and why?</strong>"
+                },
+                {
+                    time: 0.033,
+                    message: "<strong>Final Decision: Which option should the university go with for Jack's status on the basketball team and why?</strong>"
+                },
+                {
+                    time: 0.033,
+                    message: "<strong>Final Decision: Which option should the university go with for Jack's status as a college student and why?</strong>"
+                },
+                {
+                    time: 0.033,
+                    message: "<strong>Final Decision: Which option should the university go with for Tom's status as a T.A. and why?</strong>"
+                },
+                {
+                    time: 0.033,
+                    message: "<strong>Final Decision: Which option should the university go with for Tom's status as a graduate student and why?</strong>"
                 }
             ]
 
