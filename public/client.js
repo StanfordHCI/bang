@@ -922,7 +922,7 @@ $(function () {
     });
 
     socket.on('timer', data => {
-        log("<strong>You'll be prompted for your final decisions in about " + 0.03*textifyTime(data.time) + ". Please wrap up deliberations.</strong>");
+        log("<strong>You'll be prompted for your final decisions in about " + textifyTime(0.03*data.time) + ". Please wrap up deliberations.</strong>");
         //log("<strong>You'll be prompted for your final decisions soon. Please wrap up deliberations.</strong>");
     });
 
