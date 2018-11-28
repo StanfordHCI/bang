@@ -421,19 +421,19 @@ let products = [
     {
         name: "instructions",
         url: taskURL + "instructions.pdf"
-    }//,
-    // {
-    //     name: "instructions",
-    //     url: taskURL + "instructions.pdf"
-    // },
-    // {
-    //     name: "instructions",
-    //     url: taskURL + "instructions.pdf"
-    // },
-    // {
-    //     name: "instructions",
-    //     url: taskURL + "instructions.pdf"
-    // }
+    },
+    {
+        name: "instructions",
+        url: taskURL + "instructions.pdf"
+    },
+    {
+        name: "instructions",
+        url: taskURL + "instructions.pdf"
+    },
+    {
+        name: "instructions",
+        url: taskURL + "instructions.pdf"
+    }
 ];
 
 if (randomProduct) {
