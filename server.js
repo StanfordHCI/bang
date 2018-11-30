@@ -1463,23 +1463,23 @@ io.on('connection', (socket) => {
                     message: "<strong>Pleae read instructions and begin deliberations.</strong>"
                 },
                 {
-                    time: 0.863,
+                    time: 0.875,
                     message: "<strong>Final Decision: Which option should the university go with for Jack's grade in the course and why?</strong>"
                 },
                 {
-                    time: 0.896,
+                    time: 0.9,
                     message: "<strong>Final Decision: Which option should the university go with for Jack's status on the basketball team and why?</strong>"
                 },
                 {
-                    time: 0.926,
+                    time: 0.925,
                     message: "<strong>Final Decision: Which option should the university go with for Jack's status as a college student and why?</strong>"
                 },
                 {
-                    time: 0.956,
+                    time: 0.95,
                     message: "<strong>Final Decision: Which option should the university go with for Tom's status as a T.A. and why?</strong>"
                 },
                 {
-                    time: 0.989,
+                    time: 0.975,
                     message: "<strong>Final Decision: Which option should the university go with for Tom's status as a graduate student and why?</strong>"
                 }
             ]
