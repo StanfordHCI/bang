@@ -199,13 +199,19 @@ teamStats <- usersRounds %>%
 
 # Filter down to only partners (dyads)
 teamStats <- teamStats %>%
-  filter(n==TEAM_SIZE)
+  filter(n>=TEAM_SIZE)
 usersRounds <- teamStats %>%
   select(room, batch, round, teamProportionFracture, condition) %>%
   left_join(usersRounds, by=c("room", "batch", "round", "condition"))
 
 ## Table showing how many teams we've run in each condition combination:  
 print(table(teamStats$condition, teamStats$team))
+
+teamViability = teamStats$teamMeanViability
+viabilityMean = mean(teamViability)
+viabilitySD = sd(teamViability)*sqrt((length(teamViability)-1)/(length(teamViability)))
+
+teamStats$viabilityZ = (teamStats$teamMeanViability - viabilityMean) / viabilitySD
 
 ## Define and initialize cut-off point for fracture:
 teamStats <- teamStats %>%
@@ -226,8 +232,10 @@ usersRounds$metaGuessedCorrectly <- usersRounds$fractureMeta == usersRounds$part
 
 data = usersRounds
 
+# For exporting data
+# teamStats$fracture = as.numeric(teamStats$teamFracture)
+# write.csv(teamStats, file = "teamStats.csv")
 ```
-
 
 ### Manipulation Check
 
@@ -242,7 +250,6 @@ manipulationCheckAccuracyByCondition <- manipulationCheckAccuracy %>%
   group_by(condition) %>%
   summarise(numCorrect = sum(manipulationCheckCorrect), n=n(), accuracy = numCorrect/n, se = sqrt(accuracy*(1-accuracy)/n))
 print(manipulationCheckAccuracyByCondition)
-
 numRounds = lengths(data$teamOrder)[1] # split up the list of teams in order to figure out how many rounds they had
 numSameTeam = 2 # number of times they meet with the same team
 chanceManipulation <- (1/choose(numRounds, numSameTeam))
@@ -285,12 +292,33 @@ fractureConsistency <- fractureFirst %>%
   ungroup() %>%
   left_join(fractureSecond, by=c("teamMembers", "batch", "condition"), suffix=c(".first", ".second"))
 fractureConsistency$consistent <- fractureConsistency$teamFracture.first == fractureConsistency$teamFracture.second
+fractureConsistency$continuous <- fractureConsistency$viabilityZ.first - fractureConsistency$viabilityZ.second
+fractureConsistency$continuousAbs <- abs(fractureConsistency$continuous)
 rm("fractureFirst","fractureSecond")
 
 conditionConsistency <- fractureConsistency %>%
   group_by(condition) %>%
-  summarise(numConsistent = sum(consistent), n=n(), percentConsistent=numConsistent/n, se=sqrt(percentConsistent*(1-percentConsistent))/n)
+  summarise(
+    numConsistent = sum(consistent), 
+    n=n(), 
+    percentConsistent=numConsistent/n, 
+    se=sqrt(percentConsistent*(1-percentConsistent))/n,
+    numContinuousAbs = viabilityMean - sum(continuousAbs),
+    percentContinuous = numContinuousAbs / viabilityMean,
+    seContinuous=sqrt(percentContinuous*(1-percentContinuous))/n
+    )
 print(conditionConsistency)
+
+
+maskedConsistency <- fractureConsistency %>% filter(condition=="masked")
+unmaskedConsistency <- fractureConsistency %>% filter(condition=="unmasked")
+t.test(maskedConsistency$viabilityZ.first,maskedConsistency$viabilityZ.second,paired = TRUE)
+t.test(unmaskedConsistency$viabilityZ.first,unmaskedConsistency$viabilityZ.second,paired = TRUE)
+t.test(fractureConsistency$continuousAbs~fractureConsistency$condition, var.equal = TRUE)
+t.test(fractureConsistency$continuousAbs~fractureConsistency$condition)
+
+sd(maskedConsistency$continuousAbs)
+sd(unmaskedConsistency$continuousAbs)
 
 p <- ggplot(data=filter(conditionConsistency), aes(x=condition, y=percentConsistent)) +
   geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
@@ -299,14 +327,33 @@ p <- ggplot(data=filter(conditionConsistency), aes(x=condition, y=percentConsist
   scale_y_continuous(labels = scales::percent_format(1)) + 
   theme_classic() + labs(subtitle="", 
        x="",
-       y="Accuracy at identifying\n the repeat collaborators")
+       y="Consistancy of fracture")
 
 pdf('manipulationcheck.pdf', width=3.5, height=2.5)
 dev.off();
 p
 
+p2 <- ggplot(data=filter(conditionConsistency), aes(x=condition, y=percentContinuous)) +
+  geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
+  geom_errorbar(aes(ymin=percentContinuous-seContinuous, ymax=percentContinuous+seContinuous), width = 0.1) +
+  scale_x_discrete(labels=c("Masked teams","Unmasked teams")) +
+  scale_y_continuous(labels = scales::percent_format(1)) + 
+  theme_classic() + labs(subtitle="", 
+       x="",
+       y="Consistancy of fracture")
+
+pdf('manipulationcheck.pdf', width=3.5, height=2.5)
+dev.off();
+p2
+
 # chisq.test(conditionConsistency$)
 
+```
+
+```{r}
+library(lme4)
+fractureConsistency$team = paste(fractureConsistency$batch,fractureConsistency$room.first,fractureConsistency$round.first,sep = )
+summary(lmer(continuousAbs ~ condition + (1 | team), data=fractureConsistency))
 ```
 
 ## Section #1: Does fracture have continuity with prior measures?

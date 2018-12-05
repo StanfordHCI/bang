@@ -36,9 +36,8 @@ function renderChats(batch) {
         chats.map(a => a.round).set().sort().forEach(currentRound => {
           console.log("\nRound", currentRound);
           chats.map(a => a.room).set().sort().forEach(currentRoom => {
-            console.log("\nRoom",currentRoom,"in round",currentRound);
             chats.sort((a,b) => a.time - b.time).filter(a => a.room == currentRoom && a.round == currentRound).forEach(a => {
-              console.log("  " + a.userID.slice(0,5) + ": " + a.message);
+              console.log("  " + a.time + " " + a.userID.slice(0,5) + ": " + a.message);
             });
           })
         })
@@ -47,7 +46,7 @@ function renderChats(batch) {
   })
 }
 
-//Goes through stored data and checks for bonuses. Bonuses any remaining work.
+// Goes through stored data and checks for bonuses. Bonuses any remaining work.
 function retroactiveBonus() {
   const batchFolders = fs.readdirSync(dir).filter(f => fs.statSync(dir + f).isDirectory())
   batchFolders.filter(f => fs.readdirSync(dir + f).includes('users.json')).forEach(f => {
@@ -286,12 +285,17 @@ function manipulationFix(batch) {
 
 // renderChats(1534356049092)
 
-/* useEachBatch(renderChats) */
+// useEachBatch(renderChats)
 
+// var count = 0
+// useCompleteBatches(() => {
+//   console.log(count);
+//   count += 1
+// })
 
 /* retroactiveBonus() */
 /* retroactivelyFixRooms() */
 
 
-downloadData("b01.dmorina.com",saveAllData)
+// downloadData("b01.dmorina.com",saveAllData)
 // useCompleteBatches(manipulationFix)
