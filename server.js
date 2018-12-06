@@ -418,19 +418,19 @@ if (runExperimentNow) {
 // Add more products
 let products = [
     {
-        name: "Instructions",
+        name: "Estimate quantities",
         url: taskURL + "cTke2Q0pEs2IVQgB5OFkzByzYtXNoMNWdjax0Ff/mNE=.pdf"
     },
     {
-        name: "Instructions",
+        name: "Estimate quantities",
         url: taskURL + "qxff927kqmGyffNqs4mpxfbJfMR8IBOb60bJ3tv7RWo=.pdf"
     },
     {
-        name: "Instructions",
+        name: "Estimate quantities",
         url: taskURL + "9ehC2kbuZl8yBnB7xro6/07m/NYFiTNHU0xJDbw40aE=.pdf"
     },
     {
-        name: "Instructions",
+        name: "Estimate quantities",
         url: taskURL + "9jZAOD+BuLIcU3h0F3txxmtLyjpEgNr3ne977m9CcUU=.pdf"
     }
 ];
@@ -1462,7 +1462,7 @@ io.on('connection', (socket) => {
             // Initialize steps
             const taskSteps = [
                 {
-                    time: 0,
+                    time: 0.01,
                     message: "<strong>Step 0. Read instructions.</strong>"
                 },
                 {
@@ -1479,10 +1479,10 @@ io.on('connection', (socket) => {
                 },
                 {
                     time: 0.6267,
-                    message: "<strong>Step 4: Discuss Questino 4.</strong>"
+                    message: "<strong>Step 4: Discuss Question 4.</strong>"
                 },
                 {
-                    time: 0.0813,
+                    time: 0.813,
                     message: "<strong>Step 5: Discuss Question 5.</strong>"
                 }
             ]
@@ -1504,7 +1504,7 @@ io.on('connection', (socket) => {
             setTimeout(() => {
                 console.log('time warning', currentRound);
                 users.forEach(user => {
-                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .2}, socket, user)
+                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .1}, socket, user)
                 });
 
                 //Done with round
@@ -1518,8 +1518,8 @@ io.on('connection', (socket) => {
                     });
                     currentRound += 1; // guard to only do this when a round is actually done.
                     console.log(currentRound, "out of", numRounds)
-                }, 1000 * 60 * 0.2 * roundMinutes)
-            }, 1000 * 60 * 0.8 * roundMinutes);
+                }, 1000 * 60 * 0.1 * roundMinutes)
+            }, 1000 * 60 * 0.9 * roundMinutes);
 
             if (checkinOn) {
                 let numPopups = 0;
