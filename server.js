@@ -309,7 +309,7 @@ if (runExperimentNow) {
         // Notify workers that a HIT has started if we're doing recruiting by email
         if (notifyWorkersOn) {
             // let HITId = process.argv[2];
-            let subject = "We launched our new negotiation HIT. Join now, spaces are limited.";
+            let subject = "We launched our new estimation HIT. Join now, spaces are limited.";
             console.log(HIT);
             let URL = '';
             mturk.getHITURL(HIT.HITId, function (url) {
@@ -416,27 +416,22 @@ if (runExperimentNow) {
 
 
 // Add more products
-// Four separate buyer-seller rounds possible
 let products = [
     {
-        name: "Negotiate prices for refrigerators, microwaves, and sinks",
-        buyerurl: taskURL + "mwmF1qzGnO+aDxAq57mMRrdFNtFdKIBV9O6DF0Ft8=.pdf",
-        sellerurl: taskURL + "SHG63a2Wv9ZmZh9MEB158ARUDCiddlOy1DQeH8hK1g=.pdf"
+        name: "Instructions",
+        url: taskURL + "cTke2Q0pEs2IVQgB5OFkzByzYtXNoMNWdjax0Ff/mNE=.pdf"
     },
     {
-        name: "Negotiate prices for iron, sulfur, coal",
-        buyerurl: taskURL + "lIdh07rs9CA4X++tHGcAYfkv9VbgxePiglvUXKtntDc=.pdf",
-        sellerurl: taskURL + "IEKZh2rPicyIQjP5ncnKkIvfMpD60SC5d76c0bV3O0Q=.pdf"
+        name: "Instructions",
+        url: taskURL + "qxff927kqmGyffNqs4mpxfbJfMR8IBOb60bJ3tv7RWo=.pdf"
     },
     {
-        name: "Negotiate prices for strawberries, kiwi, and mangoes",
-        buyerurl: taskURL + "lvrCODe5pxoSe2WVNcBlIFQEgqrar68AN9NkmNPRPwU=.pdf",
-        sellerurl: taskURL + "3sZso2hm3QKe5mmfOgsWezvDGvBl2TlLAMWaJgbUXyk=.pdf"
+        name: "Instructions",
+        url: taskURL + "9ehC2kbuZl8yBnB7xro6/07m/NYFiTNHU0xJDbw40aE=.pdf"
     },
     {
-        name: "Negotiate prices for calculators, pencils, and notebooks",
-        buyerurl: taskURL + "zRdRU9JX412PYPwGV7xVEfPmez4FahnEmYnfz9Tecl8=.pdf",
-        sellerurl: taskURL + "54v6RWk9vSRvPjIqJlhQ7LAUpeMkW64CvA42RFxF2A8=.pdf"
+        name: "Instructions",
+        url: taskURL + "9jZAOD+BuLIcU3h0F3txxmtLyjpEgNr3ne977m9CcUU=.pdf"
     }
 ];
 
@@ -760,7 +755,6 @@ io.on('connection', (socket) => {
             batch: batchID,
             room: '',
             rooms: [],
-            positions: [], // add to list their current position
             bonus: mturk.bonusPrice,
             person: '',
             name: socket.username,
@@ -1055,7 +1049,7 @@ io.on('connection', (socket) => {
         console.log("god wants more humans".rainbow);
         let HITId = mturk.returnCurrentHIT();
         // let HITId = process.argv[2];
-        let subject = "We launched our new negotiation HIT. Join now, spaces are limited.";
+        let subject = "We launched our new estimation HIT. Join now, spaces are limited.";
         console.log(HITId);
         let URL = '';
         mturk.getHITURL(HITId, function (url) {
@@ -1390,16 +1384,11 @@ io.on('connection', (socket) => {
 
             console.log('Current Product:', currentProduct);
 
-            let buyerTaskText = "<strong><a href='" + currentProduct.buyerurl +
-                "' target='_blank'>" + currentProduct.name + "</a></strong>!";
-
-            let sellerTaskText = "<strong><a href='" + currentProduct.sellerurl +
+            let taskText = "<strong><a href='" + currentProduct.url +
                 "' target='_blank'>" + currentProduct.name + "</a></strong>!";
 
 
             experimentStarted = true;
-
-            let positions = ["buyer", "seller"]
 
             // sending each user appropriate message
             users.forEach(u => {
@@ -1428,24 +1417,6 @@ io.on('connection', (socket) => {
                             && (users.byMturkId(friend.mturkId).room === u.room) && (friend.mturkId !== u.mturkId)
                     });
 
-                    // for each member on the team, assign a position if not already assigned
-                    // TODO: DONT USE FRIENDS!!!
-                    let used = []
-                    let wholeTeam = teamMates.slice()
-                    wholeTeam.push(u)
-                    wholeTeam.forEach(member => {
-                        // pick random position to be assigned a user if not already assigned
-                        individual = users.byMturkId(member.mturkId)
-                        if (individual.positions.length != currentRound + 1) {
-                            randomposition = positions.pick()
-                            while(used.indexOf(randomposition) != -1) {
-                                randomposition = positions.pick()
-
-                            }
-                            individual.positions.push(randomposition)
-                            used.push(randomposition)
-                        }
-                    })
 
                     // console.log(teamMates)
                     let team_Aliases = tools.makeName(teamMates.length, u.friends_history);
@@ -1473,7 +1444,7 @@ io.on('connection', (socket) => {
 
                     // ASSIGN TASK HERE
                     ioEmitById(u.mturkId, 'initiate round', {
-                        task: u.positions[u.positions.length-1] == "buyer" ? buyerTaskText :  sellerTaskText,
+                        task: taskText,
                         team: team_Aliases,
                         duration: roundMinutes,
                         randomAnimal: tools.randomAnimal,
@@ -1491,12 +1462,28 @@ io.on('connection', (socket) => {
             // Initialize steps
             const taskSteps = [
                 {
-                    time: 0.33,
-                    message: "<strong>Step 1. Read instructions.</strong>"
+                    time: 0,
+                    message: "<strong>Step 0. Read instructions.</strong>"
                 },
                 {
-                    time: 0.67,
-                    message: "<strong>Step 2. Begin negotiations.</strong>"
+                    time: 0.067,
+                    message: "<strong>Step 1. Discuss Question 1.</strong>"
+                },
+                {
+                    time: 0.253,
+                    message: "<strong>Step 2: Discuss Question 2.</strong>"
+                },
+                {
+                    time: 0.44,
+                    message: "<strong>Step 3: Discuss Question 3.</strong>"
+                },
+                {
+                    time: 0.6267,
+                    message: "<strong>Step 4: Discuss Questino 4.</strong>"
+                },
+                {
+                    time: 0.0813,
+                    message: "<strong>Step 5: Discuss Question 5.</strong>"
                 }
             ]
 
