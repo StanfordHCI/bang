@@ -1,3 +1,7 @@
+#For recuritment hit
+#1 * * * * cd bang && /usr/bin/node scheduleBang.js >> bang.log 2>&1
+
+#For running tight
 0 13,16,19 * * * cd bang && kill $(ps aux | grep '[h]ttps://b01.dmorina.com/' | awk '{print $2}') >> b01.log 2>&1
 30 14,17,20 * * * cd bang && kill $(ps aux | grep '[h]ttps://b01.dmorina.com/' | awk '{print $2}') >> b01.log 2>&1
 1 13,16,19 * * * cd bang && /usr/bin/node server.js --port=3001 --url=https://b01.dmorina.com/ --condition=treatment >> b01.log 2>&1
