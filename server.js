@@ -419,7 +419,7 @@ if (runExperimentNow) {
 let products = [
     {
         name: "Estimate quantities",
-        url: taskURL + "cTke2Q0pEs2IVQgB5OFkzByzYtXNoMNWdjax0Ff/mNE=.pdf"
+        url: taskURL + "cTke2Q0pEs2IVQgB5OFkzByzYtXNoMNWdjax0FfmNE=.pdf"
     },
     {
         name: "Estimate quantities",
@@ -427,7 +427,7 @@ let products = [
     },
     {
         name: "Estimate quantities",
-        url: taskURL + "9ehC2kbuZl8yBnB7xro6/07m/NYFiTNHU0xJDbw40aE=.pdf"
+        url: taskURL + "9ehC2kbuZl8yBnB7xro607mNYFiTNHU0xJDbw40aE=.pdf"
     },
     {
         name: "Estimate quantities",
