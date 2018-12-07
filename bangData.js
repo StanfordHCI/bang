@@ -328,7 +328,7 @@ useCompleteBatches(manipulationFix)
 //Save from local folder
 /* saveAllData() */
 
-// renderChats(1534356049092)
+renderChats(1534356049092)
 // useEachBatchDB(renderAds)
 /* retroactiveBonus() */
 /* retroactivelyFixRooms() */
