@@ -29,7 +29,7 @@ const notifyUs = runningLive;
 
 const cleanHITs = false;
 const assignQualifications = runningLive;
-const debugMode = !runningLive;
+const debugMode = false;
 
 const suddenDeath = false;
 
@@ -37,7 +37,7 @@ const randomCondition = false;
 const randomRoundOrder = true;
 const randomProduct = true;
 
-const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
@@ -49,6 +49,7 @@ const timeCheckOn = false; // tracks time user spends on task and updates paymen
 // how long each task is taking
 const requiredOn = runningLive;
 const checkinIntervalMinutes = roundMinutes / 3;
+// turn off survey here
 const qFifteenOn = true;
 const qSixteenOn = true;
 
@@ -79,7 +80,16 @@ const answers = {
     answerType: 'radio',
     textValue: true
 };
-const binaryAnswers = {answers: ['Keep this team', 'Do not keep this team'], answerType: 'radio', textValue: true};
+const binaryAnswers = {
+    answers: ['Keep this team', 'Do not keep this team'],
+    answerType: 'radio',
+    textValue: true
+};
+const textAnswer = {
+    answers: [''],
+    answerType: 'text',
+    textValue: true
+};
 const leaveHitAnswers = {
     answers: ['End Task and Send Feedback', 'Return to Task'],
     answerType: 'radio',
@@ -215,25 +225,27 @@ let firstRun = false;
 let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
 let batchCompleteUpdated = false;
 
-/* const roundOrdering = extraRoundOn ? [ */
-/*   {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]}, */
-/*   {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]}, */
-/*   {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [ */
-/*   {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]}, */
-/*   {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]}, */
-/*   {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}] */
-/* const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0] */
+const roundOrdering = extraRoundOn ? [
+   {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]},
+   {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]},
+   {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [
+   {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]},
+   {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]},
+   {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}]
+ const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
 
 // Settings for 4 rounds.
 // const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
-const ordering = randomRoundOrder ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick() : [1, 2, 1, 3];
-const conditions = {control: ordering, treatment: ordering, baseline: [1, 2, 3, 2]}; //,4]} modified extra round to deal with createTeams
+
+// NOTE: comment out these two when doing 3 rounds
+// const ordering = randomRoundOrder ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick() : [1, 2, 1, 3];
+// const conditions = {control: ordering, treatment: ordering, baseline: [1, 2, 3, 2]}; //,4]} modified extra round to deal with createTeams
 
 const experimentRoundIndicator = extraRoundOn ? 2 : 1; //This records what round of the ordering is the experimental round.
 const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator); //assumes that the manipulation is always the last instance of team 1's interaction.
 console.log(currentCondition, 'with', conditions[currentCondition]);
 
-const numRounds = conditions.baseline.length;
+let numRounds = conditions.baseline.length;
 
 const numberOfRooms = teamSize * numRounds;
 const rooms = tools.letters.slice(0, numberOfRooms);
@@ -241,6 +253,9 @@ const people = extraRoundOn ? tools.letters.slice(0, teamSize ** 2 + teamSize) :
 const population = people.length
 const teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn); //added '-1' to numRounds
 //}
+
+// NOTE: only if doing one round
+// numRounds = 1;
 
 //if (runExperimentNow) {
 const batchID = Date.now();
@@ -483,7 +498,7 @@ if (qFifteenOn) {
 if (qSixteenOn) {
     eventSchedule.push("qSixteen")
 }
-eventSchedule.push("postSurvey");
+// eventSchedule.push("postSurvey");
 eventSchedule.push("finished");
 console.log("This batch will include:", eventSchedule);
 //}
@@ -1632,6 +1647,8 @@ io.on('connection', (socket) => {
                 };
             } else if (answerTag === "LH") { //leave hit yn
                 answerObj = leaveHitAnswers;
+            } else if (answerTag === "TX") {
+                answerObj = textAnswer;
             } else {//chatbot qs
                 answerObj = {}
             }

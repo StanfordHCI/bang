@@ -16,7 +16,7 @@ $(function () {
     let colorAssignment = [];
 
     //toggles
-    let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
+    let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
 
 
     //globals for prechat
@@ -75,7 +75,7 @@ $(function () {
           <label for="{{question.name}}-{{index+1}}" class="rb-tab">
             <input v-bind:type="question.answerType" name="{{question.name}}" id="{{question.name}}-{{index+1}}"
             v-bind:value="question.textValue ? answer : index + 1" v-bind:required="question.required ? true : false"/>
-            <span class='rb-spot'>{{index+1}}</span>
+            <!--<span class='rb-spot'>{{index+1}}</span>-->
             <label for='{{question.name}}-{{index+1}}'>{{answer}}</label>
           </label>
         </template>
