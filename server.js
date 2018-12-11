@@ -419,19 +419,19 @@ if (runExperimentNow) {
 // Four separate buyer-seller rounds possible
 let products = [
     {
-        name: "Plan the most efficient shopping trip.",
+        name: "Plan the most efficient shopping trip",
         url: taskURL + "tawiU1q9YDMSZkdplfuqG8ptdc9Lq6K7jP21WOIs.pdf"
     },
     {
-        name: "Find the best policy in a disciplinary action case.",
+        name: "Find the best policy in a disciplinary action case",
         url: taskURL + "Q3DYssUNxyGyQOvnmahuCdfgVjF0SYXpRARTMyXXxU.pdf"
     },
     {
-        name: "Determine the most important items when lost at sea.",
+        name: "Determine the most important items when lost at sea",
         url: taskURL + "TF7AROnBQVGADFwfstXHqL4w2wdnX8ludj8f2T4fKI.pdf"
     },
     {
-        name: "Determine the best candidate for pilot recruitment.",
+        name: "Determine the best candidate for pilot recruitment",
         url: taskURL + "VrnIyaVkKb0Lx8tfPGqLkbG8onoUrzYum6rTPxmss.pdf"
     }
 ];
