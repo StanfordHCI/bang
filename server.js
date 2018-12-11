@@ -1463,7 +1463,7 @@ io.on('connection', (socket) => {
             // Initialize steps
             const taskSteps = [
                 {
-                    time: 0.01,
+                    time: 0.003,
                     message: "<strong>Step 1. Read instructions linked above (~10 minutes).</strong>"
                 },
                 {
