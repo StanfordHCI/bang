@@ -17,7 +17,14 @@ TEAM_SIZE=4
 ROUND_MINUTES=10
 ```
 
-Replace the keys with your own (see a  [tutorial on getting set up with keys](https://glitch.com/edit/#!/mturk)). Then just run with `node server.js`.
+Replace the keys with your own by creating an IAM user (see a  [tutorial on getting set up with keys](https://glitch.com/edit/#!/mturk)). Then just run remotely with `node server.js`. Check that server is running successfully via [this link](http://127.0.0.1:3000/?assignmentId=3K4J6M3CXF8DU3JZ8XUVEMJHFWEAGV&hitId=3TRB893CSJPTPHN7BSD9FBMB45DG72&workerId=A19MTSLG2OYDLZ&turkSubmitTo=https%3A%2F%2Fworkersandbox.mturk.com)
+
+## Getting Started Tips
+- Development Tips:
+    - Make, commit, and push changes from the `nokill` branch
+- Testing Tips:
+    - Turn off waiting room by going to `public/client.js` and `server.js` and set const `waitChaton` to `false`
+    - Set `TEAM_SIZE=1` (int must be a perfect square) and `ROUND_MINUTES=1` to efficiently test
 
 ## Related literature
 1. Salganik, Matthew J., Peter Sheridan Dodds, and Duncan J. Watts. **[Experimental study of inequality and unpredictability in an artificial cultural market](http://science.sciencemag.org/content/311/5762/854.full)**. Science 311.5762 (2006): 854-856.
