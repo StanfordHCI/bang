@@ -224,7 +224,7 @@ function downloadData(url,callback) {
   const destination = ".data"
   const names = ['users','chats','batch']
   names.forEach(name => {
-    const source = "ubuntu@" + url + ":bang/.data/" + name
+    const source = "ubuntu@" + url + ":taskDev/.data/" + name
     const command = ['scp', '-i', pemFile, source, destination]
     exec(command.join(' '), (err, stdout, stderr) => {
       if (err) console.log(err);
@@ -323,7 +323,7 @@ useCompleteBatches(manipulationFix)
 //Save from servers
 // downloadData("mark.dmorina.com",saveAllData)
 // downloadData("bang.dmorina.com",saveAllData)
- // downloadData("b01.dmorina.com",saveAllData)
+downloadData("b01.dmorina.com",saveAllData)
 
 //Save from local folder
 /* saveAllData() */
