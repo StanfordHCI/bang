@@ -1464,11 +1464,11 @@ io.on('connection', (socket) => {
             const taskSteps = [
                 {
                     time: 0.003,
-                    message: "<strong>Step 1. Read instructions linked above (~10 minutes).</strong>"
+                    message: "<strong>Step 1. Read instructions linked above (~5 minutes).</strong>"
                 },
                 {
-                    time: 0.33,
-                    message: "<strong>Step 2. Begin discussions (~20 minutes).</strong>"
+                    time: 0.25,
+                    message: "<strong>Step 2. Begin discussions (~15 minutes).</strong>"
                 }
             ]
 
@@ -1489,7 +1489,7 @@ io.on('connection', (socket) => {
             setTimeout(() => {
                 console.log('time warning', currentRound);
                 users.forEach(user => {
-                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .067}, socket, user)
+                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .1}, socket, user)
                 });
 
                 //Done with round
@@ -1503,8 +1503,8 @@ io.on('connection', (socket) => {
                     });
                     currentRound += 1; // guard to only do this when a round is actually done.
                     console.log(currentRound, "out of", numRounds)
-                }, 1000 * 60 * 0.067 * roundMinutes)
-            }, 1000 * 60 * 0.933 * roundMinutes);
+                }, 1000 * 60 * 0.1 * roundMinutes)
+            }, 1000 * 60 * 0.9 * roundMinutes);
 
             if (checkinOn) {
                 let numPopups = 0;

@@ -176,7 +176,7 @@ $(function () {
             addChatMessage({username: botUsername, message: "Hi, I'm " + botUsername + ", welcome to our HIT!"});
             addChatMessage({
                 username: botUsername,
-                message: "You must be able to stay for the duration of this task, around 2 hours and 15 minutes. If you cannot stay for the entire time, please leave now. You will not be compensated if you leave preemptively. As a reminder, please do not refresh or close the page."
+                message: "You must be able to stay for the duration of this task, around 1 hour and 20 minutes. If you cannot stay for the entire time, please leave now. You will not be compensated if you leave preemptively. As a reminder, please do not refresh or close the page."
             });
             setTimeout(() => {
                 addChatMessage({
