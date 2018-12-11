@@ -198,7 +198,7 @@ console.log = function (...msg) {
         });
     });
     fs.appendFile(log_file, "\n", function (err) {
-        if (err) {f
+        if (err) {
             return trueLog(err);
         }
     });
