@@ -28,33 +28,23 @@ function renderBatch(dbName, batch) {
 
 //Cleanly renders chats for a given batch
 function renderChats(batch) {
-  fs.readFile(dir + batch + '/' + 'chats.json',(err,chatsJSON) => {
-    if (err) {return console.log(err)} else {
-      try {
-        const chats = JSON.parse(chatsJSON)
-        // console.log("\nChats for batch:",batch);
-        chats.map(a => a.round).set().sort().forEach(currentRound => {
-          // console.log("\nRound", currentRound);
-          chats.map(a => a.room).set().sort().forEach(currentRoom => {
-            // console.log("\nRoom",currentRoom,"in round",currentRound);
-            let ads = chats.sort((a,b) => a.time - b.time).filter(a => a.room == currentRoom && a.round == currentRound).filter(a => a.message[0] === "!")
-            // ads.forEach(m => console.log("  ",m.message))
-            let chosenAd = ads[ads.length -1]
-            ad = {
-              batch: chosenAd.batch,
-              round: chosenAd.round,
-              room: chosenAd.room,
-              text: chosenAd.message.slice(1),
-              user: chosenAd.userID
-            }
-            console.log(ad.batch, ad.round, ad.room, ad.text)
-          })
-        })
-      } catch(err) {
-        // console.log('File ending error in batch',batch)
-      }
-    }
-  })
+    fs.readFile(dir + batch + '/' + 'chats.json',(err,chatsJSON) => {
+        if (err) {return console.log(err)} else {
+            try {
+                const chats = JSON.parse(chatsJSON)
+                console.log("\nChats for batch:",batch);
+                chats.map(a => a.round).set().sort().forEach(currentRound => {
+                    console.log("\nRound", currentRound);
+                    chats.map(a => a.room).set().sort().forEach(currentRoom => {
+                        console.log("\nRoom",currentRoom,"in round",currentRound);
+                        chats.sort((a,b) => a.time - b.time).filter(a => a.room == currentRoom && a.round == currentRound).forEach(a => {
+                            console.log("  " + a.time + " " + a.userID.slice(0,5) + ": " + a.message);
+                        });
+                    })
+                })
+            } catch(err) {console.log('File ending error in batch',batch)}
+        }
+    })
 }
 
 //Cleanly renders ads for a given batch
@@ -323,12 +313,12 @@ useCompleteBatches(manipulationFix)
 //Save from servers
 // downloadData("mark.dmorina.com",saveAllData)
 // downloadData("bang.dmorina.com",saveAllData)
-downloadData("b01.dmorina.com",saveAllData)
+//downloadData("b01.dmorina.com",saveAllData)
 
 //Save from local folder
 /* saveAllData() */
 
-// renderChats(1534356049092)
+renderChats(1544640127133)
 // useEachBatchDB(renderAds)
 /* retroactiveBonus() */
 /* retroactivelyFixRooms() */
