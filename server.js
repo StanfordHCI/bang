@@ -1475,12 +1475,12 @@ io.on('connection', (socket) => {
             const taskSteps = [
                 {
                     time: 0.003,
-                    message: "<strong>Step 1. Read instructions linked above (~5 minutes).</strong>"
-                },
-                {
-                    time: 0.25,
-                    message: "<strong>Step 2. Begin discussions (~15 minutes).</strong>"
+                    message: "<strong>Read instructions. When all group members are done reading, begin discussions.</strong>"
                 }
+                // {
+                //     time: 0.25,
+                //     message: "<strong>Step 2. Begin discussions (~15 minutes).</strong>"
+                // }
             ]
 
             // Execute steps

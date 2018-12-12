@@ -717,7 +717,7 @@ $(function () {
             let totalLengthString = "";
             totalLengthString = Math.round(3 * (data.duration) + 15) + " minutes";
             log("<strong>Reminder</strong>: You will receive the bonus pay at an hourly rate of $10/hour <strong>only</strong> if you stay for " +
-                "all threee rounds and answer all survey questions. This should take no more than " + totalLengthString + " total.");
+                "all three rounds and answer all survey questions. This should take no more than " + totalLengthString + " total.");
             log("<strong>Do NOT use any external resources.</strong>")
             log("<strong>DO NOT REFRESH OR LEAVE THE PAGE</strong>. This will stop the task for everyone and you will not be compensated.");
             log("<strong>Task: </strong>" + data.task);
