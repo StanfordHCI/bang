@@ -434,10 +434,6 @@ if (runExperimentNow) {
 // Four separate buyer-seller rounds possible
 let products = [
     {
-        name: "Plan the most efficient shopping trip",
-        url: taskURL + "tawiU1q9YDMSZkdplfuqG8ptdc9Lq6K7jP21WOIs.pdf"
-    },
-    {
         name: "Find the best policy in a disciplinary action case",
         url: taskURL + "Q3DYssUNxyGyQOvnmahuCdfgVjF0SYXpRARTMyXXxU.pdf"
     },
