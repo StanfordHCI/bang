@@ -37,7 +37,7 @@ const randomCondition = false;
 const randomRoundOrder = true;
 const randomProduct = true;
 
-const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
@@ -434,15 +434,15 @@ if (runExperimentNow) {
 // Four separate buyer-seller rounds possible
 let products = [
     {
-        name: "Make a plan to fix an alcohol problem at a company.",
+        name: "Make a plan to fix an alcohol problem at a company",
         url: taskURL + "U9o8EN1aKPJKetpdz6pOLSFKAUnkVzUGmzIAK1o.pdf"
     },
     {
-        name: "Make a plan to make a museum more efficient.",
+        name: "Make a plan to make a museum more efficient",
         url: taskURL + "FAAa9yZKLl9EhkdvJdVPopn1NlBYQM2HiYp6G2pbFKI.pdf"
     },
     {
-        name: "Make a plan to fix an occupation issue at a local church.",
+        name: "Make a plan to fix an occupation issue at a local church",
         url: taskURL + "DnF5WurLdmQi3fHfMtSJVPRiFDvSYpLsvf03cRcVs.pdf"
     }
 ];
@@ -1474,7 +1474,7 @@ io.on('connection', (socket) => {
             // Initialize steps
             const taskSteps = [
                 {
-                    time: 0.003,
+                    time: 0.0083,
                     message: "<strong>Read instructions. When all group members are done reading, begin discussions.</strong>"
                 }
                 // {
