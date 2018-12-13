@@ -29,7 +29,7 @@ const notifyUs = runningLive;
 
 const cleanHITs = false;
 const assignQualifications = runningLive;
-const debugMode = !runningLive;
+const debugMode = false;
 
 const suddenDeath = false;
 
@@ -49,6 +49,7 @@ const timeCheckOn = false; // tracks time user spends on task and updates paymen
 // how long each task is taking
 const requiredOn = runningLive;
 const checkinIntervalMinutes = roundMinutes / 3;
+// turn off survey here
 const qFifteenOn = true;
 const qSixteenOn = true;
 
@@ -79,7 +80,16 @@ const answers = {
     answerType: 'radio',
     textValue: true
 };
-const binaryAnswers = {answers: ['Keep this team', 'Do not keep this team'], answerType: 'radio', textValue: true};
+const binaryAnswers = {
+    answers: ['Keep this team', 'Do not keep this team'],
+    answerType: 'radio',
+    textValue: true
+};
+const textAnswer = {
+    answers: [''],
+    answerType: 'text',
+    textValue: true
+};
 const leaveHitAnswers = {
     answers: ['End Task and Send Feedback', 'Return to Task'],
     answerType: 'radio',
@@ -126,10 +136,10 @@ Array.prototype.set = function () {
 
 // send to all clients, including sender
 function ioSocketsEmit(event, message) {
-  if (debugMode) {
-    console.log(event, message);
-  }
-  return io.sockets.emit(event, message);
+    if (debugMode) {
+        console.log(event, message);
+    }
+    return io.sockets.emit(event, message);
 }
 
 // send message to all clients
@@ -140,17 +150,17 @@ function messageClients(message) {
 
 
 function ioEmitById(socketId, event, message, socket, user) {
-  if (debugMode) {
-    let isActive = null
-    let isConnected = null
-    if (user) {
-      isActive = user.active
-      isConnected = user.connected
+    if (debugMode) {
+        let isActive = null
+        let isConnected = null
+        if (user) {
+            isActive = user.active
+            isConnected = user.connected
+        }
+        let printMessage =  message
+        if (event ===  'chatbot') {printMessage = "all the questions"}
+        +   console.log(socket.id, socket.mturkId, isActive, isConnected, event, printMessage);
     }
-    let printMessage =  message
-    if (event ===  'chatbot') {printMessage = "all the questions"}
-+   console.log(socket.id, socket.mturkId, isActive, isConnected, event, printMessage);
-  }
     return io.in(socketId).emit(event, message);
 }
 
@@ -215,25 +225,27 @@ let firstRun = false;
 let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
 let batchCompleteUpdated = false;
 
-/* const roundOrdering = extraRoundOn ? [ */
-/*   {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]}, */
-/*   {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]}, */
-/*   {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [ */
-/*   {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]}, */
-/*   {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]}, */
-/*   {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}] */
-/* const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0] */
+const roundOrdering = extraRoundOn ? [
+    {control: [1,2,3,2], treatment: [1,2,3,2], baseline: [1,2,3,4]},
+    {control: [1,3,2,2], treatment: [1,3,2,2], baseline: [1,2,3,4]},
+    {control: [1,2,2,3], treatment: [1,2,2,3], baseline: [1,2,3,4]}] : [
+    {control: [1,2,1], treatment: [1,2,1], baseline: [1,2,3]},
+    {control: [2,1,1], treatment: [2,1,1], baseline: [1,2,3]},
+    {control: [1,1,2], treatment: [1,1,2], baseline: [1,2,3]}]
+const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0]
 
 // Settings for 4 rounds.
 // const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
-const ordering = randomRoundOrder ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick() : [1, 2, 1, 3];
-const conditions = {control: ordering, treatment: ordering, baseline: [1, 2, 3, 2]}; //,4]} modified extra round to deal with createTeams
+
+// NOTE: comment out these two when doing 3 rounds
+// const ordering = randomRoundOrder ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick() : [1, 2, 1, 3];
+// const conditions = {control: ordering, treatment: ordering, baseline: [1, 2, 3, 2]}; //,4]} modified extra round to deal with createTeams
 
 const experimentRoundIndicator = extraRoundOn ? 2 : 1; //This records what round of the ordering is the experimental round.
 const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator); //assumes that the manipulation is always the last instance of team 1's interaction.
 console.log(currentCondition, 'with', conditions[currentCondition]);
 
-const numRounds = conditions.baseline.length;
+let numRounds = conditions.baseline.length;
 
 const numberOfRooms = teamSize * numRounds;
 const rooms = tools.letters.slice(0, numberOfRooms);
@@ -241,6 +253,9 @@ const people = extraRoundOn ? tools.letters.slice(0, teamSize ** 2 + teamSize) :
 const population = people.length
 const teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn); //added '-1' to numRounds
 //}
+
+// NOTE: only if doing one round
+// numRounds = 1;
 
 //if (runExperimentNow) {
 const batchID = Date.now();
@@ -309,7 +324,7 @@ if (runExperimentNow) {
         // Notify workers that a HIT has started if we're doing recruiting by email
         if (notifyWorkersOn) {
             // let HITId = process.argv[2];
-            let subject = "We launched our new negotiation HIT. Join now, spaces are limited.";
+            let subject = "We launched our new planning HIT. Join now, spaces are limited.";
             console.log(HIT);
             let URL = '';
             mturk.getHITURL(HIT.HITId, function (url) {
@@ -419,29 +434,21 @@ if (runExperimentNow) {
 // Four separate buyer-seller rounds possible
 let products = [
     {
-        name: "Negotiate prices for refrigerators, microwaves, and sinks",
-        buyerurl: taskURL + "mwmF1qzGnO+aDxAq57mMRrdFNtFdKIBV9O6DF0Ft8=.pdf",
-        sellerurl: taskURL + "SHG63a2Wv9ZmZh9MEB158ARUDCiddlOy1DQeH8hK1g=.pdf"
+        name: "Make a plan to fix an alcohol problem at a company.",
+        url: taskURL + "U9o8EN1aKPJKetpdz6pOLSFKAUnkVzUGmzIAK1o.pdf"
     },
     {
-        name: "Negotiate prices for iron, sulfur, coal",
-        buyerurl: taskURL + "lIdh07rs9CA4X++tHGcAYfkv9VbgxePiglvUXKtntDc=.pdf",
-        sellerurl: taskURL + "IEKZh2rPicyIQjP5ncnKkIvfMpD60SC5d76c0bV3O0Q=.pdf"
+        name: "Make a plan to make a museum more efficient.",
+        url: taskURL + "FAAa9yZKLl9EhkdvJdVPopn1NlBYQM2HiYp6G2pbFKI.pdf"
     },
     {
-        name: "Negotiate prices for strawberries, kiwi, and mangoes",
-        buyerurl: taskURL + "lvrCODe5pxoSe2WVNcBlIFQEgqrar68AN9NkmNPRPwU=.pdf",
-        sellerurl: taskURL + "3sZso2hm3QKe5mmfOgsWezvDGvBl2TlLAMWaJgbUXyk=.pdf"
-    },
-    {
-        name: "Negotiate prices for calculators, pencils, and notebooks",
-        buyerurl: taskURL + "zRdRU9JX412PYPwGV7xVEfPmez4FahnEmYnfz9Tecl8=.pdf",
-        sellerurl: taskURL + "54v6RWk9vSRvPjIqJlhQ7LAUpeMkW64CvA42RFxF2A8=.pdf"
+        name: "Make a plan to fix an occupation issue at a local church.",
+        url: taskURL + "DnF5WurLdmQi3fHfMtSJVPRiFDvSYpLsvf03cRcVs.pdf"
     }
 ];
 
 if (randomProduct) {
-  products = shuffle(products)
+    products = shuffle(products)
 }
 
 let users = []; //the main local user storage
@@ -487,7 +494,7 @@ if (qFifteenOn) {
 if (qSixteenOn) {
     eventSchedule.push("qSixteen")
 }
-eventSchedule.push("postSurvey");
+// eventSchedule.push("postSurvey");
 eventSchedule.push("finished");
 console.log("This batch will include:", eventSchedule);
 //}
@@ -760,7 +767,6 @@ io.on('connection', (socket) => {
             batch: batchID,
             room: '',
             rooms: [],
-            positions: [], // add to list their current position
             bonus: mturk.bonusPrice,
             person: '',
             name: socket.username,
@@ -854,7 +860,7 @@ io.on('connection', (socket) => {
                 })
             }
             if (notifyUs) {
-              mturk.notifyWorkers(["A19MTSLG2OYDLZ"], "Rolled " + currentCondition + " on " + taskURL , "Rolled over with: " + currentCondition + " on port " + port + " at " + taskURL + ".");
+                mturk.notifyWorkers(["A19MTSLG2OYDLZ"], "Rolled " + currentCondition + " on " + taskURL , "Rolled over with: " + currentCondition + " on port " + port + " at " + taskURL + ".");
             }
             userAcquisitionStage = false;
             mturk.startTask();
@@ -1055,7 +1061,7 @@ io.on('connection', (socket) => {
         console.log("god wants more humans".rainbow);
         let HITId = mturk.returnCurrentHIT();
         // let HITId = process.argv[2];
-        let subject = "We launched our new negotiation HIT. Join now, spaces are limited.";
+        let subject = "We launched our new planning HIT. Join now, spaces are limited.";
         console.log(HITId);
         let URL = '';
         mturk.getHITURL(HITId, function (url) {
@@ -1276,7 +1282,7 @@ io.on('connection', (socket) => {
                 usersFinished += 1;
                 console.log(usersFinished, "users have finished.");
                 if (notifyUs) {
-                  mturk.notifyWorkers(["A19MTSLG2OYDLZ"], "Completed " + currentCondition + " on " + taskURL , "Batch " + batchID + " completed: " + currentCondition + " on port " + port + " at " + taskURL + ".");
+                    mturk.notifyWorkers(["A19MTSLG2OYDLZ"], "Completed " + currentCondition + " on " + taskURL , "Batch " + batchID + " completed: " + currentCondition + " on port " + port + " at " + taskURL + ".");
                 }
                 ioEmitById(socket.mturkId, 'finished', {
                     message: "Thanks for participating, you're all done!",
@@ -1289,8 +1295,8 @@ io.on('connection', (socket) => {
         })
     });
 
-/**********************************************************************************************************************/
-/* Main experiment run */
+    /**********************************************************************************************************************/
+    /* Main experiment run */
 
     socket.on('ready', function (data) {
         useUser(socket, user => {
@@ -1390,16 +1396,11 @@ io.on('connection', (socket) => {
 
             console.log('Current Product:', currentProduct);
 
-            let buyerTaskText = "<strong><a href='" + currentProduct.buyerurl +
-                "' target='_blank'>" + currentProduct.name + "</a></strong>!";
-
-            let sellerTaskText = "<strong><a href='" + currentProduct.sellerurl +
+            let taskText = "<strong><a href='" + currentProduct.url +
                 "' target='_blank'>" + currentProduct.name + "</a></strong>!";
 
 
             experimentStarted = true;
-
-            let positions = ["buyer", "seller"]
 
             // sending each user appropriate message
             users.forEach(u => {
@@ -1408,13 +1409,13 @@ io.on('connection', (socket) => {
                         tools.makeName().username, tools.makeName().username];
                     console.log(teamNames);
                     ioEmitById(u.mturkId, 'initiate round', {
-                            task: taskText,
-                            team: teamNames,
-                            duration: roundMinutes,
-                            randomAnimal: tools.randomAnimal,
-                            round: currentRound + 1,
-                            runningLive: runningLive
-                        }, socket, u)//rounds are 0 indexed
+                        task: taskText,
+                        team: teamNames,
+                        duration: roundMinutes,
+                        randomAnimal: tools.randomAnimal,
+                        round: currentRound + 1,
+                        runningLive: runningLive
+                    }, socket, u)//rounds are 0 indexed
                 } else {
                     // Dynamically generate teammate names
                     // even if teamSize = 1 for testing, this still works
@@ -1428,24 +1429,6 @@ io.on('connection', (socket) => {
                             && (users.byMturkId(friend.mturkId).room === u.room) && (friend.mturkId !== u.mturkId)
                     });
 
-                    // for each member on the team, assign a position if not already assigned
-                    // TODO: DONT USE FRIENDS!!!
-                    let used = []
-                    let wholeTeam = teamMates.slice()
-                    wholeTeam.push(u)
-                    wholeTeam.forEach(member => {
-                        // pick random position to be assigned a user if not already assigned
-                        individual = users.byMturkId(member.mturkId)
-                        if (individual.positions.length != currentRound + 1) {
-                            randomposition = positions.pick()
-                            while(used.indexOf(randomposition) != -1) {
-                                randomposition = positions.pick()
-
-                            }
-                            individual.positions.push(randomposition)
-                            used.push(randomposition)
-                        }
-                    })
 
                     // console.log(teamMates)
                     let team_Aliases = tools.makeName(teamMates.length, u.friends_history);
@@ -1473,7 +1456,7 @@ io.on('connection', (socket) => {
 
                     // ASSIGN TASK HERE
                     ioEmitById(u.mturkId, 'initiate round', {
-                        task: u.positions[u.positions.length-1] == "buyer" ? buyerTaskText :  sellerTaskText,
+                        task: taskText,
                         team: team_Aliases,
                         duration: roundMinutes,
                         randomAnimal: tools.randomAnimal,
@@ -1491,13 +1474,13 @@ io.on('connection', (socket) => {
             // Initialize steps
             const taskSteps = [
                 {
-                    time: 0.33,
-                    message: "<strong>Step 1. Read instructions.</strong>"
-                },
-                {
-                    time: 0.67,
-                    message: "<strong>Step 2. Begin negotiations.</strong>"
+                    time: 0.003,
+                    message: "<strong>Read instructions. When all group members are done reading, begin discussions.</strong>"
                 }
+                // {
+                //     time: 0.25,
+                //     message: "<strong>Step 2. Begin discussions (~15 minutes).</strong>"
+                // }
             ]
 
             // Execute steps
@@ -1517,7 +1500,7 @@ io.on('connection', (socket) => {
             setTimeout(() => {
                 console.log('time warning', currentRound);
                 users.forEach(user => {
-                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .2}, socket, user)
+                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .1}, socket, user)
                 });
 
                 //Done with round
@@ -1531,8 +1514,8 @@ io.on('connection', (socket) => {
                     });
                     currentRound += 1; // guard to only do this when a round is actually done.
                     console.log(currentRound, "out of", numRounds)
-                }, 1000 * 60 * 0.2 * roundMinutes)
-            }, 1000 * 60 * 0.8 * roundMinutes);
+                }, 1000 * 60 * 0.1 * roundMinutes)
+            }, 1000 * 60 * 0.9 * roundMinutes);
 
             if (checkinOn) {
                 let numPopups = 0;
@@ -1660,6 +1643,8 @@ io.on('connection', (socket) => {
                 };
             } else if (answerTag === "LH") { //leave hit yn
                 answerObj = leaveHitAnswers;
+            } else if (answerTag === "TX") {
+                answerObj = textAnswer;
             } else {//chatbot qs
                 answerObj = {}
             }
@@ -1842,13 +1827,13 @@ function getRandomSubarray(arr, size) {
 }
 
 function shuffle(array) {
-  var currentIndex = array.length, temporaryValue, randomIndex;
-  while (0 !== currentIndex) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex -= 1;
-    temporaryValue = array[currentIndex];
-    array[currentIndex] = array[randomIndex];
-    array[randomIndex] = temporaryValue;
-  }
-  return array;
+    var currentIndex = array.length, temporaryValue, randomIndex;
+    while (0 !== currentIndex) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex -= 1;
+        temporaryValue = array[currentIndex];
+        array[currentIndex] = array[randomIndex];
+        array[randomIndex] = temporaryValue;
+    }
+    return array;
 }

@@ -75,7 +75,7 @@ $(function () {
           <label for="{{question.name}}-{{index+1}}" class="rb-tab">
             <input v-bind:type="question.answerType" name="{{question.name}}" id="{{question.name}}-{{index+1}}"
             v-bind:value="question.textValue ? answer : index + 1" v-bind:required="question.required ? true : false"/>
-            <span class='rb-spot'>{{index+1}}</span>
+            <!--<span class='rb-spot'>{{index+1}}</span>-->
             <label for='{{question.name}}-{{index+1}}'>{{answer}}</label>
           </label>
         </template>
@@ -716,16 +716,12 @@ $(function () {
         setTimeout(() => {
             let totalLengthString = "";
             totalLengthString = Math.round(3 * (data.duration) + 15) + " minutes";
-            log("<strong>Reminder</strong>: You will receive the bonus pay at an hourly rate of $6/hour <strong>only</strong> if you stay for " +
+            log("<strong>Reminder</strong>: You will receive the bonus pay at an hourly rate of at least $6/hour <strong>only</strong> if you stay for " +
                 "all three rounds and answer all survey questions. This should take no more than " + totalLengthString + " total.");
-            log("There is also potential for up to $1.00 in performance bonus per round. <strong>Read instructions carefully.</strong>");
-            log("<strong>KEEP THE FIRST INSTRUCTION LINK OPEN.</strong>");
+            log("<strong>Do NOT use any external resources.</strong>")
             log("<strong>DO NOT REFRESH OR LEAVE THE PAGE</strong>. This will stop the task for everyone and you will not be compensated.");
             log("<strong>Task: </strong>" + data.task);
-            // log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.");
-
-            // log("You will have <strong>" + textifyTime(data.duration) + "</strong> to brainstorm for this round. You will receive instructions about how to collaborate to write a compelling add.");
-            log("You will have <strong>" + textifyTime(data.duration) + "</strong> to read instructions and negotiate for this round.");
+            log("You will have <strong>" + textifyTime(data.duration) + "</strong> to read instructions and discuss with your group for this round.");
         }, 500);
 
         setTimeout(() => {
@@ -923,12 +919,8 @@ $(function () {
     });
 
     socket.on('timer', data => {
-        log("<strong>You'll be done with this round in about " + textifyTime(data.time) + ". Enter your final compromise now.</strong>");
-        log("<strong>If no compromise is reached, you will receive no performance bonus.</strong>");
-        // log("Remember, it can't be more than <strong>maximum 30 characters long</strong>.");
-        log("To indicate your final result, <strong>start the line with an exclamation mark (i.e., '!')</strong>.");
-        log("For instance, if your compromise was price A for the first item, B for the second, and C for the third, you would put '!ABC'</strong>.");
-        // log("If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat. This result will count equally for all members of the team.")
+        log("<strong>You'll be done with this round in about " + textifyTime(data.time) + ".</strong>");
+        log("<strong>Pleaes have one group member enter your group's final decision along with a rationale for the decision.</strong>");
     });
 
     socket.on('echo', data => {
@@ -1075,13 +1067,13 @@ const decodeURL = (toDecode) => {
 };
 
 function textifyTime(duration) {
-  let durationString = "";
-  if (duration < 1) {
-      durationString = Math.round(duration * 60) + " seconds"
-  } else if (duration === 1) {
-      durationString = "one minute"
-  } else {
-      durationString = duration + " minutes"
-  }
-  return durationString
+    let durationString = "";
+    if (duration < 1) {
+        durationString = Math.round(duration * 60) + " seconds"
+    } else if (duration === 1) {
+        durationString = "one minute"
+    } else {
+        durationString = duration + " minutes"
+    }
+    return durationString
 }
