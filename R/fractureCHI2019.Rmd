@@ -22,16 +22,16 @@ rm(list=ls())
 setwd("/Users/kevinlin/Documents/BANG/bang/R")
 getwd()
 dataPath = "../.data"
-MINIMUM_BATCH_NUMBER = 1537266991708  
+MINIMUM_BATCH_NUMBER = 1544640127133
 # last 2 days 1537366991708
 # start of final day  1537514940000
 
-TEAM_SIZE = 2
+TEAM_SIZE = 3
 MIN_FRACTURE_PERCENT = 0.5
 
 ## Function to extract blacklist surveys:
 extractBlacklistSurvey = function(frame,survey) {
-  rounds = seq(1,4)
+  rounds = seq(1,3)
   roundResponses = lapply(rounds, function(round) {
     getCol = paste("results.",survey,".",round, sep="")
     surveyCols = Filter(function(x) grepl(getCol,x),names(frame))
@@ -53,7 +53,7 @@ extractBlacklistSurvey = function(frame,survey) {
 
 ## Seperate viability function to deal with different column types
 extractViabilitySurvey = function(frame,survey) {
-  rounds = seq(1,4)
+  rounds = seq(1,3)
   roundResponses = lapply(rounds, function(round) {
     getCol = paste("results.",survey,".",round, sep="")
     surveyCols = Filter(function(x) grepl(getCol,x),names(frame))
@@ -93,12 +93,12 @@ users <- Reduce(function(x,y) merge(x, y, all=TRUE), lapply(batches, function(ba
   return(flatten(userFile, recursive = TRUE))
 }))
 
-users <- users %>%
-  select(-results.engagementFeedback.undefined, -results.qSixteenCheck.undefined, -results.qFifteenCheck.undefined, -contains("results.viabilityCheck.0"))
-users <- na.omit(users)
+#users <- users %>%
+#  select(-results.engagementFeedback.undefined, -results.qSixteenCheck.undefined, -results.qFifteenCheck.undefined,   -contains("results.viabilityCheck.0"))
+#users <- na.omit(users)
 
 usersRounds = as.data.frame(Reduce(rbind, apply(users,1,function(x) {
-  roomsForIndividual = lapply(seq(1,4),function(y) {
+  roomsForIndividual = lapply(seq(1,3),function(y) {
     x$room = x$rooms[y]
     x$round = y
     return(x)
@@ -120,7 +120,7 @@ manipulationCheck <- usersRounds %>%
   select(id, batch, room, round, manipulation, manipulationCheck, teamOrder, condition)
 qFifteen <- extractBlacklistSurvey(users, 'qFifteenCheck')
 qSixteen <- extractBlacklistSurvey(users, 'qSixteenCheck')
-viabilitySurvey <- extractViabilitySurvey(users, 'viabilityCheck')
+#viabilitySurvey <- extractViabilitySurvey(users, 'viabilityCheck')
 ```
 
 # Now merge everything
@@ -128,10 +128,11 @@ viabilitySurvey <- extractViabilitySurvey(users, 'viabilityCheck')
 usersRounds <- manipulationCheck %>%
   left_join(qFifteen, by=c("id", "batch", "round")) %>%
   left_join(qSixteen, by=c("id", "batch", "round")) %>%
-  left_join(viabilitySurvey, by=c("id", "batch", "round")) %>%
+  #left_join(viabilitySurvey, by=c("id", "batch", "round")) %>%
   mutate(rooms = rooms.x, manipulation = as.character(manipulation)) %>%
   select(-manipulationCheck.1, -manipulationCheck.x, -manipulationCheck.y, -rooms, -rooms.x, -rooms.y)
-rm(list=c("qFifteen","qSixteen","viabilitySurvey","manipulationCheck"))
+#rm(list=c("qFifteen","qSixteen","viabilitySurvey","manipulationCheck"))
+rm(list=c("qFifteen","qSixteen","manipulationCheck"))
 
 usersRounds <- usersRounds %>% 
   mutate(condition = case_when(
