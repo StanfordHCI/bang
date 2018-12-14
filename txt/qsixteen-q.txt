@@ -1,4 +1,6 @@
 YN15|1. Do you think other participants in Team 1 would choose to remove it from the random selection for a future round?
+TX|Why did you choose that?
 YN15|2. Do you think other participants in Team 2 would choose to remove it from the random selection for a future round?
+TX|Why did you choose that?
 YN15|3. Do you think other participants in Team 3 would choose to remove it from the random selection for a future round?
-YN15|4. Do you think other participants in Team 4 would choose to remove it from the random selection for a future round?
+TX|Why did you choose that?
