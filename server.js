@@ -439,11 +439,11 @@ let products = [
     },
     {
         name: "Participate in a mock jury deliberating over a car crash incident",
-        url: taskURL + ".pdf"
+        url: taskURL + "ea5kcE9ShiBcy5iJOgFunBOGFrV2hKZ4qupL1PgR9s.pdf"
     },
     {
         name: "Participate in a mock jury deliberating over a rape incident",
-        url: taskURL + ".pdf"
+        url: taskURL + "vf5aXHYMWp9PCkQ6jQEgQuYtg6akrvzuj1x9kA1A.pdf"
     }
 ];
 
@@ -1474,8 +1474,8 @@ io.on('connection', (socket) => {
             // Initialize steps
             const taskSteps = [
                 {
-                    time: 0.003,
-                    message: "<strong>Read instructions. When all group members are done reading, begin discussions.</strong>"
+                    time: 0.005,
+                    message: "<strong>Read instructions. When all group members are done reading, begin deliberations.</strong>"
                 }
                 // {
                 //     time: 0.25,
@@ -1500,7 +1500,7 @@ io.on('connection', (socket) => {
             setTimeout(() => {
                 console.log('time warning', currentRound);
                 users.forEach(user => {
-                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .1}, socket, user)
+                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .13}, socket, user)
                 });
 
                 //Done with round
@@ -1514,8 +1514,8 @@ io.on('connection', (socket) => {
                     });
                     currentRound += 1; // guard to only do this when a round is actually done.
                     console.log(currentRound, "out of", numRounds)
-                }, 1000 * 60 * 0.1 * roundMinutes)
-            }, 1000 * 60 * 0.9 * roundMinutes);
+                }, 1000 * 60 * 0.13 * roundMinutes)
+            }, 1000 * 60 * 0.87 * roundMinutes);
 
             if (checkinOn) {
                 let numPopups = 0;
