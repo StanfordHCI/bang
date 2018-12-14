@@ -1500,7 +1500,7 @@ io.on('connection', (socket) => {
             setTimeout(() => {
                 console.log('time warning', currentRound);
                 users.forEach(user => {
-                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .13}, socket, user)
+                    ioEmitById(user.mturkId, 'timer', {time: roundMinutes * .1}, socket, user)
                 });
 
                 //Done with round
@@ -1514,8 +1514,8 @@ io.on('connection', (socket) => {
                     });
                     currentRound += 1; // guard to only do this when a round is actually done.
                     console.log(currentRound, "out of", numRounds)
-                }, 1000 * 60 * 0.13 * roundMinutes)
-            }, 1000 * 60 * 0.87 * roundMinutes);
+                }, 1000 * 60 * 0.1 * roundMinutes)
+            }, 1000 * 60 * 0.9 * roundMinutes);
 
             if (checkinOn) {
                 let numPopups = 0;
