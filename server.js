@@ -241,8 +241,6 @@ let batchCompleteUpdated = false;
 const ordering = randomRoundOrder ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick() : [1, 2, 1, 3];
 const conditions = {control: ordering, treatment: ordering, baseline: [1, 2, 3, 2]}; //,4]} modified extra round to deal with createTeams
 
-numRounds = 1;
-
 const experimentRoundIndicator = extraRoundOn ? 2 : 1; //This records what round of the ordering is the experimental round.
 const experimentRound = conditions[currentCondition].lastIndexOf(experimentRoundIndicator); //assumes that the manipulation is always the last instance of team 1's interaction.
 console.log(currentCondition, 'with', conditions[currentCondition]);
@@ -257,7 +255,7 @@ const teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn); 
 //}
 
 // NOTE: only if doing one round
-// numRounds = 1;
+numRounds = 1;
 
 //if (runExperimentNow) {
 const batchID = Date.now();
