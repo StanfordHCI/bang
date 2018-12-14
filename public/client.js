@@ -919,12 +919,7 @@ $(function () {
     });
 
     socket.on('timer', data => {
-        log("<strong>You'll be done with this round in about " + textifyTime(data.time) + ". Enter your final compromise now.</strong>");
-        log("<strong>If no compromise is reached, you will receive no performance bonus.</strong>");
-        // log("Remember, it can't be more than <strong>maximum 30 characters long</strong>.");
-        log("To indicate your final result, <strong>start the line with an exclamation mark (i.e., '!')</strong>.");
-        log("For instance, if your compromise was price A for the first item, B for the second, and C for the third, you would put '!ABC'</strong>.");
-        // log("If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat. This result will count equally for all members of the team.")
+        log("<strong>You'll be done with this round in about " + textifyTime(data.time) + ". Please enter your final decision.</strong>");
     });
 
     socket.on('echo', data => {

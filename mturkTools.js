@@ -535,7 +535,7 @@ const launchBang = (callback) => {
     let time = Date.now();
 
     let HITTitle = 'Debate how money should be allocated - bonus up to $' + (hourlyWage) + ' / hour (' + time + ')';
-    let description = 'Work in groups to reach a compromise on how to allocate philanthropic resources. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10) + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.';
+    let description = 'Work in groups to reach a compromise on how to allocate philanthropic resources. This task will take approximately ' + Math.round((roundMinutes * numRounds)) + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.';
     let assignmentDuration = 60 * taskDuration;
     let lifetime = 60 * (timeActive);
     let reward = String(rewardPrice);
