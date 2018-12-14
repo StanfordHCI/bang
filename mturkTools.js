@@ -534,13 +534,13 @@ const launchBang = (callback) => {
     // HIT Parameters
     let time = Date.now();
 
-    let HITTitle = 'Negotiate prices - bonus up to $' + (hourlyWage) + ' / hour (' + time + ')';
-    let description = 'Work in groups to reach a compromies on buyer/seller prices of commodities. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10) + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.';
+    let HITTitle = 'Debate how money should be allocated - bonus up to $' + (hourlyWage) + ' / hour (' + time + ')';
+    let description = 'Work in groups to reach a compromise on how to allocate philanthropic resources. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10) + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.';
     let assignmentDuration = 60 * taskDuration;
     let lifetime = 60 * (timeActive);
     let reward = String(rewardPrice);
     let autoApprovalDelay = 60 * taskDuration;
-    let keywords = 'prices, negotiation, profit, buyer, seller';
+    let keywords = 'debate, money, philanthropy, resources, group, compromise';
     let maxAssignments = numAssignments;
     let hitContent = externalHIT(taskURL);
 
@@ -555,15 +555,15 @@ const launchBang = (callback) => {
         if (hitsLeft > 0 && !taskStarted) {
             time = Date.now();
             numAssignments = hitsLeft;
-            let HITTitle = 'Negotiate prices - bonus up to $' + (hourlyWage) + ' / hour (' + time + ')';
+            let HITTitle = 'Debate how money should be allocated - bonus up to $' + (hourlyWage) + ' / hour (' + time + ')';
             let params2 = {
                 Title: HITTitle,
-                Description: 'Work in groups to reach a compromise on buyer/seller prices of commodities. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10) + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
+                Description: 'Work in groups to reach a compromise on how to allocate philanthropic resources. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10) + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
                 AssignmentDurationInSeconds: 60 * taskDuration, // 30 minutes?
                 LifetimeInSeconds: 60 * (timeActive),  // short lifetime, deletes and reposts often
                 Reward: String(rewardPrice),
                 AutoApprovalDelayInSeconds: 60 * taskDuration,
-                Keywords: 'prices, negotiation, profit, buyer, seller',
+                Keywords: 'debate, money, philanthropy, resources, group, compromise',
                 MaxAssignments: numAssignments,
                 QualificationRequirements: safeQuals,
                 Question: externalHIT(taskURL)
