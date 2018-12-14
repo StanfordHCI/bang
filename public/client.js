@@ -715,7 +715,7 @@ $(function () {
 
         setTimeout(() => {
             let totalLengthString = "";
-            totalLengthString = Math.round(3 * (data.duration) + 15) + " minutes";
+            totalLengthString = Math.round((data.duration)) + " minutes";
             log("<strong>Reminder</strong>: You will receive the bonus pay at an hourly rate of $10/hour <strong>only</strong> if you stay for " +
                 "the entire round. This should take no more than " + totalLengthString + " total.");
             log("<strong>KEEP THE FIRST INSTRUCTION LINK OPEN.</strong>");

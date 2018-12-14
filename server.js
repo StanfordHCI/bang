@@ -1466,7 +1466,7 @@ io.on('connection', (socket) => {
             // Initialize steps
             const taskSteps = [
                 {
-                    time: 0.003,
+                    time: 0.005,
                     message: "<strong>Read instructions. When all group members are done reading, begin discussions.</strong>"
                 }
                 // {
