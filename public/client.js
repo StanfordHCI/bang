@@ -1008,12 +1008,14 @@ $(function () {
     });
 
     socket.on('finished', data => {
-        socket.emit('log', 'SOCKET DISCONNECT ON FINISHED: ' + data.finishingcode);
-        HandleFinish(finishingMessage = data.message, mturk_form = mturkVariables.turkSubmitTo +
-            "/mturk/externalSubmit",
-            assignmentId = mturkVariables.assignmentId, finishingcode = data.finishingCode);
+        socket.emit('log', 'Disconnecting: ' + data.finishingcode);
+        HandleFinish(
+          finishingMessage = data.message,
+          mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
+          assignmentId = mturkVariables.assignmentId,
+          finishingcode = data.finishingCode);
         LeavingAlert = false;
-        // socket.disconnect(true);
+        socket.disconnect(true);
     });
 
     $('#mturk_form').submit((event) => {

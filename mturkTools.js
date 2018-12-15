@@ -675,14 +675,6 @@ const checkQualsRecursive = (qualObject, callback, paginationToken = null, passt
     })
 };
 
-// checkQualsRecursive(quals.willBang, will => {
-//   checkQualsRecursive(quals.hasBanged, has => {
-//     has.filter(h => will.includes(h)).forEach(h => {
-//       unassignQuals(h, quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!')
-//     })
-//   })
-// })
-
 function getRandomSubarray(arr, size) {
     let shuffled = arr.slice(0), i = arr.length, min = i - size, temp, index;
     while (i-- > min) {
@@ -694,9 +686,4 @@ function getRandomSubarray(arr, size) {
     return shuffled.slice(min);
 }
 
-// use to remove workers from notify list
-
-//Remove qualification from user.
-// disassociateQualification(quals.willBang.QualificationTypeId, 'AWIQFS5VFFLVR', "Requested to be removed.")
-
-unassignQuals('A392Q6IRAQ9NZ3', quals.willBang, 'This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!') ;
+workOnActiveHITs(console.log)
