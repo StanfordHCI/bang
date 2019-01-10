@@ -6,12 +6,15 @@ dotenv.config();
 var yargs = require("yargs");
 var args = yargs.argv;
 var chalk_1 = require("chalk");
+var User = require("./user.js");
+var john = new User(3);
+console.log(john);
 //importing our libraries
 var tools = require('./tools');
 var mturk = require('./mturkTools');
 //Initializing variables
 var runningLocal = process.env.RUNNING_LOCAL === "TRUE";
-var runningLive = process.env.RUNNING_LIVE === "TRUE"; //ONLY CHANGE ON SERVER
+var runningLive = process.env.RUNNING_LIVE === "TRUE";
 var teamSize = parseInt(process.env.TEAM_SIZE);
 var roundMinutes = parseFloat(process.env.ROUND_MINUTES);
 var taskURL = args.url || process.env.TASK_URL;
@@ -409,7 +412,6 @@ if (runExperimentNow) {
         }
     });
 }
-//Add more products
 var products = [
     // {name: 'KOSMOS ink - Magnetic Fountain Pen', url: 'https://www.kickstarter.com/projects/stilform/kosmos-ink'},
     // {
@@ -1310,18 +1312,19 @@ io.on('connection', function (socket) {
             console.log("user.rooms.length:", user.rooms.length);
             // Replaceing user with extraRound
             if (extraRoundOn && user.rooms.length === 1) {
+                var replacingPersonName_1 = "";
                 users.forEach(function (u) {
                     if (tools.letters.slice(0, Math.pow(teamSize, 2)).includes(u.person) && !u.connected) {
                         var disconnectedsRoom_1 = u.room;
                         Object.entries(teams[0]).forEach(function (_a) {
                             var roomName = _a[0], room = _a[1];
                             if (roomName === disconnectedsRoom_1) {
-                                var replacingPersonName = room[teamSize];
+                                replacingPersonName_1 = room[teamSize];
                             }
                         });
                         //u is the user who left
                         //replacingPersonName is the v.person of some v in users who will replace u
-                        users.filter(function (v) { return v.person === replacingPersonName; }).forEach(function (v) {
+                        users.filter(function (v) { return v.person === replacingPersonName_1; }).forEach(function (v) {
                             v.room = u.room;
                             v.rooms = u.rooms;
                             v.person = u.person;
@@ -1758,3 +1761,5 @@ function shuffle(array) {
     }
     return array;
 }
+
+users.

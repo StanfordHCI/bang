@@ -11,7 +11,7 @@ let mturk = require('./mturkTools');
 
 //Initializing variables
 const runningLocal = process.env.RUNNING_LOCAL === "TRUE";
-const runningLive = process.env.RUNNING_LIVE === "TRUE"; //ONLY CHANGE ON SERVER
+const runningLive = process.env.RUNNING_LIVE === "TRUE";
 const teamSize = parseInt(process.env.TEAM_SIZE);
 const roundMinutes = parseFloat(process.env.ROUND_MINUTES);
 let taskURL = args.url || process.env.TASK_URL;
@@ -83,6 +83,8 @@ const botFile = getTXT("botquestions")
 const leaveHitFile = getTXT("leave-hit-q")
 const qFifteenFile = getTXT("qfifteen-q")
 const qSixteenFile = getTXT("qsixteen-q")
+
+
 
 // Answer Option Sets
 const answers = {
@@ -1386,12 +1388,13 @@ io.on('connection', (socket) => {
 
             // Replaceing user with extraRound
             if (extraRoundOn && user.rooms.length === 1) {
+                let replacingPersonName = ""
                 users.forEach(u => {
                     if (tools.letters.slice(0, teamSize ** 2).includes(u.person) && !u.connected) {
                         let disconnectedsRoom = u.room;
                         Object.entries(teams[0]).forEach(([roomName, room]) => {
                             if (roomName === disconnectedsRoom) {
-                                let replacingPersonName = room[teamSize]
+                                replacingPersonName = room[teamSize]
                             }
                         });
                         //u is the user who left
@@ -1848,7 +1851,7 @@ const logTime = () => {
         " seconds since starting the experiment. Printed at", timeNow.toString());
 };
 
-function getRandomSubarray(arr, size) {
+function getRandomSubarray(arr, size: number) {
     return shuffle(arr).slice(0,size);
 }
 
