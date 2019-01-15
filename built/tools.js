@@ -9,9 +9,11 @@ var teamChecker = function (roundTeams) {
             team.forEach(function (person) {
                 var others = team.filter(function (member) { return member != person; });
                 if (person in collaborators) {
-                    others.forEach(function (member) { if (collaborators[person].includes(member)) {
-                        return false;
-                    } });
+                    others.forEach(function (member) {
+                        if (collaborators[person].includes(member)) {
+                            return false;
+                        }
+                    });
                 }
                 else {
                     collaborators[person] = [];
@@ -23,8 +25,8 @@ var teamChecker = function (roundTeams) {
     return true;
 };
 var letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-var randomAnimal = 'Bison Eagle Pony Moose Deer Duck Rabbit Spider Wolf Lion Snake Shark Bird Bear Fish Horse Badger Marten Otter Lynx'.split(" ");
-var randomAdjective = 'new small young little likely nice cultured snappy spry conventional'.split(" ");
+var randomAnimal = "Bison Eagle Pony Moose Deer Duck Rabbit Spider Wolf Lion Snake Shark Bird Bear Fish Horse Badger Marten Otter Lynx".split(" ");
+var randomAdjective = "new small young little likely nice cultured snappy spry conventional".split(" ");
 var nameCount = 2;
 var createTeams = function (teamSize, numRounds, people) {
     //MEW: helper to convert sets without a type change because we need them.
@@ -45,7 +47,9 @@ var createTeams = function (teamSize, numRounds, people) {
     var teamNames = letters.slice(0, teamSize);
     var roundTeams = [];
     var collaborators = {};
-    realPeople.forEach(function (person) { collaborators[person] = [person]; });
+    realPeople.forEach(function (person) {
+        collaborators[person] = [person];
+    });
     console.log(realPeople);
     while (roundTeams.length < numRounds) {
         var unUsedPeople = realPeople.slice();
@@ -53,7 +57,9 @@ var createTeams = function (teamSize, numRounds, people) {
         var _loop_1 = function () {
             var team = [unUsedPeople.pop()]; // Add first person to team
             var _loop_2 = function () {
-                var teamCollaborators = set(team.map(function (member) { return collaborators[member]; }).reduce(function (a, b) { return a.concat(b); })); //find all prior collaborators
+                var teamCollaborators = set(team
+                    .map(function (member) { return collaborators[member]; })
+                    .reduce(function (a, b) { return a.concat(b); })); //find all prior collaborators
                 var remainingOptions = unUsedPeople.filter(function (person) { return !teamCollaborators.includes(person); }); //find all remaining options
                 if (!remainingOptions.length) {
                     return { value: createTeams(teamSize, numRounds, realPeople) };
@@ -67,7 +73,9 @@ var createTeams = function (teamSize, numRounds, people) {
                 if (typeof state_2 === "object")
                     return state_2;
             }
-            team.forEach(function (member) { collaborators[member] = set(collaborators[member].concat(team)); }); //Add collaborators from new team
+            team.forEach(function (member) {
+                collaborators[member] = set(collaborators[member].concat(team));
+            }); //Add collaborators from new team
             teams[teamNames[Object.keys(teams).length]] = team; //Add new team
         };
         while (unUsedPeople.length) {
@@ -98,7 +106,8 @@ module.exports = {
             // we want to avoid animal names
             // remove previously seen animal names
             var animals_1 = randomAnimal.slice();
-            if (teamSize <= animals_1.length - friends_history.length) { //make sure there's enough adjectives
+            if (teamSize <= animals_1.length - friends_history.length) {
+                //make sure there's enough adjectives
                 var i = 0;
                 for (i = 0; i < friends_history.length; i++) {
                     // make sure that teamSize * 3rounds < 17 (length of randomAnimals)
