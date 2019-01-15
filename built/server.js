@@ -1,14 +1,11 @@
 "use strict";
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 //Setting up utilities
 var dotenv = require("dotenv");
 dotenv.config();
 var yargs = require("yargs");
 var args = yargs.argv;
 var chalk_1 = require("chalk");
-var User = require("./user.js");
-var john = new User(3);
-console.log(john);
 //importing our libraries
 var tools = require('./tools');
 var mturk = require('./mturkTools');
@@ -17,7 +14,9 @@ var runningLocal = process.env.RUNNING_LOCAL === "TRUE";
 var runningLive = process.env.RUNNING_LIVE === "TRUE";
 var teamSize = parseInt(process.env.TEAM_SIZE);
 var roundMinutes = parseFloat(process.env.ROUND_MINUTES);
-var taskURL = args.url || process.env.TASK_URL;
+var taskURL = String(args.url) || process.env.TASK_URL;
+// MEW: new URL was not working in the JS so temporerally removed. This means the variable is just a stirng for now. 
+// const taskURL = new URL(String(args.url)) || new URL(process.env.TASK_URL)
 var runExperimentNow = true;
 var runViaEmailOn = false;
 var cleanHITs = false;
@@ -54,10 +53,10 @@ var waitChatParms = {
     minTime: 20,
     lastActivity: 59,
     maxTime: 1200,
-    maxInactivity: 200
+    maxInactivity: 200,
 };
 //Launch reporting
-console.log(runningLive ? chalk_1["default"].red.inverse("\n RUNNING LIVE ") : chalk_1["default"].green.inverse("\n RUNNING SANDBOXED "));
+console.log(runningLive ? chalk_1.default.red.inverse("\n RUNNING LIVE ") : chalk_1.default.green.inverse("\n RUNNING SANDBOXED "));
 console.log(runningLocal ? "Running locally" : "Running remotely");
 var batchID = Date.now();
 console.log("Launching batch", batchID);
@@ -83,7 +82,11 @@ var answers = {
     answerType: 'radio',
     textValue: true
 };
-var binaryAnswers = { answers: ['Keep this team', 'Do not keep this team'], answerType: 'radio', textValue: true };
+var binaryAnswers = {
+    answers: ['Keep this team', 'Do not keep this team'],
+    answerType: 'radio',
+    textValue: true
+};
 var leaveHitAnswers = {
     answers: ['End Task and Send Feedback', 'Return to Task'],
     answerType: 'radio',
@@ -97,7 +100,8 @@ var server = require('http').createServer(app);
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 var io = require('socket.io')(server); //, {transports: ['websocket']}
-var port = args.port || process.env.PORT || 3000;
+// MEW: args.port does returns unknown, so it must be coerced into string, then int.
+var port = parseInt(String(args.port)) || parseInt(process.env.PORT) || 3000;
 server.listen(port, function () {
     console.log('Server listening at port', port);
 });
@@ -106,7 +110,6 @@ function authenticate(user) {
     // if user in db, is it for this session?
     // if user not in db, is the session full?
 }
-//authenticate
 app.use(function (req, res, next) {
     if (!req.query.workerId) {
         next();
@@ -152,9 +155,6 @@ if (!Array.prototype.find) {
         return undefined;
     };
 }
-function chooseOne(list) {
-    return list[Math.floor(Math.random() * list.length)];
-}
 function userByMturkId(users, MturkId) {
     return users.find(function (user) { return user.mturkId === MturkId; });
 }
@@ -178,7 +178,7 @@ function ioEmitById(socketId, event, message, socket, user) {
         }
         +console.log(socket.id, socket.mturkId, isActive, isConnected, event, printMessage);
     }
-    return io["in"](socketId).emit(event, message);
+    return io.in(socketId).emit(event, message);
 }
 function useUser(socket, callback, err) {
     if (err === void 0) { err = "Guarded against undefined user"; }
@@ -187,7 +187,7 @@ function useUser(socket, callback, err) {
         callback(user);
     }
     else {
-        console.log(chalk_1["default"].red(err), socket.id, "\n");
+        console.log(chalk_1.default.red(err), socket.id, "\n");
         if (debugMode) {
             console.trace();
         }
@@ -196,7 +196,8 @@ function useUser(socket, callback, err) {
 // Check balance
 mturk.getBalance(function (balance) {
     if (runningLive && balance <= 400) {
-        console.log(chalk_1["default"].red.inverse.bold("\n!!! BROKE !!!\n"));
+        mturk.notifyWorkers(["A19MTSLG2OYDLZ"], "ADD MORE FUNDS to MTURK!");
+        console.log(chalk_1.default.red.inverse.bold("\n!!! BROKE !!!\n"));
     }
 });
 // Save debug logs for later review
@@ -232,9 +233,8 @@ console.log = function () {
 // Experiment variables
 var conditionOptions = ['control', 'treatment'];
 var roundOrderOptions = [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]];
-var currentCondition = args.condition || randomCondition ? chooseOne(conditionOptions) : conditionOptions[1];
-var roundOrdering = randomRoundOrder ? chooseOne(roundOrderOptions) : roundOrderOptions[0];
-//TODO Move somewhere better
+var currentCondition = args.condition || randomCondition ? tools.chooseOne(conditionOptions) : conditionOptions[1];
+var roundOrdering = randomRoundOrder ? tools.chooseOne(roundOrderOptions) : roundOrderOptions[0];
 var treatmentNow = false;
 var firstRun = false;
 var hasAddedUsers = false; //lock on adding users to db/experiment for experiment
@@ -254,11 +254,11 @@ var db = {
     batch: new Datastore({ filename: '.data/batch', autoload: true, timestampData: true }),
     time: new Datastore({ filename: '.data/time', autoload: true, timestampData: true }),
     ourHITs: new Datastore({ filename: '.data/ourHITs', autoload: true, timestampData: true }),
-    willBang: new Datastore({ filename: '.data/willBang', autoload: true, timestampData: true })
+    willBang: new Datastore({ filename: '.data/willBang', autoload: true, timestampData: true }),
 };
 function updateUserInDB(user, field, value) {
     var _a;
-    db.users.update({ mturkId: user.mturkId, batch: batchID }, { $set: (_a = {}, _a[field] = value, _a) }, {}, function (err) { return console.log(err ? chalk_1["default"].red("Err recording ") + field + ": " + err : "Updated " + field + " for " +
+    db.users.update({ mturkId: user.mturkId, batch: batchID }, { $set: (_a = {}, _a[field] = value, _a) }, {}, function (err) { return console.log(err ? chalk_1.default.red("Err recording ") + field + ": " + err : "Updated " + field + " for " +
         user.mturkId + " " + JSON.stringify(value, null, 2)); });
 }
 //Mturk background tasks
@@ -542,7 +542,7 @@ Object.keys(io.sockets.sockets).forEach(function (socketID) {
     if (userPool.every(function (user) { return user.id !== socketID; })) {
         console.log("Removing dead socket: " + socketID);
         console.log("SOCKET DISCONNECT IN LEFTOVER USER");
-        io["in"](socketID).emit('get IDs', 'broken');
+        io.in(socketID).emit('get IDs', 'broken');
         // io.in(socketID).disconnect(true)
     }
 });
@@ -602,7 +602,7 @@ io.on('connection', function (socket) {
         socket.assignmentId = assignmentId;
         socket.join(mturkId);
         if (userByMturkId(users, mturkId)) {
-            console.log(chalk_1["default"].blue('Reconnected ' + mturkId + ' in users'));
+            console.log(chalk_1.default.blue('Reconnected ' + mturkId + ' in users'));
             var user = userByMturkId(users, mturkId);
             user.connected = true;
             user.assignmentId = assignmentId;
@@ -612,7 +612,7 @@ io.on('connection', function (socket) {
         }
         if (userByMturkId(userPool, mturkId)) {
             var user = userByMturkId(userPool, mturkId);
-            console.log(chalk_1["default"].blue('RECONNECTED ' + mturkId + ' in user pool (' + user.id + ' => ' + socket.id + ')'));
+            console.log(chalk_1.default.blue('RECONNECTED ' + mturkId + ' in user pool (' + user.id + ' => ' + socket.id + ')'));
             socket.name_structure = data.name_structure;
             socket.username = data.name_structure.username;
             user.connected = true;
@@ -623,14 +623,14 @@ io.on('connection', function (socket) {
         }
         else {
             createUsername();
-            console.log(chalk_1["default"].blue('NEW USER CONNECTED'));
+            console.log(chalk_1.default.blue('NEW USER CONNECTED'));
         }
-        console.log(chalk_1["default"].blue('SOCKET: ' + socket.id + ' | MTURK ID: ' + socket.mturkId + ' | NAME: ' + socket.username +
+        console.log(chalk_1.default.blue('SOCKET: ' + socket.id + ' | MTURK ID: ' + socket.mturkId + ' | NAME: ' + socket.username +
             '| ASSIGNMENT ID: ' + socket.assignmentId));
     });
     socket.on("heartbeat", function (_data) {
         if (socket.connected) {
-            io["in"](socket.id).emit('heartbeat');
+            io.in(socket.id).emit('heartbeat');
         }
     });
     socket.on('accepted HIT', function (data) {
@@ -676,7 +676,7 @@ io.on('connection', function (socket) {
                 return user.id !== socketID;
             })) {
                 console.log("Removing dead socket: " + socketID);
-                io["in"](socketID).emit('get IDs', 'broken');
+                io.in(socketID).emit('get IDs', 'broken');
             }
         });
         logTime();
@@ -699,7 +699,7 @@ io.on('connection', function (socket) {
                     secondsSince(user.timeLastActivity) > waitChatParms.maxInactivity)) {
                     user.removed = true;
                     console.log('removing user because of inactivity:', user.id);
-                    io["in"](user.mturkId).emit('get IDs', 'broken');
+                    io.in(user.mturkId).emit('get IDs', 'broken');
                 }
             });
         }
@@ -740,9 +740,9 @@ io.on('connection', function (socket) {
             }
             else {
                 if (secondsSince(waitchatStart) / 60 >= waitChatParms.maxTime / 60) {
-                    console.log(chalk_1["default"].red("Waitchat time limit reached"));
+                    console.log(chalk_1.default.red("Waitchat time limit reached"));
                     userAcquisitionStage = false;
-                    io["in"](socket.mturkId).emit('echo', 'kill-all');
+                    io.in(socket.mturkId).emit('echo', 'kill-all');
                 }
             }
         }
@@ -752,7 +752,7 @@ io.on('connection', function (socket) {
                 ioSocketsEmit('update number waiting', { num: 0 });
                 console.log('there are ' + usersActive.length + ' users: ' + usersActive);
                 for (var i = 0; i < usersActive.length; i++) {
-                    io["in"](usersActive[i].mturkId).emit('show chat link');
+                    io.in(usersActive[i].mturkId).emit('show chat link');
                 }
             }
             else {
@@ -794,7 +794,7 @@ io.on('connection', function (socket) {
                 blacklistCheck: '',
                 qFifteenCheck: {},
                 qSixteenCheck: {},
-                engagementFeedback: ''
+                engagementFeedback: '',
             }
         };
     }
@@ -945,7 +945,7 @@ io.on('connection', function (socket) {
     // when the user disconnects.. perform this
     socket.on('disconnect', function (reason) {
         // changes connected to false if disconnected user in userPool
-        console.log(chalk_1["default"].red("[" + (new Date()).toISOString() + "]: Disconnecting socket: " + socket.id + " because " + reason));
+        console.log(chalk_1.default.red("[" + (new Date()).toISOString() + "]: Disconnecting socket: " + socket.id + " because " + reason));
         if (reason === "transport error") {
             //console.log(socket);
             console.log("TRANSPORT");
@@ -1028,7 +1028,7 @@ io.on('connection', function (socket) {
         });
     });
     socket.on('ready-to-all', function (_data) {
-        console.log(chalk_1["default"].red("god is ready"));
+        console.log(chalk_1.default.red("god is ready"));
         users.filter(function (user) { return !user.ready; }).forEach(function (user) {
             return ioEmitById(socket.mturkId, 'echo', 'ready', socket, user);
         }
@@ -1037,12 +1037,12 @@ io.on('connection', function (socket) {
         //io.sockets.emit('echo','ready')
     });
     socket.on('active-to-all', function (_data) {
-        console.log(chalk_1["default"].red("god is active"));
+        console.log(chalk_1.default.red("god is active"));
         ioSocketsEmit('echo', 'active');
         // io.sockets.emit('echo', 'active');
     });
     socket.on('notify-more', function (_data) {
-        console.log(chalk_1["default"].red("god wants more humans"));
+        console.log(chalk_1.default.red("god wants more humans"));
         var HITId = mturk.returnCurrentHIT();
         // let HITId = process.argv[2];
         var subject = "We launched our new ad writing HIT. Join now, spaces are limited.";
@@ -1076,7 +1076,7 @@ io.on('connection', function (socket) {
         });
     });
     socket.on('kill-all', function (_data) {
-        console.log(chalk_1["default"].red("god is angry"));
+        console.log(chalk_1.default.red("god is angry"));
         users.forEach(function () { return updateUserInDB(socket, "bonus", currentBonus()); });
         ioSocketsEmit('finished', {
             message: "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
@@ -1353,7 +1353,9 @@ io.on('connection', function (socket) {
             }
             Object.entries(teams[conditionRound]).forEach(function (_a) {
                 var roomName = _a[0], room = _a[1];
-                users.filter(function (u) { return room.includes(u.person); }).forEach(function (u) {
+                users.filter(function (u) {
+                    room.includes(u.person);
+                }).forEach(function (u) {
                     u.room = roomName;
                     u.rooms.push(roomName);
                     updateUserInDB(u, "rooms", u.rooms);
@@ -1444,7 +1446,7 @@ io.on('connection', function (socket) {
             taskSteps.forEach(function (step) {
                 setTimeout(function () {
                     if (step.message) {
-                        console.log(chalk_1["default"].red("Task step:"), step.message);
+                        console.log(chalk_1.default.red("Task step:"), step.message);
                         ioSocketsEmit("message clients", step.message);
                         // ioEmitById(user.mturkId, "message clients", step.message)
                     }
@@ -1611,7 +1613,7 @@ io.on('connection', function (socket) {
             console.log("Undefined user in issueFinish");
             return;
         }
-        console.log(chalk_1["default"].red('Issued finish to ' + socket.mturkId));
+        console.log(chalk_1.default.red('Issued finish to ' + socket.mturkId));
         useUser(socket, function (user) {
             ioEmitById(socket.mturkId, 'finished', { message: message, finishingCode: finishingCode, crashed: crashed }, socket, user);
         });
@@ -1761,5 +1763,3 @@ function shuffle(array) {
     }
     return array;
 }
-
-users.

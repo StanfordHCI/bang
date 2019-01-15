@@ -15,7 +15,7 @@
     "@types/node": "^10.12.18",
     "@types/yargs": "^12.0.1",
     "body-parser": "^1.18.3",
-    "chalk": "^2.4.1",
+    "chalk": "^2.4.2",
     "coffeescript": "^2.3.2",
     "dotenv": "^6.2.0",
     "express": "^4.16.4",
@@ -25,6 +25,7 @@
     "npm": "^6.5.0",
     "scp": "0.0.3",
     "socket.io": "^2.2.0",
+    "tslint": "^5.12.1",
     "typescript": "^3.1.6",
     "yargs": "^12.0.5"
   },
@@ -37,8 +38,7 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "aws-sdk": "^2.382.0",
-    "pm2": "^3.2.4"
+    "aws-sdk": "^2.388.0"
   },
   "repository": {
     "type": "git",

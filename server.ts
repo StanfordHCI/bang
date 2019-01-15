@@ -2,7 +2,7 @@
 import * as dotenv from 'dotenv'
 dotenv.config()
 import * as yargs from 'yargs'
-let args =  yargs.argv;
+let args =  yargs.argv
 import chalk from 'chalk'
 
 //importing our libraries
@@ -14,7 +14,9 @@ const runningLocal = process.env.RUNNING_LOCAL === "TRUE";
 const runningLive = process.env.RUNNING_LIVE === "TRUE";
 const teamSize = parseInt(process.env.TEAM_SIZE);
 const roundMinutes = parseFloat(process.env.ROUND_MINUTES);
-let taskURL = args.url || process.env.TASK_URL;
+const taskURL = String(args.url) || process.env.TASK_URL
+// MEW: new URL was not working in the JS so temporerally removed. This means the variable is just a stirng for now. 
+// const taskURL = new URL(String(args.url)) || new URL(process.env.TASK_URL)
 
 const runExperimentNow = true;
 const runViaEmailOn = false;
@@ -84,16 +86,17 @@ const leaveHitFile = getTXT("leave-hit-q")
 const qFifteenFile = getTXT("qfifteen-q")
 const qSixteenFile = getTXT("qsixteen-q")
 
-
-
 // Answer Option Sets
 const answers = {
     answers: ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'],
     answerType: 'radio',
     textValue: true
 }
-
-const binaryAnswers = {answers: ['Keep this team', 'Do not keep this team'], answerType: 'radio', textValue: true};
+const binaryAnswers = {
+    answers: ['Keep this team', 'Do not keep this team'],
+    answerType: 'radio',
+    textValue: true
+}
 const leaveHitAnswers = {
     answers: ['End Task and Send Feedback', 'Return to Task'],
     answerType: 'radio',
@@ -108,19 +111,18 @@ const server = require('http').createServer(app);
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 const io = require('socket.io')(server); //, {transports: ['websocket']}
-const port = args.port || process.env.PORT || 3000;
+// MEW: args.port does returns unknown, so it must be coerced into string, then int.
+const port = parseInt(String(args.port)) || parseInt(process.env.PORT) || 3000;
 server.listen(port, () => {
     console.log('Server listening at port', port)
 });
 
 function authenticate(user) {
-
   return user.workerId == "A19MTSLG2OYDLZ"
   // if user in db, is it for this session?
   // if user not in db, is the session full?
 }
 
-//authenticate
 app.use((req, res, next) => {
   if (!req.query.workerId) {
     next()
@@ -184,10 +186,6 @@ if (!Array.prototype.find) {
   };
 }
 
-function chooseOne<T>(list: T[]): T {
-  return list[Math.floor(Math.random() * list.length)]
-}
-
 function userByMturkId(users, MturkId) {
   return users.find(user => user.mturkId === MturkId)
 }
@@ -228,8 +226,9 @@ function useUser(socket, callback, err = "Guarded against undefined user") {
 }
 
 // Check balance
-mturk.getBalance(function (balance) {
+mturk.getBalance(balance => {
     if (runningLive && balance <= 400) {
+        mturk.notifyWorkers(["A19MTSLG2OYDLZ"], "ADD MORE FUNDS to MTURK!");
         console.log(chalk.red.inverse.bold("\n!!! BROKE !!!\n"))
     }
 });
@@ -266,10 +265,9 @@ console.log = function (...msg) {
 // Experiment variables
 const conditionOptions = ['control', 'treatment']
 const roundOrderOptions = [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]]
-const currentCondition = args.condition || randomCondition ? chooseOne(conditionOptions) : conditionOptions[1]
-const roundOrdering = randomRoundOrder ? chooseOne(roundOrderOptions) : roundOrderOptions[0]
+const currentCondition = args.condition || randomCondition ? tools.chooseOne(conditionOptions) : conditionOptions[1]
+const roundOrdering = randomRoundOrder ? tools.chooseOne(roundOrderOptions) : roundOrderOptions[0]
 
-//TODO Move somewhere better
 let treatmentNow = false
 let firstRun = false;
 let hasAddedUsers = false;//lock on adding users to db/experiment for experiment
@@ -1428,8 +1426,10 @@ io.on('connection', (socket) => {
                 })
             }
 
-            Object.entries(teams[conditionRound]).forEach(([roomName, room]) => {
-                users.filter(u => room.includes(u.person)).forEach(u => {
+            Object.entries(teams[conditionRound]).forEach(([roomName, room]: [string, string]) => {
+                users.filter(u => {
+                    room.includes(u.person)
+                }).forEach(u => {
                     u.room = roomName;
                     u.rooms.push(roomName);
                     updateUserInDB(u, "rooms", u.rooms);
