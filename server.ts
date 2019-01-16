@@ -762,14 +762,10 @@ db.batch.insert(
       firstRun = true;
     }
   }
-); // eventSchedule instead of all of the toggles? (missing checkinOn) //PK: what does this comment mean?
-//}
+);
 
-// Chatroom
 io.on("connection", socket => {
-  //PK: what are these bools for?
-  let experimentStarted = false; //NOTE: this will be set multiple times but I don't think that's
-  // what is wanted in this case
+  let experimentStarted = false;
 
   const workerStartTime = getSecondsPassed();
   const currentBonus = () => {
@@ -1235,7 +1231,6 @@ io.on("connection", socket => {
             );
         }
       );
-
       users
         .filter(f => f.room === user.room)
         .forEach(f => {
@@ -2331,7 +2326,7 @@ const getTeamMembers = user => {
 //PK: delete this fxn and use the normal survey mechanism?
 // This function generates a post survey for a user (listing out each team they were part of),
 // and then provides the correct answer to check against.
-const postSurveyGenerator = user => {
+function postSurveyGenerator(user) {
   const answers = getTeamMembers(user);
   // Makes a list of teams that are the correct answer, e.g., "Team 1 and Team 3"
   let correctAnswer = answers
@@ -2356,7 +2351,7 @@ const postSurveyGenerator = user => {
     answerType: "checkbox",
     correctAnswer: correctAnswer
   };
-};
+}
 
 function storeHIT(currentHIT = mturk.returnCurrentHIT()) {
   db.ourHITs.insert({ HITId: currentHIT, batch: batchID }, (err, HITAdded) => {
@@ -2390,14 +2385,14 @@ const logTime = () => {
   );
 };
 
-function getRandomSubarray(arr, size: number) {
+function getRandomSubarray(arr: any[], size: number) {
   return shuffle(arr).slice(0, size);
 }
 
-function shuffle(array) {
-  var currentIndex = array.length,
-    temporaryValue,
-    randomIndex;
+function shuffle(array: any[]) {
+  let currentIndex = array.length;
+  let temporaryValue: any;
+  let randomIndex: number;
   while (0 !== currentIndex) {
     randomIndex = Math.floor(Math.random() * currentIndex);
     currentIndex -= 1;

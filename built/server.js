@@ -646,13 +646,9 @@ db.batch.insert({
         });
         firstRun = true;
     }
-}); // eventSchedule instead of all of the toggles? (missing checkinOn) //PK: what does this comment mean?
-//}
-// Chatroom
+});
 io.on("connection", function (socket) {
-    //PK: what are these bools for?
-    var experimentStarted = false; //NOTE: this will be set multiple times but I don't think that's
-    // what is wanted in this case
+    var experimentStarted = false;
     var workerStartTime = getSecondsPassed();
     var currentBonus = function () {
         mturk.updatePayment(getSecondsPassed() - workerStartTime);
@@ -1914,7 +1910,7 @@ var getTeamMembers = function (user) {
 //PK: delete this fxn and use the normal survey mechanism?
 // This function generates a post survey for a user (listing out each team they were part of),
 // and then provides the correct answer to check against.
-var postSurveyGenerator = function (user) {
+function postSurveyGenerator(user) {
     var answers = getTeamMembers(user);
     // Makes a list of teams that are the correct answer, e.g., "Team 1 and Team 3"
     var correctAnswer = answers
@@ -1941,7 +1937,7 @@ var postSurveyGenerator = function (user) {
         answerType: "checkbox",
         correctAnswer: correctAnswer
     };
-};
+}
 function storeHIT(currentHIT) {
     if (currentHIT === void 0) { currentHIT = mturk.returnCurrentHIT(); }
     db.ourHITs.insert({ HITId: currentHIT, batch: batchID }, function (err, HITAdded) {
@@ -1974,7 +1970,9 @@ function getRandomSubarray(arr, size) {
     return shuffle(arr).slice(0, size);
 }
 function shuffle(array) {
-    var currentIndex = array.length, temporaryValue, randomIndex;
+    var currentIndex = array.length;
+    var temporaryValue;
+    var randomIndex;
     while (0 !== currentIndex) {
         randomIndex = Math.floor(Math.random() * currentIndex);
         currentIndex -= 1;
