@@ -1,7 +1,7 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 /* Find documentation on all AWS operations here: https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_OperationsArticle.html */
 /* For Node: https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html#getHIT-property */
+Object.defineProperty(exports, "__esModule", { value: true });
 var dotenv = require("dotenv");
 dotenv.config();
 var yargs = require("yargs");
@@ -10,15 +10,15 @@ var runningLocal = process.env.RUNNING_LOCAL === "TRUE";
 var runningLive = process.env.RUNNING_LIVE === "TRUE"; //ONLY CHANGE IN VIM ON SERVER
 var teamSize = parseInt(process.env.TEAM_SIZE);
 var roundMinutes = parseInt(process.env.ROUND_MINUTES);
-var endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
-var submitTo = 'https://workersandbox.mturk.com';
+var endpoint = "https://mturk-requester-sandbox.us-east-1.amazonaws.com";
+var submitTo = "https://workersandbox.mturk.com";
 if (runningLive) {
-    endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
-    submitTo = 'https://www.mturk.com';
+    endpoint = "https://mturk-requester.us-east-1.amazonaws.com";
+    submitTo = "https://www.mturk.com";
 }
 var taskURL = args.url || process.env.TASK_URL;
 if (runningLocal) {
-    taskURL = 'https://localhost:3000/';
+    taskURL = "https://localhost:3000/";
 }
 var AWS = require("aws-sdk");
 AWS.config.accessKeyId = process.env.AWS_ID;
@@ -30,64 +30,81 @@ var numRounds = 4;
 var taskDuration = roundMinutes * numRounds * 2;
 //const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
 var timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
-var hourlyWage = 10.50; // changes reward of experiment depending on length - change to 6?
+var hourlyWage = 10.5; // changes reward of experiment depending on length - change to 6?
 var rewardPrice = 0.01; // upfront cost
-var maxAssignments = (2 * teamSize * teamSize) * 2;
-var bonusPrice = (hourlyWage * (((roundMinutes * numRounds) + 10) / 60) - rewardPrice).toFixed(2);
+var maxAssignments = 2 * teamSize * teamSize * 2;
+var bonusPrice = (hourlyWage * ((roundMinutes * numRounds + 10) / 60) -
+    rewardPrice).toFixed(2);
 var usersAcceptedHIT = 0;
 var numAssignments = maxAssignments; // extra HITs for over-recruitment
-var currentHitId = '';
+var currentHitId = "";
 var hitsLeft = numAssignments; // changes when users accept and disconnect (important - don't remove)
 var taskStarted = false;
-//Setting up qualifications
+//MEW: Various qualifications set for convenience because we use them a lot.
 var quals = {
     notUSA: {
         QualificationTypeId: "00000000000000000071",
         LocaleValues: [{ Country: "US" }],
         Comparator: "NotIn",
-        ActionsGuarded: "DiscoverPreviewAndAccept" // only users outside of the US can see the HIT
+        ActionsGuarded: "DiscoverPreviewAndAccept"
     },
     onlyUSA: {
         QualificationTypeId: "00000000000000000071",
         LocaleValues: [{ Country: "US" }],
         Comparator: "In",
-        ActionsGuarded: "DiscoverPreviewAndAccept" // only users within the US can see the HIT
+        ActionsGuarded: "DiscoverPreviewAndAccept"
     },
     hitsAccepted: function (k) {
         return {
-            QualificationTypeId: '00000000000000000040',
-            Comparator: 'GreaterThan',
+            QualificationTypeId: "00000000000000000040",
+            Comparator: "GreaterThan",
             IntegerValues: [k],
             RequiredToPreview: true
         };
     },
     hasBanged: {
-        QualificationTypeId: runningLive ? "3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG" : "32X4OLFWW285XJWVDIWLQXWVGH0TDB",
-        Comparator: 'DoesNotExist',
+        //MEW: useful to filter out people who have already doen our HIT.
+        QualificationTypeId: runningLive
+            ? "3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG"
+            : "32X4OLFWW285XJWVDIWLQXWVGH0TDB",
+        Comparator: "DoesNotExist",
         ActionsGuarded: "DiscoverPreviewAndAccept"
     },
     willBang: {
-        QualificationTypeId: runningLive ? "3H3KEN1OLSVM98I05ACTNWVOM3JBI9" : "3Q14PV9RQ817STQZOSBE3H0UXC7M1J",
-        Comparator: 'Exists',
+        //MEW: useful to filter people who are scheduled to do our HIT.
+        QualificationTypeId: runningLive
+            ? "3H3KEN1OLSVM98I05ACTNWVOM3JBI9"
+            : "3Q14PV9RQ817STQZOSBE3H0UXC7M1J",
+        Comparator: "Exists",
         ActionsGuarded: "DiscoverPreviewAndAccept"
     },
     willNotBang: {
-        QualificationTypeId: runningLive ? "3H3KEN1OLSVM98I05ACTNWVOM3JBI9" : "3Q14PV9RQ817STQZOSBE3H0UXC7M1J",
-        Comparator: 'DoesNotExist',
+        //MEW: useful to filter people we don't want to work with.
+        QualificationTypeId: runningLive
+            ? "3H3KEN1OLSVM98I05ACTNWVOM3JBI9"
+            : "3Q14PV9RQ817STQZOSBE3H0UXC7M1J",
+        Comparator: "DoesNotExist",
         ActionsGuarded: "DiscoverPreviewAndAccept"
-    },
+    }
 };
-var qualsForLive = [quals.onlyUSA, quals.hitsAccepted(0), quals.hasBanged];
-var scheduleQuals = [quals.onlyUSA, quals.hitsAccepted(0), quals.hasBanged, quals.willNotBang];
+var qualsForLive = [quals.onlyUSA, quals.hitsAccepted(500), quals.hasBanged];
 var qualsForTesting = [quals.onlyUSA, quals.hitsAccepted(0)];
+var scheduleQuals = [
+    quals.onlyUSA,
+    quals.hitsAccepted(0),
+    quals.hasBanged,
+    quals.willNotBang
+];
 var safeQuals = runningLive ? qualsForLive : qualsForTesting;
 // Makes the MTurk externalHIT object, defaults to 700 px tall.
 var externalHIT = function (taskURL, height) {
     if (height === void 0) { height = 700; }
-    return '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>' + taskURL + '</ExternalURL><FrameHeight>' + height + '</FrameHeight></ExternalQuestion>';
+    return '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>' +
+        taskURL +
+        "</ExternalURL><FrameHeight>" +
+        height +
+        "</FrameHeight></ExternalQuestion>";
 };
-// This initiates the API
-// Find more in the docs here: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html
 var mturk = new AWS.MTurk({ endpoint: endpoint });
 // * startTask *
 // -------------------------------------------------------------------
@@ -113,10 +130,11 @@ var updatePayment = function (totalTime) {
 var getBalance = function (callback) {
     mturk.getAccountBalance(function (err, data) {
         if (err)
-            console.log(err, err.stack); // an error occurred
+            console.log(err, err.stack);
+        // an error occurred
         else {
             console.log(data); // successful response
-            if (typeof callback === 'function')
+            if (typeof callback === "function")
                 callback(data.AvailableBalance);
         }
     });
@@ -130,9 +148,9 @@ var getBalance = function (callback) {
 var makeHIT = function (chooseQual, title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, callback) {
     // if a schedule bang, change quals to scheduleQuals
     var quals = [];
-    if (chooseQual == 'safeQuals')
+    if (chooseQual == "safeQuals")
         quals = safeQuals;
-    else if (chooseQual == 'scheduleQuals')
+    else if (chooseQual == "scheduleQuals")
         quals = scheduleQuals;
     var makeHITParams = {
         Title: title,
@@ -152,7 +170,7 @@ var makeHIT = function (chooseQual, title, description, assignmentDuration, life
         else {
             console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
             currentHitId = data.HIT.HITId;
-            if (typeof callback === 'function')
+            if (typeof callback === "function")
                 callback(data.HIT);
         }
     });
@@ -166,7 +184,8 @@ var returnHIT = function (hitId, callback) {
     var returnHITParams = { HITId: hitId /* required */ };
     mturk.getHIT(returnHITParams, function (err, data) {
         if (err)
-            console.log("Error: " + err.message); // an error occurred
+            console.log("Error: " + err.message);
+        // an error occurred
         else
             callback(data); // successful response
     });
@@ -182,10 +201,11 @@ var getHITURL = function (hitId, callback) {
         if (err)
             console.log("Error: " + err.message);
         else {
-            url = "https://worker.mturk.com/projects/" + data.HIT.HITGroupId + "/tasks";
+            url =
+                "https://worker.mturk.com/projects/" + data.HIT.HITGroupId + "/tasks";
         }
         console.log(url);
-        if (typeof callback === 'function')
+        if (typeof callback === "function")
             callback(url);
     });
 };
@@ -200,7 +220,7 @@ var workOnActiveHITs = function (callback) {
             console.log("Error: " + err.message);
         }
         else {
-            if (typeof callback === 'function') {
+            if (typeof callback === "function") {
                 callback(data.HITs.filter(function (h) { return h.HITStatus === "Assignable"; }).map(function (h) { return h.HITId; }));
             }
         }
@@ -223,7 +243,7 @@ var listAssignments = function (HITId, callback, paginationToken, passthrough) {
                 listAssignments(HITId, callback, data.NextToken, passthrough);
             }
             else {
-                if (typeof callback === 'function')
+                if (typeof callback === "function")
                     callback(passthrough);
             }
         }
@@ -268,13 +288,14 @@ var deleteHIT = function (theHITId) {
 // Returns the qualificationTypeId of the newly created qualification.
 var createQualification = function (name) {
     var qualificationParams = {
-        Description: 'This user has already accepted a HIT for this specific task. We only allow one completion of this task per worker.',
-        Name: name,
-        QualificationTypeStatus: 'Active',
+        Description: "This user has already accepted a HIT for this specific task. We only allow one completion of this task per worker." /* required */,
+        Name: name /* required */,
+        QualificationTypeStatus: "Active" /* required */
     };
     mturk.createQualificationType(qualificationParams, function (err, data) {
         if (err)
-            console.log(err, err.stack); // an error occurred
+            console.log(err, err.stack);
+        // an error occurred
         else
             console.log(data); // successful response
         // qualificationId = data.QualificationTypeId;  // if running HIT immediately
@@ -290,8 +311,8 @@ var setAssignmentsPending = function (data) {
     hitsLeft = maxAssignments - usersAcceptedHIT;
     if (taskStarted)
         hitsLeft = 0;
-    console.log('users accepted: ', usersAcceptedHIT);
-    console.log('hits left: ', hitsLeft);
+    console.log("users accepted: ", usersAcceptedHIT);
+    console.log("hits left: ", hitsLeft);
     if (taskStarted) {
         expireHIT(currentHitId);
         console.log("expired active HITs");
@@ -302,7 +323,9 @@ var setAssignmentsPending = function (data) {
 // Assigns a qualification to users who have already completed the task - does not let workers repeat task
 // Takes users in Database as a parameter, fetches mturk Id.
 var assignQualificationToUsers = function (users, qual) {
-    users.filter(function (u) { return u.mturkId; }).forEach(function (user) {
+    users
+        .filter(function (u) { return u.mturkId; })
+        .forEach(function (user) {
         var assignQualificationParams = {
             QualificationTypeId: qual.QualificationTypeId,
             WorkerId: user.mturkId,
@@ -311,7 +334,8 @@ var assignQualificationToUsers = function (users, qual) {
         };
         mturk.associateQualificationWithWorker(assignQualificationParams, function (err, data) {
             if (err)
-                console.log(err, err.stack); // an error occurred
+                console.log(err, err.stack);
+            // an error occurred
             else
                 console.log("Assigned", qual.QualificationTypeId, "to", user.mturkId); // successful response
         });
@@ -330,7 +354,8 @@ var assignQuals = function (user, qual) {
     };
     mturk.associateQualificationWithWorker(assignQualificationParams, function (err, data) {
         if (err)
-            console.log("Error assigning ", qual.QualificationTypeId, " to ", user); // an error occurred
+            console.log("Error assigning ", qual.QualificationTypeId, " to ", user);
+        // an error occurred
         else
             console.log("Assigned ", qual.QualificationTypeId, " to ", user);
     });
@@ -339,11 +364,17 @@ var assignQuals = function (user, qual) {
 // -------------------------------------------------------------------
 // Removes a qualification to users who have already completed the task - does not let workers repeat task
 var unassignQualificationFromUsers = function (users, qual) {
-    users.filter(function (u) { return u.mturkId; }).forEach(function (user) {
-        var assignQualificationParams = { QualificationTypeId: qual.QualificationTypeId, WorkerId: user.mturkId };
+    users
+        .filter(function (u) { return u.mturkId; })
+        .forEach(function (user) {
+        var assignQualificationParams = {
+            QualificationTypeId: qual.QualificationTypeId,
+            WorkerId: user.mturkId
+        };
         mturk.disassociateQualificationFromWorker(assignQualificationParams, function (err, data) {
             if (err)
-                console.log(err, err.stack); // an error occurred
+                console.log(err, err.stack);
+            // an error occurred
             else
                 console.log("Un-Assigned", qual.QualificationTypeId, "from", user.mturkId); // successful response
         });
@@ -354,10 +385,15 @@ var unassignQualificationFromUsers = function (users, qual) {
 // Removes a qualification to users who have already completed the task - does not let workers repeat task
 // takes a userId as a string as paramter, and the qualification
 var unassignQuals = function (user, qual, reason) {
-    var assignQualificationParams = { QualificationTypeId: qual.QualificationTypeId, WorkerId: user, Reason: reason };
+    var assignQualificationParams = {
+        QualificationTypeId: qual.QualificationTypeId,
+        WorkerId: user,
+        Reason: reason
+    };
     mturk.disassociateQualificationFromWorker(assignQualificationParams, function (err, data) {
         if (err)
-            console.log("Error unassigning ", qual.QualificationTypeId, " from ", user); // an error occurred
+            console.log("Error unassigning ", qual.QualificationTypeId, " from ", user);
+        // an error occurred
         else
             console.log("Unassigned ", qual.QualificationTypeId, " from ", user);
     });
@@ -369,13 +405,14 @@ var unassignQuals = function (user, qual, reason) {
 // Takes the qualification ID, worker ID, and reason as parateters - strings.
 var disassociateQualification = function (qualificationId, workerId, reason) {
     var disassociateQualificationParams = {
-        QualificationTypeId: qualificationId,
-        WorkerId: workerId,
+        QualificationTypeId: qualificationId /* required */,
+        WorkerId: workerId /* required */,
         Reason: reason
     };
     mturk.disassociateQualificationFromWorker(disassociateQualificationParams, function (err, data) {
         if (err)
-            console.log(err, err.stack); // an error occurred
+            console.log(err, err.stack);
+        // an error occurred
         else
             console.log(data); // successful response
     });
@@ -386,12 +423,17 @@ var disassociateQualification = function (qualificationId, workerId, reason) {
 var listUsersWithQualification = function (qual, max, callback) {
     if (max > 100)
         max = 100;
-    var userWithQualificationParams = { QualificationTypeId: qual.QualificationTypeId, MaxResults: max, Status: "Granted" };
+    var userWithQualificationParams = {
+        QualificationTypeId: qual.QualificationTypeId,
+        MaxResults: max,
+        Status: "Granted"
+    };
     mturk.listWorkersWithQualificationType(userWithQualificationParams, function (err, data) {
         if (err)
-            console.log(err, err.stack); // an error occurred
+            console.log(err, err.stack);
+        // an error occurred
         else {
-            if (typeof callback === 'function')
+            if (typeof callback === "function")
                 callback(data);
         }
     });
@@ -414,7 +456,7 @@ var listUsersWithQualificationRecursively = function (qual, callback, pagination
                 listUsersWithQualificationRecursively(qual, callback, data.NextToken, passthrough);
             }
             else {
-                if (typeof callback === 'function')
+                if (typeof callback === "function")
                     callback(passthrough);
             }
         }
@@ -428,7 +470,10 @@ var listUsersWithQualificationRecursively = function (qual, callback, pagination
 // Returns an array of bonused users.
 var payBonuses = function (users, callback) {
     var successfullyBonusedUsers = [];
-    users.filter(function (u) { return u.mturkId !== 'A19MTSLG2OYDLZ' && u.mturkId.length > 5; }).filter(function (u) { return u.bonus !== 0; }).forEach(function (u) {
+    users
+        .filter(function (u) { return u.mturkId !== "A19MTSLG2OYDLZ" && u.mturkId.length > 5; })
+        .filter(function (u) { return u.bonus !== 0; })
+        .forEach(function (u) {
         mturk.sendBonus({
             AssignmentId: u.assignmentId,
             BonusAmount: String(u.bonus),
@@ -437,7 +482,9 @@ var payBonuses = function (users, callback) {
             UniqueRequestToken: u.id
         }, function (err, data) {
             if (err) {
-                if (err.message.includes("The idempotency token \"" + u.id + "\" has already been processed.")) {
+                if (err.message.includes('The idempotency token "' +
+                    u.id +
+                    '" has already been processed.')) {
                     console.log("Already bonused", u.bonus, u.id, u.mturkId);
                     successfullyBonusedUsers.push(u);
                 }
@@ -449,7 +496,7 @@ var payBonuses = function (users, callback) {
                 successfullyBonusedUsers.push(u);
                 console.log("Bonused:", u.bonus, u.id, u.mturkId);
             }
-            if (typeof callback === 'function') {
+            if (typeof callback === "function") {
                 callback(successfullyBonusedUsers);
             }
             return successfullyBonusedUsers;
@@ -463,12 +510,13 @@ var payBonuses = function (users, callback) {
 // Takes workerID and reason as parameters - strings.
 var blockWorker = function (reason, workerId) {
     var blockWorkerParams = {
-        Reason: reason,
+        Reason: reason /* required */,
         WorkerId: workerId /* required */ // string
     };
     mturk.createWorkerBlock(blockWorkerParams, function (err, data) {
         if (err)
-            console.log(err, err.stack); // an error occurred
+            console.log(err, err.stack);
+        // an error occurred
         else
             console.log(data); // successful response
     });
@@ -511,17 +559,21 @@ var returnCurrentHIT = function () {
 var launchBang = function (callback) {
     // HIT Parameters
     var time = Date.now();
-    var HITTitle = 'Write online ads - bonus up to $' + hourlyWage + ' / hour (' + time + ')';
-    var description = 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10) + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.';
+    var HITTitle = "Write online ads - bonus up to $" + hourlyWage + " / hour (" + time + ")";
+    var description = "Work in groups to write ads for new products. This task will take approximately " +
+        Math.round(roundMinutes * numRounds + 10) +
+        " minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" +
+        bonusPrice +
+        ".";
     var assignmentDuration = 60 * taskDuration;
-    var lifetime = 60 * (timeActive);
+    var lifetime = 60 * timeActive;
     var reward = String(rewardPrice);
     var autoApprovalDelay = 60 * taskDuration;
-    var keywords = 'ads, writing, copy editing, advertising';
+    var keywords = "ads, writing, copy editing, advertising";
     var maxAssignments = numAssignments;
     var hitContent = externalHIT(taskURL);
-    makeHIT('safeQuals', HITTitle, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, function (HIT) {
-        if (typeof callback === 'function')
+    makeHIT("safeQuals", HITTitle, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, hitContent, function (HIT) {
+        if (typeof callback === "function")
             callback(HIT);
     });
     var delay = 1;
@@ -531,15 +583,23 @@ var launchBang = function (callback) {
         if (hitsLeft > 0 && !taskStarted) {
             time = Date.now();
             numAssignments = hitsLeft;
-            var HITTitle_1 = 'Write online ads - bonus up to $' + hourlyWage + ' / hour (' + time + ')';
+            var HITTitle_1 = "Write online ads - bonus up to $" +
+                hourlyWage +
+                " / hour (" +
+                time +
+                ")";
             var params2 = {
                 Title: HITTitle_1,
-                Description: 'Work in groups to write ads for new products. This task will take approximately ' + Math.round((roundMinutes * numRounds) + 10) + ' minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $' + bonusPrice + '.',
+                Description: "Work in groups to write ads for new products. This task will take approximately " +
+                    Math.round(roundMinutes * numRounds + 10) +
+                    " minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" +
+                    bonusPrice +
+                    ".",
                 AssignmentDurationInSeconds: 60 * taskDuration,
-                LifetimeInSeconds: 60 * (timeActive),
+                LifetimeInSeconds: 60 * timeActive,
                 Reward: String(rewardPrice),
                 AutoApprovalDelayInSeconds: 60 * taskDuration,
-                Keywords: 'ads, writing, copy editing, advertising',
+                Keywords: "ads, writing, copy editing, advertising",
                 MaxAssignments: numAssignments,
                 QualificationRequirements: safeQuals,
                 Question: externalHIT(taskURL)
@@ -586,7 +646,8 @@ var launchBang = function (callback) {
 var notifyWorkers = function (WorkerIds, subject, message) {
     mturk.notifyWorkers({ WorkerIds: WorkerIds, MessageText: message, Subject: subject }, function (err, data) {
         if (err)
-            console.log("Error notifying workers:", err.message); // an error occurred
+            console.log("Error notifying workers:", err.message);
+        // an error occurred
         else
             console.log("Notified ", WorkerIds.length, " workers:", subject); // successful response
     });
@@ -619,7 +680,7 @@ module.exports = {
     getHITURL: getHITURL,
     listAssignments: listAssignments,
     notifyWorkers: notifyWorkers,
-    quals: quals,
+    quals: quals
 };
 // * checkQualsRecursive *
 // -------------------------------------------------------------------

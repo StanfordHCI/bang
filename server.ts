@@ -364,8 +364,8 @@ function updateUserInDB(user, field, value) {
     { mturkId: user.mturkId, batch: batchID },
     { $set: { [field]: value } },
     {},
-    err =>
-      console.log(
+    err => {
+      return console.log(
         err
           ? chalk.red("Err recording ") + field + ": " + err
           : "Updated " +
@@ -374,7 +374,8 @@ function updateUserInDB(user, field, value) {
               user.mturkId +
               " " +
               JSON.stringify(value, null, 2)
-      )
+      );
+    }
   );
 }
 

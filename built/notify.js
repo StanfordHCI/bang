@@ -1,19 +1,37 @@
-var mturk = require('./mturkTools');
-var fs = require('fs');
-var Datastore = require('nedb');
-var db = {};
-db.willBang = new Datastore({ filename: '.data/willBang', autoload: true, timestampData: true });
-db.users = new Datastore({ filename: '.data/users', autoload: true, timestampData: true });
-db.ourHITs = new Datastore({ filename: '.data/ourHITs', autoload: true, timestampData: true });
+var mturk = require("./mturkTools");
+var fs = require("fs");
+var Datastore = require("nedb");
+var db = {
+    willBang: new Datastore({
+        filename: ".data/willBang",
+        autoload: true,
+        timestampData: true
+    }),
+    users: new Datastore({
+        filename: ".data/users",
+        autoload: true,
+        timestampData: true
+    }),
+    ourHITs: new Datastore({
+        filename: ".data/ourHITs",
+        autoload: true,
+        timestampData: true
+    })
+};
 // What are we doing?
 var notification_type = process.argv[2];
 var HITId = process.argv[3];
 // File paths
-// var bonusworkersStorage = "./txt/bonusworkers.txt";
+var bonusworkersStorage = "./txt/bonusworkers.txt";
 // var repayworkersHITstorage = "./txt/currentrepayHIT.txt"
-var bonusworkers = fs.readFileSync(bonusworkersStorage).toString().split("\n");
+var bonusworkers = fs
+    .readFileSync(bonusworkersStorage)
+    .toString()
+    .split("\n");
 var bonusworkersDict = {};
-bonusworkers.forEach(function (line) { bonusworkersDict[line.split(",")[0]] = parseFloat(line.split(",")[1]); });
+bonusworkers.forEach(function (line) {
+    bonusworkersDict[line.split(",")[0]] = parseFloat(line.split(",")[1]);
+});
 console.log("bonusworkers", bonusworkers);
 console.log("bonusworkersDict", bonusworkersDict);
 console.log("key", Object.keys(bonusworkersDict));
@@ -67,7 +85,9 @@ switch (notification_type) {
                     console.log("Err loading HITS for expiration:" + err);
                 }
                 else {
-                    HITsInDB.map(function (h) { return h.HITId; }).filter(function (h) { return activeHITs.includes(h); }).forEach(mturk.expireHIT);
+                    HITsInDB.map(function (h) { return h.HITId; })
+                        .filter(function (h) { return activeHITs.includes(h); })
+                        .forEach(mturk.expireHIT);
                 }
             });
         });
@@ -81,7 +101,8 @@ switch (notification_type) {
                     if (data.HIT.Title == "Hit to repay workers") {
                         // Find people in our list of people to repay
                         mturk.listAssignments(HITId, function (data) {
-                            var repayacceptors = data.filter(function (a) { return (a.WorkerId in bonusworkers); })
+                            var repayacceptors = data
+                                .filter(function (a) { return a.WorkerId in bonusworkers; })
                                 .map(function (a) {
                                 return {
                                     mturkId: a.WorkerId,
@@ -115,7 +136,8 @@ switch (notification_type) {
                         console.log("YOYO", HITId);
                         mturk.getHITURL(HITId, function (url) {
                             var subject = "Accept this HIT to be bonused";
-                            var message = "We've created a bonus HIT to ensure you are properly bonused for our earlier HIT. Your bonus will be issued within 1 day. Please accept it and submit. " + url;
+                            var message = "We've created a bonus HIT to ensure you are properly bonused for our earlier HIT. Your bonus will be issued within 1 day. Please accept it and submit. " +
+                                url;
                             repayHITnumber_1 += 1;
                             if (repayHITnumber_1 > 1) {
                                 console.log("You've got more than 1 repay HIT. Breaking to ensure you don't spam people!");
@@ -138,8 +160,8 @@ switch (notification_type) {
         var keywords = "repay";
         var maxAssignments = 100;
         var reward = 0.01;
-        var taskURL = fs.readFileSync('./repayworkers.html').toString();
-        mturk.makeHIT('noQuals', title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, taskURL, function (HIT) {
+        var taskURL = fs.readFileSync("./repayworkers.html").toString();
+        mturk.makeHIT("noQuals", title, description, assignmentDuration, lifetime, reward, autoApprovalDelay, keywords, maxAssignments, taskURL, function (HIT) {
             var HITId = HIT.HITId;
         });
         break;
