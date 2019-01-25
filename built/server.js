@@ -6,6 +6,7 @@ dotenv.config();
 var yargs = require("yargs");
 var args = yargs.argv;
 var chalk_1 = require("chalk");
+var fs = require("fs");
 //importing our libraries
 var tools = require("./tools");
 var mturk = require("./mturkTools");
@@ -25,6 +26,7 @@ var notifyWorkersOn = runningLive;
 var usingWillBang = runningLive;
 var aggressiveNotifyOn = runningLive;
 var notifyUs = runningLive;
+var notifyUsMturkID = "A19MTSLG2OYDLZ";
 var assignQualifications = runningLive;
 //Randomization
 var randomCondition = false;
@@ -62,24 +64,6 @@ console.log(runningLive
 console.log(runningLocal ? "Running locally" : "Running remotely");
 var batchID = Date.now();
 console.log("Launching batch", batchID);
-// Question Files
-var fs = require("fs");
-var txt = "txt/";
-var extension = ".txt";
-function getTXT(filename) {
-    return txt + filename + extension;
-}
-var midSurveyFile = getTXT("midsurvey-q");
-var psychologicalSafetyFile = getTXT("psychologicalsafety-q");
-var checkinFile = getTXT("checkin-q");
-var blacklistFile = getTXT("blacklist-q");
-var feedbackFile = getTXT("feedback-q");
-var starterSurveyFile = getTXT("startersurvey-q");
-var postSurveyFile = getTXT("postsurvey-q");
-var botFile = getTXT("botquestions");
-var leaveHitFile = getTXT("leave-hit-q");
-var qFifteenFile = getTXT("qfifteen-q");
-var qSixteenFile = getTXT("qsixteen-q");
 // Answer Option Sets
 var answers = {
     answers: [
@@ -116,7 +100,7 @@ server.listen(port, function () {
     console.log("Server listening at port", port);
 });
 function authenticate(user) {
-    return user.workerId == "A19MTSLG2OYDLZ";
+    return user.workerId == notifyUsMturkID;
     // if user in db, is it for this session?
     // if user not in db, is the session full?
 }
@@ -213,7 +197,7 @@ function useUser(socket, callback, err) {
 // Check balance
 mturk.getBalance(function (balance) {
     if (runningLive && balance <= 400) {
-        mturk.notifyWorkers(["A19MTSLG2OYDLZ"], "ADD MORE FUNDS to MTURK!");
+        mturk.notifyWorkers([notifyUsMturkID], "ADD MORE FUNDS to MTURK!");
         console.log(chalk_1.default.red.inverse.bold("\n!!! BROKE !!!\n"));
     }
 });
@@ -251,13 +235,14 @@ console.log = function () {
 };
 // Experiment variables
 var conditionOptions = ["control", "treatment"];
-var roundOrderOptions = [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]];
 var currentCondition = args.condition || randomCondition
     ? tools.chooseOne(conditionOptions)
     : conditionOptions[1];
+var roundOrderOptions = [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]];
 var roundOrdering = randomRoundOrder
     ? tools.chooseOne(roundOrderOptions)
     : roundOrderOptions[0];
+//MEW: State variables for a given run are currently stored like this:
 var treatmentNow = false;
 var firstRun = false;
 var hasAddedUsers = false; //lock on adding users to db/experiment for experiment
@@ -481,28 +466,10 @@ if (runExperimentNow) {
     });
 }
 var products = [
-    // {name: 'KOSMOS ink - Magnetic Fountain Pen', url: 'https://www.kickstarter.com/projects/stilform/kosmos-ink'},
-    // {
-    //     name: 'Projka: Multi-Function Accessory Pouches',
-    //     url: 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches'
-    // },
-    // {
-    //     name: "First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC",
-    //     url: 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono'
-    // },
-    // {
-    //     name: "Nomad Energy- Radically Sustainable Energy Drink",
-    //     url: 'https://www.kickstarter.com/projects/1273663738/nomad-energy-radically-sustainable-energy-drink'
-    // },
     {
         name: "Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
         url: "https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw"
     },
-    // {
-    //     name: "The Travel Line: Versatile Travel Backpack + Packing Tools",
-    //     url: 'https://www.kickstarter.com/projects/peak-design/the-travel-line-versatile-travel-backpack-packing'
-    // },
-    // {name: "Stool Nº1", url: 'https://www.kickstarter.com/projects/390812913/stool-no1'},
     {
         name: "LetB Color - take a look at time in different ways",
         url: "https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways"
@@ -511,51 +478,13 @@ var products = [
         name: "FLECTR 360 OMNI – cycling at night with full 360° visibility",
         url: "https://www.kickstarter.com/projects/outsider-team/flectr-360-omni"
     },
-    // {
-    //     name: "Make perfect cold brew coffee at home with the BrewCub",
-    //     url: 'https://www.kickstarter.com/projects/1201993039/make-perfect-cold-brew-coffee-at-home-with-the-bre'
-    // },
-    // {
-    //     name: 'NanoPen | Worlds Smallest & Indestructible EDC Pen Tool',
-    //     url: 'https://www.kickstarter.com/projects/bullet/nanopen-worlds-smallest-and-indestructible-edc-pen?' +
-    //         'ref=section_design-tech_popular'
-    // },
-    // {
-    //     name: "The EVERGOODS MQD24 and CTB40 Crossover Backpacks",
-    //     url: 'https://www.kickstarter.com/projects/1362258351/the-evergoods-mqd24-and-ctb40-crossover-backpacks'
-    // },
-    // {
-    //     name: "Hexgears X-1 Mechanical Keyboard",
-    //     url: 'https://www.kickstarter.com/projects/hexgears/hexgears-x-1-mechanical-keyboard'
-    // },
-    // {
-    //     name: "KARVD - Modular Wood Carved Wall Panel System",
-    //     url: 'https://www.kickstarter.com/projects/karvdwalls/karvd-modular-wood-carved-wall-panel-system'
-    // },
-    // {
-    //     name: "PARA: Stationary l Pythagorean l Easy-to-Use Laser Measurer",
-    //     url: 'https://www.kickstarter.com/projects/1619356127/para-stationary-l-pythagorean-l-easy-to-use-laser'
-    // },
-    // {
-    //     name: "Blox: organize your world!",
-    //     url: 'https://www.kickstarter.com/projects/onehundred/blox-organize-your-world'
-    // },
-    // {
-    //     name: "Moment - World's Best Lenses For Mobile Photography",
-    //     url: 'https://www.kickstarter.com/projects/moment/moment-amazing-lenses-for-mobile-photography'
-    // },
     {
         name: "The Ollie Chair: Shape-Shifting Seating",
         url: "https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating"
     }
-    // {
-    //     name: "Fave: the ideal all-purpose knife!",
-    //     url: 'https://www.kickstarter.com/projects/onehundred/fave-the-ideal-all-purpose-knife'
-    // },
 ];
-if (randomProduct) {
+if (randomProduct)
     products = shuffle(products);
-}
 var users = []; //the main local user storage
 var userPool = []; //accumulates users pre-experiment
 var waitchatStart = 0;
@@ -570,37 +499,28 @@ var taskStartTime = getSecondsPassed(); // reset for each start of new task
 var taskEndTime = 0;
 var taskTime = 0;
 // Building task list
-//if (runExperimentNow){
 var eventSchedule = [];
-if (starterSurveyOn) {
+if (starterSurveyOn)
     eventSchedule.push("starterSurvey");
-}
 var roundSchedule = [];
 roundSchedule.push("ready");
-if (midSurveyOn) {
+if (midSurveyOn)
     roundSchedule.push("midSurvey");
-}
-if (psychologicalSafetyOn) {
+if (psychologicalSafetyOn)
     roundSchedule.push("psychologicalSafety");
-}
-if (teamfeedbackOn) {
+if (teamfeedbackOn)
     roundSchedule.push("teamfeedbackSurvey");
-}
 roundSchedule = replicate(roundSchedule, numRounds);
 eventSchedule = eventSchedule.concat(roundSchedule);
-if (blacklistOn) {
+if (blacklistOn)
     eventSchedule.push("blacklistSurvey");
-}
-if (qFifteenOn) {
+if (qFifteenOn)
     eventSchedule.push("qFifteen");
-}
-if (qSixteenOn) {
+if (qSixteenOn)
     eventSchedule.push("qSixteen");
-}
 eventSchedule.push("postSurvey");
 eventSchedule.push("finished");
 console.log("This batch will include:", eventSchedule);
-//}
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -985,7 +905,7 @@ io.on("connection", function (socket) {
                 });
             }
             if (notifyUs) {
-                mturk.notifyWorkers(["A19MTSLG2OYDLZ"], "Rolled " + currentCondition + " on " + taskURL, "Rolled over with: " +
+                mturk.notifyWorkers([notifyUsMturkID], "Rolled " + currentCondition + " on " + taskURL, "Rolled over with: " +
                     currentCondition +
                     " on port " +
                     port +
@@ -1070,7 +990,7 @@ io.on("connection", function (socket) {
     });
     socket.on("load bot qs", function () {
         useUser(socket, function (user) {
-            ioEmitById(socket.mturkId, "chatbot", loadQuestions(botFile), socket, user);
+            ioEmitById(socket.mturkId, "chatbot", loadQuestions("botquestions"), socket, user);
         });
     });
     // when the user disconnects.. perform this
@@ -1242,7 +1162,7 @@ io.on("connection", function (socket) {
             if (eventSchedule[currentEvent] === "starterSurvey") {
                 ioEmitById(socket.mturkId, "load", {
                     element: "starterSurvey",
-                    questions: loadQuestions(starterSurveyFile),
+                    questions: loadQuestions("startersurvey-q"),
                     interstitial: false,
                     showHeaderBar: false
                 }, socket, user);
@@ -1255,14 +1175,14 @@ io.on("connection", function (socket) {
                 if (checkinOn) {
                     ioEmitById(socket.mturkId, "load", {
                         element: "checkin",
-                        questions: loadQuestions(checkinFile),
+                        questions: loadQuestions("checkin-q"),
                         interstitial: true,
                         showHeaderBar: true
                     }, socket, user);
                 }
                 ioEmitById(socket.mturkId, "load", {
                     element: "leave-hit",
-                    questions: loadQuestions(leaveHitFile),
+                    questions: loadQuestions("leave-hit-q"),
                     interstitial: true,
                     showHeaderBar: true
                 }, socket, user);
@@ -1274,7 +1194,7 @@ io.on("connection", function (socket) {
                 }
                 ioEmitById(socket.mturkId, "load", {
                     element: "midSurvey",
-                    questions: loadQuestions(midSurveyFile),
+                    questions: loadQuestions("midsurvey-q"),
                     interstitial: false,
                     showHeaderBar: true
                 }, socket, user);
@@ -1285,7 +1205,7 @@ io.on("connection", function (socket) {
                 }
                 ioEmitById(socket.mturkId, "load", {
                     element: "psychologicalSafety",
-                    questions: loadQuestions(psychologicalSafetyFile),
+                    questions: loadQuestions("psychologicalsafety-q"),
                     interstitial: false,
                     showHeaderBar: true
                 }, socket, user);
@@ -1299,7 +1219,7 @@ io.on("connection", function (socket) {
                 }
                 ioEmitById(socket.mturkId, "load", {
                     element: "teamfeedbackSurvey",
-                    questions: loadQuestions(feedbackFile, user),
+                    questions: loadQuestions("feedback-q", user),
                     interstitial: false,
                     showHeaderBar: true
                 }, socket, user);
@@ -1320,13 +1240,13 @@ io.on("connection", function (socket) {
                 }
                 console.log({
                     element: "blacklistSurvey",
-                    questions: loadQuestions(blacklistFile, user),
+                    questions: loadQuestions("blacklist-q", user),
                     interstitial: false,
                     showHeaderBar: false
                 });
                 ioEmitById(socket.mturkId, "load", {
                     element: "blacklistSurvey",
-                    questions: loadQuestions(blacklistFile, user),
+                    questions: loadQuestions("blacklist-q", user),
                     interstitial: false,
                     showHeaderBar: false
                 }, socket, user);
@@ -1347,7 +1267,7 @@ io.on("connection", function (socket) {
                 }
                 ioEmitById(user.mturkId, "load", {
                     element: "qFifteen",
-                    questions: loadQuestions(qFifteenFile, user),
+                    questions: loadQuestions("qfifteen-q", user),
                     interstitial: false,
                     showHeaderBar: false
                 }, socket, user);
@@ -1371,7 +1291,7 @@ io.on("connection", function (socket) {
                 }
                 ioEmitById(user.mturkId, "load", {
                     element: "qSixteen",
-                    questions: loadQuestions(qSixteenFile, user),
+                    questions: loadQuestions("qsixteen-q", user),
                     interstitial: false,
                     showHeaderBar: false
                 }, socket, user);
@@ -1402,7 +1322,7 @@ io.on("connection", function (socket) {
                 updateUserInDB(user, "results.manipulation", user.results.manipulation);
                 ioEmitById(socket.mturkId, "load", {
                     element: "postSurvey",
-                    questions: loadQuestions(postSurveyFile, user),
+                    questions: loadQuestions("postsurvey-q", user),
                     interstitial: false,
                     showHeaderBar: false
                 }, socket, user);
@@ -1426,7 +1346,7 @@ io.on("connection", function (socket) {
                 usersFinished += 1;
                 console.log(usersFinished, "users have finished.");
                 if (notifyUs) {
-                    mturk.notifyWorkers(["A19MTSLG2OYDLZ"], "Completed " + currentCondition + " on " + taskURL, "Batch " +
+                    mturk.notifyWorkers([notifyUsMturkID], "Completed " + currentCondition + " on " + taskURL, "Batch " +
                         batchID +
                         " completed: " +
                         currentCondition +
@@ -1736,20 +1656,16 @@ io.on("connection", function (socket) {
         });
     });
     //loads qs in text file, returns json array
-    function loadQuestions(questionFile, user) {
+    function loadQuestions(instrument, user) {
         if (user === void 0) { user = null; }
-        var prefix = questionFile.substr(txt.length, questionFile.indexOf(".") - txt.length);
         var questions = [];
-        var i = 0;
-        fs.readFileSync(questionFile)
+        fs.readFileSync("txt/" + instrument + ".txt")
             .toString()
             .split("\n")
             .filter(function (n) { return n.length !== 0; })
-            .forEach(function (line) {
+            .forEach(function (line, index) {
             var questionObj = {};
-            i++;
-            questionObj["name"] = prefix + i;
-            //each question in the text file should be formatted: ANSWERTAG.QUESTION ex: YN.Are you part of Team Mark?
+            questionObj["name"] = instrument + (index + 1);
             questionObj["question"] = line.substr(line.indexOf("|") + 1, line.length);
             var answerTag = line.substr(0, line.indexOf("|"));
             var answerObj;
@@ -1764,14 +1680,13 @@ io.on("connection", function (socket) {
             else if (answerTag === "YN15") {
                 // yes no
                 answerObj = binaryAnswers;
-                var team = getTeamMembers(user)[i - 1];
-                questionObj["question"] += " Team " + i + " (" + team + ").";
+                var team = getTeamMembers(user)[index];
+                questionObj["question"] += " Team " + (index + 1) + " (" + team + ").";
             }
             else if (answerTag === "TR") {
                 //team radio
                 getTeamMembers(user).forEach(function (team, index) {
-                    questionObj["question"] +=
-                        " Team " + (index + 1) + " (" + team + "),";
+                    questionObj["question"] += " Team " + (index + 1) + " (" + team + ").";
                 });
                 questionObj["question"] = questionObj["question"].slice(0, -1);
                 answerObj = {
