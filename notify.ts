@@ -125,9 +125,15 @@ switch (notification_type) {
                 let successfullyBonusedUsersID = successfullyBonusedUsers.map(
                   u => u.mturkId
                 );
-                let unsuccessfullyBonusedUsers = bonusworkersDict.filter(
-                  u => !successfullyBonusedUsersID.includes(u)
-                );
+                let unsuccessfullyBonusedUsers = [];
+                Object.keys(bonusworkersDict).forEach((key, value) => {
+                  if (!successfullyBonusedUsersID.includes(value)) {
+                    unsuccessfullyBonusedUsers.push(value);
+                  }
+                });
+                // let unsuccessfullyBonusedUsers = bonusworkersDict.filter(
+                //   u => !successfullyBonusedUsersID.includes(u)
+                // );
                 fs.writeFile(
                   bonusworkersStorage,
                   unsuccessfullyBonusedUsers.join("\n"),

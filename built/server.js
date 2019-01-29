@@ -237,7 +237,7 @@ console.log = function () {
 var conditionOptions = ["control", "treatment"];
 var currentCondition = args.condition || randomCondition
     ? tools.chooseOne(conditionOptions)
-    : conditionOptions[1];
+    : "control";
 var roundOrderOptions = [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]];
 var roundOrdering = randomRoundOrder
     ? tools.chooseOne(roundOrderOptions)
@@ -534,7 +534,6 @@ Object.keys(io.sockets.sockets).forEach(function (socketID) {
         // io.in(socketID).disconnect(true)
     }
 });
-//if (runExperimentNow){
 // Adds Batch data for this experiment. unique batchID based on time/date
 db.batch.insert({
     batchID: batchID,
@@ -1872,18 +1871,16 @@ function parseResults(data) {
     });
     return parsedResults;
 }
-var decode = function (encoded) {
-    return unescape(encoded.replace(/\+/g, " "));
-};
+var decode = function (encoded) { return unescape(encoded.replace(/\+/g, " ")); };
 var logTime = function () {
     var timeNow = new Date(Date.now());
     console.log("This is as of " +
         (Date.now() - batchID) / 1000 +
         " seconds since starting the experiment. Printed at", timeNow.toString());
 };
-function getRandomSubarray(arr, size) {
+var getRandomSubarray = function (arr, size) {
     return shuffle(arr).slice(0, size);
-}
+};
 function shuffle(array) {
     var currentIndex = array.length;
     var temporaryValue;

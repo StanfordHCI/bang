@@ -4,7 +4,7 @@ dotenv.config();
 import * as yargs from "yargs";
 let args = yargs.argv;
 import chalk from "chalk";
-import fs = require("fs");
+import * as fs from "fs";
 
 //importing our libraries
 let tools = require("./tools");
@@ -284,7 +284,7 @@ const conditionOptions = ["control", "treatment"];
 const currentCondition =
   args.condition || randomCondition
     ? tools.chooseOne(conditionOptions)
-    : conditionOptions[1];
+    : "control";
 const roundOrderOptions = [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]];
 const roundOrdering = randomRoundOrder
   ? tools.chooseOne(roundOrderOptions)
@@ -638,7 +638,6 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
   }
 });
 
-//if (runExperimentNow){
 // Adds Batch data for this experiment. unique batchID based on time/date
 db.batch.insert(
   {
@@ -2263,7 +2262,7 @@ function storeHIT(currentHIT = mturk.returnCurrentHIT()) {
 }
 
 // parses results from surveys to proper format for JSON file
-function parseResults(data) {
+function parseResults(data: string) {
   let parsedResults = {};
   data.split("&").forEach(responsePair => {
     let response = responsePair.split("=");
@@ -2273,9 +2272,7 @@ function parseResults(data) {
   return parsedResults;
 }
 
-const decode = encoded => {
-  return unescape(encoded.replace(/\+/g, " "));
-};
+const decode = (encoded: string) => unescape(encoded.replace(/\+/g, " "));
 
 const logTime = () => {
   let timeNow = new Date(Date.now());
@@ -2287,9 +2284,9 @@ const logTime = () => {
   );
 };
 
-function getRandomSubarray(arr: any[], size: number) {
+const getRandomSubarray = (arr: any[], size: number) => {
   return shuffle(arr).slice(0, size);
-}
+};
 
 function shuffle(array: any[]) {
   let currentIndex = array.length;
