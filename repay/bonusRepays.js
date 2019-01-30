@@ -26,6 +26,8 @@ AWS.config = {
   "sslEnabled": true
 }
 
+const database = '../.data/repay';
+
 const mturk = new AWS.MTurk({endpoint: endpoint});
 
 // Datastore config
@@ -33,10 +35,8 @@ const fs = require('fs');
 
 const Datastore = require('nedb'),
   db = {};
-  db.users = new Datastore({ filename: '../bang/.data/users', autoload: true, timestampData: true});
-  db.batch = new Datastore({ filename: '../bang/.data/batch', autoload: true, timestampData: true});
-
-const dir = '../bang/.data/';
+  db.users = new Datastore({ filename: '../.data/users', autoload: true, timestampData: true});
+  db.batch = new Datastore({ filename: '../.data/batch', autoload: true, timestampData: true});
 
 let hitID = ""
 let workerID = ""
@@ -105,9 +105,9 @@ function sendBonus(i) {
 }
 
 function writeToFile() {
-  fs.writeFile('../bang/.data/repay', JSON.stringify(dataObj, null, 2), 'utf-8', (err) => {
+  fs.writeFile(database, JSON.stringify(dataObj, null, 2), 'utf-8', (err) => {
     if (err) console.log(err);
-    console.log('../bang/.data/repay has been updated');
+    console.log(database + ' has been updated');
   });
 }
 

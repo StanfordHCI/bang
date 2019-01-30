@@ -25,15 +25,16 @@ AWS.config = {
   "sslEnabled": true
 };
 
+const database = '../.data/repay';
+
 const mturk = new AWS.MTurk({endpoint: endpoint});
 
 // Datastore config
 const fs = require('fs');
-const dir = '../bang/.data/';
 const Datastore = require('nedb'),
   db = {};
-  db.users = new Datastore({ filename: '../bang/.data/users', autoload: true, timestampData: true});
-  db.batch = new Datastore({ filename: '../bang/.data/batch', autoload: true, timestampData: true});
+  db.users = new Datastore({ filename: '../.data/users', autoload: true, timestampData: true});
+  db.batch = new Datastore({ filename: '../.data/batch', autoload: true, timestampData: true});
 
 // Params for the new HIT we'll create
 const params = {
@@ -110,14 +111,14 @@ function writeToFile(i) {
   dataObj[i]['Bonus'] = bonus;
   dataObj[i]['RepayURL'] = repayURL;
   dataObj[i]['UniqueID'] = uniqueID;
-  fs.writeFile('../bang/.data/repay', JSON.stringify(dataObj, null, 2), 'utf-8', (err) => {
+  fs.writeFile(database, JSON.stringify(dataObj, null, 2), 'utf-8', (err) => {
     if (err) console.log(err);
-    else console.log('../bang/.data/repay has been updated');
+    else console.log(database + ' has been updated');
   });
 }
 
 function generateRepayHITs() {
-  fs.readFile('../bang/.data/repay', (err, data) => {
+  fs.readFile(database, (err, data) => {
     if (err) console.log(err);
     dataObj = JSON.parse(data);
     // loops through all current users in the database
