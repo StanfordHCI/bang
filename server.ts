@@ -10,7 +10,7 @@ import * as fs from "fs";
 let tools = require("./tools");
 let mturk = require("./mturkTools");
 
-//Initializing variables
+// Initializing variables
 const runningLocal = process.env.RUNNING_LOCAL === "TRUE";
 const runningLive = process.env.RUNNING_LIVE === "TRUE";
 const teamSize = parseInt(process.env.TEAM_SIZE);
@@ -1719,7 +1719,6 @@ io.on("connection", socket => {
             }
           }
         });
-
         badUsers.forEach(u => {
           issueFinish(
             u,

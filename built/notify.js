@@ -114,8 +114,16 @@ switch (notification_type) {
                             // Bonus Them and remove their name from repay list
                             mturk.payBonuses(repayacceptors, function (successfullyBonusedUsers) {
                                 var successfullyBonusedUsersID = successfullyBonusedUsers.map(function (u) { return u.mturkId; });
-                                bonusworkersDict;
-                                var unsuccessfullyBonusedUsers = bonusworkersDict.filter(function (u) { return !successfullyBonusedUsersID.includes(u); });
+                                var unsuccessfullyBonusedUsers = [];
+                                Object.keys(bonusworkersDict).forEach(function (_key, value) {
+                                    if (!successfullyBonusedUsersID.includes(value)) {
+                                        unsuccessfullyBonusedUsers.push(value);
+                                    }
+                                });
+                                // MEW: previous lines aim to reproduce this funcionality due to inconsistant access of Dictionary.
+                                // let unsuccessfullyBonusedUsers = bonusworkersDict.filter(
+                                //   u => !successfullyBonusedUsersID.includes(u)
+                                // );
                                 fs.writeFile(bonusworkersStorage, unsuccessfullyBonusedUsers.join("\n"), function (err) {
                                     if (err)
                                         throw err;

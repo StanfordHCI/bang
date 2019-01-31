@@ -126,11 +126,12 @@ switch (notification_type) {
                   u => u.mturkId
                 );
                 let unsuccessfullyBonusedUsers = [];
-                Object.keys(bonusworkersDict).forEach((key, value) => {
+                Object.keys(bonusworkersDict).forEach((_key, value) => {
                   if (!successfullyBonusedUsersID.includes(value)) {
                     unsuccessfullyBonusedUsers.push(value);
                   }
                 });
+                // MEW: previous lines aim to reproduce this funcionality due to inconsistant access of Dictionary.
                 // let unsuccessfullyBonusedUsers = bonusworkersDict.filter(
                 //   u => !successfullyBonusedUsersID.includes(u)
                 // );

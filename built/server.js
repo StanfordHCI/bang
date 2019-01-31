@@ -10,7 +10,7 @@ var fs = require("fs");
 //importing our libraries
 var tools = require("./tools");
 var mturk = require("./mturkTools");
-//Initializing variables
+// Initializing variables
 var runningLocal = process.env.RUNNING_LOCAL === "TRUE";
 var runningLive = process.env.RUNNING_LIVE === "TRUE";
 var teamSize = parseInt(process.env.TEAM_SIZE);
