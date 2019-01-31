@@ -28,7 +28,7 @@ fromPassword = os.getenv('EMAIL_PASSWORD')
 imapServer = "outlook.office365.com"
 
 # This will store the hitIDs of people who contact us via email
-database = '../bang/.data/repay'
+database = '../.data/repay'
 
 # Worker info
 workerName = ""
@@ -99,18 +99,18 @@ def readEmailFromGmail():
 
         # To not do all of my emails
         x = 0
-
+        
         # Loops through all emails from newest to oldest
         for i in range(latestEmailID, firstEmailID, -1):
-            x += 1
-            if x > 100:
+            x = x + 1
+            if (x > 100):
                 break
-            result, data = mail.fetch(i,  '(RFC822)')
+            result, data = mail.fetch(str(i),  "(RFC822)")
 
             for responsePart in data:
                 if isinstance(responsePart, tuple):
-                    msg = email.message_from_string(responsePart[1])
-                    emailSubject = msg['subject']
+                    msg = email.message_from_string(str(responsePart[1]))
+                    emailSubject = str(msg['subject'])
                     emailSubjectSplit = emailSubject.split()
                     emailFrom = msg['from']
                     emailBody = getBodyText(msg)
@@ -129,15 +129,15 @@ def readEmailFromGmail():
                             numEmailsFound += 1
                             repayUserDatabase.append({"Name": workerName, "Email": workerEmail, "WorkerID": workerID, "UniqueID": "", "BangHIT": hitID, "RepayURL": "", "SentHIT": False, "SentBonus": False, "Bonus": 0})
 
-        print 'Number of new complaint emails found: ' + str(numEmailsFound)
+        print ("Number of new complaint emails found: " + str(numEmailsFound))
 
         if (numEmailsFound > 0):
             with open(database, 'w') as outfile:
                 json.dump(repayUserDatabase, outfile)
-            print 'Added users to ' + database
+            print ('Added users to ' + database)
 
-    except Exception, e:
-        print str(e)
+    except Exception as e:
+        print (str(e))
 
 
 readEmailFromGmail()

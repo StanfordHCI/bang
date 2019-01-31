@@ -12,7 +12,7 @@
   "dependencies": {
     "coffeescript": "latest",
     "colors": "^1.3.2",
-    "dotenv": "^6.0.0",
+    "dotenv": "^6.2.0",
     "express": "^4.16.3",
     "moment": "^2.22.2",
     "mustache": "^2.3.2",
@@ -32,7 +32,7 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "aws-sdk": "^2.391.0",
+    "aws-sdk": "^2.395.0",
     "pm2": "^3.0.4"
   },
   "repository": {
