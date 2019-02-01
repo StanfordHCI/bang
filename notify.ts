@@ -125,9 +125,16 @@ switch (notification_type) {
                 let successfullyBonusedUsersID = successfullyBonusedUsers.map(
                   u => u.mturkId
                 );
-                let unsuccessfullyBonusedUsers = bonusworkersDict.filter(
-                  u => !successfullyBonusedUsersID.includes(u)
-                );
+                let unsuccessfullyBonusedUsers = [];
+                Object.keys(bonusworkersDict).forEach((_key, value) => {
+                  if (!successfullyBonusedUsersID.includes(value)) {
+                    unsuccessfullyBonusedUsers.push(value);
+                  }
+                });
+                // MEW: previous lines aim to reproduce this funcionality due to inconsistant access of Dictionary.
+                // let unsuccessfullyBonusedUsers = bonusworkersDict.filter(
+                //   u => !successfullyBonusedUsersID.includes(u)
+                // );
                 fs.writeFile(
                   bonusworkersStorage,
                   unsuccessfullyBonusedUsers.join("\n"),

@@ -27,7 +27,7 @@ AWS.config.region = "us-east-1";
 AWS.config.sslEnabled = true;
 // Declaration of variables
 var numRounds = 4;
-var taskDuration = roundMinutes * numRounds * 2;
+var taskDuration = 0.5 + roundMinutes * numRounds * 2; //MEW: added .5 min so we always have at least 30 seconds for the task, which is required by mturk.
 //const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
 var timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
 var hourlyWage = 10.5; // changes reward of experiment depending on length - change to 6?
