@@ -25,7 +25,7 @@ fromEmail = os.getenv('EMAIL_LOGIN')
 fromPassword = os.getenv('EMAIL_PASSWORD')
 
 # Change this to 'imap.gmail.com' if you want to read from a gmail domain account
-imapServer = "outlook.office365.com"
+imapServer = "imap.gmail.com"  # "outlook.office365.com"
 
 # This will store the hitIDs of people who contact us via email
 database = '../.data/repay'
@@ -36,6 +36,8 @@ workerEmail = ""
 workerID = ""
 
 # Recursive function to get the actual body of the email
+
+
 def getBodyText(msg):
     if msg.is_multipart():
         return getBodyText(msg.get_payload(0))
@@ -46,6 +48,8 @@ def getBodyText(msg):
 # First name
 # Email
 # Worker ID
+
+
 def getWorkerName(body):
     i = 0
     while i < len(body):
@@ -53,6 +57,7 @@ def getWorkerName(body):
             return body[i + 2]
         i += 1
     return ""
+
 
 def getWorkerEmail(body):
     i = 0
@@ -63,6 +68,7 @@ def getWorkerEmail(body):
         i += 1
     return ""
 
+
 def getWorkerID(body):
     i = 0
     while i < len(body):
@@ -72,6 +78,8 @@ def getWorkerID(body):
     return ""
 
 # main function
+
+
 def readEmailFromGmail():
     try:
         # Setting up email config
@@ -99,7 +107,7 @@ def readEmailFromGmail():
 
         # To not do all of my emails
         x = 0
-        
+
         # Loops through all emails from newest to oldest
         for i in range(latestEmailID, firstEmailID, -1):
             x = x + 1
@@ -127,17 +135,18 @@ def readEmailFromGmail():
                                 break
                         if shouldAppend:
                             numEmailsFound += 1
-                            repayUserDatabase.append({"Name": workerName, "Email": workerEmail, "WorkerID": workerID, "UniqueID": "", "BangHIT": hitID, "RepayURL": "", "SentHIT": False, "SentBonus": False, "Bonus": 0})
+                            repayUserDatabase.append({"Name": workerName, "Email": workerEmail, "WorkerID": workerID, "UniqueID": "",
+                                                      "BangHIT": hitID, "RepayURL": "", "SentHIT": False, "SentBonus": False, "Bonus": 0})
 
-        print ("Number of new complaint emails found: " + str(numEmailsFound))
+        print("Number of new complaint emails found: " + str(numEmailsFound))
 
         if (numEmailsFound > 0):
             with open(database, 'w') as outfile:
                 json.dump(repayUserDatabase, outfile)
-            print ('Added users to ' + database)
+            print('Added users to ' + database)
 
     except Exception as e:
-        print (str(e))
+        print(str(e))
 
 
 readEmailFromGmail()

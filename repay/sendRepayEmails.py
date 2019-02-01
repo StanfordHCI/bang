@@ -31,36 +31,37 @@ try:
     mail.starttls()
     mail.login(FROM_EMAIL, FROM_PWD)
 except Exception as e:
-    print (str(e))
+    print(str(e))
 
 with open(database) as json_file:
     repayUserDatabase = json.load(json_file)
 
 for user in repayUserDatabase:
     if user['SentHIT'] == False and user['RepayURL'] != "" and user['RepayURL'] != None:
-            TO_EMAIL_ADDRESS = user['Email']
+        TO_EMAIL_ADDRESS = user['Email']
 
-            # This format is necessary to be able to include a subject line
-            MESSAGE = "From: HIT: " + user['BangHIT'] + " <" + FROM_EMAIL + ">\n"
-            MESSAGE += "To: " + user['Name'] + " <" + TO_EMAIL_ADDRESS + ">\n"
-            MESSAGE += "MIME-Version: 1.0\nContent-type: text/html\n"
-            MESSAGE += "Subject: Regarding Amazon Mechanical Turk Compensation\n\n"
+        # This format is necessary to be able to include a subject line
+        MESSAGE = "From: HIT: " + user['BangHIT'] + " <" + FROM_EMAIL + ">\n"
+        MESSAGE += "To: " + user['Name'] + " <" + TO_EMAIL_ADDRESS + ">\n"
+        MESSAGE += "MIME-Version: 1.0\nContent-type: text/html\n"
+        MESSAGE += "Subject: Regarding Amazon Mechanical Turk Compensation\n\n"
 
-            # Actual message
-            MESSAGE += 'Hi ' + user['Name'] + ',\n\nThanks for reaching out.'
-            MESSAGE += '\nHere\'s a repay hit:\n\n' + str(user['RepayURL'])
-            MESSAGE += '\n\nIf that does not work, please try searching for'
-            MESSAGE += ' Stanford, and select a hit titled "Hit to repay workers".'
-            MESSAGE += '\nPlease use your worker ID when prompted. We will check '
-            MESSAGE += 'this against our database.'
-            MESSAGE += '\nWe anticipate paying out bonuses sometime in the next 48 hours.'
+        # Actual message
+        MESSAGE += 'Hi ' + user['Name'] + ',\n\nThanks for reaching out.'
+        MESSAGE += '\nHere\'s a repay hit:\n\n' + str(user['RepayURL'])
+        MESSAGE += '\n\nIf that does not work, please try searching for'
+        MESSAGE += ' Stanford, and select a hit titled "Hit to repay workers".'
+        MESSAGE += '\nPlease use your worker ID when prompted. We will check '
+        MESSAGE += 'this against our database.'
+        MESSAGE += '\nWe anticipate paying out bonuses sometime in the next 48 hours.'
 
-            try:
-                    mail.sendmail(FROM_EMAIL, TO_EMAIL_ADDRESS, MESSAGE)
-                    user['SentHIT'] = True
-                    print ('Sent repay link to ' + user['Name'] + ' at: ' + user['Email'])
-            except Exception as e:
-                    print (str(e))
+        try:
+            mail.sendmail(FROM_EMAIL, TO_EMAIL_ADDRESS, MESSAGE)
+            user['SentHIT'] = True
+            print('Sent repay link to ' +
+                  user['Name'] + ' at: ' + user['Email'])
+        except Exception as e:
+            print(str(e))
 
 mail.quit()
 
