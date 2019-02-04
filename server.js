@@ -535,95 +535,85 @@ if (runExperimentNow) {
   });
 }
 
-//Add more products
+
+//Include example for ads
 let products = [
   {
-    name: "First task",
-    url:
-      "https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw",
-	  taskSteps: [
+    name: "Ads",
+    taskSteps : [
         {
-          time: 0.1,
-          message:
+            time: 0.0,
+            message:
+            "You will receive instructions about how to collaborate to write a compelling add. We will run your final advertisement online. <strong>The more successful it is, the larger the " + "bonus each of your team members will receive.</strong>"
+        },
+        {
+            time: 0.1,
+            message:
             "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
         },
         {
-          time: 0.4,
-          message:
+            time: 0.4,
+            message:
             "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
         },
         {
-          time: 0.7,
-          message:
+            time: 0.7,
+            message:
             "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
         }
-      ]
-  },
-  {name: "Second task", url: 'https://www.kickstarter.com/projects/390812913/stool-no1',
-	  taskSteps: [
-        {
-          time: 0.1,
-          message:
-            "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
-        },
-        {
-          time: 0.4,
-          message:
-            "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
-        },
-        {
-          time: 0.7,
-          message:
-            "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
-        }
-      ]
-},
-  {
-    name: "Third task",
-    url:
-      "https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways",
-	  taskSteps: [
-        {
-          time: 0.1,
-          message:
-            "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
-        },
-        {
-          time: 0.4,
-          message:
-            "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
-        },
-        {
-          time: 0.7,
-          message:
-            "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
-        }
-      ]
-
+    ]
   },
   {
-    name: "Fourth task",
-    url: "https://www.kickstarter.com/projects/outsider-team/flectr-360-omni",
-	  taskSteps: [
+    name: "Jury",
+    url: taskURL + "CWP9VmUcdS3jJ4C46Xmmh7Ks3TacxbQsOfbxhNbLMs.pdf",
+    taskSteps : [
+      {
+          time: 0.005,
+          message: "<strong>Read instructions. When all group members are done reading, begin deliberations.</strong>"
+      }
+  ]
+  },
+  {
+    name: "Moral reasoning",
+    url: taskURL + "instructions.pdf",
+    taskSteps : [
         {
-          time: 0.1,
-          message:
-            "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
+            time: 0.01,
+            message: "<strong>Please read instructions and begin deliberations.</strong>"
         },
         {
-          time: 0.4,
-          message:
-            "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
+            time: 0.875,
+            message: "<strong>Final Decision: Which option should the university go with for Jack's grade in the course and why?</strong>"
         },
         {
-          time: 0.7,
-          message:
-            "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
+            time: 0.9,
+            message: "<strong>Final Decision: Which option should the university go with for Jack's status on the basketball team and why?</strong>"
+        },
+        {
+            time: 0.925,
+            message: "<strong>Final Decision: Which option should the university go with for Jack's status as a college student and why?</strong>"
+        },
+        {
+            time: 0.95,
+            message: "<strong>Final Decision: Which option should the university go with for Tom's status as a T.A. and why?</strong>"
+        },
+        {
+            time: 0.975,
+            message: "<strong>Final Decision: Which option should the university go with for Tom's status as a graduate student and why?</strong>"
         }
-      ]
-
+    ]
+  },
+  {
+    name: "Intellective Battery",
+    url: taskURL + "Q3DYssUNxyGyQOvnmahuCdfgVjF0SYXpRARTMyXXxU.pdf",
+    taskSteps : [
+      {
+         time: 0.003,
+         message: "<strong>Read instructions. When all group members are done reading, begin discussions.</strong>"
+      },
+    ]
   }
-  ];
+];
 
 if (randomProduct) {
   products = shuffle(products);
