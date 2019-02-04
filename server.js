@@ -32,10 +32,10 @@ const debugMode = !runningLive;
 const suddenDeath = false;
 
 const randomCondition = false;
-const randomRoundOrder = true;
+const randomRoundOrder = false;
 const randomProduct = true;
 
-const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
@@ -245,7 +245,7 @@ let batchCompleteUpdated = false;
 // const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
 const ordering = randomRoundOrder
   ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick()
-  : [1, 2, 1, 3];
+  : [1, 1, 1, 1];
 const conditions = {
   control: ordering,
   treatment: ordering,
@@ -268,7 +268,9 @@ const people = extraRoundOn
 const population = people.length;
 const teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn); //added '-1' to numRounds
 //}
-
+ordering.forEach(roundIndex => {
+	console.log(roundIndex,teams[roundIndex])
+})
 //if (runExperimentNow) {
 const batchID = Date.now();
 
@@ -535,81 +537,93 @@ if (runExperimentNow) {
 
 //Add more products
 let products = [
-  // {name: 'KOSMOS ink - Magnetic Fountain Pen', url: 'https://www.kickstarter.com/projects/stilform/kosmos-ink'},
-  // {
-  //     name: 'Projka: Multi-Function Accessory Pouches',
-  //     url: 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches'
-  // },
-  // {
-  //     name: "First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC",
-  //     url: 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono'
-  // },
-  // {
-  //     name: "Nomad Energy- Radically Sustainable Energy Drink",
-  //     url: 'https://www.kickstarter.com/projects/1273663738/nomad-energy-radically-sustainable-energy-drink'
-  // },
   {
-    name: "Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
+    name: "First task",
     url:
-      "https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw"
+      "https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw",
+	  taskSteps: [
+        {
+          time: 0.1,
+          message:
+            "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
+        },
+        {
+          time: 0.4,
+          message:
+            "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
+        },
+        {
+          time: 0.7,
+          message:
+            "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
+        }
+      ]
   },
-  // {
-  //     name: "The Travel Line: Versatile Travel Backpack + Packing Tools",
-  //     url: 'https://www.kickstarter.com/projects/peak-design/the-travel-line-versatile-travel-backpack-packing'
-  // },
-  // {name: "Stool Nº1", url: 'https://www.kickstarter.com/projects/390812913/stool-no1'},
+  {name: "Second task", url: 'https://www.kickstarter.com/projects/390812913/stool-no1',
+	  taskSteps: [
+        {
+          time: 0.1,
+          message:
+            "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
+        },
+        {
+          time: 0.4,
+          message:
+            "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
+        },
+        {
+          time: 0.7,
+          message:
+            "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
+        }
+      ]
+},
   {
-    name: "LetB Color - take a look at time in different ways",
+    name: "Third task",
     url:
-      "https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways"
+      "https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways",
+	  taskSteps: [
+        {
+          time: 0.1,
+          message:
+            "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
+        },
+        {
+          time: 0.4,
+          message:
+            "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
+        },
+        {
+          time: 0.7,
+          message:
+            "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
+        }
+      ]
+
   },
   {
-    name: "FLECTR 360 OMNI – cycling at night with full 360° visibility",
-    url: "https://www.kickstarter.com/projects/outsider-team/flectr-360-omni"
-  },
-  // {
-  //     name: "Make perfect cold brew coffee at home with the BrewCub",
-  //     url: 'https://www.kickstarter.com/projects/1201993039/make-perfect-cold-brew-coffee-at-home-with-the-bre'
-  // },
-  // {
-  //     name: 'NanoPen | Worlds Smallest & Indestructible EDC Pen Tool',
-  //     url: 'https://www.kickstarter.com/projects/bullet/nanopen-worlds-smallest-and-indestructible-edc-pen?' +
-  //         'ref=section_design-tech_popular'
-  // },
-  // {
-  //     name: "The EVERGOODS MQD24 and CTB40 Crossover Backpacks",
-  //     url: 'https://www.kickstarter.com/projects/1362258351/the-evergoods-mqd24-and-ctb40-crossover-backpacks'
-  // },
-  // {
-  //     name: "Hexgears X-1 Mechanical Keyboard",
-  //     url: 'https://www.kickstarter.com/projects/hexgears/hexgears-x-1-mechanical-keyboard'
-  // },
-  // {
-  //     name: "KARVD - Modular Wood Carved Wall Panel System",
-  //     url: 'https://www.kickstarter.com/projects/karvdwalls/karvd-modular-wood-carved-wall-panel-system'
-  // },
-  // {
-  //     name: "PARA: Stationary l Pythagorean l Easy-to-Use Laser Measurer",
-  //     url: 'https://www.kickstarter.com/projects/1619356127/para-stationary-l-pythagorean-l-easy-to-use-laser'
-  // },
-  // {
-  //     name: "Blox: organize your world!",
-  //     url: 'https://www.kickstarter.com/projects/onehundred/blox-organize-your-world'
-  // },
-  // {
-  //     name: "Moment - World's Best Lenses For Mobile Photography",
-  //     url: 'https://www.kickstarter.com/projects/moment/moment-amazing-lenses-for-mobile-photography'
-  // },
-  {
-    name: "The Ollie Chair: Shape-Shifting Seating",
-    url:
-      "https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating"
+    name: "Fourth task",
+    url: "https://www.kickstarter.com/projects/outsider-team/flectr-360-omni",
+	  taskSteps: [
+        {
+          time: 0.1,
+          message:
+            "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
+        },
+        {
+          time: 0.4,
+          message:
+            "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
+        },
+        {
+          time: 0.7,
+          message:
+            "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
+        }
+      ]
+
   }
-  // {
-  //     name: "Fave: the ideal all-purpose knife!",
-  //     url: 'https://www.kickstarter.com/projects/onehundred/fave-the-ideal-all-purpose-knife'
-  // },
-];
+  ];
 
 if (randomProduct) {
   products = shuffle(products);
@@ -1813,12 +1827,12 @@ io.on("connection", socket => {
 
       console.log("Current Product:", currentProduct);
 
-      let taskText =
-        "Design text advertisement for <strong><a href='" +
-        currentProduct.url +
-        "' target='_blank'>" +
-        currentProduct.name +
-        "</a></strong>!";
+      let taskText = ""
+        // "Design text advertisement for <strong><a href='" +
+        // currentProduct.url +
+        // "' target='_blank'>" +
+        // currentProduct.name +
+        // "</a></strong>!";
 
       experimentStarted = true;
 
@@ -1916,24 +1930,7 @@ io.on("connection", socket => {
       startTime = new Date().getTime();
 
       // Initialize steps
-      const taskSteps = [
-        {
-          time: 0.1,
-          message:
-            "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
-        },
-        {
-          time: 0.4,
-          message:
-            "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
-        },
-        {
-          time: 0.7,
-          message:
-            "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
-        }
-      ];
-
+	   const  taskSteps = currentProduct.taskSteps
       // Execute steps
       taskSteps.forEach((step, index) => {
         setTimeout(() => {
