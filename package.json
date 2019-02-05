@@ -16,7 +16,6 @@
     "mustache": "^2.3.2",
     "nedb": "^1.8.0",
     "npm": "^6.7.0",
-    "prettier": "^1.16.1",
     "scp": "0.0.3",
     "socket.io": "^2.1.1",
     "watson-developer-cloud": "^3.9.1",
@@ -31,7 +30,8 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "aws-sdk": "^2.393.0"
+    "aws-sdk": "^2.393.0",
+    "prettier": "^1.16.4"
   },
   "repository": {
     "type": "git",
