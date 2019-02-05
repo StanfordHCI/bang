@@ -226,7 +226,7 @@ const conditionsAvailable = ["control", "treatment"];
 const presetCondition = randomCondition
   ? conditionsAvailable.pick()
   : conditionsAvailable[1];
-const currentCondition = args.condition || presetCondition;
+const currentCondition = "control";
 let treatmentNow = false;
 let firstRun = false;
 let hasAddedUsers = false; //lock on adding users to db/experiment for experiment
@@ -242,33 +242,33 @@ let batchCompleteUpdated = false;
 /* const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0] */
 
 // Settings for 4 rounds.
-// const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
-const ordering = randomRoundOrder
-  ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick()
-  : [1, 2, 1, 3];
+const ordering = [1,1,1,1];
 const conditions = {
   control: ordering,
   treatment: ordering,
-  baseline: [1, 2, 3, 2]
+  baseline: [1, 1, 1, 1]
 }; //,4]} modified extra roudn to deal with createTeams
 
-const experimentRoundIndicator = extraRoundOn ? 2 : 1; //This record what round of the ordering is the experimental round.
+const experimentRoundIndicator = 1; //This record what round of the ordering is the experimental round.
 const experimentRound = conditions[currentCondition].lastIndexOf(
   experimentRoundIndicator
 ); //assumes that the manipulation is always the last instance of team 1's interaction.
 console.log(currentCondition, "with", conditions[currentCondition]);
 
-const numRounds = conditions.baseline.length;
+const numRounds = ordering.length;
 
 const numberOfRooms = teamSize * numRounds;
 const rooms = tools.letters.slice(0, numberOfRooms);
 const people = extraRoundOn
   ? tools.letters.slice(0, teamSize ** 2 + teamSize)
   : tools.letters.slice(0, teamSize ** 2);
+// const people = ["A", "B", "C", "D"];
 const population = people.length;
 const teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn); //added '-1' to numRounds
-//}
 
+ordering.forEach(index => {
+    console.log(teams[index]);
+});
 //if (runExperimentNow) {
 const batchID = Date.now();
 
@@ -533,82 +533,97 @@ if (runExperimentNow) {
   });
 }
 
-//Add more products
 let products = [
-  // {name: 'KOSMOS ink - Magnetic Fountain Pen', url: 'https://www.kickstarter.com/projects/stilform/kosmos-ink'},
-  // {
-  //     name: 'Projka: Multi-Function Accessory Pouches',
-  //     url: 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches'
-  // },
-  // {
-  //     name: "First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC",
-  //     url: 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono'
-  // },
-  // {
-  //     name: "Nomad Energy- Radically Sustainable Energy Drink",
-  //     url: 'https://www.kickstarter.com/projects/1273663738/nomad-energy-radically-sustainable-energy-drink'
-  // },
   {
-    name: "Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
-    url:
-      "https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw"
+    name: "Ads",
+    url: "",
+    taskSteps : [
+        {
+            time: 0.0,
+            message:
+            "You will receive instructions about how to collaborate to write a compelling add. We will run your final advertisement online. <strong>The more successful it is, the larger the " + "bonus each of your team members will receive. </strong>"
+            + "<strong><a href='https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw' target='_blank'>Thé-tis Tea : Plant-based seaweed tea, rich in minerals </a></strong>"
+            + "Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>."
+        },
+        {
+            time: 0.02,
+            message: "<br>For example, here are text advertisements for a golf club called Renaissance: <br>\
+                      <ul style='list-style-type:disc'> \
+                        <li><strong>An empowering modern club</strong><br></li> \
+                        <li><strong>A private club with reach</strong><br></li> \
+                        <li><strong>Don't Wait. Discover Renaissance Today</strong></li> \
+                      </ul>"
+        },
+        {
+            time: 0.1,
+            message:
+            "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
+        },
+        {
+            time: 0.4,
+            message:
+            "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
+        },
+        {
+            time: 0.7,
+            message:
+            "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
+        }
+    ]
   },
-  // {
-  //     name: "The Travel Line: Versatile Travel Backpack + Packing Tools",
-  //     url: 'https://www.kickstarter.com/projects/peak-design/the-travel-line-versatile-travel-backpack-packing'
-  // },
-  // {name: "Stool Nº1", url: 'https://www.kickstarter.com/projects/390812913/stool-no1'},
   {
-    name: "LetB Color - take a look at time in different ways",
-    url:
-      "https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways"
+    name: "Jury",
+    url: "",
+    taskSteps : [
+      {
+          time: 0.005,
+          message: `<strong>When all group members are done reading, begin deliberations.</strong>
+          <strong><a href='${taskURL}CWP9VmUcdS3jJ4C46Xmmh7Ks3TacxbQsOfbxhNbLMs.pdf' target='_blank'> Begin reading. </a></strong>`
+      }
+  ]
   },
   {
-    name: "FLECTR 360 OMNI – cycling at night with full 360° visibility",
-    url: "https://www.kickstarter.com/projects/outsider-team/flectr-360-omni"
+    name: "Moral reasoning",
+    url: "",
+    taskSteps : [
+        {
+            time: 0.01,
+            message: `<strong>When all group members are done reading, begin deliberations.</strong>
+            <strong><a href='${taskURL}instructions.pdf' target='_blank'> Begin reading.</a></strong>`
+        },
+        {
+            time: 0.875,
+            message: "<strong>Final Decision: Which option should the university go with for Jack's grade in the course and why?</strong>"
+        },
+        {
+            time: 0.9,
+            message: "<strong>Final Decision: Which option should the university go with for Jack's status on the basketball team and why?</strong>"
+        },
+        {
+            time: 0.925,
+            message: "<strong>Final Decision: Which option should the university go with for Jack's status as a college student and why?</strong>"
+        },
+        {
+            time: 0.95,
+            message: "<strong>Final Decision: Which option should the university go with for Tom's status as a T.A. and why?</strong>"
+        },
+        {
+            time: 0.975,
+            message: "<strong>Final Decision: Which option should the university go with for Tom's status as a graduate student and why?</strong>"
+        }
+    ]
   },
-  // {
-  //     name: "Make perfect cold brew coffee at home with the BrewCub",
-  //     url: 'https://www.kickstarter.com/projects/1201993039/make-perfect-cold-brew-coffee-at-home-with-the-bre'
-  // },
-  // {
-  //     name: 'NanoPen | Worlds Smallest & Indestructible EDC Pen Tool',
-  //     url: 'https://www.kickstarter.com/projects/bullet/nanopen-worlds-smallest-and-indestructible-edc-pen?' +
-  //         'ref=section_design-tech_popular'
-  // },
-  // {
-  //     name: "The EVERGOODS MQD24 and CTB40 Crossover Backpacks",
-  //     url: 'https://www.kickstarter.com/projects/1362258351/the-evergoods-mqd24-and-ctb40-crossover-backpacks'
-  // },
-  // {
-  //     name: "Hexgears X-1 Mechanical Keyboard",
-  //     url: 'https://www.kickstarter.com/projects/hexgears/hexgears-x-1-mechanical-keyboard'
-  // },
-  // {
-  //     name: "KARVD - Modular Wood Carved Wall Panel System",
-  //     url: 'https://www.kickstarter.com/projects/karvdwalls/karvd-modular-wood-carved-wall-panel-system'
-  // },
-  // {
-  //     name: "PARA: Stationary l Pythagorean l Easy-to-Use Laser Measurer",
-  //     url: 'https://www.kickstarter.com/projects/1619356127/para-stationary-l-pythagorean-l-easy-to-use-laser'
-  // },
-  // {
-  //     name: "Blox: organize your world!",
-  //     url: 'https://www.kickstarter.com/projects/onehundred/blox-organize-your-world'
-  // },
-  // {
-  //     name: "Moment - World's Best Lenses For Mobile Photography",
-  //     url: 'https://www.kickstarter.com/projects/moment/moment-amazing-lenses-for-mobile-photography'
-  // },
   {
-    name: "The Ollie Chair: Shape-Shifting Seating",
-    url:
-      "https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating"
+    name: "Intellective Battery",
+    url: "",
+    taskSteps : [
+      {
+         time: 0.003,
+         message: `<strong>When all group members are done reading, begin deliberations.</strong>
+         <strong><a href='${taskURL}Q3DYssUNxyGyQOvnmahuCdfgVjF0SYXpRARTMyXXxU.pdf' target='_blank'> Begin reading. </a></strong>`
+      },
+    ]
   }
-  // {
-  //     name: "Fave: the ideal all-purpose knife!",
-  //     url: 'https://www.kickstarter.com/projects/onehundred/fave-the-ideal-all-purpose-knife'
-  // },
 ];
 
 if (randomProduct) {
@@ -1813,12 +1828,7 @@ io.on("connection", socket => {
 
       console.log("Current Product:", currentProduct);
 
-      let taskText =
-        "Design text advertisement for <strong><a href='" +
-        currentProduct.url +
-        "' target='_blank'>" +
-        currentProduct.name +
-        "</a></strong>!";
+      let taskText = currentProduct.name;
 
       experimentStarted = true;
 
@@ -1916,23 +1926,7 @@ io.on("connection", socket => {
       startTime = new Date().getTime();
 
       // Initialize steps
-      const taskSteps = [
-        {
-          time: 0.1,
-          message:
-            "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
-        },
-        {
-          time: 0.4,
-          message:
-            "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
-        },
-        {
-          time: 0.7,
-          message:
-            "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
-        }
-      ];
+      const taskSteps = currentProduct.taskSteps; //storing the steps [] for task
 
       // Execute steps
       taskSteps.forEach((step, index) => {

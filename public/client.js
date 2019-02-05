@@ -29,7 +29,7 @@ $(function() {
   let colorAssignment = [];
 
   //toggles
-  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -776,28 +776,27 @@ $(function() {
       log(
         "<strong>DO NOT REFRESH OR LEAVE THE PAGE</strong>. If you do you will not be compensated, and it may terminate the task for other workers."
       );
-      log("Task: " + data.task);
-      log(
-        "Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>."
-      );
+      // log("Task: " + data.task);
+      // log(
+      //   "Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>."
+      // );
 
       log(
         "You will have <strong>" +
-          textifyTime(data.duration) +
-          "</strong> to brainstorm for this round. You will receive instructions about how to collaborate to write a compelling add."
+          textifyTime(data.duration)
       );
-      log(
-        "We will run your final advertisement online. <strong>The more successful it is, the larger the " +
-          "bonus each of your team members will receive.</strong>"
-      );
-      log(
-        "<br>For example, here are text advertisements for a golf club called Renaissance: <br>\
-                <ul style='list-style-type:disc'> \
-                  <li><strong>An empowering modern club</strong><br></li> \
-                  <li><strong>A private club with reach</strong><br></li> \
-                  <li><strong>Don't Wait. Discover Renaissance Today</strong></li> \
-                </ul>"
-      );
+      // log(
+      //   "We will run your final advertisement online. <strong>The more successful it is, the larger the " +
+      //     "bonus each of your team members will receive.</strong>"
+      // );
+      // log(
+      //   "<br>For example, here are text advertisements for a golf club called Renaissance: <br>\
+      //           <ul style='list-style-type:disc'> \
+      //             <li><strong>An empowering modern club</strong><br></li> \
+      //             <li><strong>A private club with reach</strong><br></li> \
+      //             <li><strong>Don't Wait. Discover Renaissance Today</strong></li> \
+      //           </ul>"
+      // );
     }, 500);
 
     setTimeout(() => {
