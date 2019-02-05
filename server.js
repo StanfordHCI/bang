@@ -32,10 +32,10 @@ const debugMode = !runningLive;
 const suddenDeath = false;
 
 const randomCondition = false;
-const randomRoundOrder = true;
+const randomRoundOrder = false;
 const randomProduct = true;
 
-const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
@@ -533,10 +533,11 @@ if (runExperimentNow) {
   });
 }
 
+
+//Include example for ads
 let products = [
   {
     name: "Ads",
-    url: "",
     taskSteps : [
         {
             time: 0.0,
