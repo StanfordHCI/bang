@@ -9,6 +9,7 @@ import * as fs from "fs";
 //importing our libraries
 let tools = require("./tools");
 let mturk = require("./mturkTools");
+let db = require("./database");
 
 // Initializing variables
 const runningLocal = process.env.RUNNING_LOCAL === "TRUE";
@@ -307,115 +308,13 @@ const people = extraRoundOn
 const teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn); //added '-1' to numRounds
 //}
 
-// Setting up the databases
-import Datastore = require("nedb");
-const db = {
-  users: new Datastore({
-    filename: ".data/users",
-    autoload: true,
-    timestampData: true
-  }),
-  chats: new Datastore({
-    filename: ".data/chats",
-    autoload: true,
-    timestampData: true
-  }),
-  batch: new Datastore({
-    filename: ".data/batch",
-    autoload: true,
-    timestampData: true
-  }),
-  time: new Datastore({
-    filename: ".data/time",
-    autoload: true,
-    timestampData: true
-  }),
-  ourHITs: new Datastore({
-    filename: ".data/ourHITs",
-    autoload: true,
-    timestampData: true
-  }),
-  willBang: new Datastore({
-    filename: ".data/willBang",
-    autoload: true,
-    timestampData: true
-  })
-};
-
-function updateUserInDB(user, field, value) {
-  db.users.update(
-    { mturkId: user.mturkId, batch: batchID },
-    { $set: { [field]: value } },
-    {},
-    err => {
-      return console.log(
-        err
-          ? chalk.red("Err recording ") + field + ": " + err
-          : "Updated " +
-              field +
-              " for " +
-              user.mturkId +
-              " " +
-              JSON.stringify(value, null, 2)
-      );
-    }
-  );
-}
-
-//Mturk background tasks
-db.users.find({}, (err, usersInDB) => {
-  if (err) {
-    console.log("DB for MTurk:" + err);
-  } else {
-    if (issueBonusesNow) {
-      mturk.payBonuses(usersInDB, bonusedUsers => {
-        bonusedUsers.forEach(u => updateUserInDB(u, "bonus", 0));
-      });
-    }
-    if (assignQualifications && runningLive) {
-      mturk.listUsersWithQualificationRecursively(
-        mturk.quals.hasBanged,
-        data => {
-          console.log(
-            "Number of users with qualification hasBanged:",
-            data.length
-          );
-        }
-      );
-    }
-    if (notifyWorkersOn && runningLive) {
-      mturk.listUsersWithQualificationRecursively(
-        mturk.quals.willBang,
-        data => {
-          console.log(
-            "Number of users with qualification willBang:",
-            data.length
-          );
-        }
-      );
-    }
-  }
-});
-
-// expires active HITs in the DB
-if (cleanHITs) {
-  mturk.workOnActiveHITs(activeHITs => {
-    db.ourHITs.find({}, (err, HITsInDB) => {
-      if (err) {
-        console.log("Err loading HITS for expiration:" + err);
-      } else {
-        HITsInDB.map(h => h.HITId)
-          .filter(h => activeHITs.includes(h))
-          .forEach(mturk.expireHIT);
-      }
-    });
-  });
-}
+db.launchMturkBackgroundTasks(issueBonusesNow, assignQualifications, runningLive, notifyWorkersOn, batchID);
+if (cleanHITs) db.cleanHITs();
 
 if (runExperimentNow) {
   mturk.launchBang(function(HIT) {
     logTime();
-    storeHIT(HIT.HITId);
+    db.storeHIT(HIT.HITId, batchID);
     // Notify workers that a HIT has started if we're doing recruiting by email
     if (notifyWorkersOn) {
       // let HITId = process.argv[2];
@@ -437,42 +336,8 @@ if (runExperimentNow) {
           throw "URL not defined";
         }
         if (usingWillBang) {
-          // removes people who no longer have willBang qual from db.willBang
-          db.willBang.find({}, (err, willBangers) => {
-            if (err) {
-              console.log("ERROR cleaning willBang db: " + err);
-            } else {
-              mturk.listUsersWithQualificationRecursively(
-                mturk.quals.willBang,
-                function(data) {
-                  let willBangIds = willBangers.map(u => u.id);
-                  willBangIds.forEach(willBangID => {
-                    if (!data.includes(willBangID)) {
-                      // if user in db.willBang no longer
-                      // has willBang qual
-                      db.willBang.remove(
-                        { id: willBangID },
-                        { multi: true },
-                        function(err, numRemoved) {
-                          if (err)
-                            console.log(
-                              "Error removing from willBang db: " + err
-                            );
-                          else
-                            console.log(
-                              willBangID +
-                                " REMOVED FROM WILLBANG DB (" +
-                                numRemoved +
-                                ")"
-                            );
-                        }
-                      );
-                    }
-                  });
-                }
-              );
-            }
-          });
+          db.cleanWillBang();
+
           // Use this function to notify only x users <= 100
           let maxWorkersToNotify = 100; // cannot be more than 100
 
@@ -508,55 +373,48 @@ if (runExperimentNow) {
           } else {
             // use the time buckets
             console.log("Current Time Period: " + currenttimePeriod);
-            db.willBang.find(
-              { timePreference: currenttimePeriod },
-              (err, currentTimePoolWorkers) => {
-                if (err) {
-                  console.log("DB for MTurk:" + err);
-                } else {
-                  if (currentTimePoolWorkers.length > maxWorkersToNotify) {
+            db.searchWillBang(
+              { timePreference: currenttimePeriod }, function(currentTimePoolWorkers) {
+                if (currentTimePoolWorkers.length > maxWorkersToNotify) {
                     currentTimePoolWorkers = getRandomSubarray(
                       currentTimePoolWorkers,
                       maxWorkersToNotify
                     );
-                  }
-                  console.log(
-                    "Time Pool Workers: " + currentTimePoolWorkers.length
-                  );
-                  let timePoolNotifyList = currentTimePoolWorkers.map(
-                    u => u.id
-                  );
-                  let moreworkersneeded =
-                    maxWorkersToNotify - currentTimePoolWorkers.length;
-                  if (aggressiveNotifyOn ? true : moreworkersneeded > 0) {
-                    //if we don't have enough
-                    // people with current time preference to notify
-                    mturk.notifyWorkers(timePoolNotifyList, subject, message);
-                    mturk.listUsersWithQualificationRecursively(
-                      mturk.quals.willBang,
-                      function(data) {
-                        let notifyList = getRandomSubarray(
-                          data,
-                          aggressiveNotifyOn
-                            ? maxWorkersToNotify
-                            : moreworkersneeded
-                        );
-                        let i = notifyList.length;
-                        while (i--) {
-                          if (timePoolNotifyList.includes(notifyList[i])) {
-                            notifyList.splice(i, 1);
-                          }
+                }
+                console.log("Time Pool Workers: " + currentTimePoolWorkers.length);
+                let timePoolNotifyList = currentTimePoolWorkers.map(
+                  u => u.id
+                );
+                let moreworkersneeded =
+                  maxWorkersToNotify - currentTimePoolWorkers.length;
+                if (aggressiveNotifyOn ? true : moreworkersneeded > 0) {
+                  //if we don't have enough
+                  // people with current time preference to notify
+                  mturk.notifyWorkers(timePoolNotifyList, subject, message);
+                  mturk.listUsersWithQualificationRecursively(
+                    mturk.quals.willBang,
+                    function(data) {
+                      let notifyList = getRandomSubarray(
+                        data,
+                        aggressiveNotifyOn
+                          ? maxWorkersToNotify
+                          : moreworkersneeded
+                      );
+                      let i = notifyList.length;
+                      while (i--) {
+                        if (timePoolNotifyList.includes(notifyList[i])) {
+                          notifyList.splice(i, 1);
                         }
-                        mturk.notifyWorkers(notifyList, subject, message);
                       }
-                    );
-                  } else {
-                    let workerstonotify = getRandomSubarray(
-                      timePoolNotifyList,
-                      maxWorkersToNotify
-                    );
-                    mturk.notifyWorkers(workerstonotify, subject, message);
-                  }
+                      mturk.notifyWorkers(notifyList, subject, message);
+                    }
+                  );
+                } else {
+                  let workerstonotify = getRandomSubarray(
+                    timePoolNotifyList,
+                    maxWorkersToNotify
+                  );
+                  mturk.notifyWorkers(workerstonotify, subject, message);
                 }
               }
             );
@@ -639,7 +497,7 @@ Object.keys(io.sockets.sockets).forEach(socketID => {
 });
 
 // Adds Batch data for this experiment. unique batchID based on time/date
-db.batch.insert(
+db.storeBatch(
   {
     batchID: batchID,
     batchComplete: false,
@@ -657,13 +515,8 @@ db.batch.insert(
     numRounds: numRounds,
     products: products,
     teamSize: teamSize
-  },
-  (err, usersAdded) => {
-    if (err) console.log("There's a problem adding batch to the DB: ", err);
-    else if (usersAdded) console.log("Batch added to the DB");
-    console.log(
-      "Leftover sockets from previous run: " + Object.keys(io.sockets.sockets)
-    );
+  }, function(usersAdded) {
+    console.log("Leftover sockets from previous run: " + Object.keys(io.sockets.sockets));
     if (!firstRun) {
       Object.keys(io.sockets.sockets).forEach(socketID => {
         console.log("SOCKET DISCONNECT IN BATCH INSERT");
@@ -1046,14 +899,7 @@ io.on("connection", socket => {
               "participate in our HIT. We only allow one participation per user, so that is why we are " +
               "removing this qualification. Thank you!"
           );
-          db.willBang.remove({ id: u }, { multi: true }, function(
-            err,
-            numRemoved
-          ) {
-            if (err) console.log("Error removing from db.willBang: ", err);
-            else
-              console.log(u + " REMOVED FROM WILLBANG DB (" + numRemoved + ")");
-          });
+          db.removeUserFromWillBang(u);
         });
       }
       if (notifyUs) {
@@ -1073,12 +919,7 @@ io.on("connection", socket => {
       mturk.startTask();
     }
 
-    db.users.insert(newUser, (err, _usersAdded) => {
-      console.log(
-        err ? "Didn't store user: " + err : "Added " + newUser.name + " to DB."
-      );
-    });
-
+    db.storeUser(newUser);
     //PK: need to emit login to each? or can we delete login fxn in client if no longer in use (login sets
     // connected to true, is this needed?)
     //io.in(user.id).emit('login', {numUsers: numUsers(user.room)})
@@ -1120,7 +961,7 @@ io.on("connection", socket => {
         cleanMessage = aliasToID(u, cleanMessage);
       });
 
-      db.chats.insert(
+      db.storeChat(
         {
           room: user.room,
           userID: socket.id,
@@ -1128,18 +969,7 @@ io.on("connection", socket => {
           time: getSecondsPassed(),
           batch: batchID,
           round: currentRound
-        },
-        (err, _chatsAdded) => {
-          if (err) console.log("Error storing message:", err);
-          else
-            console.log(
-              "Message in",
-              user.room,
-              "from",
-              user.name + ":",
-              cleanMessage
-            );
-        }
+        }, user, cleanMessage
       );
       users
         .filter(f => f.room === user.room)
@@ -1161,7 +991,7 @@ io.on("connection", socket => {
         room: user.room,
         result: data
       });
-      updateUserInDB(user, "results.checkin", user.results.checkin);
+      db.updateUser(user, "results.checkin", user.results.checkin, batchID);
     });
   });
 
@@ -1225,7 +1055,7 @@ io.on("connection", socket => {
       let notEnoughUsers = false;
 
       // update DB with change
-      updateUserInDB(user, "connected", false);
+      db.updateUser(user, "connected", false, batchID);
       console.log(socket.username + ": " + user.mturkId + " HAS LEFT");
       // if (!experimentOver && !debugMode) {
       //     mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our" +
@@ -1240,26 +1070,17 @@ io.on("connection", socket => {
       console.log("Connected users: " + getUsersConnected().length);
       //if things don't work look at this part of the code?
       if (!experimentOver && suddenDeath && experimentStarted) {
-        storeHIT();
+        db.storeHIT(mturk.returnCurrentHIT(), batchID);
 
         console.log("User left, emitting cancel to all users");
 
         if (!extraRoundOn || notEnoughUsers) {
-          storeHIT();
+          db.storeHIT(mturk.returnCurrentHIT(), batchID);
 
           console.log("User left, emitting cancel to all users");
           let totalTime = getSecondsPassed();
 
-          if (timeCheckOn) {
-            db.time.insert({ totalTaskTime: totalTime }, (err, timeAdded) => {
-              if (err)
-                console.log(
-                  "There's a problem adding total time to the DB: ",
-                  err
-                );
-              else if (timeAdded) console.log("Total time added to the DB");
-            });
-          }
+          if (timeCheckOn) db.storeTime("totalTaskTime", totalTime);
 
           users
             .filter(u => u.mturkId !== socket.mturkId)
@@ -1275,8 +1096,8 @@ io.on("connection", socket => {
               if (experimentStarted) {
                 // Add future bonus pay
                 u.bonus = currentBonus();
-                updateUserInDB(u, "bonus", u.bonus);
-                storeHIT();
+                db.updateUser(u, "bonus", u.bonus, batchID);
+                db.storeHIT(mturk.returnCurrentHIT(), batchID);
               }
               issueFinish(u, cancelMessage, true);
             });
@@ -1353,7 +1174,7 @@ io.on("connection", socket => {
 
   socket.on("kill-all", _data => {
     console.log(chalk.red("god is angry"));
-    users.forEach(() => updateUserInDB(socket, "bonus", currentBonus()));
+    db.forEach(() => db.updateUser(socket, "bonus", currentBonus(), batchID));
     ioSocketsEmit("finished", {
       message:
         "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
@@ -1567,7 +1388,7 @@ io.on("connection", socket => {
         }
         let survey = postSurveyGenerator(user);
         user.results.manipulation = survey.correctAnswer;
-        updateUserInDB(user, "results.manipulation", user.results.manipulation);
+        db.updateUser(user, "results.manipulation", user.results.manipulation, batchID);
         ioEmitById(
           socket.mturkId,
           "load",
@@ -1585,26 +1406,15 @@ io.on("connection", socket => {
         currentEvent > eventSchedule.length
       ) {
         if (!batchCompleteUpdated) {
-          db.batch.update(
-            { batchID: batchID },
-            { $set: { batchComplete: true } },
-            {},
-            err =>
-              console.log(
-                err
-                  ? "Err updating batch completion" + err
-                  : "Marked batch " + batchID + " competed in DB"
-              )
-          );
+          db.updateBatch(batchID);
           batchCompleteUpdated = true;
         }
         if (timeCheckOn) {
           recordTime("postSurvey");
         }
         user.bonus = Number(mturk.bonusPrice);
-        updateUserInDB(user, "bonus", user.bonus);
-
-        storeHIT();
+        db.updateUser(user, "bonus", user.bonus, batchID);
+        db.storeHIT(mturk.returnCurrentHIT(), batchID);
 
         usersFinished += 1;
         console.log(usersFinished, "users have finished.");
@@ -1742,7 +1552,7 @@ io.on("connection", socket => {
             .forEach(u => {
               u.room = roomName;
               u.rooms.push(roomName);
-              updateUserInDB(u, "rooms", u.rooms);
+              db.updateUser(u, "rooms", u.rooms, batchID);
               u.ready = false; //return users to unready state
               if (!suddenDeath && !u.connected) {
                 u.ready = true;
@@ -1952,7 +1762,7 @@ io.on("connection", socket => {
   socket.on("starterSurveySubmit", data => {
     useUser(socket, user => {
       user.results.starterCheck = parseResults(data);
-      updateUserInDB(user, "results.starterCheck", user.results.starterCheck);
+      db.updateUser(user, "results.starterCheck", user.results.starterCheck, batchID);
     });
   });
 
@@ -1960,10 +1770,11 @@ io.on("connection", socket => {
   socket.on("midSurveySubmit", data => {
     useUser(socket, user => {
       user.results.viabilityCheck[currentRound] = parseResults(data);
-      updateUserInDB(
+      db.updateUser(
         user,
         "results.viabilityCheck",
-        user.results.viabilityCheck
+        user.results.viabilityCheck,
+        batchID
       );
     });
   });
@@ -1971,10 +1782,11 @@ io.on("connection", socket => {
   socket.on("psychologicalSafetySubmit", data => {
     useUser(socket, user => {
       user.results.psychologicalSafety[currentRound] = parseResults(data);
-      updateUserInDB(
+      db.updateUser(
         user,
         "results.psychologicalSafety",
-        user.results.psychologicalSafety
+        user.results.psychologicalSafety, 
+        batchID
       );
     });
   });
@@ -1982,17 +1794,18 @@ io.on("connection", socket => {
   socket.on("teamfeedbackSurveySubmit", data => {
     useUser(socket, user => {
       user.results.teamfeedback[currentRound] = parseResults(data);
-      updateUserInDB(user, "results.teamfeedback", user.results.teamfeedback);
+      db.updateUser(user, "results.teamfeedback", user.results.teamfeedback, batchID);
     });
   });
 
   socket.on("mturk_formSubmit", data => {
     useUser(socket, user => {
       user.results.engagementFeedback = parseResults(data);
-      updateUserInDB(
+      db.updateUser(
         user,
         "results.engagementFeedback",
-        user.results.engagementFeedback
+        user.results.engagementFeedback,
+        batchID
       );
     });
   });
@@ -2000,24 +1813,25 @@ io.on("connection", socket => {
   socket.on("qFifteenSubmit", data => {
     useUser(socket, user => {
       user.results.qFifteenCheck = parseResults(data);
-      updateUserInDB(user, "results.qFifteenCheck", user.results.qFifteenCheck);
+      db.updateUser(user, "results.qFifteenCheck", user.results.qFifteenCheck, batchID);
     });
   });
 
   socket.on("qSixteenSubmit", data => {
     useUser(socket, user => {
       user.results.qSixteenCheck = parseResults(data);
-      updateUserInDB(user, "results.qSixteenCheck", user.results.qSixteenCheck);
+      db.updateUser(user, "results.qSixteenCheck", user.results.qSixteenCheck, batchID);
     });
   });
 
   socket.on("postSurveySubmit", data => {
     useUser(socket, user => {
       user.results.manipulationCheck = parseResults(data);
-      updateUserInDB(
+      db.updateUser(
         user,
         "results.manipulationCheck",
-        user.results.manipulationCheck
+        user.results.manipulationCheck,
+        batchID
       );
     });
   });
@@ -2025,10 +1839,11 @@ io.on("connection", socket => {
   socket.on("blacklistSurveySubmit", data => {
     useUser(socket, user => {
       user.results.blacklistCheck = parseResults(data);
-      updateUserInDB(
+      db.updateUser(
         user,
         "results.blacklistCheck",
-        user.results.blacklistCheck
+        user.results.blacklistCheck,
+        batchID
       );
     });
   });
@@ -2186,11 +2001,7 @@ function replicate(arr, times) {
 const recordTime = event => {
   taskEndTime = getSecondsPassed();
   taskTime = taskStartTime - taskEndTime;
-  db.time.insert({ [event]: taskTime }, (err, timeAdded) => {
-    if (err)
-      console.log("There's a problem adding", event, "time to the DB: ", err);
-    else if (timeAdded) console.log(event, "time added to the DB");
-  });
+  db.storeTime(event, taskTime);
   taskStartTime = getSecondsPassed();
 };
 
@@ -2251,13 +2062,6 @@ function postSurveyGenerator(user) {
     answerType: "checkbox",
     correctAnswer: correctAnswer
   };
-}
-
-function storeHIT(currentHIT = mturk.returnCurrentHIT()) {
-  db.ourHITs.insert({ HITId: currentHIT, batch: batchID }, (err, HITAdded) => {
-    if (err) console.log("There's a problem adding HIT to the DB: ", err);
-    else if (HITAdded) console.log("HIT added to the DB: ", currentHIT);
-  });
 }
 
 // parses results from surveys to proper format for JSON file
