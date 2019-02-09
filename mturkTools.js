@@ -111,7 +111,7 @@ const scheduleQuals = [
   quals.hasBanged,
   quals.willNotBang
 ];
-const qualsForTesting = [quals.onlyUSA, quals.hitsAccepted(0)];
+const qualsForTesting = [quals.onlyUSA, quals.hitsAccepted(500)];
 const safeQuals = runningLive ? qualsForLive : qualsForTesting;
 
 // Makes the MTurk externalHIT object, defaults to 700 px tall.
