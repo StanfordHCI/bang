@@ -35,7 +35,7 @@ const randomCondition = false;
 const randomRoundOrder = true;
 const randomProduct = true;
 
-const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
@@ -533,88 +533,6 @@ if (runExperimentNow) {
   });
 }
 
-//Add more products
-let products = [
-  // {name: 'KOSMOS ink - Magnetic Fountain Pen', url: 'https://www.kickstarter.com/projects/stilform/kosmos-ink'},
-  // {
-  //     name: 'Projka: Multi-Function Accessory Pouches',
-  //     url: 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches'
-  // },
-  // {
-  //     name: "First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC",
-  //     url: 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono'
-  // },
-  // {
-  //     name: "Nomad Energy- Radically Sustainable Energy Drink",
-  //     url: 'https://www.kickstarter.com/projects/1273663738/nomad-energy-radically-sustainable-energy-drink'
-  // },
-  {
-    name: "Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
-    url:
-      "https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw"
-  },
-  // {
-  //     name: "The Travel Line: Versatile Travel Backpack + Packing Tools",
-  //     url: 'https://www.kickstarter.com/projects/peak-design/the-travel-line-versatile-travel-backpack-packing'
-  // },
-  // {name: "Stool Nº1", url: 'https://www.kickstarter.com/projects/390812913/stool-no1'},
-  {
-    name: "LetB Color - take a look at time in different ways",
-    url:
-      "https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways"
-  },
-  {
-    name: "FLECTR 360 OMNI – cycling at night with full 360° visibility",
-    url: "https://www.kickstarter.com/projects/outsider-team/flectr-360-omni"
-  },
-  // {
-  //     name: "Make perfect cold brew coffee at home with the BrewCub",
-  //     url: 'https://www.kickstarter.com/projects/1201993039/make-perfect-cold-brew-coffee-at-home-with-the-bre'
-  // },
-  // {
-  //     name: 'NanoPen | Worlds Smallest & Indestructible EDC Pen Tool',
-  //     url: 'https://www.kickstarter.com/projects/bullet/nanopen-worlds-smallest-and-indestructible-edc-pen?' +
-  //         'ref=section_design-tech_popular'
-  // },
-  // {
-  //     name: "The EVERGOODS MQD24 and CTB40 Crossover Backpacks",
-  //     url: 'https://www.kickstarter.com/projects/1362258351/the-evergoods-mqd24-and-ctb40-crossover-backpacks'
-  // },
-  // {
-  //     name: "Hexgears X-1 Mechanical Keyboard",
-  //     url: 'https://www.kickstarter.com/projects/hexgears/hexgears-x-1-mechanical-keyboard'
-  // },
-  // {
-  //     name: "KARVD - Modular Wood Carved Wall Panel System",
-  //     url: 'https://www.kickstarter.com/projects/karvdwalls/karvd-modular-wood-carved-wall-panel-system'
-  // },
-  // {
-  //     name: "PARA: Stationary l Pythagorean l Easy-to-Use Laser Measurer",
-  //     url: 'https://www.kickstarter.com/projects/1619356127/para-stationary-l-pythagorean-l-easy-to-use-laser'
-  // },
-  // {
-  //     name: "Blox: organize your world!",
-  //     url: 'https://www.kickstarter.com/projects/onehundred/blox-organize-your-world'
-  // },
-  // {
-  //     name: "Moment - World's Best Lenses For Mobile Photography",
-  //     url: 'https://www.kickstarter.com/projects/moment/moment-amazing-lenses-for-mobile-photography'
-  // },
-  {
-    name: "The Ollie Chair: Shape-Shifting Seating",
-    url:
-      "https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating"
-  }
-  // {
-  //     name: "Fave: the ideal all-purpose knife!",
-  //     url: 'https://www.kickstarter.com/projects/onehundred/fave-the-ideal-all-purpose-knife'
-  // },
-];
-
-if (randomProduct) {
-  products = shuffle(products);
-}
-
 let users = []; //the main local user storage
 let userPool = []; //accumulates users pre-experiment
 let waitchatStart = 0;
@@ -695,7 +613,6 @@ db.batch.insert(
     format: conditions[currentCondition],
     experimentRound: experimentRound,
     numRounds: numRounds,
-    products: products,
     teamSize: teamSize
   },
   (err, usersAdded) => {
@@ -1808,18 +1725,7 @@ io.on("connection", socket => {
       });
 
       //Notify user 'initiate round' and send task.
-
-      let currentProduct = products[currentRound];
-
-      console.log("Current Product:", currentProduct);
-
-      let taskText =
-        "Design text advertisement for <strong><a href='" +
-        currentProduct.url +
-        "' target='_blank'>" +
-        currentProduct.name +
-        "</a></strong>!";
-
+      let taskText = "Jury Deliberation for Civil Trial";
       experimentStarted = true;
 
       users.forEach(u => {
@@ -1903,7 +1809,6 @@ io.on("connection", socket => {
         }
       });
 
-      console.log("Issued task for:", currentProduct.name);
       console.log(
         "Started round",
         currentRound,
@@ -1918,19 +1823,86 @@ io.on("connection", socket => {
       // Initialize steps
       const taskSteps = [
         {
-          time: 0.1,
+          time: 0.05,
           message:
-            "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
+            "**************DETAILED JURY INSTRUCTIONS BELOW**************"
         },
         {
-          time: 0.4,
+          time: 0.05,
           message:
-            "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
+            "<strong>Step 1. Read the facts of the case and the jury instructions at <a href=\"jury-deliberation-civil-task.pdf\" target=\"_blank\">this link</a>."
         },
         {
-          time: 0.7,
+          time: 0.05,
           message:
-            "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
+            "Remember to read both the Case Background and the Jury Instructions."
+        },
+        {
+          time: 0.05,
+          message:
+            "<strong>Step 2: Choose a presiding juror. The presiding juror should see to it that your discussions are orderly and that everyone has a fair chance to be heard.</strong>"
+        },
+        {
+          time: 0.05,
+          message:
+            "<strong>Step 3: Deliberate.</strong>"
+        },
+        {
+          time: 0.05,
+          message:
+            "It is your duty to talk with one another in the jury room and to consider the views of all the jurors. Each of you must decide the case for yourself, but only after you have considered the evidence with the other members of the jury. Feel free to change your mind if you are convinced that your position should be different. You should all try to agree. But do not give up your honest beliefs just because the others think differently."
+        },
+        {
+          time: 0.05,
+          message:
+            "Please do not state your opinions too strongly at the beginning of your deliberations or immediately announce how you plan to vote as it may interfere with an open discussion. Keep an open mind so that you and your fellow jurors can easily share ideas about the case."
+        },
+        {
+          time: 0.05,
+          message:
+            "You should use your common sense and experience in deciding whether testimony is true and accurate. However, during your deliberations, do not make any statements or provide any information to other jurors based on any special training or unique personal experiences that you may have had related to matters involved in this case. What you may know or have learned through your training or experience is not a part of the evidence received in this case."
+        },
+
+        /*Commented out below: a more rigid framework for deliberation (for now, we'll just give jurors instructions upfront and not give them reminders along the way.*/
+        // {
+        //   time: 0.07,
+        //   message:
+        //     "Your focus is to answer <strong>whether Ford Motor Company was negligent</strong> through deliberating as a jury. You’ll receive prompts over the next few minutes."
+        // },
+        // {
+        //   time: 0.08,
+        //   message:
+        //     "By the end, your goal should be to <strong>reach consensus</strong> on a decision. If you do not reach consensus, you will submit a hung jury."
+        // },
+        // {
+        //   time: 0.15,
+        //   message:
+        //     "<strong>Step 3. Has everyone finished reading? Take an initial poll of everyone's view by asking what everyone thinks. Who agrees, and who disagrees?</strong>"
+        // },
+        // {
+        //   time: 0.16,
+        //   message:
+        //     "Based on the poll, you'll want to have people express their different opnions on the matter."
+        // },
+        // {
+        //   time: 0.17,
+        //   message:
+        //     "Remember that it's helpful to take turns and note your similarities and differences."
+        // },
+        // {
+        //   time: 0.5,
+        //   message:
+        //     "How has the group's opinions changed? Try taking another poll now."
+        // },
+        // {
+        //   time: 0.8,
+        //   message:
+        //     "<strong>Step 4. Try taking a final poll now. Remember, you should either try to reach consensus, or submit a hung jury.</strong>"
+        // },
+        {
+          time: 0.9,
+          message:
+            "<strong>Time is running out. Come to a final decision. If you’re all in agreement, answer *Y or *N according to your decision. If you’re not all in agreement, answer *Hung jury to indicate that you were not been able to reach agreement. If you were not unanimous, report the vote counts.</strong>"
         }
       ];
 

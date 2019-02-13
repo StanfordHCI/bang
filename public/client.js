@@ -221,7 +221,7 @@ $(function() {
 
   let currentTeam = [];
 
-  document.title = "Ad writing task";
+  document.title = "Jury Deliberation Task";
 
   // Implements notifications
   let notify = (title, body) => {
@@ -778,25 +778,9 @@ $(function() {
       );
       log("Task: " + data.task);
       log(
-        "Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>."
-      );
-
-      log(
         "You will have <strong>" +
           textifyTime(data.duration) +
-          "</strong> to brainstorm for this round. You will receive instructions about how to collaborate to write a compelling add."
-      );
-      log(
-        "We will run your final advertisement online. <strong>The more successful it is, the larger the " +
-          "bonus each of your team members will receive.</strong>"
-      );
-      log(
-        "<br>For example, here are text advertisements for a golf club called Renaissance: <br>\
-                <ul style='list-style-type:disc'> \
-                  <li><strong>An empowering modern club</strong><br></li> \
-                  <li><strong>A private club with reach</strong><br></li> \
-                  <li><strong>Don't Wait. Discover Renaissance Today</strong></li> \
-                </ul>"
+          "</strong> to deliberate for this round. <strong>YOU ARE NOT ALLOWED TO SEARCH ON THE INTERNET FOR ANY ADDITIONAL MATERIALS.</strong> You will receive instructions about how the jury deliberation works, just as you would in a real courtroom."
       );
     }, 500);
 
@@ -1019,20 +1003,20 @@ $(function() {
   });
 
   socket.on("timer", data => {
-    log(
-      "<strong>You'll be done with this round in about " +
-        textifyTime(data.time) +
-        ". Enter your final result now.</strong>"
-    );
-    log(
-      "Remember, it can't be more than <strong>maximum 30 characters long</strong>."
-    );
-    log(
-      "To indicate your final result, <strong>start the line with an exclamation mark (i.e., '!')</strong>. We will not count that character toward your length limit."
-    );
-    log(
-      "If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat. This result will count equally for all members of the team."
-    );
+    // log(
+    //   "<strong>You'll be done with this round in about " +
+    //     textifyTime(data.time) +
+    //     ". Enter your final result now.</strong>"
+    // );
+    // log(
+    //   "Remember, it can't be more than <strong>maximum 30 characters long</strong>."
+    // );
+    // log(
+    //   "To indicate your final result, <strong>start the line with an exclamation mark (i.e., '!')</strong>. We will not count that character toward your length limit."
+    // );
+    // log(
+    //   "If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat. This result will count equally for all members of the team."
+    // );
   });
 
   socket.on("echo", data => {
