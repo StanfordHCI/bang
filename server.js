@@ -1830,7 +1830,7 @@ io.on("connection", socket => {
         {
           time: 0.05,
           message:
-            "<strong>Step 1. Read the facts of the case and the jury instructions at <a href=\"jury-deliberation-civil-task.pdf\" target=\"_blank\">this link</a>."
+            '<strong>Step 1. Read the facts of the case and the jury instructions at <a href="jury-deliberation-civil-task.pdf" target="_blank">this link</a>.'
         },
         {
           time: 0.05,
@@ -1844,8 +1844,7 @@ io.on("connection", socket => {
         },
         {
           time: 0.05,
-          message:
-            "<strong>Step 3: Deliberate.</strong>"
+          message: "<strong>Step 3: Deliberate.</strong>"
         },
         {
           time: 0.05,
