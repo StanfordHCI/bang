@@ -31,7 +31,7 @@ var assignQualifications = runningLive;
 //Randomization
 var randomCondition = false;
 var randomRoundOrder = true;
-var randomProduct = true;
+var randomTaskOrder = true;
 var suddenDeath = false;
 var waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT
 var extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
@@ -197,7 +197,7 @@ function useUser(socket, callback, err) {
 // Check balance
 mturk.getBalance(function (balance) {
     if (runningLive && balance <= 400) {
-        mturk.notifyWorkers([notifyUsMturkID], "ADD MORE FUNDS to MTURK!");
+        mturk.notifyWorkers([notifyUsMturkID], "ADD MORE FUNDS to MTURK! We have only $" + balance + ".");
         console.log(chalk_1.default.red.inverse.bold("\n!!! BROKE !!!\n"));
     }
 });
@@ -465,26 +465,43 @@ if (runExperimentNow) {
         }
     });
 }
-var products = [
+var taskStepDefaults = [
+    {
+        time: 0.1,
+        message: "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
+    },
+    {
+        time: 0.4,
+        message: "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
+    },
+    {
+        time: 0.7,
+        message: "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
+    }
+];
+var taskSet = [
     {
         name: "Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
+        steps: taskStepDefaults,
         url: "https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw"
     },
     {
         name: "LetB Color - take a look at time in different ways",
+        steps: taskStepDefaults,
         url: "https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways"
     },
     {
         name: "FLECTR 360 OMNI – cycling at night with full 360° visibility",
+        steps: taskStepDefaults,
         url: "https://www.kickstarter.com/projects/outsider-team/flectr-360-omni"
     },
     {
         name: "The Ollie Chair: Shape-Shifting Seating",
+        steps: taskStepDefaults,
         url: "https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating"
     }
 ];
-if (randomProduct)
-    products = shuffle(products);
+var tasks = randomTaskOrder ? shuffle(taskSet) : taskSet;
 var users = []; //the main local user storage
 var userPool = []; //accumulates users pre-experiment
 var waitchatStart = 0;
@@ -550,7 +567,7 @@ db.batch.insert({
     format: roundOrdering,
     experimentRound: experimentRound,
     numRounds: numRounds,
-    products: products,
+    tasks: tasks,
     teamSize: teamSize
 }, function (err, usersAdded) {
     if (err)
@@ -1458,12 +1475,12 @@ io.on("connection", function (socket) {
                 });
             });
             //Notify user 'initiate round' and send task.
-            var currentProduct = products[currentRound];
-            console.log("Current Product:", currentProduct);
+            var currentTask = tasks[currentRound];
+            console.log("Current Product:", currentTask);
             var taskText = "Design text advertisement for <strong><a href='" +
-                currentProduct.url +
+                currentTask.url +
                 "' target='_blank'>" +
-                currentProduct.name +
+                currentTask.name +
                 "</a></strong>!";
             experimentStarted = true;
             users.forEach(function (u) {
@@ -1526,25 +1543,12 @@ io.on("connection", function (socket) {
                     }, socket, u); //round 0 indexed
                 }
             });
-            console.log("Issued task for:", currentProduct.name);
+            console.log("Issued task for:", currentTask.name);
             console.log("Started round", currentRound, "with,", roundMinutes, "minute timer.");
             // save start time
             startTime = new Date().getTime();
             // Initialize steps
-            var taskSteps = [
-                {
-                    time: 0.1,
-                    message: "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
-                },
-                {
-                    time: 0.4,
-                    message: "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
-                },
-                {
-                    time: 0.7,
-                    message: "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
-                }
-            ];
+            var taskSteps = currentTask.steps;
             // Execute steps
             taskSteps.forEach(function (step) {
                 setTimeout(function () {
