@@ -50,9 +50,9 @@ The experiment works by generating several chat rooms, each of `TEAM_SIZE` peopl
 
 1. pre experiment activities
 2. chat activities (happens for each round)
-  1. pre chat activities
-  2. chat
-  3. post chat activities
+   1. pre chat activities
+   2. chat
+   3. post chat activities
 3. post experiment activities
 
 There are usually several rounds of chats and critically, some are with prior teams and some are with random teams. We can can control and randomize when this happens. The user names of each individual are randomized with `makeName` from `tools.ts` and the team configurations are governed by `createTeams` in the same file.
