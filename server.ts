@@ -16,7 +16,7 @@ const runningLive = process.env.RUNNING_LIVE === "TRUE";
 const teamSize = parseInt(process.env.TEAM_SIZE);
 const roundMinutes = parseFloat(process.env.ROUND_MINUTES);
 const taskURL = String(args.url) || process.env.TASK_URL;
-// MEW: new URL was not working in the JS so temporerally removed. This means the variable is just a stirng for now.
+// MEW: new URL type was not working in the JS so temporerally removed. This means the variable is just a stirng for now.
 // const taskURL = new URL(String(args.url)) || new URL(process.env.TASK_URL)
 
 const runExperimentNow = true;
