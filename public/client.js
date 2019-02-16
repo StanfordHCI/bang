@@ -182,7 +182,7 @@ $(function() {
       assignmentId: URLvars.assignmentId,
       timeAdded: new Date().getTime()
     };
-    socket.emit("accepted HIT", mturkVariables); //PK: thoughts on setting waitchat toggle in
+    socket.emit("accepted HIT", mturkVariables); //PK: thoughts on setting
     // client and sending it to server in this emit?
     if (waitChatOn) {
       //socket.emit('get username')

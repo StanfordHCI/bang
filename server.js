@@ -19,10 +19,10 @@ const maxWaitChatMinutes = 20;
 // Toggles
 const runExperimentNow = true;
 const issueBonusesNow = runningLive;
-const notifyWorkersOn = runningLive;
+const notifyWorkersOn = true;
 const runViaEmailOn = false;
 const usingWillBang = runningLive;
-const aggressiveNotifyOn = runningLive;
+const aggressiveNotifyOn = true;
 const notifyUs = runningLive;
 
 const cleanHITs = true;
@@ -35,7 +35,7 @@ const randomCondition = false;
 const randomRoundOrder = false;
 const randomProduct = true;
 
-const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
@@ -47,8 +47,8 @@ const timeCheckOn = false; // tracks time user spends on task and updates paymen
 // how long each task is taking
 const requiredOn = runningLive;
 const checkinIntervalMinutes = roundMinutes / 3;
-const qFifteenOn = true;
-const qSixteenOn = true;
+const qFifteenOn = false;
+const qSixteenOn = false;
 
 //Testing toggles
 const autocompleteTestOn = false; //turns on fake team to test autocomplete
@@ -226,7 +226,7 @@ const conditionsAvailable = ["control", "treatment"];
 const presetCondition = randomCondition
   ? conditionsAvailable.pick()
   : conditionsAvailable[1];
-const currentCondition = "control";
+const currentCondition = "treatment";
 let treatmentNow = false;
 let firstRun = false;
 let hasAddedUsers = false; //lock on adding users to db/experiment for experiment
@@ -242,7 +242,7 @@ let batchCompleteUpdated = false;
 /* const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0] */
 
 // Settings for 4 rounds.
-const ordering = [1,1,1,1];
+let ordering = [1,1, 1, 1];
 const conditions = {
   control: ordering,
   treatment: ordering,
@@ -265,7 +265,7 @@ const people = extraRoundOn
 // const people = ["A", "B", "C", "D"];
 const population = people.length;
 const teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn); //added '-1' to numRounds
-
+ordering = [1,1];
 ordering.forEach(index => {
     console.log(teams[index]);
 });
