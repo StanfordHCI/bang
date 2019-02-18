@@ -766,37 +766,44 @@ $(function() {
 
     setTimeout(() => {
       let totalLengthString = "";
-      totalLengthString = Math.round(3 * data.duration + 15) + " minutes";
+      totalLengthString = Math.round(4 * data.duration + 15) + " minutes";
       log(
-        "<strong>Reminder</strong>: You will receive the bonus pay at the stated hourly rate <strong>only</strong> if you stay for " +
-          "all rounds and answer any survey questions. This should take no more than " +
-          totalLengthString +
-          " total."
+        "<strong>DO NOT REFRESH OR LEAVE THE PAGE. If you do, it will terminate the task for your team members and you will not be compensated.</strong>"
       );
       log(
-        "<strong>DO NOT REFRESH OR LEAVE THE PAGE</strong>. If you do you will not be compensated, and it may terminate the task for other workers."
-      );
-      log("Task: " + data.task);
-      log(
-        "Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>."
-      );
-
-      log(
-        "You will have <strong>" +
-          textifyTime(data.duration) +
-          "</strong> to brainstorm for this round. You will receive instructions about how to collaborate to write a compelling add."
+        "You will receive the bonus pay at the stated hourly rate only after you complete all rounds and fill out all survey questions."
       );
       log(
-        "We will run your final advertisement online. <strong>The more successful it is, the larger the " +
-          "bonus each of your team members will receive.</strong>"
+        "The entire HIT will take no more than " +
+        totalLengthString +
+        " total."
       );
       log(
-        "<br>For example, here are text advertisements for a golf club called Renaissance: <br>\
+        "<br><strong>Task:</strong>"
+      );
+  
+      log(data.task);
+      
+      log("<br><strong>Directions:</strong>");
+      
+      log(
+        "1. Check out the link above and collaborate with your team members in the chat room to develop a text advertisement<br>" +
+        "2. The ad must be no more than <strong>30 characters long</strong>. <br>" +
+        "3. Instructions will be given for submitting the team's final product. <br>" +
+        "4. You have " + textifyTime(data.duration) + " to complete this round. <br>" +
+        "5. Your final advertisement will appear online. <strong>The more successful it is, the larger the " +
+          "bonus each team member will receive.</strong>"
+      );
+      log(
+        "<br><strong>Example:</strong>"
+        );
+      log(
+        "Text advertisements for 'Renaissance Golf Club': <br>\
                 <ul style='list-style-type:disc'> \
                   <li><strong>An empowering modern club</strong><br></li> \
                   <li><strong>A private club with reach</strong><br></li> \
                   <li><strong>Don't Wait. Discover Renaissance Today</strong></li> \
-                </ul>"
+                </ul><br>"
       );
     }, 500);
 
@@ -1025,13 +1032,13 @@ $(function() {
         ". Enter your final result now.</strong>"
     );
     log(
-      "Remember, it can't be more than <strong>maximum 30 characters long</strong>."
+      "Remember, your final ad can't be more than <strong>maximum 30 characters long</strong>."
     );
     log(
-      "To indicate your final result, <strong>start the line with an exclamation mark (i.e., '!')</strong>. We will not count that character toward your length limit."
+      "To indicate your final result, start the line with an exclamation mark. We will not count it towards your character limit."
     );
     log(
-      "If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat. This result will count equally for all members of the team."
+      "If you enter more than one line starting with an exclamation mark, we will only count the last one."
     );
   });
 

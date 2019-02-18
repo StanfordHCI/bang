@@ -16,7 +16,7 @@ RUNNING_LIVE=FALSE
 RUNNING_LOCAL=TRUE
 
 TEAM_SIZE=4
-ROUND_MINUTES=10
+ROUND_MINUTES=15
 ```
 
 Replace the keys with your own by creating an IAM user (see a [tutorial on getting set up with keys](https://glitch.com/edit/#!/mturk)). Then just run remotely with `node server.js`. Check that server is running successfully via [this link](http://127.0.0.1:3000/?assignmentId=3K4J6M3CXF8DU3JZ8XUVEMJHFWEAGV&hitId=3TRB893CSJPTPHN7BSD9FBMB45DG72&workerId=A19MTSLG2OYDLZ&turkSubmitTo=https%3A%2F%2Fworkersandbox.mturk.com)
