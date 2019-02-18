@@ -35,7 +35,7 @@ const randomCondition = false;
 const randomRoundOrder = true;
 const randomProduct = true;
 
-const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
@@ -1923,19 +1923,39 @@ io.on("connection", socket => {
       // Initialize steps
       const taskSteps = [
         {
-          time: 0.1,
+          time: 0.02,
           message:
-            "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
+          "<br><strong>HIT bot: Make sure to review all the instructions. Take about 3 minutes to review the product information.</strong>"
+      },
+        {
+          time: 0.2,
+          message:
+            "<br><strong>HIT bot: Say hello to your team members! Begin brainstorming ad ideas together. (4 minutes)</strong>"
         },
         {
-          time: 0.4,
+          time: 0.5,
           message:
-            "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
+            "<br><strong>HIT bot: As a team, discuss and narrow down your ideas. Collaborate to create the most compelling text ad. (5 minutes)</strong>"
         },
         {
-          time: 0.7,
+          time: 0.9,
           message:
-            "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
+            "<br><strong>HIT bot: Polish your team's favorite ad and get ready to submit. (1 minute)</strong>"
+        },
+        {
+          time: 0.9,
+          message:
+            "<br><strong>HIT bot: Submit the team's final ad by sending a message with a '!' directly in front of the text ad. Only the final submission with a '!' will be counted.</strong>"
+        },
+        {
+          time: 0.95,
+          message:
+            "<br><strong>HIT bot: Last chance to submit!</strong>"
+        },
+        {
+          time: 0.98,
+          message:
+            "<br><strong>HIT bot: This round is ending soon. Time to say goodbye to your team!</strong>"
         }
       ];
 
