@@ -39,7 +39,11 @@ const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
-const midSurveyOn = runningLive;
+const midSurveyOn = true;
+const midSurveyStatusOn = true;
+const creativeSurveyOn = true;
+const satisfactionSurveyOn = true;
+const conflictSurveyOn = true;
 const blacklistOn = false;
 const teamfeedbackOn = false;
 const checkinOn = false;
@@ -49,6 +53,8 @@ const requiredOn = runningLive;
 const checkinIntervalMinutes = roundMinutes / 3;
 const qFifteenOn = true;
 const qSixteenOn = true;
+const postSurveyOn = true;
+const demographicsSurveyOn = true;
 
 //Testing toggles
 const autocompleteTestOn = false; //turns on fake team to test autocomplete
@@ -64,12 +70,17 @@ console.log(runningLocal ? "Running locally" : "Running remotely");
 const fs = require("fs");
 const txt = "txt/";
 const midSurveyFile = txt + "midsurvey-q.txt";
+const midSurveyStatusFile = txt + "midsurveystatus-q.txt";
 const psychologicalSafetyFile = txt + "psychologicalsafety-q.txt";
 const checkinFile = txt + "checkin-q.txt";
 const blacklistFile = txt + "blacklist-q.txt";
 const feedbackFile = txt + "feedback-q.txt";
 const starterSurveyFile = txt + "startersurvey-q.txt";
 const postSurveyFile = txt + "postsurvey-q.txt";
+const demographicsSurveyFile = txt + "demographics-q.txt";
+const conflictSurveyFile = txt + "conflict-q.txt";
+const creativeSurveyFile = txt + "creative-q.txt";
+const satisfactionSurveyFile = txt + "satisfaction-q.txt";
 const botFile = txt + "botquestions.txt";
 const leaveHitFile = txt + "leave-hit-q.txt";
 const qFifteenFile = txt + "qfifteen-q.txt";
@@ -87,6 +98,70 @@ const answers = {
   answerType: "radio",
   textValue: true
 };
+
+const scale7 = {
+  answers: ["Not at all - 1", "2", "3", "4", "5", "6","Highly - 7"],
+  answerType: "radio",
+  textValue: true
+}
+
+const scale5Q = {
+  answers: ["Not at all", "Slightly", "Moderately", "Quite a lot", "Highly"],
+  answerType: "radio",
+  textValue: true
+}
+
+const scale5 = {
+  answers: ["None", "A little", "Some", "Quite a bit", "A Lot"],
+  answerType: "radio",
+  textValue: true
+}
+
+const face = {
+  answers: [":D", ":)", ":|", ":(", "D:"],
+  answerType: "radio",
+  textValue: true
+}
+
+const dem1 = {
+  answers: ["Less than a high school diploma",
+  "High school degree or equivalent (e.g. GED)",
+  "Some college, no degree",
+  "Associate degree (e.g. AA, AS)",
+  "Bachelor’s degree (e.g. BA, BS)",
+  "Master’s degree (e.g. MA, MS, MEd)",
+  "Professional degree (e.g. MD, DDS, DVM)",
+  "Doctorate (e.g. PhD, EdD)"],
+  answerType: "radio",
+  textValue: true
+}
+
+const dem2 = {
+  answers: ["Male", "Female", "Other"],
+  answerType: "radio",
+  textValue: true
+}
+
+const dem4 = {
+  answers: ["Less than $20,000", "$20,000 to $34,999", "$35,000 to $49,999",
+  "$50,000 to $74,999", "$75,000 to $99,999", "Over $100,000"],
+  answerType: "radio",
+  textValue: true
+}
+
+const dem6 = {
+  answers: ["American Indian or Alaska Native", "Asian", "Black or African American",
+  "Native Hawaiian or Other Pacific Islander", "White", "Other"],
+  answerType: "checkbox",
+  textValue: true
+}
+
+const YNAnswers = {
+  answers: ["Yes", "No"],
+  answerType: "radio",
+  textValue: true
+};
+
 const binaryAnswers = {
   answers: ["Keep this team", "Do not keep this team"],
   answerType: "radio",
@@ -641,6 +716,18 @@ roundSchedule.push("ready");
 if (midSurveyOn) {
   roundSchedule.push("midSurvey");
 }
+if (midSurveyStatusOn) {
+  roundSchedule.push("midSurveyStatus");
+}
+if (creativeSurveyOn) {
+  eventSchedule.push("creativeSurvey");
+}
+if (satisfactionSurveyOn) {
+  eventSchedule.push("satisfactionSurvey");
+}
+if (conflictSurveyOn) {
+  eventSchedule.push("conflictSurvey");
+}
 if (psychologicalSafetyOn) {
   roundSchedule.push("psychologicalSafety");
 }
@@ -658,7 +745,12 @@ if (qFifteenOn) {
 if (qSixteenOn) {
   eventSchedule.push("qSixteen");
 }
-eventSchedule.push("postSurvey");
+if (postSurveyOn) {
+  eventSchedule.push("postSurvey");
+}
+if (demographicsSurveyOn) {
+  eventSchedule.push("demographicsSurvey");
+}
 eventSchedule.push("finished");
 console.log("This batch will include:", eventSchedule);
 //}
@@ -684,6 +776,11 @@ db.batch.insert(
     batchComplete: false,
     starterSurveyOn: starterSurveyOn,
     midSurveyOn: midSurveyOn,
+    midSurveyStatusOn: midSurveyStatusOn,
+    creativeSurveyOn: creativeSurveyOn,
+    conflictSurveyOn: conflictSurveyOn,
+    satisfactionSurveyOn: satisfactionSurveyOn,
+    demographicsSurveyOn: demographicsSurveyOn,
     blacklistOn: blacklistOn,
     qFifteenOn: qFifteenOn,
     qSixteenOn: qSixteenOn,
@@ -1021,6 +1118,11 @@ io.on("connection", socket => {
         checkin: {},
         starterCheck: {},
         viabilityCheck: {},
+        statusCheck: {},
+        demographicsCheck: {},
+        conflictCheck: {},
+        creativeCheck: {},
+        satisfactionCheck: {},
         psychologicalSafety: {},
         teamfeedback: {},
         manipulationCheck: "",
@@ -1497,8 +1599,103 @@ io.on("connection", socket => {
           socket,
           user
         );
+      } else if (eventSchedule[currentEvent] === "midSurveyStatus") {
+        if (midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if (timeCheckOn) {
+          recordTime("round");
+        }
+        ioEmitById(
+          socket.mturkId,
+          "load",
+          {
+            element: "midSurveyStatus",
+            questions: loadQuestions(midSurveyStatusFile),
+            interstitial: false,
+            showHeaderBar: true
+          },
+          socket,
+          user
+        );
+      } else if (eventSchedule[currentEvent] === "creativeSurvey") {
+        if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
+        } else if (midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if (timeCheckOn) {
+          recordTime("round");
+        }
+        ioEmitById(
+          socket.mturkId,
+          "load",
+          {
+            element: "creativeSurvey",
+            questions: loadQuestions(creativeSurveyFile),
+            interstitial: false,
+            showHeaderBar: true
+          },
+          socket,
+          user
+        );
+      } else if (eventSchedule[currentEvent] === "satisfactionSurvey") {
+        
+        if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
+        } else if (midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if (timeCheckOn) {
+          recordTime("round");
+        } 
+        ioEmitById(
+          socket.mturkId,
+          "load",
+          {
+            element: "satisfactionSurvey",
+            questions: loadQuestions(satisfactionSurveyFile),
+            interstitial: false,
+            showHeaderBar: true
+          },
+          socket,
+          user
+        );
+      } else if (eventSchedule[currentEvent] === "conflictSurvey") {
+        if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
+        } else if (midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if (timeCheckOn) {
+          recordTime("round");
+        }  
+        ioEmitById(
+          socket.mturkId,
+          "load",
+          {
+            element: "conflictSurvey",
+            questions: loadQuestions(conflictSurveyFile),
+            interstitial: false,
+            showHeaderBar: true
+          },
+          socket,
+          user
+        );
       } else if (eventSchedule[currentEvent] === "psychologicalSafety") {
-        if (timeCheckOn) {
+        if (conflictSurveyOn && timeCheckOn) {
+          recordTime("conflictSurvey")
+        } else if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
+        } else if (midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if (timeCheckOn) {
           recordTime("round");
         }
         ioEmitById(
@@ -1514,7 +1711,17 @@ io.on("connection", socket => {
           user
         );
       } else if (eventSchedule[currentEvent] === "teamfeedbackSurvey") {
-        if (midSurveyOn && timeCheckOn) {
+        if (psychologicalSafetyOn && timeCheckOn) {
+          recordTime("psychologicalSafetySurvey");
+        } else if (conflictSurveyOn && timeCheckOn) {
+          recordTime("conflictSurvey")
+        } else if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
+        } else if (midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
         } else if (timeCheckOn) {
           recordTime("round");
@@ -1535,12 +1742,20 @@ io.on("connection", socket => {
         experimentOver = true;
         if (teamfeedbackOn && timeCheckOn) {
           recordTime("teamfeedbackSurvey");
+        } else if (psychologicalSafetyOn && timeCheckOn) {
+          recordTime("psychologicalSafetySurvey");
+        } else if (conflictSurveyOn && timeCheckOn) {
+          recordTime("conflictSurvey")
+        } else if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
         } else if (midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
         } else if (timeCheckOn) {
           recordTime("round");
-        } else if (psychologicalSafetyOn) {
-          recordTime("psychologicalSafety");
         }
         console.log({
           element: "blacklistSurvey",
@@ -1566,6 +1781,16 @@ io.on("connection", socket => {
           recordTime("blacklistSurvey");
         } else if (teamfeedbackOn && timeCheckOn) {
           recordTime("teamfeedbackSurvey");
+        } else if (psychologicalSafetyOn && timeCheckOn) {
+          recordTime("psychologicalSafetySurvey");
+        } else if (conflictSurveyOn && timeCheckOn) {
+          recordTime("conflictSurvey")
+        } else if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
         } else if (midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
         } else if (timeCheckOn) {
@@ -1591,6 +1816,16 @@ io.on("connection", socket => {
           recordTime("blacklistSurvey");
         } else if (teamfeedbackOn && timeCheckOn) {
           recordTime("teamfeedbackSurvey");
+        } else if (psychologicalSafetyOn && timeCheckOn) {
+          recordTime("psychologicalSafetySurvey");
+        } else if (conflictSurveyOn && timeCheckOn) {
+          recordTime("conflictSurvey")
+        } else if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
         } else if (midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
         } else if (timeCheckOn) {
@@ -1619,6 +1854,16 @@ io.on("connection", socket => {
           recordTime("blacklistSurvey");
         } else if (teamfeedbackOn && timeCheckOn) {
           recordTime("teamfeedbackSurvey");
+        } else if (psychologicalSafetyOn && timeCheckOn) {
+          recordTime("psychologicalSafetySurvey");
+        } else if (conflictSurveyOn && timeCheckOn) {
+          recordTime("conflictSurvey")
+        } else if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
         } else if (midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
         } else if (timeCheckOn) {
@@ -1633,6 +1878,45 @@ io.on("connection", socket => {
           {
             element: "postSurvey",
             questions: loadQuestions(postSurveyFile, user),
+            interstitial: false,
+            showHeaderBar: false
+          },
+          socket,
+          user
+        );
+      } else if (eventSchedule[currentEvent] === "demographicsSurvey") {
+        experimentOver = true;
+        if (postSurveyOn && timeCheckOn) {
+          recordTime("postSurvey");
+        } else if (qSixteenOn && timeCheckOn) {
+          recordTime("qSixteen");
+        } else if (qFifteenOn && timeCheckOn) {
+          recordTime("qFifteen");
+        } else if (blacklistOn && timeCheckOn) {
+          recordTime("blacklistSurvey");
+        } else if (teamfeedbackOn && timeCheckOn) {
+          recordTime("teamfeedbackSurvey");
+        } else if (psychologicalSafetyOn && timeCheckOn) {
+          recordTime("psychologicalSafetySurvey");
+        } else if (conflictSurveyOn && timeCheckOn) {
+          recordTime("conflictSurvey")
+        } else if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
+        } else if (midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if (timeCheckOn) {
+          recordTime("round");
+        }
+        ioEmitById(
+          user.mturkId,
+          "load",
+          {
+            element: "demographicsSurvey",
+            questions: loadQuestions(demographicsSurveyFile, user),
             interstitial: false,
             showHeaderBar: false
           },
@@ -1657,9 +1941,35 @@ io.on("connection", socket => {
           );
           batchCompleteUpdated = true;
         }
-        if (timeCheckOn) {
+        
+        if (demographicsSurveyOn && timeCheckOn) {
+          recordTime("demographicsSurvey");
+        } else if (postSurveyOn && timeCheckOn) {
           recordTime("postSurvey");
+        } else if (qSixteenOn && timeCheckOn) {
+          recordTime("qSixteen");
+        } else if (qFifteenOn && timeCheckOn) {
+          recordTime("qFifteen");
+        } else if (blacklistOn && timeCheckOn) {
+          recordTime("blacklistSurvey");
+        } else if (teamfeedbackOn && timeCheckOn) {
+          recordTime("teamfeedbackSurvey");
+        } else if (psychologicalSafetyOn && timeCheckOn) {
+          recordTime("psychologicalSafetySurvey");
+        } else if (conflictSurveyOn && timeCheckOn) {
+          recordTime("conflictSurvey")
+        } else if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
+        } else if (midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if (timeCheckOn) {
+          recordTime("round");
         }
+
         user.bonus = Number(mturk.bonusPrice);
         updateUserInDB(user, "bonus", user.bonus);
 
@@ -1989,7 +2299,7 @@ io.on("connection", socket => {
               "stop",
               {
                 round: currentRound,
-                survey: midSurveyOn || teamfeedbackOn || psychologicalSafetyOn
+                survey: midSurveyOn || creativeSurveyOn || satisfactionSurveyOn || conflictSurveyOn || midSurveyStatusOn || teamfeedbackOn || psychologicalSafetyOn
               },
               socket,
               user
@@ -2048,6 +2358,49 @@ io.on("connection", socket => {
     });
   });
 
+  socket.on("midSurveyStatusSubmit", data => {
+    useUser(socket, user => {
+      user.results.statusCheck[currentRound] = parseResults(data);
+      updateUserInDB(
+        user,
+        "results.statusCheck",
+        user.results.statusCheck
+      );
+    });
+  });
+
+  socket.on("creativeSurveySubmit", data => {
+    useUser(socket, user => {
+      user.results.creativeCheck[currentRound] = parseResults(data);
+      updateUserInDB(
+        user,
+        "results.creativeCheck",
+        user.results.creativeCheck
+      );
+    });
+  });
+
+  socket.on("satisfactionSurveySubmit", data => {
+    useUser(socket, user => {
+      user.results.satisfactionCheck[currentRound] = parseResults(data);
+      updateUserInDB(
+        user,
+        "results.satisfactionCheck",
+        user.results.satisfactionCheck
+      );
+    });
+  });
+
+  socket.on("conflictSurveySubmit", data => {
+    useUser(socket, user => {
+      user.results.conflictCheck[currentRound] = parseResults(data);
+      updateUserInDB(
+        user,
+        "results.conflictCheck",
+        user.results.conflictCheck
+      );
+    });
+  });
   socket.on("psychologicalSafetySubmit", data => {
     useUser(socket, user => {
       user.results.psychologicalSafety[currentRound] = parseResults(data);
@@ -2102,6 +2455,17 @@ io.on("connection", socket => {
     });
   });
 
+  socket.on("demographicsSurveySubmit", data => {
+    useUser(socket, user => {
+      user.results.demographicsCheck = parseResults(data);
+      updateUserInDB(
+        user,
+        "results.demographicsCheck",
+        user.results.demographicsCheck
+      );
+    });
+  });
+
   socket.on("blacklistSurveySubmit", data => {
     useUser(socket, user => {
       user.results.blacklistCheck = parseResults(data);
@@ -2139,9 +2503,30 @@ io.on("connection", socket => {
         if (answerTag === "S1") {
           // scale 1 radio
           answerObj = answers;
+        } else if (answerTag === "S5") {
+          // scale 5 radio
+          answerObj = scale5;
+        } else if (answerTag === "S5Q") {
+          // scale 5 radio
+          answerObj = scale5Q;
+        } else if (answerTag === "S7") {
+          // scale 7 radio
+          answerObj = scale7;
+        } else if (answerTag === "SFACE") {
+          answerObj = face;
+        } else if (answerTag === "YN1") {
+          answerObj = YNAnswers;
         } else if (answerTag === "YN") {
           // yes no
           answerObj = binaryAnswers;
+        } else if (answerTag === "D1") {
+          answerObj = dem1;
+        } else if (answerTag === "D2") {
+          answerObj = dem2;
+        } else if (answerTag === "D4") {
+          answerObj = dem4;
+        } else if (answerTag === "D6") {
+          answerObj = dem6;
         } else if (answerTag === "YN15") {
           // yes no
           answerObj = binaryAnswers;

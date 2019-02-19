@@ -55,8 +55,13 @@ $(function() {
   const $preSurvey = $("#preSurvey"); // The preSurvey page
   const $starterSurvey = $("#starterSurvey"); // The starterSurvey page
   const $midSurvey = $("#midSurvey"); // the midSurvey page
+  const $midSurveyStatus = $("#midSurveyStatus"); // the after each round status survey page
   const $psychologicalSafety = $("#psychologicalSafety"); // the psych safety page
   const $postSurvey = $("#postSurvey"); // The postSurvey page
+  const $demographicsSurvey = $("#demographicsSurvey"); // The demographics survey page - must always be last
+  const $conflictSurvey = $("#conflictSurvey"); // The round conflict survey page
+  const $creativeSurvey = $("#creativeSurvey"); // The round creative survey page
+  const $satisfactionSurvey = $("#satisfactionSurvey"); // The round satisfaction survey page
   const $blacklistSurvey = $("#blacklistSurvey"); // The blacklist page
   const $qFifteen = $("#qFifteen"); // The question fifteen page
   const $qSixteen = $("#qSixteen"); // The question fifteen page
@@ -108,8 +113,13 @@ $(function() {
     $preSurvey.hide();
     $starterSurvey.hide();
     $midSurvey.hide();
+    $midSurveyStatus.hide();
     $psychologicalSafety.hide();
     $postSurvey.hide();
+    $conflictSurvey.hide();
+    $creativeSurvey.hide();
+    $satisfactionSurvey.hide();
+    $demographicsSurvey.hide();
     $blacklistSurvey.hide();
     $teamfeedbackSurvey.hide();
     $finishingPage.hide();
@@ -142,9 +152,14 @@ $(function() {
   const $preSurveyQuestions = $(".preSurveyQuestions"); //pre survey
   const $psychologicalSafetyQuestions = $(".psychologicalSafetyQuestions"); //pre survey
   const $midSurveyQuestions = $(".midSurveyQuestions"); // mid survey
+  const $midSurveyStatusQuestions = $(".midSurveyStatusQuestions"); // mid survey
   const $qFifteenQuestions = $(".qFifteenQuestions"); // Question Fifteen
   const $qSixteenQuestions = $(".qFifteenQuestions"); // Question Fifteen
   const $postSurveyQuestions = $(".postSurveyQuestions"); //post survey
+  const $demographicsSurveyQuestions = $(".demographicsSurveyQuestions");
+  const $conflictSurveyQuestions = $(".conflictSurveyQuestions");
+  const $creativeSurveyQuestions = $(".creativeSurveyQuestions");
+  const $satisfactionSurveyQuestions = $(".satisfactionSurveyQuestions");
 
   const socket = io({ transports: ["websocket"] });
 
@@ -479,6 +494,15 @@ $(function() {
     $midSurvey.hide();
     $holdingPage.show();
     $("#midForm")[0].reset();
+  });
+
+  $("#midFormStatus").submit(event => {
+    event.preventDefault(); //stops page reloading
+    socket.emit("midSurveyStatusSubmit", $("#midFormStatus").serialize()); //submits results alone
+    socket.emit("next event");
+    $midSurveyStatus.hide();
+    $holdingPage.show();
+    $("#midFormStatus")[0].reset();
   });
 
   $("#psychologicalSafety").submit(event => {
@@ -1098,6 +1122,34 @@ $(function() {
     //watches form element
     event.preventDefault(); //stops page reloading
     socket.emit("postSurveySubmit", $("#postForm").serialize()); //submits results alone
+    socket.emit("next event");
+  });
+
+  $("#demographicsForm").submit(event => {
+    //watches form element
+    event.preventDefault(); //stops page reloading
+    socket.emit("demographicsSurveySubmit", $("#demographicsForm").serialize()); //submits results alone
+    socket.emit("next event");
+  });
+
+  $("#creativeForm").submit(event => {
+    //watches form element
+    event.preventDefault(); //stops page reloading
+    socket.emit("creativeSurveySubmit", $("#creativeForm").serialize()); //submits results alone
+    socket.emit("next event");
+  });
+
+  $("#conflictForm").submit(event => {
+    //watches form element
+    event.preventDefault(); //stops page reloading
+    socket.emit("conflictSurveySubmit", $("#conflictForm").serialize()); //submits results alone
+    socket.emit("next event");
+  });
+
+  $("#satisfactionForm").submit(event => {
+    //watches form element
+    event.preventDefault(); //stops page reloading
+    socket.emit("satisfactionSurveySubmit", $("#satisfactionForm").serialize()); //submits results alone
     socket.emit("next event");
   });
 
