@@ -1,0 +1,8 @@
+S5|1. How much friction is there among members on your team?
+S5|2. How much are personality conflicts evident in your team?
+S5|3. How much tension is there among members on your team?
+S5|4. How much emotional conflict is there among members on your team?
+S5|5. How often do people on your team disagree about opinions regarding the work being done?
+S5|6. How frequently are there conflicts about ideas on your team?
+S5|7. How much conflict about the work you do is there on your team?
+S5|8. To what extent are there differences of opinion on your team?
