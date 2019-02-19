@@ -23,7 +23,9 @@ ROUND_MINUTES=10
 
 ## Developing
 
-Run `tsc` to watch typescript files for changes and `supervisor server.js` so that the server will restart when files in the github folder are changed. Or combine these with:
+Run `tsc` to watch typescript files for changes and `supervisor server.js` so that the server will restart when files in the github folder are changed.
+
+The URL parameters are required because they are read in from Amazon Mechanical Turk. Here's an example URL for local host: http://127.0.0.1:3000/?assignmentId=3K4J6M3CXF8DU3JZ8XUVEMJHFWEAGV&hitId=3TRB893CSJPTPHN7BSD9FBMB45DG72&workerId=A19MTSLG2OYDLZ&turkSubmitTo=https%3A%2F%2Fworkersandbox.mturk.com
 
 ## Specification
 
@@ -43,6 +45,9 @@ A HIT that runs every hour will allow workers to sign up to be notified of exper
 ### Recruiting
 
 When we start an experiment we need `TEAM_SIZE`(from the `.env` file) squared participants to be active in the `waitChat` before we can start the experiment. This recruiting process initially notifies our `willBang` list and optionally makes the HIT available to other workers on MTurk. During recruiting if participants are not active in `waitChat` we remove them and pay them a nominal participation fee. Once there are enough active workers we remove their `willBang` qualification and add the `hasBanged` qualification, which makes it impossible for them to work on our experiments again. Also at this time, we usually notify ourselves that the experiment has launched.
+
+`waitChatOn` controls if a chatbot should be shown before the main task starts. This is designed so that the participants can stay engaged through the chat interaction and we can make sure they are present. For example, when participants don't respond to the chat bot for a certain time period we no longer consider them active.
+Note: `waitChatOn` exists  in `server.js` and `public/client.js` and needs to have the same value in both places to work as designed.
 
 ### Running the experiment
 
