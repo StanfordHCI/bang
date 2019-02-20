@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 |1. Rate the degree to which you agree with the following statements based on your interactions on the team: 
 STAT| deserved respect and admiration.
 STAT| deserved respect and admiration.
@@ -19,6 +18,3 @@ STAT| contributed to the decisions.
 STAT| contributed to the decisions.
 STAT| contributed to the decisions.
 STAT| contributed to the decisions.
-=======
-S1|1. Status questions for later.
->>>>>>> 5064a0bbe1fa711d931e0b5973529c4a3b0fdcf6
