@@ -35,12 +35,12 @@ const randomCondition = false;
 const randomRoundOrder = true;
 const randomProduct = true;
 
-const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
+const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
 const midSurveyOn = false;
-const midSurveyStatusOn = true; //Only set to true if teamSize = 4, Requires waitChatOn = true.
+const midSurveyStatusOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const creativeSurveyOn = true;
 const satisfactionSurveyOn = true;
 const conflictSurveyOn = true;
@@ -2383,6 +2383,8 @@ io.on("connection", socket => {
   socket.on("creativeSurveySubmit", data => {
     useUser(socket, user => {
       user.results.creativeCheck[currentRound] = parseResults(data);
+      console.log("Creative Survey");
+      console.log(parseResults(data));
       updateUserInDB(
         user,
         "results.creativeCheck",
