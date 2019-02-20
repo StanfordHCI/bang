@@ -39,7 +39,6 @@ var midSurveyOn = runningLive;
 var blacklistOn = false;
 var teamfeedbackOn = false;
 var checkinOn = false;
-var timeCheckOn = false; // tracks time user spends on task and updates payment - also tracks
 // how long each task is taking
 var requiredOn = runningLive;
 var checkinIntervalMinutes = roundMinutes / 3;
@@ -199,7 +198,7 @@ var debugDir = "debug/";
 if (!fs.existsSync(debugDir)) {
     fs.mkdirSync(debugDir);
 }
-var log_file = debugDir + "debug" + Date.now() + ".log";
+var log_file = debugDir + "debug " + Date.now() + ".log";
 console.log = function () {
     var msg = [];
     for (var _i = 0; _i < arguments.length; _i++) {
@@ -496,8 +495,7 @@ var tasks = randomTaskOrder ? shuffle(taskSet) : taskSet;
 var users = []; //the main local user storage
 var userPool = []; //accumulates users pre-experiment
 var waitchatStart = 0;
-var currentRound = 0; //PK: talk about 0-indexed v 1-indexed round numbers (note: if change -> change parts
-// of code reliant on 0-indexed round num)
+var currentRound = 0;
 var startTime = 0;
 var userAcquisitionStage = true;
 var experimentOver = false;
@@ -890,9 +888,7 @@ io.on("connection", function (socket) {
             if (usingWillBang) {
                 var hasBangers = users.map(function (a) { return a.mturkId; });
                 hasBangers.forEach(function (u) {
-                    mturk.unassignQuals(u, mturk.quals.willBang, "This qualification is used to qualify a user to " +
-                        "participate in our HIT. We only allow one participation per user, so that is why we are " +
-                        "removing this qualification. Thank you!");
+                    mturk.unassignQuals(u, mturk.quals.willBang, "This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!");
                     db.willBang.remove({ id: u }, { multi: true }, function (err, numRemoved) {
                         if (err)
                             console.log("Error removing from db.willBang: ", err);
@@ -902,19 +898,13 @@ io.on("connection", function (socket) {
                 });
             }
             if (notifyUs) {
-                mturk.notifyWorkers([notifyUsMturkID], "Rolled " + currentCondition + " on " + taskURL.hostname, "Rolled over with: " +
-                    currentCondition +
-                    " on port " +
-                    port +
-                    " at " +
-                    taskURL.hostname +
-                    ".");
+                mturk.notifyWorkers([notifyUsMturkID], "Rolled " + currentCondition + " on " + taskURL.hostname, "Rolled over with: " + currentCondition + " on port " + port + " at " + taskURL.hostname + ".");
             }
             userAcquisitionStage = false;
             mturk.startTask();
         }
         db.users.insert(newUser, function (err, _usersAdded) {
-            console.log(err ? "Didn't store user: " + err : "Added " + newUser.name + " to DB.");
+            console.log(err ? "users DB error: " + err : "Stored " + newUser.name);
         });
         //PK: need to emit login to each? or can we delete login fxn in client if no longer in use (login sets
         // connected to true, is this needed?)
@@ -1048,14 +1038,6 @@ io.on("connection", function (socket) {
                     storeHIT();
                     console.log("User left, emitting cancel to all users");
                     var totalTime = getSecondsPassed();
-                    if (timeCheckOn) {
-                        db.time.insert({ totalTaskTime: totalTime }, function (err, timeAdded) {
-                            if (err)
-                                console.log("There's a problem adding total time to the DB: ", err);
-                            else if (timeAdded)
-                                console.log("Total time added to the DB");
-                        });
-                    }
                     users
                         .filter(function (u) { return u.mturkId !== socket.mturkId; })
                         .forEach(function (u) {
@@ -1150,12 +1132,12 @@ io.on("connection", function (socket) {
                     showHeaderBar: headerOn
                 }, socket, user);
             }
-            var currentActivity = user.eventSchedule[user.currentEvent];
-            console.log("Event " + user.currentEvent + " of " + user.eventSchedule.length + ": " + currentActivity);
-            if (currentActivity === "starterSurvey") {
-                loadActivity(currentActivity);
+            user["currentActivity"] = user.eventSchedule[user.currentEvent];
+            console.log("Event " + user.currentEvent + " of " + user.eventSchedule.length + ": " + user.currentActivity);
+            if (user.currentActivity === "starterSurvey") {
+                loadActivity(user.currentActivity);
             }
-            else if (currentActivity === "ready") {
+            else if (user.currentActivity === "ready") {
                 if (checkinOn)
                     loadActivity("checkin", true, true);
                 loadActivity("leave-hit", true, true);
@@ -1166,11 +1148,11 @@ io.on("connection", function (socket) {
                 "qFifteen",
                 "qSixteen",
                 "manipulationCheck"
-            ].includes(currentActivity)) {
+            ].includes(user.currentActivity)) {
                 experimentOver = true;
-                loadActivity(currentActivity, false, false);
+                loadActivity(user.currentActivity, false, false);
             }
-            else if (currentActivity === "finished" ||
+            else if (user.currentActivity === "finished" ||
                 user.currentEvent > user.eventSchedule.length) {
                 if (!batchCompleteUpdated) {
                     db.batch.update({ batchID: batchID }, { $set: { batchComplete: true } }, {}, function (err) {
@@ -1196,7 +1178,7 @@ io.on("connection", function (socket) {
                 }, socket, user);
             }
             else
-                loadActivity(currentActivity);
+                loadActivity(user.currentActivity);
             user.currentEvent += 1;
         });
     });
@@ -1409,61 +1391,16 @@ io.on("connection", function (socket) {
             : "The task has finished early. " +
                 "You will be compensated by clicking submit below.", false, "broken");
     });
-    // Starter task
-    socket.on("starterSurveySubmit", function (data) {
+    // Store data for all surveys
+    socket.on("submit", function (data) {
         useUser(socket, function (user) {
-            user.results.starterCheck = parseResults(data);
-            updateUserInDB(user, "results.starterCheck", user.results.starterCheck);
-        });
-    });
-    socket.on("midSurveySubmit", function (data) {
-        useUser(socket, function (user) {
-            user.results.viabilityCheck[currentRound] = parseResults(data);
-            updateUserInDB(user, "results.viabilityCheck", user.results.viabilityCheck);
-        });
-    });
-    socket.on("psychologicalSafetySubmit", function (data) {
-        useUser(socket, function (user) {
-            user.results.psychologicalSafety[currentRound] = parseResults(data);
-            updateUserInDB(user, "results.psychologicalSafety", user.results.psychologicalSafety);
-        });
-    });
-    socket.on("teamfeedbackSurveySubmit", function (data) {
-        useUser(socket, function (user) {
-            user.results.teamfeedback[currentRound] = parseResults(data);
-            updateUserInDB(user, "results.teamfeedback", user.results.teamfeedback);
-        });
-    });
-    socket.on("mturk_formSubmit", function (data) {
-        useUser(socket, function (user) {
-            user.results.engagementFeedback = parseResults(data);
-            updateUserInDB(user, "results.engagementFeedback", user.results.engagementFeedback);
-        });
-    });
-    socket.on("qFifteenSubmit", function (data) {
-        useUser(socket, function (user) {
-            user.results.qFifteenCheck = parseResults(data);
-            updateUserInDB(user, "results.qFifteenCheck", user.results.qFifteenCheck);
-        });
-    });
-    socket.on("qSixteenSubmit", function (data) {
-        useUser(socket, function (user) {
-            user.results.qSixteenCheck = parseResults(data);
-            updateUserInDB(user, "results.qSixteenCheck", user.results.qSixteenCheck);
-        });
-    });
-    socket.on("manipulationCheckSubmit", function (data) {
-        useUser(socket, function (user) {
-            user.results.manipulation = postSurveyGenerator(user).correctAnswer;
-            updateUserInDB(user, "results.manipulation", user.results.manipulation);
-            user.results.manipulationCheck = parseResults(data);
-            updateUserInDB(user, "results.manipulationCheck", user.results.manipulationCheck);
-        });
-    });
-    socket.on("blacklistSurveySubmit", function (data) {
-        useUser(socket, function (user) {
-            user.results.blacklistCheck = parseResults(data);
-            updateUserInDB(user, "results.blacklistCheck", user.results.blacklistCheck);
+            var structuredResults = parseResults(data);
+            var activity = user.currentActivity;
+            if (experimentOver)
+                user.results[activity] = structuredResults;
+            else
+                user.results[activity][currentRound] = structuredResults;
+            updateUserInDB(user, "results." + activity, user.results[activity]);
         });
     });
     //loads qs in text file, returns json array
@@ -1590,27 +1527,13 @@ function getSecondsPassed() {
     return (new Date().getTime() - startTime) / 1000;
 }
 function replicate(subArray, times) {
-    var subArraySize = subArray.length, repeatedArraySize = subArraySize * times, resultingArray = new Array(repeatedArraySize);
+    var subArraySize = subArray.length;
+    var repeatedArraySize = subArraySize * times;
+    var resultingArray = new Array(repeatedArraySize);
     for (var i = 0; i < repeatedArraySize; i++)
         resultingArray[i] = subArray[i % subArraySize];
     return resultingArray;
 }
-//PK: we call this fxn many times, is it necessary?
-//PK: why do we need to record the length of each task? if this is for bonusing, can we avoid calling this
-// fxn so many times and just do once when the exp ends?
-// records length of each task
-var recordTime = function (event) {
-    var _a;
-    taskEndTime = getSecondsPassed();
-    taskTime = taskStartTime - taskEndTime;
-    db.time.insert((_a = {}, _a[event] = taskTime, _a), function (err, timeAdded) {
-        if (err)
-            console.log("There's a problem adding", event, "time to the DB: ", err);
-        else if (timeAdded)
-            console.log(event, "time added to the DB");
-    });
-    taskStartTime = getSecondsPassed();
-};
 var getTeamMembers = function (user) {
     // Makes a list of teams this user has worked with
     var roomTeams = user.rooms.map(function (room, rIndex) {

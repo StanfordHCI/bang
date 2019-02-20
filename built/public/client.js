@@ -1,5 +1,5 @@
 var LeavingAlert = true;
-window.onbeforeunload = function (event) {
+window.onbeforeunload = function () {
     if (LeavingAlert) {
         console.log("Leaving is true");
         return "Leaving will stop this HIT for all users. Are you sure you want to leave?";
@@ -37,10 +37,10 @@ $(function () {
     var $messages = $(".messages"); // Messages area
     var $inputMessage = $(".inputMessage"); // Input message input box
     var $checkinPopup = $("#checkin");
-    var $headerBar = $(".header");
     var $headerText = $("#header-text");
     var $leaveHitButton = $("#leave-hit-button");
     var $leaveHitPopup = $("#leave-hit-popup");
+    var $surveyBlock = $("#surveyBlock");
     var $chatLink = $("#chatLink");
     var $headerbarPage = $("#headerbarPage"); // The finishing page
     var $lockPage = $("#lockPage"); // The page shown before acceptance
@@ -59,20 +59,20 @@ $(function () {
     var $finishingPage = $("#finishing"); // The finishing page
     var $disconnectedMessage = $("._disconnected");
     var botUsername = "helperBot";
-    $("#ready-to-all").click(function (e) {
+    $("#ready-to-all").click(function () {
         socket.emit("ready-to-all", {});
     });
-    $("#kill-all").click(function (e) {
+    $("#kill-all").click(function () {
         socket.emit("kill-all", {});
     });
-    $("#active-to-all").click(function (e) {
+    $("#active-to-all").click(function () {
         socket.emit("active-to-all", {});
     });
-    $("#notify-more").click(function (e) {
+    $("#notify-more").click(function () {
         socket.emit("notify-more", {});
     });
     Vue.component("question-component", {
-        template: "\n      <p>{{question.question}}</p>\n      <div id=\"{{question.name}}-rb-box\" class='rb-box'>\n        <template v-for=\"(index, answer) in question.answers\" :answer=\"answer\">\n          <label for=\"{{question.name}}-{{index+1}}\" class=\"rb-tab\">\n            <input v-bind:type=\"question.answerType\" name=\"{{question.name}}\" id=\"{{question.name}}-{{index+1}}\"\n            v-bind:value=\"question.textValue ? answer : index + 1\" v-bind:required=\"question.required ? true : false\"/>\n            <span class='rb-spot'>{{index+1}}</span>\n            <label for='{{question.name}}-{{index+1}}'>{{answer}}</label>\n          </label>\n        </template>\n      </div>\n    ",
+        template: "\n      <p>{{question.question}}</p>\n      <div id=\"{{question.name}}-rb-box\" class='rb-box'>\n        <template v-for=\"(index, answer) in question.answers\" :answer=\"answer\">\n          <label for=\"{{question.name}}-{{index+1}}\" class=\"rb-tab\">\n            <input v-bind:type=\"question.answerType\" name=\"{{question.name}}\" id=\"{{question.name}}-{{index+1}}\"\n            v-bind:value=\"question.textValue ? answer : index + 1\" v-bind:required=\"question.required ? true : false\"/>\n            <label for='{{question.name}}-{{index+1}}'>{{answer}}</label>\n          </label>\n        </template>\n      </div>\n    ",
         props: {
             question: Object
         }
@@ -96,6 +96,7 @@ $(function () {
         $chatLink.hide();
         $qFifteen.hide();
         $qSixteen.hide();
+        $surveyBlock.hide();
     };
     var HandleFinish = function (finishingMessage, mturk_form, assignmentId, finishingcode) {
         hideAll();
@@ -108,15 +109,12 @@ $(function () {
     };
     var holdingUsername = document.getElementById("username");
     var messagesSafe = document.getElementsByClassName("messages")[0];
-    var finishingcode = document.getElementById("finishingcode");
     var usersWaiting = document.getElementById("numberwaiting");
-    var mturkVariables = {};
-    var $preSurveyQuestions = $(".preSurveyQuestions"); //pre survey
-    var $psychologicalSafetyQuestions = $(".psychologicalSafetyQuestions"); //pre survey
-    var $midSurveyQuestions = $(".midSurveyQuestions"); // mid survey
-    var $qFifteenQuestions = $(".qFifteenQuestions"); // Question Fifteen
-    var $qSixteenQuestions = $(".qFifteenQuestions"); // Question Fifteen
-    var $manipulationCheckQuestions = $(".manipulationCheckQuestions"); //post survey
+    var mturkVariables = {
+        assignmentId: "",
+        mturkId: "",
+        turkSubmitTo: ""
+    };
     var socket = io({ transports: ["websocket"] });
     hideAll();
     window.setInterval(function () {
@@ -131,12 +129,9 @@ $(function () {
     var $currentInput = $inputMessage.focus();
     //Check if user has accepted based on URL. Store URL variables.
     var URL = location.href;
-    var URLvars = {};
+    var URLvars = getUrlVars(location.href);
     if (URL.includes("god")) {
         URLvars.assignmentId = "ASSIGNMENT_ID_NOT_AVAILABLE";
-    }
-    else {
-        URLvars = getUrlVars(location.href);
     }
     if (URLvars.assignmentId === "ASSIGNMENT_ID_NOT_AVAILABLE") {
         $lockPage.show(); //prompt user to accept HIT
@@ -188,22 +183,19 @@ $(function () {
     document.title = "Ad writing task";
     // Implements notifications
     var notify = function (title, body) {
+        if (body === void 0) { body = ""; }
         if (Notification.permission !== "granted") {
             Notification.requestPermission();
         }
         else {
             if (!document.hasFocus()) {
-                var notification = new Notification(title, { body: body });
             }
         }
     };
     var addParticipantsMessage = function (data) {
-        var message = "";
         if (data.numUsers === 1) {
-            message += "there's 1 participant";
         }
         else {
-            message += "there are " + data.numUsers + " participants";
         }
     };
     // Sends a chat message
@@ -228,6 +220,7 @@ $(function () {
     }
     // Log a message
     function log(message, options) {
+        if (options === void 0) { options = {}; }
         var $el = $("<li>")
             .addClass("log")
             .html(message);
@@ -235,11 +228,11 @@ $(function () {
     }
     // Adds the visual chat message to the message list
     function addChatMessage(data, options) {
+        if (options === void 0) { options = {}; }
         // Don't fade the message in if there is an 'X was typing'
         var $typingMessages = getTypingMessages(data);
-        options = options || {};
         if ($typingMessages.length !== 0) {
-            options.fade = false;
+            options["fade"] = false;
             $typingMessages.remove();
         }
         var $messageBodyDiv = $('<span class="messageBody">')
@@ -330,7 +323,7 @@ $(function () {
     }
     // Gets the 'X is typing' messages of a user
     function getTypingMessages(data) {
-        return $(".typing.message").filter(function (i) {
+        return $(".typing.message").filter(function () {
             return $(this).data("username") === data.username;
         });
     }
@@ -373,7 +366,7 @@ $(function () {
         socket.emit("next event");
     });
     // Keyboard events
-    document.getElementById("character-count").innerHTML = 0;
+    document.getElementById("character-count").innerHTML = String(0);
     $window.keydown(function (event) {
         // Auto-focus the current input when a key is typed
         if (!(event.ctrlKey || event.metaKey || event.altKey)) {
@@ -392,11 +385,11 @@ $(function () {
             event.preventDefault();
         }
     });
-    $inputMessage.keyup(function (event) {
-        var currentInput = $("#inputMessage").val();
+    $inputMessage.keyup(function () {
+        var currentInput = String($("#inputMessage").val());
         var characterCount = currentInput.length;
         if (currentInput[0] === "!") {
-            document.getElementById("character-count").innerHTML = characterCount - 1; //excluding the !
+            document.getElementById("character-count").innerHTML = String(characterCount - 1); //excluding the !
             if (characterCount - 1 > 30) {
                 $("#character-counter").addClass;
                 $("#character-counter").css("color", "red");
@@ -404,51 +397,12 @@ $(function () {
             }
         }
         else {
-            document.getElementById("character-count").innerHTML = characterCount;
+            document.getElementById("character-count").innerHTML = String(characterCount);
             $("#character-counter").css("color", "black");
             $("#character-count").css("color", "black");
         }
     });
-    //note: only built to handle 1 checkin question, should expand?
-    $("#checkin-form").submit(function (event) {
-        event.preventDefault(); //stops page reloading
-        var selectedValue = $("input[name=checkin-q1]:checked").val();
-        socket.emit("new checkin", selectedValue);
-        $checkinPopup.hide();
-    });
-    $("#midForm").submit(function (event) {
-        event.preventDefault(); //stops page reloading
-        socket.emit("midSurveySubmit", $("#midForm").serialize()); //submits results alone
-        socket.emit("next event");
-        $midSurvey.hide();
-        $holdingPage.show();
-        $("#midForm")[0].reset();
-    });
-    $("#psychologicalSafety").submit(function (event) {
-        event.preventDefault(); //stops page reloading
-        socket.emit("psychologicalSafetySubmit", $("#psychologicalSafety-form").serialize()); //submits results alone
-        socket.emit("next event");
-        $psychologicalSafety.hide();
-        $holdingPage.show();
-        $("#psychologicalSafety-form")[0].reset();
-    });
-    $("#qFifteen").submit(function (event) {
-        event.preventDefault(); //stops page reloading
-        socket.emit("qFifteenSubmit", $("#qFifteenForm").serialize()); //submits results alone
-        socket.emit("next event");
-        $qFifteen.hide();
-        $holdingPage.show();
-        $("#qFifteenForm")[0].reset();
-    });
-    $("#qSixteen").submit(function (event) {
-        event.preventDefault(); //stops page reloading
-        socket.emit("qSixteenSubmit", $("#qSixteenForm").serialize()); //submits results alone
-        socket.emit("next event");
-        $qSixteen.hide();
-        $holdingPage.show();
-        $("#qSixteenForm")[0].reset();
-    });
-    $leaveHitButton.click(function (event) {
+    $leaveHitButton.click(function () {
         $leaveHitPopup.show();
         $currentInput = $("#leavetaskfeedbackInput").focus();
         $currentInput.focus();
@@ -500,7 +454,7 @@ $(function () {
     socket.on("reconnect_attempt", function (attemptNumber) {
         socket.io.opts.transports = ["websocket"];
         if (socket.connected) {
-            socket.emit("log", URLvars.workerId + " RECONNECT ATTEMPT " + attemptNumber);
+            socket.emit("log", URLvars.workerId + " RECONNECT ATTEMPT " + attemptNumber + ")");
         }
     });
     socket.on("reconnect_error", function (error) {
@@ -572,12 +526,12 @@ $(function () {
         name_structure = data.name_structure;
         holdingUsername.innerText = username;
     });
-    socket.on("show chat link", function (data) {
+    socket.on("show chat link", function () {
         $chatLink.show();
         notify("Please click the link");
     });
     //if there are enough workers who have accepted the task, show link to chat page
-    socket.on("initiate experiment", function (data) {
+    socket.on("initiate experiment", function () {
         if (preChat) {
             notify("Moving you to another chatroom.", "Come and get started with the activity.");
             addChatMessage({
@@ -593,31 +547,41 @@ $(function () {
     // Whenever the server emits 'login', log the login message
     socket.on("login", function (data) {
         connected = true;
-        // Display the welcome message
-        var message = "Welcome";
         // log(message, { prepend: true });
         addParticipantsMessage(data);
     });
-    socket.on("rejected user", function (data) {
+    socket.on("rejected user", function () {
         hideAll();
         alert("The experiment is already full. Please return this HIT.");
     });
     socket.on("load", function (data) {
-        var element = data.element;
+        var element = data.interstitial
+            ? data.element + "-questions"
+            : "#surveyQuestions";
         var questions = data.questions;
         new Vue({
-            el: "#" + element + "-questions",
-            data: {
-                questions: questions
-            }
+            el: element,
+            data: { questions: questions }
         });
         if (!data.interstitial) {
             hideAll();
-            $("#" + data.element).show();
+            $surveyBlock.show();
             if (data.showHeaderBar) {
                 $headerbarPage.show();
             }
         }
+    });
+    $("#submitForm").submit(function (event) {
+        event.preventDefault();
+        var eventObject = $("#submitForm");
+        socket.emit("submit", {
+            event: name,
+            submission: eventObject.serialize()
+        });
+        eventObject.hide();
+        $holdingPage.show();
+        eventObject[0].reset();
+        socket.emit("next event");
     });
     // Whenever the server emits 'new message', update the chat body
     socket.on("new message", function (data) {
@@ -625,7 +589,7 @@ $(function () {
         notify(data.username + ": " + data.message);
     });
     // whenever the server emits 'checkin pop up', show checkin popup
-    socket.on("checkin popup", function (data) {
+    socket.on("checkin popup", function () {
         $checkinPopup.show();
     });
     // Whenever the server emits 'user joined', log it in the chat body
@@ -660,27 +624,15 @@ $(function () {
         setTimeout(function () {
             var totalLengthString = "";
             totalLengthString = Math.round(3 * data.duration + 15) + " minutes";
-            log("<strong>Reminder</strong>: You will receive the bonus pay at the stated hourly rate <strong>only</strong> if you stay for " +
-                "all rounds and answer any survey questions. This should take no more than " +
-                totalLengthString +
-                " total.");
+            log("<strong>Reminder</strong>: You will receive the bonus pay at the stated hourly rate <strong>only</strong> if you stay for all rounds and answer any survey questions. This should take no more than " + totalLengthString + " total.");
             log("<strong>DO NOT REFRESH OR LEAVE THE PAGE</strong>. If you do you will not be compensated, and it may terminate the task for other workers.");
             log("Task: " + data.task);
             log("Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>.");
-            log("You will have <strong>" +
-                textifyTime(data.duration) +
-                "</strong> to brainstorm for this round. You will receive instructions about how to collaborate to write a compelling add.");
-            log("We will run your final advertisement online. <strong>The more successful it is, the larger the " +
-                "bonus each of your team members will receive.</strong>");
-            log("<br>For example, here are text advertisements for a golf club called Renaissance: <br>\
-                <ul style='list-style-type:disc'> \
-                  <li><strong>An empowering modern club</strong><br></li> \
-                  <li><strong>A private club with reach</strong><br></li> \
-                  <li><strong>Don't Wait. Discover Renaissance Today</strong></li> \
-                </ul>");
+            log("You will have <strong>" + textifyTime(data.duration) + "</strong> to brainstorm for this round. You will receive instructions about how to collaborate to write a compelling add.");
+            log("We will run your final advertisement online. <strong>The more successful it is, the larger the bonus each of your team members will receive.</strong>");
+            log("<br>For example, here are text advertisements for a golf club called Renaissance: <br>\n        <ul style='list-style-type:disc'>\n          <li><strong>An empowering modern club</strong><br></li>\n          <li><strong>A private club with reach</strong><br></li>\n          <li><strong>Don't Wait. Discover Renaissance Today</strong></li>\n        </ul>");
         }, 500);
         setTimeout(function () {
-            var str = "";
             for (var _i = 0, _a = data.team; _i < _a.length; _i++) {
                 member = _a[_i];
                 addChatMessage({
@@ -695,7 +647,7 @@ $(function () {
         currentTeam = data.team;
         $currentInput = $inputMessage.focus();
         // Build a list of animals in current team
-        randomAnimal = data.randomAnimal;
+        var randomAnimal = data.randomAnimal;
         var teamAnimals = {};
         for (i = 0; i < randomAnimal.length; i++) {
             for (j = 0; j < currentTeam.length; j++) {
@@ -714,17 +666,17 @@ $(function () {
                 }
                 else if (wordlength <= 5) {
                     var matcher_1 = new RegExp("^" + $.ui.autocomplete.escapeRegex(currentTerm), "i");
-                    matches = $.grep(currentTeam, function (currentTerm) {
+                    var matches = $.grep(currentTeam, function (currentTerm) {
                         return matcher_1.test(currentTerm);
                     });
                     if (matches[0] !== undefined) {
                         response(matches);
                     }
                     else {
-                        var matches = $.grep(Object.keys(teamAnimals), function (currentTerm) {
+                        var matches_1 = $.grep(Object.keys(teamAnimals), function (currentTerm) {
                             return matcher_1.test(currentTerm);
                         });
-                        response(matches.map(function (match) {
+                        response(matches_1.map(function (match) {
                             return teamAnimals[match];
                         }));
                     }
@@ -739,7 +691,7 @@ $(function () {
                         event.keyCode !== 8 &&
                         event.keyCode !== $.ui.keyCode.SPACE) {
                         //do not autocomplete if client backspace-d)
-                        current_text = $("#inputMessage")
+                        var current_text = $("#inputMessage")
                             .val()
                             .split(" ");
                         current_text.splice(-1, 1);
@@ -774,6 +726,7 @@ $(function () {
                 }
                 // Run spell check only if animal name not detected
                 if (fuzzyMatches_1[0] === undefined) {
+                    var i = 0;
                     for (i = 0; i < currentTeam.length; i++) {
                         if (fuzzyMatched(currentTeam[i], currentTerm_1, 0.7)) {
                             fuzzyMatches_1.push(currentTeam[i]);
@@ -782,9 +735,7 @@ $(function () {
                 }
                 // if there is only 1 possible match, correct the user
                 if (fuzzyMatches_1.length === 1 && fuzzyMatches_1[0] !== undefined) {
-                    var current_text = $("#inputMessage")
-                        .val()
-                        .split(" ");
+                    var current_text = String($("#inputMessage").val()).split(" ");
                     current_text.splice(-1, 1);
                     var joined_text = current_text.join(" ");
                     if (current_text[0] === undefined) {
@@ -800,8 +751,8 @@ $(function () {
     // fuzzy Match function
     function fuzzyMatched(comparer, comparitor, matchCount) {
         var isMatched = false;
-        a = comparer.trim().toLowerCase();
-        b = comparitor.trim().toLowerCase();
+        var a = comparer.trim().toLowerCase();
+        var b = comparitor.trim().toLowerCase();
         if (a.length === 0)
             return false;
         if (b.length === 0)
@@ -837,28 +788,10 @@ $(function () {
             isMatched = true;
         return isMatched;
     }
-    function occurrences(string, subString, allowOverlapping) {
-        if (allowOverlapping === void 0) { allowOverlapping = false; }
-        string += "";
-        subString += "";
-        if (subString.length <= 0)
-            return string.length + 1;
-        var n = 0, pos = 0, step = allowOverlapping ? 1 : subString.length;
-        while (true) {
-            pos = string.indexOf(subString, pos);
-            if (pos >= 0) {
-                ++n;
-                pos += step;
-            }
-            else
-                break;
-        }
-        return n;
-    }
     socket.on("message clients", function (message) {
         log(message);
     });
-    socket.on("stop", function (data) {
+    socket.on("stop", function () {
         // log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
         hideAll();
         $holdingPage.show();
@@ -867,9 +800,7 @@ $(function () {
         socket.emit("next event");
     });
     socket.on("timer", function (data) {
-        log("<strong>You'll be done with this round in about " +
-            textifyTime(data.time) +
-            ". Enter your final result now.</strong>");
+        log("<strong>You'll be done with this round in about " + textifyTime(data.time) + ". Enter your final result now.</strong>");
         log("Remember, it can't be more than <strong>maximum 30 characters long</strong>.");
         log("To indicate your final result, <strong>start the line with an exclamation mark (i.e., '!')</strong>. We will not count that character toward your length limit.");
         log("If you enter more than one line starting with an exclamation mark, we'll only use the last one in the chat. This result will count equally for all members of the team.");
@@ -884,16 +815,16 @@ $(function () {
             assignmentId: URLvars.assignmentId
         });
     });
-    socket.on("starterSurvey", function (data) {
+    socket.on("starterSurvey", function () {
         hideAll();
         $starterSurvey.show();
     });
     $("#leave-hit-submit").click(function (event) {
         event.preventDefault(); //stops page reloading
-        var feedbackMessage = $("#leavetaskfeedbackInput").val();
+        var feedbackMessage = String($("#leavetaskfeedbackInput").val());
         if (feedbackMessage.length > 10) {
             socket.emit("log", "SOCKET DISCONNECT IN LEAVE HIT BUTTON");
-            HandleFinish((finishingMessage = "You terminated the HIT. Thank you for your time."), (mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit"), (assignmentId = mturkVariables.assignmentId), (finishingcode = "LeftHit"));
+            HandleFinish("You terminated the HIT. Thank you for your time.", mturkVariables.turkSubmitTo + "/mturk/externalSubmit", mturkVariables.assignmentId, "LeftHit");
             socket.emit("mturk_formSubmit", $("#leave-hit-form").serialize());
             // socket.disconnect(true);
             $("#leave-hit-form")[0].reset();
@@ -906,64 +837,28 @@ $(function () {
         $currentInput.focus();
         $("#leave-hit-form")[0].reset();
     });
-    $("#starterForm").submit(function (event) {
-        event.preventDefault(); //stops page reloading
-        socket.emit("starterSurveySubmit", $("#starterForm").serialize()); //submits results alone
-        socket.emit("next event");
-        $starterSurvey.hide();
-        $holdingPage.show();
-        $("#starterForm")[0].reset();
-    });
-    $("#postForm").submit(function (event) {
-        //watches form element
-        event.preventDefault(); //stops page reloading
-        socket.emit("manipulationCheckSubmit", $("#postForm").serialize()); //submits results alone
-        socket.emit("next event");
-    });
-    $("#blacklistForm").submit(function (event) {
-        //watches form element
-        event.preventDefault(); //stops page reloading
-        socket.emit("blacklistSurveySubmit", $("#blacklistForm").serialize()); //submits results alone
-        socket.emit("next event");
-    });
-    $("#teamfeedbackForm").submit(function (event) {
-        event.preventDefault(); //stops page reloading
-        socket.emit("teamfeedbackSurveySubmit", $("#teamfeedbackForm").serialize());
-        $teamfeedbackSurvey.hide();
-        $holdingPage.show();
-        $("#teamfeedbackForm")[0].reset();
-        socket.emit("next event");
-    });
     //update waiting page with number of workers that must join until task can start
     socket.on("update number waiting", function (data) {
         usersWaiting.innerText = data.num;
     });
     socket.on("finished", function (data) {
         socket.emit("log", "SOCKET DISCONNECT ON FINISHED: " + data.finishingcode);
-        HandleFinish((finishingMessage = data.message), (mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit"), (assignmentId = mturkVariables.assignmentId), (finishingcode = data.finishingCode));
+        HandleFinish(data.message, mturkVariables.turkSubmitTo + "/mturk/externalSubmit", mturkVariables.assignmentId, data.finishingCode);
         LeavingAlert = false;
         // socket.disconnect(true);
     });
-    $("#mturk_form").submit(function (event) {
+    $("#mturk_form").submit(function () {
         socket.emit("mturk_formSubmit", $("#mturk_form").serialize());
     });
-    // socket.on('disconnect', function () {
-    //     $disconnectedMessage.show();
-    //     HandleFinish(
-    //         finishingMessage = "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
-    //         mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
-    //         assignmentId = mturkVariables.assignmentId,
-    //         finishingcode = "LeftHit")
-    // });
 });
 function startTimer(duration, display) {
-    var timer = duration, minutes, seconds;
+    var timer = duration;
     var interval = setInterval(function () {
-        var minutes = parseInt(timer / 60, 10);
-        var seconds = parseInt(timer % 60, 10);
-        minutes = minutes < 10 ? "0" + minutes : minutes;
-        seconds = seconds < 10 ? "0" + seconds : seconds;
-        display.html("Time: " + minutes + ":" + seconds);
+        var minutes = parseInt(String(timer / 60), 10);
+        var seconds = parseInt(String(timer % 60), 10);
+        var minutesString = minutes < 10 ? "0" + minutes : minutes;
+        var secondsString = seconds < 10 ? "0" + seconds : seconds;
+        display.html("Time: " + minutesString + ": " + secondsString);
         if (--timer < 0) {
             clearInterval(interval);
             display.html("");
@@ -985,7 +880,11 @@ function turkGetParam(name, defaultValue, uri) {
     }
 }
 var getUrlVars = function (url) {
-    var myJson = {};
+    var myJson = {
+        workerId: "",
+        turkSubmitTo: "",
+        assignmentId: ""
+    };
     url
         .slice(url.indexOf("?") + 1)
         .split("&")

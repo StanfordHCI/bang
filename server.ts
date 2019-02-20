@@ -42,7 +42,6 @@ const midSurveyOn = runningLive;
 const blacklistOn = false;
 const teamfeedbackOn = false;
 const checkinOn = false;
-const timeCheckOn = false; // tracks time user spends on task and updates payment - also tracks
 // how long each task is taking
 const requiredOn = runningLive;
 const checkinIntervalMinutes = roundMinutes / 3;
@@ -249,9 +248,9 @@ if (!fs.existsSync(debugDir)) {
   fs.mkdirSync(debugDir);
 }
 
-let log_file = debugDir + "debug" + Date.now() + ".log";
+let log_file = `${debugDir}debug ${Date.now()}.log`;
 console.log = function(...msg) {
-  msg.unshift("[" + new Date().toISOString() + "]");
+  msg.unshift(`[${new Date().toISOString()}]`);
   trueLog(
     msg
       .map(item => {
@@ -610,8 +609,7 @@ const tasks = randomTaskOrder ? shuffle(taskSet) : taskSet;
 let users = []; //the main local user storage
 let userPool = []; //accumulates users pre-experiment
 let waitchatStart = 0;
-let currentRound = 0; //PK: talk about 0-indexed v 1-indexed round numbers (note: if change -> change parts
-// of code reliant on 0-indexed round num)
+let currentRound = 0;
 let startTime = 0;
 let userAcquisitionStage = true;
 let experimentOver = false;
@@ -1057,31 +1055,24 @@ io.on("connection", socket => {
           mturk.unassignQuals(
             u,
             mturk.quals.willBang,
-            "This qualification is used to qualify a user to " +
-              "participate in our HIT. We only allow one participation per user, so that is why we are " +
-              "removing this qualification. Thank you!"
+            `This qualification is used to qualify a user to participate in our HIT. We only allow one participation per user, so that is why we are removing this qualification. Thank you!`
           );
           db.willBang.remove({ id: u }, { multi: true }, function(
             err,
             numRemoved
           ) {
             if (err) console.log("Error removing from db.willBang: ", err);
-            else
-              console.log(u + " REMOVED FROM WILLBANG DB (" + numRemoved + ")");
+            else console.log(`${u} REMOVED FROM WILLBANG DB (${numRemoved})`);
           });
         });
       }
       if (notifyUs) {
         mturk.notifyWorkers(
           [notifyUsMturkID],
-          "Rolled " + currentCondition + " on " + taskURL.hostname,
-          "Rolled over with: " +
-            currentCondition +
-            " on port " +
-            port +
-            " at " +
-            taskURL.hostname +
-            "."
+          `Rolled ${currentCondition} on ${taskURL.hostname}`,
+          `Rolled over with: ${currentCondition} on port ${port} at ${
+            taskURL.hostname
+          }.`
         );
       }
       userAcquisitionStage = false;
@@ -1089,9 +1080,7 @@ io.on("connection", socket => {
     }
 
     db.users.insert(newUser, (err, _usersAdded) => {
-      console.log(
-        err ? "Didn't store user: " + err : "Added " + newUser.name + " to DB."
-      );
+      console.log(err ? `users DB error: ${err}` : `Stored ${newUser.name}`);
     });
 
     //PK: need to emit login to each? or can we delete login fxn in client if no longer in use (login sets
@@ -1229,7 +1218,7 @@ io.on("connection", socket => {
 
       // update DB with change
       updateUserInDB(user, "connected", false);
-      console.log(socket.username + ": " + user.mturkId + " HAS LEFT");
+      console.log(`${socket.username}: ${user.mturkId} HAS LEFT`);
       // if (!experimentOver && !debugMode) {
       //     mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our" +
       //         " HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com"
@@ -1240,7 +1229,7 @@ io.on("connection", socket => {
         // console.log("Sudden death is off, so we will not cancel the run")
       }
 
-      console.log("Connected users: " + getUsersConnected().length);
+      console.log(`Connected users: ${getUsersConnected().length}`);
       //if things don't work look at this part of the code?
       if (!experimentOver && suddenDeath && experimentStarted) {
         storeHIT();
@@ -1252,17 +1241,6 @@ io.on("connection", socket => {
 
           console.log("User left, emitting cancel to all users");
           let totalTime = getSecondsPassed();
-
-          if (timeCheckOn) {
-            db.time.insert({ totalTaskTime: totalTime }, (err, timeAdded) => {
-              if (err)
-                console.log(
-                  "There's a problem adding total time to the DB: ",
-                  err
-                );
-              else if (timeAdded) console.log("Total time added to the DB");
-            });
-          }
 
           users
             .filter(u => u.mturkId !== socket.mturkId)
@@ -1382,16 +1360,16 @@ io.on("connection", socket => {
         );
       }
 
-      const currentActivity = user.eventSchedule[user.currentEvent];
+      user["currentActivity"] = user.eventSchedule[user.currentEvent];
       console.log(
-        `Event ${user.currentEvent} of ${
-          user.eventSchedule.length
-        }: ${currentActivity}`
+        `Event ${user.currentEvent} of ${user.eventSchedule.length}: ${
+          user.currentActivity
+        }`
       );
 
-      if (currentActivity === "starterSurvey") {
-        loadActivity(currentActivity);
-      } else if (currentActivity === "ready") {
+      if (user.currentActivity === "starterSurvey") {
+        loadActivity(user.currentActivity);
+      } else if (user.currentActivity === "ready") {
         if (checkinOn) loadActivity("checkin", true, true);
         loadActivity("leave-hit", true, true);
         ioEmitById(socket.mturkId, "echo", "ready", socket, user);
@@ -1401,12 +1379,12 @@ io.on("connection", socket => {
           "qFifteen",
           "qSixteen",
           "manipulationCheck"
-        ].includes(currentActivity)
+        ].includes(user.currentActivity)
       ) {
         experimentOver = true;
-        loadActivity(currentActivity, false, false);
+        loadActivity(user.currentActivity, false, false);
       } else if (
-        currentActivity === "finished" ||
+        user.currentActivity === "finished" ||
         user.currentEvent > user.eventSchedule.length
       ) {
         if (!batchCompleteUpdated) {
@@ -1447,7 +1425,7 @@ io.on("connection", socket => {
           socket,
           user
         );
-      } else loadActivity(currentActivity);
+      } else loadActivity(user.currentActivity);
       user.currentEvent += 1;
     });
   });
@@ -1731,89 +1709,14 @@ io.on("connection", socket => {
     );
   });
 
-  // Starter task
-  socket.on("starterSurveySubmit", data => {
+  // Store data for all surveys
+  socket.on("submit", data => {
     useUser(socket, user => {
-      user.results.starterCheck = parseResults(data);
-      updateUserInDB(user, "results.starterCheck", user.results.starterCheck);
-    });
-  });
-
-  socket.on("midSurveySubmit", data => {
-    useUser(socket, user => {
-      user.results.viabilityCheck[currentRound] = parseResults(data);
-      updateUserInDB(
-        user,
-        "results.viabilityCheck",
-        user.results.viabilityCheck
-      );
-    });
-  });
-
-  socket.on("psychologicalSafetySubmit", data => {
-    useUser(socket, user => {
-      user.results.psychologicalSafety[currentRound] = parseResults(data);
-      updateUserInDB(
-        user,
-        "results.psychologicalSafety",
-        user.results.psychologicalSafety
-      );
-    });
-  });
-
-  socket.on("teamfeedbackSurveySubmit", data => {
-    useUser(socket, user => {
-      user.results.teamfeedback[currentRound] = parseResults(data);
-      updateUserInDB(user, "results.teamfeedback", user.results.teamfeedback);
-    });
-  });
-
-  socket.on("mturk_formSubmit", data => {
-    useUser(socket, user => {
-      user.results.engagementFeedback = parseResults(data);
-      updateUserInDB(
-        user,
-        "results.engagementFeedback",
-        user.results.engagementFeedback
-      );
-    });
-  });
-
-  socket.on("qFifteenSubmit", data => {
-    useUser(socket, user => {
-      user.results.qFifteenCheck = parseResults(data);
-      updateUserInDB(user, "results.qFifteenCheck", user.results.qFifteenCheck);
-    });
-  });
-
-  socket.on("qSixteenSubmit", data => {
-    useUser(socket, user => {
-      user.results.qSixteenCheck = parseResults(data);
-      updateUserInDB(user, "results.qSixteenCheck", user.results.qSixteenCheck);
-    });
-  });
-
-  socket.on("manipulationCheckSubmit", data => {
-    useUser(socket, user => {
-      user.results.manipulation = postSurveyGenerator(user).correctAnswer;
-      updateUserInDB(user, "results.manipulation", user.results.manipulation);
-      user.results.manipulationCheck = parseResults(data);
-      updateUserInDB(
-        user,
-        "results.manipulationCheck",
-        user.results.manipulationCheck
-      );
-    });
-  });
-
-  socket.on("blacklistSurveySubmit", data => {
-    useUser(socket, user => {
-      user.results.blacklistCheck = parseResults(data);
-      updateUserInDB(
-        user,
-        "results.blacklistCheck",
-        user.results.blacklistCheck
-      );
+      const structuredResults = parseResults(data);
+      const activity = user.currentActivity;
+      if (experimentOver) user.results[activity] = structuredResults;
+      else user.results[activity][currentRound] = structuredResults;
+      updateUserInDB(user, `results.${activity}`, user.results[activity]);
     });
   });
 
@@ -1956,28 +1859,13 @@ function getSecondsPassed() {
 }
 
 function replicate(subArray: any[], times: number) {
-  let subArraySize = subArray.length,
-    repeatedArraySize = subArraySize * times,
-    resultingArray = new Array(repeatedArraySize);
+  const subArraySize = subArray.length;
+  const repeatedArraySize = subArraySize * times;
+  const resultingArray = new Array(repeatedArraySize);
   for (let i = 0; i < repeatedArraySize; i++)
     resultingArray[i] = subArray[i % subArraySize];
   return resultingArray;
 }
-
-//PK: we call this fxn many times, is it necessary?
-//PK: why do we need to record the length of each task? if this is for bonusing, can we avoid calling this
-// fxn so many times and just do once when the exp ends?
-// records length of each task
-const recordTime = event => {
-  taskEndTime = getSecondsPassed();
-  taskTime = taskStartTime - taskEndTime;
-  db.time.insert({ [event]: taskTime }, (err, timeAdded) => {
-    if (err)
-      console.log("There's a problem adding", event, "time to the DB: ", err);
-    else if (timeAdded) console.log(event, "time added to the DB");
-  });
-  taskStartTime = getSecondsPassed();
-};
 
 const getTeamMembers = user => {
   // Makes a list of teams this user has worked with
