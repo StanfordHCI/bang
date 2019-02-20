@@ -91,7 +91,6 @@ $(function() {
           <label for="{{question.name}}-{{index+1}}" class="rb-tab">
             <input v-bind:type="question.answerType" name="{{question.name}}" id="{{question.name}}-{{index+1}}"
             v-bind:value="question.textValue ? answer : index + 1" v-bind:required="question.required ? true : false"/>
-            <!-- <span class='rb-spot'>{{index+1}}</span> -->
             <label for='{{question.name}}-{{index+1}}'>{{answer}}</label>
           </label>
         </template>
@@ -505,6 +504,33 @@ $(function() {
     $("#midFormStatus")[0].reset();
   });
 
+  $("#creativeForm").submit(event => {
+    event.preventDefault(); //stops page reloading
+    socket.emit("creativeSurveySubmit", $("#creativeSurvey").serialize()); //submits results alone
+    socket.emit("next event");
+    $creativeSurvey.hide();
+    $holdingPage.show();
+    $("#creativeForm")[0].reset();
+  });
+
+  $("#satisfactionForm").submit(event => {
+    event.preventDefault(); //stops page reloading
+    socket.emit("satisfactionSurveySubmit", $("#satisfactionSurvey").serialize()); //submits results alone
+    socket.emit("next event");
+    $satisfactionSurvey.hide();
+    $holdingPage.show();
+    $("#satisfactionForm")[0].reset();
+  });
+
+  $("#conflictForm").submit(event => {
+    event.preventDefault(); //stops page reloading
+    socket.emit("conflictSurveySubmit", $("#conflictSurvey").serialize()); //submits results alone
+    socket.emit("next event");
+    $conflictSurvey.hide();
+    $holdingPage.show();
+    $("#conflictForm")[0].reset();
+  });
+
   $("#psychologicalSafety").submit(event => {
     event.preventDefault(); //stops page reloading
     socket.emit(
@@ -533,6 +559,15 @@ $(function() {
     $qSixteen.hide();
     $holdingPage.show();
     $("#qSixteenForm")[0].reset();
+  });
+
+  $("#demographicsForm").submit(event => {
+    event.preventDefault(); //stops page reloading
+    socket.emit("demographicsSurveySubmit", $("#demographicsSurvey").serialize()); //submits results alone
+    socket.emit("next event");
+    $demographicsSurvey.hide();
+    $holdingPage.show();
+    $("#demographicsForm")[0].reset();
   });
 
   $leaveHitButton.click(event => {
@@ -795,7 +830,7 @@ $(function() {
         "<strong>DO NOT REFRESH OR LEAVE THE PAGE. If you do, it will terminate the task for your team members and you will not be compensated.</strong>"
       );
       log(
-        "You will receive the bonus pay at the stated hourly rate only after you complete all rounds and fill out all survey questions."
+        "You will receive the bonus pay at the stated hourly rate <strong>only if you complete all rounds and fill out all survey questions.</strong>"
       );
       log(
         "The entire HIT will take no more than " +
@@ -1122,34 +1157,6 @@ $(function() {
     //watches form element
     event.preventDefault(); //stops page reloading
     socket.emit("postSurveySubmit", $("#postForm").serialize()); //submits results alone
-    socket.emit("next event");
-  });
-
-  $("#demographicsForm").submit(event => {
-    //watches form element
-    event.preventDefault(); //stops page reloading
-    socket.emit("demographicsSurveySubmit", $("#demographicsForm").serialize()); //submits results alone
-    socket.emit("next event");
-  });
-
-  $("#creativeForm").submit(event => {
-    //watches form element
-    event.preventDefault(); //stops page reloading
-    socket.emit("creativeSurveySubmit", $("#creativeForm").serialize()); //submits results alone
-    socket.emit("next event");
-  });
-
-  $("#conflictForm").submit(event => {
-    //watches form element
-    event.preventDefault(); //stops page reloading
-    socket.emit("conflictSurveySubmit", $("#conflictForm").serialize()); //submits results alone
-    socket.emit("next event");
-  });
-
-  $("#satisfactionForm").submit(event => {
-    //watches form element
-    event.preventDefault(); //stops page reloading
-    socket.emit("satisfactionSurveySubmit", $("#satisfactionForm").serialize()); //submits results alone
     socket.emit("next event");
   });
 

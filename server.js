@@ -35,12 +35,12 @@ const randomCondition = false;
 const randomRoundOrder = true;
 const randomProduct = true;
 
-const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
-const midSurveyOn = true;
-const midSurveyStatusOn = true;
+const midSurveyOn = false;
+const midSurveyStatusOn = true; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const creativeSurveyOn = true;
 const satisfactionSurveyOn = true;
 const conflictSurveyOn = true;
@@ -51,9 +51,9 @@ const timeCheckOn = false; // tracks time user spends on task and updates paymen
 // how long each task is taking
 const requiredOn = runningLive;
 const checkinIntervalMinutes = roundMinutes / 3;
-const qFifteenOn = true;
-const qSixteenOn = true;
-const postSurveyOn = true;
+const qFifteenOn = false;
+const qSixteenOn = false;
+const postSurveyOn = false;
 const demographicsSurveyOn = true;
 
 //Testing toggles
@@ -100,25 +100,31 @@ const answers = {
 };
 
 const scale7 = {
-  answers: ["Not at all - 1", "2", "3", "4", "5", "6","Highly - 7"],
+  answers: ["1 (Not at all)", "2", "3", "4", "5", "6","7 (Highly)"],
+  answerType: "radio",
+  textValue: true
+}
+
+const scale7A = {
+  answers: ["1 (Disagree Strongly)", "2", "3", "4", "5", "6","7 (Agree Strongly)"],
   answerType: "radio",
   textValue: true
 }
 
 const scale5Q = {
-  answers: ["Not at all", "Slightly", "Moderately", "Quite a lot", "Highly"],
+  answers: ["1 (Not at all)", "2", "3", "4", "5 (Highly)"],
   answerType: "radio",
   textValue: true
 }
 
 const scale5 = {
-  answers: ["None", "A little", "Some", "Quite a bit", "A Lot"],
+  answers: ["1 (None)", "2", "3", "4", "5 (A lot)"],
   answerType: "radio",
   textValue: true
 }
 
 const face = {
-  answers: [":D", ":)", ":|", ":(", "D:"],
+  answers: ["D:", "]:", "|:", "[:", ":D"],
   answerType: "radio",
   textValue: true
 }
@@ -725,13 +731,13 @@ if (midSurveyStatusOn) {
   roundSchedule.push("midSurveyStatus");
 }
 if (creativeSurveyOn) {
-  eventSchedule.push("creativeSurvey");
+  roundSchedule.push("creativeSurvey");
 }
 if (satisfactionSurveyOn) {
-  eventSchedule.push("satisfactionSurvey");
+  roundSchedule.push("satisfactionSurvey");
 }
 if (conflictSurveyOn) {
-  eventSchedule.push("conflictSurvey");
+  roundSchedule.push("conflictSurvey");
 }
 if (psychologicalSafetyOn) {
   roundSchedule.push("psychologicalSafety");
@@ -1020,8 +1026,9 @@ io.on("connection", socket => {
 
     if (waitChatOn) updateUsersActive();
     const usersActive = getPoolUsersActive();
+    const usersConnected = getPoolUsersConnected();
     console.log("Users active: " + usersActive.length);
-    console.log("Users connected: " + getPoolUsersConnected().length);
+    console.log("Users connected: " + usersConnected.length);
     console.log("Users in pool: " + userPool.length);
     let numUsersWanted = extraRoundOn
       ? teamSize ** 2 + teamSize
@@ -1077,7 +1084,7 @@ io.on("connection", socket => {
         }
       }
     } else {
-      // waitchat off
+      // waitchat off - I think the below should be usersConnected instead of usersActive as inactive users aren't being made active
       if (usersActive.length >= numUsersWanted) {
         // io.sockets.emit('update number waiting', {num: 0});
         ioSocketsEmit("update number waiting", { num: 0 });
@@ -1615,7 +1622,7 @@ io.on("connection", socket => {
           "load",
           {
             element: "midSurveyStatus",
-            questions: loadQuestions(midSurveyStatusFile),
+            questions: loadQuestions(midSurveyStatusFile, user),
             interstitial: false,
             showHeaderBar: true
           },
@@ -2351,7 +2358,6 @@ io.on("connection", socket => {
     });
   });
 
-  // Task after each round - midSurvey - MAIKA
   socket.on("midSurveySubmit", data => {
     useUser(socket, user => {
       user.results.viabilityCheck[currentRound] = parseResults(data);
@@ -2406,6 +2412,7 @@ io.on("connection", socket => {
       );
     });
   });
+
   socket.on("psychologicalSafetySubmit", data => {
     useUser(socket, user => {
       user.results.psychologicalSafety[currentRound] = parseResults(data);
@@ -2535,10 +2542,29 @@ io.on("connection", socket => {
         } else if (answerTag === "YN15") {
           // yes no
           answerObj = binaryAnswers;
-	  teamIndex = [0,1,0,2,0,3,0,4,0,5,0][i]
-          if (teamIndex === 0) throw "NY15 answers reporting teams incorrectly"
+	        teamIndex = [0,1,0,2,0,3,0,4,0,5,0][i]
+          if (teamIndex === 0) throw "YN15 answers reporting teams incorrectly"
+          // else 
           let team = getTeamMembers(user)[teamIndex - 1];
           questionObj["question"] += ` Team  ${teamIndex} (${team}).`;
+        } else if (answerTag === "STAT") {
+          // append question and answers with team member name
+          
+          let teams = getTeamMembersArray(user);
+          console.log(teams);
+          if (teamSize !== 4) throw "Not enough team members for survey format"
+          
+          let lastTeam = teams[teams.length - 1].split(" "); // splits string into array
+          lastTeam.pop(); // removes empty last element
+          console.log(lastTeam);
+          console.log(lastTeam.length);
+
+          answerObj = scale7A;
+          
+          let member = (i - 1) % 5;
+          if (member != 0) {
+              questionObj["question"] = `${lastTeam[member-1]}` + questionObj["question"];
+          }
         } else if (answerTag === "TR") {
           //team radio
           getTeamMembers(user).forEach((team, index) => {
@@ -2705,6 +2731,33 @@ const getTeamMembers = user => {
         name +
         (pIndex === 0 ? "" : pIndex + 1 === pArr.length ? " and " : ", ") +
         total
+      );
+    }, "")
+  );
+};
+
+const getTeamMembersArray = user => {
+  // Makes a list of teams this user has worked with
+  const roomTeams = user.rooms.map((room, rIndex) => {
+    return users.filter(user => user.rooms[rIndex] === room);
+  });
+
+  // Makes a human friendly string for each team with things like 'you' for the current user,
+  // commas and 'and' before the last name.
+  return roomTeams.map((team, tIndex) =>
+    team.reduce((total, current) => {
+      const friend = user.friends.find(
+        friend => friend.mturkId === current.mturkId
+      );
+      let name =
+        experimentRound === tIndex && currentCondition === "treatment"
+          ? friend.tAlias
+          : friend.alias;
+      if (name === user.name) {
+        name = "you";
+      }
+      return (
+        total.concat(name + " ")
       );
     }, "")
   );
