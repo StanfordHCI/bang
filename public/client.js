@@ -29,7 +29,7 @@ $(function() {
   let colorAssignment = [];
 
   //toggles
-  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -506,7 +506,7 @@ $(function() {
 
   $("#creativeForm").submit(event => {
     event.preventDefault(); //stops page reloading
-    socket.emit("creativeSurveySubmit", $("#creativeSurvey").serialize()); //submits results alone
+    socket.emit("creativeSurveySubmit", $("#creativeForm").serialize()); //submits results alone
     socket.emit("next event");
     $creativeSurvey.hide();
     $holdingPage.show();
@@ -515,7 +515,7 @@ $(function() {
 
   $("#satisfactionForm").submit(event => {
     event.preventDefault(); //stops page reloading
-    socket.emit("satisfactionSurveySubmit", $("#satisfactionSurvey").serialize()); //submits results alone
+    socket.emit("satisfactionSurveySubmit", $("#satisfactionForm").serialize()); //submits results alone
     socket.emit("next event");
     $satisfactionSurvey.hide();
     $holdingPage.show();
@@ -524,7 +524,7 @@ $(function() {
 
   $("#conflictForm").submit(event => {
     event.preventDefault(); //stops page reloading
-    socket.emit("conflictSurveySubmit", $("#conflictSurvey").serialize()); //submits results alone
+    socket.emit("conflictSurveySubmit", $("#conflictForm").serialize()); //submits results alone
     socket.emit("next event");
     $conflictSurvey.hide();
     $holdingPage.show();
