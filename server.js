@@ -2412,7 +2412,6 @@ io.on("connection", socket => {
       );
     });
   });
-
   socket.on("psychologicalSafetySubmit", data => {
     useUser(socket, user => {
       user.results.psychologicalSafety[currentRound] = parseResults(data);
