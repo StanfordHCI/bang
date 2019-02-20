@@ -110,7 +110,7 @@
     <li id="preSurvey" class="login page">
       <div class="form">
         Please answer the following questions to get started.
-        <ul class="postSurveyQuestions"></ul>
+        <ul class="manipulationCheckQuestions"></ul>
       </div>
     </li>
 
@@ -151,9 +151,9 @@
     </form>
   </li>
 
-    <li id="postSurvey" class="login page">
+    <li id="manipulationCheck" class="login page">
       <form id="postForm">
-        <div id="postSurvey-questions" class='survey-questions'>
+        <div id="manipulationCheck-questions" class='survey-questions'>
           <question-component v-for="question in questions" :question="question" />
         </div>
        <input type="submit" value="Submit">

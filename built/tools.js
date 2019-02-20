@@ -50,7 +50,6 @@ var createTeams = function (teamSize, numRounds, people) {
     realPeople.forEach(function (person) {
         collaborators[person] = [person];
     });
-    console.log(realPeople);
     while (roundTeams.length < numRounds) {
         var unUsedPeople = realPeople.slice();
         var teams = {};

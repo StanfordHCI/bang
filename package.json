@@ -22,7 +22,7 @@
     "moment": "^2.23.0",
     "mustache": "^2.3.2",
     "nedb": "^1.8.0",
-    "npm": "^6.6.0",
+    "npm": "^6.8.0",
     "scp": "0.0.3",
     "socket.io": "^2.2.0",
     "tslint": "^5.12.1",
@@ -38,7 +38,7 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "aws-sdk": "^2.401.0",
+    "aws-sdk": "^2.404.0",
     "prettier": "1.15.3"
   },
   "repository": {

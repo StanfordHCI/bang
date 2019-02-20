@@ -56,7 +56,7 @@ $(function() {
   const $starterSurvey = $("#starterSurvey"); // The starterSurvey page
   const $midSurvey = $("#midSurvey"); // the midSurvey page
   const $psychologicalSafety = $("#psychologicalSafety"); // the psych safety page
-  const $postSurvey = $("#postSurvey"); // The postSurvey page
+  const $manipulationCheck = $("#manipulationCheck"); // The manipulationCheck page
   const $blacklistSurvey = $("#blacklistSurvey"); // The blacklist page
   const $qFifteen = $("#qFifteen"); // The question fifteen page
   const $qSixteen = $("#qSixteen"); // The question fifteen page
@@ -109,7 +109,7 @@ $(function() {
     $starterSurvey.hide();
     $midSurvey.hide();
     $psychologicalSafety.hide();
-    $postSurvey.hide();
+    $manipulationCheck.hide();
     $blacklistSurvey.hide();
     $teamfeedbackSurvey.hide();
     $finishingPage.hide();
@@ -144,7 +144,7 @@ $(function() {
   const $midSurveyQuestions = $(".midSurveyQuestions"); // mid survey
   const $qFifteenQuestions = $(".qFifteenQuestions"); // Question Fifteen
   const $qSixteenQuestions = $(".qFifteenQuestions"); // Question Fifteen
-  const $postSurveyQuestions = $(".postSurveyQuestions"); //post survey
+  const $manipulationCheckQuestions = $(".manipulationCheckQuestions"); //post survey
 
   const socket = io({ transports: ["websocket"] });
 
@@ -1090,7 +1090,7 @@ $(function() {
   $("#postForm").submit(event => {
     //watches form element
     event.preventDefault(); //stops page reloading
-    socket.emit("postSurveySubmit", $("#postForm").serialize()); //submits results alone
+    socket.emit("manipulationCheckSubmit", $("#postForm").serialize()); //submits results alone
     socket.emit("next event");
   });
 

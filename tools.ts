@@ -56,8 +56,6 @@ const createTeams = (teamSize: number, numRounds: number, people: string[]) => {
     collaborators[person] = [person];
   });
 
-  console.log(realPeople);
-
   while (roundTeams.length < numRounds) {
     let unUsedPeople = realPeople.slice();
     let teams = {};

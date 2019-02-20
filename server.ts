@@ -15,9 +15,7 @@ const runningLocal = process.env.RUNNING_LOCAL === "TRUE";
 const runningLive = process.env.RUNNING_LIVE === "TRUE";
 const teamSize = parseInt(process.env.TEAM_SIZE);
 const roundMinutes = parseFloat(process.env.ROUND_MINUTES);
-const taskURL = String(args.url) || process.env.TASK_URL;
-// MEW: new URL type was not working in the JS so temporerally removed. This means the variable is just a stirng for now.
-// const taskURL = new URL(String(args.url)) || new URL(process.env.TASK_URL)
+const taskURL = new URL(String(args.url || process.env.TASK_URL));
 
 const runExperimentNow = true;
 const runViaEmailOn = false;
@@ -106,9 +104,9 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 const io = require("socket.io")(server); //, {transports: ['websocket']}
 // MEW: args.port does returns unknown, so it must be coerced into string, then int.
-const port = parseInt(String(args.port)) || parseInt(process.env.PORT) || 3000;
+const port = parseInt(String(args.port || process.env.PORT || 3000));
 server.listen(port, () => {
-  console.log("Server listening at port", port);
+  console.log(`Server listening at ${taskURL.hostname}:${port}.`);
 });
 
 function authenticate(user) {
@@ -137,14 +135,7 @@ app.get("/test", (_req, res) => {
   let hitId = String(Date.now() / 5);
   let submitTo = "https%3A%2F%2Fworkersandbox.mturk.com";
   res.redirect(
-    "/?assignmentId=" +
-      assignmentId +
-      "&hitId=" +
-      hitId +
-      "&workerId=" +
-      workerId +
-      "&turkSubmitTo=" +
-      submitTo
+    `/?assignmentId=${assignmentId}&hitId=${hitId}&workerId=${workerId}&turkSubmitTo=${submitTo}`
   );
 });
 
@@ -241,7 +232,10 @@ function useUser(socket, callback, err = "Guarded against undefined user") {
 // Check balance
 mturk.getBalance(balance => {
   if (runningLive && balance <= 400) {
-	  mturk.notifyWorkers([notifyUsMturkID], `ADD MORE FUNDS to MTURK! We have only $${balance}.`);
+    mturk.notifyWorkers(
+      [notifyUsMturkID],
+      `ADD MORE FUNDS to MTURK! We have only $${balance}.`
+    );
     console.log(chalk.red.inverse.bold("\n!!! BROKE !!!\n"));
   }
 });
@@ -628,22 +622,20 @@ let taskStartTime = getSecondsPassed(); // reset for each start of new task
 let taskEndTime = 0;
 let taskTime = 0;
 
-// Building task list
+// Load task file and create schedule
+const taskFile = String(args.task || process.env.TASK_FILE);
+const taskJSON = JSON.parse(fs.readFileSync(taskFile, "utf8"));
+console.log(
+  `Tasks loaded from: ${chalk.green.inverse(taskFile)}:
+	${JSON.stringify(taskJSON, null, 2)}`
+);
 let eventSchedule = [];
-if (starterSurveyOn) eventSchedule.push("starterSurvey");
-let roundSchedule = [];
-roundSchedule.push("ready");
-if (midSurveyOn) roundSchedule.push("midSurvey");
-if (psychologicalSafetyOn) roundSchedule.push("psychologicalSafety");
-if (teamfeedbackOn) roundSchedule.push("teamfeedbackSurvey");
-roundSchedule = replicate(roundSchedule, numRounds);
-eventSchedule = eventSchedule.concat(roundSchedule);
-if (blacklistOn) eventSchedule.push("blacklistSurvey");
-if (qFifteenOn) eventSchedule.push("qFifteen");
-if (qSixteenOn) eventSchedule.push("qSixteen");
-eventSchedule.push("postSurvey");
+taskJSON.forEach(task => {
+  if (typeof task === "string") eventSchedule.push(task);
+  else
+    eventSchedule = eventSchedule.concat(replicate(task.subTasks, task.times));
+});
 eventSchedule.push("finished");
-console.log("This batch will include:", eventSchedule);
 
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -678,6 +670,7 @@ db.batch.insert(
     experimentRound: experimentRound,
     numRounds: numRounds,
     tasks: tasks,
+    taskJSON: taskJSON,
     teamSize: teamSize
   },
   (err, usersAdded) => {
@@ -1081,13 +1074,13 @@ io.on("connection", socket => {
       if (notifyUs) {
         mturk.notifyWorkers(
           [notifyUsMturkID],
-          "Rolled " + currentCondition + " on " + taskURL,
+          "Rolled " + currentCondition + " on " + taskURL.hostname,
           "Rolled over with: " +
             currentCondition +
             " on port " +
             port +
             " at " +
-            taskURL +
+            taskURL.hostname +
             "."
         );
       }
@@ -1154,13 +1147,7 @@ io.on("connection", socket => {
         (err, _chatsAdded) => {
           if (err) console.log("Error storing message:", err);
           else
-            console.log(
-              "Message in",
-              user.room,
-              "from",
-              user.name + ":",
-              cleanMessage
-            );
+            console.log(`${user.room}: ${user.mturkId} says: ${cleanMessage}`);
         }
       );
       users
@@ -1189,6 +1176,7 @@ io.on("connection", socket => {
 
   socket.on("load bot qs", () => {
     useUser(socket, user => {
+      console.log(chalk.inverse.red("Loading bot questions"));
       ioEmitById(
         socket.mturkId,
         "chatbot",
@@ -1203,14 +1191,7 @@ io.on("connection", socket => {
   socket.on("disconnect", function(reason) {
     // changes connected to false if disconnected user in userPool
     console.log(
-      chalk.red(
-        "[" +
-          new Date().toISOString() +
-          "]: Disconnecting socket: " +
-          socket.id +
-          " because " +
-          reason
-      )
+      chalk.red(`Disconnecting socket: ${socket.id} because ${reason}`)
     );
     if (reason === "transport error") {
       //console.log(socket);
@@ -1338,13 +1319,7 @@ io.on("connection", socket => {
     let URL = "";
     mturk.getHITURL(HITId, function(url) {
       URL = url;
-      let message =
-        "You’re invited to join our newly launched HIT on Mturk; there are limited spaces " +
-        "and it will be closed to new participants in about 15 minutes!  Check out the HIT here: " +
-        URL +
-        " \n\nYou're receiving this message because you you indicated that you'd like to be notified of our " +
-        "upcoming HIT during this time window. If you'd like to stop receiving notifications please email " +
-        "your MTurk ID to: scaledhumanity@gmail.com";
+      let message = `You’re invited to join our newly launched HIT on Mturk; there are limited spaces and it will be closed to new participants in about 15 minutes! Check out the HIT here: ${URL}\n\nYou're receiving this message because you you indicated that you'd like to be notified of our upcoming HIT during this time window. If you'd like to stop receiving notifications please email your MTurk ID to: scaledhumanity@gmail.com`;
       console.log("message to willBangers", message);
       if (!URL) {
         throw "URL not defined";
@@ -1377,8 +1352,7 @@ io.on("connection", socket => {
     console.log(chalk.red("god is angry"));
     users.forEach(() => updateUserInDB(socket, "bonus", currentBonus()));
     ioSocketsEmit("finished", {
-      message:
-        "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
+      message: `We have had to cancel the rest of the task. Submit and you will be bonused for your time.`,
       finishingCode: "kill-all",
       turkSubmitTo: "",
       assignmentId: "",
@@ -1388,223 +1362,52 @@ io.on("connection", socket => {
 
   socket.on("next event", _data => {
     useUser(socket, user => {
-      let currentEvent = user.currentEvent;
-      let eventSchedule = user.eventSchedule;
+      function loadActivity(
+        event: string,
+        headerOn = true,
+        interstitialOn = false
+      ) {
+        console.log(user, socket.mturkID);
+        ioEmitById(
+          socket.mturkId,
+          "load",
+          {
+            element: event,
+            questions: loadQuestions(event, user),
+            interstitial: interstitialOn,
+            showHeaderBar: headerOn
+          },
+          socket,
+          user
+        );
+      }
+
+      const currentActivity = user.eventSchedule[user.currentEvent];
       console.log(
-        "Event " +
-          currentEvent +
-          ": " +
-          eventSchedule[currentEvent] +
-          " | User: " +
-          user.name
+        `Event ${user.currentEvent} of ${
+          user.eventSchedule.length
+        }: ${currentActivity}`
       );
 
-      if (eventSchedule[currentEvent] === "starterSurvey") {
-        ioEmitById(
-          socket.mturkId,
-          "load",
-          {
-            element: "starterSurvey",
-            questions: loadQuestions("startersurvey-q"),
-            interstitial: false,
-            showHeaderBar: false
-          },
-          socket,
-          user
-        );
-        taskStartTime = getSecondsPassed();
-      } else if (eventSchedule[currentEvent] === "ready") {
-        if (starterSurveyOn && timeCheckOn) {
-          recordTime("starterSurvey");
-        }
-        if (checkinOn) {
-          ioEmitById(
-            socket.mturkId,
-            "load",
-            {
-              element: "checkin",
-              questions: loadQuestions("checkin-q"),
-              interstitial: true,
-              showHeaderBar: true
-            },
-            socket,
-            user
-          );
-        }
-        ioEmitById(
-          socket.mturkId,
-          "load",
-          {
-            element: "leave-hit",
-            questions: loadQuestions("leave-hit-q"),
-            interstitial: true,
-            showHeaderBar: true
-          },
-          socket,
-          user
-        );
+      if (currentActivity === "starterSurvey") {
+        loadActivity(currentActivity);
+      } else if (currentActivity === "ready") {
+        if (checkinOn) loadActivity("checkin", true, true);
+        loadActivity("leave-hit", true, true);
         ioEmitById(socket.mturkId, "echo", "ready", socket, user);
-      } else if (eventSchedule[currentEvent] === "midSurvey") {
-        if (timeCheckOn) {
-          recordTime("round");
-        }
-        ioEmitById(
-          socket.mturkId,
-          "load",
-          {
-            element: "midSurvey",
-            questions: loadQuestions("midsurvey-q"),
-            interstitial: false,
-            showHeaderBar: true
-          },
-          socket,
-          user
-        );
-      } else if (eventSchedule[currentEvent] === "psychologicalSafety") {
-        if (timeCheckOn) {
-          recordTime("round");
-        }
-        ioEmitById(
-          socket.mturkId,
-          "load",
-          {
-            element: "psychologicalSafety",
-            questions: loadQuestions("psychologicalsafety-q"),
-            interstitial: false,
-            showHeaderBar: true
-          },
-          socket,
-          user
-        );
-      } else if (eventSchedule[currentEvent] === "teamfeedbackSurvey") {
-        if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
-        ioEmitById(
-          socket.mturkId,
-          "load",
-          {
-            element: "teamfeedbackSurvey",
-            questions: loadQuestions("feedback-q", user),
-            interstitial: false,
-            showHeaderBar: true
-          },
-          socket,
-          user
-        );
-      } else if (eventSchedule[currentEvent] === "blacklistSurvey") {
-        experimentOver = true;
-        if (teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        } else if (psychologicalSafetyOn) {
-          recordTime("psychologicalSafety");
-        }
-        console.log({
-          element: "blacklistSurvey",
-          questions: loadQuestions("blacklist-q", user),
-          interstitial: false,
-          showHeaderBar: false
-        });
-        ioEmitById(
-          socket.mturkId,
-          "load",
-          {
-            element: "blacklistSurvey",
-            questions: loadQuestions("blacklist-q", user),
-            interstitial: false,
-            showHeaderBar: false
-          },
-          socket,
-          user
-        );
-      } else if (eventSchedule[currentEvent] === "qFifteen") {
-        experimentOver = true;
-        if (blacklistOn && timeCheckOn) {
-          recordTime("blacklistSurvey");
-        } else if (teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
-        ioEmitById(
-          user.mturkId,
-          "load",
-          {
-            element: "qFifteen",
-            questions: loadQuestions("qfifteen-q", user),
-            interstitial: false,
-            showHeaderBar: false
-          },
-          socket,
-          user
-        );
-      } else if (eventSchedule[currentEvent] === "qSixteen") {
-        experimentOver = true;
-        if (qFifteenOn && timeCheckOn) {
-          recordTime("qFifteen");
-        } else if (blacklistOn && timeCheckOn) {
-          recordTime("blacklistSurvey");
-        } else if (teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
-        ioEmitById(
-          user.mturkId,
-          "load",
-          {
-            element: "qSixteen",
-            questions: loadQuestions("qsixteen-q", user),
-            interstitial: false,
-            showHeaderBar: false
-          },
-          socket,
-          user
-        );
-      } else if (eventSchedule[currentEvent] === "postSurvey") {
-        //Launch post survey
-        experimentOver = true;
-        if (qSixteenOn && timeCheckOn) {
-          recordTime("qSixteen");
-        } else if (qFifteenOn && timeCheckOn) {
-          recordTime("qFifteen");
-        } else if (blacklistOn && timeCheckOn) {
-          recordTime("blacklistSurvey");
-        } else if (teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
-        let survey = postSurveyGenerator(user);
-        user.results.manipulation = survey.correctAnswer;
-        updateUserInDB(user, "results.manipulation", user.results.manipulation);
-        ioEmitById(
-          socket.mturkId,
-          "load",
-          {
-            element: "postSurvey",
-            questions: loadQuestions("postsurvey-q", user),
-            interstitial: false,
-            showHeaderBar: false
-          },
-          socket,
-          user
-        );
       } else if (
-        eventSchedule[currentEvent] === "finished" ||
-        currentEvent > eventSchedule.length
+        [
+          "blacklistSurvey",
+          "qFifteen",
+          "qSixteen",
+          "manipulationCheck"
+        ].includes(currentActivity)
+      ) {
+        experimentOver = true;
+        loadActivity(currentActivity, false, false);
+      } else if (
+        currentActivity === "finished" ||
+        user.currentEvent > user.eventSchedule.length
       ) {
         if (!batchCompleteUpdated) {
           db.batch.update(
@@ -1614,35 +1417,22 @@ io.on("connection", socket => {
             err =>
               console.log(
                 err
-                  ? "Err updating batch completion" + err
-                  : "Marked batch " + batchID + " competed in DB"
+                  ? `Err updating batch completion: ${err}`
+                  : `Marked batch ${batchID} competed in DB`
               )
           );
           batchCompleteUpdated = true;
         }
-        if (timeCheckOn) {
-          recordTime("postSurvey");
-        }
         user.bonus = Number(mturk.bonusPrice);
         updateUserInDB(user, "bonus", user.bonus);
-
         storeHIT();
-
         usersFinished += 1;
         console.log(usersFinished, "users have finished.");
         if (notifyUs) {
           mturk.notifyWorkers(
             [notifyUsMturkID],
-            "Completed " + currentCondition + " on " + taskURL,
-            "Batch " +
-              batchID +
-              " completed: " +
-              currentCondition +
-              " on port " +
-              port +
-              " at " +
-              taskURL +
-              "."
+            `Completed ${currentCondition} on ${taskURL.hostname}`,
+            `${batchID} completed ${currentCondition} at ${taskURL.hostname}.`
           );
         }
         ioEmitById(
@@ -1657,7 +1447,7 @@ io.on("connection", socket => {
           socket,
           user
         );
-      }
+      } else loadActivity(currentActivity);
       user.currentEvent += 1;
     });
   });
@@ -1665,8 +1455,6 @@ io.on("connection", socket => {
   // Main experiment run
   socket.on("ready", function(_data) {
     useUser(socket, user => {
-      //waits until user ends up on correct link before adding user - repeated code, make function
-      // PK: what does this comment mean/ is it still relevant?
       user.ready = true;
       console.log(socket.username, "is ready");
 
@@ -1677,17 +1465,6 @@ io.on("connection", socket => {
         );
         return;
       }
-
-      //PK: still relevant? can we delete this commented out code and/or incompleteRooms()?
-      // if (incompleteRooms().length) {
-      //   console.log("Some rooms empty:",incompleteRooms())
-      //   return } //are all rooms assigned
-
-      // I think this is irrelevant now
-      // if ((suddenDeath || !userAquisitionStage) && users.length != teamSize ** 2) {
-      //   console.log("Need",teamSize ** 2 - users.length,"more users.")
-      //   return
-      // }
 
       //can we move this into its own on.*** call //PK: still relevant?
       console.log("all users ready -> starting experiment");
@@ -1962,7 +1739,6 @@ io.on("connection", socket => {
     });
   });
 
-  // Task after each round - midSurvey - MAIKA
   socket.on("midSurveySubmit", data => {
     useUser(socket, user => {
       user.results.viabilityCheck[currentRound] = parseResults(data);
@@ -2017,8 +1793,10 @@ io.on("connection", socket => {
     });
   });
 
-  socket.on("postSurveySubmit", data => {
+  socket.on("manipulationCheckSubmit", data => {
     useUser(socket, user => {
+      user.results.manipulation = postSurveyGenerator(user).correctAnswer;
+      updateUserInDB(user, "results.manipulation", user.results.manipulation);
       user.results.manipulationCheck = parseResults(data);
       updateUserInDB(
         user,
@@ -2040,7 +1818,7 @@ io.on("connection", socket => {
   });
 
   //loads qs in text file, returns json array
-  function loadQuestions(instrument, user = null) {
+  function loadQuestions(instrument: string, user = null) {
     let questions = [];
     fs.readFileSync(`txt/${instrument}.txt`)
       .toString()
@@ -2177,12 +1955,13 @@ function getSecondsPassed() {
   return (new Date().getTime() - startTime) / 1000;
 }
 
-function replicate(arr, times) {
-  let al = arr.length,
-    rl = al * times,
-    res = new Array(rl);
-  for (let i = 0; i < rl; i++) res[i] = arr[i % al];
-  return res;
+function replicate(subArray: any[], times: number) {
+  let subArraySize = subArray.length,
+    repeatedArraySize = subArraySize * times,
+    resultingArray = new Array(repeatedArraySize);
+  for (let i = 0; i < repeatedArraySize; i++)
+    resultingArray[i] = subArray[i % subArraySize];
+  return resultingArray;
 }
 
 //PK: we call this fxn many times, is it necessary?
