@@ -91,6 +91,11 @@ const binaryAnswers = {
   answers: ["Keep this team", "Do not keep this team"],
   answerType: "radio",
   textValue: true
+}
+const textAnswer = {
+  answers: [""],
+  answerType: "text",
+  textValue: true
 };
 const leaveHitAnswers = {
   answers: ["End Task and Send Feedback", "Return to Task"],
@@ -2120,8 +2125,10 @@ io.on("connection", socket => {
         } else if (answerTag === "YN15") {
           // yes no
           answerObj = binaryAnswers;
-          let team = getTeamMembers(user)[i - 1];
-          questionObj["question"] += " Team " + i + " (" + team + ").";
+	  teamIndex = [0,1,0,2,0,3,0,4,0,5,0][i]
+          if (teamIndex === 0) throw "NY15 answers reporting teams incorrectly"
+          let team = getTeamMembers(user)[teamIndex - 1];
+          questionObj["question"] += ` Team  ${teamIndex} (${team}).`;
         } else if (answerTag === "TR") {
           //team radio
           getTeamMembers(user).forEach((team, index) => {
@@ -2156,6 +2163,8 @@ io.on("connection", socket => {
         } else if (answerTag === "LH") {
           //leave hit yn
           answerObj = leaveHitAnswers;
+        } else if (answerTag === "TX") {
+          answerObj = textAnswer;
         } else {
           //chatbot qs
           answerObj = {};

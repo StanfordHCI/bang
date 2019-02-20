@@ -107,7 +107,7 @@ const quals = {
 const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged];
 const scheduleQuals = [
   quals.onlyUSA,
-  quals.hitsAccepted(0),
+  quals.hitsAccepted(100),
   quals.hasBanged,
   quals.willNotBang
 ];
