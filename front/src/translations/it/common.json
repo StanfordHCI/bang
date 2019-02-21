@@ -1,0 +1,16 @@
+{
+  "dashboard_default": {
+    "page_title": "Standard-Dashboard",
+    "visits": "Besuche",
+    "total_page_views": "Gesamtzahl der aufgerufenen Seiten",
+    "new_users": "Neue Nutzer",
+    "bounce_rate": "Absprungrate",
+    "ab_testing": "A / B-Testanalyse",
+    "visitors_sessions": "Besuchersitzungen",
+    "sales_statistic": "Verkaufsstatistik",
+    "budget_statistic": "Budgetstatistik",
+    "audience_by_country": "Zielgruppe nach Land",
+    "best_selling": "meistverkaufte Regionen",
+    "goals_completion": "Ziel erreicht"
+  }
+}

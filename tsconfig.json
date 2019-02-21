@@ -8,5 +8,13 @@
         "watch": true,
         "lib": ["dom", "es2017"],
     },
+    "exclude": [
+        "node_modules",
+        "public",
+        "src",
+        "config",
+        "scripts",
+        "build"
+    ],
     "typeRoots": ["./node_modules/@types"]
 }
