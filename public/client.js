@@ -782,6 +782,9 @@ $(function() {
           textifyTime(data.duration) +
           "</strong> to deliberate for this round. <strong>YOU ARE NOT ALLOWED TO SEARCH ON THE INTERNET FOR ANY ADDITIONAL MATERIALS.</strong> You will receive instructions about how the jury deliberation works, just as you would in a real courtroom."
       );
+      log(
+        "<strong>Note</strong>: In each round, please know that you will receive the <em>SAME case</em>, but will have <em>different</em> team members."
+      );
     }, 500);
 
     setTimeout(() => {

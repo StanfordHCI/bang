@@ -680,9 +680,9 @@ const launchBang = callback => {
   let time = Date.now();
 
   let HITTitle =
-    "Write online ads - bonus up to $" + hourlyWage + " / hour (" + time + ")";
+    "Mock Jury Deliberation - bonus up to $" + hourlyWage + " / hour (" + time + ")";
   let description =
-    "Work in groups to write ads for new products. This task will take approximately " +
+    "Work in groups to deliberate on a jury case. This task will take approximately " +
     Math.round(roundMinutes * numRounds + 10) +
     " minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" +
     bonusPrice +
@@ -691,7 +691,7 @@ const launchBang = callback => {
   let lifetime = 60 * timeActive;
   let reward = String(rewardPrice);
   let autoApprovalDelay = 60 * taskDuration;
-  let keywords = "ads, writing, copy editing, advertising";
+  let keywords = "jury, morality, deliberation, writing, analysis, fairness";
   let maxAssignments = numAssignments;
   let hitContent = externalHIT(taskURL);
 
@@ -719,7 +719,7 @@ const launchBang = callback => {
       time = Date.now();
       numAssignments = hitsLeft;
       let HITTitle =
-        "Write online ads - bonus up to $" +
+        "Mock Jury Deliberation - bonus up to $" +
         hourlyWage +
         " / hour (" +
         time +
@@ -727,7 +727,7 @@ const launchBang = callback => {
       let params2 = {
         Title: HITTitle,
         Description:
-          "Work in groups to write ads for new products. This task will take approximately " +
+          "Work in groups to deliberate on a jury case. This task will take approximately " +
           Math.round(roundMinutes * numRounds + 10) +
           " minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" +
           bonusPrice +
