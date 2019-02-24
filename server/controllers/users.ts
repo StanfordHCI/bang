@@ -23,8 +23,9 @@ export const auth = async function (data, socket, io) {
     socket.assignmentId = user.assignmentId;
     socket.turkSubmitTo = user.turkSubmitTo;
     socket.userId = user._id;
-    socket.emit('init', user)
-    await User.findByIdAndUpdate(user._id, { $set: { connected : true, lastConnect: new Date() } })
+    socket.join('waitroom');
+    socket.emit('init', user);
+    await User.findByIdAndUpdate(user._id, { $set: { connected : true, lastConnect: new Date(), socketId: socket.id, } })
 
     const activeUsers = io.sockets.clients();
     if (activeUsers.length >= parseInt(process.env.TEAM_SIZE) ** 2) { //show join-to-batch button
@@ -37,7 +38,7 @@ export const auth = async function (data, socket, io) {
 
 export const disconnect = async function (socket, io) {
   try {
-    const user = await User.findByIdAndUpdate(socket.userId, { $set: { connected : false, lastDisconnect: new Date()}})
+    const user = await User.findByIdAndUpdate(socket.userId, { $set: { connected : false, lastDisconnect: new Date(), socketId: ''}})
       .populate('batch').lean().exec();
     const activeUsers = io.sockets.clients();
     if (activeUsers.length < parseInt(process.env.TEAM_SIZE) ** 2) { //hide join-to-batch button

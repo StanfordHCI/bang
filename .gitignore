@@ -32,6 +32,7 @@ bower_components
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
+built/
 
 # Dependency directories
 node_modules/
@@ -63,6 +64,7 @@ typings/
 
 .data
 package-lock.json
+
 googleads.yaml
 txt/bonusworkers.txt
 txt/currentrecruitingHIT.txt
