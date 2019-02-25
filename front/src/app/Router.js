@@ -2,7 +2,8 @@ import React from 'react';
 import {Route, Switch, Redirect} from 'react-router-dom';
 import MainWrapper from './MainWrapper';
 import {connect} from "react-redux";
-import Main from '../containers/Main'
+import Chat from '../containers/Chat'
+import Waiting from '../containers/Waiting'
 import constants from 'Constants'
 
 const isAdminRoute = (path) => {
@@ -33,7 +34,8 @@ const MainRouter = (props) => {
     <MainWrapper>
       <main>
         <Switch>
-          <Route exact path='/' component={Main}/>
+          <Route exact path='/waiting' component={Waiting}/>
+          <Route exact path='/batch' component={Chat}/>
         </Switch>
       </main>
     </MainWrapper>

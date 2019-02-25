@@ -14,8 +14,9 @@ class Chat extends React.Component {
 
   constructor(props) {
     super(props);
-    let adr = process.env.API_HOST.substr(1, process.env.API_HOST.length - 2);
-    socket = openSocket(adr);
+    /*let adr = process.env.API_HOST.substr(1, process.env.API_HOST.length - 2);
+    socket = openSocket(adr);*/
+    console.log(socket)
     this.state = {
       chat: [],
       message: '',

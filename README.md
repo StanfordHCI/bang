@@ -23,6 +23,13 @@ MONGO_URI=your mongo connect uri
 6. Build front in prod mode by `npm run build-front` and use /front/build/ as static folder or
 Start dev front-server with hot reload by `npm run start-front` (port 3000)
 
+## Source/etc files
+All server code - /server; 
+All front code - /front/src, /front/public; 
+Front building utils - /front/scripts, /front/config;
+Built front code - /front/build;
+Built server code - /built; 
+
 ## Developing
 
 Run `tsc` to watch typescript files for changes and `supervisor server/index.js` so that the server will restart when files in the github folder are changed.

@@ -34,8 +34,9 @@ const io = require('socket.io').listen(app.listen(PORT, function() {
 
 
 io.sockets.on('connection', function (socket) {
+  console.log(socket.id)
   socket.on('init', data =>{init(data, socket, io)});
-  socket.on('disconnect', () =>{disconnect(socket, io)});
+  socket.on('disconnect', (reason) =>{disconnect(reason, socket, io)});
   socket.on('send-message', data =>{sendMessage(data, socket, io)});
   socket.on('join-batch', data =>{joinBatch(data, socket, io)});
 });
