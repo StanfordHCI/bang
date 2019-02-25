@@ -33,6 +33,7 @@ bower_components
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 built/
+front/build/
 
 # Dependency directories
 node_modules/
@@ -76,4 +77,5 @@ R/allChatFiles.csv
 .Rhistory
 *.icloud
 .idea/*
+.vscode/*
 .DS_Store

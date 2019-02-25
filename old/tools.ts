@@ -31,7 +31,7 @@ const randomAnimal = "Bison Eagle Pony Moose Deer Duck Rabbit Spider Wolf Lion S
 const randomAdjective = "new small young little likely nice cultured snappy spry conventional".split(
   " "
 );
-let nameCount = 2;
+let nameCount =  2;
 
 const createTeams = (teamSize: number, numRounds: number, people: string[]) => {
   //MEW: helper to convert sets without a type change because we need them.

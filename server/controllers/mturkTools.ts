@@ -6,8 +6,7 @@ dotenv.config();
 import * as yargs from "yargs";
 let args = yargs.argv;
 
-const runningLocal = process.env.RUNNING_LOCAL === "TRUE";
-const runningLive = process.env.RUNNING_LIVE === "TRUE"; //ONLY CHANGE IN VIM ON SERVER
+const runningLive = process.env.NODE_ENV === "production"; //ONLY CHANGE IN VIM ON SERVER
 const teamSize = parseInt(process.env.TEAM_SIZE);
 const roundMinutes = parseInt(process.env.ROUND_MINUTES);
 
@@ -20,7 +19,7 @@ if (runningLive) {
 }
 
 let taskURL = args.url || process.env.TASK_URL;
-if (runningLocal) {
+if (!runningLive) {
   taskURL = "https://localhost:3000/";
 }
 

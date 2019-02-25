@@ -11,7 +11,7 @@ export class Main extends React.Component {
   render() {
     const {appReady, children, user} = this.props;
     return  (
-      <div>
+      <div className='container__wrap'>
         <Chat/>
       </div>
     )

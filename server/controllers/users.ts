@@ -1,11 +1,11 @@
 import {User} from '../models/users'
 import {Chat} from '../models/chats'
 
-export const auth = async function (data, socket, io) {
+export const init = async function (data, socket, io) {
   try {
     let user;
     if (data.token) {
-      user = await User.findOne({token: data.token}).populate({path: 'batch'}).lean().exec();
+      user = await User.findOne({token: data.token}).populate('batch').populate('currentChat').lean().exec();
     } else {
       if (!data.mturkId || !data.assignmentId || data.hitId || !data.turkSubmitTo) {
         return;
@@ -28,6 +28,7 @@ export const auth = async function (data, socket, io) {
     await User.findByIdAndUpdate(user._id, { $set: { connected : true, lastConnect: new Date(), socketId: socket.id, } })
 
     const activeUsers = io.sockets.clients();
+    io.to('waitroom').emit('clients', activeUsers);
     if (activeUsers.length >= parseInt(process.env.TEAM_SIZE) ** 2) { //show join-to-batch button
       io.emit('can-join', true)
     }

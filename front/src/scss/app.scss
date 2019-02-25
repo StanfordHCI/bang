@@ -11,6 +11,11 @@
 
 //components...
 @import 'component/base';
+@import 'component/card';
+@import 'component/chat';
+@import 'component/table';
+@import 'component/text-editor';
+@import 'component/landing';
 //objects...
 @import 'objects/layout.scss';        // layout settings
 

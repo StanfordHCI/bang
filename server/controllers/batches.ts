@@ -7,7 +7,7 @@ export const joinBatch = async function (data, socket, io) {
   try {
     let batch = await Batch.findById(data.batch).lean().exec();
     if (batch.users.length < batch.teamSize ** 2) { //join to batch
-      const nickname = makeName();
+      const nickname = makeName(null, null);
       await Promise.all([
         Batch.findByIdAndUpdate(data.batch, { $addToSet: { users: {user: data.user}} }),
         User.findByIdAndUpdate(data.user, { $set: { batch: data.batch, currentNickname: nickname, currentChat: batch.preChat} })
@@ -33,7 +33,7 @@ const timeout = (ms) => {
 }
 
 const generateTeamUser = (user) => {
-  const nickname = makeName();
+  const nickname = makeName(null, null);
   return {user: user._id, nickname: nickname, socketId: user.socketId}
 }
 
@@ -44,11 +44,11 @@ const startBatch = async function (batch, socket, io) {
       console.log('wrong users length') // do something?
     }
     io.to(batch._id).emit('start-batch', true);
-    batch = await Batch.findByIdAndUpdate(batch._id, {$set: {status: 'active', startTime: new Date()}})
-    const teamSize = batch.teamSize;
+    batch = await Batch.findByIdAndUpdate(batch._id, {$set: {status: 'active', startTime: new Date()}}).lean().exec()
+    const teamSize = batch.teamSize, numRounds = batch.numRounds;
     let rounds = [];
 
-    for (let i = 0; i < batch.numRounds; i++) {
+    for (let i = 0; i < numRounds; i++) {
       let roundObject = {startTime: new Date(), number: i + 1, teams: []};
       let teams = [], emptyChats = [];
       for (let j = 0; j < teamSize; j++) { //simple gen for tests
@@ -71,8 +71,8 @@ const startBatch = async function (batch, socket, io) {
       })
       roundObject.teams = teams;
       rounds.push(roundObject);
-      prsHelper.push(Batch.findByIdAndUpdate(batch._id, {$set: {rounds: rounds, currentRound: roundObject.number}}));
       await Promise.all(prsHelper);
+      batch = await Batch.findByIdAndUpdate(batch._id, {$set: {rounds: rounds, currentRound: roundObject.number}}).lean().exec();
       io.to(batch._id).emit('start-round', roundObject);
       //tasks logic
       //...
@@ -82,6 +82,7 @@ const startBatch = async function (batch, socket, io) {
         clearRoom(chat._id, io)
       })
       //survey logic
+
       //.....
       await timeout(batch.roundMinutes * 333);
 

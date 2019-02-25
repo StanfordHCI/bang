@@ -20,8 +20,8 @@ class MainWrapper extends PureComponent {
   render() {
 
     return (
-      <div>
-         <div>
+      <div className="theme-dark">
+         <div className="wrapper">
           {this.props.children}
         </div>
         <UiSnackbar/>

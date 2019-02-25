@@ -10,11 +10,11 @@ let socket;
 
 const MAX_LENGTH = 240;
 
-class PoolChat extends React.Component {
+class Chat extends React.Component {
 
   constructor(props) {
     super(props);
-    let adr = ''//process.env.API_HOST.substr(1, process.env.API_HOST.length - 2);
+    let adr = process.env.API_HOST.substr(1, process.env.API_HOST.length - 2);
     socket = openSocket(adr);
     this.state = {
       chat: [],
@@ -74,11 +74,6 @@ class PoolChat extends React.Component {
                         {members.map((member) => {
                           return <tr key={member._id}>
                             <td>
-                              <img
-                                className='chat__bubble-avatar'
-                                style={{display: 'inline'}}
-                                src={defaultImage}
-                                alt='avatar'/>
                               <div className='chat__bubble-contact-name'>
                                 {member.nickname}
                                 </div>
@@ -154,4 +149,4 @@ function mapDispatchToProps(dispatch) {
   }, dispatch);
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(PoolChat);
+export default connect(mapStateToProps, mapDispatchToProps)(Chat);

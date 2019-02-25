@@ -11,19 +11,21 @@ Bang is a tool to study the consistency of socio-psychological phenomenon by run
 ```PowerShell
 AWS_ID=YOUR_AWS_MTURK_ID
 AWS_KEY=YOUR_AWS_MTURK_KEY
-
-RUNNING_LIVE=FALSE
-RUNNING_LOCAL=TRUE
-
 TEAM_SIZE=4
 ROUND_MINUTES=10
+NODE_ENV=development/production
+API_HOST=your host
+MONGO_URI=your mongo connect uri
 ```
 
-4. Start the server by running `node built/server.js`.
+4. Set up mongodb (ver. 4.0)
+5. Start the server (port 3001) by running `node built/index.js`. 
+6. Build front in prod mode by `npm run build-front` and use /front/build/ as static folder or
+Start dev front-server with hot reload by `npm run start-front` (port 3000)
 
 ## Developing
 
-Run `tsc` to watch typescript files for changes and `supervisor server.js` so that the server will restart when files in the github folder are changed.
+Run `tsc` to watch typescript files for changes and `supervisor server/index.js` so that the server will restart when files in the github folder are changed.
 
 The URL parameters are required because they are read in from Amazon Mechanical Turk. Here's an example URL for local host: http://127.0.0.1:3000/?assignmentId=3K4J6M3CXF8DU3JZ8XUVEMJHFWEAGV&hitId=3TRB893CSJPTPHN7BSD9FBMB45DG72&workerId=A19MTSLG2OYDLZ&turkSubmitTo=https%3A%2F%2Fworkersandbox.mturk.com
 

@@ -10,11 +10,9 @@
     },
     "exclude": [
         "node_modules",
-        "public",
-        "src",
-        "config",
-        "scripts",
-        "build"
+        "front",
+        "built",
+        "old"
     ],
     "typeRoots": ["./node_modules/@types"]
 }
