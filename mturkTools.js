@@ -880,4 +880,4 @@ function getRandomSubarray(arr, size) {
   return shuffled.slice(min);
 }
 
-workOnActiveHITs(console.log);
+// workOnActiveHITs(console.log);
