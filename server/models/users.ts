@@ -9,9 +9,9 @@ import * as mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
 let UserSchema = new Schema({
-  socketId:  { type: String},
-  token:  { type: String, required: true },
-  mturkid:  { type: String, required: true },
+  socketId:  { type: String, unique: true},
+  token:  { type: String, required: true, unique: true },
+  mturkId:  { type: String, required: true, unique: true },
   assignmentId:  { type: String, required: true },
   turkSubmitTo:  { type: String, required: true },
   connected:  { type: Boolean, required: true, default: true },

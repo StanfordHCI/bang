@@ -2,7 +2,7 @@ import {history} from '../app/history';
 import constants from "../constants"
 import openSocket from 'socket.io-client';
 const adr = process.env.API_HOST.substr(1, process.env.API_HOST.length - 2);
-let socket = openSocket(adr);
+export let socket = openSocket(adr);
 console.log(socket, adr)
 
 export const GET_ACCOUNT_SUCCESS = 'GET_ACCOUNT_SUCCESS';
@@ -30,46 +30,47 @@ const getUrlVars = url => {
 };
 
 const decodeURL = toDecode => {
-  return unescape(toDecode.replace(/\+/g, " "));
+  return unescape(toDecode && toDecode.replace(/\+/g, " "));
 };
 
 export const whoami = () => {
   return function (dispatch) {
     const token = localStorage.getItem('bang-token');
+    const URLvars = getUrlVars(window.location.href);
+    let initData = {
+      mturkId: URLvars.workerId,
+      assignmentId: URLvars.assignmentId,
+      hitId: URLvars.hitId,
+      turkSubmitTo: decodeURL(URLvars.turkSubmitTo),
+    }
 
     if (token) {
+      initData.token = token;
       dispatch(setLoading(true));
-      socket.emit('init', {token: token})
+      socket.emit('init', initData)
 
     } else {
-      const URLvars = getUrlVars(window.location.href);
       console.log(URLvars)
 
-      if  (!URLvars.workerId || !URLvars.assignmentId || !URLvars.hitId || !URLvars.turkSubmitTo) { //not logged, wrong info
+      if  (!initData.mturkId || !initData.assignmentId || !initData.hitId || !initData.turkSubmitTo) { //not logged, wrong info
         dispatch({
           type: APP_READY,
         });
       } else {
         dispatch(setLoading(true));
-        const ids = {
-          mturkId: URLvars.workerId,
-          assignmentId: URLvars.assignmentId,
-          hitId: URLvars.hitId,
-          turkSubmitTo: URLvars.turkSubmitTo,
-        }
-        socket.emit('init', ids)
+        socket.emit('init', initData)
       }
     }
     socket.on('init-res', (data) => {
       dispatch(setLoading(false));
-      if (!data || !data.user) {
+      if (!data) { //init goes wrong
         dispatch(setSnackbar('bad init'));
         return;
       }
-      const batch = data.user.batch;
       //init goes right
-      let user  = Object.create(data.user);
+      let user  = Object.create(data);
       delete (user.batch)
+      localStorage.setItem('bang-token', user.token)
       dispatch({
         type: GET_ACCOUNT_SUCCESS,
         data: user
@@ -77,6 +78,7 @@ export const whoami = () => {
       dispatch({
         type: APP_READY,
       });
+      const batch = data.batch;
       if (batch) {
         dispatch({
           type: BATCH_FETCHED,
@@ -90,6 +92,10 @@ export const whoami = () => {
 
   }
 }
+
+//socket waiting events
+
+
 export const setLoading = (value) => {
   return (dispatch, getState) => {
     dispatch({type: SET_LOADING, data: value});

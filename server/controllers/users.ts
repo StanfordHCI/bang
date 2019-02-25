@@ -1,28 +1,30 @@
 import {User} from '../models/users'
 import {Chat} from '../models/chats'
 
-export const init = async function (data, socket, io) {
+export const init = async function (data, socket, io, activeCounter) {
   try {
     let user;
-    if (data.token) {
-      user = await User.findOne({token: data.token}).populate('batch').populate('currentChat').lean().exec();
-      if (!user) {
-        console.log('wrong user')
-        return;
-      }
-    } else {
+    let token = data.token || '';
+    user = await User.findOne({token: token}).populate('batch').populate('currentChat').lean().exec();
+    if (!user) {
+      console.log(data)
       if (!data.mturkId || !data.assignmentId || !data.hitId || !data.turkSubmitTo) {
         console.log('wrong credentials')
         return;
       }
-      user = await User.create({
-        token: data.mturkId,
-        mturkid: data.mturkId,
-        assignmentId: data.assignmentId,
-        turkSubmitTo: data.turkSubmitTo,
-        status: 'waiting',
-      }).lean().exec()
+      //user can be without token/with wrong token, but in our db
+      user = await User.findOne({mturkId: data.mturkId}).populate('batch').populate('currentChat').lean().exec();
+      if (!user) { //if not in db - create new
+        user = await User.create({
+          token: data.mturkId,
+          mturkId: data.mturkId,
+          assignmentId: data.assignmentId,
+          turkSubmitTo: data.turkSubmitTo,
+          status: 'waiting',
+        })
+      }
     }
+
     socket.mturkId = user.mturkId;
     socket.token = user.token;
     socket.assignmentId = user.assignmentId;
@@ -32,9 +34,8 @@ export const init = async function (data, socket, io) {
     socket.emit('init-res', user);
     await User.findByIdAndUpdate(user._id, { $set: { connected : true, lastConnect: new Date(), socketId: socket.id, } })
 
-    const activeUsers = io.sockets.clients();
-    io.to('waitroom').emit('clients', activeUsers);
-    if (activeUsers.length >= parseInt(process.env.TEAM_SIZE) ** 2) { //show join-to-batch button
+    io.to('waitroom').emit('clients-active', activeCounter);
+    if (activeCounter >= parseInt(process.env.TEAM_SIZE) ** 2) { //show join-to-batch button
       io.emit('can-join', true)
     }
   } catch (e) {
@@ -42,13 +43,13 @@ export const init = async function (data, socket, io) {
   }
 }
 
-export const disconnect = async function (reason, socket, io) {
+export const disconnect = async function (reason, socket, io, activeCounter) {
   console.log('disconnect', reason)
   try {
     const user = await User.findByIdAndUpdate(socket.userId, { $set: { connected : false, lastDisconnect: new Date(), socketId: ''}})
       .populate('batch').lean().exec();
-    const activeUsers = io.sockets.clients();
-    if (activeUsers.length < parseInt(process.env.TEAM_SIZE) ** 2) { //hide join-to-batch button
+    io.to('waitroom').emit('clients-active', activeCounter);
+    if (activeCounter < parseInt(process.env.TEAM_SIZE) ** 2) { //hide join-to-batch button
       io.emit('cant-join', true)
     }
     if (user && user.batch && user.batch.status === 'active ') {

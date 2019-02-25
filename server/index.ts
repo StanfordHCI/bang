@@ -32,11 +32,12 @@ const io = require('socket.io').listen(app.listen(PORT, function() {
 }));
 
 
-
+let activeCounter = 0;
 io.sockets.on('connection', function (socket) {
-  console.log(socket.id)
-  socket.on('init', data =>{init(data, socket, io)});
-  socket.on('disconnect', (reason) =>{disconnect(reason, socket, io)});
+  activeCounter++;
+  console.log(socket.id, activeCounter)
+  socket.on('init', data =>{init(data, socket, io, activeCounter);});
+  socket.on('disconnect', (reason) =>{if (activeCounter > 0) {activeCounter--}; disconnect(reason, socket, io, activeCounter); });
   socket.on('send-message', data =>{sendMessage(data, socket, io)});
   socket.on('join-batch', data =>{joinBatch(data, socket, io)});
 });
