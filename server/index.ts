@@ -7,8 +7,10 @@ const APP_ROOT = path.resolve(__dirname, '..');
 const logger = require('./services/logger');
 require('dotenv').config({path: './.env'});
 import {init, sendMessage, disconnect} from './controllers/users'
-import {joinBatch} from './controllers/batches'
+import {joinBatch, loadBatch, loadBatchList, addBatch} from './controllers/batches'
 import {errorHandler} from './services/common'
+import {User} from './models/users'
+import {Batch} from './models/batches'
 
 mongoose.Promise = global.Promise;
 mongoose.connection.on('error', (err) => {
@@ -26,18 +28,38 @@ app
   .use(bodyParser.json({limit: '5mb'}))
   .use(bodyParser.urlencoded({extended: true, limit: '5mb'}))
 
+
+
 const io = require('socket.io').listen(app.listen(PORT, function() {
   logger.info(module, 'App is running on port: ' + PORT);
   logger.info(module, 'ENV: ' + process.env.NODE_ENV);
 }));
 
+const initialChecks = [
+  User.updateMany({}, { $set: { connected : false, lastDisconnect: new Date(), socketId: '', batch: null}}),
+  Batch.updateMany({$or: [{status:'active'}, {status:'waiting'}]}, { $set: { status : 'completed'}})
+]
 
-let activeCounter = 0;
-io.sockets.on('connection', function (socket) {
-  activeCounter++;
-  console.log(socket.id, activeCounter)
-  socket.on('init', data =>{init(data, socket, io, activeCounter);});
-  socket.on('disconnect', (reason) =>{if (activeCounter > 0) {activeCounter--}; disconnect(reason, socket, io, activeCounter); });
-  socket.on('send-message', data =>{sendMessage(data, socket, io)});
-  socket.on('join-batch', data =>{joinBatch(data, socket, io)});
-});
+Promise.all(initialChecks)
+  .then(() => {
+    io.sockets.on('connection', function (socket) {
+      socket.on('init', data => socketMiddleware('init', init, data, socket));
+      socket.on('disconnect', data => socketMiddleware('disconnect', disconnect, data, socket));
+      socket.on('send-message', data => socketMiddleware('send-message', sendMessage, data, socket));
+      socket.on('join-batch', data => socketMiddleware('join-batch', joinBatch, data, socket));
+      socket.on('load-batch', data => socketMiddleware('load-batch', loadBatch, data, socket));
+      socket.on('load-batch-list', data => socketMiddleware('load-batch-list', loadBatchList, data, socket));
+      socket.on('add-batch', data => socketMiddleware('add-batch', addBatch, data, socket));
+    });
+  })
+  .catch(err => {
+    errorHandler(err, 'Initial checks error')
+  })
+
+const socketMiddleware = function (event, action, data, socket) {
+  if (event !== 'init' && event !== 'disconnect' && !socket.userId) {
+    logger.error(module, 'User is not logged in');
+    return;
+  }
+  action(data, socket, io)
+}

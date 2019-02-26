@@ -3,12 +3,15 @@ import {
   SET_LOADING,
   SET_SNACKBAR,
   CLEAR_SNACKBAR,
-  SET_SOCKET
+  SET_USER,
+  INIT_SUCCESS,
+  SET_CHAT_INFO
 } from "../actions/app";
 
 const initialState = {
   user: null,
-  appReady: true,
+  teamSize: 999,
+  appReady: false,
   loading: false,
   socket: null,
   snackbar: {message: '', open: false},
@@ -17,10 +20,24 @@ const initialState = {
 
 export default function (state = initialState, action) {
   switch (action.type) {
-    case SET_SOCKET:
+    case SET_CHAT_INFO:
+      let user = state.user;
+      user.currentNickname = action.data.currentNickname;
+      user.currentChat = action.data.currentChat;
       return {
         ...state,
-        socket: action.data
+        user: user,
+      };
+    case SET_USER:
+      return {
+        ...state,
+        user: action.data,
+      };
+    case INIT_SUCCESS:
+      return {
+        ...state,
+        user: action.data.user,
+        teamSize: parseInt(action.data.teamSize)
       };
     case SET_LOADING:
       return {

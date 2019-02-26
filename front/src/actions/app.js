@@ -3,19 +3,16 @@ import constants from "../constants"
 import openSocket from 'socket.io-client';
 const adr = process.env.API_HOST.substr(1, process.env.API_HOST.length - 2);
 export let socket = openSocket(adr);
-console.log(socket, adr)
 
-export const GET_ACCOUNT_SUCCESS = 'GET_ACCOUNT_SUCCESS';
+export const INIT_SUCCESS = 'INIT_SUCCESS';
+export const SET_USER = 'SET_USER';
 export const APP_READY = 'APP_READY';
 export const CLEAR_REG_ERRORS = 'CLEAR_ERRORS';
 export const SET_LOADING = 'SET_LOADING';
 export const ACCOUNT_LOGOUT = 'ACCOUNT_LOGOUT';
+export const SET_CHAT_INFO = 'SET_CHAT_INFO'
 export const SET_SNACKBAR = 'SET_SNACKBAR';
 export const CLEAR_SNACKBAR = 'CLEAR_SNACKBAR';
-export const BATCH_FETCHED = 'BATCH_FETCHED';
-export const SET_SOCKET = 'SET_SOCKET';
-
-
 
 const getUrlVars = url => {
   let myJson = {};
@@ -48,53 +45,50 @@ export const whoami = () => {
       initData.token = token;
       dispatch(setLoading(true));
       socket.emit('init', initData)
-
     } else {
-      console.log(URLvars)
-
       if  (!initData.mturkId || !initData.assignmentId || !initData.hitId || !initData.turkSubmitTo) { //not logged, wrong info
         dispatch({
           type: APP_READY,
         });
+        dispatch(setSnackbar('wrong credentials'));
+        localStorage.clear()
+        history.push('/not-logged')
       } else {
         dispatch(setLoading(true));
         socket.emit('init', initData)
+        history.push('/waiting')
       }
     }
-    socket.on('init-res', (data) => {
+    socket.once('init-res', (data) => {
       dispatch(setLoading(false));
-      if (!data) { //init goes wrong
-        dispatch(setSnackbar('bad init'));
+      if (!data || !data.user || !data.teamSize) { //init goes wrong
+        dispatch({
+          type: APP_READY,
+        });
+        dispatch(setSnackbar('wrong credentials'));
+        localStorage.clear()
+        history.push('/not-logged')
         return;
       }
       //init goes right
-      let user  = Object.create(data);
-      delete (user.batch)
-      localStorage.setItem('bang-token', user.token)
+      if (!token) {
+        localStorage.setItem('bang-token', data.user.token)
+      }
       dispatch({
-        type: GET_ACCOUNT_SUCCESS,
-        data: user
+        type: INIT_SUCCESS,
+        data: {user: data.user, teamSize: data.teamSize}
       });
       dispatch({
         type: APP_READY,
       });
-      const batch = data.batch;
-      if (batch) {
-        dispatch({
-          type: BATCH_FETCHED,
-          data: batch
-        });
+      if (data.user.batch) {
         history.push('/batch');
-      } else {
+      } else if (!token) {
         history.push('/waiting');
       }
     });
-
   }
 }
-
-//socket waiting events
-
 
 export const setLoading = (value) => {
   return (dispatch, getState) => {

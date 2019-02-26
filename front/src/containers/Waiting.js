@@ -1,11 +1,9 @@
 import React from 'react';
-import {Card, CardBody, Col, Row, Container, Table} from 'reactstrap';
+import {Card, CardBody, Col, Row, Container, Button} from 'reactstrap';
 import {connect} from "react-redux";
-import {findDOMNode} from 'react-dom'
 import {bindActionCreators} from "redux";
 import {socket} from 'Actions/app'
-
-const MAX_LENGTH = 240;
+import {joinBatch} from 'Actions/batches'
 
 class Waiting extends React.Component {
 
@@ -27,6 +25,9 @@ class Waiting extends React.Component {
   }
 
   render() {
+    const {user, limit, joinBatch} = this.props;
+    console.log(limit)
+
     return (
       <Container>
         <Row>
@@ -36,7 +37,10 @@ class Waiting extends React.Component {
                 <div className='card__title'>
                   <h5 className='bold-text'>Waiting room</h5>
                 </div>
-                <h5 className='bold-text'>{this.state.activeCounter} active clients</h5>
+                <h5 className='bold-text' style={{marginBottom: '20px'}}>Active clients count: {this.state.activeCounter} of {limit}</h5>
+                {limit <= this.state.activeCounter &&
+                  <Button className="btn btn-primary" onClick={() => joinBatch()}>Join Batch</Button>
+                }
               </CardBody>
             </Card>
           </Col>
@@ -49,13 +53,14 @@ class Waiting extends React.Component {
 
 function mapStateToProps(state) {
   return {
-    currentUser: state.app.user,
+    user: state.app.user,
+    limit: state.app.teamSize ** 2
   }
 }
 
 function mapDispatchToProps(dispatch) {
   return bindActionCreators({
-
+    joinBatch,
   }, dispatch);
 }
 

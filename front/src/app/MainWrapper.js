@@ -22,7 +22,9 @@ class MainWrapper extends PureComponent {
     return (
       <div className="theme-dark">
          <div className="wrapper">
-          {this.props.children}
+           <div className='container__wrap'>
+             {this.props.appReady && this.props.children}
+           </div>
         </div>
         <UiSnackbar/>
         {this.props.loading && <div style={loaderOptions}>
@@ -41,7 +43,7 @@ function mapDispatchToProps(dispatch) {
 
 export default connect(state => {
   return {
-
+    appReady: state.app.appReady,
     loading: state.app.loading
   }
 }, mapDispatchToProps)(MainWrapper);

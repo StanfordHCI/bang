@@ -2,40 +2,26 @@ import React from 'react';
 import {Route, Switch, Redirect} from 'react-router-dom';
 import MainWrapper from './MainWrapper';
 import {connect} from "react-redux";
-import Chat from '../containers/Chat'
+import Batch from '../containers/Batch'
+import BatchList from '../containers/admin/BatchList'
 import Waiting from '../containers/Waiting'
+import NotLogged from '../containers/NotLogged'
 import constants from 'Constants'
-
-const isAdminRoute = (path) => {
-  return path.indexOf('-admin') > -1 || path.indexOf('userprofile') > -1
-}
-
-const PrivateRoute = ({data, component: Component, ...rest}) => (
-  <Route {...rest}
-         render={props => {
-           if (!data.user) {
-             return <Redirect to={{pathname: "/log_in", state: {from: props.location}}}/>;
-           }
-           const path = props.location.pathname;
-           if (isAdminRoute(path) && data.user.type !== constants.ADMIN) {
-             return <Redirect to={{pathname: "/not-found", state: {from: props.location}}}/>;
-           }
-           return <Component {...props} key={props.location.pathname}/>;
-         }}
-  />
-);
 
 const MainRouter = (props) => {
   const {user, appReady} = props;
   const data = {
     user: user
   };
+
   return appReady ? (
     <MainWrapper>
       <main>
         <Switch>
           <Route exact path='/waiting' component={Waiting}/>
-          <Route exact path='/batch' component={Chat}/>
+          <Route exact path='/batch' component={Batch}/>
+          <Route exact path='/batchlist' component={BatchList}/>
+          <Route exact path='/not-logged' component={NotLogged}/>
         </Switch>
       </main>
     </MainWrapper>

@@ -1,15 +1,13 @@
 import {combineReducers, createStore, applyMiddleware, compose} from 'redux';
 import {reducer as reduxFormReducer} from 'redux-form';
-import {
-
-  appReducer,
-} from '../reducers/index';
+import appReducer from '../reducers/appReducer';
+import batchReducer from '../reducers/batchReducer';
 import thunk from 'redux-thunk'
 import {whoami} from "../actions/app";
 
 const reducer = combineReducers({
   form: reduxFormReducer, // mounted under "form",
-
+  batch: batchReducer,
   app: appReducer,
 });
 
@@ -22,7 +20,7 @@ const middleware = [thunk];
 const store = createStore(reducer, composeEnhancers(
   applyMiddleware(...middleware),
 ));
-//setTimeout(() => store.dispatch(whoami()), 3000)
+
 store.dispatch(whoami())
 
 export default store;
