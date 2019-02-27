@@ -10,6 +10,7 @@ export const joinBatch = async function (data, socket, io) {
     let batch = await Batch.findOne({status: 'waiting'}).lean().exec();
     if (!batch) {
       logger.error(module, 'There is no waiting batch');
+      socket.emit('send-error', 'There is no waiting batch')
       return;
     }
     if (batch.users.length < batch.teamSize ** 2) { //join to batch
@@ -90,7 +91,8 @@ export const addBatch = async function (data, socket, io) {
     }
     const check = await Batch.findOne({status: 'waiting'}) ;
     if (check) {
-      logger.error(module, 'There is 1 waiting batch');
+      logger.error(module, 'There is 1 waiting batch, you cant and more');
+      socket.emit('send-error', 'There is 1 waiting batch, you cant and more')
       return;
     }
     const newBatch = {
@@ -201,7 +203,7 @@ const startBatch = async function (batch, socket, io) {
       //survey logic
 
       //.....
-      await timeout(batch.roundMinutes * 60 * 333);
+      await timeout(10000);
       roundObject.endTime = new Date();
       roundObject.status = 'completed';
       const endRoundInfo = {rounds: rounds};
@@ -211,9 +213,11 @@ const startBatch = async function (batch, socket, io) {
     }
     await timeout(5000);
     const endBatchInfo = {status: 'completed'};
+    await User.updateMany({}, { $set: { batch: null, currentNickname: null, currentChat: null}})
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: endBatchInfo}).lean().exec();
     logger.info(module, 'Main experiment end', batch._id)
     io.to(batch._id.toString()).emit('end-batch', endBatchInfo);
+
   } catch (e) {
     errorHandler(e, 'batch main run error')
   }

@@ -15,7 +15,9 @@ class Batch extends React.Component {
     this.state = {
       chat: [],
       message: '',
-      members: []
+      members: [],
+      timeLeft: 0,
+      timerActive: false
     };
     this.refresher = this.refresher.bind(this)
   }
@@ -26,6 +28,23 @@ class Batch extends React.Component {
 
   componentDidUpdate() {
     this.scrollDown();
+  }
+
+  componentWillReceiveProps(nextProps, nextState) {
+    if (!this.state.timerActive && nextProps.currentRound && nextProps.currentRound.status === 'active'){
+      console.log('start')
+      this.setState({timerActive: true})
+      this.roundTimer = setInterval(() => this.timer(nextProps.currentRound), 1000);
+    }
+    if (this.state.timerActive && this.props.currentRound && this.props.currentRound.status === 'active' && nextProps.currentRound.status === 'survey') {
+      console.log('clear')
+      this.setState({timerActive: false})
+      clearInterval(this.roundTimer)
+    }
+  }
+
+  timer(round){
+    this.setState({timeLeft: moment(round.startTime).add(1, 'minute').diff(moment(), 'seconds')})
   }
 
   refresher(data) {
@@ -120,19 +139,27 @@ class Batch extends React.Component {
   }
 
   renderSurvey() {
-    return (<div>
+    return (
+    <div>
       <h5 className='bold-text'>Place for survey logic.</h5>
     </div>)
+  }
+
+  renderRound() {
+    return (
+      <div>
+        <h5 className='bold-text'>Time left: {this.state.timeLeft}</h5>
+        {this.renderChat()}
+      </div>)
   }
 
   renderActiveStage() {
     const batch = this.props.batch;
     const round = batch.rounds[batch.currentRound - 1];
-    console.log(round)
 
     return round ? (<div>
       <h5 className='bold-text'>Round {batch.currentRound}</h5>
-      {round.status === 'active' && this.renderChat()}
+      {round.status === 'active' && this.renderRound()}
       {round.status === 'survey' && this.renderSurvey()}
     </div>) : (
       <div>
@@ -174,10 +201,15 @@ class Batch extends React.Component {
 
 
 function mapStateToProps(state) {
+  const batch = state.batch.batch;
+  const round = batch && batch.rounds ? batch.rounds[batch.currentRound - 1] : null;
+  console.log(batch)
+
   return {
     user: state.app.user,
-    batch: state.batch.batch,
-    chat: state.batch.chat
+    batch: batch,
+    chat: state.batch.chat,
+    currentRound: round
   }
 }
 
