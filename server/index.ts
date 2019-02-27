@@ -28,8 +28,6 @@ app
   .use(bodyParser.json({limit: '5mb'}))
   .use(bodyParser.urlencoded({extended: true, limit: '5mb'}))
 
-
-
 const io = require('socket.io').listen(app.listen(PORT, function() {
   logger.info(module, 'App is running on port: ' + PORT);
   logger.info(module, 'ENV: ' + process.env.NODE_ENV);
