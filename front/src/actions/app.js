@@ -33,6 +33,7 @@ const decodeURL = toDecode => {
 export const whoami = () => {
   return function (dispatch) {
     const token = localStorage.getItem('bang-token');
+    const adminToken = localStorage.getItem('bang-admin-token')
     const URLvars = getUrlVars(window.location.href);
     let initData = {
       mturkId: URLvars.workerId,
@@ -83,10 +84,14 @@ export const whoami = () => {
       });
       if (data.user.batch) {
         history.push('/batch');
-      } else if (!token) {
+      } else if (!adminToken) {
         history.push('/waiting');
       }
     });
+    socket.on('send-error', (data) => {
+      dispatch(setSnackbar(data));
+    })
+    socket.emit('send-error', 'There is no right batch')
   }
 }
 
