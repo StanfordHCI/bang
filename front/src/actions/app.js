@@ -71,7 +71,7 @@ export const whoami = () => {
         return;
       }
       //init goes right
-      if (!token) {
+      if (!token || token !== data.user.token) {
         localStorage.setItem('bang-token', data.user.token)
       }
       dispatch({
