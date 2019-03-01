@@ -104,14 +104,14 @@ const quals = {
   }
 };
 
-const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(200), quals.hasBanged];
+const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(100), quals.hasBanged];
 const scheduleQuals = [
   quals.onlyUSA,
   quals.hitsAccepted(100),
   quals.hasBanged,
   quals.willNotBang
 ];
-const qualsForTesting = [quals.onlyUSA];
+const qualsForTesting = [quals.onlyUSA]
 const safeQuals = runningLive ? qualsForLive : qualsForTesting;
 
 // Makes the MTurk externalHIT object, defaults to 700 px tall.
@@ -680,13 +680,9 @@ const launchBang = callback => {
   let time = Date.now();
 
   let HITTitle =
-    "Work in teams on tasks - bonus up to $" +
-    hourlyWage +
-    " / hour (" +
-    time +
-    ")";
+    "Work in teams on tasks - bonus up to $" + hourlyWage + " / hour (" + time + ")";
   let description =
-    "Work in groups to write ads for new products or make decisions on scenarios. This task will take approximately " +
+    "Work in groups to complete tasks. This task will take approximately " +
     Math.round(roundMinutes * numRounds + 10) +
     " minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" +
     bonusPrice +
@@ -695,8 +691,7 @@ const launchBang = callback => {
   let lifetime = 60 * timeActive;
   let reward = String(rewardPrice);
   let autoApprovalDelay = 60 * taskDuration;
-  let keywords =
-    "ads, writing, copy editing, advertising, reasoning, decision, reading";
+  let keywords = "ads, writing, copy editing, reasoning, discussion, reading, advertising";
   let maxAssignments = numAssignments;
   let hitContent = externalHIT(taskURL);
 
@@ -732,7 +727,7 @@ const launchBang = callback => {
       let params2 = {
         Title: HITTitle,
         Description:
-          "Work in groups to write ads for new products or make decisions on scenarios. This task will take approximately " +
+          "Work in groups to complete tasks. This task will take approximately " +
           Math.round(roundMinutes * numRounds + 10) +
           " minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" +
           bonusPrice +
@@ -741,8 +736,7 @@ const launchBang = callback => {
         LifetimeInSeconds: 60 * timeActive, // short lifetime, deletes and reposts often
         Reward: String(rewardPrice),
         AutoApprovalDelayInSeconds: 60 * taskDuration,
-        Keywords:
-          "ads, writing, copy editing, advertising, reasoning, decision, reading",
+        Keywords: "ads, writing, copy editing, reasoning, discussion, reading, advertising",
         MaxAssignments: numAssignments,
         QualificationRequirements: safeQuals,
         Question: externalHIT(taskURL)
