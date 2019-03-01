@@ -19,10 +19,10 @@ const maxWaitChatMinutes = 20;
 // Toggles
 const runExperimentNow = true;
 const issueBonusesNow = runningLive;
-const notifyWorkersOn = true;
+const notifyWorkersOn = runningLive;
 const runViaEmailOn = false;
 const usingWillBang = runningLive;
-const aggressiveNotifyOn = true;
+const aggressiveNotifyOn = runningLive;
 const notifyUs = runningLive;
 
 const cleanHITs = true;
@@ -247,7 +247,8 @@ let batchCompleteUpdated = false;
 /* const conditions = randomRoundOrder ? roundOrdering.pick() : roundOrdering[0] */
 
 // Settings for 4 rounds.
-let ordering = [1,1, 1, 1];
+// const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
+const ordering = [1, 1, 1, 1];
 const conditions = {
   control: ordering,
   treatment: ordering,
@@ -267,13 +268,10 @@ const rooms = tools.letters.slice(0, numberOfRooms);
 const people = extraRoundOn
   ? tools.letters.slice(0, teamSize ** 2 + teamSize)
   : tools.letters.slice(0, teamSize ** 2);
-// const people = ["A", "B", "C", "D"];
 const population = people.length;
 const teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn); //added '-1' to numRounds
-ordering = [1,1];
-ordering.forEach(index => {
-    console.log(teams[index]);
-});
+//}
+
 //if (runExperimentNow) {
 const batchID = Date.now();
 
@@ -538,18 +536,16 @@ if (runExperimentNow) {
   });
 }
 
-
-//Include example for ads
+//Add more products
 let products = [
   {
     name: "Ads",
-    taskSteps : [
+    url: "https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw",
+    taskSteps: [
         {
             time: 0.0,
-            message:
-            "You will receive instructions about how to collaborate to write a compelling add. We will run your final advertisement online. <strong>The more successful it is, the larger the " + "bonus each of your team members will receive. </strong>"
-            + "<strong><a href='https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw' target='_blank'>Thé-tis Tea : Plant-based seaweed tea, rich in minerals </a></strong>"
-            + "Start by checking out the link above, then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>."
+            message: "You will receive instructions about how to collaborate to write a compelling add. We will run your final advertisement online. <strong>The more successful it is, the larger the " + "bonus each of your team members will receive. </strong>"
+            + "Start by checking out the link " + "<strong><a href='https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw' target='_blank'>Thé-tis Tea : Plant-based seaweed tea, rich in minerals </a></strong>"+", then work together in this chat room to develop a short advertisement of no more than <strong>30 characters in length</strong>."
         },
         {
             time: 0.02,
@@ -562,31 +558,28 @@ let products = [
         },
         {
             time: 0.1,
-            message:
-            "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
+            message: "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
         },
         {
             time: 0.4,
-            message:
-            "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
+            message: "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
         },
         {
             time: 0.7,
-            message:
-            "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
+            message: "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
         }
     ]
   },
   {
-    name: "Jury",
-    url: "",
-    taskSteps : [
-      {
-          time: 0.005,
-          message: `<strong>When all group members are done reading, begin deliberations.</strong>
-          <strong><a href='${taskURL}CWP9VmUcdS3jJ4C46Xmmh7Ks3TacxbQsOfbxhNbLMs.pdf' target='_blank'> Begin reading. </a></strong>`
-      }
-  ]
+      name: "Jury",
+      url: "",
+      taskSteps : [
+        {
+            time: 0.005,
+            message:`<strong><a href='${taskURL}CWP9VmUcdS3jJ4C46Xmmh7Ks3TacxbQsOfbxhNbLMs.pdf' target='_blank'> Click here to read instructions. </a></strong>
+            <strong> When all group members are done reading, begin deliberations.</strong>`
+        }
+    ]
   },
   {
     name: "Moral reasoning",
@@ -594,8 +587,8 @@ let products = [
     taskSteps : [
         {
             time: 0.01,
-            message: `<strong>When all group members are done reading, begin deliberations.</strong>
-            <strong><a href='${taskURL}instructions.pdf' target='_blank'> Begin reading.</a></strong>`
+            message: `<strong><a href='${taskURL}instructions.pdf' target='_blank'> Click here to read instructions. </a></strong>
+            <strong> When all group members are done reading, begin deliberations.</strong>`
         },
         {
             time: 0.875,
@@ -620,15 +613,15 @@ let products = [
     ]
   },
   {
-    name: "Intellective Battery",
-    url: "",
-    taskSteps : [
-      {
-         time: 0.003,
-         message: `<strong>When all group members are done reading, begin deliberations.</strong>
-         <strong><a href='${taskURL}Q3DYssUNxyGyQOvnmahuCdfgVjF0SYXpRARTMyXXxU.pdf' target='_blank'> Begin reading. </a></strong>`
-      },
-    ]
+      name: "Intellective Battery",
+      url: "",
+      taskSteps : [
+          {
+              time: 0.003,
+              message: `<strong><a href='${taskURL}Q3DYssUNxyGyQOvnmahuCdfgVjF0SYXpRARTMyXXxU.pdf' target='_blank'> Click here to read instructions.</a></strong>
+              <strong> When all group members are done reading, begin deliberations.</strong>`
+          },
+      ]
   }
 ];
 
@@ -1932,7 +1925,25 @@ io.on("connection", socket => {
       startTime = new Date().getTime();
 
       // Initialize steps
-      const taskSteps = currentProduct.taskSteps; //storing the steps [] for task
+      // const taskSteps = [
+      //   {
+      //     time: 0.1,
+      //     message:
+      //       "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
+      //   },
+      //   {
+      //     time: 0.4,
+      //     message:
+      //       "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
+      //   },
+      //   {
+      //     time: 0.7,
+      //     message:
+      //       "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
+      //   }
+      // ];
+
+      const taskSteps = currentProduct.taskSteps;
 
       // Execute steps
       taskSteps.forEach((step, index) => {
