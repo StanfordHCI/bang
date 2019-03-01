@@ -58,24 +58,24 @@ function renderChats(batch) {
     } else {
       try {
         const chats = JSON.parse(chatsJSON);
-        // console.log("\nChats for batch:",batch);
+        console.log("\nChats for batch:",batch);
         chats
           .map(a => a.round)
           .set()
           .sort()
           .forEach(currentRound => {
-            // console.log("\nRound", currentRound);
+            console.log("\nRound", currentRound);
             chats
               .map(a => a.room)
               .set()
               .sort()
               .forEach(currentRoom => {
-                // console.log("\nRoom",currentRoom,"in round",currentRound);
+                console.log("\nRoom",currentRoom,"in round",currentRound);
                 let ads = chats
                   .sort((a, b) => a.time - b.time)
                   .filter(a => a.room == currentRoom && a.round == currentRound)
-                  .filter(a => a.message[0] === "!");
-                // ads.forEach(m => console.log("  ",m.message))
+                  //.filter(a => a.message[0] === "!");
+                ads.forEach(m => console.log("  ",m.message))
                 let chosenAd = ads[ads.length - 1];
                 ad = {
                   batch: chosenAd.batch,
@@ -88,7 +88,7 @@ function renderChats(batch) {
               });
           });
       } catch (err) {
-        // console.log('File ending error in batch',batch)
+        console.log('File ending error in batch',batch)
       }
     }
   });
@@ -453,15 +453,14 @@ let totalCount = 0;
 
 useCompleteBatches(manipulationFix);
 
-//Save from servers
+// Save from servers
 // downloadData("mark.dmorina.com",saveAllData)
 // downloadData("bang.dmorina.com",saveAllData)
 // downloadData("b01.dmorina.com",saveAllData)
 
 //Save from local folder
 /* saveAllData() */
-
-// renderChats(1534356049092)
+// renderChats(1550688611521)
 // useEachBatchDB(renderAds)
 /* retroactiveBonus() */
 /* retroactivelyFixRooms() */

@@ -53,7 +53,7 @@ const requiredOn = runningLive;
 const checkinIntervalMinutes = roundMinutes / 3;
 const qFifteenOn = false;
 const qSixteenOn = false;
-const postSurveyOn = false;
+const postSurveyOn = true;
 const demographicsSurveyOn = true;
 
 //Testing toggles
@@ -239,7 +239,7 @@ function ioEmitById(socketId, event, message, socket, user) {
     if (event === "chatbot") {
       printMessage = "all the questions";
     }
-    +console.log(
+    console.log(
       socket.id,
       socket.mturkId,
       isActive,
@@ -1131,6 +1131,7 @@ io.on("connection", socket => {
         starterCheck: {},
         viabilityCheck: {},
         statusCheck: {},
+        statusTeams: {},
         demographicsCheck: {},
         conflictCheck: {},
         creativeCheck: {},
@@ -1617,6 +1618,9 @@ io.on("connection", socket => {
         } else if (timeCheckOn) {
           recordTime("round");
         }
+
+        console.log("currentEvent === midSurveyStatus");
+
         ioEmitById(
           socket.mturkId,
           "load",
@@ -2548,23 +2552,28 @@ io.on("connection", socket => {
           // else 
           let team = getTeamMembers(user)[teamIndex - 1];
           questionObj["question"] += ` Team  ${teamIndex} (${team}).`;
-        } else if (answerTag === "STAT") {
-          // append question and answers with team member name
-          
-          let teams = getTeamMembersArray(user);
-          console.log(teams);
+        } else if (answerTag === "STAT") { // prepare status survey questions
           if (teamSize !== 4) throw "Not enough team members for survey format"
           
-          let lastTeam = teams[teams.length - 1].split(" "); // splits string into array
-          lastTeam.pop(); // removes empty last element
-          console.log(lastTeam);
-          console.log(lastTeam.length);
+          let teams = getTeamMembersArray(user);
+          let lastTeam = teams[teams.length - 1];
 
+          // if members dropped, add N/A
+          while (lastTeam.length < 4) {
+            lastTeam.push({"name":"N/A", "mturkId":"N/A"});
+          }
+          console.log(JSON.stringify(lastTeam))
           answerObj = scale7A;
           
-          let member = (i - 1) % 5;
-          if (member != 0) {
-              questionObj["question"] = `${lastTeam[member-1]}` + questionObj["question"];
+          let member = (i - 2) % 5;
+          questionObj["question"] = `${lastTeam[member]["name"]}` + questionObj["question"];
+
+          // update user object with order of status survey team members at last survey question
+          if (i === 20) {
+            let newTeam = [lastTeam[0]["mturkId"], lastTeam[1]["mturkId"], lastTeam[2]["mturkId"], lastTeam[3]["mturkId"]];
+            user.results.statusTeams[currentRound] = newTeam;
+            updateUserInDB(user, "results.statusTeams", user.results.statusTeams);
+            console.log(JSON.stringify(user.results.statusTeams));
           }
         } else if (answerTag === "TR") {
           //team radio
@@ -2740,7 +2749,7 @@ const getTeamMembers = user => {
 const getTeamMembersArray = user => {
   // Makes a list of teams this user has worked with
   const roomTeams = user.rooms.map((room, rIndex) => {
-    return users.filter(user => user.rooms[rIndex] === room);
+    return users.filter(user => user.rooms[rIndex] === room && user.connected === true);
   });
 
   // Makes a human friendly string for each team with things like 'you' for the current user,
@@ -2750,6 +2759,7 @@ const getTeamMembersArray = user => {
       const friend = user.friends.find(
         friend => friend.mturkId === current.mturkId
       );
+
       let name =
         experimentRound === tIndex && currentCondition === "treatment"
           ? friend.tAlias
@@ -2757,10 +2767,13 @@ const getTeamMembersArray = user => {
       if (name === user.name) {
         name = "you";
       }
-      return (
-        total.concat(name + " ")
-      );
-    }, "")
+
+      var newTeamMember = {};
+      newTeamMember["name"] = name;
+      newTeamMember["mturkId"] = friend.mturkId;
+      
+      return total.concat([newTeamMember]);
+    }, [])
   );
 };
 
@@ -2793,6 +2806,8 @@ const postSurveyGenerator = user => {
     correctAnswer: correctAnswer
   };
 };
+
+
 
 function getRndInteger(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;

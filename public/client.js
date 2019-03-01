@@ -83,6 +83,32 @@ $(function() {
     socket.emit("notify-more", {});
   });
 
+let vm = new Vue({
+    el: "#midSurveyStatus-questions",
+    data: {
+      questions: [{question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
+      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},]
+},
+});
+
   Vue.component("question-component", {
     template: `
       <p>{{question.question}}</p>
@@ -497,6 +523,8 @@ $(function() {
 
   $("#midFormStatus").submit(event => {
     event.preventDefault(); //stops page reloading
+    console.log("event data: " + event);
+    console.log("serialized data: " + $("#midFormStatus").serialize());
     socket.emit("midSurveyStatusSubmit", $("#midFormStatus").serialize()); //submits results alone
     socket.emit("next event");
     $midSurveyStatus.hide();
@@ -506,6 +534,7 @@ $(function() {
 
   $("#creativeForm").submit(event => {
     event.preventDefault(); //stops page reloading
+
     socket.emit("creativeSurveySubmit", $("#creativeForm").serialize()); //submits results alone
     socket.emit("next event");
     $creativeSurvey.hide();
@@ -760,13 +789,59 @@ $(function() {
   socket.on("load", data => {
     let element = data.element;
     let questions = data.questions;
+    
+    // if (element === "midSurveyStatus") {
+    //   vm.$data.questions[0][question] = questions[0][question];
+    //   vm.$data.questions[0][name] = questions[0][name];
+    //   vm.$data.questions[0][answers] = questions[0][answers];
+    //   vm.$data.questions[0][answerType] = questions[0][answerType];
+    //   vm.$data.questions[0][textValue] = questions[0][textValue];
+    //   vm.$data.questions[0][required] = questions[0][answerType];
+      
+    //   vm.$data.questions[1][question] = questions[1][question];
+    //   vm.$data.questions[1][name] = questions[1][name];
+    //   vm.$data.questions[1][answers] = questions[1][answers];
+    //   vm.$data.questions[1][answerType] = questions[1][answerType];
+    //   vm.$data.questions[1][textValue] = questions[1][textValue];
+    //   vm.$data.questions[1][required] = questions[1][answerType];
+      
+    //   vm.$data.questions[2][question] = questions[2][question];
+    //   vm.$data.questions[2][name] = questions[2][name];
+    //   vm.$data.questions[2][answers] = questions[1][answers];
+    //   vm.$data.questions[2][answerType] = questions[1][answerType];
+    //   vm.$data.questions[2][textValue] = questions[1][textValue];
+    //   vm.$data.questions[2][required] = questions[1][answerType];
 
-    new Vue({
-      el: "#" + element + "-questions",
-      data: {
-        questions
-      }
+    //   vm.$data.questions[3][question] = questions[3][question];
+    //   vm.$data.questions[3][name] = questions[3][name];
+    //   vm.$data.questions[3][answers] = questions[1][answers];
+    //   vm.$data.questions[3][answerType] = questions[1][answerType];
+    //   vm.$data.questions[3][textValue] = questions[1][textValue];
+    //   vm.$data.questions[3][required] = questions[1][answerType];
+
+    //   vm.$data.questions[4][question] = questions[4][question];
+    //   vm.$data.questions[4][name] = questions[4][name];
+    //   vm.$data.questions[4][answers] = questions[1][answers];
+    //   vm.$data.questions[4][answerType] = questions[1][answerType];
+    //   vm.$data.questions[4][textValue] = questions[1][textValue];
+    //   vm.$data.questions[4][required] = questions[1][answerType];
+
+    //   vm.$data.questions[5][question] = questions[5][question];
+    //   vm.$data.questions[5][name] = questions[5][name];
+    //   vm.$data.questions[5][answers] = questions[1][answers];
+    //   vm.$data.questions[5][answerType] = questions[1][answerType];
+    //   vm.$data.questions[5][textValue] = questions[1][textValue];
+    //   vm.$data.questions[5][required] = questions[1][answerType];
+      
+    // } else {
+      new Vue({
+        el: "#" + element + "-questions",
+        data: {
+          questions
+        }
     });
+    //}
+    //console.log("Check if questions are updating " + JSON.stringify(data.questions));
 
     if (!data.interstitial) {
       hideAll();
