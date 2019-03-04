@@ -2565,7 +2565,6 @@ io.on("connection", socket => {
           while (lastTeam.length < 4) {
             lastTeam.push({"name":"N/A", "mturkId":"N/A"});
           }
-          console.log(JSON.stringify(lastTeam))
           answerObj = scale7A;
           
           let member = (i - 2) % 5;
@@ -2576,7 +2575,6 @@ io.on("connection", socket => {
             let newTeam = [lastTeam[0]["mturkId"], lastTeam[1]["mturkId"], lastTeam[2]["mturkId"], lastTeam[3]["mturkId"]];
             user.results.statusTeams[currentRound] = newTeam;
             updateUserInDB(user, "results.statusTeams", user.results.statusTeams);
-            console.log(JSON.stringify(user.results.statusTeams));
           }
         } else if (answerTag === "TR") {
           //team radio
