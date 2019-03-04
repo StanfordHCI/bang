@@ -130,14 +130,14 @@ const face = {
 }
 
 const dem1 = {
-  answers: ["Less than a high school diploma",
-  "High school degree or equivalent (e.g. GED)",
+  answers: ["Less than High School",
+  "High school or equiv",
   "Some college, no degree",
-  "Associate degree (e.g. AA, AS)",
-  "Bachelor’s degree (e.g. BA, BS)",
-  "Master’s degree (e.g. MA, MS, MEd)",
-  "Professional degree (e.g. MD, DDS, DVM)",
-  "Doctorate (e.g. PhD, EdD)"],
+  "Associate degree",
+  "Bachelors degree",
+  "Masters degree",
+  "Professional degree",
+  "Doctorate"],
   answerType: "radio",
   textValue: true
 }
@@ -1621,11 +1621,13 @@ io.on("connection", socket => {
 
         console.log("currentEvent === midSurveyStatus");
 
+        let thisElement = "midSurveyStatusR" + currentRound.toString();
+
         ioEmitById(
           socket.mturkId,
           "load",
           {
-            element: "midSurveyStatus",
+            element: thisElement,
             questions: loadQuestions(midSurveyStatusFile, user),
             interstitial: false,
             showHeaderBar: true
@@ -2244,24 +2246,24 @@ io.on("connection", socket => {
       // Initialize steps
       const taskSteps = [
         {
-          time: 0.02,
+          time: 0.01,
           message:
-          "<br><strong>HIT bot: Make sure to review all the instructions. Take about 3 minutes to review the product information.</strong>"
+          "<br><strong>HIT bot: Take a minute to review all instructions and product information.</strong>"
       },
         {
-          time: 0.2,
+          time: 0.15,
           message:
-            "<br><strong>HIT bot: Say hello to your team members! Begin brainstorming ad ideas together. (4 minutes)</strong>"
+            "<br><strong>HIT bot: Say hello to your team members! Begin brainstorming advertisement ideas together.</strong>"
         },
         {
-          time: 0.5,
+          time: 0.4,
           message:
-            "<br><strong>HIT bot: As a team, discuss and narrow down your ideas. Collaborate to create the most compelling text ad. (5 minutes)</strong>"
+            "<br><strong>HIT bot: As a team, discuss and narrow down your ideas. Collaborate to create the most compelling text ad.</strong>"
         },
         {
-          time: 0.9,
+          time: 0.85,
           message:
-            "<br><strong>HIT bot: Polish your team's favorite ad and get ready to submit. (1 minute)</strong>"
+            "<br><strong>HIT bot: Polish your team's favorite ad and get ready to submit.</strong>"
         },
         {
           time: 0.9,
@@ -2274,9 +2276,9 @@ io.on("connection", socket => {
             "<br><strong>HIT bot: Last chance to submit!</strong>"
         },
         {
-          time: 0.98,
+          time: 0.96,
           message:
-            "<br><strong>HIT bot: This round is ending soon. Time to say goodbye to your team!</strong>"
+            "<br><strong>HIT bot: This round is ending soon. Time to say goodbye to your teammates!</strong>"
         }
       ];
 
@@ -2387,8 +2389,6 @@ io.on("connection", socket => {
   socket.on("creativeSurveySubmit", data => {
     useUser(socket, user => {
       user.results.creativeCheck[currentRound] = parseResults(data);
-      console.log("Creative Survey");
-      console.log(parseResults(data));
       updateUserInDB(
         user,
         "results.creativeCheck",
@@ -2474,6 +2474,8 @@ io.on("connection", socket => {
 
   socket.on("demographicsSurveySubmit", data => {
     useUser(socket, user => {
+      console.log("Demographics Survey");
+      console.log(parseResults(data));
       user.results.demographicsCheck = parseResults(data);
       updateUserInDB(
         user,
@@ -2500,6 +2502,7 @@ io.on("connection", socket => {
       txt.length,
       questionFile.indexOf(".") - txt.length
     );
+
     let questions = [];
     let i = 0;
     fs.readFileSync(questionFile)

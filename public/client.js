@@ -55,7 +55,10 @@ $(function() {
   const $preSurvey = $("#preSurvey"); // The preSurvey page
   const $starterSurvey = $("#starterSurvey"); // The starterSurvey page
   const $midSurvey = $("#midSurvey"); // the midSurvey page
-  const $midSurveyStatus = $("#midSurveyStatus"); // the after each round status survey page
+  const $midSurveyStatusR1 = $("#midSurveyStatusR1"); // the after each round status survey page
+  const $midSurveyStatusR2 = $("#midSurveyStatusR2"); // the after each round status survey page
+  const $midSurveyStatusR3 = $("#midSurveyStatusR3"); // the after each round status survey page
+  const $midSurveyStatusR4 = $("#midSurveyStatusR4"); // the after each round status survey page
   const $psychologicalSafety = $("#psychologicalSafety"); // the psych safety page
   const $postSurvey = $("#postSurvey"); // The postSurvey page
   const $demographicsSurvey = $("#demographicsSurvey"); // The demographics survey page - must always be last
@@ -82,32 +85,6 @@ $(function() {
   $("#notify-more").click(e => {
     socket.emit("notify-more", {});
   });
-
-let vm = new Vue({
-    el: "#midSurveyStatus-questions",
-    data: {
-      questions: [{question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},
-      {question: '', name: '', answers: '', answerType: '', textValue: '', required: ''},]
-},
-});
 
   Vue.component("question-component", {
     template: `
@@ -138,7 +115,10 @@ let vm = new Vue({
     $preSurvey.hide();
     $starterSurvey.hide();
     $midSurvey.hide();
-    $midSurveyStatus.hide();
+    $midSurveyStatusR1.hide();
+    $midSurveyStatusR2.hide();
+    $midSurveyStatusR3.hide();
+    $midSurveyStatusR4.hide();
     $psychologicalSafety.hide();
     $postSurvey.hide();
     $conflictSurvey.hide();
@@ -521,17 +501,41 @@ let vm = new Vue({
     $("#midForm")[0].reset();
   });
 
-  $("#midFormStatus").submit(event => {
+  $("#midFormStatusR1").submit(event => {
     event.preventDefault(); //stops page reloading
-    console.log("event data: " + event);
-    console.log("serialized data: " + $("#midFormStatus").serialize());
-    socket.emit("midSurveyStatusSubmit", $("#midFormStatus").serialize()); //submits results alone
+    socket.emit("midSurveyStatusSubmit", $("#midFormStatusR1").serialize()); //submits results alone
     socket.emit("next event");
-    $midSurveyStatus.hide();
+    $midSurveyStatusR1.hide();
     $holdingPage.show();
-    $("#midFormStatus")[0].reset();
+    $("#midFormStatusR1")[0].reset();
   });
 
+  $("#midFormStatusR2").submit(event => {
+    event.preventDefault(); //stops page reloading
+    socket.emit("midSurveyStatusSubmit", $("#midFormStatusR2").serialize()); //submits results alone
+    socket.emit("next event");
+    $midSurveyStatusR2.hide();
+    $holdingPage.show();
+    $("#midFormStatusR2")[0].reset();
+  });
+
+  $("#midFormStatusR3").submit(event => {
+    event.preventDefault(); //stops page reloading
+    socket.emit("midSurveyStatusSubmit", $("#midFormStatusR3").serialize()); //submits results alone
+    socket.emit("next event");
+    $midSurveyStatusR3.hide();
+    $holdingPage.show();
+    $("#midFormStatusR3")[0].reset();
+  });
+
+  $("#midFormStatusR4").submit(event => {
+    event.preventDefault(); //stops page reloading
+    socket.emit("midSurveyStatusSubmit", $("#midFormStatusR4").serialize()); //submits results alone
+    socket.emit("next event");
+    $midSurveyStatusR4.hide();
+    $holdingPage.show();
+    $("#midFormStatusR4")[0].reset();
+  });
   $("#creativeForm").submit(event => {
     event.preventDefault(); //stops page reloading
 
@@ -592,7 +596,7 @@ let vm = new Vue({
 
   $("#demographicsForm").submit(event => {
     event.preventDefault(); //stops page reloading
-    socket.emit("demographicsSurveySubmit", $("#demographicsSurvey").serialize()); //submits results alone
+    socket.emit("demographicsSurveySubmit", $("#demographicsForm").serialize()); //submits results alone
     socket.emit("next event");
     $demographicsSurvey.hide();
     $holdingPage.show();
@@ -790,58 +794,12 @@ let vm = new Vue({
     let element = data.element;
     let questions = data.questions;
     
-    // if (element === "midSurveyStatus") {
-    //   vm.$data.questions[0][question] = questions[0][question];
-    //   vm.$data.questions[0][name] = questions[0][name];
-    //   vm.$data.questions[0][answers] = questions[0][answers];
-    //   vm.$data.questions[0][answerType] = questions[0][answerType];
-    //   vm.$data.questions[0][textValue] = questions[0][textValue];
-    //   vm.$data.questions[0][required] = questions[0][answerType];
-      
-    //   vm.$data.questions[1][question] = questions[1][question];
-    //   vm.$data.questions[1][name] = questions[1][name];
-    //   vm.$data.questions[1][answers] = questions[1][answers];
-    //   vm.$data.questions[1][answerType] = questions[1][answerType];
-    //   vm.$data.questions[1][textValue] = questions[1][textValue];
-    //   vm.$data.questions[1][required] = questions[1][answerType];
-      
-    //   vm.$data.questions[2][question] = questions[2][question];
-    //   vm.$data.questions[2][name] = questions[2][name];
-    //   vm.$data.questions[2][answers] = questions[1][answers];
-    //   vm.$data.questions[2][answerType] = questions[1][answerType];
-    //   vm.$data.questions[2][textValue] = questions[1][textValue];
-    //   vm.$data.questions[2][required] = questions[1][answerType];
-
-    //   vm.$data.questions[3][question] = questions[3][question];
-    //   vm.$data.questions[3][name] = questions[3][name];
-    //   vm.$data.questions[3][answers] = questions[1][answers];
-    //   vm.$data.questions[3][answerType] = questions[1][answerType];
-    //   vm.$data.questions[3][textValue] = questions[1][textValue];
-    //   vm.$data.questions[3][required] = questions[1][answerType];
-
-    //   vm.$data.questions[4][question] = questions[4][question];
-    //   vm.$data.questions[4][name] = questions[4][name];
-    //   vm.$data.questions[4][answers] = questions[1][answers];
-    //   vm.$data.questions[4][answerType] = questions[1][answerType];
-    //   vm.$data.questions[4][textValue] = questions[1][textValue];
-    //   vm.$data.questions[4][required] = questions[1][answerType];
-
-    //   vm.$data.questions[5][question] = questions[5][question];
-    //   vm.$data.questions[5][name] = questions[5][name];
-    //   vm.$data.questions[5][answers] = questions[1][answers];
-    //   vm.$data.questions[5][answerType] = questions[1][answerType];
-    //   vm.$data.questions[5][textValue] = questions[1][textValue];
-    //   vm.$data.questions[5][required] = questions[1][answerType];
-      
-    // } else {
       new Vue({
         el: "#" + element + "-questions",
         data: {
           questions
         }
     });
-    //}
-    //console.log("Check if questions are updating " + JSON.stringify(data.questions));
 
     if (!data.interstitial) {
       hideAll();
@@ -902,10 +860,10 @@ let vm = new Vue({
       let totalLengthString = "";
       totalLengthString = Math.round(4 * data.duration + 15) + " minutes";
       log(
-        "<strong>DO NOT REFRESH OR LEAVE THE PAGE. If you do, it will terminate the task for your team members and you will not be compensated.</strong>"
+        "<strong>DO NOT REFRESH OR LEAVE THE PAGE! If you do, it may terminate the task for your team members and you will not be compensated.</strong>"
       );
       log(
-        "You will receive the bonus pay at the stated hourly rate <strong>only if you complete all rounds and fill out all survey questions.</strong>"
+        "You will receive the bonus pay at the stated hourly rate only if you<strong> fill out all survey questions and complete all rounds.</strong>"
       );
       log(
         "The entire HIT will take no more than " +
