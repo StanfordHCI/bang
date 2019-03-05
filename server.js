@@ -2558,8 +2558,8 @@ io.on("connection", socket => {
         } else if (answerTag === "STAT") { // prepare status survey questions
           if (teamSize !== 4) throw "Not enough team members for survey format"
           
-          let teams = getTeamMembersArray(user);
-          let lastTeam = teams[teams.length - 1];
+          let curTeams = getTeamMembersArray(user);
+          let lastTeam = curTeams[curTeams.length - 1];
 
           // if members dropped, add N/A
           while (lastTeam.length < 4) {
@@ -2567,8 +2567,8 @@ io.on("connection", socket => {
           }
           answerObj = scale7A;
           
-          let member = (i - 2) % 5;
-          questionObj["question"] = `${lastTeam[member]["name"]}` + questionObj["question"];
+          let curMember = (i - 2) % 5;
+          questionObj["question"] = `${lastTeam[curMember]["name"]}` + questionObj["question"];
 
           // update user object with order of status survey team members at last survey question
           if (i === 20) {
