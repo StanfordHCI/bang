@@ -43,3 +43,5 @@ Replace the keys with your own by creating an IAM user (see a [tutorial on getti
 5. Check to see if anyone else is running. Start by doing `ps -ax | grep -i node` which will tell you if there are any other node processes running. Its fine to run at the same time as others, BUT, we don't like to start new HITs while another one is still in waitChat. So if you do see another task running, try to check in to see if its finished waitChat or not.
 6. Run with `nohup node server.js >> status.log 2>&1 &`. This command lets you run the server without staying connected and watching it closely.  You can store the log elsewhere by changing that part of the command.
 7. Follow with `tail -f status.log`
+
+- In case you need to cancel the hit, visit the `[HIT url]/god.html` page and press `cancel` to kill the process.
