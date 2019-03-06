@@ -1,107 +1,50 @@
 ## About
 
-This is a 4-part system that automates the process of paying back workers that previously participated in an Amazon Mechanical Turk (mTurk) experiment with us and for some reason or another did not receive compensation.
+Automates the process of paying back workers that previously participated in an Amazon Mechanical Turk (mTurk) experiment with us and for some reason or another did not receive compensation.
 
 ## Languages
 
-This process involves two programs in NodeJS and two in Python. Programs that deal with creating new mTurk Human Intelligence Tasks (HITs) or parsing through existing submissions are written in NodeJS and those that involve reading and sending emails use Python.
+Most of the application is written in NodeJS except for the email parser which is written in Python. However, the node application calls the python program as a system call.
 
 ## Files
 
-- parseRepayEmails.py => _Python_
-- generateRepayHITs.js => _NodeJS_
-- sendRepayEmails.py => _Python_
-- bonusRepays.js => _NodeJS_
+- parse2.py
+- repay.js
 
 ## .env File
 
-Create a .env file with the following information
+Create a .env file with the following format:
 
 ```
 AWS_ID=<your aws id>
 AWS_KEY=<your aws key>
 
+CLIENT_ID=<your client id>
+CLIENT_SECRET=<your client secret>
+REDIRECT_URL=<your redirect url>
+ACCESS_TOKEN=<your access token>
+REFRESH_TOKEN=<your refresh token>
+EXPIRY_DATE=<your expiry date>
+CODE=<your code>
+
 EMAIL_LOGIN=<your email login>
 EMAIL_PASSWORD=<your password>
 ```
+Instructions on how to obtain your AWS id and your AWS key can be found on the Amazon Web Services documentation and instructions on how to obtain your client Id, client secret, redirect url, access token, refresh token, expiry date and code can be found on Google Auths page.
 
-## Creating a virtual environment for running Python Files
-
-1. A virtual environment is recommended in order to successfully run Python files. To download `virtualenv` run:
-
+## Path
+You must define the path of where the .data files are located. The `.data/repay` file will be in the same directory as the `.data/users` and the `.data/batch` files. Example:
 ```
-$ python -m pip install --user virtualenv
-```
-
-2. The installation will provide a `PATH` where the executable is located. You can either copy that path and run
-
-```
-$ /path/to/virtualenv ENV
+const path = '../bang/.data/';
 ```
 
-or you can permanently change the path by running this once:
-
+## Usage
 ```
-$ export PATH=$PATH:/path/to/
-```
-
-_without_ the name `virtualenv` at the end
-and then you'll be able to run the simpler
-
-```
-$ virtualenv ENV
+$ node repay.js
 ```
 
-3. To activate the virutal environment run:
-
-```
-$ source ENV/bin/activate
-```
-
-_Note: the word source is not code for anything; you can type the word source._
-
-4. You're now in the virtual environment! To install all dependencies do:
-
-```
-$ python -m pip install -r requirements.txt
-```
-
-5. Now you can successfully run the python programs as you normally would.
-
-```
-$ python3 <name of file>
-```
-
-6. To exit the virtual environment type:
-
-```
-$ deactivate
-```
-
-This will be useful for when you run other types of programs (e.g. NodeJS).
-
-## Dependencies
-
-This program depends on the following databases for running successfully:
-
-- .data/users
-- .data/batch
-
-Make sure that the files' database variables contain the correct path:
-Example
-.py files:
-
-```python
-database = '../.data/repay'
-```
-
-.js files;
-
-```javascript
-const database = "../.data/repay";
-```
-
-This program also creates a new database called _.data/repay_ to track people that are corresponding with us. This JSON file contains the following information for each user:
+## Fields in the Repay Database
+This JSON file contains the following information for each user:
 
 - Name => _str_
 - Email => _str_
@@ -111,59 +54,3 @@ This program also creates a new database called _.data/repay_ to track people th
 - SentHIT => _boolean_
 - SentBonus => _boolean_
 - Bonus => _int_
-
-## parseRepayEmails.py
-
-### Usage
-
-```
-$ python3 parseRepayEmails.py
-```
-
-### Configuration
-
-Current configuration assumes the domain for the email linked with the mTurk requester account is an outlook one (@stanford.edu). If that changes to, say, a gmail one, change the variable:
-
-```python
-imapServer = "outlook.office365.com"
-```
-
-to the following:
-
-```python
-imapServer = "imap.gmail.com"
-```
-
-## generateRepayHITs.js
-
-### Usage
-
-```
-$ node generateRepayHITs.js
-```
-
-## sendRepayEmails.py
-
-### Usage
-
-```
-$ python3 sendRepayEmails.py
-```
-
-### Configuration
-
-If the domain of the email that will reply to users is not a Stanford one, change the variable:
-
-```python
-SMTP_SERVER = "smtp.stanford.edu"
-```
-
-to either `"mail.domain.com"` or `"smtp.domain.com"`. If neither of those work, try [NSLOOKUP](www.exclamationsoft.com/exclamationsoft/netmailbot/help/website/HowToFindTheSMTPMailServerForAnEmailAddress.html).
-
-## bonusRepays.js
-
-### Usage
-
-```
-$ node bonusRepays.js
-```
