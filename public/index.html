@@ -92,15 +92,7 @@
         <div id="character-counter-div"><h3 id="character-counter"><span id="character-count"></span> characters</h3></div>
       </div>
     </li>
-    <div id="checkin" class="popup">
-      <form id="checkin-form" class="rb">
-        <p>These check-ins are anonymous and will be used by an algorithm to pair you with an optimal team for the next round.</p>
-        <div id="checkin-questions" class="popup-questions">
-          <question-component v-for="question in questions" :question="question" />
-        </div>
-        <input id="checkin-submit" type="submit" value="Submit">
-      </form>
-    </div>
+
     <li id="holding" class="login page">
       <div class="form">
         <h3 class="title">You're signed in as <b><span id="username"></span></b>.</h3>
@@ -110,100 +102,14 @@
     <li id="preSurvey" class="login page">
       <div class="form">
         Please answer the following questions to get started.
-        <ul class="postSurveyQuestions"></ul>
+        <ul class="manipulationCheckQuestions"></ul>
       </div>
     </li>
-
-    <li id="starterSurvey" class="login page">
-      <form id="starterForm">
-        <h3>You will see 20 statements and you will
-          be asked to evaluate the extent to which you agree with them.
-          Please answer honestly with regard to how you see yourself
-          in the present moment, not how you would like to be in the future.
-          There are no incorrect answers nor any personality profile that is
-          inherently more desirable than another.</h3>
-        <div id="starterSurvey-questions" >
-          <question-component v-for="question in questions" :question="question" />
-        </div>
-        <input type="submit" value="Submit">
-      </form>
-    </li>
-
-    <li id="midSurvey" class="login page">
-      <form id="midForm" >
-        <h3 class="intro">Please thoughtfully answer the following questions about your last team.
-          Your answers will have no impact on your task performance or ability to work with us in the future.</h3>
-        <div id="midSurvey-questions" class="survey-questions">
-          <question-component v-for="question in questions" :question="question" />
-        </div>
-        <input id="submitButton" type="submit" value="Submit">
-      </form>
-    </li>
-
-    <li id="psychologicalSafety" class="login page">
-    <form id="psychologicalSafety-form" >
-      <h3 class="intro">Please thoughtfully answer the following questions about your last team.
-        Your answers will have no impact on your task performance or ability to work with us in the future.</h3>
-      <div id="psychologicalSafety-questions" class="survey-questions">
-        <question-component v-for="question in questions" :question="question" />
-      </div>
-      <input id="submitButton" type="submit" value="Submit">
-    </form>
-  </li>
-
-    <li id="postSurvey" class="login page">
-      <form id="postForm">
-        <div id="postSurvey-questions" class='survey-questions'>
-          <question-component v-for="question in questions" :question="question" />
-        </div>
-       <input type="submit" value="Submit">
-      </form>
-    </li>
-
-    <li id="blacklistSurvey" class="login page">
-      <form id="blacklistForm">
-        <div id="blacklistSurvey-questions" class='survey-questions'>
-          <question-component v-for="question in questions" :question="question" />
-        </div>
-        <input type="submit" value="Submit">
-      </form>
-    </li>
-
-    <li id="qFifteen" class="login page">
-      <form id="qFifteenForm">
-        <h3>Please thoughtfully answer the following questions about your previous teams. 
-          Your answers are anonymous and have no impact on your task performance or ability 
-          to work with us in the future</h3>
-        <div id="qFifteen-questions" class='survey-questions'>
-          <question-component v-for="question in questions" :question="question" />
-        </div>
-        <input type="submit" value="Submit">
-      </form>
-    </li>
-
-    <li id="qSixteen" class="login page">
-      <form id="qSixteenForm">
-        <h3>Please thoughtfully answer the following questions about your previous teams. 
-            Your answers are anonymous and have no impact on your task performance or ability 
-            to work with us in the future</h3>
-        <div id="qSixteen-questions" class='survey-questions'>
-          <question-component v-for="question in questions" :question="question" />
-        </div>
-        <input type="submit" value="Submit">
-      </form>
-    </li>
-
-    <li id="teamfeedbackSurvey" class="login page">
-      <form id="teamfeedbackForm">
-        <h3>We're thinking about hiring a manager
-           to lead each team in the future. For this team, provide the manager
-           with an anonymous statement about how your team would work together
-           on future tasks. Your answers will have no impact on your ability
-           to work with us in the future.
-        </h3>
-        <textarea class="teamfeedbackInput" id="teamfeedbackInput" name="teamfeedbackInput"></textarea>
-        <br>
-        <div id="teamfeedbackSurvey-questions" class='survey-questions'>
+    
+    <li id="surveyBlock" class="login page">
+      <form id="surveyForm">
+        <h3 id="surveyInstructions">Sample instructions</h3>
+        <div id="surveyQuestions">
           <question-component v-for="question in questions" :question="question" />
         </div>
         <input type="submit" value="Submit">
