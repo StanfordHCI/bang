@@ -1,5 +1,5 @@
 let LeavingAlert = true;
-window.onbeforeunload = function(event) {
+window.onbeforeunload = function() {
   if (LeavingAlert) {
     console.log("Leaving is true");
     return "Leaving will stop this HIT for all users. Are you sure you want to leave?";
@@ -9,6 +9,7 @@ window.onbeforeunload = function(event) {
   }
 };
 
+const sessionStartTime = new Date().getTime();
 $(function() {
   const FADE_TIME = 150; // ms
   const TYPING_TIMER_LENGTH = 400; // ms
@@ -41,7 +42,6 @@ $(function() {
 
   const $inputMessage = $(".inputMessage"); // Input message input box
   const $checkinPopup = $("#checkin");
-  const $headerBar = $(".header");
   const $headerText = $("#header-text");
   const $leaveHitButton = $("#leave-hit-button");
   const $leaveHitPopup = $("#leave-hit-popup");
@@ -73,16 +73,16 @@ $(function() {
   const $disconnectedMessage = $("._disconnected");
   const botUsername = "helperBot";
 
-  $("#ready-to-all").click(e => {
+  $("#ready-to-all").click(() => {
     socket.emit("ready-to-all", {});
   });
-  $("#kill-all").click(e => {
+  $("#kill-all").click(() => {
     socket.emit("kill-all", {});
   });
-  $("#active-to-all").click(e => {
+  $("#active-to-all").click(() => {
     socket.emit("active-to-all", {});
   });
-  $("#notify-more").click(e => {
+  $("#notify-more").click(() => {
     socket.emit("notify-more", {});
   });
 
@@ -150,21 +150,8 @@ $(function() {
 
   let holdingUsername = document.getElementById("username");
   let messagesSafe = document.getElementsByClassName("messages")[0];
-  let finishingcode = document.getElementById("finishingcode");
   let usersWaiting = document.getElementById("numberwaiting");
   let mturkVariables = {};
-
-  const $preSurveyQuestions = $(".preSurveyQuestions"); //pre survey
-  const $psychologicalSafetyQuestions = $(".psychologicalSafetyQuestions"); //pre survey
-  const $midSurveyQuestions = $(".midSurveyQuestions"); // mid survey
-  const $midSurveyStatusQuestions = $(".midSurveyStatusQuestions"); // mid survey
-  const $qFifteenQuestions = $(".qFifteenQuestions"); // Question Fifteen
-  const $qSixteenQuestions = $(".qFifteenQuestions"); // Question Fifteen
-  const $postSurveyQuestions = $(".postSurveyQuestions"); //post survey
-  const $demographicsSurveyQuestions = $(".demographicsSurveyQuestions");
-  const $conflictSurveyQuestions = $(".conflictSurveyQuestions");
-  const $creativeSurveyQuestions = $(".creativeSurveyQuestions");
-  const $satisfactionSurveyQuestions = $(".satisfactionSurveyQuestions");
 
   const socket = io({ transports: ["websocket"] });
 
@@ -187,6 +174,10 @@ $(function() {
   let URLvars = {};
   if (URL.includes("god")) {
     URLvars.assignmentId = "ASSIGNMENT_ID_NOT_AVAILABLE";
+  } else if (URL.includes("test")) {
+    URLvars.assignmentId = "test";
+    URLvars.turkSubmitTo = "b01.dmorina.com";
+    URLvars.workerId = sessionStartTime;
   } else {
     URLvars = getUrlVars(location.href);
   }
@@ -244,22 +235,18 @@ $(function() {
   document.title = "Ad writing task";
 
   // Implements notifications
-  let notify = (title, body) => {
+  let notify = () => {
     if (Notification.permission !== "granted") {
       Notification.requestPermission();
     } else {
       if (!document.hasFocus()) {
-        var notification = new Notification(title, { body: body });
       }
     }
   };
 
   let addParticipantsMessage = data => {
-    let message = "";
     if (data.numUsers === 1) {
-      message += "there's 1 participant";
     } else {
-      message += "there are " + data.numUsers + " participants";
     }
   };
 
@@ -400,7 +387,7 @@ $(function() {
 
   // Gets the 'X is typing' messages of a user
   function getTypingMessages(data) {
-    return $(".typing.message").filter(function(i) {
+    return $(".typing.message").filter(function() {
       return $(this).data("username") === data.username;
     });
   }
@@ -467,7 +454,7 @@ $(function() {
     }
   });
 
-  $inputMessage.keyup(function(event) {
+  $inputMessage.keyup(function() {
     const currentInput = $("#inputMessage").val();
     const characterCount = currentInput.length;
     if (currentInput[0] === "!") {
@@ -603,7 +590,7 @@ $(function() {
     $("#demographicsForm")[0].reset();
   });
 
-  $leaveHitButton.click(event => {
+  $leaveHitButton.click(() => {
     $leaveHitPopup.show();
     $currentInput = $("#leavetaskfeedbackInput").focus();
     $currentInput.focus();
@@ -752,12 +739,12 @@ $(function() {
     holdingUsername.innerText = username;
   });
 
-  socket.on("show chat link", data => {
+  socket.on("show chat link", () => {
     $chatLink.show();
     notify("Please click the link");
   });
   //if there are enough workers who have accepted the task, show link to chat page
-  socket.on("initiate experiment", data => {
+  socket.on("initiate experiment", () => {
     if (preChat) {
       notify(
         "Moving you to another chatroom.",
@@ -778,14 +765,12 @@ $(function() {
   // Whenever the server emits 'login', log the login message
   socket.on("login", data => {
     connected = true;
-    // Display the welcome message
-    const message = "Welcome";
 
     // log(message, { prepend: true });
     addParticipantsMessage(data);
   });
 
-  socket.on("rejected user", data => {
+  socket.on("rejected user", () => {
     hideAll();
     alert("The experiment is already full. Please return this HIT.");
   });
@@ -793,12 +778,12 @@ $(function() {
   socket.on("load", data => {
     let element = data.element;
     let questions = data.questions;
-    
-      new Vue({
-        el: "#" + element + "-questions",
-        data: {
-          questions
-        }
+
+    new Vue({
+      el: "#" + element + "-questions",
+      data: {
+        questions
+      }
     });
 
     if (!data.interstitial) {
@@ -817,7 +802,7 @@ $(function() {
   });
 
   // whenever the server emits 'checkin pop up', show checkin popup
-  socket.on("checkin popup", data => {
+  socket.on("checkin popup", () => {
     $checkinPopup.show();
   });
 
@@ -866,29 +851,25 @@ $(function() {
         "You will receive the bonus pay at the stated hourly rate only if you<strong> fill out all survey questions and complete all rounds.</strong>"
       );
       log(
-        "The entire HIT will take no more than " +
-        totalLengthString +
-        " total."
+        "The entire HIT will take no more than " + totalLengthString + " total."
       );
-      log(
-        "<br><strong>Task:</strong>"
-      );
-  
+      log("<br><strong>Task:</strong>");
+
       log(data.task);
-      
+
       log("<br><strong>Directions:</strong>");
-      
+
       log(
         "1. Check out the link above and collaborate with your team members in the chat room to develop a text advertisement<br>" +
-        "2. The ad must be no more than <strong>30 characters long</strong>. <br>" +
-        "3. Instructions will be given for submitting the team's final product. <br>" +
-        "4. You have " + textifyTime(data.duration) + " to complete this round. <br>" +
-        "5. Your final advertisement will appear online. <strong>The more successful it is, the larger the " +
+          "2. The ad must be no more than <strong>30 characters long</strong>. <br>" +
+          "3. Instructions will be given for submitting the team's final product. <br>" +
+          "4. You have " +
+          textifyTime(data.duration) +
+          " to complete this round. <br>" +
+          "5. Your final advertisement will appear online. <strong>The more successful it is, the larger the " +
           "bonus each team member will receive.</strong>"
       );
-      log(
-        "<br><strong>Example:</strong>"
-        );
+      log("<br><strong>Example:</strong>");
       log(
         "Text advertisements for 'Renaissance Golf Club': <br>\
                 <ul style='list-style-type:disc'> \
@@ -900,7 +881,6 @@ $(function() {
     }, 500);
 
     setTimeout(() => {
-      let str = "";
       for (member of data.team) {
         addChatMessage({
           username: member,
@@ -1085,30 +1065,11 @@ $(function() {
     return isMatched;
   }
 
-  function occurrences(string, subString, allowOverlapping = false) {
-    string += "";
-    subString += "";
-    if (subString.length <= 0) return string.length + 1;
-
-    var n = 0,
-      pos = 0,
-      step = allowOverlapping ? 1 : subString.length;
-
-    while (true) {
-      pos = string.indexOf(subString, pos);
-      if (pos >= 0) {
-        ++n;
-        pos += step;
-      } else break;
-    }
-    return n;
-  }
-
   socket.on("message clients", message => {
     log(message);
   });
 
-  socket.on("stop", data => {
+  socket.on("stop", () => {
     // log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
     hideAll();
     $holdingPage.show();
@@ -1139,14 +1100,20 @@ $(function() {
   });
 
   socket.on("get IDs", data => {
-    const URLvars = getUrlVars(location.href);
+    if (URL.includes("test")) {
+      URLvars.assignmentId = "test";
+      URLvars.turkSubmitTo = "b01.dmorina.com";
+      URLvars.workerId = sessionStartTime;
+    } else {
+    }
+
     socket.emit(data, {
       mturkId: URLvars.workerId,
       assignmentId: URLvars.assignmentId
     });
   });
 
-  socket.on("starterSurvey", data => {
+  socket.on("starterSurvey", () => {
     hideAll();
     $starterSurvey.show();
   });
@@ -1226,7 +1193,7 @@ $(function() {
     socket.disconnect(true);
   });
 
-  $("#mturk_form").submit(event => {
+  $("#mturk_form").submit(() => {
     socket.emit("mturk_formSubmit", $("#mturk_form").serialize());
   });
 
@@ -1241,9 +1208,7 @@ $(function() {
 });
 
 function startTimer(duration, display) {
-  var timer = duration,
-    minutes,
-    seconds;
+  var timer = duration;
   let interval = setInterval(function() {
     let minutes = parseInt(timer / 60, 10);
     let seconds = parseInt(timer % 60, 10);

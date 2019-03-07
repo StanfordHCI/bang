@@ -27,23 +27,23 @@ const notifyUs = runningLive;
 
 const cleanHITs = true;
 const assignQualifications = runningLive;
-const debugMode = !runningLive;
+const debugModeOn = !runningLive;
 
 const suddenDeath = false;
 
-const randomCondition = false;
-const randomRoundOrder = true;
-const randomProduct = true;
+const randomConditionOn = false;
+const randomRoundOrderOn = true;
+const randomProductOn = true;
 
 const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
-const midSurveyOn = false;
-const midSurveyStatusOn = true; //Only set to true if teamSize = 4, Requires waitChatOn = true.
-const creativeSurveyOn = true;
-const satisfactionSurveyOn = true;
-const conflictSurveyOn = true;
+const midSurveyOn = true;
+const midSurveyStatusOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
+const creativeSurveyOn = false;
+const satisfactionSurveyOn = false;
+const conflictSurveyOn = false;
 const blacklistOn = false;
 const teamfeedbackOn = false;
 const checkinOn = false;
@@ -51,10 +51,14 @@ const timeCheckOn = false; // tracks time user spends on task and updates paymen
 // how long each task is taking
 const requiredOn = runningLive;
 const checkinIntervalMinutes = roundMinutes / 3;
-const qFifteenOn = false;
-const qSixteenOn = false;
+const qFifteenOn = true;
+const qSixteenOn = true;
 const postSurveyOn = true;
-const demographicsSurveyOn = true;
+const demographicsSurveyOn = false;
+
+if (midSurveyStatusOn && teamSize != 4) {
+  throw "Status survey only functions at team size 4";
+}
 
 //Testing toggles
 const autocompleteTestOn = false; //turns on fake team to test autocomplete
@@ -100,67 +104,89 @@ const answers = {
 };
 
 const scale7 = {
-  answers: ["1 (Not at all)", "2", "3", "4", "5", "6","7 (Highly)"],
+  answers: ["1 (Not at all)", "2", "3", "4", "5", "6", "7 (Highly)"],
   answerType: "radio",
   textValue: true
-}
+};
 
 const scale7A = {
-  answers: ["1 (Disagree Strongly)", "2", "3", "4", "5", "6","7 (Agree Strongly)"],
+  answers: [
+    "1 (Disagree Strongly)",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7 (Agree Strongly)"
+  ],
   answerType: "radio",
   textValue: true
-}
+};
 
 const scale5Q = {
   answers: ["1 (Not at all)", "2", "3", "4", "5 (Highly)"],
   answerType: "radio",
   textValue: true
-}
+};
 
 const scale5 = {
   answers: ["1 (None)", "2", "3", "4", "5 (A lot)"],
   answerType: "radio",
   textValue: true
-}
+};
 
 const face = {
   answers: ["D:", "]:", "|:", "[:", ":D"],
   answerType: "radio",
   textValue: true
-}
+};
 
 const dem1 = {
-  answers: ["Less than High School",
-  "High school or equiv",
-  "Some college, no degree",
-  "Associate degree",
-  "Bachelors degree",
-  "Masters degree",
-  "Professional degree",
-  "Doctorate"],
+  answers: [
+    "Less than High School",
+    "High school or equiv",
+    "Some college, no degree",
+    "Associate degree",
+    "Bachelors degree",
+    "Masters degree",
+    "Professional degree",
+    "Doctorate"
+  ],
   answerType: "radio",
   textValue: true
-}
+};
 
 const dem2 = {
   answers: ["Male", "Female", "Other"],
   answerType: "radio",
   textValue: true
-}
+};
 
 const dem4 = {
-  answers: ["Less than $20,000", "$20,000 to $34,999", "$35,000 to $49,999",
-  "$50,000 to $74,999", "$75,000 to $99,999", "Over $100,000"],
+  answers: [
+    "Less than $20,000",
+    "$20,000 to $34,999",
+    "$35,000 to $49,999",
+    "$50,000 to $74,999",
+    "$75,000 to $99,999",
+    "Over $100,000"
+  ],
   answerType: "radio",
   textValue: true
-}
+};
 
 const dem6 = {
-  answers: ["American Indian or Alaska Native", "Asian", "Black or African American",
-  "Native Hawaiian or Other Pacific Islander", "White", "Other"],
+  answers: [
+    "American Indian or Alaska Native",
+    "Asian",
+    "Black or African American",
+    "Native Hawaiian or Other Pacific Islander",
+    "White",
+    "Other"
+  ],
   answerType: "checkbox",
   textValue: true
-}
+};
 
 const YNAnswers = {
   answers: ["Yes", "No"],
@@ -172,7 +198,7 @@ const binaryAnswers = {
   answers: ["Keep this team", "Do not keep this team"],
   answerType: "radio",
   textValue: true
-}
+};
 const textAnswer = {
   answers: [""],
   answerType: "text",
@@ -216,19 +242,14 @@ Array.prototype.set = function() {
 };
 
 function ioSocketsEmit(event, message) {
-  if (debugMode) {
+  if (debugModeOn) {
     console.log(event, message);
   }
   return io.sockets.emit(event, message);
 }
 
-function messageClients(message) {
-  ioSocketsEmit("message clients", message);
-  console.log("Messaged all clients:".red, message);
-}
-
 function ioEmitById(socketId, event, message, socket, user) {
-  if (debugMode) {
+  if (debugModeOn) {
     let isActive = null;
     let isConnected = null;
     if (user) {
@@ -258,7 +279,7 @@ function useUser(socket, callback, err = "Guarded against undefined user") {
     callback(user);
   } else {
     console.log(err.red, socket.id, "\n", err.stack);
-    if (debugMode) {
+    if (debugModeOn) {
       console.trace();
     }
   }
@@ -308,10 +329,9 @@ console.log = function(...msg) {
 //if (runExperimentNow){
 // Experiment variables
 /* const conditionsAvailable = ['control','treatment','baseline'] */
-const conditionsAvailable = ["control", "treatment"];
-const presetCondition = randomCondition
-  ? conditionsAvailable.pick()
-  : conditionsAvailable[1];
+const presetCondition = randomConditionOn
+  ? ["control", "treatment"].pick()
+  : "treatment";
 const currentCondition = args.condition || presetCondition;
 let treatmentNow = false;
 let firstRun = false;
@@ -329,7 +349,7 @@ let batchCompleteUpdated = false;
 
 // Settings for 4 rounds.
 // const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
-const ordering = randomRoundOrder
+const ordering = randomRoundOrderOn
   ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick()
   : [1, 2, 1, 3];
 const conditions = {
@@ -351,15 +371,10 @@ const rooms = tools.letters.slice(0, numberOfRooms);
 const people = extraRoundOn
   ? tools.letters.slice(0, teamSize ** 2 + teamSize)
   : tools.letters.slice(0, teamSize ** 2);
-const population = people.length;
-const teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn); //added '-1' to numRounds
-//}
+const teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn);
 
-//if (runExperimentNow) {
 const batchID = Date.now();
-
 console.log("Launching batch", batchID);
-//}
 
 // Setting up DB
 const Datastore = require("nedb");
@@ -697,7 +712,7 @@ let products = [
   // },
 ];
 
-if (randomProduct) {
+if (randomProductOn) {
   products = shuffle(products);
 }
 
@@ -908,7 +923,7 @@ io.on("connection", socket => {
   //   socket.username = name_structure.username;
   //   socket.emit('set username', {username: socket.username})
   // })
-  socket.on("heartbeat", data => {
+  socket.on("heartbeat", () => {
     if (socket.connected) {
       io.in(socket.id).emit("heartbeat");
     }
@@ -973,7 +988,6 @@ io.on("connection", socket => {
     }
 
     mturk.setAssignmentsPending(getPoolUsersConnected().length);
-    // debugLog(userPool, "users accepted currently: " + userPool.length)
 
     Object.keys(io.sockets.sockets).forEach(socketID => {
       if (
@@ -1086,7 +1100,6 @@ io.on("connection", socket => {
     } else {
       // waitchat off - I think the below should be usersConnected instead of usersActive as inactive users aren't being made active
       if (usersActive.length >= numUsersWanted) {
-        // io.sockets.emit('update number waiting', {num: 0});
         ioSocketsEmit("update number waiting", { num: 0 });
         console.log(
           "there are " + usersActive.length + " users: " + usersActive
@@ -1095,7 +1108,6 @@ io.on("connection", socket => {
           io.in(usersActive[i].mturkId).emit("show chat link");
         }
       } else {
-        // io.sockets.emit('update number waiting', {num: teamSize ** 2 - usersActive.length});
         ioSocketsEmit("update number waiting", {
           num: teamSize ** 2 - usersActive.length
         });
@@ -1147,7 +1159,7 @@ io.on("connection", socket => {
     };
   }
 
-  socket.on("add user", data => {
+  socket.on("add user", () => {
     if (!userAcquisitionStage) {
       issueFinish(
         socket,
@@ -1249,7 +1261,7 @@ io.on("connection", socket => {
       mturk.startTask();
     }
 
-    db.users.insert(newUser, (err, usersAdded) => {
+    db.users.insert(newUser, err => {
       console.log(
         err ? "Didn't store user: " + err : "Added " + newUser.name + " to DB."
       );
@@ -1305,7 +1317,7 @@ io.on("connection", socket => {
           batch: batchID,
           round: currentRound
         },
-        (err, usersAdded) => {
+        err => {
           if (err) console.log("Error storing message:", err);
           else
             console.log(
@@ -1372,12 +1384,10 @@ io.on("connection", socket => {
       let usersActive = getPoolUsersActive();
       if (usersActive.length >= teamSize ** 2) {
         ioSocketsEmit("update number waiting", { num: 0 });
-        // io.sockets.emit('update number waiting', {num: 0});
       } else {
         ioSocketsEmit("update number waiting", {
           num: teamSize ** 2 - usersActive.length
         });
-        // io.sockets.emit('update number waiting', {num: (teamSize ** 2) - usersActive.length});
       }
       if (userAcquisitionStage)
         mturk.setAssignmentsPending(getPoolUsersConnected().length);
@@ -1412,7 +1422,6 @@ io.on("connection", socket => {
       }
 
       console.log("Connected users: " + getUsersConnected().length);
-      //if things don't work look at this part of the code?
       if (!experimentOver && suddenDeath && experimentStarted) {
         storeHIT();
 
@@ -1452,7 +1461,7 @@ io.on("connection", socket => {
                 updateUserInDB(u, "bonus", u.bonus);
                 storeHIT();
               }
-              issueFinish(u, cancelMessage, true);
+              issueFinish(u, cancelMessage);
             });
         }
       }
@@ -1463,7 +1472,7 @@ io.on("connection", socket => {
     });
   });
 
-  socket.on("ready-to-all", data => {
+  socket.on("ready-to-all", () => {
     console.log("god is ready".rainbow);
     users
       .filter(user => !user.ready)
@@ -1474,13 +1483,13 @@ io.on("connection", socket => {
     //io.sockets.emit('echo','ready')
   });
 
-  socket.on("active-to-all", data => {
+  socket.on("active-to-all", () => {
     console.log("god is active".rainbow);
     ioSocketsEmit("echo", "active");
     // io.sockets.emit('echo', 'active');
   });
 
-  socket.on("notify-more", data => {
+  socket.on("notify-more", () => {
     console.log("god wants more humans".rainbow);
     let HITId = mturk.returnCurrentHIT();
     // let HITId = process.argv[2];
@@ -1518,16 +1527,16 @@ io.on("connection", socket => {
     });
   });
 
-  socket.on("active", data => {
+  socket.on("active", () => {
     useUser(socket, user => {
       user.active = true;
       console.log("users active:", users.filter(u => u.active === true).length);
     });
   });
 
-  socket.on("kill-all", data => {
+  socket.on("kill-all", () => {
     console.log("Terminating all live clients.".red);
-    users.forEach(u => updateUserInDB(socket, "bonus", currentBonus()));
+    users.forEach(() => updateUserInDB(socket, "bonus", currentBonus()));
     ioSocketsEmit("finished", {
       message:
         "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
@@ -1538,7 +1547,7 @@ io.on("connection", socket => {
     });
   });
 
-  socket.on("next event", data => {
+  socket.on("next event", () => {
     useUser(socket, user => {
       let currentEvent = user.currentEvent;
       let eventSchedule = user.eventSchedule;
@@ -1656,7 +1665,6 @@ io.on("connection", socket => {
           user
         );
       } else if (eventSchedule[currentEvent] === "satisfactionSurvey") {
-        
         if (creativeSurveyOn && timeCheckOn) {
           recordTime("creativeSurvey");
         } else if (midSurveyStatusOn && timeCheckOn) {
@@ -1665,7 +1673,7 @@ io.on("connection", socket => {
           recordTime("midSurvey");
         } else if (timeCheckOn) {
           recordTime("round");
-        } 
+        }
         ioEmitById(
           socket.mturkId,
           "load",
@@ -1689,7 +1697,7 @@ io.on("connection", socket => {
           recordTime("midSurvey");
         } else if (timeCheckOn) {
           recordTime("round");
-        }  
+        }
         ioEmitById(
           socket.mturkId,
           "load",
@@ -1704,7 +1712,7 @@ io.on("connection", socket => {
         );
       } else if (eventSchedule[currentEvent] === "psychologicalSafety") {
         if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey")
+          recordTime("conflictSurvey");
         } else if (satisfactionSurveyOn && timeCheckOn) {
           recordTime("satisfactionSurvey");
         } else if (creativeSurveyOn && timeCheckOn) {
@@ -1732,7 +1740,7 @@ io.on("connection", socket => {
         if (psychologicalSafetyOn && timeCheckOn) {
           recordTime("psychologicalSafetySurvey");
         } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey")
+          recordTime("conflictSurvey");
         } else if (satisfactionSurveyOn && timeCheckOn) {
           recordTime("satisfactionSurvey");
         } else if (creativeSurveyOn && timeCheckOn) {
@@ -1763,7 +1771,7 @@ io.on("connection", socket => {
         } else if (psychologicalSafetyOn && timeCheckOn) {
           recordTime("psychologicalSafetySurvey");
         } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey")
+          recordTime("conflictSurvey");
         } else if (satisfactionSurveyOn && timeCheckOn) {
           recordTime("satisfactionSurvey");
         } else if (creativeSurveyOn && timeCheckOn) {
@@ -1802,7 +1810,7 @@ io.on("connection", socket => {
         } else if (psychologicalSafetyOn && timeCheckOn) {
           recordTime("psychologicalSafetySurvey");
         } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey")
+          recordTime("conflictSurvey");
         } else if (satisfactionSurveyOn && timeCheckOn) {
           recordTime("satisfactionSurvey");
         } else if (creativeSurveyOn && timeCheckOn) {
@@ -1837,7 +1845,7 @@ io.on("connection", socket => {
         } else if (psychologicalSafetyOn && timeCheckOn) {
           recordTime("psychologicalSafetySurvey");
         } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey")
+          recordTime("conflictSurvey");
         } else if (satisfactionSurveyOn && timeCheckOn) {
           recordTime("satisfactionSurvey");
         } else if (creativeSurveyOn && timeCheckOn) {
@@ -1875,7 +1883,7 @@ io.on("connection", socket => {
         } else if (psychologicalSafetyOn && timeCheckOn) {
           recordTime("psychologicalSafetySurvey");
         } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey")
+          recordTime("conflictSurvey");
         } else if (satisfactionSurveyOn && timeCheckOn) {
           recordTime("satisfactionSurvey");
         } else if (creativeSurveyOn && timeCheckOn) {
@@ -1917,7 +1925,7 @@ io.on("connection", socket => {
         } else if (psychologicalSafetyOn && timeCheckOn) {
           recordTime("psychologicalSafetySurvey");
         } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey")
+          recordTime("conflictSurvey");
         } else if (satisfactionSurveyOn && timeCheckOn) {
           recordTime("satisfactionSurvey");
         } else if (creativeSurveyOn && timeCheckOn) {
@@ -1959,7 +1967,7 @@ io.on("connection", socket => {
           );
           batchCompleteUpdated = true;
         }
-        
+
         if (demographicsSurveyOn && timeCheckOn) {
           recordTime("demographicsSurvey");
         } else if (postSurveyOn && timeCheckOn) {
@@ -1975,7 +1983,7 @@ io.on("connection", socket => {
         } else if (psychologicalSafetyOn && timeCheckOn) {
           recordTime("psychologicalSafetySurvey");
         } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey")
+          recordTime("conflictSurvey");
         } else if (satisfactionSurveyOn && timeCheckOn) {
           recordTime("satisfactionSurvey");
         } else if (creativeSurveyOn && timeCheckOn) {
@@ -2028,7 +2036,7 @@ io.on("connection", socket => {
   });
 
   // Main experiment run
-  socket.on("ready", function(data) {
+  socket.on("ready", function() {
     useUser(socket, user => {
       //waits until user ends up on correct link before adding user - repeated code, make function
       // PK: what does this comment mean/ is it still relevant?
@@ -2042,17 +2050,6 @@ io.on("connection", socket => {
         );
         return;
       }
-
-      //PK: still relevant? can we delete this commented out code and/or incompleteRooms()?
-      // if (incompleteRooms().length) {
-      //   console.log("Some rooms empty:",incompleteRooms())
-      //   return } //are all rooms assigned
-
-      // I think this is irrelevant now
-      // if ((suddenDeath || !userAquisitionStage) && users.length != teamSize ** 2) {
-      //   console.log("Need",teamSize ** 2 - users.length,"more users.")
-      //   return
-      // }
 
       //can we move this into its own on.*** call //PK: still relevant?
       console.log("all users ready -> starting experiment");
@@ -2248,8 +2245,8 @@ io.on("connection", socket => {
         {
           time: 0.01,
           message:
-          "<br><strong>HIT bot: Take a minute to review all instructions and product information.</strong>"
-      },
+            "<br><strong>HIT bot: Take a minute to review all instructions and product information.</strong>"
+        },
         {
           time: 0.15,
           message:
@@ -2272,8 +2269,7 @@ io.on("connection", socket => {
         },
         {
           time: 0.95,
-          message:
-            "<br><strong>HIT bot: Last chance to submit!</strong>"
+          message: "<br><strong>HIT bot: Last chance to submit!</strong>"
         },
         {
           time: 0.96,
@@ -2283,7 +2279,7 @@ io.on("connection", socket => {
       ];
 
       // Execute steps
-      taskSteps.forEach((step, index) => {
+      taskSteps.forEach(step => {
         setTimeout(() => {
           if (step.message) {
             console.log("Task step:".red, step.message);
@@ -2317,7 +2313,14 @@ io.on("connection", socket => {
               "stop",
               {
                 round: currentRound,
-                survey: midSurveyOn || creativeSurveyOn || satisfactionSurveyOn || conflictSurveyOn || midSurveyStatusOn || teamfeedbackOn || psychologicalSafetyOn
+                survey:
+                  midSurveyOn ||
+                  creativeSurveyOn ||
+                  satisfactionSurveyOn ||
+                  conflictSurveyOn ||
+                  midSurveyStatusOn ||
+                  teamfeedbackOn ||
+                  psychologicalSafetyOn
               },
               socket,
               user
@@ -2343,7 +2346,7 @@ io.on("connection", socket => {
   });
 
   //if broken, tell users they're done and disconnect their socket
-  socket.on("broken", data => {
+  socket.on("broken", () => {
     console.log("ON BROKEN CALLED");
     issueFinish(
       socket,
@@ -2351,8 +2354,7 @@ io.on("connection", socket => {
         ? "We've experienced an error. Please wait for an email from " +
             "scaledhumanity@gmail.com with restart instructions."
         : "The task has finished early. " +
-            "You will be compensated by clicking submit below.",
-      (finishingCode = "broken")
+            "You will be compensated by clicking submit below."
     );
   });
 
@@ -2378,22 +2380,14 @@ io.on("connection", socket => {
   socket.on("midSurveyStatusSubmit", data => {
     useUser(socket, user => {
       user.results.statusCheck[currentRound] = parseResults(data);
-      updateUserInDB(
-        user,
-        "results.statusCheck",
-        user.results.statusCheck
-      );
+      updateUserInDB(user, "results.statusCheck", user.results.statusCheck);
     });
   });
 
   socket.on("creativeSurveySubmit", data => {
     useUser(socket, user => {
       user.results.creativeCheck[currentRound] = parseResults(data);
-      updateUserInDB(
-        user,
-        "results.creativeCheck",
-        user.results.creativeCheck
-      );
+      updateUserInDB(user, "results.creativeCheck", user.results.creativeCheck);
     });
   });
 
@@ -2411,11 +2405,7 @@ io.on("connection", socket => {
   socket.on("conflictSurveySubmit", data => {
     useUser(socket, user => {
       user.results.conflictCheck[currentRound] = parseResults(data);
-      updateUserInDB(
-        user,
-        "results.conflictCheck",
-        user.results.conflictCheck
-      );
+      updateUserInDB(user, "results.conflictCheck", user.results.conflictCheck);
     });
   });
   socket.on("psychologicalSafetySubmit", data => {
@@ -2550,31 +2540,42 @@ io.on("connection", socket => {
         } else if (answerTag === "YN15") {
           // yes no
           answerObj = binaryAnswers;
-	        teamIndex = [0,1,0,2,0,3,0,4,0,5,0][i]
-          if (teamIndex === 0) throw "YN15 answers reporting teams incorrectly"
-          // else 
+          teamIndex = [0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0][i];
+          if (teamIndex === 0) throw "YN15 answers reporting teams incorrectly";
+          // else
           let team = getTeamMembers(user)[teamIndex - 1];
           questionObj["question"] += ` Team  ${teamIndex} (${team}).`;
-        } else if (answerTag === "STAT") { // prepare status survey questions
-          if (teamSize !== 4) throw "Not enough team members for survey format"
-          
+        } else if (answerTag === "STAT") {
+          // prepare status survey questions
+          if (teamSize !== 4) throw "Not enough team members for survey format";
+
           let curTeams = getTeamMembersArray(user);
           let lastTeam = curTeams[curTeams.length - 1];
 
           // if members dropped, add N/A
           while (lastTeam.length < 4) {
-            lastTeam.push({"name":"N/A", "mturkId":"N/A"});
+            lastTeam.push({ name: "N/A", mturkId: "N/A" });
           }
           answerObj = scale7A;
-          
+
           let curMember = (i - 2) % 5;
-          questionObj["question"] = `${lastTeam[curMember]["name"]}` + questionObj["question"];
+          questionObj["question"] =
+            `${lastTeam[curMember]["name"]}` + questionObj["question"];
 
           // update user object with order of status survey team members at last survey question
           if (i === 20) {
-            let newTeam = [lastTeam[0]["mturkId"], lastTeam[1]["mturkId"], lastTeam[2]["mturkId"], lastTeam[3]["mturkId"]];
+            let newTeam = [
+              lastTeam[0]["mturkId"],
+              lastTeam[1]["mturkId"],
+              lastTeam[2]["mturkId"],
+              lastTeam[3]["mturkId"]
+            ];
             user.results.statusTeams[currentRound] = newTeam;
-            updateUserInDB(user, "results.statusTeams", user.results.statusTeams);
+            updateUserInDB(
+              user,
+              "results.statusTeams",
+              user.results.statusTeams
+            );
           }
         } else if (answerTag === "TR") {
           //team radio
@@ -2628,12 +2629,7 @@ io.on("connection", socket => {
     return questions;
   }
 
-  function issueFinish(
-    socket,
-    message,
-    crashed = false,
-    finishingCode = socket.id
-  ) {
+  function issueFinish(socket, message, finishingCode = socket.id) {
     if (!socket) {
       console.log("Undefined user in issueFinish");
       return;
@@ -2713,11 +2709,6 @@ const recordTime = event => {
 //returns number of users in a room: room -> int
 const numUsers = room => users.filter(user => user.room === room).length;
 
-//PK: is this being used/ okay to delete/ for future stuff?
-//Returns a random remaining room space, or error if none. () -> room | error
-const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize);
-const assignRoom = () => incompleteRooms().pick();
-
 const getTeamMembers = user => {
   // Makes a list of teams this user has worked with
   const roomTeams = user.rooms.map((room, rIndex) => {
@@ -2750,7 +2741,9 @@ const getTeamMembers = user => {
 const getTeamMembersArray = user => {
   // Makes a list of teams this user has worked with
   const roomTeams = user.rooms.map((room, rIndex) => {
-    return users.filter(user => user.rooms[rIndex] === room && user.connected === true);
+    return users.filter(
+      user => user.rooms[rIndex] === room && user.connected === true
+    );
   });
 
   // Makes a human friendly string for each team with things like 'you' for the current user,
@@ -2772,7 +2765,7 @@ const getTeamMembersArray = user => {
       var newTeamMember = {};
       newTeamMember["name"] = name;
       newTeamMember["mturkId"] = friend.mturkId;
-      
+
       return total.concat([newTeamMember]);
     }, [])
   );
@@ -2807,12 +2800,6 @@ const postSurveyGenerator = user => {
     correctAnswer: correctAnswer
   };
 };
-
-
-
-function getRndInteger(min, max) {
-  return Math.floor(Math.random() * (max - min)) + min;
-}
 
 function storeHIT(currentHIT = mturk.returnCurrentHIT()) {
   db.ourHITs.insert({ HITId: currentHIT, batch: batchID }, (err, HITAdded) => {
