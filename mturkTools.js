@@ -111,7 +111,7 @@ const scheduleQuals = [
   quals.hasBanged,
   quals.willNotBang
 ];
-const qualsForTesting = [quals.onlyUSA]
+const qualsForTesting = [quals.onlyUSA];
 const safeQuals = runningLive ? qualsForLive : qualsForTesting;
 
 // Makes the MTurk externalHIT object, defaults to 700 px tall.
@@ -365,7 +365,7 @@ const setAssignmentsPending = data => {
   hitsLeft = maxAssignments - usersAcceptedHIT;
   if (taskStarted) hitsLeft = 0;
   console.log("users accepted: ", usersAcceptedHIT);
-  console.log("hits left: ", hitsLeft);
+  // console.log("hits left: ", hitsLeft);
   if (taskStarted) {
     expireHIT(currentHitId);
     console.log("expired active HITs");
