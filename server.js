@@ -35,11 +35,15 @@ const randomConditionOn = false;
 const randomRoundOrderOn = true;
 const randomProductOn = true;
 
-const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT
+const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
 const midSurveyOn = true;
+const midSurveyStatusOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
+const creativeSurveyOn = false;
+const satisfactionSurveyOn = false;
+const conflictSurveyOn = false;
 const blacklistOn = false;
 const teamfeedbackOn = false;
 const checkinOn = false;
@@ -49,6 +53,12 @@ const requiredOn = runningLive;
 const checkinIntervalMinutes = roundMinutes / 3;
 const qFifteenOn = true;
 const qSixteenOn = true;
+const postSurveyOn = true;
+const demographicsSurveyOn = false;
+
+if (midSurveyStatusOn && teamSize != 4) {
+  throw "Status survey only functions at team size 4";
+}
 
 //Testing toggles
 const autocompleteTestOn = false; //turns on fake team to test autocomplete
@@ -64,12 +74,17 @@ console.log(runningLocal ? "Running locally" : "Running remotely");
 const fs = require("fs");
 const txt = "txt/";
 const midSurveyFile = txt + "midsurvey-q.txt";
+const midSurveyStatusFile = txt + "midsurveystatus-q.txt";
 const psychologicalSafetyFile = txt + "psychologicalsafety-q.txt";
 const checkinFile = txt + "checkin-q.txt";
 const blacklistFile = txt + "blacklist-q.txt";
 const feedbackFile = txt + "feedback-q.txt";
 const starterSurveyFile = txt + "startersurvey-q.txt";
 const postSurveyFile = txt + "postsurvey-q.txt";
+const demographicsSurveyFile = txt + "demographics-q.txt";
+const conflictSurveyFile = txt + "conflict-q.txt";
+const creativeSurveyFile = txt + "creative-q.txt";
+const satisfactionSurveyFile = txt + "satisfaction-q.txt";
 const botFile = txt + "botquestions.txt";
 const leaveHitFile = txt + "leave-hit-q.txt";
 const qFifteenFile = txt + "qfifteen-q.txt";
@@ -87,6 +102,98 @@ const answers = {
   answerType: "radio",
   textValue: true
 };
+
+const scale7 = {
+  answers: ["1 (Not at all)", "2", "3", "4", "5", "6", "7 (Highly)"],
+  answerType: "radio",
+  textValue: true
+};
+
+const scale7A = {
+  answers: [
+    "1 (Disagree Strongly)",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7 (Agree Strongly)"
+  ],
+  answerType: "radio",
+  textValue: true
+};
+
+const scale5Q = {
+  answers: ["1 (Not at all)", "2", "3", "4", "5 (Highly)"],
+  answerType: "radio",
+  textValue: true
+};
+
+const scale5 = {
+  answers: ["1 (None)", "2", "3", "4", "5 (A lot)"],
+  answerType: "radio",
+  textValue: true
+};
+
+const face = {
+  answers: ["D:", "]:", "|:", "[:", ":D"],
+  answerType: "radio",
+  textValue: true
+};
+
+const dem1 = {
+  answers: [
+    "Less than High School",
+    "High school or equiv",
+    "Some college, no degree",
+    "Associate degree",
+    "Bachelors degree",
+    "Masters degree",
+    "Professional degree",
+    "Doctorate"
+  ],
+  answerType: "radio",
+  textValue: true
+};
+
+const dem2 = {
+  answers: ["Male", "Female", "Other"],
+  answerType: "radio",
+  textValue: true
+};
+
+const dem4 = {
+  answers: [
+    "Less than $20,000",
+    "$20,000 to $34,999",
+    "$35,000 to $49,999",
+    "$50,000 to $74,999",
+    "$75,000 to $99,999",
+    "Over $100,000"
+  ],
+  answerType: "radio",
+  textValue: true
+};
+
+const dem6 = {
+  answers: [
+    "American Indian or Alaska Native",
+    "Asian",
+    "Black or African American",
+    "Native Hawaiian or Other Pacific Islander",
+    "White",
+    "Other"
+  ],
+  answerType: "checkbox",
+  textValue: true
+};
+
+const YNAnswers = {
+  answers: ["Yes", "No"],
+  answerType: "radio",
+  textValue: true
+};
+
 const binaryAnswers = {
   answers: ["Keep this team", "Do not keep this team"],
   answerType: "radio",
@@ -153,7 +260,7 @@ function ioEmitById(socketId, event, message, socket, user) {
     if (event === "chatbot") {
       printMessage = "all the questions";
     }
-    +console.log(
+    console.log(
       socket.id,
       socket.mturkId,
       isActive,
@@ -635,6 +742,18 @@ roundSchedule.push("ready");
 if (midSurveyOn) {
   roundSchedule.push("midSurvey");
 }
+if (midSurveyStatusOn) {
+  roundSchedule.push("midSurveyStatus");
+}
+if (creativeSurveyOn) {
+  roundSchedule.push("creativeSurvey");
+}
+if (satisfactionSurveyOn) {
+  roundSchedule.push("satisfactionSurvey");
+}
+if (conflictSurveyOn) {
+  roundSchedule.push("conflictSurvey");
+}
 if (psychologicalSafetyOn) {
   roundSchedule.push("psychologicalSafety");
 }
@@ -652,7 +771,12 @@ if (qFifteenOn) {
 if (qSixteenOn) {
   eventSchedule.push("qSixteen");
 }
-eventSchedule.push("postSurvey");
+if (postSurveyOn) {
+  eventSchedule.push("postSurvey");
+}
+if (demographicsSurveyOn) {
+  eventSchedule.push("demographicsSurvey");
+}
 eventSchedule.push("finished");
 console.log("This batch will include:", eventSchedule);
 //}
@@ -678,6 +802,11 @@ db.batch.insert(
     batchComplete: false,
     starterSurveyOn: starterSurveyOn,
     midSurveyOn: midSurveyOn,
+    midSurveyStatusOn: midSurveyStatusOn,
+    creativeSurveyOn: creativeSurveyOn,
+    conflictSurveyOn: conflictSurveyOn,
+    satisfactionSurveyOn: satisfactionSurveyOn,
+    demographicsSurveyOn: demographicsSurveyOn,
     blacklistOn: blacklistOn,
     qFifteenOn: qFifteenOn,
     qSixteenOn: qSixteenOn,
@@ -911,8 +1040,9 @@ io.on("connection", socket => {
 
     if (waitChatOn) updateUsersActive();
     const usersActive = getPoolUsersActive();
+    const usersConnected = getPoolUsersConnected();
     console.log("Users active: " + usersActive.length);
-    console.log("Users connected: " + getPoolUsersConnected().length);
+    console.log("Users connected: " + usersConnected.length);
     console.log("Users in pool: " + userPool.length);
     let numUsersWanted = extraRoundOn
       ? teamSize ** 2 + teamSize
@@ -968,7 +1098,7 @@ io.on("connection", socket => {
         }
       }
     } else {
-      // waitchat off
+      // waitchat off - I think the below should be usersConnected instead of usersActive as inactive users aren't being made active
       if (usersActive.length >= numUsersWanted) {
         ioSocketsEmit("update number waiting", { num: 0 });
         console.log(
@@ -1012,6 +1142,12 @@ io.on("connection", socket => {
         checkin: {},
         starterCheck: {},
         viabilityCheck: {},
+        statusCheck: {},
+        statusTeams: {},
+        demographicsCheck: {},
+        conflictCheck: {},
+        creativeCheck: {},
+        satisfactionCheck: {},
         psychologicalSafety: {},
         teamfeedback: {},
         manipulationCheck: "",
@@ -1485,8 +1621,107 @@ io.on("connection", socket => {
           socket,
           user
         );
+      } else if (eventSchedule[currentEvent] === "midSurveyStatus") {
+        if (midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if (timeCheckOn) {
+          recordTime("round");
+        }
+
+        console.log("currentEvent === midSurveyStatus");
+
+        let thisElement = "midSurveyStatusR" + currentRound.toString();
+
+        ioEmitById(
+          socket.mturkId,
+          "load",
+          {
+            element: thisElement,
+            questions: loadQuestions(midSurveyStatusFile, user),
+            interstitial: false,
+            showHeaderBar: true
+          },
+          socket,
+          user
+        );
+      } else if (eventSchedule[currentEvent] === "creativeSurvey") {
+        if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
+        } else if (midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if (timeCheckOn) {
+          recordTime("round");
+        }
+        ioEmitById(
+          socket.mturkId,
+          "load",
+          {
+            element: "creativeSurvey",
+            questions: loadQuestions(creativeSurveyFile),
+            interstitial: false,
+            showHeaderBar: true
+          },
+          socket,
+          user
+        );
+      } else if (eventSchedule[currentEvent] === "satisfactionSurvey") {
+        if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
+        } else if (midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if (timeCheckOn) {
+          recordTime("round");
+        }
+        ioEmitById(
+          socket.mturkId,
+          "load",
+          {
+            element: "satisfactionSurvey",
+            questions: loadQuestions(satisfactionSurveyFile),
+            interstitial: false,
+            showHeaderBar: true
+          },
+          socket,
+          user
+        );
+      } else if (eventSchedule[currentEvent] === "conflictSurvey") {
+        if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
+        } else if (midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if (timeCheckOn) {
+          recordTime("round");
+        }
+        ioEmitById(
+          socket.mturkId,
+          "load",
+          {
+            element: "conflictSurvey",
+            questions: loadQuestions(conflictSurveyFile),
+            interstitial: false,
+            showHeaderBar: true
+          },
+          socket,
+          user
+        );
       } else if (eventSchedule[currentEvent] === "psychologicalSafety") {
-        if (timeCheckOn) {
+        if (conflictSurveyOn && timeCheckOn) {
+          recordTime("conflictSurvey");
+        } else if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
+        } else if (midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if (timeCheckOn) {
           recordTime("round");
         }
         ioEmitById(
@@ -1502,7 +1737,17 @@ io.on("connection", socket => {
           user
         );
       } else if (eventSchedule[currentEvent] === "teamfeedbackSurvey") {
-        if (midSurveyOn && timeCheckOn) {
+        if (psychologicalSafetyOn && timeCheckOn) {
+          recordTime("psychologicalSafetySurvey");
+        } else if (conflictSurveyOn && timeCheckOn) {
+          recordTime("conflictSurvey");
+        } else if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
+        } else if (midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
         } else if (timeCheckOn) {
           recordTime("round");
@@ -1523,12 +1768,20 @@ io.on("connection", socket => {
         experimentOver = true;
         if (teamfeedbackOn && timeCheckOn) {
           recordTime("teamfeedbackSurvey");
+        } else if (psychologicalSafetyOn && timeCheckOn) {
+          recordTime("psychologicalSafetySurvey");
+        } else if (conflictSurveyOn && timeCheckOn) {
+          recordTime("conflictSurvey");
+        } else if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
         } else if (midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
         } else if (timeCheckOn) {
           recordTime("round");
-        } else if (psychologicalSafetyOn) {
-          recordTime("psychologicalSafety");
         }
         console.log({
           element: "blacklistSurvey",
@@ -1554,6 +1807,16 @@ io.on("connection", socket => {
           recordTime("blacklistSurvey");
         } else if (teamfeedbackOn && timeCheckOn) {
           recordTime("teamfeedbackSurvey");
+        } else if (psychologicalSafetyOn && timeCheckOn) {
+          recordTime("psychologicalSafetySurvey");
+        } else if (conflictSurveyOn && timeCheckOn) {
+          recordTime("conflictSurvey");
+        } else if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
         } else if (midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
         } else if (timeCheckOn) {
@@ -1579,6 +1842,16 @@ io.on("connection", socket => {
           recordTime("blacklistSurvey");
         } else if (teamfeedbackOn && timeCheckOn) {
           recordTime("teamfeedbackSurvey");
+        } else if (psychologicalSafetyOn && timeCheckOn) {
+          recordTime("psychologicalSafetySurvey");
+        } else if (conflictSurveyOn && timeCheckOn) {
+          recordTime("conflictSurvey");
+        } else if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
         } else if (midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
         } else if (timeCheckOn) {
@@ -1607,6 +1880,16 @@ io.on("connection", socket => {
           recordTime("blacklistSurvey");
         } else if (teamfeedbackOn && timeCheckOn) {
           recordTime("teamfeedbackSurvey");
+        } else if (psychologicalSafetyOn && timeCheckOn) {
+          recordTime("psychologicalSafetySurvey");
+        } else if (conflictSurveyOn && timeCheckOn) {
+          recordTime("conflictSurvey");
+        } else if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
         } else if (midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
         } else if (timeCheckOn) {
@@ -1621,6 +1904,45 @@ io.on("connection", socket => {
           {
             element: "postSurvey",
             questions: loadQuestions(postSurveyFile, user),
+            interstitial: false,
+            showHeaderBar: false
+          },
+          socket,
+          user
+        );
+      } else if (eventSchedule[currentEvent] === "demographicsSurvey") {
+        experimentOver = true;
+        if (postSurveyOn && timeCheckOn) {
+          recordTime("postSurvey");
+        } else if (qSixteenOn && timeCheckOn) {
+          recordTime("qSixteen");
+        } else if (qFifteenOn && timeCheckOn) {
+          recordTime("qFifteen");
+        } else if (blacklistOn && timeCheckOn) {
+          recordTime("blacklistSurvey");
+        } else if (teamfeedbackOn && timeCheckOn) {
+          recordTime("teamfeedbackSurvey");
+        } else if (psychologicalSafetyOn && timeCheckOn) {
+          recordTime("psychologicalSafetySurvey");
+        } else if (conflictSurveyOn && timeCheckOn) {
+          recordTime("conflictSurvey");
+        } else if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
+        } else if (midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if (timeCheckOn) {
+          recordTime("round");
+        }
+        ioEmitById(
+          user.mturkId,
+          "load",
+          {
+            element: "demographicsSurvey",
+            questions: loadQuestions(demographicsSurveyFile, user),
             interstitial: false,
             showHeaderBar: false
           },
@@ -1645,9 +1967,35 @@ io.on("connection", socket => {
           );
           batchCompleteUpdated = true;
         }
-        if (timeCheckOn) {
+
+        if (demographicsSurveyOn && timeCheckOn) {
+          recordTime("demographicsSurvey");
+        } else if (postSurveyOn && timeCheckOn) {
           recordTime("postSurvey");
+        } else if (qSixteenOn && timeCheckOn) {
+          recordTime("qSixteen");
+        } else if (qFifteenOn && timeCheckOn) {
+          recordTime("qFifteen");
+        } else if (blacklistOn && timeCheckOn) {
+          recordTime("blacklistSurvey");
+        } else if (teamfeedbackOn && timeCheckOn) {
+          recordTime("teamfeedbackSurvey");
+        } else if (psychologicalSafetyOn && timeCheckOn) {
+          recordTime("psychologicalSafetySurvey");
+        } else if (conflictSurveyOn && timeCheckOn) {
+          recordTime("conflictSurvey");
+        } else if (satisfactionSurveyOn && timeCheckOn) {
+          recordTime("satisfactionSurvey");
+        } else if (creativeSurveyOn && timeCheckOn) {
+          recordTime("creativeSurvey");
+        } else if (midSurveyStatusOn && timeCheckOn) {
+          recordTime("midSurveyStatus");
+        } else if (midSurveyOn && timeCheckOn) {
+          recordTime("midSurvey");
+        } else if (timeCheckOn) {
+          recordTime("round");
         }
+
         user.bonus = Number(mturk.bonusPrice);
         updateUserInDB(user, "bonus", user.bonus);
 
@@ -1895,19 +2243,38 @@ io.on("connection", socket => {
       // Initialize steps
       const taskSteps = [
         {
-          time: 0.1,
+          time: 0.01,
           message:
-            "<strong>Step 1. List out ideas you like. Shoot for around 3 per person.</strong>"
+            "<br><strong>HIT bot: Take a minute to review all instructions and product information.</strong>"
+        },
+        {
+          time: 0.15,
+          message:
+            "<br><strong>HIT bot: Say hello to your team members! Begin brainstorming advertisement ideas together.</strong>"
         },
         {
           time: 0.4,
           message:
-            "<strong>Step 2. As a group choose 3 favorite ideas and discuss why you like them.</strong>"
+            "<br><strong>HIT bot: As a team, discuss and narrow down your ideas. Collaborate to create the most compelling text ad.</strong>"
         },
         {
-          time: 0.7,
+          time: 0.85,
           message:
-            "<strong>Step 3. Can you all choose one favorite idea? If not, can you convince others your favorite idea is the best?</strong>"
+            "<br><strong>HIT bot: Polish your team's favorite ad and get ready to submit.</strong>"
+        },
+        {
+          time: 0.9,
+          message:
+            "<br><strong>HIT bot: Submit the team's final ad by sending a message with a '!' directly in front of the text ad. Only the final submission with a '!' will be counted.</strong>"
+        },
+        {
+          time: 0.95,
+          message: "<br><strong>HIT bot: Last chance to submit!</strong>"
+        },
+        {
+          time: 0.96,
+          message:
+            "<br><strong>HIT bot: This round is ending soon. Time to say goodbye to your teammates!</strong>"
         }
       ];
 
@@ -1946,7 +2313,14 @@ io.on("connection", socket => {
               "stop",
               {
                 round: currentRound,
-                survey: midSurveyOn || teamfeedbackOn || psychologicalSafetyOn
+                survey:
+                  midSurveyOn ||
+                  creativeSurveyOn ||
+                  satisfactionSurveyOn ||
+                  conflictSurveyOn ||
+                  midSurveyStatusOn ||
+                  teamfeedbackOn ||
+                  psychologicalSafetyOn
               },
               socket,
               user
@@ -1992,7 +2366,6 @@ io.on("connection", socket => {
     });
   });
 
-  // Task after each round - midSurvey - MAIKA
   socket.on("midSurveySubmit", data => {
     useUser(socket, user => {
       user.results.viabilityCheck[currentRound] = parseResults(data);
@@ -2004,6 +2377,37 @@ io.on("connection", socket => {
     });
   });
 
+  socket.on("midSurveyStatusSubmit", data => {
+    useUser(socket, user => {
+      user.results.statusCheck[currentRound] = parseResults(data);
+      updateUserInDB(user, "results.statusCheck", user.results.statusCheck);
+    });
+  });
+
+  socket.on("creativeSurveySubmit", data => {
+    useUser(socket, user => {
+      user.results.creativeCheck[currentRound] = parseResults(data);
+      updateUserInDB(user, "results.creativeCheck", user.results.creativeCheck);
+    });
+  });
+
+  socket.on("satisfactionSurveySubmit", data => {
+    useUser(socket, user => {
+      user.results.satisfactionCheck[currentRound] = parseResults(data);
+      updateUserInDB(
+        user,
+        "results.satisfactionCheck",
+        user.results.satisfactionCheck
+      );
+    });
+  });
+
+  socket.on("conflictSurveySubmit", data => {
+    useUser(socket, user => {
+      user.results.conflictCheck[currentRound] = parseResults(data);
+      updateUserInDB(user, "results.conflictCheck", user.results.conflictCheck);
+    });
+  });
   socket.on("psychologicalSafetySubmit", data => {
     useUser(socket, user => {
       user.results.psychologicalSafety[currentRound] = parseResults(data);
@@ -2058,6 +2462,19 @@ io.on("connection", socket => {
     });
   });
 
+  socket.on("demographicsSurveySubmit", data => {
+    useUser(socket, user => {
+      console.log("Demographics Survey");
+      console.log(parseResults(data));
+      user.results.demographicsCheck = parseResults(data);
+      updateUserInDB(
+        user,
+        "results.demographicsCheck",
+        user.results.demographicsCheck
+      );
+    });
+  });
+
   socket.on("blacklistSurveySubmit", data => {
     useUser(socket, user => {
       user.results.blacklistCheck = parseResults(data);
@@ -2075,6 +2492,7 @@ io.on("connection", socket => {
       txt.length,
       questionFile.indexOf(".") - txt.length
     );
+
     let questions = [];
     let i = 0;
     fs.readFileSync(questionFile)
@@ -2095,16 +2513,70 @@ io.on("connection", socket => {
         if (answerTag === "S1") {
           // scale 1 radio
           answerObj = answers;
+        } else if (answerTag === "S5") {
+          // scale 5 radio
+          answerObj = scale5;
+        } else if (answerTag === "S5Q") {
+          // scale 5 radio
+          answerObj = scale5Q;
+        } else if (answerTag === "S7") {
+          // scale 7 radio
+          answerObj = scale7;
+        } else if (answerTag === "SFACE") {
+          answerObj = face;
+        } else if (answerTag === "YN1") {
+          answerObj = YNAnswers;
         } else if (answerTag === "YN") {
           // yes no
           answerObj = binaryAnswers;
+        } else if (answerTag === "D1") {
+          answerObj = dem1;
+        } else if (answerTag === "D2") {
+          answerObj = dem2;
+        } else if (answerTag === "D4") {
+          answerObj = dem4;
+        } else if (answerTag === "D6") {
+          answerObj = dem6;
         } else if (answerTag === "YN15") {
           // yes no
           answerObj = binaryAnswers;
           teamIndex = [0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0][i];
-          if (teamIndex === 0) throw "NY15 answers reporting teams incorrectly";
+          if (teamIndex === 0) throw "YN15 answers reporting teams incorrectly";
+          // else
           let team = getTeamMembers(user)[teamIndex - 1];
           questionObj["question"] += ` Team  ${teamIndex} (${team}).`;
+        } else if (answerTag === "STAT") {
+          // prepare status survey questions
+          if (teamSize !== 4) throw "Not enough team members for survey format";
+
+          let curTeams = getTeamMembersArray(user);
+          let lastTeam = curTeams[curTeams.length - 1];
+
+          // if members dropped, add N/A
+          while (lastTeam.length < 4) {
+            lastTeam.push({ name: "N/A", mturkId: "N/A" });
+          }
+          answerObj = scale7A;
+
+          let curMember = (i - 2) % 5;
+          questionObj["question"] =
+            `${lastTeam[curMember]["name"]}` + questionObj["question"];
+
+          // update user object with order of status survey team members at last survey question
+          if (i === 20) {
+            let newTeam = [
+              lastTeam[0]["mturkId"],
+              lastTeam[1]["mturkId"],
+              lastTeam[2]["mturkId"],
+              lastTeam[3]["mturkId"]
+            ];
+            user.results.statusTeams[currentRound] = newTeam;
+            updateUserInDB(
+              user,
+              "results.statusTeams",
+              user.results.statusTeams
+            );
+          }
         } else if (answerTag === "TR") {
           //team radio
           getTeamMembers(user).forEach((team, index) => {
@@ -2237,10 +2709,6 @@ const recordTime = event => {
 //returns number of users in a room: room -> int
 const numUsers = room => users.filter(user => user.room === room).length;
 
-//PK: is this being used/ okay to delete/ for future stuff?
-//Returns a random remaining room space, or error if none. () -> room | error
-const incompleteRooms = () => rooms.filter(room => numUsers(room) < teamSize);
-
 const getTeamMembers = user => {
   // Makes a list of teams this user has worked with
   const roomTeams = user.rooms.map((room, rIndex) => {
@@ -2267,6 +2735,39 @@ const getTeamMembers = user => {
         total
       );
     }, "")
+  );
+};
+
+const getTeamMembersArray = user => {
+  // Makes a list of teams this user has worked with
+  const roomTeams = user.rooms.map((room, rIndex) => {
+    return users.filter(
+      user => user.rooms[rIndex] === room && user.connected === true
+    );
+  });
+
+  // Makes a human friendly string for each team with things like 'you' for the current user,
+  // commas and 'and' before the last name.
+  return roomTeams.map((team, tIndex) =>
+    team.reduce((total, current) => {
+      const friend = user.friends.find(
+        friend => friend.mturkId === current.mturkId
+      );
+
+      let name =
+        experimentRound === tIndex && currentCondition === "treatment"
+          ? friend.tAlias
+          : friend.alias;
+      if (name === user.name) {
+        name = "you";
+      }
+
+      var newTeamMember = {};
+      newTeamMember["name"] = name;
+      newTeamMember["mturkId"] = friend.mturkId;
+
+      return total.concat([newTeamMember]);
+    }, [])
   );
 };
 

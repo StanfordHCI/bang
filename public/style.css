@@ -320,11 +320,6 @@ input[type="checkbox"]:checked ~ label {
   transform: translate(0, 25%);
 }
 
-input[type="radio"],
-input[type="checkbox"] {
-  opacity: 0;
-}
-
 /* Submit Button */
 .button-box {
   padding: 10px 0;
