@@ -1,0 +1,20 @@
+|1. Rate the degree to which you agree with the following statements based on your interactions on the team: 
+STAT| deserved respect and admiration.
+STAT| deserved respect and admiration.
+STAT| deserved respect and admiration.
+STAT| deserved respect and admiration.
+|2. Rate the degree to which you agree with the following statements based on your interactions on the team:
+STAT| had influence over the decisions.
+STAT| had influence over the decisions.
+STAT| had influence over the decisions.
+STAT| had influence over the decisions.
+|3. Rate the degree to which you agree with the following statements based on your interactions on the team: 
+STAT| led the decision-making process.
+STAT| led the decision-making process.
+STAT| led the decision-making process.
+STAT| led the decision-making process.
+|4. Rate the degree to which you agree with the following statements based on your interactions on the team:
+STAT| contributed to the decisions.
+STAT| contributed to the decisions.
+STAT| contributed to the decisions.
+STAT| contributed to the decisions.

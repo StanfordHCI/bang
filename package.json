@@ -15,7 +15,7 @@
     "moment": "^2.24.0",
     "mustache": "^2.3.2",
     "nedb": "^1.8.0",
-    "npm": "^6.7.0",
+    "npm": "^6.9.0",
     "scp": "0.0.3",
     "socket.io": "^2.1.1",
     "watson-developer-cloud": "^3.9.1",
@@ -30,7 +30,7 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "aws-sdk": "^2.400.0",
+    "aws-sdk": "^2.416.0",
     "prettier": "^1.16.4"
   },
   "repository": {

@@ -1,0 +1,6 @@
+D1|1. What is the highest degree or level of school you have completed?
+D2|2. What is your gender?
+TX|3. Which year were you born?
+D4|4. How much total combined money did all members of your household earn last year?
+YN1|5. Are you of Hispanic, Latino, or of Spanish origin?
+D6|6. How would you describe yourself?

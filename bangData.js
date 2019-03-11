@@ -452,7 +452,6 @@ let totalCount = 0;
 //useCompleteBatches(manipulationCheck)
 //useCompleteBatches(manipulationFix);
 
-
 //Save from servers
 //downloadData("mark.dmorina.com",saveAllData)
 //downloadData("bang.dmorina.com",saveAllData)
