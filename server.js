@@ -2230,9 +2230,12 @@ io.on("connection", socket => {
       startTime = new Date().getTime();
 
       // Initialize steps
+
+
+
+      // TODO:Change the task here with new names!
       const taskSteps = [
         {
-<<<<<<< HEAD
           time: 0.05,
           message:
             "**************DETAILED JURY INSTRUCTIONS BELOW**************"
