@@ -27,7 +27,7 @@ class BatchInfo extends React.Component {
   }
 
   handleSubmit = () => {
-    this.props.addBatch(this.props.templateList.find(x => x._id === this.state.template))
+    this.props.addBatch(this.props.templateList.find(x => x._id === this.state.template.value))
   }
 
   handleChange = (e) => {
@@ -45,7 +45,7 @@ class BatchInfo extends React.Component {
             <div className='form'>
               <Select
                 value={this.state.template}
-                onChange={(e) => this.handleChange(e.value)}
+                onChange={(e) => this.handleChange(e)}
                 options={this.state.options}
                 clearable={false}
                 multi={false}
