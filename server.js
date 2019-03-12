@@ -35,11 +35,11 @@ const randomConditionOn = false;
 const randomRoundOrderOn = false; //NEEDS TO BE FALSE BC I WANT STATIC
 const randomProductOn = true;
 
-const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
+const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
-const midSurveyOn = true;
+const midSurveyOn = true; //EMILY UDPATED THIS to be about the jury deliberation.
 const midSurveyStatusOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const creativeSurveyOn = false;
 const satisfactionSurveyOn = false;
@@ -332,9 +332,6 @@ console.log = function(...msg) {
 const presetCondition = randomConditionOn
   ? ["control", "treatment"].pick()
   : "treatment";
-
-
-//todo: delcare list here
 
 const currentCondition = args.condition || presetCondition;
 let treatmentNow = false;
@@ -640,6 +637,8 @@ if (runExperimentNow) {
 
 
 //TODO: CHANGE THIS PART TO ALTERNATE THE CASES
+const taskPDF = ["./jury-task1.pdf", "./jury-task2.pdf"] // use .shuffle and declare list outside if you want
+shuffle(taskPDF);
 
 //Add more products
 let products = [
@@ -826,9 +825,8 @@ db.batch.insert(
     format: conditions[currentCondition],
     experimentRound: experimentRound,
     numRounds: numRounds,
-    teamSize: teamSize
-
-
+    teamSize: teamSize,
+    taskPDF: taskPDF
     //todo: store shuffled lst
   },
   (err, usersAdded) => {
@@ -2239,10 +2237,8 @@ io.on("connection", socket => {
       startTime = new Date().getTime();
 
       // Initialize steps
-
-      const taskPDF = ["pdf1", "pdf2"] // use .shuffle and declare list outside if you want
+      //const taskPDF = ["./jury-task1.pdf", "./jury-task2.pdf"] // use .shuffle and declare list outside if you want
       const currentPDF = taskPDF[currentRound%taskPDF.length]
-
 
       // TODO:Change the task here with new names!
       const taskSteps = [

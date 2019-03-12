@@ -30,7 +30,7 @@ $(function() {
   let colorAssignment = [];
 
   //toggles
-  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -853,7 +853,7 @@ $(function() {
       log(
         "You will have <strong>" +
           textifyTime(data.duration) +
-          "</strong> to deliberate for this round. <strong>YOU ARE NOT ALLOWED TO SEARCH ON THE INTERNET FOR ANY ADDITIONAL MATERIALS.</strong> You will receive instructions about how the jury deliberation works, just as you would in a real courtroom."
+          "</strong> to deliberate for this round. <strong>YOU ARE NOT ALLOWED TO SEARCH ON THE INTERNET FOR ANY ADDITIONAL MATERIALS.</strong> You will receive instructions about how the jury deliberation works, just as you would in a real courtroom." + 
           "The entire HIT will take no more than " + totalLengthString + " total."
       );
       /*
