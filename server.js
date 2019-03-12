@@ -32,7 +32,7 @@ const debugModeOn = !runningLive;
 const suddenDeath = false;
 
 const randomConditionOn = false;
-const randomRoundOrderOn = true;
+const randomRoundOrderOn = false; //NEEDS TO BE FALSE BC I WANT STATIC
 const randomProductOn = true;
 
 const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
@@ -332,6 +332,10 @@ console.log = function(...msg) {
 const presetCondition = randomConditionOn
   ? ["control", "treatment"].pick()
   : "treatment";
+
+
+//todo: delcare list here
+
 const currentCondition = args.condition || presetCondition;
 let treatmentNow = false;
 let firstRun = false;
@@ -739,10 +743,12 @@ let eventSchedule = [];
 if (starterSurveyOn) {
   eventSchedule.push("starterSurvey");
 }
+//update here for a thing before the round starts
 let roundSchedule = [];
+//update round schedul to have pre task
 roundSchedule.push("ready");
 if (midSurveyOn) {
-  roundSchedule.push("midSurvey");
+  roundSchedule.push("midSurvey"); //TODO: modify survey here!
 }
 if (midSurveyStatusOn) {
   roundSchedule.push("midSurveyStatus");
@@ -821,6 +827,9 @@ db.batch.insert(
     experimentRound: experimentRound,
     numRounds: numRounds,
     teamSize: teamSize
+
+
+    //todo: store shuffled lst
   },
   (err, usersAdded) => {
     if (err) console.log("There's a problem adding batch to the DB: ", err);
@@ -2231,6 +2240,8 @@ io.on("connection", socket => {
 
       // Initialize steps
 
+      const taskPDF = ["pdf1", "pdf2"] // use .shuffle and declare list outside if you want
+      const currentPDF = taskPDF[currentRound%taskPDF.length]
 
 
       // TODO:Change the task here with new names!
@@ -2243,7 +2254,7 @@ io.on("connection", socket => {
         {
           time: 0.05,
           message:
-            '<strong>Step 1. Read the facts of the case and the jury instructions at <a href="jury-deliberation-civil-task.pdf" target="_blank">this link</a>.'
+            `<strong>Step 1. Read the facts of the case and the jury instructions at <a href="${currentPDF}" target="_blank">this link</a>.`
         },
         {
           time: 0.05,
