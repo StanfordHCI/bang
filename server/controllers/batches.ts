@@ -85,7 +85,20 @@ export const loadBatch = async function (data, socket, io) {
 
 
 
-
+const generateRandomTeams = (allUsers, size) => {
+  let users = Array.from(allUsers);
+  let teams = [];
+  for (let i = 0; i < size; i++) {
+    let team = {users: []};
+    for (let j = 0; j < size; j++) {
+      const index = Math.floor(Math.random() * users.length)
+      team.users.push(users[index]);
+      users.slice(index, 1)
+    }
+    teams.push(team)
+  }
+  return teams;
+}
 
 const timeout = (ms) => {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -109,15 +122,30 @@ const startBatch = async function (batch, socket, io) {
     io.to(batch._id.toString()).emit('start-batch', startBatchInfo);
     const teamSize = batch.teamSize, numRounds = batch.numRounds;
     let rounds = [];
+    const teams1round = generateRandomTeams(users, teamSize);
 
     for (let i = 0; i < numRounds; i++) {
       let roundObject = {startTime: new Date(), number: i + 1, teams: [], status: 'active', endTime: null};
       let teams = [], emptyChats = [];
+      switch (i) { //logic for teamsize=2 and 4 rounds and expRound=3; not perfect.
+        case 0:
+          teams = teams1round;
+          break;
+        case 1:
+          teams = [{users: [teams1round[0].users[0], teams1round[1].users[0]]}, {users:  [teams1round[0].users[1], teams1round[1].users[1]]}]
+          break;
+        case 2:
+          teams = teams1round;
+          break;
+        case 3:
+          teams = [{users: [teams1round[0].users[0], teams1round[1].users[1]]}, {users:  [teams1round[0].users[1], teams1round[1].users[0]]}]
+          break;
+      }
+
       for (let j = 0; j < teamSize; j++) { //simple gen for tests
-        const teamUsers = Array.from(users).splice(j * teamSize, (j+1) * teamSize).map(x => generateTeamUser(x));
-        teams.push({users: teamUsers});
         emptyChats.push({batch: batch._id, messages: []})
       }
+
       const chats = await Chat.insertMany(emptyChats);
       let prsHelper = [];
       teams.forEach((team, index) => {
