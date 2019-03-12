@@ -11,6 +11,7 @@ let  BatchSchema = new Schema({
   status: { type: String, enum: ['completed', 'active', 'waiting'], default: 'waiting' },
   users: [{
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
+    nickname: {type: String, required: true},
   }],
   rounds: [{
     startTime: Date,

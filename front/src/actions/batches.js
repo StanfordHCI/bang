@@ -2,7 +2,6 @@ import {SET_CHAT_INFO, SET_USER, setSnackbar, socket} from "./app";
 import {history} from "../app/history";
 
 export const BATCH_FETCHED = 'BATCH_FETCHED';
-export const BATCHES_FETCHED = 'BATCHES_FETCHED';
 export const CHAT_FETCHED = 'CHAT_FETCHED';
 export const REFRESH_BATCH = 'REFRESH_BATCH';
 export const ADD_MESSAGE = 'ADD_MESSAGE'
@@ -98,24 +97,6 @@ export const loadBatch = () => {
     })
     socket.on('refresh-batch', (data) =>{
       socket.emit('load-batch', {batch: user.batch})
-    })
-  }
-}
-
-export const addBatch = () => {
-  return function (dispatch, getState) {
-    socket.emit('add-batch', {adminToken: localStorage.getItem('bang-admin-token')})
-  }
-}
-
-export const loadBatchList = () => {
-  return function (dispatch, getState) {
-    socket.emit('load-batch-list', {adminToken: localStorage.getItem('bang-admin-token')})
-    socket.on('loaded-batch-list', (data) => {
-      dispatch({
-        type: BATCHES_FETCHED,
-        data: data
-      });
     })
   }
 }

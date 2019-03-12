@@ -1,7 +1,6 @@
 import {
   BATCH_FETCHED,
   CHAT_FETCHED,
-  BATCHES_FETCHED,
   REFRESH_BATCH,
   ADD_MESSAGE
 } from "../actions/batches";
@@ -13,8 +12,7 @@ const initialState = {
     members: [],
     batch: '',
     _id: ''
-  },
-  batchList: [],
+  }
 };
 
 const addValues = (base, add) => {
@@ -34,11 +32,6 @@ export default function (state = initialState, action) {
       return {
         ...state,
         batch: batch
-      };
-    case BATCHES_FETCHED:
-      return {
-        ...state,
-        batchList: action.data
       };
     case BATCH_FETCHED:
       return {

@@ -50,6 +50,9 @@ export const init = async function (data, socket, io) {
     } else {
       socket.join('waitroom');
     }
+    if (data.adminToken && data.adminToken === process.env.ADMIN_TOKEN) {
+      user.isAdmin = true;
+    }
     socket.emit('init-res', {user: user, teamSize: process.env.TEAM_SIZE});
     await User.findByIdAndUpdate(user._id, { $set: { connected : true, lastConnect: new Date(), socketId: socket.id, } });
     await activeCheck(io);

@@ -41,6 +41,9 @@ export const whoami = () => {
       hitId: URLvars.hitId,
       turkSubmitTo: decodeURL(URLvars.turkSubmitTo),
     }
+    if (adminToken) {
+      initData.adminToken = adminToken;
+    }
 
     if (token) {
       initData.token = token;
@@ -82,10 +85,18 @@ export const whoami = () => {
       dispatch({
         type: APP_READY,
       });
-      if (data.user.batch) {
-        history.push('/batch');
-      } else if (!adminToken) {
-        history.push('/waiting');
+      if (!data.user.isAdmin) {
+        if (data.user.systemStatus ==='willbang') {
+          if (data.user.batch) {
+            history.push('/batch');
+          } else {
+            history.push('/waiting');
+          }
+        } else {
+          history.push('/hasbanged');
+        }
+      } else {
+
       }
     });
     socket.on('send-error', (data) => {

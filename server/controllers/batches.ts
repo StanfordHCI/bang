@@ -17,9 +17,9 @@ export const joinBatch = async function (data, socket, io) {
       const nickname = makeName(null, null).username;
       let user;
       const prs = await Promise.all([
-        Batch.findByIdAndUpdate(batch._id, { $addToSet: { users: {user: socket.userId}},  }, {new: true}),
+        Batch.findByIdAndUpdate(batch._id, { $addToSet: { users: {user: socket.userId, nickname: nickname}},  }, {new: true}),
         User.findByIdAndUpdate(socket.userId,
-          { $set: { batch: batch._id, currentNickname: nickname, currentChat: batch.preChat} }, {new: true}).lean().exec()
+          { $set: { batch: batch._id, realNick: nickname, currentChat: batch.preChat} }, {new: true}).lean().exec()
       ])
       user = prs[1]
       socket.join(user.currentChat.toString()) //chat room
@@ -45,7 +45,7 @@ export const loadBatch = async function (data, socket, io) {
     if (batch.status === 'waiting') {
       const prs = await Promise.all([
         Chat.findById(batch.preChat).lean().exec(),
-        User.find({currentChat: batch.preChat}).select('currentNickname currentChat').lean().exec(),
+        User.find({currentChat: batch.preChat}).select('realNick fakeNick currentChat').lean().exec(),
       ])
       chat = prs[0];
       chat.members = prs[1]
@@ -64,7 +64,7 @@ export const loadBatch = async function (data, socket, io) {
         })
         const prs = await Promise.all([
           Chat.findById(chatId).lean().exec(),
-          User.find({currentChat: chatId}).select('currentNickname currentChat').lean().exec()
+          User.find({currentChat: chatId}).select('realNick fakeNick currentChat').lean().exec()
         ])
         chat = prs[0];
         chat.members = prs[1]
@@ -80,51 +80,6 @@ export const loadBatch = async function (data, socket, io) {
     socket.emit('loaded-batch', {batch: batch, chat: chat, userInfo: userInfo})
   } catch (e) {
     errorHandler(e, 'load batch error')
-  }
-}
-
-export const addBatch = async function (data, socket, io) {
-  try {
-    if (data.adminToken !== 'cXBE31cGivjSt338') { //just test token, this logic should be deleted
-      logger.error(module, 'Forbidden');
-      return;
-    }
-    const check = await Batch.findOne({status: 'waiting'}) ;
-    if (check) {
-      logger.error(module, 'There is 1 waiting batch, you cant and more');
-      socket.emit('send-error', 'There is 1 waiting batch, you cant and more')
-      return;
-    }
-    const newBatch = {
-      teamSize: process.env.TEAM_SIZE,
-      users: [],
-      numRounds: 4,
-      format: [1, 2, 1, 3],
-      experimentRound: 1,
-      status: 'waiting',
-      tasks: [],
-      roundMinutes: process.env.ROUND_MINUTES
-    }
-    const batch = await Batch.create(newBatch);
-    const preChat = await Chat.create({batch: batch._id, messages: []});
-    await Batch.findByIdAndUpdate(batch._id, {$set: {preChat: preChat._id}})
-    const batchList = await Batch.find({}).select('createdAt startTime status currentRound').lean().exec()
-    socket.emit('loaded-batch-list', batchList)
-  } catch (e) {
-    errorHandler(e, 'add batch error')
-  }
-}
-
-export const loadBatchList = async function (data, socket, io) {
-  try {
-    if (data.adminToken !== 'cXBE31cGivjSt338') { //just test token, this logic should be deleted
-      logger.error(module, 'Forbidden');
-      return;
-    }
-    const batchList = await Batch.find({}).select('createdAt startTime status currentRound').lean().exec();
-    socket.emit('loaded-batch-list', batchList)
-  } catch (e) {
-    errorHandler(e, 'add batch error')
   }
 }
 
@@ -168,7 +123,7 @@ const startBatch = async function (batch, socket, io) {
       teams.forEach((team, index) => {
         team.chat = chats[index]._id;
         team.users.forEach(user => {
-          prsHelper.push(User.findByIdAndUpdate(user.user, {$set: {currentNickname: user.nickname, currentChat: team.chat}}));
+          prsHelper.push(User.findByIdAndUpdate(user.user, {$set: {fakeNick: user.nickname, currentChat: team.chat}}));
           /*const userSocket = io.sockets.connected[user.socketId];
           if (userSocket) {
             userSocket.join(team.chat.toString());
@@ -213,11 +168,11 @@ const startBatch = async function (batch, socket, io) {
     }
     await timeout(5000);
     const endBatchInfo = {status: 'completed'};
-    await User.updateMany({}, { $set: { batch: null, currentNickname: null, currentChat: null}})
+    await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: endBatchInfo}).lean().exec();
     logger.info(module, 'Main experiment end', batch._id)
     io.to(batch._id.toString()).emit('end-batch', endBatchInfo);
-
+    clearRoom(batch._id, io)
   } catch (e) {
     errorHandler(e, 'batch main run error')
   }

@@ -3,22 +3,22 @@ import {Card, CardBody, Col, Row, Container, Button, Table} from 'reactstrap';
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 import {socket} from 'Actions/app'
-import {loadBatchList, addBatch} from 'Actions/admin'
+import {loadUserList} from 'Actions/admin'
 import moment from 'moment'
-import {history} from 'App/history';
 
-class BatchList extends React.Component {
+class UserList extends React.Component {
 
   constructor(props) {
     super(props);
+
   }
 
   componentWillMount() {
-    this.props.loadBatchList();
+    this.props.loadUserList();
   }
 
   render() {
-    const {batchList} = this.props;
+    const {userList} = this.props;
 
     return (
       <Container>
@@ -27,25 +27,27 @@ class BatchList extends React.Component {
             <Card>
               <CardBody>
                 <div className='card__title'>
-                  <h5 className='bold-text'>Batch list</h5>
-                  <Button className="btn btn-primary" onClick={() => history.push('/batches-add')}>Add Batch</Button>
+                  <h5 className='bold-text'>User list</h5>
+                  <Button className="btn btn-primary" onClick={() => history.push('/users-add')}>Add User</Button>
                 </div>
                 <Table className='table table--bordered table--head-accent'>
                   <thead>
                   <tr>
                     <th>#</th>
+                    <th>mturk id</th>
                     <th>created</th>
-                    <th>start time</th>
-                    <th>status</th>
+                    <th>connected</th>
+                    <th>last connect time</th>
                   </tr>
                   </thead>
                   <tbody>
-                  {batchList.map((batch, index) => {
-                    return <tr key={batch._id}>
-                      <td>{index}</td>
-                      <td>{moment(batch.createdAt).format('YYYY.DD.MM-HH:mm:ss')}</td>
-                      <td>{moment(batch.startTime).format('YYYY.DD.MM-HH:mm:ss')}</td>
-                      <td>{batch.status}</td>
+                  {userList.map((user, index) => {
+                    return <tr key={user._id}>
+                      <td>{index + 1}</td>
+                      <td>{user.mturkId}</td>
+                      <td>{moment(user.createdAt).format('YYYY.DD.MM-HH:mm:ss')}</td>
+                      <td>{user.connected ? 'yes' : 'no'}</td>
+                      <td>{moment(user.lastConnect).format('YYYY.DD.MM-HH:mm:ss')}</td>
                     </tr>
                   })}
                   </tbody>
@@ -62,16 +64,14 @@ class BatchList extends React.Component {
 
 function mapStateToProps(state) {
   return {
-    batchList: state.admin.batchList
+    userList: state.admin.userList
   }
 }
 
 function mapDispatchToProps(dispatch) {
   return bindActionCreators({
-    loadBatchList,
-    addBatch
+    loadUserList,
   }, dispatch);
 }
 
-export default
-connect(mapStateToProps, mapDispatchToProps)(BatchList);
+export default connect(mapStateToProps, mapDispatchToProps)(UserList);

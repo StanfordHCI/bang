@@ -64,7 +64,7 @@ class Batch extends React.Component {
   }
 
   renderChat() {
-    const {sendMessage, user,chat} = this.props;
+    const {sendMessage, user, chat, batch} = this.props;
 
     return (
       <div className='chat'>
@@ -78,10 +78,18 @@ class Batch extends React.Component {
               </thead>
               <tbody>
               {chat.members.map((member) => {
-                return <tr key={member._id}>
+                return (batch.status === 'waiting' || member._id.toString() === user._id.toString()) ?
+                  <tr key={member._id}>
+                    <td>
+                      <div className='chat__bubble-contact-name'>
+                        {member.realNick}
+                      </div>
+                    </td>
+                  </tr> :
+                  <tr key={member._id}>
                   <td>
                     <div className='chat__bubble-contact-name'>
-                      {member.currentNickname}
+                      {member.fakeNick}
                     </div>
                   </td>
                 </tr>
@@ -120,7 +128,11 @@ class Batch extends React.Component {
               onKeyDown={(e) => {
                 if (e.keyCode === 13 && this.state.message && this.state.message.length <= MAX_LENGTH) {
                   this.setState({message: ''});
-                  sendMessage({message: this.state.message, nickname: user.currentNickname, chat: chat._id})
+                  sendMessage({
+                    message: this.state.message,
+                    nickname: batch.status === 'active' ? user.fakeNick : user.realNick,
+                    chat: chat._id
+                  })
                 }
               }}/>
           </div>

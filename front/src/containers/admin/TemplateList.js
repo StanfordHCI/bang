@@ -3,22 +3,23 @@ import {Card, CardBody, Col, Row, Container, Button, Table} from 'reactstrap';
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 import {socket} from 'Actions/app'
-import {loadBatchList, addBatch} from 'Actions/admin'
+import {loadTemplateList} from 'Actions/admin'
 import moment from 'moment'
 import {history} from 'App/history';
 
-class BatchList extends React.Component {
+class TemplateList extends React.Component {
 
   constructor(props) {
     super(props);
+
   }
 
   componentWillMount() {
-    this.props.loadBatchList();
+    this.props.loadTemplateList();
   }
 
   render() {
-    const {batchList} = this.props;
+    const {templateList} = this.props;
 
     return (
       <Container>
@@ -27,25 +28,23 @@ class BatchList extends React.Component {
             <Card>
               <CardBody>
                 <div className='card__title'>
-                  <h5 className='bold-text'>Batch list</h5>
-                  <Button className="btn btn-primary" onClick={() => history.push('/batches-add')}>Add Batch</Button>
+                  <h5 className='bold-text'>Template list</h5>
+                  <Button className="btn btn-primary" onClick={() => history.push('/templates-add')}>Add Template</Button>
                 </div>
                 <Table className='table table--bordered table--head-accent'>
                   <thead>
                   <tr>
                     <th>#</th>
+                    <th>name</th>
                     <th>created</th>
-                    <th>start time</th>
-                    <th>status</th>
                   </tr>
                   </thead>
                   <tbody>
-                  {batchList.map((batch, index) => {
-                    return <tr key={batch._id}>
-                      <td>{index}</td>
-                      <td>{moment(batch.createdAt).format('YYYY.DD.MM-HH:mm:ss')}</td>
-                      <td>{moment(batch.startTime).format('YYYY.DD.MM-HH:mm:ss')}</td>
-                      <td>{batch.status}</td>
+                  {templateList.map((template, index) => {
+                    return <tr key={template._id}>
+                      <td>{index + 1}</td>
+                      <td>{template.name}</td>
+                      <td>{moment(template.createdAt).format('YYYY.DD.MM-HH:mm:ss')}</td>
                     </tr>
                   })}
                   </tbody>
@@ -62,16 +61,14 @@ class BatchList extends React.Component {
 
 function mapStateToProps(state) {
   return {
-    batchList: state.admin.batchList
+    templateList: state.admin.templateList
   }
 }
 
 function mapDispatchToProps(dispatch) {
   return bindActionCreators({
-    loadBatchList,
-    addBatch
+    loadTemplateList,
   }, dispatch);
 }
 
-export default
-connect(mapStateToProps, mapDispatchToProps)(BatchList);
+export default connect(mapStateToProps, mapDispatchToProps)(TemplateList);
