@@ -12,12 +12,17 @@ const isAdmin = (req, res, next) => {
   }
 }
 
+const ping = (req, res) => {
+  res.status(200).end();
+}
+
 module.exports = function (app) {
   let rootRoutes = express.Router();
 
   rootRoutes
     .options('*', cors())
     .use('/api/admin', isAdmin, adminRoutes(app))
+    .get('/ping', ping)
 
   return rootRoutes;
 };
