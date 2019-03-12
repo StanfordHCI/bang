@@ -43,8 +43,6 @@ const io = require('socket.io').listen(app.listen(PORT, function() {
   logger.info(module, 'ENV: ' + process.env.NODE_ENV);
 }));
 
-io.set('origins', '*:*');
-
 const initialChecks = [
   User.updateMany({}, { $set: { connected : false, lastDisconnect: new Date(), socketId: '', batch: null,
       currentChat: null, realNick: null, fakeNick: null}}),
