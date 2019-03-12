@@ -23,9 +23,10 @@ class TemplateInfo extends PureComponent {
                 <div className='card__title'>
                   <h5 className='bold-text'>Add template</h5>
                 </div>
-                <Select>
-
-                </Select>
+                <TemplateForm
+                  isAdd
+                  onSubmit={this.props.addTemplate}
+                />
               </CardBody>
             </Card>
       </Container>

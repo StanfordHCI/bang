@@ -14,6 +14,7 @@ export const addBatch = async function (req, res) {
       return;
     }
     let newBatch = req.body;
+    delete newBatch._id;
     newBatch.status = 'waiting';
     newBatch.users = [];
     /*const newBatch = {
@@ -66,7 +67,13 @@ export const loadBatchList = async function (req, res) {
 
 export const loadTemplateList = async function (req, res) {
   try {
-    const templateList = await Template.find({}).select('name createdAt').lean().exec();
+    let select = '';
+    if (req.query.full) {
+      select = 'name roundMinutes numRounds experimentRound tasks teamSize'
+    } else {
+      select = 'name createdAt'
+    }
+    const templateList = await Template.find({}).select(select).lean().exec();
     res.json({templateList: templateList})
   } catch (e) {
     errorHandler(e, 'load templates error')

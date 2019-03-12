@@ -40,11 +40,12 @@ export function updateBatch(batch) {
 }
 
 export function addBatch(batch) {
+  console.log(batch)
   return dispatch => {
     dispatch(setLoading(true));
     return axios({
       method: 'post',
-      url: 'batches/',
+      url: 'admin/batches/',
       data: batch,
     })
       .then((response) => {

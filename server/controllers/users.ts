@@ -20,6 +20,7 @@ export const init = async function (data, socket, io) {
     let user;
     let token = data.token || '';
     user = await User.findOne({token: token}).lean().exec();
+
     if (!user) {
       if (!data.mturkId || !data.assignmentId || !data.hitId || !data.turkSubmitTo) {
         logger.info(module, 'wrong credentials');
