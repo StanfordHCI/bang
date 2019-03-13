@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "outDir": "./built",
+    "allowJs": true,
+    "target": "es5",
+    "moduleResolution": "node",
+    "pretty":true,
+    "watch": false,
+    "lib": ["dom", "es2017"]
+  },
+  "exclude": [
+    "node_modules",
+    "front",
+    "built",
+    "old"
+  ],
+  "typeRoots": ["./node_modules/@types"]
+}
