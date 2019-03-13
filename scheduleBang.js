@@ -148,7 +148,6 @@ mturk.makeHIT(
   taskURL,
   HIT => {
     const HITId = HIT.HITId;
-    console.log(mturk.getHITURL(HITId));
     mturk.getHITURL(HITId, console.log);
     // Write new recruiting HIT id to file for next hour run
     fs.writeFile(recruitingHITstorage, HITId, err => {
