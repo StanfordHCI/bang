@@ -67,10 +67,12 @@ questionHTML = questionHTML({ HIT_date: HITDATE });
 const lifetime = 60; //calculate lifetime based on when runTime was
 
 //Set HIT Params
-const title = `Get notified when our task launches. If you stay for the whole task, we bonus at approximately $12 per hour.`;
+const title = `Get notified when our task launches. If you stay for the whole task, we bonus at approximately $${
+  mturk.hourlyWage
+} per hour.`;
 const description = `Submit this HIT to be notified when our task launches. Space is limited.`;
 const assignmentDuration = 20;
-const reward = 0.1;
+const reward = mturk.rewardPrice;
 const autoApprovalDelay = 1;
 const keywords = "qualification, future task, notification";
 const maxAssignments = 500;
@@ -146,7 +148,8 @@ mturk.makeHIT(
   taskURL,
   HIT => {
     const HITId = HIT.HITId;
-
+    console.log(mturk.getHITURL(HITId));
+    mturk.getHITURL(HITId, console.log);
     // Write new recruiting HIT id to file for next hour run
     fs.writeFile(recruitingHITstorage, HITId, err => {
       if (err) {

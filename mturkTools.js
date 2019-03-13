@@ -249,16 +249,17 @@ const returnHIT = (hitId, callback) => {
 //
 // Takes HIT ID as parameter.
 
-const getHITURL = (hitId, callback) => {
-  let url = "";
+const getHITURL = (hitId, callback = null) => {
   mturk.getHIT({ HITId: hitId }, (err, data) => {
     if (err) console.log("Error: " + err.message);
     else {
-      url =
-        "https://worker.mturk.com/projects/" + data.HIT.HITGroupId + "/tasks";
+      const url = `https://${
+        runningLive ? "worker" : "workersandbox"
+      }.mturk.com/projects/${data.HIT.HITGroupId}/tasks`;
+      if (typeof callback === "function") {
+        callback(url);
+      }
     }
-    console.log(url);
-    if (typeof callback === "function") callback(url);
   });
 };
 
@@ -810,6 +811,8 @@ const notifyWorkers = (WorkerIds, subject, message) => {
 
 module.exports = {
   startTask: startTask,
+  hourlyWage: hourlyWage,
+  rewardPrice: rewardPrice,
   updatePayment: updatePayment,
   getBalance: getBalance,
   makeHIT: makeHIT,
