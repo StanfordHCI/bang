@@ -13,7 +13,7 @@ const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
           <Row>
             <Col>
               <div key={index} className='form__form-group'>
-                <label className='form__form-group-label'>step time:</label>
+                <label className='form__form-group-label'>step time (part of round time, like '0.3'):</label>
                 <div className='form__form-group-field'>
                   <Field
                     name={`${step}.time`}
@@ -53,19 +53,10 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds}) => {
   for (let i = 0; i < numRounds; i++) {
     tasks.push(
       <div key={i} className='form__form-group'>
-        <label className='form__form-group-label'>task name:</label>
+        <label className='form__form-group-label'>task:</label>
         <div className='form__form-group-field'>
           <Field
-            name={`tasks[${i}].name`}
-            component={renderField}
-            type='text'
-          />
-        </div>
-
-        <label className='form__form-group-label'>task url:</label>
-        <div className='form__form-group-field'>
-          <Field
-            name={`tasks[${i}].url`}
+            name={`tasks[${i}].message`}
             component={renderField}
             type='text'
           />

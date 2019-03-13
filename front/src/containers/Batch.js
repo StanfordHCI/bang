@@ -70,7 +70,7 @@ class Batch extends React.Component {
       <div className='chat'>
         <div className='chat__contact-list'>
           <div className='chat__contacts'>
-            <Table className='table table--bordered table--head-accent'>
+            {batch.status === 'active' && <Table className='table table--bordered table--head-accent'>
               <thead>
               <tr>
                 <th>members</th>
@@ -78,11 +78,11 @@ class Batch extends React.Component {
               </thead>
               <tbody>
               {chat.members.map((member) => {
-                return (batch.status === 'waiting' || member._id.toString() === user._id.toString()) ?
+                return (member._id.toString() === user._id.toString()) ?
                   <tr key={member._id}>
                     <td>
                       <div className='chat__bubble-contact-name'>
-                        {member.realNick}
+                        {member.realNick + ' (you)'}
                       </div>
                     </td>
                   </tr> :
@@ -95,7 +95,23 @@ class Batch extends React.Component {
                 </tr>
               })}
               </tbody>
-            </Table>
+            </Table>}
+            {batch.status === 'waiting' && <Table className='table table--bordered table--head-accent'>
+              <thead>
+              <tr>
+                <th>members</th>
+              </tr>
+              </thead>
+              <tbody>
+                <tr key={user._id}>
+                  <td>
+                    <div className='chat__bubble-contact-name'>
+                      {user.realNick + ' (you)'}
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </Table>}
           </div>
         </div>
         <div className='chat__dialog' style={{marginLeft: 10}}>

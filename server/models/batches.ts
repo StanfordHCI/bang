@@ -13,6 +13,7 @@ let  BatchSchema = new Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
     nickname: {type: String, required: true},
   }],
+  roundSurvey: [{type: String, required: true}],
   rounds: [{
     startTime: Date,
     endTime: Date,
@@ -20,7 +21,8 @@ let  BatchSchema = new Schema({
     teams: [{
       users: [{
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
-        nickname: {type: String, required: true}
+        nickname: {type: String, required: true},
+        survey: [{type: String, required: true}],
       }],
       chat: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat', required: true},
     }],
@@ -44,12 +46,11 @@ let  BatchSchema = new Schema({
   experimentRound: {type: Number, required: true},
   numRounds: {type: Number, required: true},
   tasks: [{
-    name: {type: String, required: true},
+    message: {type: String, required: true},
     steps: [{
       time: {type: Number, required: true},
       message: {type: String, required: true}
     }],
-    url: {type: String, required: true},
   }],
   taskJSON: {},
 }, options);

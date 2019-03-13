@@ -14,12 +14,11 @@ let  TemplateSchema = new Schema({
   experimentRound: {type: Number, required: true},
   numRounds: {type: Number, required: true},
   tasks: [{
-    name: {type: String, required: true},
+    message: {type: String, required: true},
     steps: [{
       time: {type: Number, required: true},
       message: {type: String, required: true}
     }],
-    url: {type: String, required: true},
   }],
 }, options);
 export const Template = mongoose.model('Template', TemplateSchema);

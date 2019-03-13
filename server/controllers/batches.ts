@@ -4,6 +4,7 @@ import {Batch} from '../models/batches'
 import {clearRoom, makeName} from './utils'
 import {errorHandler} from '../services/common'
 const logger = require('../services/logger');
+const botId = '100000000000000000000001'
 
 export const joinBatch = async function (data, socket, io) {
   try {
@@ -85,15 +86,15 @@ export const loadBatch = async function (data, socket, io) {
 
 
 
-const generateRandomTeams = (allUsers, size) => {
+const generateRandomTeams = (allUsers, size, oldNicks) => {
   let users = Array.from(allUsers);
   let teams = [];
   for (let i = 0; i < size; i++) {
     let team = {users: []};
     for (let j = 0; j < size; j++) {
       const index = Math.floor(Math.random() * users.length)
-      team.users.push(users[index]);
-      users.slice(index, 1)
+      team.users.push(generateTeamUser(users[index], oldNicks));
+      users.splice(index, 1)
     }
     teams.push(team)
   }
@@ -104,9 +105,16 @@ const timeout = (ms) => {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-const generateTeamUser = (user) => {
-  const nickname = makeName(null, null).username;
-  return {user: user._id, nickname: nickname, socketId: user.socketId}
+const generateTeamUser = (user, oldNicks) => {
+  let nickname;
+  while (true) {
+    nickname = makeName(null, null).username;
+    if (!oldNicks.some(x => x === nickname)) {
+      oldNicks.push(nickname)
+      break;
+    }
+  }
+  return {user: user._id, nickname: nickname, survey: []}
 }
 
 const startBatch = async function (batch, socket, io) {
@@ -122,10 +130,12 @@ const startBatch = async function (batch, socket, io) {
     io.to(batch._id.toString()).emit('start-batch', startBatchInfo);
     const teamSize = batch.teamSize, numRounds = batch.numRounds;
     let rounds = [];
-    const teams1round = generateRandomTeams(users, teamSize);
+    let oldNicks = []
+    const teams1round = generateRandomTeams(users, teamSize, oldNicks);
 
     for (let i = 0; i < numRounds; i++) {
       let roundObject = {startTime: new Date(), number: i + 1, teams: [], status: 'active', endTime: null};
+      const task = batch.tasks[i];
       let teams = [], emptyChats = [];
       switch (i) { //logic for teamsize=2 and 4 rounds and expRound=3; not perfect.
         case 0:
@@ -143,7 +153,7 @@ const startBatch = async function (batch, socket, io) {
       }
 
       for (let j = 0; j < teamSize; j++) { //simple gen for tests
-        emptyChats.push({batch: batch._id, messages: []})
+        emptyChats.push({batch: batch._id, messages: [{user: botId, nickname: 'helperBot', time: new Date(), message: 'Task: ' + task.message}]})
       }
 
       const chats = await Chat.insertMany(emptyChats);
@@ -152,28 +162,39 @@ const startBatch = async function (batch, socket, io) {
         team.chat = chats[index]._id;
         team.users.forEach(user => {
           prsHelper.push(User.findByIdAndUpdate(user.user, {$set: {fakeNick: user.nickname, currentChat: team.chat}}));
-          /*const userSocket = io.sockets.connected[user.socketId];
-          if (userSocket) {
-            userSocket.join(team.chat.toString());
-          } else {
-            logger.error(module, 'Cannot find user socket')
-          }*/
-          delete user.socketId;
           return user;
         })
         return team;
       })
       roundObject.teams = teams;
+
       rounds.push(roundObject);
       await Promise.all(prsHelper);
       const startRoundInfo = {rounds: rounds, currentRound: roundObject.number};
       batch = await Batch.findByIdAndUpdate(batch._id, {$set: startRoundInfo}).lean().exec();
       logger.info(module, 'Begin round ' + roundObject.number)
       io.to(batch._id.toString()).emit('refresh-batch', true)
-      //io.to(batch._id.toString()).emit('start-round', startRoundInfo); //to much info, should cut
-      //tasks logic
-      //...
-      await timeout(batch.roundMinutes * 60 * 1000);
+
+      let stepsSumTime = 0;
+      for (let j = 0; j < task.steps.length; j++) {
+        const step = batch.tasks[i].steps[j];
+        const stepMessage = {
+          user: botId,
+          nickname: 'helperBot',
+          message: 'Step ' + (j+1) + ': ' + step.message,
+          time: new Date()
+        }
+        let ps = [];
+        teams.forEach(team => {
+          ps.push(Chat.findByIdAndUpdate(team.chat, { $addToSet: { messages: stepMessage} }))
+          io.to(team.chat).emit('receive-message', stepMessage);
+        })
+        await Promise.all(ps)
+        stepsSumTime = stepsSumTime + step.time;
+        await timeout(batch.roundMinutes * step.time * 60000)
+      }
+
+      await timeout(batch.roundMinutes * (1 - stepsSumTime) * 60000);
 
       roundObject.status = 'survey';
       const midRoundInfo =  {rounds: rounds};
@@ -186,7 +207,7 @@ const startBatch = async function (batch, socket, io) {
       //survey logic
 
       //.....
-      await timeout(10000);
+      await timeout(30000);
       roundObject.endTime = new Date();
       roundObject.status = 'completed';
       const endRoundInfo = {rounds: rounds};
@@ -196,7 +217,7 @@ const startBatch = async function (batch, socket, io) {
     }
     await timeout(5000);
     const endBatchInfo = {status: 'completed'};
-    await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
+    await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null}})
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: endBatchInfo}).lean().exec();
     logger.info(module, 'Main experiment end', batch._id)
     io.to(batch._id.toString()).emit('end-batch', endBatchInfo);

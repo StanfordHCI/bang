@@ -37,7 +37,7 @@ class Waiting extends React.Component {
                 <div className='card__title'>
                   <h5 className='bold-text'>Waiting room</h5>
                 </div>
-                <p>Waiting on <b>{limit - this.state.activeCounter > 0 ? limit - this.state.activeCounter : 0}</b>
+                <p>Waiting on <b>{limit - this.state.activeCounter > 0 ? limit - this.state.activeCounter : 0} </b>
                   more MTurk users to accept the task.</p>
                 <p>Only wait if you can complete the entire task. If you leave early, you will not be paid. Provided you stay for the whole task, we will bonus to a rate of approximately $10.50 per hour.</p>
                 <p>Once enough people have accepted, you will be able to begin the task.</p>
