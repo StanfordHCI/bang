@@ -104,10 +104,15 @@ const quals = {
   }
 };
 
-const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(100), quals.hasBanged];
+const minHitsRequired = 100;
+const qualsForLive = [
+  quals.onlyUSA,
+  quals.hitsAccepted(minHitsRequired),
+  quals.hasBanged
+];
 const scheduleQuals = [
   quals.onlyUSA,
-  quals.hitsAccepted(100),
+  quals.hitsAccepted(minHitsRequired),
   quals.hasBanged,
   quals.willNotBang
 ];
@@ -185,8 +190,13 @@ const makeHIT = (
   // if a schedule bang, change quals to scheduleQuals
 
   let quals = [];
-  if (chooseQual == "safeQuals") quals = safeQuals;
-  else if (chooseQual == "scheduleQuals") quals = scheduleQuals;
+  if (!runningLive) {
+    quals = qualsForTesting;
+  } else if (chooseQual === "safeQuals") {
+    quals = safeQuals;
+  } else if (chooseQual === "scheduleQuals") {
+    quals = scheduleQuals;
+  }
 
   let makeHITParams = {
     Title: title, // string
@@ -880,4 +890,5 @@ function getRandomSubarray(arr, size) {
   return shuffled.slice(min);
 }
 
-workOnActiveHITs(console.log);
+// workOnActiveHITs(console.log);
+// disassociateQualification(quals.willBang.QualificationTypeId,"AECQ7QG4CQP69","You asked to be removed from our notification list.")

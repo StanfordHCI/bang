@@ -1,19 +1,26 @@
 require("dotenv").config();
-var http = require("http"),
-  mturk = require("./mturkTools"),
-  fs = require("fs");
-var colors = require("colors");
+const http = require("http");
+const mturk = require("./mturkTools");
+const fs = require("fs");
+const chalk = require("chalk");
 const Datastore = require("nedb");
 
 //Environmental settings, set in .env
-const runningLocal = process.env.RUNNING_LOCAL == "TRUE";
-const runningLive = process.env.RUNNING_LIVE == "TRUE"; //ONLY CHANGE ON SERVER
+const runningLocal = process.env.RUNNING_LOCAL === "TRUE";
+const runningLive = process.env.RUNNING_LIVE === "TRUE";
 
 console.log(
   runningLive
-    ? "\n RUNNING LIVE ".red.inverse
-    : "\n RUNNING SANDBOXED ".green.inverse
+    ? chalk.red.inverse("\n RUNNING LIVE ")
+    : chalk.green.inverse("\n RUNNING SANDBOXED ")
 );
+
+console.log(
+  !runningLocal
+    ? chalk.red.inverse("\n RUNNING REMOTE ")
+    : chalk.green.inverse("\n RUNNING LOCAL ")
+);
+
 var date = new Date(
   Date.now() + 1000 /*sec*/ * 60 /*min*/ * 60 /*hour*/ * 24 /*day*/ * 1
 ); //Actual HIT 1 day in the future
@@ -30,23 +37,18 @@ var generateTemplateString = (function() {
 
   function generateTemplate(template) {
     var fn = cache[template];
-
     if (!fn) {
       // Replace ${expressions} (etc) with ${map.expressions}.
-
       var sanitized = template
         .replace(/\$\{([\s]*[^;\s\{]+[\s]*)\}/g, function(_, match) {
           return `\$\{map.${match.trim()}\}`;
         })
         // Afterwards, replace anything that's not ${map.expressions}' (etc) with a blank string.
         .replace(/(\$\{(?!map\.)[^}]+\})/g, "");
-
       fn = Function("map", `return \`${sanitized}\``);
     }
-
     return fn;
   }
-
   return generateTemplate;
 })();
 
@@ -65,38 +67,32 @@ questionHTML = questionHTML({ HIT_date: HITDATE });
 const lifetime = 60; //calculate lifetime based on when runTime was
 
 //Set HIT Params
-const title = `Get notified when our ad writing task launches. If you stay for the whole task, we bonus at approximately $10.50 per hour.`;
-const description =
-  "Submit this HIT to be notified when our ad writing task launches. Space is limited.";
+const title = `Get notified when our task launches. If you stay for the whole task, we bonus at approximately $12 per hour.`;
+const description = `Submit this HIT to be notified when our task launches. Space is limited.`;
 const assignmentDuration = 20;
-const reward = 0.01;
+const reward = 0.1;
 const autoApprovalDelay = 1;
-const keywords = "ad writing, qualification, future task";
-const maxAssignments = 200;
+const keywords = "qualification, future task, notification";
+const maxAssignments = 500;
 const taskURL = questionHTML;
 
-let db = {};
-db.willBang = new Datastore({
-  filename: ".data/willBang",
+const dbName = ".data/willBang";
+const dbLocation = runningLocal ? dbName : `~/${dbName}`;
+const willBangDB = new Datastore({
+  filename: dbLocation,
   autoload: true,
   timestampData: true
 });
 
-//Removes user from db.willBang
-// let removeId = ''
-// db.willBang.remove({id: removeId}, { multi: true }, function (err, numRemoved) {
-//   if(err) console.log(err)
-//   else console.log('Removed ' + numRemoved + ' from db.willBang: ' + removeId)
-// })
-//return;
+console.log(`Date: ${Date.now()}`);
 
-console.log("Date: " + Date.now());
+const timeOptions = ["morning", "midday", "afternoon", "evening"];
 
 // Assign willBang to people who have accepted recruiting HIT of last hour
 console.log("fs.exists()", fs.existsSync(recruitingHITstorage));
 if (fs.existsSync(recruitingHITstorage)) {
   const HITId = fs.readFileSync(recruitingHITstorage).toString();
-  console.log("HITID found in database", HITId);
+  console.log(`HITID found in database ${HITId}`);
   mturk.listAssignments(HITId, data => {
     const willBangers = data.map(a => a.WorkerId);
     willBangers.forEach(u => mturk.assignQuals(u, mturk.quals.willBang));
@@ -104,30 +100,17 @@ if (fs.existsSync(recruitingHITstorage)) {
     // Store willBangers with timePreference in database
     // Deal with timezones?
     data.forEach(u => {
-      let timePreference = "";
-      if (u.Answer.includes("morning")) {
-        //current this only allows them to choose 1 time preference. Fix?
-        timePreference = "morning";
-      } else if (u.Answer.includes("midday")) {
-        timePreference = "midday";
-      } else if (u.Answer.includes("afternoon")) {
-        timePreference = "afternoon";
-      } else if (u.Answer.includes("evening")) {
-        timePreference = "evening";
-      } else if (u.Answer.includes("late evening")) {
-        timePreference = "late evening";
-      }
-
-      db.willBang.insert(
+      const timePreference = timeOptions.filter(t => u.Answer.includes(t));
+      willBangDB.insert(
         { id: u.WorkerId, timePreference: timePreference },
         (err, usersAdded) => {
-          if (err)
+          if (err) {
             console.log(
-              "There's a problem adding users to the willBang DB: ",
-              err
+              `There's a problem adding users to the willBang DB: ${err}`
             );
-          else if (usersAdded)
-            console.log("Users added to the willBang DB: " + u.WorkerId);
+          } else if (usersAdded) {
+            console.log(`${u.WorkerId} added for ${timePreference}`);
+          }
         }
       );
     });
@@ -164,12 +147,12 @@ mturk.makeHIT(
 
     // Write new recruiting HIT id to file for next hour run
     fs.writeFile(recruitingHITstorage, HITId, err => {
-      if (err)
+      if (err) {
         console.log(
-          "There's a problem writing HIT to the recruiting file: ",
-          err
+          `There's a problem writing HIT to the recruiting file: ${err}`
         );
+      }
     });
-    console.log("recruitment schedule HIT success");
+    console.log(`recruitment schedule HIT success`);
   }
 );
