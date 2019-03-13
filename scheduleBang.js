@@ -48,6 +48,7 @@ var generateTemplateString = (function() {
       fn = Function("map", `return \`${sanitized}\``);
     }
     return fn;
+    ``;
   }
   return generateTemplate;
 })();
@@ -56,7 +57,7 @@ var generateTemplateString = (function() {
 let questionHTML = generateTemplateString(
   fs.readFileSync("./question.html").toString()
 );
-let recruitingHITstorage = "./txt/currentrecruitingHIT.txt";
+let recruitingHITstorage = "./.data/currentRecruitingHIT";
 questionHTML = questionHTML({ HIT_date: HITDATE });
 
 // Determine the lifetime of HIT
