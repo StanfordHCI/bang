@@ -37,8 +37,8 @@ const numRounds = 4;
 const taskDuration = roundMinutes * numRounds * 2;
 //const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
 const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
-const hourlyWage = 10.5; // changes reward of experiment depending on length - change to 6?
-const rewardPrice = 0.01; // upfront cost
+const hourlyWage = 12; // changes reward of experiment depending on length - change to 6?
+const rewardPrice = 0.1; // upfront cost
 const numHITs = 3;
 const maxAssignments = 2 * teamSize * teamSize * 2;
 
@@ -104,10 +104,15 @@ const quals = {
   }
 };
 
-const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(100), quals.hasBanged];
+const minHitsRequired = 100;
+const qualsForLive = [
+  quals.onlyUSA,
+  quals.hitsAccepted(minHitsRequired),
+  quals.hasBanged
+];
 const scheduleQuals = [
   quals.onlyUSA,
-  quals.hitsAccepted(100),
+  quals.hitsAccepted(minHitsRequired),
   quals.hasBanged,
   quals.willNotBang
 ];
@@ -185,8 +190,13 @@ const makeHIT = (
   // if a schedule bang, change quals to scheduleQuals
 
   let quals = [];
-  if (chooseQual == "safeQuals") quals = safeQuals;
-  else if (chooseQual == "scheduleQuals") quals = scheduleQuals;
+  if (!runningLive) {
+    quals = qualsForTesting;
+  } else if (chooseQual === "safeQuals") {
+    quals = safeQuals;
+  } else if (chooseQual === "scheduleQuals") {
+    quals = scheduleQuals;
+  }
 
   let makeHITParams = {
     Title: title, // string
@@ -239,16 +249,17 @@ const returnHIT = (hitId, callback) => {
 //
 // Takes HIT ID as parameter.
 
-const getHITURL = (hitId, callback) => {
-  let url = "";
+const getHITURL = (hitId, callback = null) => {
   mturk.getHIT({ HITId: hitId }, (err, data) => {
     if (err) console.log("Error: " + err.message);
     else {
-      url =
-        "https://worker.mturk.com/projects/" + data.HIT.HITGroupId + "/tasks";
+      const url = `https://${
+        runningLive ? "worker" : "workersandbox"
+      }.mturk.com/projects/${data.HIT.HITGroupId}/tasks`;
+      if (typeof callback === "function") {
+        callback(url);
+      }
     }
-    console.log(url);
-    if (typeof callback === "function") callback(url);
   });
 };
 
@@ -800,6 +811,8 @@ const notifyWorkers = (WorkerIds, subject, message) => {
 
 module.exports = {
   startTask: startTask,
+  hourlyWage: hourlyWage,
+  rewardPrice: rewardPrice,
   updatePayment: updatePayment,
   getBalance: getBalance,
   makeHIT: makeHIT,
@@ -881,3 +894,7 @@ function getRandomSubarray(arr, size) {
 }
 
 // workOnActiveHITs(console.log);
+<<<<<<< HEAD
+=======
+// disassociateQualification(quals.willBang.QualificationTypeId,"AECQ7QG4CQP69","You asked to be removed from our notification list.")
+>>>>>>> c5ee0a01cc212b96c55ed593252e77c3b2c7ceaf

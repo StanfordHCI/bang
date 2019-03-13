@@ -377,6 +377,12 @@ const teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn);
 const batchID = Date.now();
 console.log("Launching batch", batchID);
 
+const homeDIR = require("os").homedir();
+const willBangDBName = ".data/willBang";
+const willBangDMLocation = runningLocal
+  ? willBangDBName
+  : `${homeDIR}/${willBangDBName}`;
+
 // Setting up DB
 const Datastore = require("nedb");
 const db = {};
@@ -406,7 +412,7 @@ db.ourHITs = new Datastore({
   timestampData: true
 });
 db.willBang = new Datastore({
-  filename: ".data/willBang",
+  filename: willBangDMLocation,
   autoload: true,
   timestampData: true
 });
@@ -545,25 +551,23 @@ if (runExperimentNow) {
           let maxWorkersToNotify = 100; // cannot be more than 100
 
           // Get workers to notify from - all times are GMT (NOT PST!!) bc server time is GMT
-          let currenttimePeriod = "";
           let currentHour = new Date(Date.now()).getHours();
-          if (13 <= currentHour && currentHour <= 15) {
-            currenttimePeriod = "morning";
-          } else if (16 <= currentHour && currentHour <= 18) {
-            currenttimePeriod = "midday";
-          } else if (19 <= currentHour && currentHour <= 21) {
-            currenttimePeriod = "afternoon";
-          } else if (
-            (22 <= currentHour && currentHour <= 23) ||
-            currentHour === 0
-          ) {
-            currenttimePeriod = "evening";
-          } else if (1 <= currentHour && currentHour <= 3) {
-            currenttimePeriod = "late evening";
-          } else {
-            currenttimePeriod = "no bucket";
-          }
-          if (currenttimePeriod === "no bucket") {
+          const timePeriods = {
+            13: "morning",
+            14: "morning",
+            15: "morning",
+            16: "midday",
+            17: "midday",
+            18: "midday",
+            19: "afternoon",
+            20: "afternoon",
+            21: "afternoon",
+            22: "evening",
+            23: "evening"
+          };
+
+          const currentTimePeriod = timePeriods[currentHour];
+          if (currentTimePeriod === undefined) {
             // randomize list
             mturk.listUsersWithQualificationRecursively(
               mturk.quals.willBang,
@@ -575,9 +579,9 @@ if (runExperimentNow) {
             );
           } else {
             // use the time buckets
-            console.log("Current Time Period: " + currenttimePeriod);
+            console.log("Current Time Period: " + currentTimePeriod);
             db.willBang.find(
-              { timePreference: currenttimePeriod },
+              { timePreference: currentTimePeriod },
               (err, currentTimePoolWorkers) => {
                 if (err) {
                   console.log("DB for MTurk:" + err);
