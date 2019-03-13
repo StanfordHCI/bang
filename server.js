@@ -376,10 +376,11 @@ const teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn);
 const batchID = Date.now();
 console.log("Launching batch", batchID);
 
+const homeDIR = require("os").homedir();
 const willBangDBName = ".data/willBang";
 const willBangDMLocation = runningLocal
   ? willBangDBName
-  : `~/${willBangDBName}`;
+  : `${homeDIR}/${willBangDBName}`;
 
 // Setting up DB
 const Datastore = require("nedb");
