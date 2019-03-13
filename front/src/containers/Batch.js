@@ -32,19 +32,17 @@ class Batch extends React.Component {
 
   componentWillReceiveProps(nextProps, nextState) {
     if (!this.state.timerActive && nextProps.currentRound && nextProps.currentRound.status === 'active'){
-      console.log('start')
       this.setState({timerActive: true})
       this.roundTimer = setInterval(() => this.timer(nextProps.currentRound), 1000);
     }
     if (this.state.timerActive && this.props.currentRound && this.props.currentRound.status === 'active' && nextProps.currentRound.status === 'survey') {
-      console.log('clear')
       this.setState({timerActive: false})
       clearInterval(this.roundTimer)
     }
   }
 
   timer(round){
-    this.setState({timeLeft: moment(round.startTime).add(1, 'minute').diff(moment(), 'seconds')})
+    this.setState({timeLeft: moment(round.startTime).add(this.props.batch.roundMinutes, 'minute').diff(moment(), 'seconds')})
   }
 
   refresher(data) {
@@ -123,7 +121,7 @@ class Batch extends React.Component {
                   return (
                     <div className={messageClass} key={index + 1}>
                       <div className='chat__bubble-message-wrap'>
-                        <p className='chat__bubble-contact-name'>{message.nickname}</p>
+                        <p className='chat__bubble-contact-name'>{message.user.toString() === user._id.toString() ? user.realNick : message.nickname}</p>
                         <p className='chat__bubble-message'>{message.message}</p>
                         <p className='chat__bubble-date'>{moment(message.time).format('LTS')}</p>
                       </div>
