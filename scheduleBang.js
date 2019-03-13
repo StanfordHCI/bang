@@ -76,8 +76,10 @@ const keywords = "qualification, future task, notification";
 const maxAssignments = 500;
 const taskURL = questionHTML;
 
+const homedir = require("os").homedir();
 const dbName = ".data/willBang";
-const dbLocation = runningLocal ? dbName : `~/${dbName}`;
+const dbLocation = runningLocal ? dbName : `${homedir}/${dbName}`;
+console.log(`WillBang DB at ${dbLocation}`);
 const willBangDB = new Datastore({
   filename: dbLocation,
   autoload: true,
