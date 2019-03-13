@@ -131,24 +131,23 @@ const startBatch = async function (batch, socket, io) {
     const teamSize = batch.teamSize, numRounds = batch.numRounds;
     let rounds = [];
     let oldNicks = []
-    const teams1round = generateRandomTeams(users, teamSize, oldNicks);
 
     for (let i = 0; i < numRounds; i++) {
       let roundObject = {startTime: new Date(), number: i + 1, teams: [], status: 'active', endTime: null};
       const task = batch.tasks[i];
       let teams = [], emptyChats = [];
-      switch (i) { //logic for teamsize=2 and 4 rounds and expRound=3; not perfect.
+      switch (i) {
         case 0:
-          teams = teams1round;
+          teams = generateRandomTeams(users, teamSize, oldNicks);
           break;
         case 1:
-          teams = [{users: [teams1round[0].users[0], teams1round[1].users[0]]}, {users:  [teams1round[0].users[1], teams1round[1].users[1]]}]
+          teams = generateRandomTeams(users, teamSize, oldNicks);
           break;
         case 2:
-          teams = teams1round;
+          teams = generateRandomTeams(users, teamSize, oldNicks);
           break;
         case 3:
-          teams = [{users: [teams1round[0].users[0], teams1round[1].users[1]]}, {users:  [teams1round[0].users[1], teams1round[1].users[0]]}]
+          teams = generateRandomTeams(users, teamSize, oldNicks);
           break;
       }
 
