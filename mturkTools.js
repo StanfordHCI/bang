@@ -37,8 +37,8 @@ const numRounds = 4;
 const taskDuration = roundMinutes * numRounds * 2;
 //const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
 const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
-const hourlyWage = 10.5; // changes reward of experiment depending on length - change to 6?
-const rewardPrice = 0.01; // upfront cost
+const hourlyWage = 12; // changes reward of experiment depending on length - change to 6?
+const rewardPrice = 0.1; // upfront cost
 const numHITs = 3;
 const maxAssignments = 2 * teamSize * teamSize * 2;
 
