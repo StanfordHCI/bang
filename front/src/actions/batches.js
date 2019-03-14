@@ -22,8 +22,14 @@ export const joinBatch = () => {
 
 export const sendMessage = (message) => {
   return function (dispatch) {
-    console.log(message)
     socket.emit('send-message', message);
+  }
+}
+
+export const submitSurvey = (data) => {
+  return function (dispatch) {
+    console.log(data)
+    socket.emit('send-survey', data);
   }
 }
 

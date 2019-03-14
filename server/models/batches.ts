@@ -17,7 +17,7 @@ let  BatchSchema = new Schema({
   rounds: [{
     startTime: Date,
     endTime: Date,
-    status: { type: String, enum: ['completed', 'active', 'waiting'], default: 'waiting' },
+    status: { type: String, enum: ['completed', 'active', 'waiting', 'saved'], default: 'waiting' },
     teams: [{
       users: [{
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
@@ -43,7 +43,8 @@ let  BatchSchema = new Schema({
   checkinOn: {type: Boolean, required: true, default: false},
   condition: { type: String, enum: ['control', 'treatment'], default: 'control',required: true },
   format: [{type: Number, required: true}],
-  experimentRound: {type: Number, required: true},
+  experimentRound1: {type: Number, required: true},
+  experimentRound2: {type: Number, required: true},
   numRounds: {type: Number, required: true},
   tasks: [{
     message: {type: String, required: true},
@@ -53,5 +54,6 @@ let  BatchSchema = new Schema({
     }],
   }],
   taskJSON: {},
+  midQuestions: [String],
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);

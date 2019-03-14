@@ -1,6 +1,7 @@
 import {User} from '../models/users'
 import {Chat} from '../models/chats'
 import {Batch} from '../models/batches'
+import {Survey} from '../models/surveys'
 import {clearRoom, makeName} from './utils'
 import {errorHandler} from '../services/common'
 const logger = require('../services/logger');
@@ -28,8 +29,9 @@ export const joinBatch = async function (data, socket, io) {
       socket.join(batch._id.toString()) //common room, not chat
       socket.emit('joined-batch', {user: user});
     }
-    if (batch.users.length === batch.teamSize ** 2 - 1 && batch.status === 'waiting') { //start batch
-      clearRoom('waitroom', io);
+    if (batch.users.length >= batch.teamSize ** 2 - 1 && batch.status === 'waiting') { //start batch
+      //clearRoom('waitroom', io);
+
       clearRoom(batch.preChat, io);
       await startBatch(batch, socket, io)
     }
@@ -86,7 +88,7 @@ export const loadBatch = async function (data, socket, io) {
 
 
 
-const generateRandomTeams = (allUsers, size, oldNicks) => {
+/*const generateRandomTeams = (allUsers, size, oldNicks) => {
   let users = Array.from(allUsers);
   let teams = [];
   for (let i = 0; i < size; i++) {
@@ -99,7 +101,7 @@ const generateRandomTeams = (allUsers, size, oldNicks) => {
     teams.push(team)
   }
   return teams;
-}
+}*/
 
 const timeout = (ms) => {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -119,7 +121,7 @@ const generateTeamUser = (user, oldNicks) => {
 
 const startBatch = async function (batch, socket, io) {
   try {
-    await timeout(5000)
+    await timeout(5000);
     const users = await User.find({batch: batch._id, connected: true}).lean().exec();
     if (users.length != batch.teamSize ** 2) {
       console.log('wrong users length') // do something?
@@ -136,18 +138,26 @@ const startBatch = async function (batch, socket, io) {
       let roundObject = {startTime: new Date(), number: i + 1, teams: [], status: 'active', endTime: null};
       const task = batch.tasks[i];
       let teams = [], emptyChats = [];
-      switch (i) {
-        case 0:
-          teams = generateRandomTeams(users, teamSize, oldNicks);
+      const rand = Math.floor(Math.random() * 2);
+      const randomIndex1 = rand + 2; //2 or 3
+      const randomIndex2 = 5 - randomIndex1;
+
+      switch (i + 1) { //logic for teamsize=2 and 4 rounds and expRound=3; not perfect.
+        case batch.experimentRound1:
+          teams[0] = {users: Array.from(users).splice(rand * teamSize, (rand+1) * teamSize).map(x => generateTeamUser(x, oldNicks))};
+          teams[1] = {users: Array.from(users).splice((1 - rand) * teamSize, ((1 - rand)+1) * teamSize).map(x => generateTeamUser(x, oldNicks))};
           break;
-        case 1:
-          teams = generateRandomTeams(users, teamSize, oldNicks);
+        case batch.experimentRound2:
+          teams[0] = {users: [generateTeamUser(users[1], oldNicks), generateTeamUser(users[0], oldNicks)]}
+          teams[1] = {users: [generateTeamUser(users[3], oldNicks), generateTeamUser(users[2], oldNicks)]}
           break;
-        case 2:
-          teams = generateRandomTeams(users, teamSize, oldNicks);
+        case 1: case 2:
+          teams[0] = {users: [generateTeamUser(users[0], oldNicks), generateTeamUser(users[randomIndex1], oldNicks)]}
+          teams[1] = {users: [generateTeamUser(users[1], oldNicks), generateTeamUser(users[randomIndex2], oldNicks)]}
           break;
-        case 3:
-          teams = generateRandomTeams(users, teamSize, oldNicks);
+        case 3: case 4:
+          teams[0] = {users: [generateTeamUser(users[0], oldNicks), generateTeamUser(users[randomIndex2], oldNicks)]}
+          teams[1] = {users: [generateTeamUser(users[1], oldNicks), generateTeamUser(users[randomIndex1], oldNicks)]}
           break;
       }
 
@@ -214,14 +224,29 @@ const startBatch = async function (batch, socket, io) {
       logger.info(module, 'End round ' + roundObject.number)
       io.to(batch._id.toString()).emit('end-round', endRoundInfo);
     }
-    await timeout(5000);
-    const endBatchInfo = {status: 'completed'};
+    const postBatchInfo = {status: 'completed'};
+    batch = await Batch.findByIdAndUpdate(batch._id, {$set: postBatchInfo}).lean().exec();
+    io.to(batch._id.toString()).emit('end-batch', postBatchInfo);
+    //last survey
+    await timeout(30000);
+
     await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null}})
-    batch = await Batch.findByIdAndUpdate(batch._id, {$set: endBatchInfo}).lean().exec();
     logger.info(module, 'Main experiment end', batch._id)
-    io.to(batch._id.toString()).emit('end-batch', endBatchInfo);
     clearRoom(batch._id, io)
   } catch (e) {
     errorHandler(e, 'batch main run error')
+  }
+}
+
+export const receiveSurvey = async function (data, socket, io) {
+  try {
+    const newSurvey = {
+      ...data,
+      user: socket.userId,
+    }
+    await Survey.create(newSurvey)
+
+  } catch (e) {
+    errorHandler(e, 'receive survey error')
   }
 }

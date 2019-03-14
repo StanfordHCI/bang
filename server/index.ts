@@ -7,7 +7,7 @@ const APP_ROOT = path.resolve(__dirname, '..');
 const logger = require('./services/logger');
 require('dotenv').config({path: './.env'});
 import {init, sendMessage, disconnect} from './controllers/users'
-import {joinBatch, loadBatch} from './controllers/batches'
+import {joinBatch, loadBatch, receiveSurvey} from './controllers/batches'
 import {errorHandler} from './services/common'
 import {User} from './models/users'
 import {Batch} from './models/batches'
@@ -46,7 +46,7 @@ const io = require('socket.io').listen(app.listen(PORT, function() {
 const initialChecks = [
   User.updateMany({}, { $set: { connected : false, lastDisconnect: new Date(), socketId: '', batch: null,
       currentChat: null, realNick: null, fakeNick: null}}),
-  Batch.updateMany({$or: [{status:'active'}, {status:'waiting'}]}, { $set: { status : 'completed'}})
+  Batch.updateMany({$or: [{status:'active'}, {status:'waiting'}, {status:'completed'}]}, { $set: { status : 'saved'}})
 ]
 
 Promise.all(initialChecks)
@@ -57,6 +57,7 @@ Promise.all(initialChecks)
       socket.on('send-message', data => socketMiddleware('send-message', sendMessage, data, socket));
       socket.on('join-batch', data => socketMiddleware('join-batch', joinBatch, data, socket));
       socket.on('load-batch', data => socketMiddleware('load-batch', loadBatch, data, socket));
+      socket.on('send-survey', data => socketMiddleware('send-survey', receiveSurvey, data, socket));
     });
   })
   .catch(err => {

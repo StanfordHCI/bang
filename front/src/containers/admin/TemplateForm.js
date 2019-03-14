@@ -13,7 +13,7 @@ const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
           <Row>
             <Col>
               <div key={index} className='form__form-group'>
-                <label className='form__form-group-label'>step time (part of round time, like '0.3'):</label>
+                <label className='form__form-group-label'>step time:</label>
                 <div className='form__form-group-field'>
                   <Field
                     name={`${step}.time`}

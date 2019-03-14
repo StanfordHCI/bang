@@ -17,6 +17,28 @@ export const addBatch = async function (req, res) {
     delete newBatch._id;
     newBatch.status = 'waiting';
     newBatch.users = [];
+    newBatch.experimentRound1 = Math.floor(Math.random() * 2) + 1; //1 or 2
+    if (newBatch.experimentRound1 === 2) {
+      newBatch.experimentRound2 = Math.floor(Math.random() * 2) + 3; //3 or 4
+    } else {
+      newBatch.experimentRound2 = 3;
+    }
+    newBatch.midQuestions = [
+      'The members of this team could work for a long time together.',
+      'Most of the members of this team would welcome the opportunity to work as a group again in the future.',
+      'This team has the capacity for long-term success.',
+      'This team has what it takes to be effective in the future.',
+      'This team would work well together in the future.',
+      'This team has positioned itself well for continued success.',
+      'This team has the ability to perform well in the future.',
+      'This team has the ability to function as an ongoing unit.',
+      'This team should continue to function as a unit.',
+      'This team has the resources to perform well in the future.',
+      'This team is well positioned for growth over time.',
+      'This team can develop to meet future challenges.',
+      'This team has the capacity to sustain itself.',
+      'This team has what it takes to endure in future performance episodes.'
+    ]
     /*const newBatch = {
       teamSize: process.env.TEAM_SIZE,
       users: [],
@@ -39,12 +61,6 @@ export const addBatch = async function (req, res) {
           nickname: 'helperBot',
           message: 'You must be able to stay for the duration of this task, around 1 hour. If you cannot stay for the entire time, ' +
           'please leave now. You will not be compensated if you leave preemptively.',
-          user: botId,
-          time: new Date
-        },
-        {
-          nickname: 'helperBot',
-          message: 'For this first task, I need you to answer a sequence of questions. Thanks for cooperating!',
           user: botId,
           time: new Date
         },
@@ -83,7 +99,6 @@ export const loadTemplateList = async function (req, res) {
 export const addTemplate = async function (req, res) {
   try {
     let newTemplate = req.body;
-    newTemplate.experimentRound = 3;
     const template = await Template.create(req.body);
     res.json({template: template})
   } catch (e) {
