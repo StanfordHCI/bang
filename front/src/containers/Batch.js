@@ -179,6 +179,7 @@ class Batch extends React.Component {
       <div>
         <h5 className='bold-text'>Round survey</h5>
         {!this.state.surveyDone && <MidSurveyForm
+          initialValues={{questions: this.props.batch.midQuestions.map(x => {return {result: ''}})}}
           questions={this.props.batch.midQuestions}
           onSubmit={this.submitSurvey}
         />}
@@ -205,6 +206,8 @@ class Batch extends React.Component {
       data.round = batch.currentRound
     } else if (batch.status === 'completed') {
       data.isPost = true;
+      data.mainQuestion.partners = data.mainQuestion.partners.map(x => x.value)
+      console.log(data.mainQuestion.partners)
     }
     this.props.submitSurvey(data)
     this.setState({surveyDone: true})
@@ -272,7 +275,6 @@ class Batch extends React.Component {
 function mapStateToProps(state) {
   const batch = state.batch.batch;
   const round = batch && batch.rounds ? batch.rounds[batch.currentRound - 1] : null;
-  console.log(batch)
 
   return {
     user: state.app.user,

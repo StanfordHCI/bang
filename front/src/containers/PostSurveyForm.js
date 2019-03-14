@@ -83,7 +83,6 @@ class PostSurveyForm extends React.Component {
                       <Field
                         name='mainQuestion.partners'
                         component={renderMultiSelectField}
-                        type='text'
                         options={uOptions}
                       />
                     </div>

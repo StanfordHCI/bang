@@ -228,7 +228,7 @@ const startBatch = async function (batch, socket, io) {
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: postBatchInfo}).lean().exec();
     io.to(batch._id.toString()).emit('end-batch', postBatchInfo);
     //last survey
-    await timeout(30000);
+    await timeout(300000);
 
     await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null}})
     logger.info(module, 'Main experiment end', batch._id)
