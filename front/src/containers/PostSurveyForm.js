@@ -14,6 +14,13 @@ const qOptions = [
   {value: 4, label: '4'},
 ]
 
+const uOptions = [
+  {value: 1, label: 'Partner from round 1'},
+  {value: 2, label: 'Partner from round 2'},
+  {value: 3, label: 'Partner from round 3'},
+  {value: 4, label: 'Partner from round 4'},
+]
+
 const renderQuestions = ({fields, meta: {touched, error, warning}, questions}) => {
   let tasks = [];
   for (let i = 0; i < questions.length; i++) {
@@ -46,13 +53,6 @@ class PostSurveyForm extends React.Component {
 
   render() {
     const {invalid, batch} = this.props;
-    const uOptions = [
-      {value: 1, label: 'Partner from round 1'},
-      {value: 2, label: 'Partner from round 2'},
-      {value: 3, label: 'Partner from round 3'},
-      {value: 4, label: 'Partner from round 4'},
-    ]
-    uOptions.splice(uOptions.findIndex(x => x.value === batch.experimentRound2), 1)
 
     return (<div>
         <form className='form form--horizontal' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
@@ -78,7 +78,7 @@ class PostSurveyForm extends React.Component {
                     </div>
                   </div>
                   <div className='form__form-group'>
-                    <label className='form__form-group-label'>Team size:</label>
+                    <label className='form__form-group-label'>Partners you wanna choose:</label>
                     <div className='form__form-group-field'>
                       <Field
                         name='mainQuestion.partners'

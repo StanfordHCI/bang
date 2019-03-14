@@ -244,7 +244,6 @@ export const receiveSurvey = async function (data, socket, io) {
       ...data,
       user: socket.userId,
     }
-    console.log(newSurvey.mainQuestion)
     await Survey.create(newSurvey)
 
   } catch (e) {
