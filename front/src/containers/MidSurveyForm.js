@@ -77,8 +77,9 @@ class MidSurveyForm extends React.Component {
 }
 
 const validate = (values, props) => {
+  console.log(values)
   const errors = {questions: []};
-  for (let i = 0; i < values.questions.length; i++) {
+  if (values.questions) for (let i = 0; i < values.questions.length; i++) {
     if (!values.questions[i].result) {
       errors.questions[i] = {result: 'required'}
     }

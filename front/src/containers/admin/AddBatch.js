@@ -27,11 +27,11 @@ class BatchInfo extends React.Component {
   }
 
   handleSubmit = () => {
-    this.props.addBatch(this.props.templateList.find(x => x._id === this.state.template.value))
+    this.props.addBatch(this.props.templateList.find(x => x._id === this.state.template))
   }
 
   handleChange = (e) => {
-    this.setState({template: e})
+    this.setState({template: e.value})
   }
 
   render() {

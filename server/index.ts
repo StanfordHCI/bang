@@ -46,7 +46,7 @@ const io = require('socket.io').listen(app.listen(PORT, function() {
 const initialChecks = [
   User.updateMany({}, { $set: { connected : false, lastDisconnect: new Date(), socketId: '', batch: null,
       currentChat: null, realNick: null, fakeNick: null}}),
-  Batch.updateMany({$or: [{status:'active'}, {status:'waiting'}, {status:'completed'}]}, { $set: { status : 'saved'}})
+  Batch.updateMany({$or: [{status:'active'}, {status:'waiting'}]}, { $set: { status : 'completed'}})
 ]
 
 Promise.all(initialChecks)

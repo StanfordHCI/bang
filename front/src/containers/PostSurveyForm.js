@@ -70,7 +70,7 @@ class PostSurveyForm extends React.Component {
                         options={qOptions}
                       />
                       <Field
-                        name='mainQuestion.expRound1'
+                        name='mainQuestion.expRound2'
                         component={renderSelectField}
                         type='text'
                         options={qOptions}

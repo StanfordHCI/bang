@@ -17,7 +17,7 @@ let  BatchSchema = new Schema({
   rounds: [{
     startTime: Date,
     endTime: Date,
-    status: { type: String, enum: ['completed', 'active', 'waiting', 'saved'], default: 'waiting' },
+    status: { type: String, enum: ['completed', 'active', 'waiting'], default: 'waiting' },
     teams: [{
       users: [{
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
