@@ -28,7 +28,7 @@ export const sendMessage = (message) => {
 
 export const submitSurvey = (data) => {
   return function (dispatch) {
-    console.log(data)
+    dispatch(setSnackbar('Survey submitted'));
     socket.emit('send-survey', data);
   }
 }
@@ -61,6 +61,7 @@ export const loadBatch = () => {
 
     //batch events
     socket.on('start-batch', (data) =>{
+
       dispatch(setSnackbar('Batch start'));
       dispatch({
         type: REFRESH_BATCH,

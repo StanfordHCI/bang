@@ -15,7 +15,6 @@ class SelectField extends PureComponent {
   
   render() {
     const {value, name, disabled, searchable} = this.props;
-    console.log(value)
     
     return (
       <Select

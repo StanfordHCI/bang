@@ -26,9 +26,7 @@ const addValues = (base, add) => {
 export default function (state = initialState, action) {
   switch (action.type) {
     case REFRESH_BATCH:
-      console.log(state.batch, action.data)
       const batch = addValues(state.batch, action.data);
-      console.log(batch)
       return {
         ...state,
         batch: batch

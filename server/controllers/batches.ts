@@ -25,9 +25,9 @@ export const joinBatch = async function (data, socket, io) {
       ])
       user = prs[1]
       socket.join(user.currentChat.toString()) //chat room
-      io.to(batch._id.toString()).emit('refresh-batch', true)
       socket.join(batch._id.toString()) //common room, not chat
       socket.emit('joined-batch', {user: user});
+      io.to(batch._id.toString()).emit('refresh-batch', true)
     }
     if (batch.users.length >= batch.teamSize ** 2 - 1 && batch.status === 'waiting') { //start batch
       //clearRoom('waitroom', io);
@@ -228,7 +228,7 @@ const startBatch = async function (batch, socket, io) {
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: postBatchInfo}).lean().exec();
     io.to(batch._id.toString()).emit('end-batch', postBatchInfo);
     //last survey
-    await timeout(300000);
+    await timeout(60000);
 
     await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null}})
     logger.info(module, 'Main experiment end', batch._id)
@@ -244,6 +244,7 @@ export const receiveSurvey = async function (data, socket, io) {
       ...data,
       user: socket.userId,
     }
+    console.log(newSurvey.mainQuestion)
     await Survey.create(newSurvey)
 
   } catch (e) {
