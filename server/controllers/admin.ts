@@ -18,10 +18,10 @@ export const addBatch = async function (req, res) {
     newBatch.status = 'waiting';
     newBatch.users = [];
     newBatch.experimentRound1 = Math.floor(Math.random() * 2) + 1; //1 or 2
-    if (newBatch.experimentRound1 === 2) {
+    if (newBatch.experimentRound1 === 1) {
       newBatch.experimentRound2 = Math.floor(Math.random() * 2) + 3; //3 or 4
     } else {
-      newBatch.experimentRound2 = 3;
+      newBatch.experimentRound2 = 4;
     }
     newBatch.midQuestions = [
       'The members of this team could work for a long time together.',
