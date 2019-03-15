@@ -1,8 +1,10 @@
 const fs = require("fs");
-var exec = require("child_process").exec;
-let mturk = require("./mturkTools");
+const exec = require("child_process").exec;
+const mturk = require("./mturkTools");
 
-const dir = "./.data/";
+const serverURL = "b01.dmorina.com";
+const dbLocation = ".data";
+const dir = `./${dbLocation}/`;
 
 Array.prototype.set = function() {
   const setArray = [];
@@ -58,7 +60,7 @@ function renderChats(batch) {
     } else {
       try {
         const chats = JSON.parse(chatsJSON);
-        console.log("\nChats for batch:",batch);
+        console.log("\nChats for batch:", batch);
         chats
           .map(a => a.round)
           .set()
@@ -70,12 +72,14 @@ function renderChats(batch) {
               .set()
               .sort()
               .forEach(currentRoom => {
-                console.log("\nRoom",currentRoom,"in round",currentRound);
+                console.log("\nRoom", currentRoom, "in round", currentRound);
                 let ads = chats
                   .sort((a, b) => a.time - b.time)
-                  .filter(a => a.room == currentRoom && a.round == currentRound)
-                  //.filter(a => a.message[0] === "!");
-                ads.forEach(m => console.log("  ",m.message))
+                  .filter(
+                    a => a.room == currentRoom && a.round == currentRound
+                  );
+                //.filter(a => a.message[0] === "!");
+                ads.forEach(m => console.log("  ", m.message));
                 let chosenAd = ads[ads.length - 1];
                 ad = {
                   batch: chosenAd.batch,
@@ -88,7 +92,7 @@ function renderChats(batch) {
               });
           });
       } catch (err) {
-        console.log('File ending error in batch',batch)
+        console.log("File ending error in batch", batch);
       }
     }
   });
@@ -266,7 +270,7 @@ function retroactivelyFixRooms() {
 }
 
 //Renders a full db by name.
-function saveOutBatch(dbName, batch) {
+function saveBatchArchive(dbName, batch) {
   const batchDir = dir + batch;
   if (!fs.existsSync(batchDir)) {
     fs.mkdirSync(batchDir);
@@ -316,28 +320,28 @@ function useEachBatchDB(callback) {
   });
 }
 
-function saveAllData() {
+function saveDBArchives() {
   useEachBatchDB(batch => {
-    ["users", "chats", "batch"].forEach(data => {
-      saveOutBatch(data, batch);
+    ["users", "chats", "batch"].forEach(db => {
+      saveBatchArchive(db, batch);
     });
   });
 }
 
-function downloadData(url, callback) {
+function downloadData(serverFolder, callback) {
   let pemFile = "~/.ssh/sh-batch.pem";
-  if (url.includes("mark") || url.includes("bang")) {
+  if (serverURL.includes("mark") || serverURL.includes("bang")) {
     pemFile = "~/.ssh/sh-server.pem";
   }
-  const destination = ".data";
   const names = ["users", "chats", "batch"];
   names.forEach(name => {
-    const source = "ubuntu@" + url + ":bang/.data/" + name;
-    const command = ["scp", "-i", pemFile, source, destination];
+    const source = `ubuntu@${serverURL}:${serverFolder}/${dbLocation}/${name}`;
+    const command = ["scp", "-i", pemFile, source, dbLocation];
+    console.log(`Running: ${command}`);
     exec(command.join(" "), (err, stdout, stderr) => {
       if (err) console.log(err);
       else {
-        console.log("Downloaded data from", url);
+        console.log("Downloaded data from", serverURL);
         if (typeof callback == "function") {
           callback(stdout);
         }
@@ -451,12 +455,10 @@ let totalCount = 0;
 // manipulationCheck(1537292004662)
 // useCompleteBatches(manipulationCheck)
 
-useCompleteBatches(manipulationFix);
+// useCompleteBatches(manipulationFix);
 
-// Save from servers
-// downloadData("mark.dmorina.com",saveAllData)
-// downloadData("bang.dmorina.com",saveAllData)
-downloadData("b01.dmorina.com",saveAllData)
+// Download data from your folder and save it into local batch archives
+downloadData("b02", saveDBArchives);
 
 //Save from local folder
 /* saveAllData() */
