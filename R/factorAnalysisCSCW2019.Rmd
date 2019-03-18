@@ -1,0 +1,240 @@
+---
+title: "Factor analysis; n=2, round=2"
+output: html_document
+fig_width: 3.5
+fig_caption: yes
+---
+
+## Game plan for factor analysis: 
+- Consistency is key: 
+  - Filter for surveys only from users who worked with the *same* team sizes (n) and where *all users* completed the round we're analyzing
+  - If the above conditions are met, pick a single round for analysis; then, later analyze remaining rounds to ensure no major  desperencies 
+  - Follow notes for factor analysis in the section below
+
+
+## Set-up packages // libraries and prepare for data import:
+```{r echo=FALSE, include=FALSE, results='hide'}
+# From fractureCHI notebook:
+library(jsonlite)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(pROC)
+library(stargazer)
+library(dplyr)
+
+# New for factor analysis: 
+library(nFactors)
+library(psych)
+library(FactoMineR)
+library(GPArotation)
+```
+
+## Set-up directories, import and clean data:
+```{r, include=TRUE, echo=TRUE}
+rm(list=ls())
+setwd("/Users/mark/Documents/Academia/Stanford/scaled-humanity/bang/R") # Change this to your working directory where Bang/R file is located 
+getwd()
+dataPath = "../.data"
+MINIMUM_BATCH_NUMBER = 1537266991708  # Identify the batch number that represents the start of the batches you'd like to include in your analysis 
+
+TEAM_SIZE = 2 # Alter depending on team size in runs you're analyzing; this variable is used later on to ensure that you're filtering out all team_sizes != the size you've specified 
+
+## Function to extract surveys:
+extractBlacklistSurvey = function(frame,survey) {
+  rounds = seq(1,4)
+  roundResponses = lapply(rounds, function(round) {
+    getCol = paste("results.",survey,".",round, sep="")
+    surveyCols = Filter(function(x) grepl(getCol,x),names(frame))
+    newCols = lapply(surveyCols, function(x) gsub(getCol,paste("results.",survey, sep=""),x) )
+    surveyFrame = as.data.frame(frame[,surveyCols])
+    if (is.null(newCols)) {return("No newCols")}
+    names(surveyFrame) = newCols
+    surveyFrame$id = frame$id
+    surveyFrame$round = round
+    surveyFrame$batch = frame$batch
+    #surveyFrame$room = frame$room
+    surveyFrame$rooms = frame$rooms
+    surveyFrame$manipulationCheck <- frame$results.manipulationCheck
+    #surveyFrame$blacklist = frame$results.blacklistCheck
+    return(surveyFrame)
+  })
+  return(Reduce(rbind, roundResponses))
+}
+
+## Seperate viability function to deal with different column types
+extractViabilitySurvey = function(frame,survey) {
+  rounds = seq(1,4)
+  roundResponses = lapply(rounds, function(round) {
+    getCol = paste("results.",survey,".",round, sep="")
+    surveyCols = Filter(function(x) grepl(getCol,x),names(frame))
+    newCols = lapply(surveyCols, function(x) gsub(getCol,paste("results.",survey, sep=""),x) )
+    surveyFrame = as.data.frame(frame[,surveyCols])
+    if (is.null(newCols)) {return("No newCols")}
+    names(surveyFrame) = newCols
+    surveyFrame$id = frame$id
+    surveyFrame$round = round
+    surveyFrame$batch = frame$batch
+    surveyFrame$rooms = frame$rooms
+    #surveyFrame$room = frame$room
+    surveyFrame$manipulationCheck.1 = frame$results.manipulationCheck.1
+    #surveyFrame$blacklist = frame$results.blacklistCheck
+    return(surveyFrame)
+    print(surveyFrame)
+  dim(surveyFrame)
+  })
+  return(Reduce(bind_rows, roundResponses))
+}
+
+# Filter batches and convert JSON to data frames
+options(scipen=999) # Change from scientific notation so we can compare batch numbers below
+batches = dir(dataPath, pattern = "^[0-9]+$" )
+batches <- as.numeric(batches) 
+batches = batches[batches>MINIMUM_BATCH_NUMBER]
+batches = Filter(function(batch) {
+  if (any(dir(paste(dataPath,batch,sep="/")) == "batch.json") && (any(dir(paste(dataPath,batch,sep="/")) == "users.json")) ) {
+      batchData = read_json(paste(dataPath,batch,"batch.json",sep="/"), simplifyVector = TRUE)
+      return(any(batchData$batchComplete == TRUE))
+    }
+    return(FALSE)
+}, batches)
+
+users <- Reduce(function(x,y) merge(x, y, all=TRUE), lapply(batches, function(batch) {
+  userFile = read_json(paste(dataPath,batch,"users.json",sep="/"), simplifyVector=TRUE)
+  return(flatten(userFile, recursive = TRUE))
+}))
+
+# Filter out variables not relevant to analysis: 
+users <- users %>%
+  select(-results.engagementFeedback.undefined, -results.qSixteenCheck.undefined, -results.qFifteenCheck.undefined, -contains("results.viabilityCheck.0"))
+users <- na.omit(users)
+
+# Function to assign round numbers in the correct order 
+usersRounds = as.data.frame(Reduce(rbind, apply(users,1,function(x) {
+  roomsForIndividual = lapply(seq(1,4),function(y) {
+    x$room = x$rooms[y]
+    x$round = y
+    return(x)
+  })
+  return(Reduce(rbind, roomsForIndividual))
+})))
+
+# Converting variables to their proper respective form for later analysis: 
+usersRounds <- usersRounds %>% mutate(id = as.character(id), batch=as.numeric(batch), round=as.numeric(round), room=as.character(room))
+usersRounds <- usersRounds %>% select(id, batch, round, room)
+
+viabilitySurvey <- extractViabilitySurvey(users, 'viabilityCheck')
+
+## to-do, add more cleaning for viability 
+
+```
+
+## After data is imported and filtered based on conditions in *gameplan* begin analysis: 
+
+Determining the number of factors we'll select for factor analysis using: 1. parallel analysis and 2. eigenvalue 
+
+# Number of factors: 
+
+```{r}
+data = # viability survey results based on above conditions 
+parallel <- fa.parallel(data, fm = 'minres', fa = 'fa')
+# This will output a "scree plot" 
+# How to interpret plot: 
+# Blue line: eigenvalues of actual data and two red lines show simulated and re-sampled data 
+# Look at where there is a drop in actual data (blue line) and where it levels out 
+# Also look at the point where the gap between simulated data (red) and actual data (blue) 
+# tends to be minimial. 
+# Use the above criteria to determine the range of factors that would be a good choice. 
+```
+
+# Factor analysis: 
+
+```{r}
+# Using fa() function, given the below arguments, we'll supply: 
+# r  – Raw data or correlation or covariance matrix
+# nfactors – Number of factors to extract
+# rotate – Although there are various types rotations, `Varimax` and `Oblimin` are most popular
+# fm – One of the factor extraction techniques like `Minimum Residual (OLS)`, `Maximum Liklihood`, `Principal Axis` etc.
+# We will select oblique rotation (rotate = “oblimin”) since we assume there is correlation in our factors
+# We will also start w/ `Ordinary Least Squared/Minres` factoring (fm = “minres”), as it is known to provide results similar to `Maximum Likelihood` without assuming multivariate normal distribution and derives solutions through iterative eigendecomposition like principal axis.
+
+threefactor <- fa(data,nfactors = 3,rotate = "oblimin",fm="minres")
+print(threefactor) # Print to inspect factor loadings 
+
+# Following best practices, we consider loadings more than 0.3 and not loading on more than one factor (note: negative values are acceptable here)
+
+print(threefactor$loadings,cutoff = 0.3)
+
+# Analyze results from above to see what variables become insignificant in new setting and have double-loadings. 
+# Based on the results above, continue to modify number of factors until the results are in only single-loading. 
+# For example, if there are double loadings above, we can modify to include 4 factors: 
+
+fourfactor <- fa(data,nfactors = 4,rotate = "oblimin",fm="minres")
+print(fourfactor$loadings,cutoff = 0.3)
+
+# As soon as our output mights our conditions, we've achieved ideal "simple structure" and can proceed to validate our model. 
+```
+
+## Adequacy test: 
+
+```{r}
+fa.digram(fourfactor)
+
+# Conditions to analyze: 
+# Root mean sauare of residuals (RMSR): this value ought to be close to 0. 
+# Root mean square error of approximatio (RMSEA): this value should be below <0.05 
+# Tucker-Lewis Index (TLI): this vlaue should be over 0.90 
+
+# If we have established adequacy of our factors based on the above conditions, 
+# we can name the factors. Here, we can form factors depending on the the variable loadings from the fa.diagram output. 
+```
+
+# Additional analysis options: 
+
+# Principal Components: 
+```{r}
+# Pricipal Components Analysis
+# entering raw data and extracting PCs from the correlation matrix 
+mydata = # viability survey results based on above conditions 
+fit <- princomp(mydata, cor=TRUE)
+summary(fit) # print variance accounted for 
+loadings(fit) # pc loadings 
+plot(fit,type="lines") # scree plot 
+fit$scores # the principal components
+biplot(fit)
+```
+
+# Varimax Rotated Principal Components: 
+```{r}
+# retaining 5 components 
+fit <- principal(mydata, nfactors=5, rotate="varimax")
+fit # print results
+```
+
+# Exploratory Factor Analysis: 
+```{r}
+# Maximum Likelihood Factor Analysis
+# entering raw data and extracting 3 factors, 
+# with varimax rotation 
+fit <- factanal(mydata, 3, rotation="varimax")
+print(fit, digits=2, cutoff=.3, sort=TRUE)
+# plot factor 1 by factor 2 
+load <- fit$loadings[,1:2] 
+plot(load,type="n") # set up plot 
+text(load,labels=names(mydata),cex=.7) # add variable names
+```
+
+# Determing the number of factors to extract: 
+A key decision in factor analysis is how many factors to extract. The nFactor can help with this. 
+Theoretical background: 
+
+```{r}
+# Determine Number of Factors to Extract
+ev <- eigen(cor(mydata)) # get eigenvalues
+ap <- parallel(subject=nrow(mydata),var=ncol(mydata),
+  rep=100,cent=.05)
+nS <- nScree(x=ev$values, aparallel=ap$eigen$qevpea)
+plotnScree(nS)
+```
+
+
