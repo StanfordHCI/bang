@@ -19,15 +19,17 @@ library(dplyr)
 ## Set-up directories, import and clean data:
 ```{r, include=TRUE, echo=TRUE}
 rm(list=ls())
-setwd("/Users/mark/Documents/Academia/Stanford/scaled-humanity/bang/R")
+setwd("/Users/mark/Documents/Academia/Stanford/scaled-humanity/bang/R") # Change this to your working directory where Bang/R file is located 
 getwd()
 dataPath = "../.data"
-MINIMUM_BATCH_NUMBER = 1537266991708  
-# last 2 days 1537366991708
-# start of final day  1537514940000
+MINIMUM_BATCH_NUMBER = 1537266991708  # Identify the batch number that represents the start of the batches you'd like to include in your analysis 
 
-TEAM_SIZE = 2
-MIN_FRACTURE_PERCENT = 0.5
+# last 2 days 1537366991708
+# start of final day  1537514940000 
+
+TEAM_SIZE = 2 # Alter depending on team size in runs you're analyzing; this variable is used later on to ensure that you're filtering out all team_sizes != the size you've specified 
+
+MIN_FRACTURE_PERCENT = 0.5 # Default cut off for fracture within a team; this variable is used later to label binary 0 (no fracture), 1 (fracture) values at a group level 
 
 ## Function to extract blacklist surveys:
 extractBlacklistSurvey = function(frame,survey) {
@@ -76,9 +78,9 @@ extractViabilitySurvey = function(frame,survey) {
 }
 
 # Filter batches and convert JSON to data frames
-options(scipen=999)
+options(scipen=999) # Change from scientific notation so we can compare batch numbers below
 batches = dir(dataPath, pattern = "^[0-9]+$" )
-batches <- as.numeric(batches)
+batches <- as.numeric(batches) 
 batches = batches[batches>MINIMUM_BATCH_NUMBER]
 batches = Filter(function(batch) {
   if (any(dir(paste(dataPath,batch,sep="/")) == "batch.json") && (any(dir(paste(dataPath,batch,sep="/")) == "users.json")) ) {
@@ -93,10 +95,12 @@ users <- Reduce(function(x,y) merge(x, y, all=TRUE), lapply(batches, function(ba
   return(flatten(userFile, recursive = TRUE))
 }))
 
+# Filter out variables not relevant to analysis: 
 users <- users %>%
   select(-results.engagementFeedback.undefined, -results.qSixteenCheck.undefined, -results.qFifteenCheck.undefined, -contains("results.viabilityCheck.0"))
 users <- na.omit(users)
 
+# Function to assign round numbers in the correct order 
 usersRounds = as.data.frame(Reduce(rbind, apply(users,1,function(x) {
   roomsForIndividual = lapply(seq(1,4),function(y) {
     x$room = x$rooms[y]
@@ -106,18 +110,20 @@ usersRounds = as.data.frame(Reduce(rbind, apply(users,1,function(x) {
   return(Reduce(rbind, roomsForIndividual))
 })))
 
+# Converting variables to their proper respective form for later analysis: 
 usersRounds <- usersRounds %>% mutate(id = as.character(id), batch=as.numeric(batch), round=as.numeric(round), room=as.character(room))
 usersRounds <- usersRounds %>% select(id, batch, round, room)
 
 ## Use extract survey function to reformat survey data:
 manipulationCheck <- usersRounds %>%
-  left_join(users, by=c("id", "batch")) %>%
+  left_join(users, by=c("id", "batch")) %>% # Left join 
   mutate(room=room.x) %>%
   mutate(manipulation=results.manipulation) %>%
   mutate(manipulationCheck=results.manipulationCheck.1) %>%
   mutate(teamOrder=results.format) %>%
   mutate(condition=results.condition) %>%
-  select(id, batch, room, round, manipulation, manipulationCheck, teamOrder, condition)
+  select(id, batch, room, round, manipulation, manipulationCheck, teamOrder, condition) 
+
 qFifteen <- extractBlacklistSurvey(users, 'qFifteenCheck')
 qSixteen <- extractBlacklistSurvey(users, 'qSixteenCheck')
 viabilitySurvey <- extractViabilitySurvey(users, 'viabilityCheck')
@@ -140,7 +146,6 @@ usersRounds <- usersRounds %>%
   ))
 
 # Conditionally assign conditions based on treatment and results column:
-## Messy, but robust? Verify, verify, verify people:   
 ## For runs with 4 rounds:
 usersRounds <- usersRounds %>% mutate(
   team = case_when(
@@ -211,6 +216,7 @@ teamViability = teamStats$teamMeanViability
 viabilityMean = mean(teamViability)
 viabilitySD = sd(teamViability)*sqrt((length(teamViability)-1)/(length(teamViability)))
 
+# Centering / standardizing viability score 
 teamStats$viabilityZ = (teamStats$teamMeanViability - viabilityMean) / viabilitySD
 
 ## Define and initialize cut-off point for fracture:
@@ -277,9 +283,7 @@ maskedAccuracy <- filter(manipulationCheckAccuracyByCondition, condition=="maske
 manipulationCheckChanceComparison <- prop.test(maskedAccuracy[1,]$numCorrect, maskedAccuracy[1,]$n, chanceManipulation)
 print(manipulationCheckChanceComparison)
 
-
 ```
-
 
 
 ### Consistency of fracture
@@ -949,3 +953,4 @@ voteconsistencysummary <- voteconsistency %>%
 
 t.test(zdiff ~ results.condition.x, data=voteconsistency)
 ```
+
