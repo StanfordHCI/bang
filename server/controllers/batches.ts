@@ -162,7 +162,8 @@ const startBatch = async function (batch, socket, io) {
       }
 
       for (let j = 0; j < teamSize; j++) { //simple gen for tests
-        emptyChats.push({batch: batch._id, messages: [{user: botId, nickname: 'helperBot', time: new Date(), message: 'Task: ' + task.message}]})
+        emptyChats.push({batch: batch._id, messages: [{user: botId, nickname: 'helperBot', time: new Date(),
+            message: 'Task: ' + (task ? task.message : 'empty')}]})
       }
 
       const chats = await Chat.insertMany(emptyChats);
@@ -185,7 +186,7 @@ const startBatch = async function (batch, socket, io) {
       io.to(batch._id.toString()).emit('refresh-batch', true)
 
       let stepsSumTime = 0;
-      for (let j = 0; j < task.steps.length; j++) {
+      if (task && task.steps && task.steps.length) for (let j = 0; j < task.steps.length; j++) {
         const step = batch.tasks[i].steps[j];
         const stepMessage = {
           user: botId,

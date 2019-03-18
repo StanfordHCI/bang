@@ -54,7 +54,7 @@ class BatchInfo extends React.Component {
               />
             </div>
             <ButtonToolbar className='mx-auto form__button-toolbar'>
-              <Button onClick={this.handleSubmit} color='primary' size='sm' type='button' >Add batch</Button>
+              <Button onClick={this.handleSubmit} disabled={!this.state.template} color='primary' size='sm' type='button' >Add batch</Button>
             </ButtonToolbar>
           </CardBody>}
         </Card>
