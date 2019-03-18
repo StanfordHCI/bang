@@ -332,6 +332,11 @@ const db = {
     filename: ".data/willBang",
     autoload: true,
     timestampData: true
+  }),
+  allUsers: new Datastore({
+    filename: ".data/allUsers",
+    autoload: true,
+    timestampData: true
   })
 };
 
@@ -708,6 +713,11 @@ io.on("connection", socket => {
   socket.on("connected", data => {
     const mturkId = data.mturkId;
     const assignmentId = data.assignmentId;
+    // Laura: tracking all visited users
+    db.allUsers.insert({ workerId: mturkId }, (err) => {
+      if (err) console.log('Err adding ' + mturkId + ' to allUsers DB:', err);
+      else console.log('Added ' + mturkId + ' to allUsers DB.');
+    });
     socket.mturkId = mturkId;
     socket.assignmentId = assignmentId;
     socket.join(mturkId);
