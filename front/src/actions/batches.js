@@ -50,11 +50,6 @@ export const loadBatch = () => {
       let chat = data.chat;
       let teamAnimals, currentTeam;
       if (data.batch.status === 'active') {
-        chat.messages.forEach(message => {
-          let checkedMessage = message.message || '';
-          checkedMessage = checkedMessage.replace(new RegExp(user.fakeNick, "ig"), user.realNick);
-          return checkedMessage;
-        })
         teamAnimals = {}
         currentTeam = chat.members.map(x => {
           let animalIndex;
@@ -122,10 +117,9 @@ export const loadBatch = () => {
       });
     })
     socket.on('receive-message', (data) =>{
-      let checkedMessage = data.message.replace(new RegExp(user.fakeNick, "ig"), user.realNick);
       dispatch({
         type: ADD_MESSAGE,
-        data: checkedMessage
+        data: data
       });
     })
     socket.on('refresh-batch', (data) =>{

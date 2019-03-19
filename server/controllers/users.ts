@@ -86,8 +86,12 @@ export const sendMessage = async function (data, socket, io) {
       message: data.message,
       time: new Date()
     }
-    await Chat.findByIdAndUpdate(data.chat, { $addToSet: { messages: newMessage} })
+    const chat = await Chat.findByIdAndUpdate(data.chat, { $addToSet: { messages: newMessage} }, {new: true}).populate('batch').lean().exec();
     io.to(data.chat).emit('receive-message', newMessage);
+    if (chat.batch.status === 'waiting') {
+      await User.findByIdAndUpdate(socket.userId, { $set: { lastCheckTime: new Date()}})
+      logger.info(module, 'afk timer refreshed')
+    }
   } catch (e) {
     errorHandler(e, 'send message error')
   }

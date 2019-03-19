@@ -129,6 +129,17 @@ class Batch extends React.Component {
 
   handleSubmit = (e) => {
     const {sendMessage, user, chat, batch, currentTeam, teamAnimals} = this.props;
+    if (batch.status === 'waiting') {
+      if (e.keyCode === 13) {
+        sendMessage({
+          message: this.state.message,
+          nickname: user.realNick,
+          chat: chat._id
+        })
+        this.setState({message: ''});
+      }
+      return;
+    }
     if (!this.state.message || this.state.message.length > MAX_LENGTH) return;
 
     let newMessage = this.state.message;
@@ -199,7 +210,11 @@ class Batch extends React.Component {
   }
 
   handleType = (event) => {
-    const {currentTeam, teamAnimals} = this.props;
+    const {currentTeam, teamAnimals, batch} = this.props;
+    if (batch.status === 'waiting') {
+      this.setState({message: event.target.value})
+      return;
+    }
     const message = event.target.value;
     let newMessage = message;
     const index = message.lastIndexOf(' ');
@@ -253,7 +268,6 @@ class Batch extends React.Component {
       value: this.state.message,
       onChange: this.handleType,
       onKeyDown: this.handleSubmit,
-      disabled: batch.status === 'waiting',
       className: 'chat__field-input'
     };
 
@@ -261,7 +275,7 @@ class Batch extends React.Component {
       <div className='chat'>
         <div className='chat__contact-list'>
           <div className='chat__contacts'>
-            {batch.status === 'active' && <Table className='table table--bordered table--head-accent'>
+            <Table className='table table--bordered table--head-accent'>
               <thead>
               <tr>
                 <th>members</th>
@@ -287,23 +301,7 @@ class Batch extends React.Component {
                   </tr>
               })}
               </tbody>
-            </Table>}
-            {batch.status === 'waiting' && <Table className='table table--bordered table--head-accent'>
-              <thead>
-              <tr>
-                <th>members</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr key={user._id}>
-                <td>
-                  <div className='chat__bubble-contact-name'>
-                    {user.realNick + ' (you)'}
-                  </div>
-                </td>
-              </tr>
-              </tbody>
-            </Table>}
+            </Table>
           </div>
         </div>
         <div className='chat__dialog' style={{marginLeft: 10}}>
@@ -470,11 +468,24 @@ class Batch extends React.Component {
 function mapStateToProps(state) {
   const batch = state.batch.batch;
   const round = batch && batch.rounds ? batch.rounds[batch.currentRound - 1] : null;
+  let chat = state.batch.chat;
+  if (batch && batch.status ==='waiting') {
+    chat.members = chat.members.filter(x => x._id.toString() === state.app.user._id.toString())
+    chat.messages = chat.messages.filter(x => x.user.toString() === state.app.user._id.toString() || x.user.toString() === '100000000000000000000001')
+  }
+  if (batch && batch.status ==='active') {
+    chat.messages.forEach(message => {
+      let checkedMessage = message.message || '';
+      checkedMessage = checkedMessage.replace(new RegExp(state.app.user.fakeNick, "ig"), state.app.user.realNick);
+      message.message = checkedMessage;
+      return message;
+    })
+  }
 
   return {
     user: state.app.user,
     batch: batch,
-    chat: state.batch.chat,
+    chat: chat,
     currentRound: round,
     currentTeam: state.batch.currentTeam,
     teamAnimals: state.batch.teamAnimals

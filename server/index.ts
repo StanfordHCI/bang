@@ -1,3 +1,5 @@
+import {Chat} from "./models/chats";
+
 const path = require('path');
 const express = require('express');
 const app = express();
@@ -75,11 +77,20 @@ const socketMiddleware = function (event, action, data, socket) {
   action(data, socket, io)
 }
 
-
+const botId = '100000000000000000000001'
 //waiting batch afk check
 cron.schedule('*/30 * * * * *', async function(){
-  const batch = await Batch.findOne({status: 'waiting'}).select('users createdAt').populate('users.user').lean().exec();
+  const batch = await Batch.findOne({status: 'waiting'}).select('users createdAt preChat').populate('users.user').lean().exec();
   if (batch) {
+    const botMessage = {
+      nickname: 'helperBot',
+      message: 'Type something or we will kick you',
+      user: botId,
+      time: new Date
+    }
+    await Chat.findByIdAndUpdate(batch.preChat, { $addToSet: { messages: botMessage} });
+    io.to(batch.preChat).emit('receive-message', botMessage);
+
     let prs = [], kicked = [];
     batch.users.forEach(item => {
       const user = item.user;
