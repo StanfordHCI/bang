@@ -331,15 +331,13 @@ class Batch extends React.Component {
             <div className='chat__dialog-messages-wrap'>
               <div className='chat__dialog-messages'>
                 {chat.messages.map((message, index) => {
-                  let checkedMessage = message.message || '';
-                  if (batch.status === 'active') checkedMessage = checkedMessage.replace(new RegExp(user.fakeNick, "ig"), user.realNick)
                   let messageClass = message.user === user._id ? 'chat__bubble chat__bubble--active' : 'chat__bubble';
                   return (
                     <div className={messageClass} key={index + 1}>
                       <div className='chat__bubble-message-wrap'>
                         <p
                           className='chat__bubble-contact-name'>{message.user.toString() === user._id.toString() ? user.realNick : message.nickname}</p>
-                        <p className='chat__bubble-message'>{checkedMessage}</p>
+                        <p className='chat__bubble-message'>{message.message}</p>
                         <p className='chat__bubble-date'>{moment(message.time).format('LTS')}</p>
                       </div>
                     </div>

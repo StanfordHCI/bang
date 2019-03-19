@@ -4,7 +4,7 @@ import {Chat} from '../models/chats'
 import {errorHandler} from '../services/common'
 const logger = require('../services/logger');
 
-const activeCheck = async function (io) {
+export const activeCheck = async function (io) {
   try {
     const activeUsers = await User.find({connected: true}).select('_id').lean().exec()
     const activeCounter = activeUsers ? activeUsers.length : 0;

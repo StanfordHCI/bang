@@ -19,17 +19,18 @@ export const joinBatch = async function (data, socket, io) {
       const nickname = makeName(null, null).username;
       let user;
       const prs = await Promise.all([
-        Batch.findByIdAndUpdate(batch._id, { $addToSet: { users: {user: socket.userId, nickname: nickname}},  }, {new: true}),
+        Batch.findByIdAndUpdate(batch._id, { $addToSet: { users: {user: socket.userId, nickname: nickname, joinDate: new Date()}},  }, {new: true}),
         User.findByIdAndUpdate(socket.userId,
           { $set: { batch: batch._id, realNick: nickname, currentChat: batch.preChat} }, {new: true}).lean().exec()
       ])
       user = prs[1]
+      batch = prs[0]
       socket.join(user.currentChat.toString()) //chat room
       socket.join(batch._id.toString()) //common room, not chat
       socket.emit('joined-batch', {user: user});
       io.to(batch._id.toString()).emit('refresh-batch', true)
     }
-    if (batch.users.length >= batch.teamSize ** 2 - 1 && batch.status === 'waiting') { //start batch
+    if (batch.users.length >= batch.teamSize ** 2 && batch.status === 'waiting') { //start batch
       //clearRoom('waitroom', io);
 
       clearRoom(batch.preChat, io);
@@ -48,10 +49,10 @@ export const loadBatch = async function (data, socket, io) {
     if (batch.status === 'waiting') {
       const prs = await Promise.all([
         Chat.findById(batch.preChat).lean().exec(),
-        User.find({currentChat: batch.preChat}).select('realNick fakeNick currentChat').lean().exec(),
+        User.findById(socket.userId).select('realNick currentChat').lean().exec(),
       ])
       chat = prs[0];
-      chat.members = prs[1]
+      chat.members = [prs[1]]
       userInfo = chat.members.find(x => x._id.toString() === socket.userId.toString())
       socket.join(batch.preChat.toString())
     } else if (batch.status === 'active') {
@@ -86,39 +87,6 @@ export const loadBatch = async function (data, socket, io) {
   }
 }
 
-
-
-/*const generateRandomTeams = (allUsers, size, oldNicks) => {
-  let users = Array.from(allUsers);
-  let teams = [];
-  for (let i = 0; i < size; i++) {
-    let team = {users: []};
-    for (let j = 0; j < size; j++) {
-      const index = Math.floor(Math.random() * users.length)
-      team.users.push(generateTeamUser(users[index], oldNicks));
-      users.splice(index, 1)
-    }
-    teams.push(team)
-  }
-  return teams;
-}*/
-
-const timeout = (ms) => {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-const generateTeamUser = (user, oldNicks) => {
-  let nickname;
-  while (true) {
-    nickname = makeName(null, null).username;
-    if (!oldNicks.some(x => x === nickname)) {
-      oldNicks.push(nickname)
-      break;
-    }
-  }
-  return {user: user._id, nickname: nickname, survey: []}
-}
-
 const startBatch = async function (batch, socket, io) {
   try {
     await timeout(5000);
@@ -137,29 +105,9 @@ const startBatch = async function (batch, socket, io) {
     for (let i = 0; i < numRounds; i++) {
       let roundObject = {startTime: new Date(), number: i + 1, teams: [], status: 'active', endTime: null};
       const task = batch.tasks[i];
-      let teams = [], emptyChats = [];
-      const rand = Math.floor(Math.random() * 2);
-      const randomIndex1 = rand + 2; //2 or 3
-      const randomIndex2 = 5 - randomIndex1;
+      let emptyChats = [];
 
-      switch (i + 1) { //logic for teamsize=2 and 4 rounds and expRound=3; not perfect.
-        case batch.experimentRound1:
-          teams[0] = {users: Array.from(users).splice(rand * teamSize, (rand+1) * teamSize).map(x => generateTeamUser(x, oldNicks))};
-          teams[1] = {users: Array.from(users).splice((1 - rand) * teamSize, ((1 - rand)+1) * teamSize).map(x => generateTeamUser(x, oldNicks))};
-          break;
-        case batch.experimentRound2:
-          teams[0] = {users: [generateTeamUser(users[1], oldNicks), generateTeamUser(users[0], oldNicks)]}
-          teams[1] = {users: [generateTeamUser(users[3], oldNicks), generateTeamUser(users[2], oldNicks)]}
-          break;
-        case 1: case 2:
-          teams[0] = {users: [generateTeamUser(users[0], oldNicks), generateTeamUser(users[randomIndex1], oldNicks)]}
-          teams[1] = {users: [generateTeamUser(users[1], oldNicks), generateTeamUser(users[randomIndex2], oldNicks)]}
-          break;
-        case 3: case 4:
-          teams[0] = {users: [generateTeamUser(users[0], oldNicks), generateTeamUser(users[randomIndex2], oldNicks)]}
-          teams[1] = {users: [generateTeamUser(users[1], oldNicks), generateTeamUser(users[randomIndex1], oldNicks)]}
-          break;
-      }
+      let teams = generateTeams(batch, users, i+1, oldNicks)
 
       for (let j = 0; j < teamSize; j++) { //simple gen for tests
         emptyChats.push({batch: batch._id, messages: [{user: botId, nickname: 'helperBot', time: new Date(),
@@ -250,4 +198,85 @@ export const receiveSurvey = async function (data, socket, io) {
   } catch (e) {
     errorHandler(e, 'receive survey error')
   }
+}
+
+
+
+
+/*const generateRandomTeams = (allUsers, size, oldNicks) => {
+  let users = Array.from(allUsers);
+  let teams = [];
+  for (let i = 0; i < size; i++) {
+    let team = {users: []};
+    for (let j = 0; j < size; j++) {
+      const index = Math.floor(Math.random() * users.length)
+      team.users.push(generateTeamUser(users[index], oldNicks));
+      users.splice(index, 1)
+    }
+    teams.push(team)
+  }
+  return teams;
+}*/
+
+const timeout = (ms) => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+const generateTeams = (batch, users, roundNumber, oldNicks) => {
+  let teams = [];
+
+  const rand = Math.floor(Math.random() * 2);
+  const randomIndex1 = rand + 2; //2 or 3
+  const randomIndex2 = 5 - randomIndex1;
+
+  //logic for teamsize=2 and 4 rounds, not perfect.
+  if (roundNumber === batch.experimentRound1 || roundNumber === batch.experimentRound2) {
+    const user1 = generateTeamUser(users[0], oldNicks, null);
+    const user2 = generateTeamUser(users[1], oldNicks, user1.nickname)
+    const user3 = generateTeamUser(users[3], oldNicks, null);
+    const user4 = generateTeamUser(users[4], oldNicks, user3.nickname)
+    teams[0] = {users: [user1, user2]};
+    teams[1] = {users: [user3, user4]};
+    return teams;
+  }
+  if (roundNumber === 1 || roundNumber === 2) {
+    const user1 = generateTeamUser(users[0], oldNicks, null);
+    const user2 = generateTeamUser(users[randomIndex1], oldNicks, user1.nickname)
+    const user3 = generateTeamUser(users[1], oldNicks, null);
+    const user4 = generateTeamUser(users[randomIndex2], oldNicks, user3.nickname)
+    teams[0] = {users: [user1, user2]};
+    teams[1] = {users: [user3, user4]};
+    return teams;
+  }
+  if (roundNumber === 3 || roundNumber === 4) {
+    const user1 = generateTeamUser(users[0], oldNicks, null);
+    const user2 = generateTeamUser(users[randomIndex2], oldNicks, user1.nickname)
+    const user3 = generateTeamUser(users[1], oldNicks, null);
+    const user4 = generateTeamUser(users[randomIndex1], oldNicks, user3.nickname)
+    teams[0] = {users: [user1, user2]};
+    teams[1] = {users: [user3, user4]};
+    return teams;
+  }
+}
+
+const generateTeamUser = (user, oldNicks, partner) => {
+  let nickname, adj, animal, index;
+  if (partner) {
+    for (let i = 0; i < partner.length; i++) {
+      if (partner[i] === partner[i].toUpperCase()) {
+        index = i;
+        break;
+      }
+    }
+    adj = partner.slice(index, partner.length);
+    animal = partner.slice(0, index);
+  }
+  while (true) {
+    nickname = makeName(null, null).username;
+    if (!oldNicks.some(x => x === nickname) && (!partner || (nickname.indexOf(adj) === -1 && nickname.indexOf(animal) === -1))) {
+      oldNicks.push(nickname)
+      break;
+    }
+  }
+  return {user: user._id, nickname: nickname}
 }

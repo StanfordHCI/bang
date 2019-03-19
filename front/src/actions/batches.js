@@ -47,10 +47,17 @@ export const loadBatch = () => {
         type: BATCH_FETCHED,
         data: data.batch
       });
+      let chat = data.chat;
+      if (data.batch.status === 'active') chat.messages.forEach(message => {
+        let checkedMessage = message.message || '';
+        checkedMessage = checkedMessage.replace(new RegExp(user.fakeNick, "ig"), user.realNick);
+        return checkedMessage;
+      })
       dispatch({
         type: CHAT_FETCHED,
         data: data.chat
       });
+
       if (data.userInfo) {
         dispatch({
           type: SET_CHAT_INFO,
@@ -97,9 +104,10 @@ export const loadBatch = () => {
       });
     })
     socket.on('receive-message', (data) =>{
+      let checkedMessage = data.message.replace(new RegExp(user.fakeNick, "ig"), user.realNick);
       dispatch({
         type: ADD_MESSAGE,
-        data: data
+        data: checkedMessage
       });
     })
     socket.on('refresh-batch', (data) =>{

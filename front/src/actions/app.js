@@ -102,6 +102,10 @@ export const whoami = () => {
     socket.on('send-error', (data) => {
       dispatch(setSnackbar(data));
     })
+    socket.on('kick-afk', (data) => {
+      dispatch(setSnackbar('You are afk'));
+      window.location.reload();
+    })
     socket.emit('send-error', 'There is no right batch')
   }
 }

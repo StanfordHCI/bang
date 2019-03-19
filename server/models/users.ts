@@ -20,6 +20,7 @@ let UserSchema = new Schema({
   fakeNick: String,
   currentChat: {type: mongoose.Schema.Types.ObjectId, ref: 'Chat'},
   lastConnect: Date,
+  lastCheckTime: Date,
   lastDisconnect: Date,
   //status: { type: String, enum: ['waiting', 'active'], default: 'waiting',required: true },
   batch: {type: mongoose.Schema.Types.ObjectId, ref: 'Batch'},

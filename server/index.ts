@@ -6,12 +6,14 @@ const PORT = process.env.PORT|| 3001;
 const APP_ROOT = path.resolve(__dirname, '..');
 const logger = require('./services/logger');
 require('dotenv').config({path: './.env'});
-import {init, sendMessage, disconnect} from './controllers/users'
+import {init, sendMessage, disconnect, activeCheck} from './controllers/users'
 import {joinBatch, loadBatch, receiveSurvey} from './controllers/batches'
 import {errorHandler} from './services/common'
 import {User} from './models/users'
 import {Batch} from './models/batches'
+const moment = require('moment')
 const cors = require('cors')
+const cron = require('node-cron');
 
 mongoose.Promise = global.Promise;
 mongoose.connection.on('error', (err) => {
@@ -51,6 +53,7 @@ const initialChecks = [
 
 Promise.all(initialChecks)
   .then(() => {
+    activeCheck(io);
     io.sockets.on('connection', function (socket) {
       socket.on('init', data => socketMiddleware('init', init, data, socket));
       socket.on('disconnect', data => socketMiddleware('disconnect', disconnect, data, socket));
@@ -71,3 +74,27 @@ const socketMiddleware = function (event, action, data, socket) {
   }
   action(data, socket, io)
 }
+
+
+//waiting batch afk check
+cron.schedule('*/30 * * * * *', async function(){
+  const batch = await Batch.findOne({status: 'waiting'}).select('users createdAt').populate('users.user').lean().exec();
+  if (batch) {
+    let prs = [], kicked = [];
+    batch.users.forEach(item => {
+      const user = item.user;
+      if (moment().diff(moment(item.joinDate), 'second') > 31 && (!user.lastCheckTime || moment().diff(moment(user.lastCheckTime), 'second') > 30)) { //kick user
+        prs.push(User.findByIdAndUpdate(user._id, { $set: { batch: null, realNick: null, currentChat: null }}))
+        prs.push(Batch.findByIdAndUpdate(batch._id, {$pull: { users: {user: user._id}}}))
+        kicked.push(user)
+      }
+    })
+    if (prs.length > 0) {
+      await Promise.all(prs);
+      kicked.forEach(user => {
+        io.to(user.socketId).emit('kick-afk', true);
+        logger.info(module, 'user was kicked: ' + user._id)
+      })
+    }
+  }
+});
