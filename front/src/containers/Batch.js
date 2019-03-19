@@ -72,8 +72,6 @@ class Batch extends React.Component {
       timerActive: false,
       surveyDone: false,
       isReady: false,
-      currentTeam: [],
-      teamAnimals: {},
       autoNames: []
     };
     this.refresher = this.refresher.bind(this)
@@ -88,23 +86,8 @@ class Batch extends React.Component {
   }
 
   componentWillReceiveProps(nextProps, nextState) {
-    if (!this.state.isReady && nextProps.chat && nextProps.chat.members && nextProps.chat.members.length) {
-      let teamAnimals = {}
-      let currentTeam = nextProps.chat.members.map(x => {
-        let result = {}, animalIndex;
-        const nick = x._id.toString() === nextProps.user._id.toString() ? x.realNick : x.fakeNick;
-        if (!nick) return ''
-        if (nick) for (let i = 0; i < nick.length; i++) {
-          if (nick[i] === nick[i].toUpperCase()) {
-            animalIndex = i;
-            break;
-          }
-        }
-        let animal = nick.slice(animalIndex, nick.length)
-        teamAnimals[animal] = nick;
-        return nick
-      })
-      this.setState({isReady: true, currentTeam: currentTeam, teamAnimals: teamAnimals})
+    if (!this.state.isReady && nextProps.chat && nextProps.batch) {
+      this.setState({isReady: true})
     }
     if (!this.state.timerActive && nextProps.currentRound && nextProps.currentRound.status === 'active') {
       this.setState({timerActive: true})
@@ -145,7 +128,7 @@ class Batch extends React.Component {
   }
 
   handleSubmit = (e) => {
-    const {sendMessage, user, chat, batch} = this.props;
+    const {sendMessage, user, chat, batch, currentTeam, teamAnimals} = this.props;
     if (!this.state.message || this.state.message.length > MAX_LENGTH) return;
 
     let newMessage = this.state.message;
@@ -159,8 +142,6 @@ class Batch extends React.Component {
       } else {
         currentTerm = message;
       }
-      const currentTeam = this.state.currentTeam;
-      const teamAnimals = this.state.teamAnimals;
 
       let fuzzyMatches = [];
 
@@ -218,6 +199,7 @@ class Batch extends React.Component {
   }
 
   handleType = (event) => {
+    const {currentTeam, teamAnimals} = this.props;
     const message = event.target.value;
     let newMessage = message;
     const index = message.lastIndexOf(' ');
@@ -228,8 +210,6 @@ class Batch extends React.Component {
       currentTerm = message;
     }
     let wordlength = currentTerm.length;
-    const currentTeam = this.state.currentTeam;
-    const teamAnimals = this.state.teamAnimals;
 
     if (wordlength < 2) {
       this.setAutocompltete("");
@@ -495,7 +475,9 @@ function mapStateToProps(state) {
     user: state.app.user,
     batch: batch,
     chat: state.batch.chat,
-    currentRound: round
+    currentRound: round,
+    currentTeam: state.batch.currentTeam,
+    teamAnimals: state.batch.teamAnimals
   }
 }
 

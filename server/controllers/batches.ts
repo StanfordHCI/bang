@@ -100,7 +100,7 @@ const startBatch = async function (batch, socket, io) {
     io.to(batch._id.toString()).emit('start-batch', startBatchInfo);
     const teamSize = batch.teamSize, numRounds = batch.numRounds;
     let rounds = [];
-    let oldNicks = []
+    let oldNicks = users.map(user => user.realNick)
 
     for (let i = 0; i < numRounds; i++) {
       let roundObject = {startTime: new Date(), number: i + 1, teams: [], status: 'active', endTime: null};
@@ -231,28 +231,28 @@ const generateTeams = (batch, users, roundNumber, oldNicks) => {
 
   //logic for teamsize=2 and 4 rounds, not perfect.
   if (roundNumber === batch.experimentRound1 || roundNumber === batch.experimentRound2) {
-    const user1 = generateTeamUser(users[0], oldNicks, null);
-    const user2 = generateTeamUser(users[1], oldNicks, user1.nickname)
-    const user3 = generateTeamUser(users[3], oldNicks, null);
-    const user4 = generateTeamUser(users[4], oldNicks, user3.nickname)
+    const user1 = generateTeamUser(users[0], oldNicks, users[1].realNick);
+    const user2 = generateTeamUser(users[1], oldNicks, users[0].realNick)
+    const user3 = generateTeamUser(users[2], oldNicks, users[3].realNick);
+    const user4 = generateTeamUser(users[3], oldNicks, users[2].realNick)
     teams[0] = {users: [user1, user2]};
     teams[1] = {users: [user3, user4]};
     return teams;
   }
   if (roundNumber === 1 || roundNumber === 2) {
-    const user1 = generateTeamUser(users[0], oldNicks, null);
-    const user2 = generateTeamUser(users[randomIndex1], oldNicks, user1.nickname)
-    const user3 = generateTeamUser(users[1], oldNicks, null);
-    const user4 = generateTeamUser(users[randomIndex2], oldNicks, user3.nickname)
+    const user1 = generateTeamUser(users[0], oldNicks, users[randomIndex1].realNick);
+    const user2 = generateTeamUser(users[randomIndex1], oldNicks, users[0].realNick)
+    const user3 = generateTeamUser(users[1], oldNicks, users[randomIndex2].realNick);
+    const user4 = generateTeamUser(users[randomIndex2], oldNicks, users[1].realNick)
     teams[0] = {users: [user1, user2]};
     teams[1] = {users: [user3, user4]};
     return teams;
   }
   if (roundNumber === 3 || roundNumber === 4) {
-    const user1 = generateTeamUser(users[0], oldNicks, null);
-    const user2 = generateTeamUser(users[randomIndex2], oldNicks, user1.nickname)
-    const user3 = generateTeamUser(users[1], oldNicks, null);
-    const user4 = generateTeamUser(users[randomIndex1], oldNicks, user3.nickname)
+    const user1 = generateTeamUser(users[0], oldNicks, users[randomIndex2].realNick);
+    const user2 = generateTeamUser(users[randomIndex2], oldNicks, users[0].realNick)
+    const user3 = generateTeamUser(users[1], oldNicks, users[randomIndex1].realNick);
+    const user4 = generateTeamUser(users[randomIndex1], oldNicks, users[1].realNick)
     teams[0] = {users: [user1, user2]};
     teams[1] = {users: [user3, user4]};
     return teams;

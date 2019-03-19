@@ -48,14 +48,32 @@ export const loadBatch = () => {
         data: data.batch
       });
       let chat = data.chat;
-      if (data.batch.status === 'active') chat.messages.forEach(message => {
-        let checkedMessage = message.message || '';
-        checkedMessage = checkedMessage.replace(new RegExp(user.fakeNick, "ig"), user.realNick);
-        return checkedMessage;
-      })
+      let teamAnimals, currentTeam;
+      if (data.batch.status === 'active') {
+        chat.messages.forEach(message => {
+          let checkedMessage = message.message || '';
+          checkedMessage = checkedMessage.replace(new RegExp(user.fakeNick, "ig"), user.realNick);
+          return checkedMessage;
+        })
+        teamAnimals = {}
+        currentTeam = chat.members.map(x => {
+          let animalIndex;
+          const nick = x._id.toString() === user._id.toString() ? x.realNick : x.fakeNick;
+          if (!nick) return ''
+          if (nick) for (let i = 0; i < nick.length; i++) {
+            if (nick[i] === nick[i].toUpperCase()) {
+              animalIndex = i;
+              break;
+            }
+          }
+          let animal = nick.slice(animalIndex, nick.length)
+          teamAnimals[animal] = nick;
+          return nick
+        })
+      }
       dispatch({
         type: CHAT_FETCHED,
-        data: data.chat
+        data: {chat: chat, currentTeam: currentTeam, teamAnimals: teamAnimals}
       });
 
       if (data.userInfo) {

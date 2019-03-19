@@ -7,11 +7,13 @@ import {
 
 const initialState = {
   batch: null,
+  currentTeam: [],
+  teamAnimals: {},
   chat: {
     messages: [],
     members: [],
     batch: '',
-    _id: ''
+    _id: '',
   }
 };
 
@@ -39,7 +41,9 @@ export default function (state = initialState, action) {
     case CHAT_FETCHED:
       return {
         ...state,
-        chat: action.data
+        chat: action.data.chat,
+        teamAnimals: action.data.teamAnimals,
+        currentTeam: action.data.currentTeam
       };
     case ADD_MESSAGE:
       let chat = state.chat;
