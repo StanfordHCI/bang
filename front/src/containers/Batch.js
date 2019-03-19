@@ -473,7 +473,7 @@ function mapStateToProps(state) {
     chat.members = chat.members.filter(x => x._id.toString() === state.app.user._id.toString())
     chat.messages = chat.messages.filter(x => x.user.toString() === state.app.user._id.toString() || x.user.toString() === '100000000000000000000001')
   }
-  if (batch && batch.status ==='active') {
+  if (batch && batch.status ==='active' && !!state.app.user.fakeNick && typeof(state.app.user.fakeNick) === 'string') {
     chat.messages.forEach(message => {
       let checkedMessage = message.message || '';
       checkedMessage = checkedMessage.replace(new RegExp(state.app.user.fakeNick, "ig"), state.app.user.realNick);
