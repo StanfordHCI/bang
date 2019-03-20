@@ -1,5 +1,6 @@
 require("dotenv").config();
 require("colors");
+require("chalk");
 const args = require("yargs").argv;
 
 //Environmental settings, set in .env
@@ -486,25 +487,17 @@ if (cleanHITs) {
 }
 
 if (runExperimentNow) {
-  mturk.launchBang(function(HIT) {
+  mturk.launchBang(batchID, function(HIT) {
     logTime();
     storeHIT(HIT.HITId);
     // Notify workers that a HIT has started if we're doing recruiting by email
     if (notifyWorkersOn) {
-      // let HITId = process.argv[2];
-      let subject =
-        "We launched our new ad writing HIT. Join now, spaces are limited.";
+      let subject = `We launched our new ad writing HIT. Join now, spaces are limited.`;
       console.log(HIT);
-      let URL = "";
+      let URL = ``;
       mturk.getHITURL(HIT.HITId, function(url) {
         URL = url;
-        let message =
-          "You’re invited to join our newly launched HIT on Mturk; there are limited spaces and " +
-          "it will be closed to new participants in about 15 minutes!  Check out the HIT here: " +
-          URL +
-          " \n\nYou're receiving this message because you indicated that you'd like to be notified of our" +
-          " upcoming HIT during this time window. If you'd like to stop receiving notifications please " +
-          "email your MTurk ID to: scaledhumanity@gmail.com";
+        let message = `You’re invited to join our newly launched HIT on Mturk; there are limited spaces and it will be closed to new participants in about 15 minutes!  Check out the HIT here: ${URL} \n\nYou're receiving this message because you indicated that you'd like to be notified of our upcoming HIT during this time window. If you'd like to stop receiving notifications please email your MTurk ID to: scaledhumanity@gmail.com`;
         console.log("message to willBangers", message);
         if (!URL) {
           throw "URL not defined";
@@ -513,7 +506,7 @@ if (runExperimentNow) {
           // removes people who no longer have willBang qual from db.willBang
           db.willBang.find({}, (err, willBangers) => {
             if (err) {
-              console.log("ERROR cleaning willBang db: " + err);
+              console.log(`ERROR cleaning willBang db: ${err}`);
             } else {
               mturk.listUsersWithQualificationRecursively(
                 mturk.quals.willBang,
@@ -527,17 +520,15 @@ if (runExperimentNow) {
                         { id: willBangID },
                         { multi: true },
                         function(err, numRemoved) {
-                          if (err)
+                          if (err) {
                             console.log(
-                              "Error removing from willBang db: " + err
+                              `Error removing from willBang db: ${err}`
                             );
-                          else
+                          } else {
                             console.log(
-                              willBangID +
-                                " REMOVED FROM WILLBANG DB (" +
-                                numRemoved +
-                                ")"
+                              `${willBangID} REMOVED FROM WILLBANG DB (${numRemoved})`
                             );
+                          }
                         }
                       );
                     }
@@ -573,7 +564,7 @@ if (runExperimentNow) {
               function(data) {
                 let notifyList = getRandomSubarray(data, maxWorkersToNotify);
                 mturk.notifyWorkers(notifyList, subject, message);
-                console.log("Notified", notifyList.length, "workers");
+                console.log(`Notified ${notifyList.length} workers`);
               }
             );
           } else {
@@ -742,7 +733,8 @@ if (starterSurveyOn) {
   eventSchedule.push("starterSurvey");
 }
 let roundSchedule = [];
-roundSchedule.push("ready");
+
+roundSchedule.push("ready"); //This is the chat task.
 if (midSurveyOn) {
   roundSchedule.push("midSurvey");
 }
@@ -757,7 +749,7 @@ if (satisfactionSurveyOn) {
 }
 if (conflictSurveyOn) {
   roundSchedule.push("conflictSurvey");
-}
+} []
 if (psychologicalSafetyOn) {
   roundSchedule.push("psychologicalSafety");
 }
@@ -871,28 +863,19 @@ io.on("connection", socket => {
     socket.join(mturkId);
 
     if (users.byMturkId(mturkId)) {
-      console.log(("Reconnected " + mturkId + " in users").blue);
+      console.log(`Reconnected ${mturkId} in users`.blue);
       let user = users.byMturkId(mturkId);
       user.connected = true;
       user.assignmentId = assignmentId;
       user.id = socket.id;
       user.turkSubmitTo = data.turkSubmitTo;
 
-      //console.log(users.byMturkId(mturkId))
       mturk.setAssignmentsPending(getUsersConnected().length);
     }
     if (userPool.byMturkId(mturkId)) {
       let user = userPool.byMturkId(mturkId);
       console.log(
-        (
-          "RECONNECTED " +
-          mturkId +
-          " in user pool (" +
-          user.id +
-          " => " +
-          socket.id +
-          ")"
-        ).blue
+        `RECONNECTED ${mturkId} in user pool (${user.id} => ${socket.id})`.blue
       );
       socket.name_structure = data.name_structure;
       socket.username = data.name_structure.username;
@@ -901,32 +884,17 @@ io.on("connection", socket => {
       user.assignmentId = assignmentId;
       user.id = socket.id;
       user.turkSubmitTo = data.turkSubmitTo;
-
-      //console.log(userPool.byMturkId(mturkId))
     } else {
       createUsername();
       console.log("NEW USER CONNECTED".blue);
     }
     console.log(
-      (
-        "SOCKET: " +
-        socket.id +
-        " | MTURK ID: " +
-        socket.mturkId +
-        " | NAME: " +
-        socket.username +
-        "| ASSIGNMENT ID: " +
-        socket.assignmentId
-      ).blue
+      `SOCKET: ${socket.id} | MTURK ID: ${socket.mturkId} | NAME: ${
+        socket.username
+      } | ASSIGNMENT ID: ${socket.assignmentId}`.blue
     );
   });
 
-  // socket.on('get username', data => {
-  //   let name_structure = tools.makeName();
-  //   socket.name_structure = name_structure;
-  //   socket.username = name_structure.username;
-  //   socket.emit('set username', {username: socket.username})
-  // })
   socket.on("heartbeat", () => {
     if (socket.connected) {
       io.in(socket.id).emit("heartbeat");
@@ -961,12 +929,7 @@ io.on("connection", socket => {
       //if it's a reconnected user
       let user = userPool.byMturkId(data.mturkId);
       console.log(
-        data.mturkId +
-          " REJOINED USER POOL (" +
-          user.id +
-          " => " +
-          socket.id +
-          ")"
+        `${data.mturkId} REJOINED USER POOL (${user.id} => ${socket.id})`
       );
 
       user.id = socket.id;
@@ -999,13 +962,13 @@ io.on("connection", socket => {
           return user.id !== socketID;
         })
       ) {
-        console.log("Removing dead socket: " + socketID);
+        console.log("Removing dead socket:", socketID);
         io.in(socketID).emit("get IDs", "broken");
       }
     });
     logTime();
     console.log(
-      "Sockets active: " + Object.keys(io.sockets.sockets) + " of " + teamSize
+      `Sockets active: ${Object.keys(io.sockets.sockets)} of ${teamSize}`
     );
     updateUserPool();
   });
@@ -1181,12 +1144,9 @@ io.on("connection", socket => {
     let newUser = makeUser(userPool.byMturkId(socket.mturkId));
     users.push(newUser);
     console.log(
-      newUser.name +
-        " (" +
-        newUser.mturkId +
-        ") added to users.\n" +
-        "Total users: " +
+      `${newUserename} (${newUser.mturkId}) added to users.\nTotal users: ${
         users.length
+      }`
     );
     //add friends for each user once the correct number of users is reached
     let numUsersRequired = extraRoundOn
@@ -1243,22 +1203,15 @@ io.on("connection", socket => {
             numRemoved
           ) {
             if (err) console.log("Error removing from db.willBang: ", err);
-            else
-              console.log(u + " REMOVED FROM WILLBANG DB (" + numRemoved + ")");
+            else console.log(`${u} REMOVED FROM WILLBANG DB (${numRemoved})`);
           });
         });
       }
       if (notifyUs) {
         mturk.notifyWorkers(
           ["A19MTSLG2OYDLZ"],
-          "Rolled " + currentCondition + " on " + taskURL,
-          "Rolled over with: " +
-            currentCondition +
-            " on port " +
-            port +
-            " at " +
-            taskURL +
-            "."
+          `Rolled ${currentCondition} on ${taskURL}`,
+          `Rolled over with: ${currentCondition} on port ${port} at ${taskURL}.`
         );
       }
       userAcquisitionStage = false;
@@ -1267,13 +1220,9 @@ io.on("connection", socket => {
 
     db.users.insert(newUser, err => {
       console.log(
-        err ? "Didn't store user: " + err : "Added " + newUser.name + " to DB."
+        err ? `Didn't store user: ${err}` : `Added ${newUser.name} to DB.`
       );
     });
-
-    //PK: need to emit login to each? or can we delete login fxn in client if no longer in use (login sets
-    // connected to true, is this needed?)
-    //io.in(user.id).emit('login', {numUsers: numUsers(user.room)})
   });
 
   socket.on("update user pool", data => {
@@ -2010,16 +1959,8 @@ io.on("connection", socket => {
         if (notifyUs) {
           mturk.notifyWorkers(
             ["A19MTSLG2OYDLZ"],
-            "Completed " + currentCondition + " on " + taskURL,
-            "Batch " +
-              batchID +
-              " completed: " +
-              currentCondition +
-              " on port " +
-              port +
-              " at " +
-              taskURL +
-              "."
+            `Completed ${currentCondition} on ${taskURL}`,
+            `Batch ${batchID} completed: ${currentCondition} on port ${port} at ${taskURL}.`
           );
         }
         ioEmitById(
@@ -2247,6 +2188,34 @@ io.on("connection", socket => {
       // Initialize steps
       const taskSteps = [
         {
+          time: 0.001,
+          message: `<strong>DO NOT REFRESH OR LEAVE THE PAGE! If you do, it may terminate the task for your team members and you will not be compensated.</strong>`
+        },
+        {
+          time: 0.002,
+          message: `You will receive the bonus pay at the stated hourly rate only if you<strong> fill out all survey questions and complete all rounds.</strong>`
+        },
+        {
+          time: 0.003,
+          message: `The entire HIT will take no more than ${Math.round(
+            roundMinutes * numRounds + 15
+          )} minutes total.`
+        },
+        { time: 0.004, message: `<br><strong>Task:</strong>` },
+        { time: 0.005, message: `${taskText}` },
+        { time: 0.005, message: `<br><strong>Directions:</strong>` },
+        {
+          time: 0.005,
+          message: `1. Check out the link above and collaborate with your team members in the chat room to develop a text advertisement<br>2. The ad must be no more than <strong>30 characters long</strong>. <br>3. Instructions will be given for submitting the team's final product. <br>4. You have ${textifyTime(
+            data.duration
+          )} to complete this round. <br>5. Your final advertisement will appear online. <strong>The more successful it is, the larger the bonus each team member will receive.</strong>`
+        },
+        { time: 0.006, message: `<br><strong>Example:</strong>` },
+        {
+          time: 0.007,
+          message: `Text advertisements for 'Renaissance Golf Club': <br><ul style='list-style-type:disc'><li><strong>An empowering modern club</strong><br></li><li><strong>A private club with reach</strong><br></li><li><strong>Don't Wait. Discover Renaissance Today</strong></li></ul><br>`
+        },
+        {
           time: 0.01,
           message:
             "<br><strong>HIT bot: Take a minute to review all instructions and product information.</strong>"
@@ -2365,14 +2334,14 @@ io.on("connection", socket => {
   // Starter task
   socket.on("starterSurveySubmit", data => {
     useUser(socket, user => {
-      user.results.starterCheck = parseResults(data);
+      user.results.starterCheck = responseToJSON(data);
       updateUserInDB(user, "results.starterCheck", user.results.starterCheck);
     });
   });
 
   socket.on("midSurveySubmit", data => {
     useUser(socket, user => {
-      user.results.viabilityCheck[currentRound] = parseResults(data);
+      user.results.viabilityCheck[currentRound] = responseToJSON(data);
       updateUserInDB(
         user,
         "results.viabilityCheck",
@@ -2383,21 +2352,21 @@ io.on("connection", socket => {
 
   socket.on("midSurveyStatusSubmit", data => {
     useUser(socket, user => {
-      user.results.statusCheck[currentRound] = parseResults(data);
+      user.results.statusCheck[currentRound] = responseToJSON(data);
       updateUserInDB(user, "results.statusCheck", user.results.statusCheck);
     });
   });
 
   socket.on("creativeSurveySubmit", data => {
     useUser(socket, user => {
-      user.results.creativeCheck[currentRound] = parseResults(data);
+      user.results.creativeCheck[currentRound] = responseToJSON(data);
       updateUserInDB(user, "results.creativeCheck", user.results.creativeCheck);
     });
   });
 
   socket.on("satisfactionSurveySubmit", data => {
     useUser(socket, user => {
-      user.results.satisfactionCheck[currentRound] = parseResults(data);
+      user.results.satisfactionCheck[currentRound] = responseToJSON(data);
       updateUserInDB(
         user,
         "results.satisfactionCheck",
@@ -2408,13 +2377,13 @@ io.on("connection", socket => {
 
   socket.on("conflictSurveySubmit", data => {
     useUser(socket, user => {
-      user.results.conflictCheck[currentRound] = parseResults(data);
+      user.results.conflictCheck[currentRound] = responseToJSON(data);
       updateUserInDB(user, "results.conflictCheck", user.results.conflictCheck);
     });
   });
   socket.on("psychologicalSafetySubmit", data => {
     useUser(socket, user => {
-      user.results.psychologicalSafety[currentRound] = parseResults(data);
+      user.results.psychologicalSafety[currentRound] = responseToJSON(data);
       updateUserInDB(
         user,
         "results.psychologicalSafety",
@@ -2425,14 +2394,14 @@ io.on("connection", socket => {
 
   socket.on("teamfeedbackSurveySubmit", data => {
     useUser(socket, user => {
-      user.results.teamfeedback[currentRound] = parseResults(data);
+      user.results.teamfeedback[currentRound] = responseToJSON(data);
       updateUserInDB(user, "results.teamfeedback", user.results.teamfeedback);
     });
   });
 
   socket.on("mturk_formSubmit", data => {
     useUser(socket, user => {
-      user.results.engagementFeedback = parseResults(data);
+      user.results.engagementFeedback = responseToJSON(data);
       updateUserInDB(
         user,
         "results.engagementFeedback",
@@ -2443,21 +2412,21 @@ io.on("connection", socket => {
 
   socket.on("qFifteenSubmit", data => {
     useUser(socket, user => {
-      user.results.qFifteenCheck = parseResults(data);
+      user.results.qFifteenCheck = responseToJSON(data);
       updateUserInDB(user, "results.qFifteenCheck", user.results.qFifteenCheck);
     });
   });
 
   socket.on("qSixteenSubmit", data => {
     useUser(socket, user => {
-      user.results.qSixteenCheck = parseResults(data);
+      user.results.qSixteenCheck = responseToJSON(data);
       updateUserInDB(user, "results.qSixteenCheck", user.results.qSixteenCheck);
     });
   });
 
   socket.on("postSurveySubmit", data => {
     useUser(socket, user => {
-      user.results.manipulationCheck = parseResults(data);
+      user.results.manipulationCheck = responseToJSON(data);
       updateUserInDB(
         user,
         "results.manipulationCheck",
@@ -2469,8 +2438,8 @@ io.on("connection", socket => {
   socket.on("demographicsSurveySubmit", data => {
     useUser(socket, user => {
       console.log("Demographics Survey");
-      console.log(parseResults(data));
-      user.results.demographicsCheck = parseResults(data);
+      console.log(responseToJSON(data));
+      user.results.demographicsCheck = responseToJSON(data);
       updateUserInDB(
         user,
         "results.demographicsCheck",
@@ -2481,7 +2450,7 @@ io.on("connection", socket => {
 
   socket.on("blacklistSurveySubmit", data => {
     useUser(socket, user => {
-      user.results.blacklistCheck = parseResults(data);
+      user.results.blacklistCheck = responseToJSON(data);
       updateUserInDB(
         user,
         "results.blacklistCheck",
@@ -2716,7 +2685,9 @@ const numUsers = room => users.filter(user => user.room === room).length;
 const getTeamMembers = user => {
   // Makes a list of teams this user has worked with
   const roomTeams = user.rooms.map((room, rIndex) => {
-    return users.filter(user => user.rooms[rIndex] === room);
+    return users.filter(user => {
+      return user.rooms[rIndex] === room;
+    });
   });
 
   // Makes a human friendly string for each team with things like 'you' for the current user,
@@ -2742,7 +2713,7 @@ const getTeamMembers = user => {
   );
 };
 
-const getTeamMembersArray = user => {
+function getTeamMembersArray(user) {
   // Makes a list of teams this user has worked with
   const roomTeams = user.rooms.map((room, rIndex) => {
     return users.filter(
@@ -2773,12 +2744,12 @@ const getTeamMembersArray = user => {
       return total.concat([newTeamMember]);
     }, [])
   );
-};
+}
 
 //PK: delete this fxn and use the normal survey mechanism?
 // This function generates a post survey for a user (listing out each team they were part of),
 // and then provides the correct answer to check against.
-const postSurveyGenerator = user => {
+function postSurveyGenerator(user) {
   const answers = getTeamMembers(user);
   // Makes a list of teams that are the correct answer, e.g., "Team 1 and Team 3"
   let correctAnswer = answers
@@ -2803,7 +2774,7 @@ const postSurveyGenerator = user => {
     answerType: "checkbox",
     correctAnswer: correctAnswer
   };
-};
+}
 
 function storeHIT(currentHIT = mturk.returnCurrentHIT()) {
   db.ourHITs.insert({ HITId: currentHIT, batch: batchID }, (err, HITAdded) => {
@@ -2813,19 +2784,19 @@ function storeHIT(currentHIT = mturk.returnCurrentHIT()) {
 }
 
 // parses results from surveys to proper format for JSON file
-function parseResults(data) {
-  let parsedResults = {};
-  data.split("&").forEach(responsePair => {
+function responseToJSON(rawResposne) {
+  let JSONResponse = {};
+  rawResposne.split("&").forEach(responsePair => {
     let response = responsePair.split("=");
     index = response[0].split("-q");
-    parsedResults[index[1]] = response[1] ? decode(response[1]) : "";
+    JSONResponse[index[1]] = response[1] ? decode(response[1]) : "";
   });
-  return parsedResults;
+  return JSONResponse;
 }
 
-const decode = encoded => {
+function decode(encoded) {
   return unescape(encoded.replace(/\+/g, " "));
-};
+}
 
 const logTime = () => {
   let timeNow = new Date(Date.now());

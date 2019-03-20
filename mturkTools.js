@@ -686,74 +686,48 @@ const returnCurrentHIT = () => {
 // -------------------------------------------------------------------
 // Launches Scaled-Humanity Fracture experiment
 
-const launchBang = callback => {
+function launchBang(batchID, callback) {
   // HIT Parameters
-  let time = Date.now();
 
-  let HITTitle =
-    "Write online ads - bonus up to $" + hourlyWage + " / hour (" + time + ")";
-  let description =
-    "Work in groups to write ads for new products. This task will take approximately " +
-    Math.round(roundMinutes * numRounds + 10) +
-    " minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" +
-    bonusPrice +
-    ".";
-  let assignmentDuration = 60 * taskDuration;
-  let lifetime = 60 * timeActive;
-  let reward = String(rewardPrice);
-  let autoApprovalDelay = 60 * taskDuration;
-  let keywords = "ads, writing, copy editing, advertising";
-  let maxAssignments = numAssignments;
-  let hitContent = externalHIT(taskURL);
+  let bangParameters = {
+    Title: `Write online ads - bonus up to $${hourlyWage}/hour (${batchID})}`,
+    Description: `Work in groups to write ads for new products. This task will take approximately ${Math.round(
+      roundMinutes * numRounds + 15
+    )} minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $${bonusPrice}.`,
+    AssignmentDurationInSeconds: 60 * taskDuration, // 30 minutes?
+    LifetimeInSeconds: 60 * timeActive, // short lifetime, deletes and reposts often
+    Reward: String(rewardPrice),
+    AutoApprovalDelayInSeconds: 60 * taskDuration,
+    Keywords: "ads, writing, copy editing, advertising",
+    MaxAssignments: numAssignments,
+    QualificationRequirements: safeQuals,
+    Question: externalHIT(taskURL)
+  };
 
-  makeHIT(
-    "safeQuals",
-    HITTitle,
-    description,
-    assignmentDuration,
-    lifetime,
-    reward,
-    autoApprovalDelay,
-    keywords,
-    maxAssignments,
-    hitContent,
-    function(HIT) {
-      if (typeof callback === "function") callback(HIT);
+  mturk.createHIT(bangParameters, (err, data) => {
+    if (err) {
+      console.log(err, err.stack);
+    } else {
+      console.log(
+        "Posted",
+        data.HIT.MaxAssignments,
+        "assignments:",
+        data.HIT.HITId
+      );
+      currentHitId = data.HIT.HITId;
+      currentHITTypeId = data.HIT.HITTypeId;
+      currentHITGroupId = data.HIT.HITGroupId;
+      if (typeof callback === "function") callback(data.HIT);
     }
-  );
+  });
 
   let delay = 1;
   // only continues to post if not enough people accepted HIT
   // Reposts every timeActive(x) number of minutes to keep HIT on top - stops reposting when enough people join
   setTimeout(() => {
     if (hitsLeft > 0 && !taskStarted) {
-      time = Date.now();
-      numAssignments = hitsLeft;
-      let HITTitle =
-        "Write online ads - bonus up to $" +
-        hourlyWage +
-        " / hour (" +
-        time +
-        ")";
-      let params2 = {
-        Title: HITTitle,
-        Description:
-          "Work in groups to write ads for new products. This task will take approximately " +
-          Math.round(roundMinutes * numRounds + 10) +
-          " minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" +
-          bonusPrice +
-          ".",
-        AssignmentDurationInSeconds: 60 * taskDuration, // 30 minutes?
-        LifetimeInSeconds: 60 * timeActive, // short lifetime, deletes and reposts often
-        Reward: String(rewardPrice),
-        AutoApprovalDelayInSeconds: 60 * taskDuration,
-        Keywords: "ads, writing, copy editing, advertising",
-        MaxAssignments: numAssignments,
-        QualificationRequirements: safeQuals,
-        Question: externalHIT(taskURL)
-      };
-
-      mturk.createHIT(params2, (err, data) => {
+      bangParameters.maxAssignments = hitsLeft;
+      mturk.createHIT(bangParameters, (err, data) => {
         if (err) {
           console.log(err, err.stack);
         } else {
@@ -766,24 +740,6 @@ const launchBang = callback => {
           currentHitId = data.HIT.HITId;
           currentHITTypeId = data.HIT.HITTypeId;
           currentHITGroupId = data.HIT.HITGroupId;
-
-          // // notify here - randomize list - notify again each time a new HIT is posted if have not yet rolled over
-          // let subject = "We launched our new ad writing HIT. Join now, spaces are limited."
-          // console.log(data.HIT)
-          // let URL = ''
-          // getHITURL(currentHitId, function(url) {
-          //   URL = url;
-          //   let message = "You’re invited to join our newly launched HIT on Mturk; there are limited spaces and it will be closed to new participants in about 15 minutes!  Check out the HIT here: " + URL + " \n\nYou're receiving this message because you you indicated that you'd like to be notified of our upcoming HIT during this time window. If you'd like to stop receiving notifications please email your MTurk ID to: scaledhumanity@gmail.com";
-          //   console.log("message to willBangers", message);
-          //   if(!URL) {
-          //     throw "URL not defined"
-          //   }
-          //   let maxWorkersToNotify = 100; // cannot be more than 100
-          //   listUsersWithQualificationRecursively(quals.willBang, function(data) {
-          //     let notifyList = getRandomSubarray(data, maxWorkersToNotify)
-          //     notifyWorkers(notifyList, subject, message)
-          //   })
-          // })
         }
       });
       delay++;
@@ -792,7 +748,7 @@ const launchBang = callback => {
       expireHIT(currentHitId);
     }
   }, 1000 * 60 * timeActive * delay);
-};
+}
 
 // * notifyWorkers
 // -------------------------------------------------------------------
