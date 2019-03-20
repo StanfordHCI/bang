@@ -8,8 +8,7 @@ fig_caption: yes
 ## Game plan for factor analysis: 
 - Consistency is key: 
   - Filter for surveys only from users who worked with the *same* team sizes (n) and where *all users* completed the round we're analyzing
-  - If the above conditions are met, pick a single round for analysis; then, later analyze remaining rounds to ensure no major  desperencies 
-  - Follow notes for factor analysis in the section below
+  - If the above conditions are met, pick a single round for analysis, follow notes for factor analysis in the section below
 
 ## Set-up packages // libraries and prepare for data import:
 ```{r echo=FALSE, include=FALSE, results='hide'}
@@ -148,7 +147,35 @@ Determining the number of factors we'll select for factor analysis using: 1. par
 3. Sample size 300 + generally agreed upon as best (CHECK)
 4. Normal data screening: 
 - Screen, accuracy, missing/outliers (CHECK) 
-- Assumptions: addivity, linearity, normality, homogeneity and homoscedasticity ()
+- Assumptions: addivity, linearity, normality, homogeneity and homoscedasticity (CHECK - see below code chunk, homogeneity is of partial concern)
+
+```{r}
+## Addivity: 
+correl = cor(data, use = "pairwise.complete.obs")
+symnum(correl)
+correl
+
+# Set up assumptions: 
+## Normality: 
+random = rchisq(nrow(data), 7)
+fake = lm(random~., data = data)
+standardized = rstudent(fake)
+fitted = scale(fake$fitted.values)
+hist(standardized)
+# Roughly normal 
+
+# Linearity 
+qqnorm(standardized)
+abline(0, 0) 
+
+#Homogeneity
+plot(fitted, standardized) 
+abline(0, 0) 
+abline(v = 0)
+# Some concerns w/ homogeneity 
+
+```
+
 # Number of factors: 
 
 ```{r}
@@ -217,8 +244,13 @@ print(fourfactor$loadings,cutoff = 0.3)
 # As soon as our output mights our conditions, we've achieved ideal "simple structure" and can proceed to validate our model. 
 ```
 
+Fit indices interpretations: 
+1. Goodness of fit statistics: 
 Our goal is to have Tucker Lew Index of Factoring to be greater than 0.90: 
-- Our model gives 
+- Our model TLI is 0.971  
+2. Residual statistics: 
+Our goal is to have root mean square error of approximation and root mean square of the residual <.10
+- Our model RMSEA is 0.091 
 
 
 ## Adequacy test: 
