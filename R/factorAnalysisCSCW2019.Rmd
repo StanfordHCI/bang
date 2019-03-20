@@ -1,5 +1,5 @@
 ---
-title: "Factor analysis; n=2, round=2"
+title: "Factor analysis: Viability""
 output: html_document
 fig_width: 3.5
 fig_caption: yes
@@ -11,56 +11,28 @@ fig_caption: yes
   - If the above conditions are met, pick a single round for analysis; then, later analyze remaining rounds to ensure no major  desperencies 
   - Follow notes for factor analysis in the section below
 
-
 ## Set-up packages // libraries and prepare for data import:
 ```{r echo=FALSE, include=FALSE, results='hide'}
-# From fractureCHI notebook:
 library(jsonlite)
 library(ggplot2)
 library(lme4)
-library(lmerTest)
-library(pROC)
+library(psych)
+library(GPArotation)
 library(stargazer)
 library(dplyr)
-
-# New for factor analysis: 
-library(nFactors)
-library(psych)
-library(FactoMineR)
-library(GPArotation)
 ```
 
 ## Set-up directories, import and clean data:
 ```{r, include=TRUE, echo=TRUE}
 rm(list=ls())
-setwd("/Users/mark/Documents/Academia/Stanford/scaled-humanity/bang/R") # Change this to your working directory where Bang/R file is located 
+setwd("/Users/allieblaising/Desktop/bang/R") # Change this to your working directory where Bang/R file is located
 getwd()
-dataPath = "../.data"
+dataPath = "../data"
 MINIMUM_BATCH_NUMBER = 1537266991708  # Identify the batch number that represents the start of the batches you'd like to include in your analysis 
 
 TEAM_SIZE = 2 # Alter depending on team size in runs you're analyzing; this variable is used later on to ensure that you're filtering out all team_sizes != the size you've specified 
 
-## Function to extract surveys:
-extractBlacklistSurvey = function(frame,survey) {
-  rounds = seq(1,4)
-  roundResponses = lapply(rounds, function(round) {
-    getCol = paste("results.",survey,".",round, sep="")
-    surveyCols = Filter(function(x) grepl(getCol,x),names(frame))
-    newCols = lapply(surveyCols, function(x) gsub(getCol,paste("results.",survey, sep=""),x) )
-    surveyFrame = as.data.frame(frame[,surveyCols])
-    if (is.null(newCols)) {return("No newCols")}
-    names(surveyFrame) = newCols
-    surveyFrame$id = frame$id
-    surveyFrame$round = round
-    surveyFrame$batch = frame$batch
-    #surveyFrame$room = frame$room
-    surveyFrame$rooms = frame$rooms
-    surveyFrame$manipulationCheck <- frame$results.manipulationCheck
-    #surveyFrame$blacklist = frame$results.blacklistCheck
-    return(surveyFrame)
-  })
-  return(Reduce(rbind, roundResponses))
-}
+MIN_FRACTURE_PERCENT = 0.5 # Default cut off for fracture within a team; this variable is used later to label binary 0 (no fracture), 1 (fracture) values at a group level 
 
 ## Seperate viability function to deal with different column types
 extractViabilitySurvey = function(frame,survey) {
@@ -105,9 +77,9 @@ users <- Reduce(function(x,y) merge(x, y, all=TRUE), lapply(batches, function(ba
 }))
 
 # Filter out variables not relevant to analysis: 
-users <- users %>%
-  select(-results.engagementFeedback.undefined, -results.qSixteenCheck.undefined, -results.qFifteenCheck.undefined, -contains("results.viabilityCheck.0"))
-users <- na.omit(users)
+# Note: clear out problem columns 
+users <- users %>% 
+  filter(!is.na(results.viabilityCheck.1.10))
 
 # Function to assign round numbers in the correct order 
 usersRounds = as.data.frame(Reduce(rbind, apply(users,1,function(x) {
@@ -121,12 +93,15 @@ usersRounds = as.data.frame(Reduce(rbind, apply(users,1,function(x) {
 
 # Converting variables to their proper respective form for later analysis: 
 usersRounds <- usersRounds %>% mutate(id = as.character(id), batch=as.numeric(batch), round=as.numeric(round), room=as.character(room))
-usersRounds <- usersRounds %>% select(id, batch, round, room)
 
 viabilitySurvey <- extractViabilitySurvey(users, 'viabilityCheck')
 
-## to-do, add more cleaning for viability 
+usersRounds <- usersRounds %>%
+  left_join(viabilitySurvey, by=c("id", "batch", "round")) %>%
+  mutate(rooms = rooms.x)
 
+usersRounds <- usersRounds %>% select(id, batch, room, round, results.condition, results.viabilityCheck.1, results.viabilityCheck.2, results.viabilityCheck.3, results.viabilityCheck.4, results.viabilityCheck.5, results.viabilityCheck.6, results.viabilityCheck.7, results.viabilityCheck.8, results.viabilityCheck.9, results.viabilityCheck.10, results.viabilityCheck.11, results.viabilityCheck.12, results.viabilityCheck.13, results.viabilityCheck.14) %>% filter(!is.na(results.viabilityCheck.14)) 
+                                                                                                                                                                                                                                                                                               
 ```
 
 ## After data is imported and filtered based on conditions in *gameplan* begin analysis: 
@@ -136,7 +111,21 @@ Determining the number of factors we'll select for factor analysis using: 1. par
 # Number of factors: 
 
 ```{r}
-data = # viability survey results based on above conditions 
+usersRounds <- usersRounds %>% mutate(condition = as.character(results.condition))
+
+teamGroupings <- usersRounds %>%
+  arrange(id) %>%
+  group_by(room, batch, round, condition) %>%
+  summarise(n=n()) 
+
+## Factor for visualizations:
+levels <- c("Strongly Disagree", "Disagree", "Neutral","Agree", "Strongly Agree")
+usersRounds <- usersRounds %>%
+  mutate_at(.vars = vars(contains("viabilityCheck")), funs(factor(., levels = levels))) 
+
+usersNumeric <- usersRounds %>% mutate_if(is.factor, as.numeric) %>% select(contains("viabilityCheck")) 
+data = usersNumeric
+# viability survey results based on above conditions 
 parallel <- fa.parallel(data, fm = 'minres', fa = 'fa')
 # This will output a "scree plot" 
 # How to interpret plot: 
@@ -145,6 +134,18 @@ parallel <- fa.parallel(data, fm = 'minres', fa = 'fa')
 # Also look at the point where the gap between simulated data (red) and actual data (blue) 
 # tends to be minimial. 
 # Use the above criteria to determine the range of factors that would be a good choice. 
+```
+
+## Adequacy test: 
+
+```{r}
+usersNumeric.pca <- princomp(usersNumeric)
+summary(usersNumeric.pca)
+# Based on the summary, it appears 1 component exists. 
+# Factors = 1 
+usersNumeric.fa1 <- factanal(usersNumeric, factors = 1, rotation="varimax")
+usersNumeric.fa1
+
 ```
 
 # Factor analysis: 
@@ -179,7 +180,6 @@ print(fourfactor$loadings,cutoff = 0.3)
 
 ```{r}
 fa.digram(fourfactor)
-
 # Conditions to analyze: 
 # Root mean sauare of residuals (RMSR): this value ought to be close to 0. 
 # Root mean square error of approximatio (RMSEA): this value should be below <0.05 
@@ -195,7 +195,7 @@ fa.digram(fourfactor)
 ```{r}
 # Pricipal Components Analysis
 # entering raw data and extracting PCs from the correlation matrix 
-mydata = # viability survey results based on above conditions 
+mydata = usersNumeric # viability survey results based on above conditions 
 fit <- princomp(mydata, cor=TRUE)
 summary(fit) # print variance accounted for 
 loadings(fit) # pc loadings 
