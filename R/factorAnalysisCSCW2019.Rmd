@@ -92,7 +92,7 @@ usersRounds = as.data.frame(Reduce(rbind, apply(users,1,function(x) {
 })))
 
 # Converting variables to their proper respective form for later analysis: 
-usersRounds <- usersRounds %>% mutate(id = as.character(id), batch=as.numeric(batch), round=as.numeric(round), room=as.character(room))
+usersRounds <- usersRounds %>% mutate(id = as.character(id), batch=as.numeric(batch), round=as.numeric(round), room=as.character(room), condition = as.character(results.condition))
 
 viabilitySurvey <- extractViabilitySurvey(users, 'viabilityCheck')
 
@@ -100,27 +100,61 @@ usersRounds <- usersRounds %>%
   left_join(viabilitySurvey, by=c("id", "batch", "round")) %>%
   mutate(rooms = rooms.x)
 
-usersRounds <- usersRounds %>% select(id, batch, room, round, results.condition, results.viabilityCheck.1, results.viabilityCheck.2, results.viabilityCheck.3, results.viabilityCheck.4, results.viabilityCheck.5, results.viabilityCheck.6, results.viabilityCheck.7, results.viabilityCheck.8, results.viabilityCheck.9, results.viabilityCheck.10, results.viabilityCheck.11, results.viabilityCheck.12, results.viabilityCheck.13, results.viabilityCheck.14) %>% filter(!is.na(results.viabilityCheck.14)) 
-                                                                                                                                                                                                                                                                                               
+usersRounds <- usersRounds %>% select(id, batch, room, round, condition, results.viabilityCheck.1, results.viabilityCheck.2, results.viabilityCheck.3, results.viabilityCheck.4, results.viabilityCheck.5, results.viabilityCheck.6, results.viabilityCheck.7, results.viabilityCheck.8, results.viabilityCheck.9, results.viabilityCheck.10, results.viabilityCheck.11, results.viabilityCheck.12, results.viabilityCheck.13, results.viabilityCheck.14) %>% filter(!is.na(results.viabilityCheck.14)) 
+ 
+# Calculate team sizes                                                                                                                
+usersRounds <- usersRounds %>%
+  arrange(id) %>%
+  group_by(room, batch, round,condition) %>% 
+  mutate(n = n())
+
+# For consistency, filter for only dyads for first round exploratory factor analysis: 
+
+usersRounds <- usersRounds %>% 
+  filter(n == 2)
 ```
 
 ## After data is imported and filtered based on conditions in *gameplan* begin analysis: 
 
+EFA: Exploratory factor analysis: describes the data and summarizes "factors", often used as a first step on a scale or data. 
+- Factors thought to cause the variables, and the underlying construct is what creates the scores. 
+- Factors are produced, which is the term to use when writing up. 
+- Only shared variables and unique variance is analyzed, the left over variance is considered error. 
+
+Variance types: 
+Common variance = overlapping variance between items (systematic variance)
+Unique variance = variance only related to that item 
+Communality = the common variance for the item (think of R^2 for that item)
+EFA = describes common variance 
+PCA = describes common variance + unique variance 
+
+Correlation Matrices: 
+Observed correlation matrix = the correlations between all the variables (like bivariate correlation chart) 
+Reproduced correlation matrix = correlation matrix created from the factors created 
+Residual correlation matrix = the difference between original and reproduced correlation matrix. 
+The matrix will be very small if you had a good fit for your model. The residual matrices are used to calculate how well the analysis went. 
+
+Eigenvalues = a mathematical representation of the variance accounted for by that grouping of itmes. 
+
+# Research questions: 
+1. Number of underlying patterns (factors/components): How many best fit the data? 
+2. Scale development: 1. What are the underlying piece? 2. How do the questions group together? 
+
 Determining the number of factors we'll select for factor analysis using: 1. parallel analysis and 2. eigenvalue 
 
+# Assumption checking: 
+1. Variables: because EFA + PCA group variables into factors/components, only using 5 variables for example, doesn't allow us to create clusters easily. At least 10 variables are recommended. (CHECK)
+2. Types of variables: interval or ration (CHECK)
+3. Sample size 300 + generally agreed upon as best (CHECK)
+4. Normal data screening: 
+- Screen, accuracy, missing/outliers (CHECK) 
+- Assumptions: addivity, linearity, normality, homogeneity and homoscedasticity ()
 # Number of factors: 
 
 ```{r}
-usersRounds <- usersRounds %>% mutate(condition = as.character(results.condition))
-
-teamGroupings <- usersRounds %>%
-  arrange(id) %>%
-  group_by(room, batch, round, condition) %>%
-  summarise(n=n()) 
-
 ## Factor for visualizations:
 levels <- c("Strongly Disagree", "Disagree", "Neutral","Agree", "Strongly Agree")
-usersRounds <- usersRounds %>%
+usersRounds <- usersRounds %>% ungroup() %>% 
   mutate_at(.vars = vars(contains("viabilityCheck")), funs(factor(., levels = levels))) 
 
 usersNumeric <- usersRounds %>% mutate_if(is.factor, as.numeric) %>% select(contains("viabilityCheck")) 
@@ -134,18 +168,25 @@ parallel <- fa.parallel(data, fm = 'minres', fa = 'fa')
 # Also look at the point where the gap between simulated data (red) and actual data (blue) 
 # tends to be minimial. 
 # Use the above criteria to determine the range of factors that would be a good choice. 
-```
 
-## Adequacy test: 
+# How many factors? 
+nofactors = fa.parallel(data, fm = "ml", fa = "fa") 
+sum(nofactors$fa.values > 1.0) # Old Kaiser criterion 
+sum(nofactors$fa.values > .7) # New Kaiser criterion 
+
+# All three criterion suggest 1 factor 
+```
+# Simple structure w/ a three factor model
+How do we achieve simple structure? 
+- Factor rotation 
+- Fitting estimation 
 
 ```{r}
-usersNumeric.pca <- princomp(usersNumeric)
-summary(usersNumeric.pca)
-# Based on the summary, it appears 1 component exists. 
 # Factors = 1 
 usersNumeric.fa1 <- factanal(usersNumeric, factors = 1, rotation="varimax")
 usersNumeric.fa1
-
+usersNumeric.fa5 <- factanal(usersNumeric, factors = 1, rotation = "varimax", scores = "regression")
+head(usersNumeric.fa5$scores)
 ```
 
 # Factor analysis: 
@@ -159,7 +200,7 @@ usersNumeric.fa1
 # We will select oblique rotation (rotate = “oblimin”) since we assume there is correlation in our factors
 # We will also start w/ `Ordinary Least Squared/Minres` factoring (fm = “minres”), as it is known to provide results similar to `Maximum Likelihood` without assuming multivariate normal distribution and derives solutions through iterative eigendecomposition like principal axis.
 
-threefactor <- fa(data,nfactors = 3,rotate = "oblimin",fm="minres")
+threefactor <- fa(usersNumeric,nfactors = 1,rotate = "oblimin",fm="minres")
 print(threefactor) # Print to inspect factor loadings 
 
 # Following best practices, we consider loadings more than 0.3 and not loading on more than one factor (note: negative values are acceptable here)
@@ -170,11 +211,15 @@ print(threefactor$loadings,cutoff = 0.3)
 # Based on the results above, continue to modify number of factors until the results are in only single-loading. 
 # For example, if there are double loadings above, we can modify to include 4 factors: 
 
-fourfactor <- fa(data,nfactors = 4,rotate = "oblimin",fm="minres")
+fourfactor <- fa(data,nfactors = 1,rotate = "oblimin",fm="minres")
 print(fourfactor$loadings,cutoff = 0.3)
 
 # As soon as our output mights our conditions, we've achieved ideal "simple structure" and can proceed to validate our model. 
 ```
+
+Our goal is to have Tucker Lew Index of Factoring to be greater than 0.90: 
+- Our model gives 
+
 
 ## Adequacy test: 
 
@@ -194,9 +239,8 @@ fa.digram(fourfactor)
 # Principal Components: 
 ```{r}
 # Pricipal Components Analysis
-# entering raw data and extracting PCs from the correlation matrix 
-mydata = usersNumeric # viability survey results based on above conditions 
-fit <- princomp(mydata, cor=TRUE)
+# entering raw data and extracting PCs from the correlation matrix  
+fit <- princomp(data, cor=TRUE)
 summary(fit) # print variance accounted for 
 loadings(fit) # pc loadings 
 plot(fit,type="lines") # scree plot 
