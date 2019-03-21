@@ -1,6 +1,5 @@
 require("dotenv").config();
-require("colors");
-require("chalk");
+const chalk = require("chalk");
 const args = require("yargs").argv;
 
 //Environmental settings, set in .env
@@ -66,8 +65,8 @@ const autocompleteTestOn = false; //turns on fake team to test autocomplete
 
 console.log(
   runningLive
-    ? "\n RUNNING LIVE ".red.inverse
-    : "\n RUNNING SANDBOXED ".green.inverse
+    ? chalk.red.inverse("\n RUNNING LIVE ")
+    : chalk.green.inverse("\n RUNNING SANDBOXED ")
 );
 console.log(runningLocal ? "Running locally" : "Running remotely");
 
@@ -279,7 +278,7 @@ function useUser(socket, callback, err = "Guarded against undefined user") {
   if (typeof user !== "undefined" && typeof callback === "function") {
     callback(user);
   } else {
-    console.log(err.red, socket.id, "\n", err.stack);
+    console.log(chalk.red(err), socket.id, "\n", err.stack);
     if (debugModeOn) {
       console.trace();
     }
@@ -289,7 +288,7 @@ function useUser(socket, callback, err = "Guarded against undefined user") {
 // Check balance
 mturk.getBalance(function(balance) {
   if (runningLive && balance <= 400) {
-    console.log("\n!!! BROKE !!!\n".red.inverse.bold);
+    console.log(chalk.red.inverse.bold("\n!!! BROKE !!!\n"));
   }
 });
 
@@ -368,7 +367,6 @@ console.log(currentCondition, "with", conditions[currentCondition]);
 const numRounds = conditions.baseline.length;
 
 const numberOfRooms = teamSize * numRounds;
-const rooms = tools.letters.slice(0, numberOfRooms);
 const people = extraRoundOn
   ? tools.letters.slice(0, teamSize ** 2 + teamSize)
   : tools.letters.slice(0, teamSize ** 2);
@@ -425,7 +423,7 @@ function updateUserInDB(user, field, value) {
     err =>
       console.log(
         err
-          ? "Err recording ".red + field + ": " + err
+          ? chalk.red("Err recording ") + field + ": " + err
           : "Updated " +
               field +
               " for " +
@@ -451,8 +449,7 @@ db.users.find({}, (err, usersInDB) => {
         mturk.quals.hasBanged,
         data => {
           console.log(
-            "Number of users with qualification hasBanged:",
-            data.length
+            `Number of users with qualification hasBanged: ${data.length}`
           );
         }
       );
@@ -462,8 +459,7 @@ db.users.find({}, (err, usersInDB) => {
         mturk.quals.willBang,
         data => {
           console.log(
-            "Number of users with qualification willBang:",
-            data.length
+            `Number of users with qualification willBang: ${data.length}`
           );
         }
       );
@@ -553,7 +549,8 @@ if (runExperimentNow) {
             20: "afternoon",
             21: "afternoon",
             22: "evening",
-            23: "evening"
+            23: "evening",
+            24: "evening"
           };
 
           const currentTimePeriod = timePeriods[currentHour];
@@ -631,29 +628,15 @@ if (runExperimentNow) {
 
 //Add more products
 let products = [
-  // {name: 'KOSMOS ink - Magnetic Fountain Pen', url: 'https://www.kickstarter.com/projects/stilform/kosmos-ink'},
-  // {
-  //     name: 'Projka: Multi-Function Accessory Pouches',
-  //     url: 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches'
-  // },
-  // {
-  //     name: "First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC",
-  //     url: 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono'
-  // },
-  // {
-  //     name: "Nomad Energy- Radically Sustainable Energy Drink",
-  //     url: 'https://www.kickstarter.com/projects/1273663738/nomad-energy-radically-sustainable-energy-drink'
-  // },
   {
     name: "Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
     url:
       "https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw"
   },
-  // {
-  //     name: "The Travel Line: Versatile Travel Backpack + Packing Tools",
-  //     url: 'https://www.kickstarter.com/projects/peak-design/the-travel-line-versatile-travel-backpack-packing'
-  // },
-  // {name: "Stool Nº1", url: 'https://www.kickstarter.com/projects/390812913/stool-no1'},
+  {
+    name: "Stool Nº1",
+    url: "https://www.kickstarter.com/projects/390812913/stool-no1"
+  },
   {
     name: "LetB Color - take a look at time in different ways",
     url:
@@ -663,48 +646,11 @@ let products = [
     name: "FLECTR 360 OMNI – cycling at night with full 360° visibility",
     url: "https://www.kickstarter.com/projects/outsider-team/flectr-360-omni"
   },
-  // {
-  //     name: "Make perfect cold brew coffee at home with the BrewCub",
-  //     url: 'https://www.kickstarter.com/projects/1201993039/make-perfect-cold-brew-coffee-at-home-with-the-bre'
-  // },
-  // {
-  //     name: 'NanoPen | Worlds Smallest & Indestructible EDC Pen Tool',
-  //     url: 'https://www.kickstarter.com/projects/bullet/nanopen-worlds-smallest-and-indestructible-edc-pen?' +
-  //         'ref=section_design-tech_popular'
-  // },
-  // {
-  //     name: "The EVERGOODS MQD24 and CTB40 Crossover Backpacks",
-  //     url: 'https://www.kickstarter.com/projects/1362258351/the-evergoods-mqd24-and-ctb40-crossover-backpacks'
-  // },
-  // {
-  //     name: "Hexgears X-1 Mechanical Keyboard",
-  //     url: 'https://www.kickstarter.com/projects/hexgears/hexgears-x-1-mechanical-keyboard'
-  // },
-  // {
-  //     name: "KARVD - Modular Wood Carved Wall Panel System",
-  //     url: 'https://www.kickstarter.com/projects/karvdwalls/karvd-modular-wood-carved-wall-panel-system'
-  // },
-  // {
-  //     name: "PARA: Stationary l Pythagorean l Easy-to-Use Laser Measurer",
-  //     url: 'https://www.kickstarter.com/projects/1619356127/para-stationary-l-pythagorean-l-easy-to-use-laser'
-  // },
-  // {
-  //     name: "Blox: organize your world!",
-  //     url: 'https://www.kickstarter.com/projects/onehundred/blox-organize-your-world'
-  // },
-  // {
-  //     name: "Moment - World's Best Lenses For Mobile Photography",
-  //     url: 'https://www.kickstarter.com/projects/moment/moment-amazing-lenses-for-mobile-photography'
-  // },
   {
     name: "The Ollie Chair: Shape-Shifting Seating",
     url:
       "https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating"
   }
-  // {
-  //     name: "Fave: the ideal all-purpose knife!",
-  //     url: 'https://www.kickstarter.com/projects/onehundred/fave-the-ideal-all-purpose-knife'
-  // },
 ];
 
 if (randomProductOn) {
@@ -863,7 +809,7 @@ io.on("connection", socket => {
     socket.join(mturkId);
 
     if (users.byMturkId(mturkId)) {
-      console.log(`Reconnected ${mturkId} in users`.blue);
+      console.log(chalk.blue(`Reconnected ${mturkId} in users`));
       let user = users.byMturkId(mturkId);
       user.connected = true;
       user.assignmentId = assignmentId;
@@ -875,7 +821,9 @@ io.on("connection", socket => {
     if (userPool.byMturkId(mturkId)) {
       let user = userPool.byMturkId(mturkId);
       console.log(
-        `RECONNECTED ${mturkId} in user pool (${user.id} => ${socket.id})`.blue
+        chalk.blue(
+          `RECONNECTED ${mturkId} in user pool (${user.id} => ${socket.id})`
+        )
       );
       socket.name_structure = data.name_structure;
       socket.username = data.name_structure.username;
@@ -886,12 +834,14 @@ io.on("connection", socket => {
       user.turkSubmitTo = data.turkSubmitTo;
     } else {
       createUsername();
-      console.log("NEW USER CONNECTED".blue);
+      console.log(chalk.blue("NEW USER CONNECTED"));
     }
     console.log(
-      `SOCKET: ${socket.id} | MTURK ID: ${socket.mturkId} | NAME: ${
-        socket.username
-      } | ASSIGNMENT ID: ${socket.assignmentId}`.blue
+      chalk.blue(
+        `SOCKET: ${socket.id} | MTURK ID: ${socket.mturkId} | NAME: ${
+          socket.username
+        } | ASSIGNMENT ID: ${socket.assignmentId}`
+      )
     );
   });
 
@@ -1059,7 +1009,7 @@ io.on("connection", socket => {
           });
       } else {
         if (secondsSince(waitchatStart) / 60 >= maxWaitChatMinutes) {
-          console.log("Waitchat time limit reached".red);
+          console.log(chalk.red("Waitchat time limit reached"));
           userAcquisitionStage = false;
           io.in(socket.mturkId).emit("echo", "kill-all");
         }
@@ -1315,14 +1265,11 @@ io.on("connection", socket => {
   socket.on("disconnect", function(reason) {
     // changes connected to false if disconnected user in userPool
     console.log(
-      (
-        "[" +
-        new Date().toISOString() +
-        "]: Disconnecting socket: " +
-        socket.id +
-        " because " +
-        reason
-      ).red
+      chalk.red(
+        `[${new Date().toISOString()}]: Disconnecting socket: ${
+          socket.id
+        } because ${reason}`
+      )
     );
     if (reason === "transport error") {
       //console.log(socket);
@@ -1488,7 +1435,7 @@ io.on("connection", socket => {
   });
 
   socket.on("kill-all", () => {
-    console.log("Terminating all live clients.".red);
+    console.log(chalk.red("Terminating all live clients."));
     users.forEach(() => updateUserInDB(socket, "bonus", currentBonus()));
     ioSocketsEmit("finished", {
       message:
@@ -2252,7 +2199,7 @@ io.on("connection", socket => {
       taskSteps.forEach(step => {
         setTimeout(() => {
           if (step.message) {
-            console.log("Task step:".red, step.message);
+            console.log(chalk.red.inverse("Task step:"), step.message);
             ioSocketsEmit("message clients", step.message);
             // ioEmitById(user.mturkId, "message clients", step.message)
           }
@@ -2604,7 +2551,7 @@ io.on("connection", socket => {
       console.log("Undefined user in issueFinish");
       return;
     }
-    console.log(("Issued finish to " + socket.mturkId).red);
+    console.log(chalk.red("Issued finish to " + socket.mturkId));
     ioEmitById(
       socket.mturkId,
       "finished",
@@ -2675,9 +2622,6 @@ const recordTime = event => {
   });
   taskStartTime = getSecondsPassed();
 };
-
-//returns number of users in a room: room -> int
-const numUsers = room => users.filter(user => user.room === room).length;
 
 const getTeamMembers = user => {
   // Makes a list of teams this user has worked with
