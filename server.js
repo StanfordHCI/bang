@@ -492,12 +492,12 @@ if (runExperimentNow) {
     storeHIT(HIT.HITId);
     // Notify workers that a HIT has started if we're doing recruiting by email
     if (notifyWorkersOn) {
-      let subject = `We launched our new ad writing HIT. Join now, spaces are limited.`;
+      let subject = `We launched our new HIT. Join now, spaces are limited.`;
       console.log(HIT);
       let URL = ``;
       mturk.getHITURL(HIT.HITId, function(url) {
         URL = url;
-        let message = `You’re invited to join our newly launched HIT on Mturk; there are limited spaces and it will be closed to new participants in about 15 minutes!  Check out the HIT here: ${URL} \n\nYou're receiving this message because you indicated that you'd like to be notified of our upcoming HIT during this time window. If you'd like to stop receiving notifications please email your MTurk ID to: scaledhumanity@gmail.com`;
+        let message = `You’re invited to join our newly launched HIT on Mturk; there are limited spaces and it will be closed to new participants in about 15 minutes! \n\nCheck out the HIT here: ${URL} \n\nYou're receiving this message because you indicated that you'd like to be notified of our upcoming HIT during this time window. If you'd like to stop receiving notifications please email your MTurk ID to: scaledhumanity@gmail.com`;
         console.log("message to willBangers", message);
         if (!URL) {
           throw "URL not defined";
@@ -749,7 +749,7 @@ if (satisfactionSurveyOn) {
 }
 if (conflictSurveyOn) {
   roundSchedule.push("conflictSurvey");
-} []
+}
 if (psychologicalSafetyOn) {
   roundSchedule.push("psychologicalSafety");
 }
@@ -1090,7 +1090,7 @@ io.on("connection", socket => {
       batch: batchID,
       room: "",
       rooms: [],
-      bonus: mturk.bonusPrice,
+      bonus: 0,
       person: "",
       name: socket.username,
       ready: false,
@@ -1144,7 +1144,7 @@ io.on("connection", socket => {
     let newUser = makeUser(userPool.byMturkId(socket.mturkId));
     users.push(newUser);
     console.log(
-      `${newUserename} (${newUser.mturkId}) added to users.\nTotal users: ${
+      `${newUser.name} (${newUser.mturkId}) added to users.\nTotal users: ${
         users.length
       }`
     );
@@ -2201,29 +2201,26 @@ io.on("connection", socket => {
             roundMinutes * numRounds + 15
           )} minutes total.`
         },
-        { time: 0.004, message: `<br><strong>Task:</strong>` },
-        { time: 0.005, message: `${taskText}` },
-        { time: 0.005, message: `<br><strong>Directions:</strong>` },
+        { time: 0.005, message: `<strong>Task:</strong><br>${taskText}` },
         {
           time: 0.005,
-          message: `1. Check out the link above and collaborate with your team members in the chat room to develop a text advertisement<br>2. The ad must be no more than <strong>30 characters long</strong>. <br>3. Instructions will be given for submitting the team's final product. <br>4. You have ${textifyTime(
-            data.duration
+          message: `<strong>Directions:</strong><br>1. Check out the link above and collaborate with your team members in the chat room to develop a text advertisement<br>2. The ad must be no more than <strong>30 characters long</strong>. <br>3. Instructions will be given for submitting the team's final product. <br>4. You have ${textifyTime(
+            roundMinutes
           )} to complete this round. <br>5. Your final advertisement will appear online. <strong>The more successful it is, the larger the bonus each team member will receive.</strong>`
         },
-        { time: 0.006, message: `<br><strong>Example:</strong>` },
         {
           time: 0.007,
-          message: `Text advertisements for 'Renaissance Golf Club': <br><ul style='list-style-type:disc'><li><strong>An empowering modern club</strong><br></li><li><strong>A private club with reach</strong><br></li><li><strong>Don't Wait. Discover Renaissance Today</strong></li></ul><br>`
+          message: `<strong>Example:</strong><br>Text advertisements for 'Renaissance Golf Club': <br><ul style='list-style-type:disc'><li><strong>An empowering modern club</strong><br></li><li><strong>A private club with reach</strong><br></li><li><strong>Don't Wait. Discover Renaissance Today</strong></li></ul><br>`
         },
         {
           time: 0.01,
           message:
-            "<br><strong>HIT bot: Take a minute to review all instructions and product information.</strong>"
+            "<br><strong>HIT bot: Take a minute to review all instructions above.</strong>"
         },
         {
           time: 0.15,
           message:
-            "<br><strong>HIT bot: Say hello to your team members! Begin brainstorming advertisement ideas together.</strong>"
+            "<br><strong>HIT bot: Say hello to your team members! Begin brainstorming ideas together.</strong>"
         },
         {
           time: 0.4,
@@ -2827,4 +2824,16 @@ function shuffle(array) {
     array[randomIndex] = temporaryValue;
   }
   return array;
+}
+
+function textifyTime(duration) {
+  let durationString = "";
+  if (duration < 1) {
+    durationString = Math.round(duration * 60) + " seconds";
+  } else if (duration === 1) {
+    durationString = "one minute";
+  } else {
+    durationString = duration + " minutes";
+  }
+  return durationString;
 }

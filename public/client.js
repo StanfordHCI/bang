@@ -471,7 +471,6 @@ $(function() {
     }
   });
 
-  //note: only built to handle 1 checkin question, should expand?
   $("#checkin-form").submit(event => {
     event.preventDefault(); //stops page reloading
     let selectedValue = $("input[name=checkin-q1]:checked").val();
@@ -840,42 +839,6 @@ $(function() {
     $headerbarPage.show();
     $("input[name=checkin-q1]").attr("checked", false); //reset checkin form
     LeavingAlert = data.runningLive; //leaving alert for users if running live
-
-    // setTimeout(() => {
-    //   let totalLengthString = "";
-    //   totalLengthString = Math.round(4 * data.duration + 15) + " minutes";
-    //   log(
-    //     "<strong>DO NOT REFRESH OR LEAVE THE PAGE! If you do, it may terminate the task for your team members and you will not be compensated.</strong>"
-    //   );
-    //   log(
-    //     "You will receive the bonus pay at the stated hourly rate only if you<strong> fill out all survey questions and complete all rounds.</strong>"
-    //   );
-    //   log(
-    //     "The entire HIT will take no more than " + totalLengthString + " total."
-    //   );
-    //   log("<br><strong>Task:</strong>");
-    //   log(data.task);
-    //   log("<br><strong>Directions:</strong>");
-    //   log(
-    //     "1. Check out the link above and collaborate with your team members in the chat room to develop a text advertisement<br>" +
-    //       "2. The ad must be no more than <strong>30 characters long</strong>. <br>" +
-    //       "3. Instructions will be given for submitting the team's final product. <br>" +
-    //       "4. You have " +
-    //       textifyTime(data.duration) +
-    //       " to complete this round. <br>" +
-    //       "5. Your final advertisement will appear online. <strong>The more successful it is, the larger the " +
-    //       "bonus each team member will receive.</strong>"
-    //   );
-    //   log("<br><strong>Example:</strong>");
-    //   log(
-    //     "Text advertisements for 'Renaissance Golf Club': <br>\
-    //             <ul style='list-style-type:disc'> \
-    //               <li><strong>An empowering modern club</strong><br></li> \
-    //               <li><strong>A private club with reach</strong><br></li> \
-    //               <li><strong>Don't Wait. Discover Renaissance Today</strong></li> \
-    //             </ul><br>"
-    //   );
-    // }, 500);
 
     setTimeout(() => {
       for (member of data.team) {
