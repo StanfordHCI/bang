@@ -336,7 +336,6 @@ class Batch extends React.Component {
           </div>
           <div className='chat__text-field' style={{flexDirection: 'column'}}>
             <input
-              disabled={batch.status === 'waiting'}
               className='chat__field-input'
               value={this.state.message}
               type='text'
