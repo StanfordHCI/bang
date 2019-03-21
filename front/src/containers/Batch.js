@@ -9,8 +9,6 @@ import MidSurveyForm from './MidSurveyForm'
 import PostSurveyForm from './PostSurveyForm'
 import {history} from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
-import Autosuggest from 'react-autosuggest';
-
 
 const MAX_LENGTH = 240;
 
