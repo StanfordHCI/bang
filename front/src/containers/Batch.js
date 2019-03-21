@@ -146,7 +146,7 @@ class Batch extends React.Component {
 
     if (e.keyCode === 13 || e.keyCode === 32) {
       const message = this.state.message;
-      const index = message ? message.lastIndexOf(' ') : -1;
+      const index = message.lastIndexOf(' ');
       let currentTerm;
       if (index > - 1) {
         currentTerm = message.slice(index, message.length);
