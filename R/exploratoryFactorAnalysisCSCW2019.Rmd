@@ -1,7 +1,9 @@
 ---
-title: "Factor analysis: n==2""
-output: html_document
+title: 'Factor analysis: n==2'
 fig_width: 3.5
+output:
+  pdf_document: default
+  html_document: default
 fig_caption: yes
 ---
 
@@ -142,7 +144,7 @@ Eigenvalues = a mathematical representation of the variance accounted for by tha
 # Checking parametric assumptions necessary for EFA and PCA: 
 1. Variables: because EFA + PCA group variables into factors/components, only using 5 variables for example, doesn't allow us to create clusters easily. At least 10 variables are recommended. (CHECK)
 2. Types of variables: interval or ration (CHECK)
-3. Sample size 300 + generally agreed upon as best (CHECK - we have 378 observations w/ dyads, but this is including all rounds) 
+3. Sample size 300 + generally agreed upon as best (CHECK - we have 666 observations w/ dyads, but this is including all rounds) 
 4. Normal data screening: 
 - Screen, accuracy, missing/outliers (CHECK) 
 - Assumptions: addivity, linearity, normality, homogeneity and homoscedasticity (CHECK - see below code chunk, homogeneity is of partial concern)
@@ -168,7 +170,7 @@ fake = lm(random~., data = data)
 standardized = rstudent(fake)
 fitted = scale(fake$fitted.values)
 hist(standardized)
-# Roughly normal distribution 
+# Some concerns about normality, left skewed. 
 
 # Linearity 
 qqnorm(standardized)
@@ -230,7 +232,10 @@ print(sum(parallel$fa.values > .7)) # New Kaiser criterion
 #data.fa1
 #data.fa5 <- factanal(data, factors = 2, rotation = "oblimin", scores = "regression")
 #head(data.fa5$scores)
-# Lots of output / analysis if there were more than 1 factor
+# Lots of output / analysis if there were more than 1 factor... But there isn't... 
+
+data.fa1 <- factanal(data, factors = 1, fm = "ml")
+data.fa1
 ```
 
 # Is our solution / model adequate?  
@@ -255,15 +260,29 @@ psych::alpha(data)
 # Raw_alpha is 0.99, which is very good. 
 ```
 
-## Theory: 
+## Theory: what do the factors mean? 
+- Traditionally, here is where we would look at question themes and give the factors a label. But, because we only have one factor this step isn't possible right now... 
+
+# Principal component analysis to look at importance of components: 
 
 ```{r}
+# Pricipal Components Analysis
+# entering raw data and extracting PCs 
+# from the correlation matrix 
+fit <- princomp(data, cor=TRUE)
+summary(fit) # print variance accounted for 
+loadings(fit) # pc loadings 
+plot(fit,type="lines") # scree plot 
+fit$scores # the principal components
+biplot(fit)
 
+# Varimax Rotated Principal Components
+# retaining 5 components 
+fit <- principal(data, nfactors=1, rotate="varimax")
+fit # print results
 ```
 
-
-## Adequacy test: 
-
+# Taken together, one component is sufficient. 
 
 
 
