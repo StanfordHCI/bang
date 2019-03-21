@@ -146,7 +146,7 @@ class Batch extends React.Component {
 
     if (e.keyCode === 13 || e.keyCode === 32) {
       const message = this.state.message;
-      const index = message.lastIndexOf(' ');
+      const index = message ? message.lastIndexOf(' ') : -1;
       let currentTerm;
       if (index > - 1) {
         currentTerm = message.slice(index, message.length);
@@ -197,7 +197,7 @@ class Batch extends React.Component {
 
     if (e.keyCode === 13) {
       newMessage = newMessage.replace(new RegExp(user.realNick, "ig"), user.fakeNick)
-      this.setState({message: ''});
+      this.setState({message: '', autoNames: []});
       sendMessage({
         message: newMessage,
         nickname: batch.status === 'active' ? user.fakeNick : user.realNick,
@@ -205,7 +205,7 @@ class Batch extends React.Component {
       })
     }
     if (e.keyCode === 32) {
-      this.setState({message: newMessage});
+      this.setState({message: newMessage, autoNames: []});
     }
   }
 
@@ -217,10 +217,10 @@ class Batch extends React.Component {
     }
     const message = event.target.value;
     let newMessage = message;
-    const index = message.lastIndexOf(' ');
+    const index = message.lastIndexOf(' ')
     let currentTerm;
     if (index > - 1) {
-      currentTerm = message.slice(index, message.length);
+      currentTerm = message.slice(index + 1, message.length);
     } else {
       currentTerm = message;
     }
@@ -259,6 +259,18 @@ class Batch extends React.Component {
     }
 
     this.setState({message: newMessage})
+  }
+
+
+  handleChooseName = (name) => {
+    const index = this.state.message.lastIndexOf(' ')
+    let newMessage;
+    if (index > - 1) {
+      newMessage = this.state.message.slice(0, index + 1) + name;
+    } else {
+      newMessage = name;
+    }
+    this.setState({message: newMessage, autoNames: []})
   }
 
   renderChat() {
@@ -324,24 +336,25 @@ class Batch extends React.Component {
               </div>
             </div>
           </div>
-          <div className='chat__text-field'>
-            {/*<input
+          <div className='chat__text-field' style={{flexDirection: 'column'}}>
+            <input
               disabled={batch.status === 'waiting'}
               className='chat__field-input'
               value={this.state.message}
               type='text'
               onChange={this.handleType}
               onKeyDown={this.handleSubmit}
-            />*/}
-            <Autosuggest
-              style={{width: '100%'}}
-              suggestions={this.state.autoNames}
-              renderSuggestion={sug => (<div>{sug}</div>)}
-              inputProps={inputProps}
-              onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
-              onSuggestionsClearRequested={this.onSuggestionsClearRequested}
-              getSuggestionValue={sug => sug}
             />
+            {this.state.autoNames.length > 0 &&
+            <div className="autocompl">
+              {this.state.autoNames.map(item => {
+
+                return (<div onClick={() => this.handleChooseName(item)}
+                  className="autocompl-row">{item}
+                  </div>)
+              })}
+            </div>
+            }
           </div>
           {this.state.message.length > MAX_LENGTH &&
           <p className='chat__error'>Message is too long (max length: {MAX_LENGTH} symbols)</p>}
@@ -349,17 +362,6 @@ class Batch extends React.Component {
       </div>
     )
   }
-
-  onSuggestionsFetchRequested = ({ value }) => {
-    console.log(1, this.state.autoNames)
-  };
-
-  onSuggestionsClearRequested = () => {
-    console.log(2)
-    this.setState({
-      autoNames: []
-    });
-  };
 
   renderWaitingStage() {
     return (<div>
