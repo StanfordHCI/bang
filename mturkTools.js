@@ -820,9 +820,9 @@ const checkQualsRecursive = (
   });
 };
 
-// // workOnActiveHITs(console.log);
-// unassignQuals(
-//   "A2UU4THI93NYGH",
-//   quals.willBang,
-//   "You asked to be removed from our notification list."
-// );
+// workOnActiveHITs(console.log);
+unassignQuals(
+  "AP7BOM5KUH8KV",
+  quals.willBang,
+  "You asked to be removed from our notification list."
+);

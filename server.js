@@ -7,7 +7,7 @@ const runningLocal = process.env.RUNNING_LOCAL === "TRUE";
 const runningLive = process.env.RUNNING_LIVE === "TRUE"; //ONLY CHANGE ON SERVER
 const teamSize = parseInt(process.env.TEAM_SIZE);
 const roundMinutes = parseFloat(process.env.ROUND_MINUTES);
-let taskURL = args.url || process.env.TASK_URL;
+const taskURL = args.url || process.env.TASK_URL;
 
 //Parameters for waiting qualifications
 const secondsToWait = 20; //number of seconds users must have been on pretask to meet qualification (e.g. 120)
@@ -423,13 +423,12 @@ function updateUserInDB(user, field, value) {
     err =>
       console.log(
         err
-          ? chalk.red("Err recording ") + field + ": " + err
-          : "Updated " +
-              field +
-              " for " +
-              user.mturkId +
-              " " +
-              JSON.stringify(value, null, 2)
+          ? `${chalk.red("Err recording ")} ${field}: ${err}`
+          : `Updated ${field} for ${user.mturkId} ${JSON.stringify(
+              value,
+              null,
+              2
+            )}`
       )
   );
 }
@@ -729,8 +728,7 @@ app.use(express.static("public"));
 Object.keys(io.sockets.sockets).forEach(socketID => {
   console.log(socketID);
   if (userPool.every(user => user.id !== socketID)) {
-    console.log("Removing dead socket: " + socketID);
-    console.log("SOCKET DISCONNECT IN LEFTOVER USER");
+    console.log("Removing leftover socket: " + socketID);
     io.in(socketID).emit("get IDs", "broken");
     // io.in(socketID).disconnect(true)
   }
@@ -978,8 +976,6 @@ io.on("connection", socket => {
             //take the 1st teamssize **2 users and add them
             ioEmitById(user.mturkId, "echo", "add user", socket, user);
             ioEmitById(user.mturkId, "initiate experiment", null, socket, user);
-            // io.in(user.mturkId).emit("echo", "add user");
-            // io.in(user.mturkId).emit('initiate experiment');
           } else {
             //else emit finish
             console.log("EMIT FINISH TO EXTRA ACTIVE WORKER");
@@ -1237,7 +1233,6 @@ io.on("connection", socket => {
         .filter(f => f.room === user.room)
         .forEach(f => {
           socket.broadcast.to(f.mturkId).emit("new message", {
-            // TODO
             username: idToAlias(f, String(socket.mturkId)),
             message: idToAlias(f, cleanMessage)
           });
@@ -1294,9 +1289,6 @@ io.on("connection", socket => {
       else mturk.setAssignmentsPending(getUsersConnected().length);
     }
 
-    // if (!users.every(user => socket.id !== user.id)) {//socket id is found in users
-    //newMessage('has left the chatroom')
-
     if (
       !users.find(function(element) {
         return element.mturkId === socket.mturkId;
@@ -1311,6 +1303,9 @@ io.on("connection", socket => {
       // update DB with change
       updateUserInDB(user, "connected", false);
       console.log(socket.username + ": " + user.mturkId + " HAS LEFT");
+
+      runReady();
+
       // if (!experimentOver && !debugMode) {
       //     mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our" +
       //         " HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com"
@@ -1367,30 +1362,27 @@ io.on("connection", socket => {
       }
       if (!suddenDeath && !userAcquisitionStage) {
         // sets users to ready when they disconnect
-        user.ready = true; // TODO: remove user from users
+        user.ready = true;
       }
     });
   });
 
   socket.on("ready-to-all", () => {
-    console.log("god is ready".rainbow);
+    console.log(chalk.red.inverse("god is ready"));
     users
       .filter(user => !user.ready)
-      .forEach(
-        user => ioEmitById(socket.mturkId, "echo", "ready", socket, user)
-        // io.in(socket.mturkId).emit('echo', 'ready')
+      .forEach(user =>
+        ioEmitById(socket.mturkId, "echo", "ready", socket, user)
       );
-    //io.sockets.emit('echo','ready')
   });
 
   socket.on("active-to-all", () => {
-    console.log("god is active".rainbow);
+    console.log(chalk.red.inverse("god is active"));
     ioSocketsEmit("echo", "active");
-    // io.sockets.emit('echo', 'active');
   });
 
   socket.on("notify-more", () => {
-    console.log("god wants more humans".rainbow);
+    console.log(chalk.red.inverse("god wants more humans"));
     let HITId = mturk.returnCurrentHIT();
     // let HITId = process.argv[2];
     let subject =
@@ -1434,7 +1426,9 @@ io.on("connection", socket => {
     });
   });
 
-  socket.on("kill-all", () => {
+  socket.on("kill-all", killAll);
+
+  function killAll() {
     console.log(chalk.red("Terminating all live clients."));
     users.forEach(() => updateUserInDB(socket, "bonus", currentBonus()));
     ioSocketsEmit("finished", {
@@ -1445,8 +1439,7 @@ io.on("connection", socket => {
       assignmentId: "",
       crashed: false
     });
-  });
-
+  }
   socket.on("next event", () => {
     useUser(socket, user => {
       let currentEvent = user.currentEvent;
@@ -1475,9 +1468,6 @@ io.on("connection", socket => {
         );
         taskStartTime = getSecondsPassed();
       } else if (eventSchedule[currentEvent] === "ready") {
-        if (starterSurveyOn && timeCheckOn) {
-          recordTime("starterSurvey");
-        }
         if (checkinOn) {
           ioEmitById(
             socket.mturkId,
@@ -1506,9 +1496,6 @@ io.on("connection", socket => {
         );
         ioEmitById(socket.mturkId, "echo", "ready", socket, user);
       } else if (eventSchedule[currentEvent] === "midSurvey") {
-        if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           socket.mturkId,
           "load",
@@ -1522,12 +1509,6 @@ io.on("connection", socket => {
           user
         );
       } else if (eventSchedule[currentEvent] === "midSurveyStatus") {
-        if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
-
         console.log("currentEvent === midSurveyStatus");
 
         let thisElement = "midSurveyStatusR" + currentRound.toString();
@@ -1545,13 +1526,6 @@ io.on("connection", socket => {
           user
         );
       } else if (eventSchedule[currentEvent] === "creativeSurvey") {
-        if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           socket.mturkId,
           "load",
@@ -1565,15 +1539,6 @@ io.on("connection", socket => {
           user
         );
       } else if (eventSchedule[currentEvent] === "satisfactionSurvey") {
-        if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           socket.mturkId,
           "load",
@@ -1587,17 +1552,6 @@ io.on("connection", socket => {
           user
         );
       } else if (eventSchedule[currentEvent] === "conflictSurvey") {
-        if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           socket.mturkId,
           "load",
@@ -1611,19 +1565,6 @@ io.on("connection", socket => {
           user
         );
       } else if (eventSchedule[currentEvent] === "psychologicalSafety") {
-        if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey");
-        } else if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           socket.mturkId,
           "load",
@@ -1637,21 +1578,6 @@ io.on("connection", socket => {
           user
         );
       } else if (eventSchedule[currentEvent] === "teamfeedbackSurvey") {
-        if (psychologicalSafetyOn && timeCheckOn) {
-          recordTime("psychologicalSafetySurvey");
-        } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey");
-        } else if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           socket.mturkId,
           "load",
@@ -1666,23 +1592,6 @@ io.on("connection", socket => {
         );
       } else if (eventSchedule[currentEvent] === "blacklistSurvey") {
         experimentOver = true;
-        if (teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if (psychologicalSafetyOn && timeCheckOn) {
-          recordTime("psychologicalSafetySurvey");
-        } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey");
-        } else if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         console.log({
           element: "blacklistSurvey",
           questions: loadQuestions(blacklistFile, user),
@@ -1703,25 +1612,6 @@ io.on("connection", socket => {
         );
       } else if (eventSchedule[currentEvent] === "qFifteen") {
         experimentOver = true;
-        if (blacklistOn && timeCheckOn) {
-          recordTime("blacklistSurvey");
-        } else if (teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if (psychologicalSafetyOn && timeCheckOn) {
-          recordTime("psychologicalSafetySurvey");
-        } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey");
-        } else if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           user.mturkId,
           "load",
@@ -1736,27 +1626,6 @@ io.on("connection", socket => {
         );
       } else if (eventSchedule[currentEvent] === "qSixteen") {
         experimentOver = true;
-        if (qFifteenOn && timeCheckOn) {
-          recordTime("qFifteen");
-        } else if (blacklistOn && timeCheckOn) {
-          recordTime("blacklistSurvey");
-        } else if (teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if (psychologicalSafetyOn && timeCheckOn) {
-          recordTime("psychologicalSafetySurvey");
-        } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey");
-        } else if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           user.mturkId,
           "load",
@@ -1772,29 +1641,6 @@ io.on("connection", socket => {
       } else if (eventSchedule[currentEvent] === "postSurvey") {
         //Launch post survey
         experimentOver = true;
-        if (qSixteenOn && timeCheckOn) {
-          recordTime("qSixteen");
-        } else if (qFifteenOn && timeCheckOn) {
-          recordTime("qFifteen");
-        } else if (blacklistOn && timeCheckOn) {
-          recordTime("blacklistSurvey");
-        } else if (teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if (psychologicalSafetyOn && timeCheckOn) {
-          recordTime("psychologicalSafetySurvey");
-        } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey");
-        } else if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         let survey = postSurveyGenerator(user);
         user.results.manipulation = survey.correctAnswer;
         updateUserInDB(user, "results.manipulation", user.results.manipulation);
@@ -1812,31 +1658,6 @@ io.on("connection", socket => {
         );
       } else if (eventSchedule[currentEvent] === "demographicsSurvey") {
         experimentOver = true;
-        if (postSurveyOn && timeCheckOn) {
-          recordTime("postSurvey");
-        } else if (qSixteenOn && timeCheckOn) {
-          recordTime("qSixteen");
-        } else if (qFifteenOn && timeCheckOn) {
-          recordTime("qFifteen");
-        } else if (blacklistOn && timeCheckOn) {
-          recordTime("blacklistSurvey");
-        } else if (teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if (psychologicalSafetyOn && timeCheckOn) {
-          recordTime("psychologicalSafetySurvey");
-        } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey");
-        } else if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           user.mturkId,
           "load",
@@ -1866,34 +1687,6 @@ io.on("connection", socket => {
               )
           );
           batchCompleteUpdated = true;
-        }
-
-        if (demographicsSurveyOn && timeCheckOn) {
-          recordTime("demographicsSurvey");
-        } else if (postSurveyOn && timeCheckOn) {
-          recordTime("postSurvey");
-        } else if (qSixteenOn && timeCheckOn) {
-          recordTime("qSixteen");
-        } else if (qFifteenOn && timeCheckOn) {
-          recordTime("qFifteen");
-        } else if (blacklistOn && timeCheckOn) {
-          recordTime("blacklistSurvey");
-        } else if (teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if (psychologicalSafetyOn && timeCheckOn) {
-          recordTime("psychologicalSafetySurvey");
-        } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey");
-        } else if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
         }
 
         user.bonus = Number(mturk.bonusPrice);
@@ -1928,10 +1721,10 @@ io.on("connection", socket => {
   });
 
   // Main experiment run
-  socket.on("ready", function() {
+  socket.on("ready", runReady);
+
+  function runReady() {
     useUser(socket, user => {
-      //waits until user ends up on correct link before adding user - repeated code, make function
-      // PK: what does this comment mean/ is it still relevant?
       user.ready = true;
       console.log(socket.username, "is ready");
 
@@ -1943,16 +1736,9 @@ io.on("connection", socket => {
         return;
       }
 
-      //can we move this into its own on.*** call //PK: still relevant?
-      console.log("all users ready -> starting experiment");
-
       treatmentNow =
         currentCondition === "treatment" && currentRound === experimentRound;
       const conditionRound = conditions[currentCondition][currentRound] - 1;
-
-      // secondReadyIndex = eventSchedule.indexOf("ready", eventSchedule.indexOf("ready") + 1)
-
-      console.log("user.rooms.length:", user.rooms.length);
 
       // Replaceing user with extraRound
       if (extraRoundOn && user.rooms.length === 1) {
@@ -2064,11 +1850,6 @@ io.on("connection", socket => {
             u
           ); //rounds are 0 indexed
         } else {
-          // Dynamically generate teammate names
-          // even if teamSize = 1 for testing, this still works
-          // users.forEach(u => {
-          //   console.log(u.id, u.room)
-          // })
           let teamMates = u.friends.filter(friend => {
             return (
               users.byMturkId(friend.mturkId) &&
@@ -2082,6 +1863,12 @@ io.on("connection", socket => {
             teamMates.length,
             u.friends_history
           );
+
+          if (team_Aliases === false) {
+            killAll();
+            console.log(chalk.red.inverse("Friend list failure."));
+          }
+
           user.friends_history = u.friends_history.concat(team_Aliases);
           for (i = 0; i < teamMates.length; i++) {
             if (treatmentNow) {
@@ -2199,9 +1986,8 @@ io.on("connection", socket => {
       taskSteps.forEach(step => {
         setTimeout(() => {
           if (step.message) {
-            console.log(chalk.red.inverse("Task step:"), step.message);
+            console.log(chalk.inverse(" Task step "), step.message);
             ioSocketsEmit("message clients", step.message);
-            // ioEmitById(user.mturkId, "message clients", step.message)
           }
           if (typeof step.action === "function") step.action();
         }, step.time * roundMinutes * 60 * 1000);
@@ -2260,7 +2046,7 @@ io.on("connection", socket => {
         }, 1000 * 60 * checkinIntervalMinutes);
       }
     });
-  });
+  }
 
   //if broken, tell users they're done and disconnect their socket
   socket.on("broken", () => {
@@ -2275,7 +2061,6 @@ io.on("connection", socket => {
     );
   });
 
-  // Starter task
   socket.on("starterSurveySubmit", data => {
     useUser(socket, user => {
       user.results.starterCheck = responseToJSON(data);
@@ -2381,8 +2166,6 @@ io.on("connection", socket => {
 
   socket.on("demographicsSurveySubmit", data => {
     useUser(socket, user => {
-      console.log("Demographics Survey");
-      console.log(responseToJSON(data));
       user.results.demographicsCheck = responseToJSON(data);
       updateUserInDB(
         user,
@@ -2607,21 +2390,6 @@ function replicate(arr, times) {
   for (let i = 0; i < rl; i++) res[i] = arr[i % al];
   return res;
 }
-
-//PK: we call this fxn many times, is it necessary?
-//PK: why do we need to record the length of each task? if this is for bonusing, can we avoid calling this
-// fxn so many times and just do once when the exp ends?
-// records length of each task
-const recordTime = event => {
-  taskEndTime = getSecondsPassed();
-  taskTime = taskStartTime - taskEndTime;
-  db.time.insert({ [event]: taskTime }, (err, timeAdded) => {
-    if (err)
-      console.log("There's a problem adding", event, "time to the DB: ", err);
-    else if (timeAdded) console.log(event, "time added to the DB");
-  });
-  taskStartTime = getSecondsPassed();
-};
 
 const getTeamMembers = user => {
   // Makes a list of teams this user has worked with
