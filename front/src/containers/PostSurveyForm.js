@@ -61,7 +61,8 @@ class PostSurveyForm extends React.Component {
               <Col>
                 <div className='form__panel'>
                   <div className='form__form-group'>
-                    <label className='form__form-group-label'>Please, select these 2 rounds:</label>
+                    <label className='form__form-group-label'>You met with the same partner in two of the previous four rounds.
+                      How do you think, in what two rounds you worked with the same person?</label>
                     <div className='form__form-group-field'>
                       <Field
                         name='mainQuestion.expRound1'
@@ -78,7 +79,7 @@ class PostSurveyForm extends React.Component {
                     </div>
                   </div>
                   <div className='form__form-group'>
-                    <label className='form__form-group-label'>Partners you wanna choose:</label>
+                    <label className='form__form-group-label'>What partners do you prefer to work with in the future?</label>
                     <div className='form__form-group-field'>
                       <Field
                         name='mainQuestion.partners'
