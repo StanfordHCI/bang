@@ -81,8 +81,7 @@ module.exports = {
       return {username: adjective + animal, parts: [adjective, animal]}
     } else {
       // friends history store previously seen names by the user
-      // we want to avoid animal names
-
+      // we want to avoid same animal names
       // remove previously seen animal names
       let animals = randomAnimal.slice();
       if (teamSize <= animals.length - friends_history.length) { //make sure there's enough adjectives
