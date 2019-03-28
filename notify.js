@@ -1,4 +1,4 @@
-const mturk = require("./mturkTools");
+chiddenonst mturk = require("./mturkTools");
 const fs = require("fs");
 const Datastore = require("nedb");
 

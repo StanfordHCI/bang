@@ -178,6 +178,8 @@ $(function() {
     URLvars.assignmentId = "test";
     URLvars.turkSubmitTo = "b01.dmorina.com";
     URLvars.workerId = sessionStartTime;
+  } else if (URL.includes("502")) {
+    URL.vars.assignmentId = "ASSIGNMENT_ID_NOT_AVAILABLE";
   } else {
     URLvars = getUrlVars(location.href);
   }
@@ -207,6 +209,7 @@ $(function() {
       });
       addChatMessage({
         username: botUsername,
+        /* TODO: change message here that will inform people about compensation*/
         message:
           "You must be able to stay for the duration of this task, around 1 hour. If you cannot stay for the entire time, please leave now. You will not be compensated if you leave preemptively. As a reminder, please do not refresh or close the page."
       });
