@@ -79,7 +79,9 @@ function renderChats(batch) {
                     a => a.room == currentRoom && a.round == currentRound
                   );
                 //.filter(a => a.message[0] === "!");
-                ads.forEach(m => console.log("  ", m.message));
+                ads.forEach(m =>
+                  console.log(`${m.userID.substring(0, 5)}  ${m.message}`)
+                );
                 let chosenAd = ads[ads.length - 1];
                 ad = {
                   batch: chosenAd.batch,
@@ -455,14 +457,17 @@ let totalCount = 0;
 // manipulationCheck(1537292004662)
 // useCompleteBatches(manipulationCheck)
 
-// useCompleteBatches(manipulationFix);
+// useCompleteBatches(manipulationFix)
 
 // Download data from your folder and save it into local batch archives
-downloadData("b02", saveDBArchives);
+// downloadData("b02", saveDBArchives);
 
 //Save from local folder
 /* saveAllData() */
 // renderChats(1550688611521)
-// useEachBatchDB(renderAds)
 /* retroactiveBonus() */
 /* retroactivelyFixRooms() */
+
+//Rendering for various things
+// useCompleteBatches(renderChats);
+// useCompleteBatches(renderAds);
