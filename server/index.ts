@@ -1,18 +1,17 @@
-import {Chat} from "./models/chats";
-
+require('dotenv').config({path: './.env'});
 const path = require('path');
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');const mongoose = require('mongoose');
-const PORT = process.env.PORT|| 3001;
+const PORT = process.env.PORT || 3001;
 const APP_ROOT = path.resolve(__dirname, '..');
 const logger = require('./services/logger');
-require('dotenv').config({path: './.env'});
 import {init, sendMessage, disconnect, activeCheck} from './controllers/users'
 import {joinBatch, loadBatch, receiveSurvey} from './controllers/batches'
 import {errorHandler} from './services/common'
 import {User} from './models/users'
 import {Batch} from './models/batches'
+import {Chat} from "./models/chats";
 const moment = require('moment')
 const cors = require('cors')
 const cron = require('node-cron');
