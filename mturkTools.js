@@ -821,8 +821,8 @@ const checkQualsRecursive = (
 };
 
 // workOnActiveHITs(console.log);
-unassignQuals(
-  "AP7BOM5KUH8KV",
-  quals.willBang,
-  "You asked to be removed from our notification list."
-);
+// unassignQuals(
+//   "AP7BOM5KUH8KV",
+//   quals.willBang,
+//   "You asked to be removed from our notification list."
+// );
