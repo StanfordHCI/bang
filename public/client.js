@@ -233,7 +233,7 @@ $(function() {
 
   let currentTeam = [];
 
-  document.title = "Ad writing task";
+  document.title = "Allocation task";
 
   // Implements notifications
   let notify = () => {

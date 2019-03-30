@@ -680,15 +680,15 @@ function launchBang(batchID, callback) {
   // HIT Parameters
 
   let bangParameters = {
-    Title: `Write online ads - bonus up to $${hourlyWage}/hour (${batchID})`,
-    Description: `Work in groups to write ads for new products. This task will take approximately ${Math.round(
+    Title: `Allocation task - bonus up to $${hourlyWage}/hour if completed (${batchID})`,
+    Description: `Work in groups to allocate funds. This task will take approximately ${Math.round(
       roundMinutes * numRounds + 15
     )} minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $${bonusPrice}.`,
     AssignmentDurationInSeconds: 60 * taskDuration, // 30 minutes?
     LifetimeInSeconds: 60 * timeActive, // short lifetime, deletes and reposts often
     Reward: String(basePrice),
     AutoApprovalDelayInSeconds: 60 * taskDuration,
-    Keywords: "ads, writing, copy editing, advertising",
+    Keywords: "allocation, group",
     MaxAssignments: numAssignments,
     QualificationRequirements: safeQuals,
     Question: externalHIT(taskURL)

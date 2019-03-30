@@ -40,7 +40,7 @@ const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitCha
 const starterSurveyOn = false;
 const midSurveyOn = runningLive;
 const midSurveyStatusOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
-const psychologicalSafetyOn = runningLive;
+const psychologicalSafetyOn = true;
 const creativeSurveyOn = false;
 const satisfactionSurveyOn = false;
 const conflictSurveyOn = false;
@@ -624,34 +624,31 @@ if (runExperimentNow) {
 }
 
 //Add more products
-let products = [
+let tasks = [
   {
-    name: "Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
-    url:
-      "https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw"
+    first: `To purchase a new computer system for the county government in order to hold local taxes constant.`,
+    second: `To purchase additional volumes for the community's library system.`,
+    third: `To create a tourist bureau to develop advertising and other methods of attracting tourism into the community.`
   },
   {
-    name: "Stool Nº1",
-    url: "https://www.kickstarter.com/projects/390812913/stool-no1"
+    first: `To purchase a new computer system for the county government in order to hold local taxes constant.`,
+    second: `To establish a community arts program featuring art, music, and dance programs for children and adults.`,
+    third: `To establish an additional shelter for the homeless in the community.`
   },
   {
-    name: "LetB Color - take a look at time in different ways",
-    url:
-      "https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways"
+    first: `To purchase job training services for homeless in the community.`,
+    second: `To purchase additional volumes for the community's library system.`,
+    third: `To purchase art for display in the community's art gallery.`
   },
   {
-    name: "FLECTR 360 OMNI – cycling at night with full 360° visibility",
-    url: "https://www.kickstarter.com/projects/outsider-team/flectr-360-omni"
-  },
-  {
-    name: "The Ollie Chair: Shape-Shifting Seating",
-    url:
-      "https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating"
+    first: `To establish a community arts program featuring art, music, and dance programs for children and adults.`,
+    second: `To purchase art for display in the community's art gallery.`,
+    third: `To create a veterans support center to help veterans find jobs.`
   }
 ];
 
 if (randomProductOn) {
-  products = shuffle(products);
+  tasks = shuffle(tasks);
 }
 
 let users = []; //the main local user storage
@@ -756,7 +753,7 @@ db.batch.insert(
     format: conditions[currentCondition],
     experimentRound: experimentRound,
     numRounds: numRounds,
-    products: products,
+    products: tasks,
     teamSize: teamSize
   },
   (err, usersAdded) => {
@@ -1383,8 +1380,7 @@ io.on("connection", socket => {
     console.log(chalk.red.inverse("god wants more humans"));
     let HITId = mturk.returnCurrentHIT();
     // let HITId = process.argv[2];
-    let subject =
-      "We launched our new ad writing HIT. Join now, spaces are limited.";
+    let subject = "We launched a new group HIT. Join now, spaces are limited.";
     console.log(HITId);
     let URL = "";
     mturk.getHITURL(HITId, function(url) {
@@ -1810,16 +1806,15 @@ io.on("connection", socket => {
 
       //Notify user 'initiate round' and send task.
 
-      let currentProduct = products[currentRound];
+      let currentTask = tasks[currentRound];
 
-      console.log("Current Product:", currentProduct);
+      console.log("Current Task:", currentTask);
 
-      let taskText =
-        "Design text advertisement for <strong><a href='" +
-        currentProduct.url +
-        "' target='_blank'>" +
-        currentProduct.name +
-        "</a></strong>!";
+      let taskText = `<br><ol><li><strong>${
+        currentTask.first
+      }</strong></li><li><strong>${
+        currentTask.second
+      }</strong></li><li><strong>${currentTask.third}</strong></li></ol><br>`;
 
       experimentStarted = true;
 
@@ -1905,7 +1900,7 @@ io.on("connection", socket => {
         }
       });
 
-      console.log("Issued task for:", currentProduct.name);
+      console.log("Issued task for:", currentTask.name);
       console.log(
         "Started round",
         currentRound,
@@ -1933,55 +1928,52 @@ io.on("connection", socket => {
             roundMinutes * numRounds + 15
           )} minutes total.`
         },
-        { time: 0.005, message: `<strong>Task:</strong><br>${taskText}` },
         {
           time: 0.005,
-          message: `<strong>Directions:</strong><br>1. Check out the link above and collaborate with your team members in the chat room to develop a text advertisement<br>2. The ad must be no more than <strong>30 characters long</strong>. <br>3. Instructions will be given for submitting the team's final product. <br>4. You have ${textifyTime(
-            roundMinutes
-          )} to complete this round. <br>5. Your final advertisement will appear online. <strong>The more successful it is, the larger the bonus each team member will receive.</strong>`
+          message: `<strong>Task:</strong> You must evaluate competing requests for funding and make judgements about their relative merit. Many programs have merit, but limited resources require that you select the programs that you prefer to fund. You have discretionary funds available, and a number of projects are requesting access to these funds. <br>Your group’s job is to select those that should receive support. <br>Your personal goal in selecting projects for funding is to choose those programs that agree with your personal values.`
         },
+        {
+          time: 0.006,
+          message: `<br>You have <strong>$500,000 total to allocate</strong> from this fund. <br>Proposals received from various organizations for projects are listed below. Each project is in need of $500,000 but can benefit from any contribution that you might make. The greater the contribution that you make to a particular project, the more likely it is that the chosen project will succeed.`
+        },
+
         {
           time: 0.007,
-          message: `<strong>Example:</strong><br>Text advertisements for 'Renaissance Golf Club': <br><ul style='list-style-type:disc'><li><strong>An empowering modern club</strong><br></li><li><strong>A private club with reach</strong><br></li><li><strong>Don't Wait. Discover Renaissance Today</strong></li></ul><br>`
+          message: `<br><strong>Proposed projects:</strong><br>${taskText}`
         },
         {
-          time: 0.01,
-          message:
-            "<br><strong>HIT bot: Take a minute to review all instructions above.</strong>"
+          time: 0.008,
+          message: `You have ${textifyTime(
+            roundMinutes
+          )} to complete this decision as a group.<br>After everyone is done reading, begin discussing with your group members to agree on a final allocation. <strong>When prompted, enter the final choices and the reasons behind them.</strong><br>There is, of course, no optimal allocation. However, your group’s performance will be evaluated by judges based on how persuasive your arguments for the allocation are.
+          `
         },
         {
-          time: 0.15,
-          message:
-            "<br><strong>HIT bot: Say hello to your team members! Begin brainstorming ideas together.</strong>"
-        },
-        {
-          time: 0.4,
-          message:
-            "<br><strong>HIT bot: As a team, discuss and narrow down your ideas. Collaborate to create the most compelling text ad.</strong>"
+          time: 0.5,
+          message: `<br><strong>You're about half way through this round.</strong><br> As a reminder, you're deciding on how to allocate $500,000 between the following initiatives based on which programs agree with your personal values:<br>${taskText}`
         },
         {
           time: 0.85,
           message:
-            "<br><strong>HIT bot: Polish your team's favorite ad and get ready to submit.</strong>"
+            "<br><strong>Get ready to submit your group decision.</strong>"
         },
         {
-          time: 0.87,
-          message:
-            "<br>Remember, your final ad can't be more than <strong>maximum 30 characters long</strong>."
+          time: 0.855,
+          message: `<br><strong>The programs you are considering are:<br>${taskText}</strong>`
         },
         {
-          time: 0.9,
+          time: 0.86,
           message:
-            "<br><strong>HIT bot: Submit the team's final ad by sending a message with a '!' directly in front of the text ad. Only the final submission with a '!' will be counted.</strong>"
+            "<br><strong>Submit the team's final choices by sending a message for each program starting with its number in the list above as well as the amount of money allocated and the main reason. Use this format:<br><code>1: $$$ reason</code><br><code>2: $$$ reason</code><br><code>3: $$$ reason</code></strong><br><br>"
         },
         {
           time: 0.95,
-          message: "<br><strong>HIT bot: Last chance to submit!</strong>"
+          message: "<br><strong>Last chance to submit!</strong>"
         },
         {
           time: 0.96,
           message:
-            "<br><strong>HIT bot: This round is ending soon. Time to say goodbye to your teammates!</strong>"
+            "<br><strong>This round is ending soon. Time to say goodbye to your teammates!</strong>"
         }
       ];
 
