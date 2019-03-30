@@ -27,8 +27,10 @@ class Accept extends React.PureComponent {
                     <form
                       id="submitForm"
                       method="POST"
-                      action={"https://www.mturk.com/mturk/externalSubmit/?assignmentId=" + user.assignmentId}
+                      action="https://www.mturk.com/mturk/externalSubmit/"
                     >
+                      <input type='hidden' value={user.assignmentId} name='assignmentId' id='assignmentId'/>
+                      <input type='hidden' value='WorkerNotification' name='submitCode' id='submitCode'/>
                       <Button
                         className="btn btn-primary"
                         onClick={() => joinBang()}

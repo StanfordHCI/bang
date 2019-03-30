@@ -94,7 +94,7 @@ export const whoami = () => {
           }
         } else if (data.user.systemStatus ==='notbanged') {
           history.push('/notbanged');
-        } else if (data.user.systemStatus ==='hasbanged') {
+        } else {
           history.push('/hasbanged');
         }
       } else {
