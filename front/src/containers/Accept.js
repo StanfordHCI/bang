@@ -25,7 +25,8 @@ class Accept extends React.PureComponent {
                     you have completed that task. Space is limited and submitting this HIT does not guarantee you will be able to participate.</p>
                   <div id="Submit">
                     <form
-                      id="submitForm"
+                      name='mturk_form'
+                      id="mturk_form"
                       method="POST"
                       action="https://www.mturk.com/mturk/externalSubmit/"
                     >
