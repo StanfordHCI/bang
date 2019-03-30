@@ -492,7 +492,7 @@ if (runExperimentNow) {
       let URL = ``;
       mturk.getHITURL(HIT.HITId, function(url) {
         URL = url;
-        let message = `You’re invited to join our newly launched HIT on Mturk; there are limited spaces and it will be closed to new participants in about 15 minutes! \n\nCheck out the HIT here: ${URL} \n\nYou're receiving this message because you indicated that you'd like to be notified of our upcoming HIT during this time window. If you'd like to stop receiving notifications please email your MTurk ID to: scaledhumanity@gmail.com`;
+        let message = `You’re invited to join our newly launched HIT on Mturk; there are limited spaces and it will be closed to new participants in about 15 minutes! \n\nCheck out the HIT here: ${URL} \n\nIf the HIT is "unavailable", it likely means spaces have been filled. Don't worry, you'll be notified of the next time we upload a new HIT.\n\nYou're receiving this message because you indicated that you'd like to be notified of our upcoming HIT during this time window. If you'd like to stop receiving notifications please email your MTurk ID to: scaledhumanity@gmail.com`;
         console.log("message to willBangers", message);
         if (!URL) {
           throw "URL not defined";
@@ -1080,7 +1080,8 @@ io.on("connection", socket => {
           ? "We don't need you to work at this specific moment, but we may have " +
               "tasks for you soon. Please await further instructions from scaledhumanity@gmail.com."
           : "We have enough users on this task. Hit the button below and you will be compensated appropriately " +
-              "for your time. Thank you!"
+              "for your time. If you are interested in participating in a future task, we launch HITs frequently. " + 
+              "Thank you!"
       ); //PK: come back to this
       return;
     }
