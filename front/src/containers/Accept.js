@@ -22,8 +22,7 @@ class Accept extends React.PureComponent {
                   <Button
                     className="btn btn-primary"
                     onClick={() => joinBang()}
-                    type="submit"
-                    id="submitButton"
+                    type="button"
                   >
                     Join Bang
                   </Button>
