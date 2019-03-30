@@ -19,29 +19,14 @@ class Accept extends React.PureComponent {
             <Card>
               <CardBody>
                 <div className='card__title'>
-                  <p className='bold-text'>We are planning to run an ad writing task on during the following timeslots.
-                    The task takes approximately 40-50 minutes and if you stay for the whole task, we bonus to a rate of approximately $10.50 per hour.
-                    If you submit this HIT, you may be notified when we launch the task and may receive future notifications about our HITs until
-                    you have completed that task. Space is limited and submitting this HIT does not guarantee you will be able to participate.</p>
-                  <div id="Submit">
-                    <form
-                      name='mturk_form'
-                      id="mturk_form"
-                      method="POST"
-                      action="https://www.mturk.com/mturk/externalSubmit/"
-                    >
-                      <input type='hidden' value={user.assignmentId} name='assignmentId' id='assignmentId'/>
-                      <input type='hidden' value='WorkerNotification' name='submitCode' id='submitCode'/>
-                      <Button
-                        className="btn btn-primary"
-                        onClick={() => joinBang()}
-                        type="submit"
-                        id="submitButton"
-                      >
-                        Join Bang
-                      </Button>
-                    </form>
-                  </div>
+                  <Button
+                    className="btn btn-primary"
+                    onClick={() => joinBang()}
+                    type="submit"
+                    id="submitButton"
+                  >
+                    Join Bang
+                  </Button>
                 </div>
               </CardBody>
             </Card>

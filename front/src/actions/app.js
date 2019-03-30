@@ -147,6 +147,6 @@ export const joinBang = () => {
   return function (dispatch) {
     dispatch(setLoading(true))
     socket.emit('join-bang', {});
-    console.log('herererererererere')
+    window.location.href = 'https://bang-dev.deliveryweb.ru/accept/'
   }
 }
