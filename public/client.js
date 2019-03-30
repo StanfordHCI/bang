@@ -1,10 +1,8 @@
 let LeavingAlert = true;
 window.onbeforeunload = function() {
   if (LeavingAlert) {
-    console.log("Leaving is true");
     return "Leaving will stop this HIT for all users. Are you sure you want to leave?";
   } else {
-    console.log("Leaving is false");
     return null;
   }
 };
@@ -1039,23 +1037,6 @@ $(function() {
     // messagesSafe.innerHTML = '';
     $inputMessage.unbind("keydown");
     socket.emit("next event");
-  });
-
-  socket.on("timer", data => {
-    log(
-      "<strong>You'll be done with this round in about " +
-        textifyTime(data.time) +
-        ". Enter your final result now.</strong>"
-    );
-    log(
-      "Remember, your final ad can't be more than <strong>maximum 30 characters long</strong>."
-    );
-    log(
-      "To indicate your final result, start the line with an exclamation mark. We will not count it towards your character limit."
-    );
-    log(
-      "If you enter more than one line starting with an exclamation mark, we will only count the last one."
-    );
   });
 
   socket.on("echo", data => {

@@ -549,13 +549,14 @@ goodBatches = [
   1553179862174,
   1553180462276,
   1553181661900,
-  // 1553194261766,
   1553196062079,
   1553198462284,
   1553199661488,
   1553200861903,
   1553201461913
 ];
+
+// 1553194261766 an apparent faild batch
 
 // goodBatches.forEach(renderAds);
 goodBatches.forEach(generateAddsCSVRow);

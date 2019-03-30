@@ -37,10 +37,10 @@ const randomProductOn = true;
 
 const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
-const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
-const midSurveyOn = true;
+const midSurveyOn = runningLive;
 const midSurveyStatusOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
+const psychologicalSafetyOn = runningLive;
 const creativeSurveyOn = false;
 const satisfactionSurveyOn = false;
 const conflictSurveyOn = false;
@@ -51,10 +51,10 @@ const timeCheckOn = false; // tracks time user spends on task and updates paymen
 // how long each task is taking
 const requiredOn = runningLive;
 const checkinIntervalMinutes = roundMinutes / 3;
-const qFifteenOn = true;
-const qSixteenOn = true;
+const qFifteenOn = runningLive;
+const qSixteenOn = runningLive;
 const postSurveyOn = true;
-const demographicsSurveyOn = false;
+const demographicsSurveyOn = true;
 
 if (midSurveyStatusOn && teamSize != 4) {
   throw "Status survey only functions at team size 4";
@@ -145,11 +145,9 @@ const dem1 = {
   answers: [
     "Less than High School",
     "High school or equiv",
-    "Some college, no degree",
-    "Associate degree",
-    "Bachelors degree",
-    "Masters degree",
-    "Professional degree",
+    "Some college",
+    "Undergraduate degree",
+    "Graduate degree",
     "Doctorate"
   ],
   answerType: "radio",
@@ -184,7 +182,7 @@ const dem6 = {
     "White",
     "Other"
   ],
-  answerType: "checkbox",
+  answerType: "radio",
   textValue: true
 };
 
@@ -1080,7 +1078,7 @@ io.on("connection", socket => {
           ? "We don't need you to work at this specific moment, but we may have " +
               "tasks for you soon. Please await further instructions from scaledhumanity@gmail.com."
           : "We have enough users on this task. Hit the button below and you will be compensated appropriately " +
-              "for your time. If you are interested in participating in a future task, we launch HITs frequently. " + 
+              "for your time. If you are interested in participating in a future task, we launch HITs frequently. " +
               "Thank you!"
       ); //PK: come back to this
       return;
@@ -1305,8 +1303,6 @@ io.on("connection", socket => {
       updateUserInDB(user, "connected", false);
       console.log(socket.username + ": " + user.mturkId + " HAS LEFT");
 
-      runReady();
-
       // if (!experimentOver && !debugMode) {
       //     mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our" +
       //         " HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com"
@@ -1314,6 +1310,7 @@ io.on("connection", socket => {
       //         "\nAssignment ID: " + user.assignmentId + '\nHIT ID: ' + mturk.returnCurrentHIT())
       // }
       if (!experimentOver && !suddenDeath) {
+        runReady();
         // console.log("Sudden death is off, so we will not cancel the run")
       }
 
@@ -1968,6 +1965,11 @@ io.on("connection", socket => {
             "<br><strong>HIT bot: Polish your team's favorite ad and get ready to submit.</strong>"
         },
         {
+          time: 0.87,
+          message:
+            "<br>Remember, your final ad can't be more than <strong>maximum 30 characters long</strong>."
+        },
+        {
           time: 0.9,
           message:
             "<br><strong>HIT bot: Submit the team's final ad by sending a message with a '!' directly in front of the text ad. Only the final submission with a '!' will be counted.</strong>"
@@ -1994,46 +1996,31 @@ io.on("connection", socket => {
         }, step.time * roundMinutes * 60 * 1000);
       });
 
-      //Round warning
-      // make timers run in serial
+      //Done with round
       setTimeout(() => {
-        console.log("time warning", currentRound);
+        console.log("done with round", currentRound);
         users.forEach(user => {
           ioEmitById(
             user.mturkId,
-            "timer",
-            { time: roundMinutes * 0.2 },
+            "stop",
+            {
+              round: currentRound,
+              survey:
+                midSurveyOn ||
+                creativeSurveyOn ||
+                satisfactionSurveyOn ||
+                conflictSurveyOn ||
+                midSurveyStatusOn ||
+                teamfeedbackOn ||
+                psychologicalSafetyOn
+            },
             socket,
             user
           );
         });
-
-        //Done with round
-        setTimeout(() => {
-          console.log("done with round", currentRound);
-          users.forEach(user => {
-            ioEmitById(
-              user.mturkId,
-              "stop",
-              {
-                round: currentRound,
-                survey:
-                  midSurveyOn ||
-                  creativeSurveyOn ||
-                  satisfactionSurveyOn ||
-                  conflictSurveyOn ||
-                  midSurveyStatusOn ||
-                  teamfeedbackOn ||
-                  psychologicalSafetyOn
-              },
-              socket,
-              user
-            );
-          });
-          currentRound += 1; // guard to only do this when a round is actually done.
-          console.log(currentRound, "out of", numRounds);
-        }, 1000 * 60 * 0.2 * roundMinutes);
-      }, 1000 * 60 * 0.8 * roundMinutes);
+        currentRound += 1; // guard to only do this when a round is actually done.
+        console.log(currentRound, "out of", numRounds);
+      }, 1000 * 60 * roundMinutes);
 
       if (checkinOn) {
         let numPopups = 0;
@@ -2369,7 +2356,7 @@ function aliasToID(user, newString) {
   return newString;
 }
 
-//replaces other users IDs with user.friend alieses in string
+// replaces other users IDs with user.friend alieses in string
 function idToAlias(user, newString) {
   user.friends.forEach(friend => {
     let idRegEx = new RegExp(friend.mturkId, "g");
