@@ -5,6 +5,7 @@ import {errorHandler} from '../services/common'
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
 
+
 export const addBatch = async function (req, res) {
   try {
     const check = await Batch.findOne({status: 'waiting'}).select('_id') ;
@@ -39,16 +40,7 @@ export const addBatch = async function (req, res) {
       'This team has the capacity to sustain itself.',
       'This team has what it takes to endure in future performance episodes.'
     ]
-    /*const newBatch = {
-      teamSize: process.env.TEAM_SIZE,
-      users: [],
-      numRounds: 4,
-      format: [1, 2, 1, 3],
-      experimentRound: 1,
-      status: 'waiting',
-      tasks: [],
-      roundMinutes: process.env.ROUND_MINUTES
-    }*/
+
     const batch = await Batch.create(newBatch);
     const preChat = await Chat.create({batch: batch._id, messages: [
         {

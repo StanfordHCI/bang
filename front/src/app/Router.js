@@ -12,6 +12,8 @@ import TemplateInfo from '../containers/admin/TemplateInfo'
 import AddTemplate from '../containers/admin/AddTemplate'
 import TemplateList from '../containers/admin/TemplateList'
 import HasBanged from '../containers/HasBanged'
+import Accept from '../containers/Accept'
+
 import constants from 'Constants'
 
 const MainRouter = (props) => {
@@ -25,6 +27,7 @@ const MainRouter = (props) => {
       <main>
         <Switch>
           <Route exact path='/waiting' component={Waiting}/>
+          <Route exact path='/notbanged' component={Accept}/>
           <Route exact path='/batch' component={Batch}/>
           <Route exact path='/batches-add' component={AddBatch}/>
           <Route exact path='/templates-add' component={AddTemplate}/>

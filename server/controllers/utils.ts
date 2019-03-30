@@ -1,3 +1,64 @@
+require('dotenv').config({path: './.env'});
+const runningLive = process.env.NODE_ENV === "production";
+import * as AWS from "aws-sdk";
+AWS.config.accessKeyId = process.env.AWS_ID;
+AWS.config.secretAccessKey = process.env.AWS_KEY;
+AWS.config.region = "us-east-1";
+AWS.config.sslEnabled = true;
+let endpoint = runningLive ? "https://mturk-requester-sandbox.us-east-1.amazonaws.com" :
+  "https://mturk-requester-sandbox.us-east-1.amazonaws.com"; //should be changed
+let submitTo = runningLive ? "https://workersandbox.mturk.com" : "https://workersandbox.mturk.com"; //should be changed
+const mturk = new AWS.MTurk({ endpoint: endpoint });
+
+
+
+const taskURL = runningLive ? 'https://bang-dev.deliveryweb.ru/' : 'https://bang-dev.deliveryweb.ru/';
+const quals = {
+  notUSA: {
+    QualificationTypeId: "00000000000000000071",
+    LocaleValues: [{ Country: "US" }],
+    Comparator: "NotIn",
+    ActionsGuarded: "DiscoverPreviewAndAccept"
+  },
+  onlyUSA: {
+    QualificationTypeId: "00000000000000000071",
+    LocaleValues: [{ Country: "US" }],
+    Comparator: "In",
+    ActionsGuarded: "DiscoverPreviewAndAccept"
+  },
+  hitsAccepted: (k: number) => {
+    return {
+      QualificationTypeId: "00000000000000000040",
+      Comparator: "GreaterThan",
+      IntegerValues: [k],
+      RequiredToPreview: true
+    };
+  },
+  hasBanged: {
+    //MEW: useful to filter out people who have already done our HIT.
+    QualificationTypeId: runningLive
+      ? "33CI7FQ96AL58DPIE8NY2KTI5SF7OH" //hardcoded ids, dangerous logic
+      : "33CI7FQ96AL58DPIE8NY2KTI5SF7OH",//hardcoded ids, dangerous logic
+    Comparator: "DoesNotExist",
+    ActionsGuarded: "DiscoverPreviewAndAccept"
+  },
+ /* willBang: {
+    //MEW: useful to filter people who are scheduled to do our HIT.
+    QualificationTypeId: runningLive
+      ? "3SR1M7GDJW59K8YBYD1L5YS55VPA25" //hardcoded ids, dangerous logic
+      : "3SR1M7GDJW59K8YBYD1L5YS55VPA25", //hardcoded ids, dangerous logic
+    Comparator: "Exists",
+    ActionsGuarded: "DiscoverPreviewAndAccept"
+  }*/
+};
+
+const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(500), quals.hasBanged];
+const qualsForTesting = [];
+const scheduleQuals = [
+  quals.onlyUSA,
+  quals.hitsAccepted(0),];
+const safeQuals = runningLive ? qualsForLive : qualsForTesting;
+
 export const clearRoom = function (room, io) {
   io.of('/').in(room).clients((error, socketIds) => {
     if (error) throw error;
@@ -9,28 +70,6 @@ const chooseOne = <T>(list: T[]): T => {
   return list[Math.floor(Math.random() * list.length)];
 };
 
-const teamChecker = roundTeams => {
-  let collaborators = {};
-  roundTeams.forEach(teams => {
-    Object.entries(teams).forEach(([teamName, team]: [string, string[]]) => {
-      team.forEach((person: string) => {
-        let others = team.filter(member => member != person);
-        if (person in collaborators) {
-          others.forEach(member => {
-            if (collaborators[person].includes(member)) {
-              return false;
-            }
-          });
-        } else {
-          collaborators[person] = [];
-        } // make sure there's a array for that person
-        collaborators[person].push(others); // add in collaborators form that team
-      });
-    });
-  });
-  return true;
-};
-
 export const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 export const randomAnimal = "Bison Eagle Pony Moose Deer Duck Rabbit Spider Wolf Lion Snake Shark Bird Bear Fish Horse Badger Marten Otter Lynx".split(
   " "
@@ -38,97 +77,117 @@ export const randomAnimal = "Bison Eagle Pony Moose Deer Duck Rabbit Spider Wolf
 const randomAdjective = "new small young little likely nice cultured snappy spry conventional".split(
   " "
 );
-let nameCount = 2;
 
-const createTeams = (teamSize: number, numRounds: number, people: string[]) => {
-  //MEW: helper to convert sets without a type change because we need them.
-  function set(array: any[]) {
-    const setArray = [];
-    array.forEach(element => {
-      if (!setArray.includes(element)) {
-        setArray.push(element);
-      }
-    });
-    return setArray;
-  }
-  let realPeople = people.slice(0, teamSize ** 2);
-  if (people.length != teamSize ** 2) throw "Wrong number of people.";
-  if (teamSize > numRounds + 1)
-    throw "Team size is too large for number of rounds.";
-  const teamNames = letters.slice(0, teamSize);
+const externalHIT = (taskURL, height = 700) =>
+  '<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>' +
+  taskURL +
+  "</ExternalURL><FrameHeight>" +
+  height +
+  "</FrameHeight></ExternalQuestion>";
 
-  let roundTeams = [];
-  let collaborators = {};
-  realPeople.forEach(person => {
-    collaborators[person] = [person];
-  });
-
-  while (roundTeams.length < numRounds) {
-    let unUsedPeople = realPeople.slice();
-    let teams = {};
-
-    while (unUsedPeople.length) {
-      let team = [unUsedPeople.pop()]; // Add first person to team
-      while (team.length < teamSize) {
-        let teamCollaborators = set(
-          team
-            .map(member => collaborators[member])
-            .reduce((a, b) => a.concat(b))
-        ); //find all prior collaborators
-        let remainingOptions = unUsedPeople.filter(
-          person => !teamCollaborators.includes(person)
-        ); //find all remaining options
-        if (!remainingOptions.length) {
-          return createTeams(teamSize, numRounds, realPeople);
-        } // deal with random selection overlap
-        let newCollaborator = chooseOne(remainingOptions);
-        unUsedPeople = unUsedPeople.filter(person => person != newCollaborator); //update unused people
-
-        team.push(newCollaborator); // add new collaborator into the team
-      }
-
-      team.forEach(member => {
-        collaborators[member] = set(collaborators[member].concat(team));
-      }); //Add collaborators from new team
-      teams[teamNames[Object.keys(teams).length]] = team; //Add new team
-    }
-    roundTeams.push(teams);
-  }
-
-  if (!teamChecker(roundTeams)) throw "Valid teams were not created";
-  return roundTeams;
-};
 
 export const makeName = function(friends_history, teamSize) {
   if (!friends_history) {
     let adjective = chooseOne(randomAdjective);
     let animal = chooseOne(randomAnimal);
     return { username: adjective + animal, parts: [adjective, animal] };
-  } else {
-    // friends history store previously seen names by the user
-    // we want to avoid animal names
-
-    // remove previously seen animal names
-    /*let animals = randomAnimal.slice();
-    if (teamSize <= animals.length - friends_history.length) {
-      //make sure there's enough adjectives
-      let i = 0;
-      for (i = 0; i < friends_history.length; i++) {
-        // make sure that teamSize * 3rounds < 17 (length of randomAnimals)
-        // we could throw an error message?
-        try {
-          animals.splice(animals.indexOf(friends_history[i][1]), 1);
-        } catch (err) {
-          console.log("Problem with friend history:", friends_history, err);
-        }
-      }
-    }
-    // MEW: need to generate a new array of combinations to return.
-    return Array.apply(null, Array(teamSize)).map(() => {
-      let adjective = chooseOne(randomAdjective);
-      let animal = chooseOne(animals);
-      animals.splice(animals.indexOf(animal), 1);
-      return [adjective, animal];
-    });*/
   }
 }
+
+export const addHIT = (batch) => {
+  return new Promise((resolve, reject) => {
+    let time = Date.now();
+    const hourlyWage = 10.5;
+    const rewardPrice = 0.01;
+    let bonusPrice = (hourlyWage * ((batch.roundMinutes * batch.numRounds + 10) / 60) - rewardPrice).toFixed(2);
+
+    let HITTitle =
+      "Write online ads - bonus up to $" + hourlyWage + " / hour (" + time + ")";
+    let description =
+      "Work in groups to write ads for new products. This task will take approximately " +
+      Math.round(batch.roundMinutes * batch.numRounds + 10) +
+      " minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" +
+      bonusPrice +
+      ".";
+    let keywords = "ads, writing, copy editing, advertising";
+    let maxAssignments = batch.teamSize * batch.teamSize * 4;
+    let hitContent = externalHIT(taskURL);
+
+    let makeHITParams = {
+      Title: HITTitle,
+      Description: description,
+      AssignmentDurationInSeconds: 240,
+      LifetimeInSeconds: 240,
+      Reward: String(rewardPrice),
+      AutoApprovalDelayInSeconds: 240,
+      Keywords: keywords, // string
+      MaxAssignments: maxAssignments, // number
+      QualificationRequirements: safeQuals, // list of qualification objects
+      Question: hitContent
+    };
+
+    mturk.createHIT(makeHITParams, (err, data) => {
+      if (err) {reject(err);}
+      else {
+        console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
+        resolve(data.HIT)
+      }
+    });
+  })
+}
+
+export const notifyWorkers = (WorkerIds, MessageText, Subject) => {
+  return new Promise((resolve, reject) => {
+    mturk.notifyWorkers(
+      { WorkerIds: WorkerIds, MessageText: MessageText, Subject: Subject},
+      function(err, data) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(data)
+        }
+      }
+    );
+  })
+}
+
+export const assignQual = (userId, qualId) => {
+  return new Promise((resolve, reject) => {
+    const assignQualificationParams = {
+      QualificationTypeId: qualId,
+      WorkerId: userId,
+      IntegerValue: 1,
+      SendNotification: false
+    };
+    mturk.associateQualificationWithWorker(assignQualificationParams,
+      function(err, data) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(data)
+        }
+      }
+    );
+  })
+};
+
+export const payBonus = (userId, mturkId, assignmentId, amount) => {
+  return new Promise((resolve, reject) => {
+    const params = {
+      AssignmentId: assignmentId,
+      BonusAmount: String(amount),
+      Reason: "Thanks for participating in our HIT!",
+      WorkerId: mturkId,
+      UniqueRequestToken: userId
+    };
+    mturk.sendBonus(params,
+      function(err, data) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(data)
+        }
+      }
+    );
+  })
+};

@@ -92,7 +92,9 @@ export const whoami = () => {
           } else {
             history.push('/waiting');
           }
-        } else {
+        } else if (data.user.systemStatus ==='notbanged') {
+          history.push('/notbanged');
+        } else if (data.user.systemStatus ==='hasbanged') {
           history.push('/hasbanged');
         }
       } else {
@@ -140,3 +142,11 @@ export const clearSnackbar = (message) => {
     type: CLEAR_SNACKBAR,
   }
 };
+
+export const joinBang = () => {
+  return function (dispatch) {
+    dispatch(setLoading(true))
+    socket.emit('join-bang', {});
+    console.log('herererererererere')
+  }
+}

@@ -1,3 +1,5 @@
+import {addHIT} from "./controllers/utils";
+
 require('dotenv').config({path: './.env'});
 const path = require('path');
 const express = require('express');
@@ -6,7 +8,7 @@ const bodyParser = require('body-parser');const mongoose = require('mongoose');
 const PORT = process.env.PORT || 3001;
 const APP_ROOT = path.resolve(__dirname, '..');
 const logger = require('./services/logger');
-import {init, sendMessage, disconnect, activeCheck} from './controllers/users'
+import {init, sendMessage, disconnect, activeCheck, joinBang} from './controllers/users'
 import {joinBatch, loadBatch, receiveSurvey} from './controllers/batches'
 import {errorHandler} from './services/common'
 import {User} from './models/users'
@@ -57,6 +59,7 @@ Promise.all(initialChecks)
     activeCheck(io);
     io.sockets.on('connection', function (socket) {
       socket.on('init', data => socketMiddleware('init', init, data, socket));
+      socket.on('join-bang', data => socketMiddleware('join-bang', joinBang, data, socket));
       socket.on('disconnect', data => socketMiddleware('disconnect', disconnect, data, socket));
       socket.on('send-message', data => socketMiddleware('send-message', sendMessage, data, socket));
       socket.on('join-batch', data => socketMiddleware('join-batch', joinBatch, data, socket));
@@ -106,5 +109,18 @@ cron.schedule('*/30 * * * * *', async function(){
         logger.info(module, 'user was kicked: ' + user._id)
       })
     }
+  }
+});
+
+cron.schedule('*/4 * * * *', async function(){
+  console.log(new Date())
+  try {
+    const batch = await Batch.findOne({status: 'waiting'}).select('_id').lean().exec();
+    if (batch) {
+      const HIT = await addHIT(batch);
+      logger.info(module, 'Hit created')
+    }
+  } catch (e) {
+    errorHandler(e, 'create HIT error')
   }
 });

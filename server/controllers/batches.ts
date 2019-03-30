@@ -1,21 +1,25 @@
 import {User} from '../models/users'
 import {Chat} from '../models/chats'
 import {Batch} from '../models/batches'
+import {Bonus} from '../models/bonuses'
 import {Survey} from '../models/surveys'
 import {clearRoom, makeName} from './utils'
 import {errorHandler} from '../services/common'
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
+import {notifyWorkers, assignQual, payBonus} from "./utils";
+
 
 export const joinBatch = async function (data, socket, io) {
   try {
     let batch = await Batch.findOne({status: 'waiting'}).lean().exec();
+
     if (!batch) {
       logger.error(module, 'There is no waiting batch');
       socket.emit('send-error', 'There is no waiting batch')
       return;
     }
-    if (batch.users.length < batch.teamSize ** 2) { //join to batch
+    if (socket.systemStatus === 'willbang' && batch.users.length < batch.teamSize ** 2) { //join to batch
       const nickname = makeName(null, null).username;
       let user;
       const prs = await Promise.all([
@@ -32,7 +36,12 @@ export const joinBatch = async function (data, socket, io) {
     }
     if (batch.users.length >= batch.teamSize ** 2 && batch.status === 'waiting') { //start batch
       //clearRoom('waitroom', io);
-
+      let addQuals = [];
+      batch.users.forEach(user => { //add hasbanged qual to all users in batch
+        addQuals.push(assignQual(user.mturkId, '33CI7FQ96AL58DPIE8NY2KTI5SF7OH'))
+      })
+      await Promise.all(addQuals)
+      await notifyWorkers(batch.users.map(user => user.mturkId), 'Experiment started. Join here: https://bang-dev.deliveryweb.ru', 'Bang')
       clearRoom(batch.preChat, io);
       await startBatch(batch, socket, io)
     }
@@ -179,7 +188,7 @@ const startBatch = async function (batch, socket, io) {
     //last survey
     await timeout(60000);
 
-    await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null}})
+    await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
     logger.info(module, 'Main experiment end', batch._id)
     clearRoom(batch._id, io)
   } catch (e) {
@@ -194,6 +203,20 @@ export const receiveSurvey = async function (data, socket, io) {
       user: socket.userId,
     }
     await Survey.create(newSurvey)
+    if (newSurvey.isPost) {
+      let amount = 1;
+      const bonus = await payBonus(socket.userId, socket.mturkId, socket.assignmentId, amount)
+      if (bonus) {
+        const newBonus = {
+          batch: newSurvey.batch,
+          user: socket.userId,
+          amount: amount,
+          assignment: socket.assignmentId
+        }
+        await Bonus.create(newBonus)
+        logger.info('module', 'Bonus sent to ' + socket.mturkId)
+      }
+    }
 
   } catch (e) {
     errorHandler(e, 'receive survey error')

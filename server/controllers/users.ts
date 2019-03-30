@@ -2,7 +2,10 @@ import {User} from '../models/users'
 import {Batch} from '../models/batches'
 import {Chat} from '../models/chats'
 import {errorHandler} from '../services/common'
+import {Survey} from "../models/surveys";
 const logger = require('../services/logger');
+import {notifyWorkers, assignQual} from "./utils";
+
 
 export const activeCheck = async function (io) {
   try {
@@ -45,6 +48,7 @@ export const init = async function (data, socket, io) {
     socket.token = user.token;
     socket.assignmentId = user.assignmentId;
     socket.turkSubmitTo = user.turkSubmitTo;
+    socket.systemStatus = user.systemStatus;
     socket.userId = user._id;
     if (user.batch) {
       socket.join(user.batch.toString()) //chat room
@@ -94,5 +98,21 @@ export const sendMessage = async function (data, socket, io) {
     }
   } catch (e) {
     errorHandler(e, 'send message error')
+  }
+}
+
+export const joinBang = async function (data, socket, io) {
+  try {
+    console.log('join bang', socket.mturkId)
+    await assignQual(socket.mturkId, '3SR1M7GDJW59K8YBYD1L5YS55VPA25')
+    const prs = await Promise.all([
+      Batch.findOne({status: 'waiting'}).select('_id'),
+      User.findByIdAndUpdate(socket.userId, {$set: {systemStatus: 'willbang'}}).lean().exec()
+    ])
+    if (!!prs[0]) { //notify new user because we have waiting batch
+      await notifyWorkers([prs[1].mturkId], 'Experiment started. Join here: https://bang-dev.deliveryweb.ru', 'Bang')
+    }
+  } catch (e) {
+    errorHandler(e, 'join bang error')
   }
 }

@@ -3,8 +3,6 @@
 
 import * as dotenv from "dotenv";
 dotenv.config();
-import * as yargs from "yargs";
-let args = yargs.argv;
 
 const runningLive = process.env.NODE_ENV === "production"; //ONLY CHANGE IN VIM ON SERVER
 const teamSize = parseInt(process.env.TEAM_SIZE);
@@ -18,8 +16,8 @@ if (runningLive) {
   submitTo = "https://www.mturk.com";
 }
 
-let taskURL = args.url || process.env.TASK_URL;
-if (!runningLive) {
+let taskURL = process.env.TASK_URL;
+if (process.env.NODE_ENV !== 'production') {
   taskURL = "https://localhost:3000/";
 }
 
@@ -98,15 +96,13 @@ const quals = {
   }
 };
 
-const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(500), quals.hasBanged];
-const qualsForTesting = [quals.onlyUSA, quals.hitsAccepted(0)];
+const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(500)];
+const qualsForTesting = [];
 const scheduleQuals = [
   quals.onlyUSA,
-  quals.hitsAccepted(0),
-  quals.hasBanged,
-  quals.willNotBang
-];
+  quals.hitsAccepted(0),];
 const safeQuals = runningLive ? qualsForLive : qualsForTesting;
+console.log(safeQuals)
 
 // Makes the MTurk externalHIT object, defaults to 700 px tall.
 const externalHIT = (taskURL, height = 700) =>
@@ -172,7 +168,8 @@ const makeHIT = (
   keywords,
   maxAssignments,
   hitContent,
-  callback
+  callback,
+  rej
 ) => {
   // if a schedule bang, change quals to scheduleQuals
 
@@ -194,7 +191,7 @@ const makeHIT = (
   };
 
   mturk.createHIT(makeHITParams, (err, data) => {
-    if (err) console.log(err, err.stack);
+    if (err) rej(err);
     else {
       console.log(
         "Posted",
@@ -796,6 +793,7 @@ module.exports = {
   updatePayment: updatePayment,
   getBalance: getBalance,
   makeHIT: makeHIT,
+  externalHIT: externalHIT,
   returnHIT: returnHIT,
   workOnActiveHITs: workOnActiveHITs,
   expireHIT: expireHIT,
@@ -819,7 +817,8 @@ module.exports = {
   getHITURL: getHITURL,
   listAssignments: listAssignments,
   notifyWorkers: notifyWorkers,
-  quals: quals
+  quals: quals,
+  mturk: mturk
 };
 
 // * checkQualsRecursive *

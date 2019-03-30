@@ -11,7 +11,7 @@ const Schema = mongoose.Schema;
 let UserSchema = new Schema({
   socketId:  { type: String},
   token:  { type: String, required: true, unique: true },
-  systemStatus: { type: String, required: true, enum: ['willbang', 'hasbanged'], default: 'willbang'},
+  systemStatus: { type: String, required: true, enum: ['notbanged', 'willbang', 'hasbanged'], default: 'notbanged'},
   mturkId:  { type: String, required: true, unique: true },
   assignmentId:  { type: String, required: true },
   turkSubmitTo:  { type: String, required: true },
