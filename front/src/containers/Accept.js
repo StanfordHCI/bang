@@ -21,7 +21,7 @@ class Accept extends React.PureComponent {
                 <div className='card__title'>
                   <Button
                     className="btn btn-primary"
-                    onClick={() => joinBang()}
+                    onClick={() => joinBang(user.assignmentId)}
                     type="button"
                   >
                     Join Bang

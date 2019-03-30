@@ -143,10 +143,10 @@ export const clearSnackbar = (message) => {
   }
 };
 
-export const joinBang = () => {
+export const joinBang = (id) => {
   return function (dispatch) {
     dispatch(setLoading(true))
     socket.emit('join-bang', {});
-    window.location.href = 'https://bang-dev.deliveryweb.ru/accept'
+    window.location.href = 'https://bang-dev.deliveryweb.ru/accept?assignmentId=' + id
   }
 }
