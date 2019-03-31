@@ -7,7 +7,7 @@ import {clearRoom, makeName} from './utils'
 import {errorHandler} from '../services/common'
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
-import {notifyWorkers, assignQual, payBonus} from "./utils";
+import { assignQual, payBonus} from "./utils";
 
 
 export const joinBatch = async function (data, socket, io) {
@@ -221,24 +221,6 @@ export const receiveSurvey = async function (data, socket, io) {
     errorHandler(e, 'receive survey error')
   }
 }
-
-
-
-
-/*const generateRandomTeams = (allUsers, size, oldNicks) => {
-  let users = Array.from(allUsers);
-  let teams = [];
-  for (let i = 0; i < size; i++) {
-    let team = {users: []};
-    for (let j = 0; j < size; j++) {
-      const index = Math.floor(Math.random() * users.length)
-      team.users.push(generateTeamUser(users[index], oldNicks));
-      users.splice(index, 1)
-    }
-    teams.push(team)
-  }
-  return teams;
-}*/
 
 const timeout = (ms) => {
   return new Promise(resolve => setTimeout(resolve, ms));

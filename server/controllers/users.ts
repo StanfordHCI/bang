@@ -13,6 +13,9 @@ export const activeCheck = async function (io) {
     const activeCounter = activeUsers ? activeUsers.length : 0;
     io.to('waitroom').emit('clients-active', activeCounter);
     logger.info(module, 'Active clients: ' + activeCounter);
+    if (activeCounter > 3) {
+      await notifyWorkers(activeUsers.map(user => user.mturkId), 'You can join our experiment', 'Bang')
+    }
   } catch (e) {
     errorHandler(e, 'active check error')
   }
@@ -33,20 +36,18 @@ export const init = async function (data, socket, io) {
       //user can be without token/with wrong token, but in our db
       //but its not secure, if somebody will get another's mturk id - he will get his session
       user = await User.findOne({mturkId: data.mturkId}).populate('batch').lean().exec();
-      if (!user) { //if not in db - create new; moved to mturk logic.
-        /*user = await User.create({
-          token: data.mturkId,
-          mturkId: data.mturkId,
-          assignmentId: data.assignmentId,
-          turkSubmitTo: data.turkSubmitTo,
-          status: 'waiting',
-        })*/
+      if (!user) {
+        logger.info(module, 'wrong credentials');
+        socket.emit('init-res', null);
+        return;
+      } else {
+        user = await User.findByIdAndUpdate(user._id, {$set: {mainAssignmentId: data.assignmentId}}).lean().exec();
       }
     }
 
     socket.mturkId = user.mturkId;
     socket.token = user.token;
-    socket.assignmentId = user.assignmentId;
+    socket.assignmentId = user.mainAssignmentId;
     socket.turkSubmitTo = user.turkSubmitTo;
     socket.systemStatus = user.systemStatus;
     socket.userId = user._id;
@@ -110,7 +111,7 @@ export const joinBang = async function (data, socket, io) {
       User.findByIdAndUpdate(socket.userId, {$set: {systemStatus: 'willbang'}}).lean().exec()
     ])
     if (!!prs[0]) { //notify new user because we have waiting batch
-      await notifyWorkers([prs[1].mturkId], 'Experiment started. Join here: https://bang-dev.deliveryweb.ru', 'Bang')
+      await notifyWorkers([socket.mturkId], 'Experiment started. Join here: https://bang-dev.deliveryweb.ru', 'Bang')
     }
   } catch (e) {
     errorHandler(e, 'join bang error')

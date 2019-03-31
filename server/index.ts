@@ -59,7 +59,7 @@ Promise.all(initialChecks)
     activeCheck(io);
     io.sockets.on('connection', function (socket) {
       socket.on('init', data => socketMiddleware('init', init, data, socket));
-      socket.on('join-bang', data => socketMiddleware('join-bang', joinBang, data, socket));
+      //socket.on('join-bang', data => socketMiddleware('join-bang', joinBang, data, socket));
       socket.on('disconnect', data => socketMiddleware('disconnect', disconnect, data, socket));
       socket.on('send-message', data => socketMiddleware('send-message', sendMessage, data, socket));
       socket.on('join-batch', data => socketMiddleware('join-batch', joinBatch, data, socket));
