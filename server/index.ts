@@ -9,7 +9,7 @@ const logger = require('./services/logger');
 import {init, sendMessage, disconnect, activeCheck, joinBang} from './controllers/users'
 import {joinBatch, loadBatch, receiveSurvey} from './controllers/batches'
 import {errorHandler} from './services/common'
-import {addHIT, listHITs, listAssignmentsForHIT, notifyWorkers, assignQual} from "./controllers/utils";
+import {addHIT, disassociateQualificationFromWorker, listAssignmentsForHIT, notifyWorkers, assignQual} from "./controllers/utils";
 import {User} from './models/users'
 import {Batch} from './models/batches'
 import {Chat} from "./models/chats";
@@ -51,7 +51,7 @@ const io = require('socket.io').listen(app.listen(PORT, function() {
 const initialChecks = [
   User.updateMany({}, { $set: { connected : false, lastDisconnect: new Date(), socketId: '', batch: null,
       currentChat: null, realNick: null, fakeNick: null}}),
-  Batch.updateMany({$or: [{status:'active'}, {status:'waiting'}]}, { $set: { status : 'completed'}})
+  Batch.updateMany({$or: [{status:'active'}, {status:'waiting'}]}, { $set: { status : 'completed'}}),
 ]
 
 Promise.all(initialChecks)
@@ -113,13 +113,13 @@ cron.schedule('*/30 * * * * *', async function(){
 });
 
 cron.schedule('* * * * *', async function(){
-  console.log(new Date())
+
   try {
     const batch = await Batch.findOne({status: 'waiting'}).select('teamSize roundMinutes numRounds').lean().exec();
     if (batch) {
       if (currentHIT) {
         const as = await listAssignmentsForHIT(currentHIT).Assignments;
-        for (let i = 0; i < as.length; i++) {
+        if (as && as.length) for (let i = 0; i < as.length; i++) {
           const assignment = as[i];
           const check = await User.findOne({mturkId: assignment.WorkerId});
           if (!check) {//add user to db and give willbang qual
@@ -142,19 +142,20 @@ cron.schedule('* * * * *', async function(){
       logger.info(module, 'Hit created :' + currentHIT)
     }
   } catch (e) {
-    errorHandler(e, 'create HIT error')
+    errorHandler(e, 'create schedule HIT error')
   }
 });
 
+
+
 /*const test = async function(){
-  const hits = await listHITs();
-  let hit = hits.HITs[0];
-  if (hit.Title.indexOf('Test') === -1) { //
-    hit = hits.HITs[1]
+  try {
+    await disassociateQualificationFromWorker('APJC0K7A2B3TM', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd');
+    await disassociateQualificationFromWorker('APJC0K7A2B3TM', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd');
+  } catch(e) {
+    errorHandler(e, 'test error')
   }
-  const as = await listAssignmentsForHIT(currentHIT)
-  console.log(hit)
-  console.log(as)
+
 }
 
 test()*/

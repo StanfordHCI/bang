@@ -236,3 +236,22 @@ export const getHIT = (id) => {
     );
   })
 };
+
+export const disassociateQualificationFromWorker = (workerId, qualificationId, reason) => {
+  return new Promise((resolve, reject) => {
+    const params = {
+      QualificationTypeId: qualificationId /* required */, // string
+      WorkerId: workerId /* required */, // string
+      Reason: reason
+    };
+    mturk.disassociateQualificationFromWorker(params,
+      function(err, data) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(data)
+        }
+      }
+    );
+  })
+};
