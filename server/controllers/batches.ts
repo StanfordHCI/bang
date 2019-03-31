@@ -36,11 +36,7 @@ export const joinBatch = async function (data, socket, io) {
     }
     if (batch.users.length >= batch.teamSize ** 2 && batch.status === 'waiting') { //start batch
       //clearRoom('waitroom', io);
-      let addQuals = [];
-      batch.users.forEach(user => { //add hasbanged qual to all users in batch
-        addQuals.push(assignQual(user.mturkId, '33CI7FQ96AL58DPIE8NY2KTI5SF7OH'))
-      })
-      await Promise.all(addQuals)
+
       clearRoom(batch.preChat, io);
       await startBatch(batch, socket, io)
     }
@@ -99,6 +95,12 @@ const startBatch = async function (batch, socket, io) {
   try {
     await timeout(5000);
     const users = await User.find({batch: batch._id, connected: true}).lean().exec();
+    let addQuals = [];
+    users.forEach(user => { //add hasbanged qual to all users in batch
+      addQuals.push(assignQual(user.mturkId, '33CI7FQ96AL58DPIE8NY2KTI5SF7OH'))
+    })
+    await Promise.all(addQuals)
+
     if (users.length != batch.teamSize ** 2) {
       console.log('wrong users length') // do something?
     }

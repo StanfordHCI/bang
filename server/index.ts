@@ -129,7 +129,6 @@ cron.schedule('*/10 * * * * *', async function(){
   try {
     if (currentHIT) {
       const as = (await listAssignmentsForHIT(currentHIT)).Assignments;
-      console.log(currentHIT, as)
       if (as && as.length) for (let i = 0; i < as.length; i++) {
         const assignment = as[i];
         const check = await User.findOne({mturkId: assignment.WorkerId});
