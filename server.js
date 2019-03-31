@@ -38,7 +38,7 @@ const randomProductOn = true;
 const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const starterSurveyOn = false;
-const midSurveyOn = runningLive;
+const midSurveyOn = true;
 const midSurveyStatusOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = true;
 const creativeSurveyOn = false;
@@ -1262,10 +1262,6 @@ io.on("connection", socket => {
         } because ${reason}`
       )
     );
-    if (reason === "transport error") {
-      //console.log(socket);
-      console.log("TRANSPORT");
-    }
     if (
       userPool.find(function(element) {
         return element.mturkId === socket.mturkId;
@@ -1306,55 +1302,20 @@ io.on("connection", socket => {
       //         + " with your Mturk ID and the last things you did in the HIT.\n\nMturk ID: " + user.mturkId +
       //         "\nAssignment ID: " + user.assignmentId + '\nHIT ID: ' + mturk.returnCurrentHIT())
       // }
-      if (!experimentOver && !suddenDeath) {
-        runReady();
-        // console.log("Sudden death is off, so we will not cancel the run")
-      }
+
+      //Handle last submitter leaving during a survey
+      // if (user.eventSchedule[user.currentEvent] != "ready" && !experimentOver) {
+      //   setTimeout(() => {
+      //     if (!socket.connected) {
+      //       console.log(
+      //         "User has perminantly left during survey. Set to ready."
+      //       );
+      //       runReady();
+      //     }
+      //   }, 15 * 1000);
+      // }
 
       console.log("Connected users: " + getUsersConnected().length);
-      if (!experimentOver && suddenDeath && experimentStarted) {
-        storeHIT();
-
-        console.log("User left, emitting cancel to all users");
-
-        if (!extraRoundOn || notEnoughUsers) {
-          storeHIT();
-
-          console.log("User left, emitting cancel to all users");
-          let totalTime = getSecondsPassed();
-
-          if (timeCheckOn) {
-            db.time.insert({ totalTaskTime: totalTime }, (err, timeAdded) => {
-              if (err)
-                console.log(
-                  "There's a problem adding total time to the DB: ",
-                  err
-                );
-              else if (timeAdded) console.log("Total time added to the DB");
-            });
-          }
-
-          users
-            .filter(u => u.mturkId !== socket.mturkId)
-            .forEach(u => {
-              let cancelMessage =
-                "<strong>Someone left the task.</strong><br> <br> \
-            Unfortunately, our group task requires a specific number of users to run, \
-            so once a user leaves, our task cannot proceed. <br><br> \
-            To complete the task, please provide suggestions of ways to \
-            prevent people leaving in future runs of the study. <br><br> \
-            Since the team activity had already started, you will be additionally \
-            bonused for the time spent working with the team.";
-              if (experimentStarted) {
-                // Add future bonus pay
-                u.bonus = currentBonus();
-                updateUserInDB(u, "bonus", u.bonus);
-                storeHIT();
-              }
-              issueFinish(u, cancelMessage);
-            });
-        }
-      }
       if (!suddenDeath && !userAcquisitionStage) {
         // sets users to ready when they disconnect
         user.ready = true;
@@ -1362,6 +1323,7 @@ io.on("connection", socket => {
     });
   });
 
+  //This appears to not work.
   socket.on("ready-to-all", () => {
     console.log(chalk.red.inverse("god is ready"));
     users

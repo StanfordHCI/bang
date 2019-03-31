@@ -36,7 +36,7 @@ const taskDuration = roundMinutes * numRounds * 4;
 //const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
 const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
 const hourlyWage = 12; // changes reward of experiment depending on length - change to 6?
-const basePrice = 1; // upfront cost
+const basePrice = 0.5; // upfront cost
 const maxAssignments = 2 * teamSize * teamSize * 2;
 
 let bonusPrice = (
@@ -822,7 +822,7 @@ const checkQualsRecursive = (
 
 // workOnActiveHITs(console.log);
 // unassignQuals(
-//   "AP7BOM5KUH8KV",
+//   "AN9MVFWRCF2OP",
 //   quals.willBang,
 //   "You asked to be removed from our notification list."
 // );

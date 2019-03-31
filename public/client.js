@@ -8,6 +8,8 @@ window.onbeforeunload = function() {
 };
 
 const sessionStartTime = new Date().getTime();
+let timers = [];
+
 $(function() {
   const FADE_TIME = 150; // ms
   const TYPING_TIMER_LENGTH = 400; // ms
@@ -1153,23 +1155,57 @@ $(function() {
 });
 
 function startTimer(duration, display) {
-  var timer = duration;
-  let interval = setInterval(function() {
-    let minutes = parseInt(timer / 60, 10);
-    let seconds = parseInt(timer % 60, 10);
+  timers.forEach(timer => clearInterval(timer));
+  var start = Date.now(),
+    diff,
+    minutes,
+    seconds;
+  timers.push(
+    setInterval(() => {
+      // get the number of seconds that have elapsed since
+      // startTimer() was called
+      diff = duration - (((Date.now() - start) / 1000) | 0);
 
-    minutes = minutes < 10 ? "0" + minutes : minutes;
-    seconds = seconds < 10 ? "0" + seconds : seconds;
+      // does the same job as parseInt truncates the float
+      minutes = (diff / 60) | 0;
+      seconds = diff % 60 | 0;
 
-    display.html("Time: " + minutes + ":" + seconds);
+      minutes = minutes < 10 ? "0" + minutes : minutes;
+      seconds = seconds < 10 ? "0" + seconds : seconds;
 
-    if (--timer < 0) {
-      clearInterval(interval);
-      display.html("");
-      //timer = duration;
-    }
-  }, 1000);
+      display.html(`Time: ${minutes}:${seconds}`);
+      if (diff >= duration) {
+        display.html("");
+        timers.forEach(timer => clearInterval(timer));
+      }
+      if (diff <= 0) {
+        // add one second so that the count down starts at the full duration
+        // example 05:00 not 04:59
+        start = Date.now() + 1000;
+      }
+    }, 1000)
+  );
 }
+
+// Old timer
+// {
+//   var timer = duration;
+//   let interval = setInterval(function() {
+//     let minutes = parseInt(timer / 60, 10);
+//     let seconds = parseInt(timer % 60, 10);
+
+//     minutes = minutes < 10 ? "0" + minutes : minutes;
+//     seconds = seconds < 10 ? "0" + seconds : seconds;
+
+//     display.html("Time: " + minutes + ":" + seconds);
+
+//     if (--timer < 0) {
+//       clearInterval(interval);
+//       display.html("");
+//       //timer = duration;
+//     }
+//   }, 1000);
+// }
 
 function turkGetParam(name, defaultValue, uri) {
   var regexS = "[?&]" + name + "=([^&#]*)";
