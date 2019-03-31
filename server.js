@@ -287,6 +287,13 @@ function useUser(socket, callback, err = "Guarded against undefined user") {
 mturk.getBalance(function(balance) {
   if (runningLive && balance <= 400) {
     console.log(chalk.red.inverse.bold("\n!!! BROKE !!!\n"));
+    if (notifyUs) {
+      mturk.notifyWorkers(
+        ["A19MTSLG2OYDLZ"],
+        `ADD MORE FUNDS: $${balance} left`,
+        `EOM`
+      );
+    }
   }
 });
 
