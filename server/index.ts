@@ -112,13 +112,14 @@ cron.schedule('*/30 * * * * *', async function(){
   }
 });
 
-cron.schedule('* * * * *', async function(){
+cron.schedule('*/2 * * * *', async function(){
 
   try {
     const batch = await Batch.findOne({status: 'waiting'}).select('teamSize roundMinutes numRounds').lean().exec();
     if (batch) {
       if (currentHIT) {
         const as = await listAssignmentsForHIT(currentHIT).Assignments;
+        console.log(currentHIT, as)
         if (as && as.length) for (let i = 0; i < as.length; i++) {
           const assignment = as[i];
           const check = await User.findOne({mturkId: assignment.WorkerId});
@@ -150,8 +151,10 @@ cron.schedule('* * * * *', async function(){
 
 /*const test = async function(){
   try {
-    await disassociateQualificationFromWorker('APJC0K7A2B3TM', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd');
-    await disassociateQualificationFromWorker('APJC0K7A2B3TM', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd');
+    //await disassociateQualificationFromWorker('APJC0K7A2B3TM', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd');
+    //await disassociateQualificationFromWorker('APJC0K7A2B3TM', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd');
+    const as = await listAssignmentsForHIT('3JAOYN9IHNG6YH911MJXPQYS9OP33N');
+    console.log(as)
   } catch(e) {
     errorHandler(e, 'test error')
   }
