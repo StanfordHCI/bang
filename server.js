@@ -1915,25 +1915,25 @@ io.on("connection", socket => {
           message: `<br><strong>You're about half way through this round.</strong><br> As a reminder, you're deciding on how to allocate $500,000 between the following initiatives based on which programs agree with your personal values:<br>${taskText}`
         },
         {
-          time: 0.85,
+          time: 0.8,
           message:
             "<br><strong>Get ready to submit your group decision.</strong>"
         },
         {
-          time: 0.855,
+          time: 0.81,
           message: `<br><strong>The programs you are considering are:<br>${taskText}</strong>`
         },
         {
-          time: 0.86,
+          time: 0.82,
           message:
             "<br><strong>Submit the team's final choices by sending a message for each program starting with its number in the list above as well as the amount of money allocated and the main reason. Use this format:<br><code>1: $$$ reason</code><br><code>2: $$$ reason</code><br><code>3: $$$ reason</code></strong><br><br>"
         },
         {
-          time: 0.95,
+          time: 0.9,
           message: "<br><strong>Last chance to submit!</strong>"
         },
         {
-          time: 0.96,
+          time: 0.92,
           message:
             "<br><strong>This round is ending soon. Time to say goodbye to your teammates!</strong>"
         }
