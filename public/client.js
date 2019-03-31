@@ -486,7 +486,7 @@ $(function() {
     socket.emit("midSurveySubmit", $("#midForm").serialize()); //submits results alone
     socket.emit("next event");
     $midSurvey.hide();
-    $holdingPage.show();
+    submitHold();
     $("#midForm")[0].reset();
   });
 
@@ -495,7 +495,7 @@ $(function() {
     socket.emit("midSurveyStatusSubmit", $("#midFormStatusR1").serialize()); //submits results alone
     socket.emit("next event");
     $midSurveyStatusR1.hide();
-    $holdingPage.show();
+    submitHold();
     $("#midFormStatusR1")[0].reset();
   });
 
@@ -504,7 +504,7 @@ $(function() {
     socket.emit("midSurveyStatusSubmit", $("#midFormStatusR2").serialize()); //submits results alone
     socket.emit("next event");
     $midSurveyStatusR2.hide();
-    $holdingPage.show();
+    submitHold();
     $("#midFormStatusR2")[0].reset();
   });
 
@@ -513,7 +513,7 @@ $(function() {
     socket.emit("midSurveyStatusSubmit", $("#midFormStatusR3").serialize()); //submits results alone
     socket.emit("next event");
     $midSurveyStatusR3.hide();
-    $holdingPage.show();
+    submitHold();
     $("#midFormStatusR3")[0].reset();
   });
 
@@ -522,7 +522,7 @@ $(function() {
     socket.emit("midSurveyStatusSubmit", $("#midFormStatusR4").serialize()); //submits results alone
     socket.emit("next event");
     $midSurveyStatusR4.hide();
-    $holdingPage.show();
+    submitHold();
     $("#midFormStatusR4")[0].reset();
   });
   $("#creativeForm").submit(event => {
@@ -531,7 +531,7 @@ $(function() {
     socket.emit("creativeSurveySubmit", $("#creativeForm").serialize()); //submits results alone
     socket.emit("next event");
     $creativeSurvey.hide();
-    $holdingPage.show();
+    submitHold();
     $("#creativeForm")[0].reset();
   });
 
@@ -540,7 +540,7 @@ $(function() {
     socket.emit("satisfactionSurveySubmit", $("#satisfactionForm").serialize()); //submits results alone
     socket.emit("next event");
     $satisfactionSurvey.hide();
-    $holdingPage.show();
+    submitHold();
     $("#satisfactionForm")[0].reset();
   });
 
@@ -549,7 +549,7 @@ $(function() {
     socket.emit("conflictSurveySubmit", $("#conflictForm").serialize()); //submits results alone
     socket.emit("next event");
     $conflictSurvey.hide();
-    $holdingPage.show();
+    submitHold();
     $("#conflictForm")[0].reset();
   });
 
@@ -561,7 +561,7 @@ $(function() {
     ); //submits results alone
     socket.emit("next event");
     $psychologicalSafety.hide();
-    $holdingPage.show();
+    submitHold();
     $("#psychologicalSafety-form")[0].reset();
   });
 
@@ -570,7 +570,7 @@ $(function() {
     socket.emit("qFifteenSubmit", $("#qFifteenForm").serialize()); //submits results alone
     socket.emit("next event");
     $qFifteen.hide();
-    $holdingPage.show();
+    submitHold();
     $("#qFifteenForm")[0].reset();
   });
 
@@ -579,7 +579,7 @@ $(function() {
     socket.emit("qSixteenSubmit", $("#qSixteenForm").serialize()); //submits results alone
     socket.emit("next event");
     $qSixteen.hide();
-    $holdingPage.show();
+    submitHold();
     $("#qSixteenForm")[0].reset();
   });
 
@@ -588,7 +588,7 @@ $(function() {
     socket.emit("demographicsSurveySubmit", $("#demographicsForm").serialize()); //submits results alone
     socket.emit("next event");
     $demographicsSurvey.hide();
-    $holdingPage.show();
+    submitHold();
     $("#demographicsForm")[0].reset();
   });
 
@@ -778,6 +778,7 @@ $(function() {
   });
 
   socket.on("load", data => {
+    clearAllTimers;
     let element = data.element;
     let questions = data.questions;
 
@@ -833,7 +834,7 @@ $(function() {
 
   socket.on("initiate round", data => {
     messagesSafe.innerHTML = "";
-    startTimer(60 * data.duration - 1, $headerText); // start header timer, subtract 1 to give more notice
+    displayTimer(60 * data.duration - 1, $headerText); // start header timer, subtract 1 to give more notice
 
     document.getElementById("inputMessage").value = ""; //clear chat in new round
     hideAll();
@@ -1144,26 +1145,31 @@ $(function() {
     socket.emit("mturk_formSubmit", $("#mturk_form").serialize());
   });
 
-  // socket.on('disconnect', function () {
-  //     $disconnectedMessage.show();
-  //     HandleFinish(
-  //         finishingMessage = "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
-  //         mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
-  //         assignmentId = mturkVariables.assignmentId,
-  //         finishingcode = "LeftHit")
-  // });
+  //MW: Reminds the server people are ready after 1 min, so that we don't get stuck if people leave surveys.
+  function submitHold() {
+    $holdingPage.show();
+    clearAllTimers();
+    //Repeats until a new event is received.
+    timers.push(
+      setInterval(() => {
+        socket.emit("ready");
+      }, 1 * 60 * 1000)
+    );
+  }
 });
 
-function startTimer(duration, display) {
+function clearAllTimers() {
   timers.forEach(timer => clearInterval(timer));
+}
+
+function displayTimer(duration, display) {
+  clearAllTimers();
   var start = Date.now(),
     diff,
     minutes,
     seconds;
   timers.push(
     setInterval(() => {
-      // get the number of seconds that have elapsed since
-      // startTimer() was called
       diff = duration - (((Date.now() - start) / 1000) | 0);
 
       // does the same job as parseInt truncates the float
@@ -1186,26 +1192,6 @@ function startTimer(duration, display) {
     }, 1000)
   );
 }
-
-// Old timer
-// {
-//   var timer = duration;
-//   let interval = setInterval(function() {
-//     let minutes = parseInt(timer / 60, 10);
-//     let seconds = parseInt(timer % 60, 10);
-
-//     minutes = minutes < 10 ? "0" + minutes : minutes;
-//     seconds = seconds < 10 ? "0" + seconds : seconds;
-
-//     display.html("Time: " + minutes + ":" + seconds);
-
-//     if (--timer < 0) {
-//       clearInterval(interval);
-//       display.html("");
-//       //timer = duration;
-//     }
-//   }, 1000);
-// }
 
 function turkGetParam(name, defaultValue, uri) {
   var regexS = "[?&]" + name + "=([^&#]*)";
