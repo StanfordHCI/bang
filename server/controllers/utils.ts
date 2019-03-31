@@ -181,7 +181,7 @@ export const payBonus = (userId, mturkId, assignmentId, amount) => {
       BonusAmount: String(amount),
       Reason: "Thanks for participating in our HIT!",
       WorkerId: mturkId,
-      UniqueRequestToken: userId
+      UniqueRequestToken: String(userId)
     };
     mturk.sendBonus(params,
       function(err, data) {

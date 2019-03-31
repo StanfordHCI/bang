@@ -14,7 +14,7 @@ export const activeCheck = async function (io) {
     io.to('waitroom').emit('clients-active', activeCounter);
     logger.info(module, 'Active clients: ' + activeCounter);
     if (activeCounter > 3) {
-      await notifyWorkers(activeUsers.map(user => user.mturkId), 'You can join our experiment', 'Bang')
+      //await notifyWorkers(activeUsers.map(user => user.mturkId), 'You can join our experiment', 'Bang')
     }
   } catch (e) {
     errorHandler(e, 'active check error')
