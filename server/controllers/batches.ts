@@ -41,7 +41,6 @@ export const joinBatch = async function (data, socket, io) {
         addQuals.push(assignQual(user.mturkId, '33CI7FQ96AL58DPIE8NY2KTI5SF7OH'))
       })
       await Promise.all(addQuals)
-      await notifyWorkers(batch.users.map(user => user.mturkId), 'Experiment started. Join here: https://bang-dev.deliveryweb.ru', 'Bang')
       clearRoom(batch.preChat, io);
       await startBatch(batch, socket, io)
     }

@@ -11,8 +11,6 @@ let submitTo = runningLive ? "https://workersandbox.mturk.com" : "https://worker
 const mturk = new AWS.MTurk({ endpoint: endpoint });
 
 
-
-const taskURL = runningLive ? 'https://bang-dev.deliveryweb.ru/' : 'https://bang-dev.deliveryweb.ru/';
 const quals = {
   notUSA: {
     QualificationTypeId: "00000000000000000071",
@@ -42,22 +40,20 @@ const quals = {
     Comparator: "DoesNotExist",
     ActionsGuarded: "DiscoverPreviewAndAccept"
   },
- /* willBang: {
+  willBang: {
     //MEW: useful to filter people who are scheduled to do our HIT.
     QualificationTypeId: runningLive
       ? "3SR1M7GDJW59K8YBYD1L5YS55VPA25" //hardcoded ids, dangerous logic
       : "3SR1M7GDJW59K8YBYD1L5YS55VPA25", //hardcoded ids, dangerous logic
     Comparator: "Exists",
     ActionsGuarded: "DiscoverPreviewAndAccept"
-  }*/
+  }
 };
 
-const qualsForLive = [quals.onlyUSA, quals.hitsAccepted(500), quals.hasBanged];
-const qualsForTesting = [];
-const scheduleQuals = [
-  quals.onlyUSA,
-  quals.hitsAccepted(0),];
-const safeQuals = runningLive ? qualsForLive : qualsForTesting;
+const testScheduleQuals = [quals.hasBanged];
+const liveScheduleQuals = [quals.onlyUSA, quals.hitsAccepted(100), quals.hasBanged]
+const testMainQuals = [quals.hasBanged, quals.willBang]
+const liveMainQuals = [quals.onlyUSA, quals.hitsAccepted(100), quals.hasBanged, quals.willBang]
 
 export const clearRoom = function (room, io) {
   io.of('/').in(room).clients((error, socketIds) => {
@@ -94,15 +90,15 @@ export const makeName = function(friends_history, teamSize) {
   }
 }
 
-export const addHIT = (batch) => {
+export const addHIT = (batch, isMain) => {
   return new Promise((resolve, reject) => {
     let time = Date.now();
     const hourlyWage = 10.5;
     const rewardPrice = 0.01;
+    const duration = isMain ? 60 * (0.5 + batch.roundMinutes * batch.numRounds * 2) : 60;
     let bonusPrice = (hourlyWage * ((batch.roundMinutes * batch.numRounds + 10) / 60) - rewardPrice).toFixed(2);
-
-    let HITTitle =
-      "Write online ads - bonus up to $" + hourlyWage + " / hour (" + time + ")";
+    let bg = isMain ? 'Main task. ' : 'Test task. ';
+    let HITTitle = bg + "Write online ads - bonus up to $" + hourlyWage + " / hour (" + time + ")";
     let description =
       "Work in groups to write ads for new products. This task will take approximately " +
       Math.round(batch.roundMinutes * batch.numRounds + 10) +
@@ -110,26 +106,25 @@ export const addHIT = (batch) => {
       bonusPrice +
       ".";
     let keywords = "ads, writing, copy editing, advertising";
-    let maxAssignments = batch.teamSize * batch.teamSize * 4;
-    let hitContent = externalHIT(taskURL);
+    let maxAssignments = isMain ? batch.teamSize * batch.teamSize * 4 : 100;
+    let hitContent = externalHIT(isMain ? 'https://bang-dev.deliveryweb.ru' : 'https://bang-dev.deliveryweb.ru/accept');
 
     let makeHITParams = {
       Title: HITTitle,
       Description: description,
-      AssignmentDurationInSeconds: 240,
-      LifetimeInSeconds: 240,
+      AssignmentDurationInSeconds: duration,
+      LifetimeInSeconds: duration,
       Reward: String(rewardPrice),
-      AutoApprovalDelayInSeconds: 240,
-      Keywords: keywords, // string
-      MaxAssignments: maxAssignments, // number
-      QualificationRequirements: safeQuals, // list of qualification objects
+      AutoApprovalDelayInSeconds: duration,
+      Keywords: keywords,
+      MaxAssignments: maxAssignments,
+      QualificationRequirements: isMain ? testMainQuals : testScheduleQuals,
       Question: hitContent
     };
 
     mturk.createHIT(makeHITParams, (err, data) => {
       if (err) {reject(err);}
       else {
-        console.log("Posted", data.HIT.MaxAssignments, "assignments:", data.HIT.HITId);
         resolve(data.HIT)
       }
     });
@@ -181,6 +176,56 @@ export const payBonus = (userId, mturkId, assignmentId, amount) => {
       UniqueRequestToken: userId
     };
     mturk.sendBonus(params,
+      function(err, data) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(data)
+        }
+      }
+    );
+  })
+};
+
+export const listHITs = () => {
+  return new Promise((resolve, reject) => {
+    mturk.listHITs({MaxResults: 2},
+      function(err, data) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(data)
+        }
+      }
+    );
+  })
+};
+
+export const listAssignmentsForHIT = (id) => {
+  return new Promise((resolve, reject) => {
+    const params = {
+      HITId: id,
+      AssignmentStatuses: ['Submitted', 'Approved', 'Rejected',],
+      MaxResults: 100,
+    };
+    mturk.listAssignmentsForHIT(params,
+      function(err, data) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(data)
+        }
+      }
+    );
+  })
+};
+
+export const getHIT = (id) => {
+  return new Promise((resolve, reject) => {
+    const params = {
+      HITId: id,
+    };
+    mturk.getHIT(params,
       function(err, data) {
         if (err) {
           reject(err);

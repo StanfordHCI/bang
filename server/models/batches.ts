@@ -56,5 +56,6 @@ let  BatchSchema = new Schema({
   }],
   taskJSON: {},
   midQuestions: [String],
+  HITId: {type: String, required: true},
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);

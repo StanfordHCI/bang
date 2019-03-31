@@ -33,14 +33,14 @@ export const init = async function (data, socket, io) {
       //user can be without token/with wrong token, but in our db
       //but its not secure, if somebody will get another's mturk id - he will get his session
       user = await User.findOne({mturkId: data.mturkId}).populate('batch').lean().exec();
-      if (!user) { //if not in db - create new
-        user = await User.create({
+      if (!user) { //if not in db - create new; moved to mturk logic.
+        /*user = await User.create({
           token: data.mturkId,
           mturkId: data.mturkId,
           assignmentId: data.assignmentId,
           turkSubmitTo: data.turkSubmitTo,
           status: 'waiting',
-        })
+        })*/
       }
     }
 

@@ -1,5 +1,3 @@
-import {addHIT} from "./controllers/utils";
-
 require('dotenv').config({path: './.env'});
 const path = require('path');
 const express = require('express');
@@ -11,12 +9,14 @@ const logger = require('./services/logger');
 import {init, sendMessage, disconnect, activeCheck, joinBang} from './controllers/users'
 import {joinBatch, loadBatch, receiveSurvey} from './controllers/batches'
 import {errorHandler} from './services/common'
+import {addHIT, listHITs, listAssignmentsForHIT, notifyWorkers, assignQual} from "./controllers/utils";
 import {User} from './models/users'
 import {Batch} from './models/batches'
 import {Chat} from "./models/chats";
 const moment = require('moment')
 const cors = require('cors')
 const cron = require('node-cron');
+let currentHIT = '';
 
 mongoose.Promise = global.Promise;
 mongoose.connection.on('error', (err) => {
@@ -112,15 +112,49 @@ cron.schedule('*/30 * * * * *', async function(){
   }
 });
 
-cron.schedule('*/4 * * * *', async function(){
+cron.schedule('* * * * *', async function(){
   console.log(new Date())
   try {
-    const batch = await Batch.findOne({status: 'waiting'}).select('_id').lean().exec();
+    const batch = await Batch.findOne({status: 'waiting'}).select('teamSize roundMinutes numRounds').lean().exec();
     if (batch) {
-      const HIT = await addHIT(batch);
-      logger.info(module, 'Hit created')
+      if (currentHIT) {
+        const as = await listAssignmentsForHIT(currentHIT).Assignments;
+        for (let i = 0; i < as.length; i++) {
+          const assignment = as[i];
+          const check = await User.findOne({mturkId: assignment.WorkerId});
+          if (!check) {//add user to db and give willbang qual
+            console.log(assignment.WorkerId)
+            let prs = [
+              User.create({
+                token: assignment.WorkerId,
+                mturkId: assignment.WorkerId,
+                testAssignmentId: assignment.assignmentId
+              }),
+              assignQual(assignment.WorkerId, '3SR1M7GDJW59K8YBYD1L5YS55VPA25'),
+              notifyWorkers([assignment.WorkerId], 'Experiment started. Please find and accept our main mturk task', 'Bang')
+            ];
+            await Promise.all(prs);
+          }
+        }
+      }
+      const HIT = await addHIT(batch, false);
+      currentHIT = HIT.HITId;
+      logger.info(module, 'Hit created :' + currentHIT)
     }
   } catch (e) {
     errorHandler(e, 'create HIT error')
   }
 });
+
+/*const test = async function(){
+  const hits = await listHITs();
+  let hit = hits.HITs[0];
+  if (hit.Title.indexOf('Test') === -1) { //
+    hit = hits.HITs[1]
+  }
+  const as = await listAssignmentsForHIT(currentHIT)
+  console.log(hit)
+  console.log(as)
+}
+
+test()*/
