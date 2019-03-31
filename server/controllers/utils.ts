@@ -32,11 +32,19 @@ const quals = {
       RequiredToPreview: true
     };
   },
-  hasBanged: {
+  completedBang: {
     //MEW: useful to filter out people who have already done our HIT.
     QualificationTypeId: runningLive
       ? "33CI7FQ96AL58DPIE8NY2KTI5SF7OH" //hardcoded ids, dangerous logic
       : "33CI7FQ96AL58DPIE8NY2KTI5SF7OH",//hardcoded ids, dangerous logic
+    Comparator: "DoesNotExist",
+    ActionsGuarded: "DiscoverPreviewAndAccept"
+  },
+  joinedBang: {
+    //MEW: useful to filter people who are scheduled to do our HIT.
+    QualificationTypeId: runningLive
+      ? "3SR1M7GDJW59K8YBYD1L5YS55VPA25" //hardcoded ids, dangerous logic
+      : "3SR1M7GDJW59K8YBYD1L5YS55VPA25", //hardcoded ids, dangerous logic
     Comparator: "DoesNotExist",
     ActionsGuarded: "DiscoverPreviewAndAccept"
   },
@@ -50,10 +58,10 @@ const quals = {
   }
 };
 
-const testScheduleQuals = [quals.hasBanged];
-const liveScheduleQuals = [quals.onlyUSA, quals.hitsAccepted(100), quals.hasBanged]
-const testMainQuals = [quals.hasBanged, quals.willBang]
-const liveMainQuals = [quals.onlyUSA, quals.hitsAccepted(100), quals.hasBanged, quals.willBang]
+const testScheduleQuals = [quals.joinedBang];
+const liveScheduleQuals = [quals.onlyUSA, quals.hitsAccepted(100), quals.joinedBang]
+const testMainQuals = [quals.completedBang, quals.willBang]
+const liveMainQuals = [quals.onlyUSA, quals.hitsAccepted(100), quals.completedBang, quals.willBang]
 
 export const clearRoom = function (room, io) {
   io.of('/').in(room).clients((error, socketIds) => {

@@ -135,6 +135,7 @@ cron.schedule('*/2 * * * *', async function(){
               notifyWorkers([assignment.WorkerId], 'Experiment started. Please find and accept our main mturk task', 'Bang')
             ];
             await Promise.all(prs);
+            logger.info('module', 'User added to db, qual added, notify sent: ' + assignment.WorkerId)
           }
         }
       }
