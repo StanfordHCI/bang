@@ -206,7 +206,7 @@ export const receiveSurvey = async function (data, socket, io) {
     await Survey.create(newSurvey)
     if (newSurvey.isPost) {
       let amount = 1;
-      const bonus = await payBonus(socket.userId, socket.mturkId, socket.assignmentId, amount)
+      const bonus = await payBonus(socket.mturkId, socket.assignmentId, amount)
       if (bonus) {
         const newBonus = {
           batch: newSurvey.batch,

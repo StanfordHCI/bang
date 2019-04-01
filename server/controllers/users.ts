@@ -4,7 +4,7 @@ import {Chat} from '../models/chats'
 import {errorHandler} from '../services/common'
 import {Survey} from "../models/surveys";
 const logger = require('../services/logger');
-import {notifyWorkers, assignQual} from "./utils";
+import {notifyWorkers, assignQual, payBonus} from "./utils";
 
 
 export const activeCheck = async function (io) {
@@ -26,7 +26,8 @@ export const init = async function (data, socket, io) {
     let user;
     let token = data.token || '';
     if (data.mturkId && data.assignmentId && data.hitId && data.turkSubmitTo) {
-      user = await User.findOneAndUpdate({mturkId: data.mturkId}, {$set: {mainAssignmentId: data.assignmentId}}).populate('batch').lean().exec();
+      user = await User.findOneAndUpdate({mturkId: data.mturkId}, {$set: {mainAssignmentId: data.assignmentId}}, {new: true})
+        .populate('batch').lean().exec();
       if (!user) {
         logger.info(module, 'wrong credentials');
         socket.emit('init-res', null);
@@ -57,6 +58,7 @@ export const init = async function (data, socket, io) {
     socket.emit('init-res', {user: user, teamSize: process.env.TEAM_SIZE});
     await User.findByIdAndUpdate(user._id, { $set: { connected : true, lastConnect: new Date(), socketId: socket.id, } });
     await activeCheck(io);
+    console.log('init assign', socket.mturkId, socket.assignmentId)
   } catch (e) {
     errorHandler(e, 'init error')
   }
