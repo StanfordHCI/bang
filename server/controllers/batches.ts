@@ -98,7 +98,7 @@ const startBatch = async function (batch, socket, io) {
     let bangPrs = [];
     users.forEach(user => {
       bangPrs.push(assignQual(user.mturkId, '33CI7FQ96AL58DPIE8NY2KTI5SF7OH'))
-      bangPrs.push(payBonus(user.mturkId, user.mainAssignmentId, 1.01))
+      bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, 1.01))
     })
     await Promise.all(bangPrs)
 
