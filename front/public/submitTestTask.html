@@ -1,0 +1,36 @@
+<HTMLQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd">
+  <HTMLContent>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta http-equiv='Content-Type' content='text/html; charset=UTF-8'/>
+      <script type='text/javascript' src='https://s3.amazonaws.com/mturk-public/externalHIT_v1.js'></script>
+    </head>
+    <body>
+    <h2>We are planning to run an ad writing task. The task takes approximately 40-50 minutes and if you stay for the
+      whole task, we bonus to a rate of approximately $10.50 per hour. If you submit this HIT, you may be notified when
+      we launch the task and may receive future notifications about our HITs until you have completed that task. Space
+      is limited and submitting this HIT does not guarantee you will be able to participate.</h2>
+
+
+    <form name='mturk_form' method='post' id='mturk_form' action='https://www.mturk.com/mturk/externalSubmit'>
+      <br>
+      <h3>Please select one time slot when you are available to participate in our HIT. We may notify you at that time
+        and at future times when our HIT launches. Timezones for each timeslot are listed.</h3>
+      <input type='radio' value="morning" name="time"/>6-8am PST, 7-9am MST, 8-10am CST, 9-11pm EST <br>
+      <input type='radio' value="midday" name="time"/>9-11am PST, 10am-12pm MST, 11am-1pm CST, 12-2pm EST <br>
+      <input type='radio' value="afternoon" name="time"/>12-2pm PST, 1-3pm MST, 2-4pm CST, 3-5pm EST <br>
+      <input type='radio' value="evening" name="time"/>3-5pm PST, 4-6pm MST, 5-7pm CST, 6-8pm EST <br>
+      <br>
+      <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
+      <input type='hidden' value='WorkerNotification' name='submitCode' id='submitCode'/>
+      <input type='submit' id='submitButton' value='Submit'/></form>
+    <script language='Javascript'>turkSetAssignmentID();
+
+
+    </script>
+    </body>
+    </html>
+  </HTMLContent>
+</HTMLQuestion>
+

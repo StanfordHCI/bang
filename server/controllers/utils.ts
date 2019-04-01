@@ -8,7 +8,7 @@ AWS.config.sslEnabled = true;
 let endpoint = runningLive ? "https://mturk-requester-sandbox.us-east-1.amazonaws.com" :
   "https://mturk-requester-sandbox.us-east-1.amazonaws.com"; //should be changed
 let submitTo = runningLive ? "https://workersandbox.mturk.com" : "https://workersandbox.mturk.com"; //should be changed
-const mturk = new AWS.MTurk({ endpoint: endpoint });
+export const mturk = new AWS.MTurk({ endpoint: endpoint });
 
 
 const quals = {
@@ -123,7 +123,7 @@ export const addHIT = (batch, isMain) => {
       AssignmentDurationInSeconds: duration,
       LifetimeInSeconds: duration,
       Reward: String(rewardPrice),
-      AutoApprovalDelayInSeconds: duration,
+      AutoApprovalDelayInSeconds: 5,
       Keywords: keywords,
       MaxAssignments: maxAssignments,
       QualificationRequirements: isMain ? testMainQuals : testScheduleQuals,
@@ -176,7 +176,6 @@ export const assignQual = (userId, qualId) => {
 
 export const payBonus = (mturkId, assignmentId, amount) => {
   return new Promise((resolve, reject) => {
-    console.log(assignmentId)
     const params = {
       AssignmentId: assignmentId,
       BonusAmount: String(amount),

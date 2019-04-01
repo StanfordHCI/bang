@@ -44,7 +44,7 @@ export const init = async function (data, socket, io) {
 
     socket.mturkId = user.mturkId;
     socket.token = user.token;
-    socket.assignmentId = user.mainAssignmentId;
+    socket.assignmentId = user.testAssignmentId;
     socket.systemStatus = user.systemStatus;
     socket.userId = user._id;
     if (user.batch) {

@@ -55,7 +55,7 @@ class PostSurveyForm extends React.Component {
     const {invalid, batch} = this.props;
 
     return (<div>
-        <form className='form form--horizontal' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
+        <form className='form' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
           <Container>
             <Row>
               <Col>

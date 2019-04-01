@@ -95,11 +95,6 @@ const startBatch = async function (batch, socket, io) {
   try {
     await timeout(5000);
     const users = await User.find({batch: batch._id, connected: true}).lean().exec();
-    let addQuals = [];
-    users.forEach(user => { //add hasbanged qual to all users in batch
-      addQuals.push(assignQual(user.mturkId, '33CI7FQ96AL58DPIE8NY2KTI5SF7OH'))
-    })
-    await Promise.all(addQuals)
 
     if (users.length != batch.teamSize ** 2) {
       console.log('wrong users length') // do something?
@@ -187,7 +182,17 @@ const startBatch = async function (batch, socket, io) {
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: postBatchInfo}).lean().exec();
     io.to(batch._id.toString()).emit('end-batch', postBatchInfo);
     //last survey
-    await timeout(60000);
+    await timeout(120000);
+    const finalSurveys = await Survey.find({batch: batch._id, isPost: true}).select('user').lean().exec()
+    let endPrs = [];
+    users.forEach(user => {
+      endPrs.push(assignQual(user.mturkId, '33CI7FQ96AL58DPIE8NY2KTI5SF7OH'))
+      /*if (finalSurveys.some(x => x.user.toString() === user._id.toString())) {
+        endPrs.push(payBonus(user.mturkId, user.mainAssignmentId, 1))
+      }*/
+    })
+
+    await Promise.all(endPrs)
     await expireHIT(batch.HITId)
     await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
     logger.info(module, 'Main experiment end', batch._id)
