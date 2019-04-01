@@ -33,7 +33,7 @@ const suddenDeath = false;
 
 const randomConditionOn = false;
 const randomRoundOrderOn = true;
-const randomProductOn = true;
+const randomTaskOrderOn = true;
 
 const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
@@ -634,7 +634,7 @@ if (runExperimentNow) {
 }
 
 //Add more products
-let products = [
+let tasks = [
   {
     name: "Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
     url:
@@ -660,8 +660,8 @@ let products = [
   }
 ];
 
-if (randomProductOn) {
-  products = shuffle(products);
+if (randomTaskOrderOn) {
+  tasks = shuffle(tasks);
 }
 
 let users = []; //the main local user storage
@@ -766,7 +766,7 @@ db.batch.insert(
     format: conditions[currentCondition],
     experimentRound: experimentRound,
     numRounds: numRounds,
-    products: products,
+    products: tasks,
     teamSize: teamSize
   },
   (err, usersAdded) => {
@@ -1780,15 +1780,15 @@ io.on("connection", socket => {
 
       //Notify user 'initiate round' and send task.
 
-      let currentProduct = products[currentRound];
+      let currentTask = tasks[currentRound];
 
-      console.log("Current Product:", currentProduct);
+      console.log("Current Product:", currentTask);
 
       let taskText =
         "Design text advertisement for <strong><a href='" +
-        currentProduct.url +
+        currentTask.url +
         "' target='_blank'>" +
-        currentProduct.name +
+        currentTask.name +
         "</a></strong>!";
 
       experimentStarted = true;
@@ -1875,7 +1875,7 @@ io.on("connection", socket => {
         }
       });
 
-      console.log("Issued task for:", currentProduct.name);
+      console.log("Issued task for:", currentTask.name);
       console.log(
         "Started round",
         currentRound,
