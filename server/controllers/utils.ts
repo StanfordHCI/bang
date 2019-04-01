@@ -101,10 +101,10 @@ export const makeName = function(friends_history, teamSize) {
 export const addHIT = (batch, isMain) => {
   return new Promise((resolve, reject) => {
     let time = Date.now();
-    const hourlyWage = 10.5;
+    const hourlyWage = 12;
     const rewardPrice = 0.01;
     const duration = isMain ? 36000 : 250;
-    let bonusPrice = (hourlyWage * ((batch.roundMinutes * batch.numRounds + 10) / 60) - rewardPrice).toFixed(2);
+    let bonusPrice = (hourlyWage * ((batch.roundMinutes * batch.numRounds * 1.5) / 60) - rewardPrice).toFixed(2);
     let bg = isMain ? 'Main task. ' : 'Test task. ';
     let HITTitle = bg + "Write online ads - bonus up to $" + hourlyWage + " / hour (" + time + ")";
     let description =
