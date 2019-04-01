@@ -13,6 +13,7 @@ import AddTemplate from '../containers/admin/AddTemplate'
 import TemplateList from '../containers/admin/TemplateList'
 import HasBanged from '../containers/HasBanged'
 import Accept from '../containers/Accept'
+import BatchEnd from '../containers/BatchEnd'
 
 import constants from 'Constants'
 
@@ -29,6 +30,7 @@ const MainRouter = (props) => {
           <Route exact path='/waiting' component={Waiting}/>
           <Route exact path='/notbanged' component={Accept}/>
           <Route exact path='/batch' component={Batch}/>
+          <Route exact path='/batch-end' component={BatchEnd}/>
           <Route exact path='/batches-add' component={AddBatch}/>
           <Route exact path='/templates-add' component={AddTemplate}/>
           <Route exact path='/batches' component={BatchList}/>
