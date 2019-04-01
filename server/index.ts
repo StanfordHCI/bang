@@ -9,7 +9,7 @@ const logger = require('./services/logger');
 import {init, sendMessage, disconnect, activeCheck, joinBang} from './controllers/users'
 import {joinBatch, loadBatch, receiveSurvey} from './controllers/batches'
 import {errorHandler} from './services/common'
-import {addHIT, disassociateQualificationFromWorker, listAssignmentsForHIT, notifyWorkers, assignQual} from "./controllers/utils";
+import {addHIT, disassociateQualificationFromWorker, listAssignmentsForHIT, notifyWorkers, assignQual, expireHIT, payBonus, mturk} from "./controllers/utils";
 import {User} from './models/users'
 import {Batch} from './models/batches'
 import {Chat} from "./models/chats";
@@ -141,7 +141,8 @@ cron.schedule('*/10 * * * * *', async function(){
               testAssignmentId: assignment.AssignmentId
             }),
             assignQual(assignment.WorkerId, '3SR1M7GDJW59K8YBYD1L5YS55VPA25'),
-            notifyWorkers([assignment.WorkerId], 'Experiment started. Please find and accept our main mturk task', 'Bang')
+            notifyWorkers([assignment.WorkerId], 'Experiment started. Please find and accept our main mturk task here:' +
+              ' https://workersandbox.mturk.com/requesters/A3QTK0H2SRN96W/projects', 'Bang')
           ];
           await Promise.all(prs);
           logger.info('module', 'User added to db, qual added, notify sent: ' + assignment.WorkerId)
@@ -153,14 +154,23 @@ cron.schedule('*/10 * * * * *', async function(){
   }
 });
 
-/*
 
-const test = async function(){
+
+
+/*const test = async function(){
   try {
-    await disassociateQualificationFromWorker('APJC0K7A2B3TM', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd');
-    await disassociateQualificationFromWorker('APJC0K7A2B3TM', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd');
-    const as = (await listAssignmentsForHIT('39N6W9XWRF188WIDLMJ7YEJEMUOYGV')).Assignments;
-    console.log(as)
+    let prs = [
+      disassociateQualificationFromWorker('A3QTK0H2SRN96W', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd'),
+      disassociateQualificationFromWorker('A2RJT3346F362V', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd'),
+      disassociateQualificationFromWorker('A1858EK0YRX9ZV', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd'),
+      disassociateQualificationFromWorker('A2LPEQIGMF3JJL', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd'),
+      disassociateQualificationFromWorker('A3QTK0H2SRN96W', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd'),
+      disassociateQualificationFromWorker('A2RJT3346F362V', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd'),
+      disassociateQualificationFromWorker('A1858EK0YRX9ZV', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd'),
+      disassociateQualificationFromWorker('A2LPEQIGMF3JJL', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd'),
+    ]
+    await Promise.all(prs)
+
   } catch(e) {
     errorHandler(e, 'test error')
   }
@@ -168,3 +178,4 @@ const test = async function(){
 }
 
 test()*/
+

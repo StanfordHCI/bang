@@ -93,7 +93,7 @@ class PostSurveyForm extends React.Component {
                 </div>
               </Col>
             </Row>
-            <Row>
+            <Row style={{marginTop: '100px'}}>
               <Col>
                 <ButtonToolbar className='mx-auto form__button-toolbar'>
                   <Button color='primary' size='sm' type='submit' disabled={invalid}>Submit</Button>
