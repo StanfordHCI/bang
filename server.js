@@ -56,6 +56,9 @@ const qSixteenOn = runningLive;
 const postSurveyOn = true;
 const demographicsSurveyOn = true;
 
+//Just Mark for now. Feel free to add your ID, and finish a task for us so you can get notificaions too.
+const notifyUsList = ["A19MTSLG2OYDLZ"];
+
 if (midSurveyStatusOn && teamSize != 4) {
   throw "Status survey only functions at team size 4";
 }
@@ -289,7 +292,7 @@ mturk.getBalance(function(balance) {
     console.log(chalk.red.inverse.bold("\n!!! BROKE !!!\n"));
     if (notifyUs) {
       mturk.notifyWorkers(
-        ["A19MTSLG2OYDLZ"],
+        notifyUsList,
         `ADD MORE FUNDS: $${balance} left`,
         `EOM`
       );
@@ -1146,9 +1149,7 @@ io.on("connection", socket => {
           mturk.unassignQuals(
             u,
             mturk.quals.willBang,
-            "This qualification is used to qualify a user to " +
-              "participate in our HIT. We only allow one participation per user, so that is why we are " +
-              "removing this qualification. Thank you!"
+            `We remove this qualification after workers pass a certain part of our experiment, to avoid repeating that part. It is not a problem with your work. Thanks for working on this experiment.`
           );
           db.willBang.remove({ id: u }, { multi: true }, function(
             err,
@@ -1161,7 +1162,7 @@ io.on("connection", socket => {
       }
       if (notifyUs) {
         mturk.notifyWorkers(
-          ["A19MTSLG2OYDLZ"],
+          notifyUsList,
           `Rolled ${currentCondition} on ${taskURL}`,
           `Rolled over with: ${currentCondition} on port ${port} at ${taskURL}.`
         );
@@ -1665,7 +1666,7 @@ io.on("connection", socket => {
         console.log(usersFinished, "users have finished.");
         if (notifyUs) {
           mturk.notifyWorkers(
-            ["A19MTSLG2OYDLZ"],
+            notifyUsList,
             `Completed ${currentCondition} on ${taskURL}`,
             `Batch ${batchID} completed: ${currentCondition} on port ${port} at ${taskURL}.`
           );
@@ -2014,7 +2015,7 @@ io.on("connection", socket => {
         ? "We've experienced an error. Please wait for an email from " +
             "scaledhumanity@gmail.com with restart instructions."
         : "The task has finished early. " +
-            "You will be compensated by clicking submit below."
+            "You will be compensated by clicking submit below. If you completed rounds of the main task, you will be bonused based on the time it took to complete those rounds."
     );
   });
 
