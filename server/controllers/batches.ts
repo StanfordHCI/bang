@@ -3,7 +3,7 @@ import {Chat} from '../models/chats'
 import {Batch} from '../models/batches'
 import {Bonus} from '../models/bonuses'
 import {Survey} from '../models/surveys'
-import {clearRoom, makeName} from './utils'
+import {clearRoom, expireHIT, makeName} from './utils'
 import {errorHandler} from '../services/common'
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
@@ -175,7 +175,7 @@ const startBatch = async function (batch, socket, io) {
       //survey logic
 
       //.....
-      await timeout(30000);
+      await timeout(batch.roundMinutes * 30000);
       roundObject.endTime = new Date();
       roundObject.status = 'completed';
       const endRoundInfo = {rounds: rounds};
@@ -188,7 +188,7 @@ const startBatch = async function (batch, socket, io) {
     io.to(batch._id.toString()).emit('end-batch', postBatchInfo);
     //last survey
     await timeout(60000);
-
+    await expireHIT(batch.HITId)
     await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
     logger.info(module, 'Main experiment end', batch._id)
     clearRoom(batch._id, io)

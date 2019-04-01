@@ -103,7 +103,7 @@ export const addHIT = (batch, isMain) => {
     let time = Date.now();
     const hourlyWage = 10.5;
     const rewardPrice = 0.01;
-    const duration = isMain ? 60 * (0.5 + batch.roundMinutes * batch.numRounds * 2) : 241;
+    const duration = isMain ? 36000 : 240;
     let bonusPrice = (hourlyWage * ((batch.roundMinutes * batch.numRounds + 10) / 60) - rewardPrice).toFixed(2);
     let bg = isMain ? 'Main task. ' : 'Test task. ';
     let HITTitle = bg + "Write online ads - bonus up to $" + hourlyWage + " / hour (" + time + ")";
@@ -253,6 +253,20 @@ export const disassociateQualificationFromWorker = (workerId, qualificationId, r
       Reason: reason
     };
     mturk.disassociateQualificationFromWorker(params,
+      function(err, data) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(data)
+        }
+      }
+    );
+  })
+};
+
+export const expireHIT = (id) => {
+  return new Promise((resolve, reject) => {
+    mturk.updateExpirationForHIT({ HITId: id, ExpireAt: new Date("0") },
       function(err, data) {
         if (err) {
           reject(err);
