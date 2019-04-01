@@ -570,7 +570,6 @@ $(function() {
     socket.emit("qFifteenSubmit", $("#qFifteenForm").serialize()); //submits results alone
     socket.emit("next event");
     $qFifteen.hide();
-    submitHold();
     $("#qFifteenForm")[0].reset();
   });
 
@@ -579,7 +578,6 @@ $(function() {
     socket.emit("qSixteenSubmit", $("#qSixteenForm").serialize()); //submits results alone
     socket.emit("next event");
     $qSixteen.hide();
-    submitHold();
     $("#qSixteenForm")[0].reset();
   });
 
@@ -588,7 +586,6 @@ $(function() {
     socket.emit("demographicsSurveySubmit", $("#demographicsForm").serialize()); //submits results alone
     socket.emit("next event");
     $demographicsSurvey.hide();
-    submitHold();
     $("#demographicsForm")[0].reset();
   });
 
@@ -778,7 +775,7 @@ $(function() {
   });
 
   socket.on("load", data => {
-    clearAllTimers;
+    clearAllTimers();
     let element = data.element;
     let questions = data.questions;
 
@@ -1145,7 +1142,7 @@ $(function() {
     socket.emit("mturk_formSubmit", $("#mturk_form").serialize());
   });
 
-  //MW: Reminds the server people are ready after 1 min, so that we don't get stuck if people leave surveys.
+  //MW: Reminds the server people are ready after some time, so that we don't get stuck if people leave surveys.
   function submitHold() {
     $holdingPage.show();
     clearAllTimers();
@@ -1153,7 +1150,7 @@ $(function() {
     timers.push(
       setInterval(() => {
         socket.emit("ready");
-      }, 1 * 60 * 1000)
+      }, 10 * 60 * 1000)
     );
   }
 });
