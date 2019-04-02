@@ -687,15 +687,15 @@ function launchBang(batchID, callback) {
   // HIT Parameters
 
   let bangParameters = {
-    Title: `Allocation task - bonus up to $${hourlyWage}/hour if completed (${batchID})`,
-    Description: `Work in groups to allocate funds. This task will take approximately ${Math.round(
+    Title: `Discussion task - bonus up to $${hourlyWage}/hour if completed (${batchID})`,
+    Description: `Work in groups to discuss facts. This task will take approximately ${Math.round(
       roundMinutes * numRounds + 15
     )} minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $${bonusPrice}.`,
     AssignmentDurationInSeconds: 60 * taskDuration, // 30 minutes?
     LifetimeInSeconds: 60 * timeActive, // short lifetime, deletes and reposts often
     Reward: String(basePrice),
     AutoApprovalDelayInSeconds: 1,
-    Keywords: "allocation, group",
+    Keywords: "facts, group",
     MaxAssignments: numAssignments,
     QualificationRequirements: safeQuals,
     Question: externalHIT(taskURL)

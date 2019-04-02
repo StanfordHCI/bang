@@ -40,7 +40,7 @@ const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitCha
 const starterSurveyOn = false;
 const midSurveyOn = true;
 const midSurveyStatusOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
-const psychologicalSafetyOn = true;
+const psychologicalSafetyOn = runningLive;
 const creativeSurveyOn = false;
 const satisfactionSurveyOn = false;
 const conflictSurveyOn = false;
@@ -638,24 +638,40 @@ if (runExperimentNow) {
 //Add more products
 let tasks = [
   {
-    first: `To purchase a new computer system for the county government in order to hold local taxes constant.`,
-    second: `To purchase additional volumes for the community's library system.`,
-    third: `To create a tourist bureau to develop advertising and other methods of attracting tourism into the community.`
+    task: `<ol>
+    <li>Number of miles from New York to Los Angeles</li>
+    <li>Average weight of an elephant</li>
+    <li>Number of U.S. states that border the Gulf of Mexico</li>
+    <li>Number of months per year residents of Tromoso, Norway go without seeing a sunset</li>
+    <li>Highest temperature (in degrees F) ever registered in the U.S.</li>
+    </ol>`
   },
   {
-    first: `To purchase a new computer system for the county government in order to hold local taxes constant.`,
-    second: `To establish a community arts program featuring art, music, and dance programs for children and adults.`,
-    third: `To establish an additional shelter for the homeless in the community.`
+    task: `<ol>
+    <li>Percentage of air we breathe made up of nitrogen</li>
+    <li>Weight of average white American female in her twenties</li>
+    <li>Average American household income in August, 2008</li>
+    <li>Population of the U.S. in 2009</li>
+    <li>Population of India in 2009</li>
+    </ol>`
   },
   {
-    first: `To purchase job training services for homeless in the community.`,
-    second: `To purchase additional volumes for the community's library system.`,
-    third: `To purchase art for display in the community's art gallery.`
+    task: `<ol>
+    <li>Height of Mt. McKinley (in feet)</li>
+    <li>Percentage of the U.S. population that is Hispanic (according to 2008 census figures)</li>
+    <li>Median age in the U.S.</li>
+    <li>Number of countries in the United Nations</li>
+    <li>Percentage of U.S. adults that go online at least once per week</li>
+    </ol>`
   },
   {
-    first: `To establish a community arts program featuring art, music, and dance programs for children and adults.`,
-    second: `To purchase art for display in the community's art gallery.`,
-    third: `To create a veterans support center to help veterans find jobs.`
+    task: `<ol>
+    <li>Percentage of the American population in the criminal justice system - either behind bars, on probation, or on parole in 2008</li>
+    <li>Average distance driven per vehicle in the U.S. each year (in miles)</li>
+    <li>Number of gallons total of water per day that the average American uses</li>
+    <li>Average weight of a car (in pounds)</li>
+    <li>Size of the U.S. labor force (including unemployed)</li>
+    </ol>`
   }
 ];
 
@@ -1782,11 +1798,7 @@ io.on("connection", socket => {
 
       console.log("Current Task:", currentTask);
 
-      let taskText = `<br><ol><li><strong>${
-        currentTask.first
-      }</strong></li><li><strong>${
-        currentTask.second
-      }</strong></li><li><strong>${currentTask.third}</strong></li></ol><br>`;
+      let taskText = `<br>${currentTask.task}<br>`;
 
       experimentStarted = true;
 
@@ -1892,7 +1904,7 @@ io.on("connection", socket => {
         },
         {
           time: 0.002,
-          message: `You will receive the bonus pay at the stated hourly rate only if you<strong> fill out all survey questions and complete all rounds.</strong>`
+          message: `You will receive the bonus pay at the stated hourly rate only if you <strong>fill out all survey questions and complete all rounds.</strong>`
         },
         {
           time: 0.003,
@@ -1902,41 +1914,35 @@ io.on("connection", socket => {
         },
         {
           time: 0.005,
-          message: `<strong>Task:</strong> You must evaluate competing requests for funding and make judgements about their relative merit. Many programs have merit, but limited resources require that you select the programs that you prefer to fund. You have discretionary funds available, and a number of projects are requesting access to these funds. <br>Your group’s job is to select those that should receive support. <br>Your personal goal in selecting projects for funding is to choose those programs that agree with your personal values.`
+          message: `<strong>Instructions:</strong><br><strong>Please do NOT use any external resources (e.g. internet, books, friends, etc.) besides whoever is in your chatroom. Your answers will NOT impact your bonus, however, if we suspect that external sources were used to answer the questions, we will reject the work.</strong>`
         },
-        {
-          time: 0.006,
-          message: `<br>You have <strong>$500,000 total to allocate</strong> from this fund. <br>Proposals received from various organizations for projects are listed below. Each project is in need of $500,000 but can benefit from any contribution that you might make. The greater the contribution that you make to a particular project, the more likely it is that the chosen project will succeed.`
-        },
-
         {
           time: 0.007,
-          message: `<br><strong>Proposed projects:</strong><br>${taskText}`
+          message: `<br><strong>Estimate the following quantities:</strong><br>${taskText}`
         },
         {
           time: 0.008,
           message: `You have ${textifyTime(
             roundMinutes
-          )} to complete this decision as a group.<br>After everyone is done reading, begin discussing with your group members to agree on a final allocation. <strong>When prompted, enter the final choices and the reasons behind them.</strong><br>There is, of course, no optimal allocation. However, your group’s performance will be evaluated by judges based on how persuasive your arguments for the allocation are.
-          `
+          )} to discuss and estimate hese quantities as a group.<br>`
         },
         {
           time: 0.5,
-          message: `<br><strong>You're about half way through this round.</strong><br> As a reminder, you're deciding on how to allocate $500,000 between the following initiatives based on which programs agree with your personal values:<br>${taskText}`
+          message: `<br><strong>You're about half way through this round.</strong><br> As a reminder, you're estimating the following quantities as a group:<br>${taskText}`
         },
         {
           time: 0.8,
           message:
-            "<br><strong>Get ready to submit your group decision.</strong>"
+            "<br><strong>Get ready to submit your group estimate.</strong>"
         },
         {
           time: 0.81,
-          message: `<br><strong>The programs you are considering are:<br>${taskText}</strong>`
+          message: `<br><strong>The quantities you're estimating are:<br>${taskText}</strong>`
         },
         {
           time: 0.82,
           message:
-            "<br><strong>Submit the team's final choices by sending a message for each program starting with its number in the list above as well as the amount of money allocated and the main reason. Use this format:<br><code>1: $$$ reason</code><br><code>2: $$$ reason</code><br><code>3: $$$ reason</code></strong><br><br>"
+            "<br><strong>Submit the team's final group estimation by sending a message for each item starting with its number in the list above. Here's an example for other similar questions:<br><code>1: 14</code><br><code>2: 200</code><br><code>3: 13042</code></strong><br><br>"
         },
         {
           time: 0.9,
