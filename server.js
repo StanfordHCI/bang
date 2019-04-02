@@ -40,6 +40,7 @@ const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitCha
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
 const midSurveyOn = true; //EMILY UDPATED THIS to be about the jury deliberation.
+const juryPreTaskOn = true; //EMILY ADDED THIS FOR JURY PRETASK
 const midSurveyStatusOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const creativeSurveyOn = false;
 const satisfactionSurveyOn = false;
@@ -73,6 +74,7 @@ console.log(runningLocal ? "Running locally" : "Running remotely");
 // Question Files
 const fs = require("fs");
 const txt = "txt/";
+const juryPreTaskFile = txt + "jury_pretask.txt";
 const midSurveyFile = txt + "midsurvey-q.txt";
 const midSurveyStatusFile = txt + "midsurveystatus-q.txt";
 const psychologicalSafetyFile = txt + "psychologicalsafety-q.txt";
@@ -746,10 +748,16 @@ let eventSchedule = [];
 if (starterSurveyOn) {
   eventSchedule.push("starterSurvey");
 }
+if (juryPreTaskOn) {
+  eventSchedule.push("juryPreTask"); //this goes BEFORE the "ready"
+}
 //update here for a thing before the round starts
 let roundSchedule = [];
 //update round schedul to have pre task
 roundSchedule.push("ready");
+
+// TODO: push the pre-survey HERE
+
 if (midSurveyOn) {
   roundSchedule.push("midSurvey"); //TODO: modify survey here!
 }
@@ -813,6 +821,7 @@ db.batch.insert(
     batchComplete: false,
     starterSurveyOn: starterSurveyOn,
     midSurveyOn: midSurveyOn,
+    juryPreTaskOn: juryPreTaskOn,
     midSurveyStatusOn: midSurveyStatusOn,
     creativeSurveyOn: creativeSurveyOn,
     conflictSurveyOn: conflictSurveyOn,
@@ -1506,7 +1515,7 @@ io.on("connection", socket => {
     let HITId = mturk.returnCurrentHIT();
     // let HITId = process.argv[2];
     let subject =
-      "We launched our new ad writing HIT. Join now, spaces are limited.";
+      "We launched our new jury deliberation HIT. Join now, spaces are limited.";
     console.log(HITId);
     let URL = "";
     mturk.getHITURL(HITId, function(url) {
@@ -1586,7 +1595,23 @@ io.on("connection", socket => {
           user
         );
         taskStartTime = getSecondsPassed();
-      } else if (eventSchedule[currentEvent] === "ready") {
+      } else if (eventSchedule[currentEvent] === "juryPreTask") {
+        if (timeCheckOn) {
+          recordTime("round");
+        }
+        ioEmitById(
+          socket.mturkId,
+          "load",
+          {
+            element: "juryPreTask",
+            questions: loadQuestions(juryPreTaskFile),
+            interstitial: false,
+            showHeaderBar: false
+          },
+          socket,
+          user
+        );
+      }else if (eventSchedule[currentEvent] === "ready") {
         if (starterSurveyOn && timeCheckOn) {
           recordTime("starterSurvey");
         }
@@ -1679,7 +1704,10 @@ io.on("connection", socket => {
       } else if (eventSchedule[currentEvent] === "satisfactionSurvey") {
         if (creativeSurveyOn && timeCheckOn) {
           recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
+        } else if (juryPreTaskOn && timeCheckOn) {
+          recordTime("juryPreTask");
+        }
+        else if (midSurveyStatusOn && timeCheckOn) {
           recordTime("midSurveyStatus");
         } else if (midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
@@ -1701,7 +1729,9 @@ io.on("connection", socket => {
       } else if (eventSchedule[currentEvent] === "conflictSurvey") {
         if (satisfactionSurveyOn && timeCheckOn) {
           recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
+        } else if (juryPreTaskOn && timeCheckOn) {
+          recordTime("juryPreTask");
+        }else if (creativeSurveyOn && timeCheckOn) {
           recordTime("creativeSurvey");
         } else if (midSurveyStatusOn && timeCheckOn) {
           recordTime("midSurveyStatus");
@@ -1729,7 +1759,9 @@ io.on("connection", socket => {
           recordTime("satisfactionSurvey");
         } else if (creativeSurveyOn && timeCheckOn) {
           recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
+        } else if (juryPreTaskOn && timeCheckOn) {
+          recordTime("juryPreTask");
+        }else if (midSurveyStatusOn && timeCheckOn) {
           recordTime("midSurveyStatus");
         } else if (midSurveyOn && timeCheckOn) {
           recordTime("midSurvey");
@@ -1757,6 +1789,8 @@ io.on("connection", socket => {
           recordTime("satisfactionSurvey");
         } else if (creativeSurveyOn && timeCheckOn) {
           recordTime("creativeSurvey");
+        } else if (juryPreTaskOn && timeCheckOn) {
+          recordTime("juryPreTask");
         } else if (midSurveyStatusOn && timeCheckOn) {
           recordTime("midSurveyStatus");
         } else if (midSurveyOn && timeCheckOn) {
@@ -1788,6 +1822,8 @@ io.on("connection", socket => {
           recordTime("satisfactionSurvey");
         } else if (creativeSurveyOn && timeCheckOn) {
           recordTime("creativeSurvey");
+        } else if (juryPreTaskOn && timeCheckOn) {
+          recordTime("juryPreTask");
         } else if (midSurveyStatusOn && timeCheckOn) {
           recordTime("midSurveyStatus");
         } else if (midSurveyOn && timeCheckOn) {
@@ -1827,6 +1863,8 @@ io.on("connection", socket => {
           recordTime("satisfactionSurvey");
         } else if (creativeSurveyOn && timeCheckOn) {
           recordTime("creativeSurvey");
+        } else if (juryPreTaskOn && timeCheckOn) {
+          recordTime("juryPreTask");
         } else if (midSurveyStatusOn && timeCheckOn) {
           recordTime("midSurveyStatus");
         } else if (midSurveyOn && timeCheckOn) {
@@ -1862,6 +1900,8 @@ io.on("connection", socket => {
           recordTime("satisfactionSurvey");
         } else if (creativeSurveyOn && timeCheckOn) {
           recordTime("creativeSurvey");
+        } else if (juryPreTaskOn && timeCheckOn) {
+          recordTime("juryPreTask");
         } else if (midSurveyStatusOn && timeCheckOn) {
           recordTime("midSurveyStatus");
         } else if (midSurveyOn && timeCheckOn) {
@@ -1900,6 +1940,8 @@ io.on("connection", socket => {
           recordTime("satisfactionSurvey");
         } else if (creativeSurveyOn && timeCheckOn) {
           recordTime("creativeSurvey");
+        } else if (juryPreTaskOn && timeCheckOn) {
+          recordTime("juryPreTask");
         } else if (midSurveyStatusOn && timeCheckOn) {
           recordTime("midSurveyStatus");
         } else if (midSurveyOn && timeCheckOn) {
@@ -1942,6 +1984,8 @@ io.on("connection", socket => {
           recordTime("satisfactionSurvey");
         } else if (creativeSurveyOn && timeCheckOn) {
           recordTime("creativeSurvey");
+        } else if (juryPreTaskOn && timeCheckOn) {
+          recordTime("juryPreTask");
         } else if (midSurveyStatusOn && timeCheckOn) {
           recordTime("midSurveyStatus");
         } else if (midSurveyOn && timeCheckOn) {
@@ -2000,6 +2044,8 @@ io.on("connection", socket => {
           recordTime("satisfactionSurvey");
         } else if (creativeSurveyOn && timeCheckOn) {
           recordTime("creativeSurvey");
+        } else if (juryPreTaskOn && timeCheckOn) {
+          recordTime("juryPreTask");
         } else if (midSurveyStatusOn && timeCheckOn) {
           recordTime("midSurveyStatus");
         } else if (midSurveyOn && timeCheckOn) {
@@ -2370,6 +2416,7 @@ io.on("connection", socket => {
               {
                 round: currentRound,
                 survey:
+                  juryPreTaskOn ||
                   midSurveyOn ||
                   creativeSurveyOn ||
                   satisfactionSurveyOn ||
@@ -2415,6 +2462,13 @@ io.on("connection", socket => {
   });
 
   // Starter task
+  socket.on("juryPreTaskSubmit", data => {
+    useUser(socket, user => {
+      user.results.juryPreTask = parseResults(data);
+      updateUserInDB(user, "results.juryPreTask", user.results.juryPreTask);
+    });
+  });
+
   socket.on("starterSurveySubmit", data => {
     useUser(socket, user => {
       user.results.starterCheck = parseResults(data);
@@ -2593,6 +2647,11 @@ io.on("connection", socket => {
           answerObj = dem4;
         } else if (answerTag === "D6") {
           answerObj = dem6;
+        } else if (answerTag === "ARTICLE") { //TODO: new answer type
+          questionObj["question"] =
+            questionObj["question"] + `${taskPDF[currentRound]}`;
+          answerObj = binaryAnswers; //??
+
         } else if (answerTag === "YN15") {
           // yes no
           answerObj = binaryAnswers;
@@ -2674,6 +2733,8 @@ io.on("connection", socket => {
           answerObj = {};
         }
 
+
+        //Had a problem here where answerObj was undefined---find out why!
         questionObj["answers"] = answerObj.answers;
         questionObj["answerType"] = answerObj.answerType;
         questionObj["textValue"] = answerObj.textValue;

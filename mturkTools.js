@@ -894,7 +894,4 @@ function getRandomSubarray(arr, size) {
 }
 
 // workOnActiveHITs(console.log);
-<<<<<<< HEAD
-=======
 // disassociateQualification(quals.willBang.QualificationTypeId,"AECQ7QG4CQP69","You asked to be removed from our notification list.")
->>>>>>> c5ee0a01cc212b96c55ed593252e77c3b2c7ceaf

@@ -54,6 +54,7 @@ $(function() {
   const $holdingPage = $("#holding"); // The holding page
   const $preSurvey = $("#preSurvey"); // The preSurvey page
   const $starterSurvey = $("#starterSurvey"); // The starterSurvey page
+  const $juryPreTask = $("#juryPreTask");
   const $midSurvey = $("#midSurvey"); // the midSurvey page
   const $midSurveyStatusR1 = $("#midSurveyStatusR1"); // the after each round status survey page
   const $midSurveyStatusR2 = $("#midSurveyStatusR2"); // the after each round status survey page
@@ -114,6 +115,7 @@ $(function() {
     $holdingPage.hide();
     $preSurvey.hide();
     $starterSurvey.hide();
+    $juryPreTask.hide();
     $midSurvey.hide();
     $midSurveyStatusR1.hide();
     $midSurveyStatusR2.hide();
@@ -479,6 +481,15 @@ $(function() {
     $checkinPopup.hide();
   });
 
+  $("#juryPreTask").submit(event => {
+    event.preventDefault(); //stops page reloading
+    socket.emit("juryPreTask", $("#juryPreTask").serialize()); //submits results alone
+    socket.emit("next event");
+    $juryPreTask.hide();
+    $holdingPage.show();
+    $("#juryPreTask")[0].reset();
+  });
+
   $("#midForm").submit(event => {
     event.preventDefault(); //stops page reloading
     socket.emit("midSurveySubmit", $("#midForm").serialize()); //submits results alone
@@ -775,9 +786,11 @@ $(function() {
     alert("The experiment is already full. Please return this HIT.");
   });
 
-  socket.on("load", data => {
+  socket.on("load", data => { //This is where you show the survey
     let element = data.element;
     let questions = data.questions;
+
+    console.log("Loaded element " + element + " with questions " + questions);
 
     new Vue({
       el: "#" + element + "-questions",
@@ -789,6 +802,7 @@ $(function() {
     if (!data.interstitial) {
       hideAll();
       $("#" + data.element).show();
+      console.log("showing" + data.element +  "now");
       if (data.showHeaderBar) {
         $headerbarPage.show();
       }
