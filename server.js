@@ -423,21 +423,22 @@ db.willBang = new Datastore({
   timestampData: true
 });
 
-function updateUserInDB(user, field, value) {
-  db.users.update(
-    { mturkId: user.mturkId, batch: batchID },
-    { $set: { [field]: value } },
-    {},
-    err =>
-      console.log(
-        err
-          ? `${chalk.red("Err recording ")} ${field}: ${err}`
-          : `Updated ${field} for ${user.mturkId} ${JSON.stringify(
-              value,
-              null,
-              2
-            )}`
-      )
+function updateUserInDB(user, field, value, singleBatch = true) {
+  //MW: When singleBatch == false, this modifies more than one documents across all batches because otherwise some records wont be edited, e.g. when bonusing.
+  const query = singleBatch
+    ? { mturkId: user.mturkId, batch: batchID }
+    : { mturkId: user.mturkId };
+  const settings = singleBatch ? {} : { multi: true };
+  db.users.update(query, { $set: { [field]: value } }, settings, err =>
+    console.log(
+      err
+        ? `${chalk.red("Err recording ")} ${field}: ${err}`
+        : `Updated ${field} for ${user.mturkId} ${JSON.stringify(
+            value,
+            null,
+            2
+          )}`
+    )
   );
 }
 
@@ -448,9 +449,10 @@ db.users.find({}, (err, usersInDB) => {
   } else {
     if (issueBonusesNow) {
       mturk.payBonuses(usersInDB, bonusedUsers => {
-        bonusedUsers.forEach(u => updateUserInDB(u, "bonus", 0));
+        bonusedUsers.forEach(u => updateUserInDB(u, "bonus", 0, false));
       });
     }
+
     if (assignQualifications && runningLive) {
       mturk.listUsersWithQualificationRecursively(
         mturk.quals.hasBanged,

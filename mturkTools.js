@@ -573,29 +573,33 @@ const listUsersWithQualificationRecursively = (
 
 const payBonuses = (users, callback) => {
   let successfullyBonusedUsers = [];
-  users
+  const bonusableUsers = users
     .filter(u => u.mturkId !== "A19MTSLG2OYDLZ" && u.mturkId.length > 5)
-    .filter(u => u.bonus !== 0)
-    .forEach(u => {
-      mturk.sendBonus(
-        {
-          AssignmentId: u.assignmentId,
-          BonusAmount: String(u.bonus),
-          Reason: "Thanks for participating in our HIT!",
-          WorkerId: u.mturkId,
-          UniqueRequestToken: u.id
-        },
-        err => {
-          if (err) {
+    .filter(u => u.bonus != 0);
+  bonusableUsers.forEach((u, index) => {
+    mturk.sendBonus(
+      {
+        AssignmentId: u.assignmentId,
+        BonusAmount: String(u.bonus),
+        Reason: "Thanks for participating in our HIT!",
+        WorkerId: u.mturkId,
+        UniqueRequestToken: u.id
+      },
+      err => {
+        if (err) {
+          if (
+            err.message.includes(
+              `The idempotency token "${u.id}" has already been processed.`
+            )
+          ) {
+            console.log("Already bonused", u.bonus, u.id, u.mturkId);
+            successfullyBonusedUsers.push(u);
+          } else {
             if (
               err.message.includes(
-                'The idempotency token "' +
-                  u.id +
-                  '" has already been processed.'
+                `Assignment ${u.assignmentId} does not exist.`
               )
             ) {
-              console.log("Already bonused", u.bonus, u.id, u.mturkId);
-              successfullyBonusedUsers.push(u);
             } else {
               console.log(
                 "NOT bonused\t",
@@ -605,17 +609,20 @@ const payBonuses = (users, callback) => {
                 err.message
               );
             }
-          } else {
-            successfullyBonusedUsers.push(u);
-            console.log("Bonused:", u.bonus, u.id, u.mturkId);
           }
-          if (typeof callback === "function") {
+        } else {
+          successfullyBonusedUsers.push(u);
+          console.log("Bonused:", u.bonus, u.id, u.mturkId);
+        }
+        if (typeof callback === "function") {
+          if (bonusableUsers.length === index + 1) {
             callback(successfullyBonusedUsers);
           }
-          return successfullyBonusedUsers;
         }
-      );
-    });
+        return successfullyBonusedUsers;
+      }
+    );
+  });
 };
 
 // * blockWorker *
