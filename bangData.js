@@ -1,8 +1,10 @@
 const fs = require("fs");
-var exec = require("child_process").exec;
-let mturk = require("./mturkTools");
+const exec = require("child_process").exec;
+const mturk = require("./mturkTools");
 
-const dir = "./.data/";
+const serverURL = "b01.dmorina.com";
+const dbLocation = ".data";
+const dir = `./${dbLocation}/`;
 
 Array.prototype.set = function() {
   const setArray = [];
@@ -42,6 +44,38 @@ db.ourHITs = new Datastore({
   timestampData: true
 });
 
+const rooms = ["A", "B", "C", "D"];
+const products = [
+  {
+    category: "Tea",
+    name: "Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
+    url:
+      "https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw"
+  },
+  {
+    category: "Stool",
+    name: "Stool Nº1",
+    url: "https://www.kickstarter.com/projects/390812913/stool-no1"
+  },
+  {
+    category: "Clock",
+    name: "LetB Color - take a look at time in different ways",
+    url:
+      "https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways"
+  },
+  {
+    category: "Light",
+    name: "FLECTR 360 OMNI – cycling at night with full 360° visibility",
+    url: "https://www.kickstarter.com/projects/outsider-team/flectr-360-omni"
+  },
+  {
+    category: "Chair",
+    name: "The Ollie Chair: Shape-Shifting Seating",
+    url:
+      "https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating"
+  }
+];
+
 //Renders a full db by name.
 function renderBatch(dbName, batch) {
   db[dbName].find({}, (err, data) => {
@@ -58,7 +92,7 @@ function renderChats(batch) {
     } else {
       try {
         const chats = JSON.parse(chatsJSON);
-        console.log("\nChats for batch:",batch);
+        console.log("\nChats for batch:", batch);
         chats
           .map(a => a.round)
           .set()
@@ -70,25 +104,18 @@ function renderChats(batch) {
               .set()
               .sort()
               .forEach(currentRoom => {
-                console.log("\nRoom",currentRoom,"in round",currentRound);
-                let ads = chats
+                console.log("\nRoom", currentRoom, "in round", currentRound);
+                chats
                   .sort((a, b) => a.time - b.time)
                   .filter(a => a.room == currentRoom && a.round == currentRound)
-                  // .filter(a => a.message[0] === "!");
-                ads.forEach(m => console.log("  ",m.userID + ": " + m.message))
-                let chosenAd = ads[ads.length - 1];
-                ad = {
-                  batch: chosenAd.batch,
-                  round: chosenAd.round,
-                  room: chosenAd.room,
-                  text: chosenAd.message.slice(1),
-                  user: chosenAd.userID
-                };
-                console.log(ad.batch, ad.round, ad.room, ad.text);
+                  .forEach(m =>
+                    console.log(`${m.userID.substring(0, 5)}  ${m.message}`)
+                  );
+                // console.log(`Ad: ${ad.text}`);
               });
           });
       } catch (err) {
-        console.log('File ending error in batch',batch)
+        console.log("File ending error in batch", batch);
       }
     }
   });
@@ -117,11 +144,10 @@ function renderAds(batch) {
                 // console.log("\nRoom",currentRoom,"in round",currentRound);
                 let ads = chats
                   .sort((a, b) => a.time - b.time)
-                  .filter(
-                    a => a.room == currentRoom && a.round == currentRound
-                  ); //.filter(a => a.message[0] === "!")
+                  .filter(a => a.room == currentRoom && a.round == currentRound)
+                  .filter(a => a.message[0] === "!");
                 ads = ads.slice(ads.length - 5);
-                ads.forEach(m => console.log("  ", m.message));
+                // ads.forEach(m => console.log("  ", m.message));
                 let chosenAd = ads[ads.length - 1];
                 ad = {
                   batch: chosenAd.batch,
@@ -130,14 +156,56 @@ function renderAds(batch) {
                   text: chosenAd.message.slice(1, 31),
                   user: chosenAd.userID
                 };
-
                 console.log([ad.batch, ad.round, ad.room, ad.text].join("|"));
                 // console.log(ad.text);
               });
           });
       } catch (err) {
-        // console.log('File ending error in batch',batch)
+        throw err;
       }
+    }
+  });
+}
+
+function generateAddsCSVRow(batch) {
+  //get chats database
+  fs.readFile(dir + batch + "/" + "chats.json", (err, chatsRAW) => {
+    if (err) throw err;
+    else {
+      fs.readFile(dir + batch + "/" + "batch.json", (err, batchRAW) => {
+        if (err) throw err;
+        else {
+          try {
+            const chats = JSON.parse(chatsRAW);
+            const batchData = JSON.parse(batchRAW)[0];
+            batchData.products.forEach((product, round) => {
+              product.category = products.filter(
+                p => p.url === product.url
+              )[0].category;
+              rooms.forEach(room => {
+                const ads = chats
+                  .filter(a => a.round === round)
+                  .filter(a => a.room === room)
+                  .filter(a => a.message[0] === "!")
+                  .sort((a, b) => a.time - b.time);
+                if (ads.length != 0) {
+                  const ad = ads[ads.length - 1];
+                  csvRow = `Enabled,Expanded text ad,${
+                    product.url
+                  },, --, --,,"${ad.message.slice(1, 31)}",Kickstarter, --,"${
+                    product.name
+                  }", --, --, --,No,"${
+                    product.category
+                  }",Under review,0,0, --,USD, --,0`;
+                  console.log(csvRow);
+                }
+              });
+            });
+          } catch (err) {
+            throw err;
+          }
+        }
+      });
     }
   });
 }
@@ -266,7 +334,7 @@ function retroactivelyFixRooms() {
 }
 
 //Renders a full db by name.
-function saveOutBatch(dbName, batch) {
+function saveBatchArchive(dbName, batch) {
   const batchDir = dir + batch;
   if (!fs.existsSync(batchDir)) {
     fs.mkdirSync(batchDir);
@@ -316,30 +384,30 @@ function useEachBatchDB(callback) {
   });
 }
 
-function saveAllData() {
+function saveDBArchives() {
   useEachBatchDB(batch => {
-    ["users", "chats", "batch"].forEach(data => {
-      saveOutBatch(data, batch);
+    ["users", "chats", "batch"].forEach(db => {
+      saveBatchArchive(db, batch);
     });
   });
 }
 
-function downloadData(url, callback) {
+function downloadData(serverFolder, callback) {
   let pemFile = "~/.ssh/sh-batch.pem";
-  if (url.includes("mark") || url.includes("bang")) {
+  if (serverURL.includes("mark") || serverURL.includes("bang")) {
     pemFile = "~/.ssh/sh-server.pem";
   }
-  const destination = ".data";
   const names = ["users", "chats", "batch"];
   names.forEach(name => {
-    const source = "ubuntu@" + url + ":b02/.data/" + name; //Emily changed this to be b02, her server
-    const command = ["scp", "-i", pemFile, source, destination];
+    const source = `ubuntu@${serverURL}:${serverFolder}/${dbLocation}/${name}`;
+    const command = ["scp", "-i", pemFile, source, dbLocation];
+    console.log(`Running: ${command}`);
     exec(command.join(" "), (err, stdout, stderr) => {
       if (err) console.log(err);
       else {
-        console.log("Downloaded data from", url);
+        console.log("Downloaded data from", serverURL);
         if (typeof callback == "function") {
-          callback(stdout);
+          setTimeout(callback(stdout));
         }
       }
     });

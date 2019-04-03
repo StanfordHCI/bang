@@ -1,0 +1,796 @@
+---
+title: "Fracture CHI 2019 Results: n=2"
+output: html_document
+fig_width: 3.5
+fig_caption: yes
+---
+
+## Set-up packages // libraries and prepare for data import:
+```{r echo=FALSE, include=FALSE, results='hide'}
+library(jsonlite)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(pROC)
+library(stargazer)
+library(dplyr)
+```
+
+## Set-up directories, import and clean data:
+```{r, include=TRUE, echo=TRUE}
+rm(list=ls())
+setwd("/Users/mark/Documents/Academia/Stanford/scaled-humanity/bang/R") # Change this to your working directory where Bang/R file is located 
+getwd()
+dataPath = "../.data"
+MINIMUM_BATCH_NUMBER = 1552194538000  # Identify the batch number that represents the start of the batches you'd like to include in your analysis 
+
+# last 2 days 1537366991708
+# start of final day  1537514940000 
+
+TEAM_SIZE = 3 # Alter depending on team size in runs you're analyzing; this variable is used later on to ensure that you're filtering out all team_sizes != the size you've specified 
+
+MIN_FRACTURE_PERCENT = 0.5 # Default cut off for fracture within a team; this variable is used later to label binary 0 (no fracture), 1 (fracture) values at a group level 
+
+## Function to extract blacklist surveys:
+extractBlacklistSurvey = function(frame,survey) {
+  rounds = seq(1,4)
+  roundResponses = lapply(rounds, function(round) {
+    getCol = paste("results.",survey,".",round, sep="")
+    surveyCols = Filter(function(x) grepl(getCol,x),names(frame))
+    newCols = lapply(surveyCols, function(x) gsub(getCol,paste("results.",survey, sep=""),x) )
+    surveyFrame = as.data.frame(frame[,surveyCols])
+    if (is.null(newCols)) {return("No newCols")}
+    names(surveyFrame) = newCols
+    surveyFrame$id = frame$id
+    surveyFrame$round = round
+    surveyFrame$batch = frame$batch
+    #surveyFrame$room = frame$room
+    surveyFrame$rooms = frame$rooms
+    surveyFrame$manipulationCheck <- frame$results.manipulationCheck
+    #surveyFrame$blacklist = frame$results.blacklistCheck
+    return(surveyFrame)
+  })
+  return(Reduce(rbind, roundResponses))
+}
+
+## Seperate viability function to deal with different column types
+extractViabilitySurvey = function(frame,survey) {
+  rounds = seq(1,4)
+  roundResponses = lapply(rounds, function(round) {
+    getCol = paste("results.",survey,".",round, sep="")
+    surveyCols = Filter(function(x) grepl(getCol,x),names(frame))
+    newCols = lapply(surveyCols, function(x) gsub(getCol,paste("results.",survey, sep=""),x) )
+    surveyFrame = as.data.frame(frame[,surveyCols])
+    if (is.null(newCols)) {return("No newCols")}
+    names(surveyFrame) = newCols
+    surveyFrame$id = frame$id
+    surveyFrame$round = round
+    surveyFrame$batch = frame$batch
+    surveyFrame$rooms = frame$rooms
+    #surveyFrame$room = frame$room
+    surveyFrame$manipulationCheck.1 = frame$results.manipulationCheck.1
+    #surveyFrame$blacklist = frame$results.blacklistCheck
+    return(surveyFrame)
+    print(surveyFrame)
+  dim(surveyFrame)
+  })
+  return(Reduce(bind_rows, roundResponses))
+}
+
+task = c("creative", "intellective", "cognative-conflic")
+taskText = c("The Ollie Chair: Shape-Shifting Seating", "<ol>\n    <li>Number of miles from New York to Los Angeles</li>\n    <li>Average weight of an elephant</li>\n    <li>Number of U.S. states that border the Gulf of Mexico</li>\n    <li>Number of months per year residents of Tromoso, Norway go without seeing a sunset</li>\n    <li>Highest temperature (in degrees F) ever registered in the U.S.</li>\n    </ol>", "To purchase art for display in the community's art gallery.")
+
+checkTask = function(batchData) {
+  frame = as.data.frame(batchData$products)
+  if(any(which(frame == taskText[1]))) {
+    return(task[1])
+  }
+  if(any(which(frame == taskText[2]))) {
+    return(task[2])
+  }
+  if(any(which(frame == taskText[3]))) {
+    return(task[3])
+  }
+  return("none")
+}
+
+loadBatch = function(batch){
+  batchData = read_json(paste(dataPath,batch,"batch.json",sep="/"), simplifyVector = TRUE)
+  c(batch,
+    task = checkTask(batchData)
+    )
+}
+
+# Filter batches and convert JSON to data frames
+options(scipen=999) # Change from scientific notation so we can compare batch numbers below
+batches = dir(dataPath, pattern = "^[0-9]+$" )
+batches = as.numeric(batches) 
+batches = batches[batches>MINIMUM_BATCH_NUMBER]
+batchFrame = as.data.frame(batches)
+batchFrame = batchFrame %>% 
+  filter(any(dir(paste(dataPath,batches,sep="/")) == "batch.json")) %>%
+  filter(any(dir(paste(dataPath,batches,sep="/")) == "users.json")) %>%
+  mutate(batch = batches) %>%
+  select( -batches )
+batchFrame = apply(batchFrame,1 ,loadBatch)
+batchFrame = t(batchFrame)
+batchFrame = data.frame(
+  batch = as.numeric(batchFrame[,1]),
+  task = as.character(batchFrame[,2])
+)
+
+batches = Filter(function(batch) {
+  if (any(dir(paste(dataPath,batch,sep="/")) == "batch.json") && (any(dir(paste(dataPath,batch,sep="/")) == "users.json")) ) {
+      batchData = read_json(paste(dataPath,batch,"batch.json",sep="/"), simplifyVector = TRUE)
+      return(any(batchData$batchComplete == TRUE))
+    }
+    return(FALSE)
+}, batches)
+
+
+users <- Reduce(function(x,y) merge(x, y, all=TRUE), lapply(batches, function(batch) {
+  userFile = read_json(paste(dataPath,batch,"users.json",sep="/"), simplifyVector=TRUE)
+  return(flatten(userFile, recursive = TRUE))
+}))
+
+# Filter out variables not relevant to analysis: 
+# users <- users %>%
+#   select(-results.engagementFeedback.undefined, -results.qSixteenCheck.undefined, -results.qFifteenCheck.undefined, -contains("results.viabilityCheck.0"))
+users <- users %>%
+  select(
+    -results.qSixteenCheck.2, 
+    -results.qSixteenCheck.4, 
+    -results.qSixteenCheck.6, 
+    -results.qSixteenCheck.8, 
+    -results.qFifteenCheck.2, 
+    -results.qFifteenCheck.4, 
+    -results.qFifteenCheck.6, 
+    -results.qFifteenCheck.8
+  ) %>%
+  mutate(
+    results.qFifteenCheck.2 = results.qFifteenCheck.3, 
+    results.qFifteenCheck.3 = results.qFifteenCheck.5, 
+    results.qFifteenCheck.4 = results.qFifteenCheck.7, 
+    results.qSixteenCheck.2 = results.qSixteenCheck.3, 
+    results.qSixteenCheck.3 = results.qSixteenCheck.5, 
+    results.qSixteenCheck.4 = results.qSixteenCheck.7
+  )
+users <- users %>% 
+  select(
+    -contains("results.psychologicalSafety"),
+    -contains("demographicsCheck"),
+    -contains("undefined")
+  )
+
+users <- na.omit(users)
+
+# Function to assign round numbers in the correct order 
+usersRounds = as.data.frame(Reduce(rbind, apply(users,1,function(x) {
+  roomsForIndividual = lapply(seq(1,4),function(y) {
+    x$room = x$rooms[y]
+    x$round = y
+    return(x)
+  })
+  return(Reduce(rbind, roomsForIndividual))
+})))
+
+# Converting variables to their proper respective form for later analysis: 
+usersRounds <- usersRounds %>% mutate(id = as.character(id), batch=as.numeric(batch), round=as.numeric(round), room=as.character(room))
+usersRounds <- usersRounds %>% select(id, batch, round, room)
+
+## Use extract survey function to reformat survey data:
+manipulationCheck <- usersRounds %>%
+  left_join(users, by=c("id", "batch")) %>% # Left join 
+  mutate(room=room.x) %>%
+  mutate(manipulation=results.manipulation) %>%
+  mutate(manipulationCheck=results.manipulationCheck.1) %>%
+  mutate(teamOrder=results.format) %>%
+  mutate(condition=results.condition) %>%
+  select(id, batch, room, round, manipulation, manipulationCheck, teamOrder, condition) %>%
+  left_join(batchFrame, by="batch")
+
+qFifteen <- extractBlacklistSurvey(users, 'qFifteenCheck')
+qSixteen <- extractBlacklistSurvey(users, 'qSixteenCheck')
+viabilitySurvey <- extractViabilitySurvey(users, 'viabilityCheck')
+```
+
+# Now merge everything
+```{r}
+usersRounds <- manipulationCheck %>%
+  left_join(qFifteen, by=c("id", "batch", "round")) %>%
+  left_join(qSixteen, by=c("id", "batch", "round")) %>%
+  left_join(viabilitySurvey, by=c("id", "batch", "round")) %>%
+  mutate(rooms = rooms.x, manipulation = as.character(manipulation), manipulationCheck = as.character(manipulationCheck.x)) %>%
+  select(-manipulationCheck.x, -manipulationCheck.y, -rooms, -rooms.x, -rooms.y)
+# rm(list=c("qFifteen","qSixteen","viabilitySurvey","manipulationCheck"))
+
+usersRounds <- usersRounds %>% 
+  mutate(condition = case_when(
+    condition=="treatment" ~ "masked",
+    condition=="control" ~ "unmasked"
+  ))
+
+# Conditionally assign conditions based on treatment and results column:
+## For runs with 4 rounds:
+usersRounds <- usersRounds %>% mutate(
+  team = case_when(
+    teamOrder=="c(1, 1, 2, 3)" & round==1 ~ "A",
+    teamOrder=="c(1, 1, 2, 3)" & round==2 ~ "Ap",
+    teamOrder=="c(1, 1, 2, 3)" & round==3 ~ "B",
+    teamOrder=="c(1, 1, 2, 3)" & round==4 ~ "B",
+    teamOrder=="c(1, 2, 1, 3)" & round==1 ~ "A",
+    teamOrder=="c(1, 2, 1, 3)" & round==2 ~ "B",
+    teamOrder=="c(1, 2, 1, 3)" & round==3 ~ "Ap",
+    teamOrder=="c(1, 2, 1, 3)" & round==4 ~ "B",
+    teamOrder=="c(2, 1, 1, 3)" & round==1 ~ "B",
+    teamOrder=="c(2, 1, 1, 3)" & round==2 ~ "A",
+    teamOrder=="c(2, 1, 1, 3)" & round==3 ~ "Ap",
+    teamOrder=="c(2, 1, 1, 3)" & round==4 ~ "B",
+    teamOrder=="c(2, 3, 1, 1)" & round==1 ~ "B",
+    teamOrder=="c(2, 3, 1, 1)" & round==2 ~ "B",
+    teamOrder=="c(2, 3, 1, 1)" & round==3 ~ "A",
+    teamOrder=="c(2, 3, 1, 1)" & round==4 ~ "Ap",
+    teamOrder=="c(2, 1, 3, 1)" & round==1 ~ "B",
+    teamOrder=="c(2, 1, 3, 1)" & round==2 ~ "A",
+    teamOrder=="c(2, 1, 3, 1)" & round==3 ~ "B",
+    teamOrder=="c(2, 1, 3, 1)" & round==4 ~ "Ap",
+    teamOrder=="c(1, 2, 3, 1)" & round==1 ~ "A",
+    teamOrder=="c(1, 2, 3, 1)" & round==2 ~ "B",
+    teamOrder=="c(1, 2, 3, 1)" & round==3 ~ "B",
+    teamOrder=="c(1, 2, 3, 1)" & round==4 ~ "Ap"
+  ))
+
+## Factor for visualizations:
+levels <- c("Strongly Disagree", "Disagree", "Neutral","Agree", "Strongly Agree")
+usersRounds <- usersRounds %>%
+  mutate_at(.vars = vars(contains("viabilityCheck")), funs(factor(., levels = levels)))
+usersRounds$viabilityScale <- usersRounds %>%
+  select(contains("viabilityCheck")) %>%
+  mutate_all(as.numeric) %>%
+  rowSums()
+usersRounds <- usersRounds %>%
+  select(-contains("viabilityCheck"))
+rm("levels")
+
+## Rename Q15 + Q16:
+usersRounds <- usersRounds %>%
+  mutate(fracture = results.qFifteenCheck == "Do not keep this team",
+         fractureMeta = results.qSixteenCheck == "Do not keep this team") %>%
+  select(-results.qFifteenCheck, -results.qSixteenCheck)
+
+teamStats <- usersRounds %>%
+  arrange(id) %>%
+  group_by(room, batch, round, condition, team, task) %>%
+  summarise(n=n(), 
+            teamMeanViability=mean(viabilityScale), 
+            teamMedianViability=median(viabilityScale),
+            groupManipulationCheck=sum(as.numeric(manipulationCheck==manipulation)/n()),
+            teamProportionFracture=sum(fracture/n()),
+            teamMembers = paste(id, collapse=", "))
+
+# Filter down to only partners (dyads)
+teamStats <- teamStats %>%
+  filter(n>=TEAM_SIZE)
+usersRounds <- teamStats %>%
+  select(room, batch, round, teamProportionFracture, condition) %>%
+  left_join(usersRounds, by=c("room", "batch", "round", "condition","team"))
+
+## Table showing how many teams we've run in each condition combination:  
+print(table(teamStats$condition, teamStats$team))
+
+teamViability = teamStats$teamMeanViability
+viabilityMean = mean(teamViability)
+viabilitySD = sd(teamViability)*sqrt((length(teamViability)-1)/(length(teamViability)))
+
+# Centering / standardizing viability score 
+teamStats$viabilityZ = (teamStats$teamMeanViability - viabilityMean) / viabilitySD
+
+## Define and initialize cut-off pozzint for fracture:
+teamStats <- teamStats %>%
+  group_by(room, batch, round, condition) %>%
+  mutate(teamFracture = case_when (teamProportionFracture<MIN_FRACTURE_PERCENT ~ FALSE,
+                                teamProportionFracture>=MIN_FRACTURE_PERCENT ~ TRUE))
+
+# now add whether the team fractured to data
+usersRounds <- usersRounds %>%
+  select(-teamProportionFracture, -team) %>%
+  left_join(teamStats, by=c("room", "batch", "round", "condition","task"))
+
+# did they guess correctly?
+usersRounds$partnerFractured <- ifelse(usersRounds$teamProportionFracture == 0, FALSE,
+                                ifelse(usersRounds$teamProportionFracture == 1, TRUE,
+                                       ifelse(usersRounds$fracture, FALSE, TRUE)))
+usersRounds$metaGuessedCorrectly <- usersRounds$fractureMeta == usersRounds$partnerFractured
+
+data = usersRounds
+
+# For exporting data
+# teamStats$fracture = as.numeric(teamStats$teamFracture)
+# write.csv(teamStats, file = "teamStats.csv")
+```
+
+### Manipulation Check
+
+# R manipulationcheck
+```{r, echo=TRUE}
+manipulationCheckAccuracy = data %>%
+  ungroup() %>%
+  distinct(id, batch, condition, manipulation, manipulationCheck, task) %>%
+  mutate(manipulationCheckCorrect = manipulation == manipulationCheck)
+
+manipulationCheckAccuracyByCondition <- manipulationCheckAccuracy %>%
+  group_by(condition,task) %>%
+  summarise(numCorrect = sum(manipulationCheckCorrect), n=n(), accuracy = numCorrect/n, se = sqrt(accuracy*(1-accuracy)/n))
+print(manipulationCheckAccuracyByCondition)
+print(table(manipulationCheckAccuracyByCondition))
+
+manipulationCheckAccuracyByTeams <- teamStats %>%
+  group_by(condition,task) %>%
+  summarise(meanCorrect=sum(groupManipulationCheck>=.25),n=n(),accuracy=meanCorrect/n)
+manipulationCheckAccuracyByTeams
+
+numRounds = lengths(data$teamOrder)[1] # split up the list of teams in order to figure out how many rounds they had
+numSameTeam = 2 # number of times they meet with the same team
+chanceManipulation <- (1/choose(numRounds, numSameTeam))
+
+p <- ggplot(data=filter(manipulationCheckAccuracyByCondition), aes(x=condition, y=accuracy)) + # add  , condition=="masked" to filter for only masked
+  geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
+  geom_hline(yintercept=chanceManipulation, size=1, color="grey") +   
+  geom_errorbar(aes(ymin=accuracy-se, ymax=accuracy+se), width = 0.1) +
+  scale_x_discrete(labels=c("Masked teams","Unmasked teams")) +
+  scale_y_continuous(labels = scales::percent_format(1)) + 
+  theme_classic() + labs(subtitle="", 
+       x="",
+       y="Accuracy at identifying\n the repeat collaborators")
+
+# pdf('manipulationcheck.pdf', width=3.5, height=2.5)
+# dev.off();
+p
+
+```
+
+## 1B: Proportion test comparing treatment manipulation percent correct with chance:
+# R manipulationcheckprop
+```{r}
+## Proportion test with treatment and chance: 
+maskedAccuracy <- filter(manipulationCheckAccuracyByCondition, condition=="masked")
+manipulationCheckChanceComparison <- prop.test(maskedAccuracy[1,]$numCorrect, maskedAccuracy[1,]$n, chanceManipulation)
+print(manipulationCheckChanceComparison)
+
+```
+
+
+### Consistency of fracture
+```{r}
+fractureFirst <- teamStats %>%
+  filter(team=="A")
+fractureSecond <- teamStats %>%
+  filter(team=="Ap")
+fractureConsistency <- fractureFirst %>%
+  ungroup() %>%
+  left_join(fractureSecond, by=c("teamMembers", "batch", "condition","task"), suffix=c(".first", ".second"))
+fractureConsistency$consistent <- fractureConsistency$teamFracture.first == fractureConsistency$teamFracture.second
+fractureConsistency$continuous <- fractureConsistency$viabilityZ.first - fractureConsistency$viabilityZ.second
+fractureConsistency$continuousAbs <- abs(fractureConsistency$continuous)
+rm("fractureFirst","fractureSecond")
+
+conditionConsistency <- fractureConsistency %>%
+  group_by(condition,task) %>%
+  summarise(
+    numConsistent = sum(consistent), 
+    n=n(), 
+    percentConsistent=numConsistent/n, 
+    se=sqrt(percentConsistent*(1-percentConsistent))/n,
+    numContinuousAbs = viabilityMean - sum(continuousAbs),
+    percentContinuous = numContinuousAbs / viabilityMean,
+    seContinuous=sqrt(percentContinuous*(1-percentContinuous))/n
+    )
+print(conditionConsistency)
+
+maskedConsistency <- fractureConsistency %>% filter(condition=="masked")
+unmaskedConsistency <- fractureConsistency %>% filter(condition=="unmasked")
+
+prop.test(conditionConsistency$numConsistent, conditionConsistency$n, p=NULL, alternative = "two.sided", correct = TRUE)
+# 
+# t.test(maskedConsistency$viabilityZ.first,maskedConsistency$viabilityZ.second,paired = TRUE)
+# t.test(unmaskedConsistency$viabilityZ.first,unmaskedConsistency$viabilityZ.second,paired = TRUE)
+# t.test(fractureConsistency$continuousAbs~fractureConsistency$condition, var.equal = TRUE)
+# t.test(fractureConsistency$continuousAbs~fractureConsistency$condition)
+# 
+# sd(maskedConsistency$continuousAbs)
+# sd(unmaskedConsistency$continuousAbs)
+
+p <- ggplot(data=filter(conditionConsistency), aes(x=condition, y=percentConsistent)) +
+  geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
+  geom_errorbar(aes(ymin=percentConsistent-se, ymax=percentConsistent+se), width = 0.1) +
+  scale_x_discrete(labels=c("Masked teams","Unmasked teams")) +
+  scale_y_continuous(labels = scales::percent_format(1)) + 
+  theme_classic() + labs(subtitle="", 
+       x="",
+       y="Consistancy of fracture")
+
+pdf('manipulationcheck.pdf', width=3.5, height=2.5)
+dev.off();
+p
+
+# p2 <- ggplot(data=filter(conditionConsistency), aes(x=condition, y=percentContinuous)) +
+#   geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
+#   geom_errorbar(aes(ymin=percentContinuous-seContinuous, ymax=percentContinuous+seContinuous), width = 0.1) +
+#   scale_x_discrete(labels=c("Masked teams","Unmasked teams")) +
+#   scale_y_continuous(labels = scales::percent_format(1)) +
+#   theme_classic() + labs(subtitle="",
+#        x="",
+#        y="Consistancy of fracture")
+# 
+# pdf('manipulationcheck.pdf', width=3.5, height=2.5)
+# dev.off();
+# p2
+
+```
+
+```{r}
+# library(lme4)
+# fractureConsistency$team = paste(fractureConsistency$batch,fractureConsistency$room.first,fractureConsistency$round.first,sep = )
+# summary(lmer(continuousAbs ~ condition + (1 | team), fractureConsistency))
+
+p <- ggplot(data=filter(teamStats), aes(x=teamFracture, y=teamMeanViability)) +
+  geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
+  # geom_errorbar(aes(ymin=percentConsistent-se, ymax=percentConsistent+se), width = 0.1) +
+  scale_x_discrete(labels=c("No fracture","Fracture")) +
+  # scale_y_continuous(labels = scales) + 
+  theme_classic() + labs(subtitle="", 
+       x="",
+       y="")
+
+
+g <- ggplot(teamStats, aes(factor(teamFracture), teamMeanViability)) +
+  geom_boxplot(varwidth=T, fill="#2853C2", alpha=0.7) +
+  labs(
+       x="",
+       y="Average viability score") +
+  scale_x_discrete(labels=c("No fracture", "Fracture")) + theme_classic()
+  #theme(text = element_text(size=25), axis.text.x = element_text(size=16))
+pdf('viabilityplot.pdf', width=3.5, height=2)
+g
+# dev.off();
+
+# pdf('manipulationcheck.pdf', width=3.5, height=2.5)
+# dev.off();
+
+
+```
+
+## Section #1: Does fracture have continuity with prior measures?
+## 1C: Logistic regression predicting binary fracture outcome from viability scales: 
+# R viabilitydescriptive
+```{r}
+viabilityDescriptive <- describe(groupedProportionFracture$mean)
+viabilityDescriptive
+
+```
+
+# R viabilitycheck
+```{r}
+groupedProportionFracture$logicalfracture <- groupedProportionFracture$fracture == "1"
+describe(subset(groupedProportionFracture, logicalfracture == TRUE)$mean)
+describe(subset(groupedProportionFracture, logicalfracture == FALSE)$mean)
+t.test(groupedProportionFracture$mean ~ groupedProportionFracture$logicalfracture)
+
+## Simple logistic regression: we will fit a logistic regression model in order to predict
+## the probability of fracture based on a team's average viability sum:
+groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture)
+groupedProportionFracture$logicalfracture <- as.logical(groupedProportionFracture$fracture)
+model1 <- glm(logicalfracture ~ mean, family = "binomial", data = groupedProportionFracture)
+stargazer(model1,
+          covariate.labels = c("Average viability scale", "(Intercept)"),
+          dep.var.labels=c("Fracture"),
+          no.space=TRUE,
+          title="The relationship between the viability scale and fracture. Higher viability was significantly associated with lower log odds of fracture.",
+          label="tab:viability",
+          #keep.stat="n",
+          table.placement = "tb",
+          star.cutoffs = c(0.05, 0.01, 0.001)
+          )
+
+summary(model1)
+
+exp(cbind(coef(model1), confint(model1)))
+```
+
+## Test predictive power of logistic regression:
+```{r, include=FALSE, }
+## From output we see that a one unit decrease in mean viability score is associated with a decreasein the log odds of fracture by 0.26 units.
+
+## Check predictive power:
+
+## Split data into 60% training and 40% testing data sets to test how well the model performs
+set.seed(123)
+groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture)
+sample <- sample(c(TRUE, FALSE), nrow(groupedProportionFracture), replace = T, prob = c(0.6,0.4))
+train <- groupedProportionFracture[sample, ]
+test <- groupedProportionFracture[!sample, ]
+
+model2 <- glm(fracture ~ mean, family = "binomial", data = train)
+stargazer(model2, title="Training Results", align=TRUE)
+summary(model2)
+print(model2)
+## To assess the linear regression deviance, look at deviance in summary output, if
+## deviance == sum of sqaures in linear regression, null deviance == difference between. a model with only the intercept ("no mean predictors") and the a saturated model a model with a theoretically perfect fit. Model deviance (residual deviance) should be lower (i.e. small values == better fit).
+
+print(tidy(model1))
+print(tidy(model2))
+## Coefficient estimtes from log regression characterize relationship between the predictor and
+## response variable on a log-odds scale, so binary increase from no fracture - fracture can be interpreted as associated with a decrease in mean viability sum.
+
+## More coefficient output: measure the confidence intervals and accuracy of the coefficent:
+confint(model1)
+
+## Making predictions:
+## What is the probability of fracture given the following team mean viability scores: for example purposes: 55 and 65:
+
+predict(model2, data.frame(mean = c(55, 65)), type = "response")
+
+## From the output, we can see that the probability of fracture decreases from 0.31% to 0.03% when mean viability sum increases from 55 to 65.
+
+## Another example, with means 45 and 60:
+
+predict(model2, data.frame(mean = c(40, 60)), type = "response")
+
+## From the output, we can see that the probability of fracture decreases from 0.96% to 0.10% when mean viability sum increases from 40 to 60.
+
+## Model evaluation & diagnostics:
+## How well does the model fit the data? And how accurate are the predictions on an out-of-sample data set?
+
+## Residul assessment:
+model1_data <- augment(model1) %>%
+  mutate(index = 1:n())
+
+ggplot(model1_data, aes(index, .std.resid, color = mean)) +
+  geom_point(alpha = .5) +
+  geom_ref_line(h = 3)
+
+## Validation of predicted values:
+## How well does the model perform when predicting the target variable on out-of-sample observations?
+
+test.predicted.m1 <- predict(model1, newdata = test, type = "response")
+
+## Classification performance for each model on the test data. Output gives us a list of true / false positives:
+
+list(
+  model1 = table(test$mean, test.predicted.m1 > 0.5) %>% prop.table() %>% round(3))
+
+table(test$mean, test.predicted.m1 > 0.5)
+```
+
+```{r, include=FALSE, eval=FALSE}
+## Logistic regression on individual score:
+individualProportionFractureTreatment <- individualProportionFracture %>%
+filter(results.condition=="treatment")
+individualmaskedFracture1 <- individualProportionFractureTreatment %>% filter(condition=="A")
+individualmaskedFracture2 <- individualProportionFractureTreatment %>% filter(condition=="Ap")
+individualmaskedFracture <- cbind(individualmaskedFracture1, individualmaskedFracture2)
+## Need to finish this
+```
+
+## 1D: Graph of fracture/no fracture vs. mean/stdev viability scale
+
+## Boxplot: mean viability survey scores + fracture value (group level + individual level)
+# R viabilityplot
+```{r, include=TRUE, echo=TRUE}
+g <- ggplot(groupedProportionFracture, aes(factor(fracture), mean)) +
+  geom_boxplot(varwidth=T, fill="#2853C2", alpha=0.7) +
+  labs(
+       x="",
+       y="Average viability score") +
+  scale_x_discrete(labels=c("0" = "No fracture", "1" = "Fracture")) + theme_classic()
+  #theme(text = element_text(size=25), axis.text.x = element_text(size=16))
+pdf('viabilityplot.pdf', width=3.5, height=2)
+g
+dev.off();
+
+g <- ggplot(individualProportionFracture, aes(factor(fracture), sum))
+g + geom_boxplot(varwidth=T, fill="#2853C2", alpha=0.7) +
+  labs(x="",
+       y="Individual viability score") +
+ scale_x_discrete(labels=c("0" = "Keep this team", "1" = "Do not keep this team")) + theme_classic() + theme(text = element_text(size=25),
+        axis.text.x = element_text(size=16))
+
+```
+
+```{r, include=FALSE, eval=FALSE}
+## Correlation scatterplot: mean viability survey scores + fracture value (group level + individual level)
+## Grouped fracture correlation:
+ggplot(data=groupedProportionFracture, aes(fracture, mean)) +
+   geom_point() +
+  stat_smooth(method = "lm", col = "red") + labs(title="Scatterplot correlation between teams' mean viability and binary fracture scores", y="Teams' mean viability survey score (range 14-70) ", x="Teams' binary fracture score") +
+scale_x_discrete(labels=c("0" = "Keep this team", "1" = "Do not keep this team"))
+
+## Individual fracture correlation:
+ggplot(data=individualProportionFracture, aes(fracture, mean)) +
+   geom_point() +
+  stat_smooth(method = "lm", col = "red") + labs(subtitle="Scatterplot correlation between individuals' mean viability and binary fracture scores", y="Individual mean viability survey scores (range 14-70) ", x="Individual binary fracture score") +
+scale_x_discrete(labels=c("0" = "Keep this team", "1" = "Do not keep this team"))
+
+## Grouped fracture proportion correlation:
+ggplot(data=individualProportionFracture, aes(prop, mean)) +
+   geom_point() +
+  stat_smooth(method = "lm", col = "red") + labs(subtitle="Scatterplot correlation between teams' mean viability and team fracture proportion", y="Individual mean viability survey scores (range 14-70 ", x="Teams' fracture proportion") +
+scale_x_continuous(labels=c("0" = "Keep this team", "0.40", "0.60", "0.80" ,"1.00" = "Do not keep this team"))
+```
+
+## Group by and summarise fracture percentage by condition + plot for percentages:
+```{r, echo=TRUE}
+resultsPercent <- groupedProportionFracture %>% group_by(results.condition) %>% summarise(n=n(), fracture=sum(fracture), percent=fracture/n, se=sqrt(percent*(1-percent)/n)) %>% filter(results.condition=="control" | results.condition=="treatment")
+dat <- data.frame(conditionFracturePercent= factor(c("Unmasked","Masked"), levels=c("Unmasked","Masked")),
+                  fractureTotal = c(resultsPercent$percent), se=c(resultsPercent$se))  
+dat$fractureTotal <- round(dat$fractureTotal, 3)
+
+p <- ggplot(data=dat, aes(x=conditionFracturePercent, y=fractureTotal)) +
+  geom_bar(stat="identity", fill="#2853C2", alpha=0.7)+
+  scale_y_continuous(labels = scales::percent_format(10)) +
+  geom_text(aes(label=fractureTotal), vjust=2, color="white", size=5) +
+  geom_errorbar(aes(ymin=fractureTotal-se, ymax=fractureTotal+se), width=0.4, colour="grey", alpha=0.9, size=1)  +
+  labs(x="",
+       y="% of teams that fractured") + theme_classic() + theme(text = element_text(size=25),
+        axis.text.x = element_text(size=16))
+p
+```
+
+## Plot of total fracture percentages in the baseline condition:
+# R baselinefracture
+```{r, echo=TRUE}
+groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture)
+
+resultsOverall <- groupedProportionFracture %>% filter(condition=="B") %>% group_by(n) %>%  summarise(count=n(),fracture=sum(fracture), percent=fracture/count, se=sqrt(percent*(1-percent)/count))
+resultsOverall
+
+baselineConsistency <- resultsOverall[1,]$percent^2 + (1-resultsOverall[1,]$percent)^2
+baselineConsistency
+```
+
+# R baselinebyround
+```{r, echo=TRUE}
+resultsRound <- groupedProportionFracture %>% filter(condition=="B") %>% group_by(round) %>% summarise(n=n(),fracture=sum(fracture), notfracture=n()-fracture, percent=fracture/n, se=sqrt(percent*(1-percent)/n))
+resultsRound
+
+chisqinput <- subset(groupedProportionFracture, condition=="B")
+chisqresults <- table(chisqinput$round, chisqinput$fracture)
+chisqresults
+chisq.test(chisqresults)
+
+dat <- data.frame(roundFracturePercent= factor(c("Round 1","Round 2", "Round 3", "Round 4"), levels=c("Round 1","Round 2", "Round 3", "Round 4")),
+                  fractureTotal = c(resultsRound$percent), se=c(resultsRound$se))
+dat$fractureTotal <- round(dat$fractureTotal, 3)
+p <- ggplot(data=dat, aes(x=roundFracturePercent, y=fractureTotal)) +
+  geom_bar(stat="identity", fill="#2853C2", alpha=0.7)+
+  geom_text(aes(label=fractureTotal), vjust=1.6, color="white", size=5)+
+  scale_y_continuous(labels = scales::percent_format(10)) +
+  geom_errorbar(aes(ymin=fractureTotal-se, ymax=fractureTotal+se), width=0.4, colour="grey", alpha=0.9, size=1) + theme_classic() + labs(y="% teams that fractured", x="") +
+  theme(text = element_text(size=25),
+        axis.text.x = element_text(size=12))
+p
+```
+
+# Frequency of fracture proportions per condition:
+```{r, echo=TRUE}
+ggplot(groupedProportionFracture, aes(x = factor(fracture))) +
+    geom_bar(fill="#2853C2", alpha=0.7, aes(y = (..count..)/sum(..count..))) +
+scale_y_continuous(labels = scales::percent_format(10))  +
+  scale_x_discrete(labels=c("0"="Keep this team", "1"="Do not keep this team")) + labs(y="% of total fracture scores", x="") +  facet_grid(.~results.condition) + theme_classic() + theme(text = element_text(size=25),
+        axis.text.x = element_text(size=12))
+```
+
+## Frequency of fracture proportions per round:
+```{r, echo=TRUE}
+ggplot(groupedProportionFracture, aes(x = prop)) +
+    geom_bar(fill="#2853C2", alpha=0.7, aes(y = (..count..)/sum(..count..))) +
+  scale_y_continuous(labels = scales::percent_format(10))  + scale_x_continuous()+  labs(y="% of fracture proportions", x="Team fracture proportions") +  facet_grid(.~round) +  theme_classic() + theme(text = element_text(size=25),
+        axis.text.x = element_text(size=16))
+```
+
+```{r, echo=TRUE, include=FALSE, eval=FALSE}
+# Frequency of mean viability scores per condition:
+## To-do: why are rows being removed, this isn't right:
+ggplot(groupedProportionFracture, aes(x = factor(mean))) +
+    geom_bar(fill="#2853C2", alpha=0.7, aes(y = (..count..)/sum(..count..))) +
+scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(limits=c("30", "50", "70")) +
+     labs(subtitle="% of mean viability scores",
+       x="range of means",
+       y="frequency") + facet_grid(.~results.condition) +  theme_classic()
+```
+
+## Section #2: How often does fracture occur?
+
+## CHI squared tests:
+```{r, echo=TRUE}
+## Test if whether fracture is independent of condition (i.e. baseline, control & treatment) at .05 significance level:
+chi = table(groupedProportionFracture$results.condition, groupedProportionFracture$fracture)  
+chi
+print(chisq.test(chi))
+```
+
+## 2B: What's the overall % of fracturing the second time? (by condition)
+```{r, echo=TRUE}
+## Filtering second time only:
+groupedProportionFracture$fracture <- as.numeric(groupedProportionFracture$fracture)
+groupedProportionFractureOverall <- groupedProportionFracture %>%
+      mutate(overallPercent = sum(as.numeric(fracture))) %>%
+      summarise(n=n(), overallPercent=unique(overallPercent/n))  
+mean(groupedProportionFractureOverall$overallPercent)
+
+groupedProportionFractureB <- groupedProportionFracture %>%
+      filter(condition=="B") %>%
+      mutate(overallPercent = sum(as.numeric(fracture))) %>%
+      summarise(n=n(), overallPercent=unique(overallPercent/n))  
+print(groupedProportionFractureB)
+mean(groupedProportionFractureB$overallPercent)
+
+## To-do: review below code, worried it's incorrect:
+
+groupedProportionFractureSecond <- groupedProportionFracture %>% group_by(results.condition) %>%
+      filter(condition=="Ap") %>%
+      mutate(overallPercent = sum(as.numeric(fracture))) %>%
+      summarise(n=n(), overallPercent=unique(overallPercent)/n)
+print(groupedProportionFractureSecond)
+
+## For baseline theoretical distribution: (to-do: look over this, worried also that it's wrong)
+
+groupedProportionFractureSecondBase <- groupedProportionFractureBaseline %>%
+      filter(condition=="B") %>%
+      summarise(n=n(), overallPercent=sum(as.numeric(fracture))/n)
+
+print(groupedProportionFractureSecondBase$overallPercent)
+```
+
+## Proportion tests for total fracture change:
+```{r, echo=TRUE}
+## Set-up separate groups for proportion tests to answer: does unmasked fracture more/less than masked, and more/less than new pairs?
+
+## Is the proportion of fracture in the second round significantly different in the two conditions (i.e. treatment + baseline)
+treatmentvsBaselineChange <- c(48, 49)
+propFractureChangeTreatmentvsBase <- prop.test(x = c(treatmentvsBaselineChange), n = c(100, 100))
+print(propFractureChangeTreatmentvsBase)
+
+## Is the proportion of fracture in the second round significantly different in the two conditions (i.e. control + baseline)
+controlvsBaselineChange <- c(40, 49)
+propFractureChangeControlvsBase <- prop.test(x = c(controlvsBaselineChange), n = c(100, 100))
+print(propFractureChangeControlvsBase)
+```
+
+## Section 3: How consistent is fracture?
+
+## 3A: calculating the conditional probabilities of fracture for each condition:
+# R conditionaltreatment
+```{r, echo=TRUE}
+## If fractured the first time, what's the % of fracturing the second time? look at 1 and Ap combination for % in second time:
+## Compare both treatment and control with baseline as theoretical distribution:
+## Conditional probability for masked:
+# of groups who fractured 1 and 2
+
+maskedFracture12 <- sum(ifelse(maskedConsistency$teamFracture.first==TRUE & maskedConsistency$teamFracture.second==TRUE,1,0))/nrow(maskedConsistency)
+# of groups who fractured only 1
+maskedFractureOnly1 <- sum(ifelse(maskedConsistency$teamFracture.first==TRUE & maskedConsistency$teamFracture.second==FALSE,1,0))/nrow(maskedConsistency)
+# of groups who fractured only 2
+maskedFractureOnly2 <- sum(ifelse(maskedConsistency$teamFracture.first==FALSE & maskedConsistency$teamFracture.second==TRUE,1,0))/nrow(maskedConsistency)
+# of groups who fractured never        
+maskedFractureNever <- sum(ifelse(maskedConsistency$teamFracture.first==FALSE & maskedConsistency$teamFracture.second==FALSE,1,0))/nrow(maskedConsistency)
+conditionalProbTreatment <- matrix(c(maskedFracture12, maskedFractureOnly1, maskedFractureOnly2, maskedFractureNever),ncol=2,byrow=TRUE)
+colnames(conditionalProbTreatment) <- c("t2 frac","t2 no frac")
+rownames(conditionalProbTreatment) <- c("t1 frac","t1 no frac")
+conditionalProbTreatment <- as.table(conditionalProbTreatment)
+print(conditionalProbTreatment)
+
+unmaskedFracture12 <- sum(ifelse(unmaskedConsistency$teamFracture.first==TRUE & unmaskedConsistency$teamFracture.second==TRUE,1,0))/nrow(unmaskedConsistency)
+# of groups who fractured only 1
+unmaskedFractureOnly1 <- sum(ifelse(unmaskedConsistency$teamFracture.first==TRUE & unmaskedConsistency$teamFracture.second==FALSE,1,0))/nrow(unmaskedConsistency)
+# of groups who fractured only 2
+unmaskedFractureOnly2 <- sum(ifelse(unmaskedConsistency$teamFracture.first==FALSE & unmaskedConsistency$teamFracture.second==TRUE,1,0))/nrow(unmaskedConsistency)
+# of groups who fractured never        
+unmaskedFractureNever <- sum(ifelse(unmaskedConsistency$teamFracture.first==FALSE & unmaskedConsistency$teamFracture.second==FALSE,1,0))/nrow(unmaskedConsistency)
+conditionalProbTreatment <- matrix(c(unmaskedFracture12, unmaskedFractureOnly1, unmaskedFractureOnly2, unmaskedFractureNever),ncol=2,byrow=TRUE)
+colnames(conditionalProbTreatment) <- c("t2 frac","t2 no frac")
+rownames(conditionalProbTreatment) <- c("t1 frac","t1 no frac")
+conditionalProbTreatment <- as.table(conditionalProbTreatment)
+print(conditionalProbTreatment)
+```

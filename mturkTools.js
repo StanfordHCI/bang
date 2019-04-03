@@ -1,16 +1,14 @@
 /* Find documentation on all AWS operations here: https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_OperationsArticle.html */
 /* For Node: https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/MTurk.html#getHIT-property */
 require("dotenv").config();
+const chalk = require("chalk");
 const args = require("yargs").argv;
+const AWS = require("aws-sdk");
 
 const runningLocal = process.env.RUNNING_LOCAL === "TRUE";
 const runningLive = process.env.RUNNING_LIVE === "TRUE"; //ONLY CHANGE IN VIM ON SERVER
 const teamSize = parseInt(process.env.TEAM_SIZE);
 const roundMinutes = process.env.ROUND_MINUTES;
-
-const AWS = require("aws-sdk");
-
-const runningDelayed = false;
 
 let endpoint = "https://mturk-requester-sandbox.us-east-1.amazonaws.com";
 let submitTo = "https://workersandbox.mturk.com";
@@ -36,22 +34,19 @@ AWS.config = {
 const numRounds = 4;
 const taskDuration = roundMinutes * numRounds * 2;
 //const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
-const timeActive = 4; //should be 10 // How long a task stays alive in minutes -  repost same task to assure top of list
+const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
 const hourlyWage = 12; // changes reward of experiment depending on length - change to 6?
-const rewardPrice = 0.1; // upfront cost
-const numHITs = 3;
+const basePrice = 0.5; // upfront cost
 const maxAssignments = 2 * teamSize * teamSize * 2;
 
 let bonusPrice = (
   hourlyWage * ((roundMinutes * numRounds + 10) / 60) -
-  rewardPrice
+  basePrice
 ).toFixed(2);
 let usersAcceptedHIT = 0;
 let numAssignments = maxAssignments; // extra HITs for over-recruitment
 
 let currentHitId = "";
-let currentHITTypeId = "";
-let currentHITGroupId = "";
 
 let hitsLeft = numAssignments; // changes when users accept and disconnect (important - don't remove)
 let taskStarted = false;
@@ -146,7 +141,7 @@ const startTask = () => {
 // Takes a number as a parameter.
 
 const updatePayment = totalTime => {
-  bonusPrice = (hourlyWage * (totalTime / 60) - rewardPrice).toFixed(2);
+  bonusPrice = (hourlyWage * (totalTime / 60) - basePrice).toFixed(2);
   if (bonusPrice < 0) {
     bonusPrice = 0;
   }
@@ -203,7 +198,7 @@ const makeHIT = (
     Description: description, // string
     AssignmentDurationInSeconds: 60 * assignmentDuration, // number, pass as minutes
     LifetimeInSeconds: 60 * lifetime, // number, pass as minutes
-    Reward: String(rewardPrice), // string - ok if passed as number
+    Reward: String(basePrice), // string - ok if passed as number
     AutoApprovalDelayInSeconds: 60 * autoApprovalDelay, // number, pass as minutes
     Keywords: keywords, // string
     MaxAssignments: maxAssignments, // number
@@ -221,8 +216,6 @@ const makeHIT = (
         data.HIT.HITId
       );
       currentHitId = data.HIT.HITId;
-      currentHITTypeId = data.HIT.HITTypeId;
-      currentHITGroupId = data.HIT.HITGroupId;
       if (typeof callback === "function") callback(data.HIT);
     }
   });
@@ -319,7 +312,7 @@ const listAssignments = (
 // Takes a HIT ID as a parameter
 
 const expireHIT = HITId => {
-  mturk.updateExpirationForHIT({ HITId: HITId, ExpireAt: 0 }, (err, data) => {
+  mturk.updateExpirationForHIT({ HITId: HITId, ExpireAt: 0 }, err => {
     if (err) {
       console.log("Error in expireHIT: " + err.message);
     } else {
@@ -336,7 +329,7 @@ const expireHIT = HITId => {
 // Takes a string of the HIT ID as a parameter.
 
 const deleteHIT = theHITId => {
-  mturk.deleteHIT({ HITId: theHITId }, (err, data) => {
+  mturk.deleteHIT({ HITId: theHITId }, err => {
     if (err) console.log("Error: " + err.message);
     else console.log("Deleted HIT:", theHITId);
   });
@@ -400,7 +393,7 @@ const assignQualificationToUsers = (users, qual) => {
       };
       mturk.associateQualificationWithWorker(
         assignQualificationParams,
-        function(err, data) {
+        function(err) {
           if (err) console.log(err, err.stack);
           // an error occurred
           else
@@ -428,8 +421,7 @@ const assignQuals = (user, qual) => {
     SendNotification: false
   };
   mturk.associateQualificationWithWorker(assignQualificationParams, function(
-    err,
-    data
+    err
   ) {
     if (err)
       console.log("Error assigning ", qual.QualificationTypeId, " to ", user);
@@ -452,7 +444,7 @@ const unassignQualificationFromUsers = (users, qual) => {
       };
       mturk.disassociateQualificationFromWorker(
         assignQualificationParams,
-        function(err, data) {
+        function(err) {
           if (err) console.log(err, err.stack);
           // an error occurred
           else
@@ -479,18 +471,16 @@ const unassignQuals = (user, qual, reason) => {
     Reason: reason
   };
   mturk.disassociateQualificationFromWorker(assignQualificationParams, function(
-    err,
-    data
+    err
   ) {
     if (err)
       console.log(
-        "Error unassigning ",
-        qual.QualificationTypeId,
-        " from ",
-        user
+        `Error unassigning ${
+          qual.QualificationTypeId
+        } from ${user}:\n${chalk.red(err)}`
       );
     // an error occurred
-    else console.log("Unassigned ", qual.QualificationTypeId, " from ", user);
+    else console.log(`Unassigned ${qual.QualificationTypeId} from ${user}.`);
   });
 };
 
@@ -583,29 +573,33 @@ const listUsersWithQualificationRecursively = (
 
 const payBonuses = (users, callback) => {
   let successfullyBonusedUsers = [];
-  users
+  const bonusableUsers = users
     .filter(u => u.mturkId !== "A19MTSLG2OYDLZ" && u.mturkId.length > 5)
-    .filter(u => u.bonus !== 0)
-    .forEach(u => {
-      mturk.sendBonus(
-        {
-          AssignmentId: u.assignmentId,
-          BonusAmount: String(u.bonus),
-          Reason: "Thanks for participating in our HIT!",
-          WorkerId: u.mturkId,
-          UniqueRequestToken: u.id
-        },
-        (err, data) => {
-          if (err) {
+    .filter(u => u.bonus != 0);
+  bonusableUsers.forEach((u, index) => {
+    mturk.sendBonus(
+      {
+        AssignmentId: u.assignmentId,
+        BonusAmount: String(u.bonus),
+        Reason: "Thanks for participating in our HIT!",
+        WorkerId: u.mturkId,
+        UniqueRequestToken: u.id
+      },
+      err => {
+        if (err) {
+          if (
+            err.message.includes(
+              `The idempotency token "${u.id}" has already been processed.`
+            )
+          ) {
+            console.log("Already bonused", u.bonus, u.id, u.mturkId);
+            successfullyBonusedUsers.push(u);
+          } else {
             if (
               err.message.includes(
-                'The idempotency token "' +
-                  u.id +
-                  '" has already been processed.'
+                `Assignment ${u.assignmentId} does not exist.`
               )
             ) {
-              console.log("Already bonused", u.bonus, u.id, u.mturkId);
-              successfullyBonusedUsers.push(u);
             } else {
               console.log(
                 "NOT bonused\t",
@@ -615,17 +609,20 @@ const payBonuses = (users, callback) => {
                 err.message
               );
             }
-          } else {
-            successfullyBonusedUsers.push(u);
-            console.log("Bonused:", u.bonus, u.id, u.mturkId);
           }
-          if (typeof callback === "function") {
+        } else {
+          successfullyBonusedUsers.push(u);
+          console.log("Bonused:", u.bonus, u.id, u.mturkId);
+        }
+        if (typeof callback === "function") {
+          if (bonusableUsers.length === index + 1) {
             callback(successfullyBonusedUsers);
           }
-          return successfullyBonusedUsers;
         }
-      );
-    });
+        return successfullyBonusedUsers;
+      }
+    );
+  });
 };
 
 // * blockWorker *
@@ -686,74 +683,45 @@ const returnCurrentHIT = () => {
 // -------------------------------------------------------------------
 // Launches Scaled-Humanity Fracture experiment
 
-const launchBang = callback => {
+function launchBang(batchID, callback) {
   // HIT Parameters
-  let time = Date.now();
+  let bangParameters = {
+    Title: `Mock Jury Deliberation - bonus up to $${hourlyWage}/hour (${batchID})`,
+    Description: `Work in groups to deliberate on a jury case. This task will take approximately ${Math.round(
+      roundMinutes * numRounds + 15
+    )} minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $${bonusPrice}.`,
+    AssignmentDurationInSeconds: 60 * taskDuration, // 30 minutes?
+    LifetimeInSeconds: 60 * timeActive, // short lifetime, deletes and reposts often
+    Reward: String(basePrice),
+    AutoApprovalDelayInSeconds: 60 * taskDuration,
+    Keywords: "jury, morality, deliberation, writing, analysis, fairness",
+    MaxAssignments: numAssignments,
+    QualificationRequirements: safeQuals,
+    Question: externalHIT(taskURL)
+  };
 
-  let HITTitle =
-    "Mock Jury Deliberation - bonus up to $" + hourlyWage + " / hour (" + time + ")";
-  let description =
-    "Work in groups to deliberate on a jury case. This task will take approximately " +
-    Math.round(roundMinutes * numRounds + 10) +
-    " minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" +
-    bonusPrice +
-    ".";
-  let assignmentDuration = 60 * taskDuration;
-  let lifetime = 60 * timeActive;
-  let reward = String(rewardPrice);
-  let autoApprovalDelay = 60 * taskDuration;
-  let keywords = "jury, morality, deliberation, writing, analysis, fairness";
-  let maxAssignments = numAssignments;
-  let hitContent = externalHIT(taskURL);
-
-  makeHIT(
-    "safeQuals",
-    HITTitle,
-    description,
-    assignmentDuration,
-    lifetime,
-    reward,
-    autoApprovalDelay,
-    keywords,
-    maxAssignments,
-    hitContent,
-    function(HIT) {
-      if (typeof callback === "function") callback(HIT);
+  mturk.createHIT(bangParameters, (err, data) => {
+    if (err) {
+      console.log(err, err.stack);
+    } else {
+      console.log(
+        "Posted",
+        data.HIT.MaxAssignments,
+        "assignments:",
+        data.HIT.HITId
+      );
+      currentHitId = data.HIT.HITId;
+      if (typeof callback === "function") callback(data.HIT);
     }
-  );
+  });
 
   let delay = 1;
   // only continues to post if not enough people accepted HIT
   // Reposts every timeActive(x) number of minutes to keep HIT on top - stops reposting when enough people join
   setTimeout(() => {
     if (hitsLeft > 0 && !taskStarted) {
-      time = Date.now();
-      numAssignments = hitsLeft;
-      let HITTitle =
-        "Mock Jury Deliberation - bonus up to $" +
-        hourlyWage +
-        " / hour (" +
-        time +
-        ")";
-      let params2 = {
-        Title: HITTitle,
-        Description:
-          "Work in groups to deliberate on a jury case. This task will take approximately " +
-          Math.round(roundMinutes * numRounds + 10) +
-          " minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" +
-          bonusPrice +
-          ".",
-        AssignmentDurationInSeconds: 60 * taskDuration, // 30 minutes?
-        LifetimeInSeconds: 60 * timeActive, // short lifetime, deletes and reposts often
-        Reward: String(rewardPrice),
-        AutoApprovalDelayInSeconds: 60 * taskDuration,
-        Keywords: "ads, writing, copy editing, advertising",
-        MaxAssignments: numAssignments,
-        QualificationRequirements: safeQuals,
-        Question: externalHIT(taskURL)
-      };
-
-      mturk.createHIT(params2, (err, data) => {
+      bangParameters.maxAssignments = hitsLeft;
+      mturk.createHIT(bangParameters, (err, data) => {
         if (err) {
           console.log(err, err.stack);
         } else {
@@ -764,26 +732,6 @@ const launchBang = callback => {
             data.HIT.HITId
           );
           currentHitId = data.HIT.HITId;
-          currentHITTypeId = data.HIT.HITTypeId;
-          currentHITGroupId = data.HIT.HITGroupId;
-
-          // // notify here - randomize list - notify again each time a new HIT is posted if have not yet rolled over
-          // let subject = "We launched our new ad writing HIT. Join now, spaces are limited."
-          // console.log(data.HIT)
-          // let URL = ''
-          // getHITURL(currentHitId, function(url) {
-          //   URL = url;
-          //   let message = "You’re invited to join our newly launched HIT on Mturk; there are limited spaces and it will be closed to new participants in about 15 minutes!  Check out the HIT here: " + URL + " \n\nYou're receiving this message because you you indicated that you'd like to be notified of our upcoming HIT during this time window. If you'd like to stop receiving notifications please email your MTurk ID to: scaledhumanity@gmail.com";
-          //   console.log("message to willBangers", message);
-          //   if(!URL) {
-          //     throw "URL not defined"
-          //   }
-          //   let maxWorkersToNotify = 100; // cannot be more than 100
-          //   listUsersWithQualificationRecursively(quals.willBang, function(data) {
-          //     let notifyList = getRandomSubarray(data, maxWorkersToNotify)
-          //     notifyWorkers(notifyList, subject, message)
-          //   })
-          // })
         }
       });
       delay++;
@@ -792,7 +740,7 @@ const launchBang = callback => {
       expireHIT(currentHitId);
     }
   }, 1000 * 60 * timeActive * delay);
-};
+}
 
 // * notifyWorkers
 // -------------------------------------------------------------------
@@ -801,7 +749,7 @@ const launchBang = callback => {
 const notifyWorkers = (WorkerIds, subject, message) => {
   mturk.notifyWorkers(
     { WorkerIds: WorkerIds, MessageText: message, Subject: subject },
-    function(err, data) {
+    function(err) {
       if (err) console.log("Error notifying workers:", err.message);
       // an error occurred
       else console.log("Notified ", WorkerIds.length, " workers:", subject); // successful response
@@ -812,7 +760,7 @@ const notifyWorkers = (WorkerIds, subject, message) => {
 module.exports = {
   startTask: startTask,
   hourlyWage: hourlyWage,
-  rewardPrice: rewardPrice,
+  rewardPrice: basePrice,
   updatePayment: updatePayment,
   getBalance: getBalance,
   makeHIT: makeHIT,
@@ -878,20 +826,10 @@ const checkQualsRecursive = (
   });
 };
 
-function getRandomSubarray(arr, size) {
-  let shuffled = arr.slice(0),
-    i = arr.length,
-    min = i - size,
-    temp,
-    index;
-  while (i-- > min) {
-    index = Math.floor((i + 1) * Math.random());
-    temp = shuffled[index];
-    shuffled[index] = shuffled[i];
-    shuffled[i] = temp;
-  }
-  return shuffled.slice(min);
-}
-
 // workOnActiveHITs(console.log);
-// disassociateQualification(quals.willBang.QualificationTypeId,"AECQ7QG4CQP69","You asked to be removed from our notification list.")
+
+unassignQuals(
+  "A1KK0TJ0ZHCPMZ",
+  quals.willBang,
+  "You asked to be removed from our notification list."
+);
