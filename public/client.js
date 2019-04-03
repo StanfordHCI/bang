@@ -94,8 +94,8 @@ $(function() {
       <div id="{{question.name}}-rb-box" class='rb-box'>
         <template v-for="(index, answer) in question.answers" :answer="answer">
           <label for="{{question.name}}-{{index+1}}" class="rb-tab">
-            <input v-bind:type="question.answerType" name="{{question.name}}" id="{{question.name}}-{{index+1}}"
-            v-bind:value="question.textValue ? answer : index + 1" v-bind:required="question.required ? true : false"/>
+            <input v-bind:type="question.answerType" name="{{question.name}}" id="{{question.name}}-{{index+1}}" 
+            v-bind:value="question.textValue ? answer : index + 1" v-bind:required="question.required ? true : false" v-model="toggle"/>
             <label for='{{question.name}}-{{index+1}}'>{{answer}}</label>
           </label>
         </template>
@@ -488,7 +488,7 @@ $(function() {
     socket.emit("next event");
     $juryPreTask.hide();
     $holdingPage.show();
-    $("#juryPreTask")[0].reset();
+    $("#juryPreTaskForm")[0].reset();
   });
 
   $("#midForm").submit(event => {
@@ -497,6 +497,7 @@ $(function() {
     socket.emit("next event");
     $midSurvey.hide();
     $holdingPage.show();
+
     $("#midForm")[0].reset();
   });
 

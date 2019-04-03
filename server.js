@@ -749,12 +749,12 @@ let eventSchedule = [];
 if (starterSurveyOn) {
   eventSchedule.push("starterSurvey");
 }
-if (juryPreTaskOn) {
-  eventSchedule.push("juryPreTask"); //this goes BEFORE the "ready"
-}
 //update here for a thing before the round starts
 let roundSchedule = [];
 //update round schedul to have pre task
+if (juryPreTaskOn) {
+  roundSchedule.push("juryPreTask"); //this goes BEFORE the "ready"
+}
 roundSchedule.push("ready");
 
 // TODO: push the pre-survey HERE
@@ -1597,9 +1597,9 @@ io.on("connection", socket => {
         );
         taskStartTime = getSecondsPassed();
       } else if (eventSchedule[currentEvent] === "juryPreTask") {
-        if (timeCheckOn) {
-          recordTime("round");
-        }
+        // if (timeCheckOn) {
+        //   recordTime("round");
+        // }
         ioEmitById(
           socket.mturkId,
           "load",
@@ -1644,9 +1644,9 @@ io.on("connection", socket => {
         );
         ioEmitById(socket.mturkId, "echo", "ready", socket, user);
       } else if (eventSchedule[currentEvent] === "midSurvey") {
-        if (timeCheckOn) {
-          recordTime("round");
-        }
+        // if (timeCheckOn) {
+        //   recordTime("round");
+        // }
         ioEmitById(
           socket.mturkId,
           "load",
@@ -2651,7 +2651,7 @@ io.on("connection", socket => {
         } else if (answerTag === "ARTICLE") { //TODO: new answer type
 
           questionObj["question"] =
-            questionObj["question"] + "*"+ `<a href=\"${taskPDF[currentRound]}\" style=\"color: rgb(0,255,0)\" target=\"_blank\">Click here to read the case.</a>`; //using * as a delimiter
+            questionObj["question"] + "*"+ `<a href=\"${taskPDF[currentRound]}\" style=\"color: rgb(0,255,0)\" target=\"_blank\">Click here to read the case (opens in new tab).</a>`; //using * as a delimiter
           answerObj = YNAnswers; //??
 
         } else if (answerTag === "YN15") {
