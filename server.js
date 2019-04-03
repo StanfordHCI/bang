@@ -38,7 +38,8 @@ const randomProductOn = true;
 const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
-const starterSurveyOn = false;
+const starterSurveyOn = false; 
+
 const midSurveyOn = true; //EMILY UDPATED THIS to be about the jury deliberation.
 const juryPreTaskOn = true; //EMILY ADDED THIS FOR JURY PRETASK
 const midSurveyStatusOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
@@ -2648,9 +2649,17 @@ io.on("connection", socket => {
         } else if (answerTag === "D6") {
           answerObj = dem6;
         } else if (answerTag === "ARTICLE") { //TODO: new answer type
+
+          //TODO: get the pdf to show up as a hyperlink
+
+
+          // var para = this.createElement("p");
+          // var node = this.createTextNode("<a href=\"`${taskPDF[currentRound]}`\"></a>");
+          // para.appendChild(node);
+
           questionObj["question"] =
-            questionObj["question"] + `${taskPDF[currentRound]}`;
-          answerObj = binaryAnswers; //??
+            questionObj["question"] + `<a href=\"${taskPDF[currentRound]}\"></a>`;
+          answerObj = YNAnswers; //??
 
         } else if (answerTag === "YN15") {
           // yes no
@@ -2733,8 +2742,6 @@ io.on("connection", socket => {
           answerObj = {};
         }
 
-
-        //Had a problem here where answerObj was undefined---find out why!
         questionObj["answers"] = answerObj.answers;
         questionObj["answerType"] = answerObj.answerType;
         questionObj["textValue"] = answerObj.textValue;

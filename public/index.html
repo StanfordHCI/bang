@@ -114,6 +114,15 @@
         <ul class="preSurveyQuestions"></ul>
       </div>
     </li>
+    <li id="juryPreTask" class="login page">
+       <form id="juryPreTaskForm">
+        <h3>Please answer the following questions to get started.</h3>
+        <div id="juryPreTask-questions" >
+          <question-component v-for="question in questions" :question="question" />
+        </div>
+        <input type="submit" value="Submit">
+      </form>
+    </li>
 
     <li id="starterSurvey" class="login page">
       <form id="starterForm">
