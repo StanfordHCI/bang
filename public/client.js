@@ -89,7 +89,8 @@ $(function() {
 
   Vue.component("question-component", {
     template: `
-      <p>{{question.question}}</p>
+      <p>{{question.question.split("*")[0]}}</p>
+      <div v-html=(question.question.split("*")[1])></div>
       <div id="{{question.name}}-rb-box" class='rb-box'>
         <template v-for="(index, answer) in question.answers" :answer="answer">
           <label for="{{question.name}}-{{index+1}}" class="rb-tab">

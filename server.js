@@ -2650,15 +2650,8 @@ io.on("connection", socket => {
           answerObj = dem6;
         } else if (answerTag === "ARTICLE") { //TODO: new answer type
 
-          //TODO: get the pdf to show up as a hyperlink
-
-
-          // var para = this.createElement("p");
-          // var node = this.createTextNode("<a href=\"`${taskPDF[currentRound]}`\"></a>");
-          // para.appendChild(node);
-
           questionObj["question"] =
-            questionObj["question"] + `<a href=\"${taskPDF[currentRound]}\"></a>`;
+            questionObj["question"] + "*"+ `<a href=\"${taskPDF[currentRound]}\" style=\"color: rgb(0,255,0)\" target=\"_blank\">Click here to read the case.</a>`; //using * as a delimiter
           answerObj = YNAnswers; //??
 
         } else if (answerTag === "YN15") {
