@@ -522,19 +522,15 @@ let totalCount = 0;
 // useCompleteBatches(manipulationFix)
 
 // Download data from your folder and save it into local batch archives
-// downloadData("bang", saveDBArchives);
+// downloadData("bang");
 // saveDBArchives();
-//Save from local folder
-/* saveAllData() */
-// renderChats(1550688611521)
-/* retroactiveBonus() */
-/* retroactivelyFixRooms() */
+useCompleteBatches(manipulationFix);
 
 //Rendering for various things
 // useCompleteBatches(renderChats);
 // useCompleteBatches(renderAds);
 
-goodBatches = [
+addBatches = [
   1553010760733,
   1553019661611,
   1553021461648,
@@ -558,5 +554,5 @@ goodBatches = [
 
 // 1553194261766 an apparent faild batch
 
-// goodBatches.forEach(renderAds);
-goodBatches.forEach(generateAddsCSVRow);
+// addBatches.forEach(renderAds);
+// addBatches.forEach(generateAddsCSVRow);

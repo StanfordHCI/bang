@@ -77,11 +77,48 @@ extractViabilitySurvey = function(frame,survey) {
   return(Reduce(bind_rows, roundResponses))
 }
 
+task = c("creative", "intellective", "cognative-conflic")
+taskText = c("The Ollie Chair: Shape-Shifting Seating", "<ol>\n    <li>Number of miles from New York to Los Angeles</li>\n    <li>Average weight of an elephant</li>\n    <li>Number of U.S. states that border the Gulf of Mexico</li>\n    <li>Number of months per year residents of Tromoso, Norway go without seeing a sunset</li>\n    <li>Highest temperature (in degrees F) ever registered in the U.S.</li>\n    </ol>", "To purchase art for display in the community's art gallery.")
+
+checkTask = function(batchData) {
+  frame = as.data.frame(batchData$products)
+  if(any(which(frame == taskText[1]))) {
+    return(task[1])
+  }
+  if(any(which(frame == taskText[2]))) {
+    return(task[2])
+  }
+  if(any(which(frame == taskText[3]))) {
+    return(task[3])
+  }
+  return("none")
+}
+
+loadBatch = function(batch){
+  batchData = read_json(paste(dataPath,batch,"batch.json",sep="/"), simplifyVector = TRUE)
+  c(batch,
+    task = checkTask(batchData)
+    )
+}
+
 # Filter batches and convert JSON to data frames
 options(scipen=999) # Change from scientific notation so we can compare batch numbers below
 batches = dir(dataPath, pattern = "^[0-9]+$" )
-batches <- as.numeric(batches) 
+batches = as.numeric(batches) 
 batches = batches[batches>MINIMUM_BATCH_NUMBER]
+batchFrame = as.data.frame(batches)
+batchFrame = batchFrame %>% 
+  filter(any(dir(paste(dataPath,batches,sep="/")) == "batch.json")) %>%
+  filter(any(dir(paste(dataPath,batches,sep="/")) == "users.json")) %>%
+  mutate(batch = batches) %>%
+  select( -batches )
+batchFrame = apply(batchFrame,1 ,loadBatch)
+batchFrame = t(batchFrame)
+batchFrame = data.frame(
+  batch = as.numeric(batchFrame[,1]),
+  task = as.character(batchFrame[,2])
+)
+
 batches = Filter(function(batch) {
   if (any(dir(paste(dataPath,batch,sep="/")) == "batch.json") && (any(dir(paste(dataPath,batch,sep="/")) == "users.json")) ) {
       batchData = read_json(paste(dataPath,batch,"batch.json",sep="/"), simplifyVector = TRUE)
@@ -89,6 +126,7 @@ batches = Filter(function(batch) {
     }
     return(FALSE)
 }, batches)
+
 
 users <- Reduce(function(x,y) merge(x, y, all=TRUE), lapply(batches, function(batch) {
   userFile = read_json(paste(dataPath,batch,"users.json",sep="/"), simplifyVector=TRUE)
@@ -117,6 +155,13 @@ users <- users %>%
     results.qSixteenCheck.3 = results.qSixteenCheck.5, 
     results.qSixteenCheck.4 = results.qSixteenCheck.7
   )
+users <- users %>% 
+  select(
+    -contains("results.psychologicalSafety"),
+    -contains("demographicsCheck"),
+    -contains("undefined")
+  )
+
 users <- na.omit(users)
 
 # Function to assign round numbers in the correct order 
@@ -141,7 +186,8 @@ manipulationCheck <- usersRounds %>%
   mutate(manipulationCheck=results.manipulationCheck.1) %>%
   mutate(teamOrder=results.format) %>%
   mutate(condition=results.condition) %>%
-  select(id, batch, room, round, manipulation, manipulationCheck, teamOrder, condition) 
+  select(id, batch, room, round, manipulation, manipulationCheck, teamOrder, condition) %>%
+  left_join(batchFrame, by="batch")
 
 qFifteen <- extractBlacklistSurvey(users, 'qFifteenCheck')
 qSixteen <- extractBlacklistSurvey(users, 'qSixteenCheck')
@@ -156,7 +202,7 @@ usersRounds <- manipulationCheck %>%
   left_join(viabilitySurvey, by=c("id", "batch", "round")) %>%
   mutate(rooms = rooms.x, manipulation = as.character(manipulation), manipulationCheck = as.character(manipulationCheck.x)) %>%
   select(-manipulationCheck.x, -manipulationCheck.y, -rooms, -rooms.x, -rooms.y)
-rm(list=c("qFifteen","qSixteen","viabilitySurvey","manipulationCheck"))
+# rm(list=c("qFifteen","qSixteen","viabilitySurvey","manipulationCheck"))
 
 usersRounds <- usersRounds %>% 
   mutate(condition = case_when(
@@ -214,10 +260,11 @@ usersRounds <- usersRounds %>%
 
 teamStats <- usersRounds %>%
   arrange(id) %>%
-  group_by(room, batch, round, condition, team) %>%
+  group_by(room, batch, round, condition, team, task) %>%
   summarise(n=n(), 
             teamMeanViability=mean(viabilityScale), 
-            teamMedianViability=median(viabilityScale), 
+            teamMedianViability=median(viabilityScale),
+            groupManipulationCheck=sum(as.numeric(manipulationCheck==manipulation)/n()),
             teamProportionFracture=sum(fracture/n()),
             teamMembers = paste(id, collapse=", "))
 
@@ -226,7 +273,7 @@ teamStats <- teamStats %>%
   filter(n>=TEAM_SIZE)
 usersRounds <- teamStats %>%
   select(room, batch, round, teamProportionFracture, condition) %>%
-  left_join(usersRounds, by=c("room", "batch", "round", "condition"))
+  left_join(usersRounds, by=c("room", "batch", "round", "condition","team"))
 
 ## Table showing how many teams we've run in each condition combination:  
 print(table(teamStats$condition, teamStats$team))
@@ -238,7 +285,7 @@ viabilitySD = sd(teamViability)*sqrt((length(teamViability)-1)/(length(teamViabi
 # Centering / standardizing viability score 
 teamStats$viabilityZ = (teamStats$teamMeanViability - viabilityMean) / viabilitySD
 
-## Define and initialize cut-off point for fracture:
+## Define and initialize cut-off pozzint for fracture:
 teamStats <- teamStats %>%
   group_by(room, batch, round, condition) %>%
   mutate(teamFracture = case_when (teamProportionFracture<MIN_FRACTURE_PERCENT ~ FALSE,
@@ -247,7 +294,7 @@ teamStats <- teamStats %>%
 # now add whether the team fractured to data
 usersRounds <- usersRounds %>%
   select(-teamProportionFracture, -team) %>%
-  left_join(teamStats, by=c("room", "batch", "round", "condition"))
+  left_join(teamStats, by=c("room", "batch", "round", "condition","task"))
 
 # did they guess correctly?
 usersRounds$partnerFractured <- ifelse(usersRounds$teamProportionFracture == 0, FALSE,
@@ -268,14 +315,20 @@ data = usersRounds
 ```{r, echo=TRUE}
 manipulationCheckAccuracy = data %>%
   ungroup() %>%
-  distinct(id, batch, condition, manipulation, manipulationCheck) %>%
+  distinct(id, batch, condition, manipulation, manipulationCheck, task) %>%
   mutate(manipulationCheckCorrect = manipulation == manipulationCheck)
 
 manipulationCheckAccuracyByCondition <- manipulationCheckAccuracy %>%
-  group_by(condition) %>%
+  group_by(condition,task) %>%
   summarise(numCorrect = sum(manipulationCheckCorrect), n=n(), accuracy = numCorrect/n, se = sqrt(accuracy*(1-accuracy)/n))
 print(manipulationCheckAccuracyByCondition)
 print(table(manipulationCheckAccuracyByCondition))
+
+manipulationCheckAccuracyByTeams <- teamStats %>%
+  group_by(condition,task) %>%
+  summarise(meanCorrect=sum(groupManipulationCheck>=.25),n=n(),accuracy=meanCorrect/n)
+manipulationCheckAccuracyByTeams
+
 numRounds = lengths(data$teamOrder)[1] # split up the list of teams in order to figure out how many rounds they had
 numSameTeam = 2 # number of times they meet with the same team
 chanceManipulation <- (1/choose(numRounds, numSameTeam))
@@ -315,14 +368,14 @@ fractureSecond <- teamStats %>%
   filter(team=="Ap")
 fractureConsistency <- fractureFirst %>%
   ungroup() %>%
-  left_join(fractureSecond, by=c("teamMembers", "batch", "condition"), suffix=c(".first", ".second"))
+  left_join(fractureSecond, by=c("teamMembers", "batch", "condition","task"), suffix=c(".first", ".second"))
 fractureConsistency$consistent <- fractureConsistency$teamFracture.first == fractureConsistency$teamFracture.second
 fractureConsistency$continuous <- fractureConsistency$viabilityZ.first - fractureConsistency$viabilityZ.second
 fractureConsistency$continuousAbs <- abs(fractureConsistency$continuous)
 rm("fractureFirst","fractureSecond")
 
 conditionConsistency <- fractureConsistency %>%
-  group_by(condition) %>%
+  group_by(condition,task) %>%
   summarise(
     numConsistent = sum(consistent), 
     n=n(), 
@@ -338,7 +391,7 @@ maskedConsistency <- fractureConsistency %>% filter(condition=="masked")
 unmaskedConsistency <- fractureConsistency %>% filter(condition=="unmasked")
 
 prop.test(conditionConsistency$numConsistent, conditionConsistency$n, p=NULL, alternative = "two.sided", correct = TRUE)
-
+# 
 # t.test(maskedConsistency$viabilityZ.first,maskedConsistency$viabilityZ.second,paired = TRUE)
 # t.test(unmaskedConsistency$viabilityZ.first,unmaskedConsistency$viabilityZ.second,paired = TRUE)
 # t.test(fractureConsistency$continuousAbs~fractureConsistency$condition, var.equal = TRUE)
@@ -372,8 +425,6 @@ p
 # pdf('manipulationcheck.pdf', width=3.5, height=2.5)
 # dev.off();
 # p2
-# 
-# chisq.test(conditionConsistency$
 
 ```
 
