@@ -829,8 +829,8 @@ const checkQualsRecursive = (
 
 // workOnActiveHITs(console.log);
 
-unassignQuals(
-  "A1KK0TJ0ZHCPMZ",
-  quals.willBang,
-  "You asked to be removed from our notification list."
-);
+// unassignQuals(
+//   "A1XDVNSCFDIYR4",
+//   quals.willBang,
+//   "You asked to be removed from our notification list."
+// );

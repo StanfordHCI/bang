@@ -155,6 +155,24 @@ users <- users %>%
     results.qSixteenCheck.3 = results.qSixteenCheck.5, 
     results.qSixteenCheck.4 = results.qSixteenCheck.7
   )
+
+demographics = users %>% 
+  select(contains("demographicsCheck")) %>%
+  mutate(
+    age = 2019 - as.numeric(results.demographicsCheck.3),
+    gender = as.factor(results.demographicsCheck.2),
+  ) %>%
+  filter(age < 200) %>%
+  summarise(
+    percentFemale = sum(gender == "Female") / n(),
+    percentOther = sum(gender == "Other") / n(),
+    ageMean = mean(age),
+    ageSD = sd(age)
+  )
+
+demographics <- na.omit(demographics)
+summary(demographics)
+
 users <- users %>% 
   select(
     -contains("results.psychologicalSafety"),
@@ -188,6 +206,8 @@ manipulationCheck <- usersRounds %>%
   mutate(condition=results.condition) %>%
   select(id, batch, room, round, manipulation, manipulationCheck, teamOrder, condition) %>%
   left_join(batchFrame, by="batch")
+
+performanceTable = read.csv("../performance.csv", header = TRUE)
 
 qFifteen <- extractBlacklistSurvey(users, 'qFifteenCheck')
 qSixteen <- extractBlacklistSurvey(users, 'qSixteenCheck')
@@ -364,26 +384,49 @@ print(manipulationCheckChanceComparison)
 ```{r}
 fractureFirst <- teamStats %>%
   filter(team=="A")
+
+fractureFirst %>%
+  group_by(teamFracture) %>%
+  summarise(
+    viabilityMean = mean(teamMeanViability)
+  )
+
 fractureSecond <- teamStats %>%
   filter(team=="Ap")
 fractureConsistency <- fractureFirst %>%
-  ungroup() %>%
+  # ungroup() %>%
   left_join(fractureSecond, by=c("teamMembers", "batch", "condition","task"), suffix=c(".first", ".second"))
 fractureConsistency$consistent <- fractureConsistency$teamFracture.first == fractureConsistency$teamFracture.second
-fractureConsistency$continuous <- fractureConsistency$viabilityZ.first - fractureConsistency$viabilityZ.second
+fractureConsistency$continuous <- fractureConsistency$teamMeanViability.second - fractureConsistency$teamMeanViability.first
 fractureConsistency$continuousAbs <- abs(fractureConsistency$continuous)
-rm("fractureFirst","fractureSecond")
+fractureConsistency$viabilityIsUp <- fractureConsistency$continuous > 0
+# rm("fractureFirst","fractureSecond")
+
+mean(fractureConsistency$continuous)
+mean(fractureConsistency$continuousAbs)
+
+test = fractureConsistency %>% 
+  group_by(task,condition,consistent) %>%
+  summarise(
+    meanContinousAbs = mean(continuousAbs),
+    percentUp = mean(viabilityIsUp),
+    n = n(),
+    fractureRate = mean(mean(teamFracture.first),mean(teamFracture.second))
+  )
+
+mean(fractureConsistency$viabilityIsUp)
 
 conditionConsistency <- fractureConsistency %>%
-  group_by(condition,task) %>%
+  group_by(task, condition) %>%
   summarise(
     numConsistent = sum(consistent), 
     n=n(), 
     percentConsistent=numConsistent/n, 
     se=sqrt(percentConsistent*(1-percentConsistent))/n,
-    numContinuousAbs = viabilityMean - sum(continuousAbs),
-    percentContinuous = numContinuousAbs / viabilityMean,
-    seContinuous=sqrt(percentContinuous*(1-percentContinuous))/n
+    meanContinuousAbs = mean(continuousAbs),
+    fractureRate = mean(mean(teamFracture.first),mean(teamFracture.second))
+    # percentContinuous = numContinuousAbs / viabilityMean,
+    # seContinuous=sqrt(percentContinuous*(1-percentContinuous))/n
     )
 print(conditionConsistency)
 
@@ -391,14 +434,14 @@ maskedConsistency <- fractureConsistency %>% filter(condition=="masked")
 unmaskedConsistency <- fractureConsistency %>% filter(condition=="unmasked")
 
 prop.test(conditionConsistency$numConsistent, conditionConsistency$n, p=NULL, alternative = "two.sided", correct = TRUE)
-# 
-# t.test(maskedConsistency$viabilityZ.first,maskedConsistency$viabilityZ.second,paired = TRUE)
-# t.test(unmaskedConsistency$viabilityZ.first,unmaskedConsistency$viabilityZ.second,paired = TRUE)
-# t.test(fractureConsistency$continuousAbs~fractureConsistency$condition, var.equal = TRUE)
-# t.test(fractureConsistency$continuousAbs~fractureConsistency$condition)
-# 
-# sd(maskedConsistency$continuousAbs)
-# sd(unmaskedConsistency$continuousAbs)
+
+t.test(maskedConsistency$viabilityZ.first,maskedConsistency$viabilityZ.second,paired = TRUE)
+t.test(unmaskedConsistency$viabilityZ.first,unmaskedConsistency$viabilityZ.second,paired = TRUE)
+t.test(fractureConsistency$continuousAbs~fractureConsistency$condition, var.equal = TRUE)
+t.test(fractureConsistency$continuousAbs~fractureConsistency$condition)
+
+sd(maskedConsistency$continuousAbs)
+sd(unmaskedConsistency$continuousAbs)
 
 p <- ggplot(data=filter(conditionConsistency), aes(x=condition, y=percentConsistent)) +
   geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
@@ -426,6 +469,9 @@ p
 # dev.off();
 # p2
 
+```
+```{r}
+summary(performanceTable)
 ```
 
 ```{r}

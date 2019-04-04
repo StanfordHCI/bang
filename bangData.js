@@ -148,15 +148,17 @@ function renderAds(batch) {
                   .filter(a => a.message[0] === "!");
                 ads = ads.slice(ads.length - 5);
                 // ads.forEach(m => console.log("  ", m.message));
+                console.log(batch);
                 let chosenAd = ads[ads.length - 1];
-                ad = {
-                  batch: chosenAd.batch,
-                  round: chosenAd.round,
-                  room: chosenAd.room,
-                  text: chosenAd.message.slice(1, 31),
-                  user: chosenAd.userID
-                };
-                console.log([ad.batch, ad.round, ad.room, ad.text].join("|"));
+                console.log(Object.keys(chosenAd).length);
+                // ad = {
+                //   batch: chosenAd.batch,
+                //   round: chosenAd.round,
+                //   room: chosenAd.room,
+                //   text: chosenAd.message.slice(1, 31),
+                //   user: chosenAd.userID
+                // };
+                // console.log([ad.batch, ad.round, ad.room, ad.text].join("|"));
                 // console.log(ad.text);
               });
           });
@@ -167,7 +169,7 @@ function renderAds(batch) {
   });
 }
 
-function generateAddsCSVRow(batch) {
+function generateAdsCSVRow(batch) {
   //get chats database
   fs.readFile(dir + batch + "/" + "chats.json", (err, chatsRAW) => {
     if (err) throw err;
@@ -198,6 +200,51 @@ function generateAddsCSVRow(batch) {
                     product.category
                   }",Under review,0,0, --,USD, --,0`;
                   console.log(csvRow);
+                }
+              });
+            });
+          } catch (err) {
+            throw err;
+          }
+        }
+      });
+    }
+  });
+}
+
+function returnAds(batch, callback) {
+  //get chats database
+  fs.readFile(dir + batch + "/" + "chats.json", (err, chatsRAW) => {
+    if (err) throw err;
+    else {
+      fs.readFile(dir + batch + "/" + "batch.json", (err, batchRAW) => {
+        if (err) throw err;
+        else {
+          try {
+            const chats = JSON.parse(chatsRAW);
+            const batchData = JSON.parse(batchRAW)[0];
+            batchData.products.forEach((product, round) => {
+              product.category = products.filter(
+                p => p.url === product.url
+              )[0].category;
+              rooms.forEach(room => {
+                const ads = chats
+                  .filter(a => a.round === round)
+                  .filter(a => a.room === room)
+                  .filter(a => a.message[0] === "!")
+                  .sort((a, b) => a.time - b.time);
+                if (ads.length != 0) {
+                  const fullAd = ads[ads.length - 1];
+                  const ad = {
+                    batch: fullAd.batch,
+                    roundTask: product.category,
+                    round: fullAd.round,
+                    room: fullAd.room,
+                    text: fullAd.message.slice(1, 31)
+                  };
+                  if (typeof callback == "function") {
+                    return callback(ad);
+                  } else return ad;
                 }
               });
             });
@@ -513,8 +560,66 @@ function useCompleteBatches(callback) {
     });
 }
 
-let correctCount = 0;
-let totalCount = 0;
+function importCSVdata(file, callback) {
+  var csvParser = require("csv-parse");
+  const filePath = `${dbLocation}/${file}`;
+  fs.readFile(
+    filePath,
+    {
+      encoding: "utf-8"
+    },
+    function(err, csvData) {
+      if (err) {
+        console.log(err);
+      }
+      csvParser(
+        csvData,
+        {
+          delimiter: ","
+        },
+        function(err, data) {
+          if (err) {
+            console.log(err);
+          } else {
+            if (typeof callback == "function") {
+              callback(data);
+              return data;
+            }
+          }
+        }
+      );
+    }
+  );
+}
+
+{
+  questions: {
+    1;
+  }
+}
+
+function matchAd(data, ad) {
+  data
+    .filter(row => row[7] === ad.text)
+    .forEach(row => {
+      const clicks = 1 + Number(row[17].replace(",", ""));
+      const impressions = Number(row[18].replace(",", ""));
+      const result = {
+        text: ad.text,
+        room: ad.room,
+        round: ad.round,
+        batch: ad.batch,
+        performance: clicks / impressions,
+        roundTask: ad.roundTask
+      };
+      console.log(
+        `${result.batch}, ${result.round}, ${result.room}, ${
+          result.roundTask
+        }, ${result.performance}`
+      );
+      // console.log(result);
+    });
+}
 
 // manipulationCheck(1537292004662)
 // useCompleteBatches(manipulationCheck)
@@ -524,13 +629,13 @@ let totalCount = 0;
 // Download data from your folder and save it into local batch archives
 // downloadData("bang");
 // saveDBArchives();
-useCompleteBatches(manipulationFix);
+// useCompleteBatches(manipulationFix);
 
 //Rendering for various things
-// useCompleteBatches(renderChats);
+useCompleteBatches(renderChats);
 // useCompleteBatches(renderAds);
 
-addBatches = [
+const adBatches = [
   1553010760733,
   1553019661611,
   1553021461648,
@@ -551,8 +656,15 @@ addBatches = [
   1553200861903,
   1553201461913
 ];
-
 // 1553194261766 an apparent faild batch
 
-// addBatches.forEach(renderAds);
-// addBatches.forEach(generateAddsCSVRow);
+// adBatches.forEach(returnAds(parseAdsCSV));
+
+// console.log(`batch, round, room, roundTask, performance`);
+// importCSVdata("ads.csv", adsData => {
+//   adBatches.forEach(batch => {
+//     returnAds(batch, ad => {
+//       matchAd(adsData, ad);
+//     });
+//   });
+// });
