@@ -119,6 +119,8 @@ cron.schedule('*/4 * * * *', async function(){
       const HIT = await addHIT(batch, false);
       currentHIT = HIT.HITId;
       logger.info(module, 'Hit created :' + currentHIT)
+    } else {
+      currentHIT = '';
     }
   } catch (e) {
     errorHandler(e, 'create schedule HIT error')
@@ -160,14 +162,14 @@ cron.schedule('*/10 * * * * *', async function(){
 /*const test = async function(){
   try {
     let prs = [
-      disassociateQualificationFromWorker('A3QTK0H2SRN96W', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd'),
+      disassociateQualificationFromWorker('ALIBB17V6XE1Z', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd'),
+      disassociateQualificationFromWorker('A2LPEQIGMF3JJL', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd'),
       disassociateQualificationFromWorker('A2RJT3346F362V', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd'),
       disassociateQualificationFromWorker('A1858EK0YRX9ZV', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd'),
-      disassociateQualificationFromWorker('A2LPEQIGMF3JJL', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd'),
-      disassociateQualificationFromWorker('A3QTK0H2SRN96W', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd'),
+      disassociateQualificationFromWorker('ALIBB17V6XE1Z', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd'),
+      disassociateQualificationFromWorker('A2LPEQIGMF3JJL', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd'),
       disassociateQualificationFromWorker('A2RJT3346F362V', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd'),
       disassociateQualificationFromWorker('A1858EK0YRX9ZV', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd'),
-      disassociateQualificationFromWorker('A2LPEQIGMF3JJL', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd'),
     ]
     await Promise.all(prs)
 
