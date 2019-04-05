@@ -58,7 +58,6 @@ export const init = async function (data, socket, io) {
     socket.emit('init-res', {user: user, teamSize: process.env.TEAM_SIZE});
     await User.findByIdAndUpdate(user._id, { $set: { connected : true, lastConnect: new Date(), socketId: socket.id, } });
     await activeCheck(io);
-    console.log('init assign', socket.mturkId, socket.assignmentId)
   } catch (e) {
     errorHandler(e, 'init error')
   }

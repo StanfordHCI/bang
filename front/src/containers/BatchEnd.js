@@ -12,7 +12,7 @@ class BatchEnd extends React.PureComponent {
             <Card>
               <CardBody>
                 <p>Thank you for your work on our tasks. We will pay you shortly for your work based on $12/hour pay rate.</p>
-                <p>Now you cab return to the main page.</p>
+                <p>Now you can return to the main page.</p>
                 <p>If you faced any problems please contact us via email mturk@yourdomain.com</p>
               </CardBody>
             </Card>
