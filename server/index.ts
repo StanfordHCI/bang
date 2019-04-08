@@ -112,7 +112,7 @@ cron.schedule('*/30 * * * * *', async function(){
   }
 });
 
-cron.schedule('*/1 * * * *', async function(){
+cron.schedule('*/4 * * * *', async function(){
   try {
     const batch = await Batch.findOne({status: 'waiting'}).select('teamSize roundMinutes numRounds').lean().exec();
     if (batch) {
