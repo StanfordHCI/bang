@@ -632,7 +632,7 @@ function matchAd(data, ad) {
 // useCompleteBatches(manipulationFix);
 
 //Rendering for various things
-useCompleteBatches(renderChats);
+// useCompleteBatches(renderChats);
 // useCompleteBatches(renderAds);
 
 const adBatches = [
@@ -668,3 +668,5 @@ const adBatches = [
 //     });
 //   });
 // });
+
+renderChats("1553179862174")
