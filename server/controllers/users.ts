@@ -98,6 +98,7 @@ export const sendMessage = async function (data, socket, io) {
   }
 }
 
+/*
 export const joinBang = async function (data, socket, io) {
   try {
     console.log('join bang', socket.mturkId)
@@ -113,3 +114,4 @@ export const joinBang = async function (data, socket, io) {
     errorHandler(e, 'join bang error')
   }
 }
+*/

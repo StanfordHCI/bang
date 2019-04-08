@@ -16,6 +16,9 @@ ROUND_MINUTES=10
 NODE_ENV=development/production
 API_HOST=your host
 MONGO_URI=your mongo connect uri
+ADMIN_TOKEN=your admin token
+WILL_BANG_QUAL=will bang qual id from mturk
+HAS_BANGED_QUAL=has banged qual id from mturk
 ```
 
 4. Set up mongodb (ver. 4.0)
@@ -76,3 +79,5 @@ We are moving toward a model where bang can be run with a variety of tasks and a
 ### Paying
 
 At the end of the task, we provide bonuses to our workers and follow up with any who experienced errors. This currently happens at the start  of the next round of the experiment or on a cron script.
+
+### System workflow

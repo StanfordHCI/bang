@@ -1,3 +1,4 @@
+require('dotenv').config({path: './.env'});
 import {User} from '../models/users'
 import {Chat} from '../models/chats'
 import {Batch} from '../models/batches'
@@ -97,7 +98,7 @@ const startBatch = async function (batch, socket, io) {
     const users = await User.find({batch: batch._id, connected: true}).lean().exec();
     let bangPrs = [];
     users.forEach(user => {
-      bangPrs.push(assignQual(user.mturkId, '33CI7FQ96AL58DPIE8NY2KTI5SF7OH'))
+      bangPrs.push(assignQual(user.mturkId, process.env.HAS_BANGED_QUAL))
       bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, 1.01))
     })
     await Promise.all(bangPrs)

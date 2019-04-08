@@ -142,7 +142,7 @@ cron.schedule('*/10 * * * * *', async function(){
               mturkId: assignment.WorkerId,
               testAssignmentId: assignment.AssignmentId
             }),
-            assignQual(assignment.WorkerId, '3SR1M7GDJW59K8YBYD1L5YS55VPA25'),
+            assignQual(assignment.WorkerId, process.env.WILL_BANG_QUAL),
             notifyWorkers([assignment.WorkerId], 'Experiment started. Please find and accept our main mturk task here:' +
               ' https://workersandbox.mturk.com/requesters/A3QTK0H2SRN96W/projects', 'Bang')
           ];
@@ -158,18 +158,19 @@ cron.schedule('*/10 * * * * *', async function(){
 
 
 
+//to clear used workers
 
 /*const test = async function(){
   try {
     let prs = [
-      disassociateQualificationFromWorker('ALIBB17V6XE1Z', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd'),
-      disassociateQualificationFromWorker('A2LPEQIGMF3JJL', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd'),
-      disassociateQualificationFromWorker('A2RJT3346F362V', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd'),
-      disassociateQualificationFromWorker('A1858EK0YRX9ZV', '3SR1M7GDJW59K8YBYD1L5YS55VPA25', 'asd'),
-      disassociateQualificationFromWorker('ALIBB17V6XE1Z', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd'),
-      disassociateQualificationFromWorker('A2LPEQIGMF3JJL', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd'),
-      disassociateQualificationFromWorker('A2RJT3346F362V', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd'),
-      disassociateQualificationFromWorker('A1858EK0YRX9ZV', '33CI7FQ96AL58DPIE8NY2KTI5SF7OH', 'asd'),
+      disassociateQualificationFromWorker('ALIBB17V6XE1Z', process.env.WILL_BANG_QUAL, 'asd'),
+      disassociateQualificationFromWorker('A2LPEQIGMF3JJL', process.env.WILL_BANG_QUAL, 'asd'),
+      disassociateQualificationFromWorker('A2RJT3346F362V', process.env.WILL_BANG_QUAL, 'asd'),
+      disassociateQualificationFromWorker('A1858EK0YRX9ZV', process.env.WILL_BANG_QUAL, 'asd'),
+      disassociateQualificationFromWorker('ALIBB17V6XE1Z', process.env.HAS_BANGED_QUAL, 'asd'),
+      disassociateQualificationFromWorker('A2LPEQIGMF3JJL', process.env.HAS_BANGED_QUAL, 'asd'),
+      disassociateQualificationFromWorker('A2RJT3346F362V', process.env.HAS_BANGED_QUAL, 'asd'),
+      disassociateQualificationFromWorker('A1858EK0YRX9ZV', process.env.HAS_BANGED_QUAL, 'asd'),
     ]
     await Promise.all(prs)
 

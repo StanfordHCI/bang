@@ -35,24 +35,24 @@ const quals = {
   completedBang: {
     //MEW: useful to filter out people who have already done our HIT.
     QualificationTypeId: runningLive
-      ? "33CI7FQ96AL58DPIE8NY2KTI5SF7OH" //hardcoded ids, dangerous logic
-      : "33CI7FQ96AL58DPIE8NY2KTI5SF7OH",//hardcoded ids, dangerous logic
+      ? process.env.HAS_BANGED_QUAL
+      : process.env.HAS_BANGED_QUAL,
     Comparator: "DoesNotExist",
     ActionsGuarded: "DiscoverPreviewAndAccept"
   },
   joinedBang: {
     //MEW: useful to filter people who are scheduled to do our HIT.
     QualificationTypeId: runningLive
-      ? "3SR1M7GDJW59K8YBYD1L5YS55VPA25" //hardcoded ids, dangerous logic
-      : "3SR1M7GDJW59K8YBYD1L5YS55VPA25", //hardcoded ids, dangerous logic
+      ? process.env.WILL_BANG_QUAL
+      : process.env.WILL_BANG_QUAL,
     Comparator: "DoesNotExist",
     ActionsGuarded: "DiscoverPreviewAndAccept"
   },
   willBang: {
     //MEW: useful to filter people who are scheduled to do our HIT.
     QualificationTypeId: runningLive
-      ? "3SR1M7GDJW59K8YBYD1L5YS55VPA25" //hardcoded ids, dangerous logic
-      : "3SR1M7GDJW59K8YBYD1L5YS55VPA25", //hardcoded ids, dangerous logic
+      ? process.env.WILL_BANG_QUAL
+      : process.env.WILL_BANG_QUAL,
     Comparator: "Exists",
     ActionsGuarded: "DiscoverPreviewAndAccept"
   }
