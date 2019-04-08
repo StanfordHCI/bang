@@ -112,13 +112,13 @@ cron.schedule('*/30 * * * * *', async function(){
   }
 });
 
-cron.schedule('*/4 * * * *', async function(){
+cron.schedule('*/1 * * * *', async function(){
   try {
     const batch = await Batch.findOne({status: 'waiting'}).select('teamSize roundMinutes numRounds').lean().exec();
     if (batch) {
       const HIT = await addHIT(batch, false);
       currentHIT = HIT.HITId;
-      logger.info(module, 'Hit created :' + currentHIT)
+      logger.info(module, 'Test HIT created :' + currentHIT)
     } else {
       currentHIT = '';
     }
@@ -135,7 +135,9 @@ cron.schedule('*/10 * * * * *', async function(){
         const assignment = as[i];
         const check = await User.findOne({mturkId: assignment.WorkerId});
         if (!check) {//add user to db and give willbang qual
-          console.log(assignment.WorkerId)
+          const url = process.env.MTURK_FRAME === 'ON' ? ' https://workersandbox.mturk.com/requesters/A3QTK0H2SRN96W/projects' :
+            'http://localhost:3000/?assignmentId=' + assignment.AssignmentId + '&workerId=' + assignment.WorkerId;
+
           let prs = [
             User.create({
               token: assignment.WorkerId,
@@ -143,8 +145,7 @@ cron.schedule('*/10 * * * * *', async function(){
               testAssignmentId: assignment.AssignmentId
             }),
             assignQual(assignment.WorkerId, process.env.WILL_BANG_QUAL),
-            notifyWorkers([assignment.WorkerId], 'Experiment started. Please find and accept our main mturk task here:' +
-              ' https://workersandbox.mturk.com/requesters/A3QTK0H2SRN96W/projects', 'Bang')
+            notifyWorkers([assignment.WorkerId], 'Experiment started. Please find and accept our main mturk task here:' + url, 'Bang')
           ];
           await Promise.all(prs);
           logger.info('module', 'User added to db, qual added, notify sent: ' + assignment.WorkerId)
@@ -163,7 +164,7 @@ cron.schedule('*/10 * * * * *', async function(){
 /*const test = async function(){
   try {
     let prs = [
-      disassociateQualificationFromWorker('ALIBB17V6XE1Z', process.env.WILL_BANG_QUAL, 'asd'),
+      disassociateQualificationFromWorker('APJC0K7A2B3TM', process.env.WILL_BANG_QUAL, 'asd'),
       disassociateQualificationFromWorker('A2LPEQIGMF3JJL', process.env.WILL_BANG_QUAL, 'asd'),
       disassociateQualificationFromWorker('A2RJT3346F362V', process.env.WILL_BANG_QUAL, 'asd'),
       disassociateQualificationFromWorker('A1858EK0YRX9ZV', process.env.WILL_BANG_QUAL, 'asd'),

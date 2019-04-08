@@ -95,7 +95,7 @@ export const loadBatch = async function (data, socket, io) {
 const startBatch = async function (batch, socket, io) {
   try {
     await timeout(5000);
-    const users = await User.find({batch: batch._id, connected: true}).lean().exec();
+    const users = await User.find({batch: batch._id}).lean().exec();
     let bangPrs = [];
     users.forEach(user => {
       bangPrs.push(assignQual(user.mturkId, process.env.HAS_BANGED_QUAL))
@@ -191,7 +191,9 @@ const startBatch = async function (batch, socket, io) {
     //last survey
     await timeout(120000);
 
-    await expireHIT(batch.HITId)
+    if (process.env.MTURK_FRAME === 'ON') {
+      await expireHIT(batch.HITId)
+    }
     await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
     logger.info(module, 'Main experiment end', batch._id)
     clearRoom(batch._id, io)

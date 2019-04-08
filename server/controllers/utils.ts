@@ -9,6 +9,7 @@ let endpoint = runningLive ? "https://mturk-requester-sandbox.us-east-1.amazonaw
   "https://mturk-requester-sandbox.us-east-1.amazonaws.com"; //should be changed
 let submitTo = runningLive ? "https://workersandbox.mturk.com" : "https://workersandbox.mturk.com"; //should be changed
 export const mturk = new AWS.MTurk({ endpoint: endpoint });
+let fs = require("fs");
 
 
 const quals = {
@@ -89,7 +90,6 @@ const externalHIT = (taskURL, height = 700) =>
   height +
   "</FrameHeight></ExternalQuestion>";
 
-
 export const makeName = function(friends_history, teamSize) {
   if (!friends_history) {
     let adjective = chooseOne(randomAdjective);
@@ -105,7 +105,8 @@ export const addHIT = (batch, isMain) => {
     const rewardPrice = 0.01;
     const duration = isMain ? 36000 : 250;
     let bonusPrice = (hourlyWage * ((batch.roundMinutes * batch.numRounds * 1.5) / 60) - rewardPrice).toFixed(2);
-    let bg = isMain ? 'Main task. ' : 'Test task. ';
+    let bg = process.env.MTURK_FRAME === 'ON' ? (isMain ? 'Main task. ' : 'Test task. ') : 'Recruit task. ';
+
     let HITTitle = bg + "Write online ads - bonus up to $" + hourlyWage + " / hour (" + time + ")";
     let description =
       "Work in groups to write ads for new products. This task will take approximately " +
@@ -115,7 +116,15 @@ export const addHIT = (batch, isMain) => {
       ".";
     let keywords = "ads, writing, copy editing, advertising";
     let maxAssignments = isMain ? batch.teamSize * batch.teamSize * 4 : 100;
-    let hitContent = externalHIT(isMain ? 'https://bang-dev.deliveryweb.ru' : 'https://bang-dev.deliveryweb.ru/accept');
+    let hitContent;
+    if (process.env.MTURK_FRAME === 'ON') {
+      hitContent = externalHIT(isMain ? 'https://bang-dev.deliveryweb.ru' : 'https://bang-dev.deliveryweb.ru/accept');
+    } else {
+      const html = fs.readFileSync("./old/question.html").toString();
+      hitContent = html
+        .replace(/\$\{([\s]*[^;\s\{]+[\s]*)\}/g, function(_, match) {return `\$\{map.${match.trim()}\}`;})
+        .replace(/(\$\{(?!map\.)[^}]+\})/g, "");
+    }
 
     let makeHITParams = {
       Title: HITTitle,

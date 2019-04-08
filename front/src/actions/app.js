@@ -50,7 +50,7 @@ export const whoami = () => {
       dispatch(setLoading(true));
       socket.emit('init', initData)
     } else {
-      if  (!initData.mturkId || !initData.assignmentId || !initData.hitId || !initData.turkSubmitTo) { //not logged, wrong info
+      if  (!initData.mturkId || !initData.assignmentId) { //not logged, wrong info
         dispatch({
           type: APP_READY,
         });

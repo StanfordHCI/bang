@@ -1,8 +1,9 @@
+require('dotenv').config({path: './.env'});
 import {Template} from '../models/templates'
 import {Chat} from '../models/chats'
 import {Batch} from '../models/batches'
 import {errorHandler} from '../services/common'
-import {addHIT} from "./utils";
+import {addHIT, expireHIT} from "./utils";
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
 
@@ -41,8 +42,10 @@ export const addBatch = async function (req, res) {
       'This team has the capacity to sustain itself.',
       'This team has what it takes to endure in future performance episodes.'
     ]
-    const HIT = await addHIT(newBatch, true);
-    newBatch.HITId = HIT.HITId;
+    if (process.env.MTURK_FRAME === 'ON') {
+      const HIT = await addHIT(newBatch, true);
+      newBatch.HITId = HIT.HITId;
+    }
     const batch = await Batch.create(newBatch);
     const preChat = await Chat.create({batch: batch._id, messages: [
         {
