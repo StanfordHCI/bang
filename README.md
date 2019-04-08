@@ -83,7 +83,7 @@ At the end of the task, we provide bonuses to our workers and follow up with any
 
 ### System workflow
 To achieve admin’s access you need to add following keys into the Local Storage:
-bang-token: 144
+bang-token: admin id
 bang-admin-token:  (value ADMIN_TOKEN from the .env file)
 
 	List of the links which are available only for admin user:
@@ -94,11 +94,20 @@ bang-admin-token:  (value ADMIN_TOKEN from the .env file)
 
 For now application works only in Mturk sandbox. To test application you need at least 4 Mturk workers in the sandbox. 
 
+inside frame, MTURK_FRAME=ON
+
     For start experiment you need to add new batch at the /batches-add page. After that in will have “waiting” status and server will start posting qualification HITs every 4 minutes. Qualification HITs’ lifetime is 250 sec. 
-Link for the qualification HIT’s task is /accept. Here you can see /old/questions.html from the server (all other pages are React’s static) - all works through ngnix. 
+Link for the qualification HIT’s task is /accept. Here you can see /old/questions.html from the server (all other pages are React’s static) - all works through nginx. 
 All people which are ready with the qualification HIT achieve willBang qualification on Mturk and get email invite to the main task in Mturk (experiment workflow via frame). 
-Link for our main task that was mentioned above can be changed to the link with specific parameters which will leads to the our site directly.
 When in the waiting room there’re enough participants, for now four people are required, they get ability to join the batch. After enough people are joined batch experiment automatically starts. 
 As experiment is started all joined participants get start bonus, for now it’s $1.01, and achieve hasBanged qualification on Mturk. 
 From now those participants can’t see our Mturk’s task anymore. After final survey is completed by participant he/she achieve remaining part of his bonus on the basis of $12 per hour. For the last step server delete main task on Mturk.
+After it, if you wanna use your users again, you should clear their qualifications (‘test’ script in /index.ts, for example)and you should delete them from db.
+
+without frame, MTURK_FRAME=OFF
+For start experiment you need to add new batch at the /batches-add page. After that in will have “waiting” status and server will start posting qualification HITs every 4 minutes. Qualification HITs’ lifetime is 250 sec. 
+All people which are ready with the qualification HIT achieve willBang qualification on Mturk and get email invite to the main task in our site. 
+When in the waiting room there’re enough participants, for now four people are required, they get ability to join the batch. After enough people are joined batch experiment automatically starts. 
+As experiment is started all joined participants get start bonus, for now it’s $1.01, and achieve hasBanged qualification on Mturk. 
+From now those participants can’t see our Mturk’s task anymore. After final survey is completed by participant he/she achieve remaining part of his bonus on the basis of $12 per hour..
 After it, if you wanna use your users again, you should clear their qualifications (‘test’ script in /index.ts, for example)and you should delete them from db.
