@@ -37,7 +37,7 @@ const taskDuration = roundMinutes * numRounds * 2;
 const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
 const hourlyWage = 12; // changes reward of experiment depending on length - change to 6?
 const basePrice = 0.5; // upfront cost
-const maxAssignments = 2 * teamSize * teamSize * 2;
+const maxAssignments = 2 * teamSize * teamSize * 4;
 
 let bonusPrice = (
   hourlyWage * ((roundMinutes * numRounds + 10) / 60) -

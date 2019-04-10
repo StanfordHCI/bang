@@ -36,11 +36,11 @@ const randomRoundOrderOn = true;
 const randomTaskOrderOn = true;
 
 const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
-const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
+const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true, might not work fully
 const starterSurveyOn = false;
 const midSurveyOn = true;
 const midSurveyStatusOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
-const psychologicalSafetyOn = runningLive;
+const psychologicalSafetyOn = false;
 const creativeSurveyOn = false;
 const satisfactionSurveyOn = false;
 const conflictSurveyOn = false;
@@ -56,6 +56,7 @@ const qSixteenOn = runningLive;
 const postSurveyOn = true;
 const demographicsSurveyOn = true;
 
+//MW: This is who we notify when runtime events happen, e.g. rolling over, or getting submissions.
 //Just Mark for now. Feel free to add your ID, and finish a task for us so you can get notificaions too.
 const notifyUsList = ["A19MTSLG2OYDLZ"];
 
@@ -334,13 +335,13 @@ console.log = function(...msg) {
   });
 };
 
-//if (runExperimentNow){
 // Experiment variables
-/* const conditionsAvailable = ['control','treatment','baseline'] */
 const presetCondition = randomConditionOn
   ? ["control", "treatment"].pick()
   : "treatment";
 const currentCondition = args.condition || presetCondition;
+
+// Runtime variables
 let treatmentNow = false;
 let firstRun = false;
 let hasAddedUsers = false; //lock on adding users to db/experiment for experiment
@@ -1908,9 +1909,9 @@ io.on("connection", socket => {
         { time: 0.005, message: `<strong>Task:</strong><br>${taskText}` },
         {
           time: 0.005,
-          message: `<strong>Directions:</strong><br>1. Check out the link above and collaborate with your team members in the chat room to develop a text advertisement<br>2. The ad must be no more than <strong>30 characters long</strong>. <br>3. Instructions will be given for submitting the team's final product. <br>4. You have ${textifyTime(
+          message: `<strong>Directions:</strong><br>1. Check out the link above and collaborate with your team members to brainstorm text advertisements. <br>2. The ads must be no more than <strong>30 characters long</strong>. <br>3. Instructions will be given for submitting your favorite advertisements. <br>4. You have ${textifyTime(
             roundMinutes
-          )} to complete this round. <br>5. Your final advertisement will appear online. <strong>The more successful it is, the larger the bonus each team member will receive.</strong>`
+          )} to complete this round. <br>`
         },
         {
           time: 0.007,
@@ -1924,27 +1925,27 @@ io.on("connection", socket => {
         {
           time: 0.15,
           message:
-            "<br><strong>HIT bot: Say hello to your team members! Begin brainstorming ideas together.</strong>"
+            "<br><strong>HIT bot: Say hello to your team members! Begin brainstorming ideas.</strong>"
         },
         {
           time: 0.4,
           message:
-            "<br><strong>HIT bot: As a team, discuss and narrow down your ideas. Collaborate to create the most compelling text ad.</strong>"
+            "<br><strong>HIT bot: Discuss your ideas. Create the compelling text ads.</strong>"
         },
         {
           time: 0.85,
           message:
-            "<br><strong>HIT bot: Polish your team's favorite ad and get ready to submit.</strong>"
+            "<br><strong>HIT bot: Polish your team's favorite ads and get ready to submit.</strong>"
         },
         {
           time: 0.87,
           message:
-            "<br>Remember, your final ad can't be more than <strong>maximum 30 characters long</strong>."
+            "<br>Remember, your final ads can't be more than <strong>maximum 30 characters long</strong>."
         },
         {
           time: 0.9,
           message:
-            "<br><strong>HIT bot: Submit the team's final ad by sending a message with a '!' directly in front of the text ad. Only the final submission with a '!' will be counted.</strong>"
+            "<br><strong>HIT bot: Submit your final ads by sending a message with a '!' directly in front of the text ad.</strong>"
         },
         {
           time: 0.95,
