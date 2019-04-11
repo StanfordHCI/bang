@@ -30,7 +30,7 @@ $(function() {
   let colorAssignment = [];
 
   //toggles
-  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -1223,11 +1223,13 @@ $(function() {
     $holdingPage.show();
     clearAllTimers();
     //Repeats until a new event is received.
-    timers.push(
-      setInterval(() => {
-        socket.emit("ready");
-      }, 10 * 60 * 1000)
-    );
+
+    //playing with commenting this out
+    // timers.push(
+    //   setInterval(() => {
+    //     socket.emit("ready");
+    //   }, 10 * 60 * 1000)
+    // );
   }
 });
 

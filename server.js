@@ -36,7 +36,7 @@ const randomRoundOrderOn = false; //NEEDS TO BE FALSE BC I WANT STATIC
 const randomProductOn = true;
 const randomTaskOrderOn = false;
 
-const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
+const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false; 

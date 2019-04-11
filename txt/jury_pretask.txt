@@ -1,4 +1,4 @@
-ARTICLE| Please read this article. After you are done, select "Yes" to confirm that you have read the article: 
+ARTICLE| Please read this article. Note that some articles can and will be repeated; however, as you approach these questions and the rounds ahead, try to keep an open mind and answer honestly. Remember that some Turkers are seeing these articles for the first time. After you are done, select "Yes" to confirm that you have read the article: 
 S1|1. In the case I just read, the product was defective.
 S1|2. I believe that the company (defendant) was negligent.
 S1|3. I believe that the company (defendant) breached its implied warranty.
