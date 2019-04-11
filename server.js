@@ -1930,22 +1930,6 @@ io.on("connection", socket => {
             roundMinutes * numRounds + 15
           )} minutes total.`
         },
-        { time: 0.005, message: `<strong>Task:</strong><br>${taskText}` },
-        {
-          time: 0.005,
-          message: `<strong>Directions:</strong><br>1. Check out the link above and collaborate with your team members in the chat room to develop a text advertisement<br>2. The ad must be no more than <strong>30 characters long</strong>. <br>3. Instructions will be given for submitting the team's final product. <br>4. You have ${textifyTime(
-            roundMinutes
-          )} to complete this round. <br>5. Your final advertisement will appear online. <strong>The more successful it is, the larger the bonus each team member will receive.</strong>`
-        },
-        {
-          time: 0.007,
-          message: `<strong>Example:</strong><br>Text advertisements for 'Renaissance Golf Club': <br><ul style='list-style-type:disc'><li><strong>An empowering modern club</strong><br></li><li><strong>A private club with reach</strong><br></li><li><strong>Don't Wait. Discover Renaissance Today</strong></li></ul><br>`
-        },
-        {
-          time: 0.01,
-          message:
-            "<br><strong>HIT bot: Take a minute to review all instructions above.</strong>"
-        },
         {
           time: 0.05,
           message:

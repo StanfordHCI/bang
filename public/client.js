@@ -904,7 +904,7 @@ $(function() {
       for (member of data.team) {
         addChatMessage({
           username: member,
-          message: "has entered the chatroom"
+          message: "has entered the jury room"
         });
       }
     }, 1000);
