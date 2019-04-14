@@ -357,10 +357,10 @@ let batchCompleteUpdated = false;
 
 // Settings for 4 rounds.
 // const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
-//const ordering = randomRoundOrderOn
-//  ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick()
-//  : [1, 2, 1, 3];
-const ordering = [1, 1, 1, 1];
+const ordering = randomRoundOrderOn
+  ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick()
+  : [1, 2, 1, 3];
+//const ordering = [1, 1, 1, 1];
 const conditions = {
   control: ordering,
   treatment: ordering,
