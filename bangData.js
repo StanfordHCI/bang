@@ -147,19 +147,19 @@ function renderAds(batch) {
                   .filter(a => a.room == currentRoom && a.round == currentRound)
                   .filter(a => a.message[0] === "!");
                 ads = ads.slice(ads.length - 5);
-                ads.forEach(m => console.log("  ", m.message));
+                // ads.forEach(m => console.log("  ", m.message));
                 console.log(batch);
                 let chosenAd = ads[ads.length - 1];
                 console.log(Object.keys(chosenAd).length);
-                ad = {
-                  batch: chosenAd.batch,
-                  round: chosenAd.round,
-                  room: chosenAd.room,
-                  text: chosenAd.message.slice(1, 31),
-                  user: chosenAd.userID
-                };
-                console.log([ad.batch, ad.round, ad.room, ad.text].join("|"));
-                console.log(ad.text);
+                // ad = {
+                //   batch: chosenAd.batch,
+                //   round: chosenAd.round,
+                //   room: chosenAd.room,
+                //   text: chosenAd.message.slice(1, 31),
+                //   user: chosenAd.userID
+                // };
+                // console.log([ad.batch, ad.round, ad.room, ad.text].join("|"));
+                // console.log(ad.text);
               });
           });
       } catch (err) {
@@ -630,6 +630,7 @@ function matchAd(data, ad) {
 //downloadData("b02");
 //saveDBArchives();
 //useCompleteBatches(manipulationFix);
+
 
 //Rendering for various things
 // useCompleteBatches(renderChats);
