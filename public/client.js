@@ -30,7 +30,7 @@ $(function() {
   let colorAssignment = [];
 
   //toggles
-  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -44,7 +44,9 @@ $(function() {
   const $checkinPopup = $("#checkin");
   const $headerText = $("#header-text");
   const $leaveHitButton = $("#leave-hit-button");
+  const $emergencyExitButton = $("#emergency-exit-button");
   const $leaveHitPopup = $("#leave-hit-popup");
+  const $emergencyExitPopup = $("#emergency-exit-popup");
 
   const $chatLink = $("#chatLink");
   const $headerbarPage = $("#headerbarPage"); // The finishing page
@@ -105,6 +107,8 @@ $(function() {
   });
 
   const hideAll = () => {
+    $emergencyExitButton.hide();
+    $emergencyExitPopup.hide();
     $headerbarPage.hide();
     $checkinPopup.hide();
     $leaveHitPopup.hide();
@@ -599,6 +603,22 @@ $(function() {
     );
   });
 
+  $emergencyExitButton.click(() => {
+    $emergencyExitPopup.show();
+    $currentInput = $("#leavetaskfeedbackInput").focus();
+    $currentInput.focus();
+    socket.emit(
+      "log",
+      holdingUsername.innerText + " clicked emergency exit button."
+    );
+    HandleFinish(
+        (finishingMessage = "You terminated the HIT via the emergency exit. Thank you for your time."),
+        (mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit"),
+        (assignmentId = mturkVariables.assignmentId),
+        (finishingcode = "LeftHit")
+      );
+  });
+
   //Simple autocomplete
   $inputMessage.autocomplete({
     source: ["test"],
@@ -1034,6 +1054,9 @@ $(function() {
     // log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
     hideAll();
     $holdingPage.show();
+    $emergencyExitButton.hide();
+    setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
+    //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     // messagesSafe.innerHTML = '';
     $inputMessage.unbind("keydown");
     socket.emit("next event");

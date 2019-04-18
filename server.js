@@ -35,7 +35,7 @@ const randomConditionOn = false;
 const randomRoundOrderOn = true;
 const randomTaskOrderOn = true;
 
-const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
+const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const starterSurveyOn = false;
 const midSurveyOn = true;
