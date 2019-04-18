@@ -611,6 +611,9 @@ $(function() {
       "log",
       holdingUsername.innerText + " clicked emergency exit button."
     );
+
+    //TODO: Some way to set the worker bonus to exactly 15 here.
+
     HandleFinish(
         (finishingMessage = "You terminated the HIT via the emergency exit. Thank you for your time."),
         (mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit"),
