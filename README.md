@@ -31,9 +31,9 @@ Replace the keys with your own by creating an IAM user (see a [tutorial on getti
   - To test larger team sizes, change the Worker ID in the URL. A list of 26 different Worker URL's [may be found here](https://docs.google.com/document/d/e/2PACX-1vRKrF6XJ-LUGyuumUiAyXc2mLOwPdhivliMadUKXqK_a92_vmV_9jaBxhtst3BSqK_BdtCdlZHd5VfC/pub).
 
 ## Running Live Steps
-1. SSH into server. Currently we are using ubuntu@b01.dmorina.com: 
+1. SSH into server. Currently we are using ubuntu@c01.dmorina.com: 
   ```PowerShell
-  ssh -i ~/.ssh/sh-batch.pem ubuntu@b01.dmorina.com
+  ssh -i ~/.ssh/sh-batch.pem ubuntu@c01.dmorina.com
   ```
 2. cd into the folder you'll be working in (check for one no one else is using)
 3. Double check that the switches in the top of `server.js` and `public/client.js` are correct. Specifically:
