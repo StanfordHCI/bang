@@ -46,7 +46,6 @@ $(function() {
   const $leaveHitButton = $("#leave-hit-button");
   const $emergencyExitButton = $("#emergency-exit-button");
   const $leaveHitPopup = $("#leave-hit-popup");
-  const $emergencyExitPopup = $("#emergency-exit-popup");
 
   const $chatLink = $("#chatLink");
   const $headerbarPage = $("#headerbarPage"); // The finishing page
@@ -108,7 +107,6 @@ $(function() {
 
   const hideAll = () => {
     $emergencyExitButton.hide();
-    $emergencyExitPopup.hide();
     $headerbarPage.hide();
     $checkinPopup.hide();
     $leaveHitPopup.hide();
@@ -604,15 +602,16 @@ $(function() {
   });
 
   $emergencyExitButton.click(() => {
-    $emergencyExitPopup.show();
-    $currentInput = $("#leavetaskfeedbackInput").focus();
-    $currentInput.focus();
     socket.emit(
       "log",
       holdingUsername.innerText + " clicked emergency exit button."
     );
 
     //TODO: Some way to set the worker bonus to exactly 15 here.
+    socket.emit(
+      "bonus",
+      "15"
+    );
 
     HandleFinish(
         (finishingMessage = "You terminated the HIT via the emergency exit. Thank you for your time."),
@@ -1058,8 +1057,8 @@ $(function() {
     hideAll();
     $holdingPage.show();
     $emergencyExitButton.hide();
-    setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
-    //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
+    //setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
+    setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     // messagesSafe.innerHTML = '';
     $inputMessage.unbind("keydown");
     socket.emit("next event");
