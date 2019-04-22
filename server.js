@@ -1,5 +1,5 @@
 require("dotenv").config();
-require("colors");
+const chalk = require("chalk");
 const args = require("yargs").argv;
 
 //Environmental settings, set in .env
@@ -7,7 +7,7 @@ const runningLocal = process.env.RUNNING_LOCAL === "TRUE";
 const runningLive = process.env.RUNNING_LIVE === "TRUE"; //ONLY CHANGE ON SERVER
 const teamSize = parseInt(process.env.TEAM_SIZE);
 const roundMinutes = parseFloat(process.env.ROUND_MINUTES);
-let taskURL = args.url || process.env.TASK_URL;
+const taskURL = args.url || process.env.TASK_URL;
 
 //Parameters for waiting qualifications
 const secondsToWait = 20; //number of seconds users must have been on pretask to meet qualification (e.g. 120)
@@ -33,14 +33,14 @@ const suddenDeath = false;
 
 const randomConditionOn = false;
 const randomRoundOrderOn = true;
-const randomProductOn = true;
+const randomTaskOrderOn = true;
 
 const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
-const psychologicalSafetyOn = false;
 const starterSurveyOn = false;
 const midSurveyOn = true;
 const midSurveyStatusOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
+const psychologicalSafetyOn = runningLive;
 const creativeSurveyOn = false;
 const satisfactionSurveyOn = false;
 const conflictSurveyOn = false;
@@ -51,10 +51,13 @@ const timeCheckOn = false; // tracks time user spends on task and updates paymen
 // how long each task is taking
 const requiredOn = runningLive;
 const checkinIntervalMinutes = roundMinutes / 3;
-const qFifteenOn = true;
-const qSixteenOn = true;
+const qFifteenOn = runningLive;
+const qSixteenOn = runningLive;
 const postSurveyOn = true;
-const demographicsSurveyOn = false;
+const demographicsSurveyOn = true;
+
+//Just Mark for now. Feel free to add your ID, and finish a task for us so you can get notificaions too.
+const notifyUsList = ["A19MTSLG2OYDLZ"];
 
 if (midSurveyStatusOn && teamSize != 4) {
   throw "Status survey only functions at team size 4";
@@ -65,8 +68,8 @@ const autocompleteTestOn = false; //turns on fake team to test autocomplete
 
 console.log(
   runningLive
-    ? "\n RUNNING LIVE ".red.inverse
-    : "\n RUNNING SANDBOXED ".green.inverse
+    ? chalk.red.inverse("\n RUNNING LIVE ")
+    : chalk.green.inverse("\n RUNNING SANDBOXED ")
 );
 console.log(runningLocal ? "Running locally" : "Running remotely");
 
@@ -145,11 +148,9 @@ const dem1 = {
   answers: [
     "Less than High School",
     "High school or equiv",
-    "Some college, no degree",
-    "Associate degree",
-    "Bachelors degree",
-    "Masters degree",
-    "Professional degree",
+    "Some college",
+    "Undergraduate degree",
+    "Graduate degree",
     "Doctorate"
   ],
   answerType: "radio",
@@ -184,7 +185,7 @@ const dem6 = {
     "White",
     "Other"
   ],
-  answerType: "checkbox",
+  answerType: "radio",
   textValue: true
 };
 
@@ -278,7 +279,7 @@ function useUser(socket, callback, err = "Guarded against undefined user") {
   if (typeof user !== "undefined" && typeof callback === "function") {
     callback(user);
   } else {
-    console.log(err.red, socket.id, "\n", err.stack);
+    console.log(chalk.red(err), socket.id, "\n", err.stack);
     if (debugModeOn) {
       console.trace();
     }
@@ -288,7 +289,14 @@ function useUser(socket, callback, err = "Guarded against undefined user") {
 // Check balance
 mturk.getBalance(function(balance) {
   if (runningLive && balance <= 400) {
-    console.log("\n!!! BROKE !!!\n".red.inverse.bold);
+    console.log(chalk.red.inverse.bold("\n!!! BROKE !!!\n"));
+    if (notifyUs) {
+      mturk.notifyWorkers(
+        notifyUsList,
+        `ADD MORE FUNDS: $${balance} left`,
+        `EOM`
+      );
+    }
   }
 });
 
@@ -367,7 +375,6 @@ console.log(currentCondition, "with", conditions[currentCondition]);
 const numRounds = conditions.baseline.length;
 
 const numberOfRooms = teamSize * numRounds;
-const rooms = tools.letters.slice(0, numberOfRooms);
 const people = extraRoundOn
   ? tools.letters.slice(0, teamSize ** 2 + teamSize)
   : tools.letters.slice(0, teamSize ** 2);
@@ -416,22 +423,22 @@ db.willBang = new Datastore({
   timestampData: true
 });
 
-function updateUserInDB(user, field, value) {
-  db.users.update(
-    { mturkId: user.mturkId, batch: batchID },
-    { $set: { [field]: value } },
-    {},
-    err =>
-      console.log(
-        err
-          ? "Err recording ".red + field + ": " + err
-          : "Updated " +
-              field +
-              " for " +
-              user.mturkId +
-              " " +
-              JSON.stringify(value, null, 2)
-      )
+function updateUserInDB(user, field, value, singleBatch = true) {
+  //MW: When singleBatch == false, this modifies more than one documents across all batches because otherwise some records wont be edited, e.g. when bonusing.
+  const query = singleBatch
+    ? { mturkId: user.mturkId, batch: batchID }
+    : { mturkId: user.mturkId };
+  const settings = singleBatch ? {} : { multi: true };
+  db.users.update(query, { $set: { [field]: value } }, settings, err =>
+    console.log(
+      err
+        ? `${chalk.red("Err recording ")} ${field}: ${err}`
+        : `Updated ${field} for ${user.mturkId} ${JSON.stringify(
+            value,
+            null,
+            2
+          )}`
+    )
   );
 }
 
@@ -442,16 +449,16 @@ db.users.find({}, (err, usersInDB) => {
   } else {
     if (issueBonusesNow) {
       mturk.payBonuses(usersInDB, bonusedUsers => {
-        bonusedUsers.forEach(u => updateUserInDB(u, "bonus", 0));
+        bonusedUsers.forEach(u => updateUserInDB(u, "bonus", 0, false));
       });
     }
+
     if (assignQualifications && runningLive) {
       mturk.listUsersWithQualificationRecursively(
         mturk.quals.hasBanged,
         data => {
           console.log(
-            "Number of users with qualification hasBanged:",
-            data.length
+            `Number of users with qualification hasBanged: ${data.length}`
           );
         }
       );
@@ -461,8 +468,7 @@ db.users.find({}, (err, usersInDB) => {
         mturk.quals.willBang,
         data => {
           console.log(
-            "Number of users with qualification willBang:",
-            data.length
+            `Number of users with qualification willBang: ${data.length}`
           );
         }
       );
@@ -486,25 +492,17 @@ if (cleanHITs) {
 }
 
 if (runExperimentNow) {
-  mturk.launchBang(function(HIT) {
+  mturk.launchBang(batchID, function(HIT) {
     logTime();
     storeHIT(HIT.HITId);
     // Notify workers that a HIT has started if we're doing recruiting by email
     if (notifyWorkersOn) {
-      // let HITId = process.argv[2];
-      let subject =
-        "We launched our new ad writing HIT. Join now, spaces are limited.";
+      let subject = `We launched our new HIT. Join now, spaces are limited.`;
       console.log(HIT);
-      let URL = "";
+      let URL = ``;
       mturk.getHITURL(HIT.HITId, function(url) {
         URL = url;
-        let message =
-          "You’re invited to join our newly launched HIT on Mturk; there are limited spaces and " +
-          "it will be closed to new participants in about 15 minutes!  Check out the HIT here: " +
-          URL +
-          " \n\nYou're receiving this message because you indicated that you'd like to be notified of our" +
-          " upcoming HIT during this time window. If you'd like to stop receiving notifications please " +
-          "email your MTurk ID to: scaledhumanity@gmail.com";
+        let message = `You’re invited to join our newly launched HIT on Mturk; there are limited spaces and it will be closed to new participants in about 15 minutes! \n\nCheck out the HIT here: ${URL} \n\nIf the HIT is "unavailable", it likely means spaces have been filled. Don't worry, you'll be notified of the next time we upload a new HIT.\n\nYou're receiving this message because you indicated that you'd like to be notified of our upcoming HIT during this time window. If you'd like to stop receiving notifications please email your MTurk ID to: scaledhumanity@gmail.com`;
         console.log("message to willBangers", message);
         if (!URL) {
           throw "URL not defined";
@@ -513,7 +511,7 @@ if (runExperimentNow) {
           // removes people who no longer have willBang qual from db.willBang
           db.willBang.find({}, (err, willBangers) => {
             if (err) {
-              console.log("ERROR cleaning willBang db: " + err);
+              console.log(`ERROR cleaning willBang db: ${err}`);
             } else {
               mturk.listUsersWithQualificationRecursively(
                 mturk.quals.willBang,
@@ -527,17 +525,15 @@ if (runExperimentNow) {
                         { id: willBangID },
                         { multi: true },
                         function(err, numRemoved) {
-                          if (err)
+                          if (err) {
                             console.log(
-                              "Error removing from willBang db: " + err
+                              `Error removing from willBang db: ${err}`
                             );
-                          else
+                          } else {
                             console.log(
-                              willBangID +
-                                " REMOVED FROM WILLBANG DB (" +
-                                numRemoved +
-                                ")"
+                              `${willBangID} REMOVED FROM WILLBANG DB (${numRemoved})`
                             );
+                          }
                         }
                       );
                     }
@@ -562,7 +558,8 @@ if (runExperimentNow) {
             20: "afternoon",
             21: "afternoon",
             22: "evening",
-            23: "evening"
+            23: "evening",
+            24: "evening"
           };
 
           const currentTimePeriod = timePeriods[currentHour];
@@ -573,7 +570,7 @@ if (runExperimentNow) {
               function(data) {
                 let notifyList = getRandomSubarray(data, maxWorkersToNotify);
                 mturk.notifyWorkers(notifyList, subject, message);
-                console.log("Notified", notifyList.length, "workers");
+                console.log(`Notified ${notifyList.length} workers`);
               }
             );
           } else {
@@ -639,30 +636,16 @@ if (runExperimentNow) {
 }
 
 //Add more products
-let products = [
-  // {name: 'KOSMOS ink - Magnetic Fountain Pen', url: 'https://www.kickstarter.com/projects/stilform/kosmos-ink'},
-  // {
-  //     name: 'Projka: Multi-Function Accessory Pouches',
-  //     url: 'https://www.kickstarter.com/projects/535342561/projka-multi-function-accessory-pouches'
-  // },
-  // {
-  //     name: "First Swiss Automatic Pilot's watch in TITANIUM & CERAMIC",
-  //     url: 'https://www.kickstarter.com/projects/chazanow/liv-watches-titanium-ceramic-chrono'
-  // },
-  // {
-  //     name: "Nomad Energy- Radically Sustainable Energy Drink",
-  //     url: 'https://www.kickstarter.com/projects/1273663738/nomad-energy-radically-sustainable-energy-drink'
-  // },
+let tasks = [
   {
     name: "Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
     url:
       "https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw"
   },
-  // {
-  //     name: "The Travel Line: Versatile Travel Backpack + Packing Tools",
-  //     url: 'https://www.kickstarter.com/projects/peak-design/the-travel-line-versatile-travel-backpack-packing'
-  // },
-  // {name: "Stool Nº1", url: 'https://www.kickstarter.com/projects/390812913/stool-no1'},
+  {
+    name: "Stool Nº1",
+    url: "https://www.kickstarter.com/projects/390812913/stool-no1"
+  },
   {
     name: "LetB Color - take a look at time in different ways",
     url:
@@ -672,52 +655,15 @@ let products = [
     name: "FLECTR 360 OMNI – cycling at night with full 360° visibility",
     url: "https://www.kickstarter.com/projects/outsider-team/flectr-360-omni"
   },
-  // {
-  //     name: "Make perfect cold brew coffee at home with the BrewCub",
-  //     url: 'https://www.kickstarter.com/projects/1201993039/make-perfect-cold-brew-coffee-at-home-with-the-bre'
-  // },
-  // {
-  //     name: 'NanoPen | Worlds Smallest & Indestructible EDC Pen Tool',
-  //     url: 'https://www.kickstarter.com/projects/bullet/nanopen-worlds-smallest-and-indestructible-edc-pen?' +
-  //         'ref=section_design-tech_popular'
-  // },
-  // {
-  //     name: "The EVERGOODS MQD24 and CTB40 Crossover Backpacks",
-  //     url: 'https://www.kickstarter.com/projects/1362258351/the-evergoods-mqd24-and-ctb40-crossover-backpacks'
-  // },
-  // {
-  //     name: "Hexgears X-1 Mechanical Keyboard",
-  //     url: 'https://www.kickstarter.com/projects/hexgears/hexgears-x-1-mechanical-keyboard'
-  // },
-  // {
-  //     name: "KARVD - Modular Wood Carved Wall Panel System",
-  //     url: 'https://www.kickstarter.com/projects/karvdwalls/karvd-modular-wood-carved-wall-panel-system'
-  // },
-  // {
-  //     name: "PARA: Stationary l Pythagorean l Easy-to-Use Laser Measurer",
-  //     url: 'https://www.kickstarter.com/projects/1619356127/para-stationary-l-pythagorean-l-easy-to-use-laser'
-  // },
-  // {
-  //     name: "Blox: organize your world!",
-  //     url: 'https://www.kickstarter.com/projects/onehundred/blox-organize-your-world'
-  // },
-  // {
-  //     name: "Moment - World's Best Lenses For Mobile Photography",
-  //     url: 'https://www.kickstarter.com/projects/moment/moment-amazing-lenses-for-mobile-photography'
-  // },
   {
     name: "The Ollie Chair: Shape-Shifting Seating",
     url:
       "https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating"
   }
-  // {
-  //     name: "Fave: the ideal all-purpose knife!",
-  //     url: 'https://www.kickstarter.com/projects/onehundred/fave-the-ideal-all-purpose-knife'
-  // },
 ];
 
-if (randomProductOn) {
-  products = shuffle(products);
+if (randomTaskOrderOn) {
+  tasks = shuffle(tasks);
 }
 
 let users = []; //the main local user storage
@@ -742,7 +688,8 @@ if (starterSurveyOn) {
   eventSchedule.push("starterSurvey");
 }
 let roundSchedule = [];
-roundSchedule.push("ready");
+
+roundSchedule.push("ready"); //This is the chat task.
 if (midSurveyOn) {
   roundSchedule.push("midSurvey");
 }
@@ -791,8 +738,7 @@ app.use(express.static("public"));
 Object.keys(io.sockets.sockets).forEach(socketID => {
   console.log(socketID);
   if (userPool.every(user => user.id !== socketID)) {
-    console.log("Removing dead socket: " + socketID);
-    console.log("SOCKET DISCONNECT IN LEFTOVER USER");
+    console.log("Removing leftover socket: " + socketID);
     io.in(socketID).emit("get IDs", "broken");
     // io.in(socketID).disconnect(true)
   }
@@ -822,7 +768,7 @@ db.batch.insert(
     format: conditions[currentCondition],
     experimentRound: experimentRound,
     numRounds: numRounds,
-    products: products,
+    products: tasks,
     teamSize: teamSize
   },
   (err, usersAdded) => {
@@ -871,28 +817,21 @@ io.on("connection", socket => {
     socket.join(mturkId);
 
     if (users.byMturkId(mturkId)) {
-      console.log(("Reconnected " + mturkId + " in users").blue);
+      console.log(chalk.blue(`Reconnected ${mturkId} in users`));
       let user = users.byMturkId(mturkId);
       user.connected = true;
       user.assignmentId = assignmentId;
       user.id = socket.id;
       user.turkSubmitTo = data.turkSubmitTo;
 
-      //console.log(users.byMturkId(mturkId))
       mturk.setAssignmentsPending(getUsersConnected().length);
     }
     if (userPool.byMturkId(mturkId)) {
       let user = userPool.byMturkId(mturkId);
       console.log(
-        (
-          "RECONNECTED " +
-          mturkId +
-          " in user pool (" +
-          user.id +
-          " => " +
-          socket.id +
-          ")"
-        ).blue
+        chalk.blue(
+          `RECONNECTED ${mturkId} in user pool (${user.id} => ${socket.id})`
+        )
       );
       socket.name_structure = data.name_structure;
       socket.username = data.name_structure.username;
@@ -901,32 +840,19 @@ io.on("connection", socket => {
       user.assignmentId = assignmentId;
       user.id = socket.id;
       user.turkSubmitTo = data.turkSubmitTo;
-
-      //console.log(userPool.byMturkId(mturkId))
     } else {
       createUsername();
-      console.log("NEW USER CONNECTED".blue);
+      console.log(chalk.blue("NEW USER CONNECTED"));
     }
     console.log(
-      (
-        "SOCKET: " +
-        socket.id +
-        " | MTURK ID: " +
-        socket.mturkId +
-        " | NAME: " +
-        socket.username +
-        "| ASSIGNMENT ID: " +
-        socket.assignmentId
-      ).blue
+      chalk.blue(
+        `SOCKET: ${socket.id} | MTURK ID: ${socket.mturkId} | NAME: ${
+          socket.username
+        } | ASSIGNMENT ID: ${socket.assignmentId}`
+      )
     );
   });
 
-  // socket.on('get username', data => {
-  //   let name_structure = tools.makeName();
-  //   socket.name_structure = name_structure;
-  //   socket.username = name_structure.username;
-  //   socket.emit('set username', {username: socket.username})
-  // })
   socket.on("heartbeat", () => {
     if (socket.connected) {
       io.in(socket.id).emit("heartbeat");
@@ -961,12 +887,7 @@ io.on("connection", socket => {
       //if it's a reconnected user
       let user = userPool.byMturkId(data.mturkId);
       console.log(
-        data.mturkId +
-          " REJOINED USER POOL (" +
-          user.id +
-          " => " +
-          socket.id +
-          ")"
+        `${data.mturkId} REJOINED USER POOL (${user.id} => ${socket.id})`
       );
 
       user.id = socket.id;
@@ -999,13 +920,13 @@ io.on("connection", socket => {
           return user.id !== socketID;
         })
       ) {
-        console.log("Removing dead socket: " + socketID);
+        console.log("Removing dead socket:", socketID);
         io.in(socketID).emit("get IDs", "broken");
       }
     });
     logTime();
     console.log(
-      "Sockets active: " + Object.keys(io.sockets.sockets) + " of " + teamSize
+      `Sockets active: ${Object.keys(io.sockets.sockets)} of ${teamSize}`
     );
     updateUserPool();
   });
@@ -1065,8 +986,6 @@ io.on("connection", socket => {
             //take the 1st teamssize **2 users and add them
             ioEmitById(user.mturkId, "echo", "add user", socket, user);
             ioEmitById(user.mturkId, "initiate experiment", null, socket, user);
-            // io.in(user.mturkId).emit("echo", "add user");
-            // io.in(user.mturkId).emit('initiate experiment');
           } else {
             //else emit finish
             console.log("EMIT FINISH TO EXTRA ACTIVE WORKER");
@@ -1096,7 +1015,7 @@ io.on("connection", socket => {
           });
       } else {
         if (secondsSince(waitchatStart) / 60 >= maxWaitChatMinutes) {
-          console.log("Waitchat time limit reached".red);
+          console.log(chalk.red("Waitchat time limit reached"));
           userAcquisitionStage = false;
           io.in(socket.mturkId).emit("echo", "kill-all");
         }
@@ -1127,7 +1046,7 @@ io.on("connection", socket => {
       batch: batchID,
       room: "",
       rooms: [],
-      bonus: mturk.bonusPrice,
+      bonus: 0,
       person: "",
       name: socket.username,
       ready: false,
@@ -1171,7 +1090,8 @@ io.on("connection", socket => {
           ? "We don't need you to work at this specific moment, but we may have " +
               "tasks for you soon. Please await further instructions from scaledhumanity@gmail.com."
           : "We have enough users on this task. Hit the button below and you will be compensated appropriately " +
-              "for your time. Thank you!"
+              "for your time. If you are interested in participating in a future task, we launch HITs frequently. " +
+              "Thank you!"
       ); //PK: come back to this
       return;
     }
@@ -1181,12 +1101,9 @@ io.on("connection", socket => {
     let newUser = makeUser(userPool.byMturkId(socket.mturkId));
     users.push(newUser);
     console.log(
-      newUser.name +
-        " (" +
-        newUser.mturkId +
-        ") added to users.\n" +
-        "Total users: " +
+      `${newUser.name} (${newUser.mturkId}) added to users.\nTotal users: ${
         users.length
+      }`
     );
     //add friends for each user once the correct number of users is reached
     let numUsersRequired = extraRoundOn
@@ -1234,31 +1151,22 @@ io.on("connection", socket => {
           mturk.unassignQuals(
             u,
             mturk.quals.willBang,
-            "This qualification is used to qualify a user to " +
-              "participate in our HIT. We only allow one participation per user, so that is why we are " +
-              "removing this qualification. Thank you!"
+            `We remove this qualification after workers pass a certain part of our experiment, to avoid repeating that part. It is not a problem with your work. Thanks for working on this experiment.`
           );
           db.willBang.remove({ id: u }, { multi: true }, function(
             err,
             numRemoved
           ) {
             if (err) console.log("Error removing from db.willBang: ", err);
-            else
-              console.log(u + " REMOVED FROM WILLBANG DB (" + numRemoved + ")");
+            else console.log(`${u} REMOVED FROM WILLBANG DB (${numRemoved})`);
           });
         });
       }
       if (notifyUs) {
         mturk.notifyWorkers(
-          ["A19MTSLG2OYDLZ"],
-          "Rolled " + currentCondition + " on " + taskURL,
-          "Rolled over with: " +
-            currentCondition +
-            " on port " +
-            port +
-            " at " +
-            taskURL +
-            "."
+          notifyUsList,
+          `Rolled ${currentCondition} on ${taskURL}`,
+          `Rolled over with: ${currentCondition} on port ${port} at ${taskURL}.`
         );
       }
       userAcquisitionStage = false;
@@ -1267,13 +1175,9 @@ io.on("connection", socket => {
 
     db.users.insert(newUser, err => {
       console.log(
-        err ? "Didn't store user: " + err : "Added " + newUser.name + " to DB."
+        err ? `Didn't store user: ${err}` : `Added ${newUser.name} to DB.`
       );
     });
-
-    //PK: need to emit login to each? or can we delete login fxn in client if no longer in use (login sets
-    // connected to true, is this needed?)
-    //io.in(user.id).emit('login', {numUsers: numUsers(user.room)})
   });
 
   socket.on("update user pool", data => {
@@ -1338,7 +1242,6 @@ io.on("connection", socket => {
         .filter(f => f.room === user.room)
         .forEach(f => {
           socket.broadcast.to(f.mturkId).emit("new message", {
-            // TODO
             username: idToAlias(f, String(socket.mturkId)),
             message: idToAlias(f, cleanMessage)
           });
@@ -1366,19 +1269,12 @@ io.on("connection", socket => {
   socket.on("disconnect", function(reason) {
     // changes connected to false if disconnected user in userPool
     console.log(
-      (
-        "[" +
-        new Date().toISOString() +
-        "]: Disconnecting socket: " +
-        socket.id +
-        " because " +
-        reason
-      ).red
+      chalk.red(
+        `[${new Date().toISOString()}]: Disconnecting socket: ${
+          socket.id
+        } because ${reason}`
+      )
     );
-    if (reason === "transport error") {
-      //console.log(socket);
-      console.log("TRANSPORT");
-    }
     if (
       userPool.find(function(element) {
         return element.mturkId === socket.mturkId;
@@ -1398,9 +1294,6 @@ io.on("connection", socket => {
       else mturk.setAssignmentsPending(getUsersConnected().length);
     }
 
-    // if (!users.every(user => socket.id !== user.id)) {//socket id is found in users
-    //newMessage('has left the chatroom')
-
     if (
       !users.find(function(element) {
         return element.mturkId === socket.mturkId;
@@ -1415,86 +1308,51 @@ io.on("connection", socket => {
       // update DB with change
       updateUserInDB(user, "connected", false);
       console.log(socket.username + ": " + user.mturkId + " HAS LEFT");
+
       // if (!experimentOver && !debugMode) {
       //     mturk.notifyWorkers([user.mturkId], "You've disconnected from our HIT", "You've disconnected from our" +
       //         " HIT. If you are unaware of why you have been disconnected, please email scaledhumanity@gmail.com"
       //         + " with your Mturk ID and the last things you did in the HIT.\n\nMturk ID: " + user.mturkId +
       //         "\nAssignment ID: " + user.assignmentId + '\nHIT ID: ' + mturk.returnCurrentHIT())
       // }
-      if (!experimentOver && !suddenDeath) {
-        // console.log("Sudden death is off, so we will not cancel the run")
-      }
+
+      //Handle last submitter leaving during a survey
+      // if (user.eventSchedule[user.currentEvent] != "ready" && !experimentOver) {
+      //   setTimeout(() => {
+      //     if (!socket.connected) {
+      //       console.log(
+      //         "User has perminantly left during survey. Set to ready."
+      //       );
+      //       runReady();
+      //     }
+      //   }, 15 * 1000);
+      // }
 
       console.log("Connected users: " + getUsersConnected().length);
-      if (!experimentOver && suddenDeath && experimentStarted) {
-        storeHIT();
-
-        console.log("User left, emitting cancel to all users");
-
-        if (!extraRoundOn || notEnoughUsers) {
-          storeHIT();
-
-          console.log("User left, emitting cancel to all users");
-          let totalTime = getSecondsPassed();
-
-          if (timeCheckOn) {
-            db.time.insert({ totalTaskTime: totalTime }, (err, timeAdded) => {
-              if (err)
-                console.log(
-                  "There's a problem adding total time to the DB: ",
-                  err
-                );
-              else if (timeAdded) console.log("Total time added to the DB");
-            });
-          }
-
-          users
-            .filter(u => u.mturkId !== socket.mturkId)
-            .forEach(u => {
-              let cancelMessage =
-                "<strong>Someone left the task.</strong><br> <br> \
-            Unfortunately, our group task requires a specific number of users to run, \
-            so once a user leaves, our task cannot proceed. <br><br> \
-            To complete the task, please provide suggestions of ways to \
-            prevent people leaving in future runs of the study. <br><br> \
-            Since the team activity had already started, you will be additionally \
-            bonused for the time spent working with the team.";
-              if (experimentStarted) {
-                // Add future bonus pay
-                u.bonus = currentBonus();
-                updateUserInDB(u, "bonus", u.bonus);
-                storeHIT();
-              }
-              issueFinish(u, cancelMessage);
-            });
-        }
-      }
       if (!suddenDeath && !userAcquisitionStage) {
         // sets users to ready when they disconnect
-        user.ready = true; // TODO: remove user from users
+        user.ready = true;
       }
     });
   });
 
+  //This appears to not work.
   socket.on("ready-to-all", () => {
-    console.log("god is ready".rainbow);
+    console.log(chalk.red.inverse("god is ready"));
     users
       .filter(user => !user.ready)
-      .forEach(
-        user => ioEmitById(socket.mturkId, "echo", "ready", socket, user)
-        // io.in(socket.mturkId).emit('echo', 'ready')
+      .forEach(user =>
+        ioEmitById(socket.mturkId, "echo", "ready", socket, user)
       );
-    //io.sockets.emit('echo','ready')
   });
 
   socket.on("active-to-all", () => {
-    console.log("god is active".rainbow);
+    console.log(chalk.red.inverse("god is active"));
     ioSocketsEmit("echo", "active");
-    // io.sockets.emit('echo', 'active');
   });
 
   socket.on("notify-more", () => {
-    console.log("god wants more humans".rainbow);
+    console.log(chalk.red.inverse("god wants more humans"));
     let HITId = mturk.returnCurrentHIT();
     // let HITId = process.argv[2];
     let subject =
@@ -1538,8 +1396,10 @@ io.on("connection", socket => {
     });
   });
 
-  socket.on("kill-all", () => {
-    console.log("Terminating all live clients.".red);
+  socket.on("kill-all", killAll);
+
+  function killAll() {
+    console.log(chalk.red("Terminating all live clients."));
     users.forEach(() => updateUserInDB(socket, "bonus", currentBonus()));
     ioSocketsEmit("finished", {
       message:
@@ -1549,8 +1409,7 @@ io.on("connection", socket => {
       assignmentId: "",
       crashed: false
     });
-  });
-
+  }
   socket.on("next event", () => {
     useUser(socket, user => {
       let currentEvent = user.currentEvent;
@@ -1579,9 +1438,6 @@ io.on("connection", socket => {
         );
         taskStartTime = getSecondsPassed();
       } else if (eventSchedule[currentEvent] === "ready") {
-        if (starterSurveyOn && timeCheckOn) {
-          recordTime("starterSurvey");
-        }
         if (checkinOn) {
           ioEmitById(
             socket.mturkId,
@@ -1610,9 +1466,6 @@ io.on("connection", socket => {
         );
         ioEmitById(socket.mturkId, "echo", "ready", socket, user);
       } else if (eventSchedule[currentEvent] === "midSurvey") {
-        if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           socket.mturkId,
           "load",
@@ -1626,12 +1479,6 @@ io.on("connection", socket => {
           user
         );
       } else if (eventSchedule[currentEvent] === "midSurveyStatus") {
-        if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
-
         console.log("currentEvent === midSurveyStatus");
 
         let thisElement = "midSurveyStatusR" + currentRound.toString();
@@ -1649,13 +1496,6 @@ io.on("connection", socket => {
           user
         );
       } else if (eventSchedule[currentEvent] === "creativeSurvey") {
-        if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           socket.mturkId,
           "load",
@@ -1669,15 +1509,6 @@ io.on("connection", socket => {
           user
         );
       } else if (eventSchedule[currentEvent] === "satisfactionSurvey") {
-        if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           socket.mturkId,
           "load",
@@ -1691,17 +1522,6 @@ io.on("connection", socket => {
           user
         );
       } else if (eventSchedule[currentEvent] === "conflictSurvey") {
-        if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           socket.mturkId,
           "load",
@@ -1715,19 +1535,6 @@ io.on("connection", socket => {
           user
         );
       } else if (eventSchedule[currentEvent] === "psychologicalSafety") {
-        if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey");
-        } else if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           socket.mturkId,
           "load",
@@ -1741,21 +1548,6 @@ io.on("connection", socket => {
           user
         );
       } else if (eventSchedule[currentEvent] === "teamfeedbackSurvey") {
-        if (psychologicalSafetyOn && timeCheckOn) {
-          recordTime("psychologicalSafetySurvey");
-        } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey");
-        } else if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           socket.mturkId,
           "load",
@@ -1770,23 +1562,6 @@ io.on("connection", socket => {
         );
       } else if (eventSchedule[currentEvent] === "blacklistSurvey") {
         experimentOver = true;
-        if (teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if (psychologicalSafetyOn && timeCheckOn) {
-          recordTime("psychologicalSafetySurvey");
-        } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey");
-        } else if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         console.log({
           element: "blacklistSurvey",
           questions: loadQuestions(blacklistFile, user),
@@ -1807,25 +1582,6 @@ io.on("connection", socket => {
         );
       } else if (eventSchedule[currentEvent] === "qFifteen") {
         experimentOver = true;
-        if (blacklistOn && timeCheckOn) {
-          recordTime("blacklistSurvey");
-        } else if (teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if (psychologicalSafetyOn && timeCheckOn) {
-          recordTime("psychologicalSafetySurvey");
-        } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey");
-        } else if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           user.mturkId,
           "load",
@@ -1840,27 +1596,6 @@ io.on("connection", socket => {
         );
       } else if (eventSchedule[currentEvent] === "qSixteen") {
         experimentOver = true;
-        if (qFifteenOn && timeCheckOn) {
-          recordTime("qFifteen");
-        } else if (blacklistOn && timeCheckOn) {
-          recordTime("blacklistSurvey");
-        } else if (teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if (psychologicalSafetyOn && timeCheckOn) {
-          recordTime("psychologicalSafetySurvey");
-        } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey");
-        } else if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           user.mturkId,
           "load",
@@ -1876,29 +1611,6 @@ io.on("connection", socket => {
       } else if (eventSchedule[currentEvent] === "postSurvey") {
         //Launch post survey
         experimentOver = true;
-        if (qSixteenOn && timeCheckOn) {
-          recordTime("qSixteen");
-        } else if (qFifteenOn && timeCheckOn) {
-          recordTime("qFifteen");
-        } else if (blacklistOn && timeCheckOn) {
-          recordTime("blacklistSurvey");
-        } else if (teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if (psychologicalSafetyOn && timeCheckOn) {
-          recordTime("psychologicalSafetySurvey");
-        } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey");
-        } else if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         let survey = postSurveyGenerator(user);
         user.results.manipulation = survey.correctAnswer;
         updateUserInDB(user, "results.manipulation", user.results.manipulation);
@@ -1916,31 +1628,6 @@ io.on("connection", socket => {
         );
       } else if (eventSchedule[currentEvent] === "demographicsSurvey") {
         experimentOver = true;
-        if (postSurveyOn && timeCheckOn) {
-          recordTime("postSurvey");
-        } else if (qSixteenOn && timeCheckOn) {
-          recordTime("qSixteen");
-        } else if (qFifteenOn && timeCheckOn) {
-          recordTime("qFifteen");
-        } else if (blacklistOn && timeCheckOn) {
-          recordTime("blacklistSurvey");
-        } else if (teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if (psychologicalSafetyOn && timeCheckOn) {
-          recordTime("psychologicalSafetySurvey");
-        } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey");
-        } else if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
         ioEmitById(
           user.mturkId,
           "load",
@@ -1972,34 +1659,6 @@ io.on("connection", socket => {
           batchCompleteUpdated = true;
         }
 
-        if (demographicsSurveyOn && timeCheckOn) {
-          recordTime("demographicsSurvey");
-        } else if (postSurveyOn && timeCheckOn) {
-          recordTime("postSurvey");
-        } else if (qSixteenOn && timeCheckOn) {
-          recordTime("qSixteen");
-        } else if (qFifteenOn && timeCheckOn) {
-          recordTime("qFifteen");
-        } else if (blacklistOn && timeCheckOn) {
-          recordTime("blacklistSurvey");
-        } else if (teamfeedbackOn && timeCheckOn) {
-          recordTime("teamfeedbackSurvey");
-        } else if (psychologicalSafetyOn && timeCheckOn) {
-          recordTime("psychologicalSafetySurvey");
-        } else if (conflictSurveyOn && timeCheckOn) {
-          recordTime("conflictSurvey");
-        } else if (satisfactionSurveyOn && timeCheckOn) {
-          recordTime("satisfactionSurvey");
-        } else if (creativeSurveyOn && timeCheckOn) {
-          recordTime("creativeSurvey");
-        } else if (midSurveyStatusOn && timeCheckOn) {
-          recordTime("midSurveyStatus");
-        } else if (midSurveyOn && timeCheckOn) {
-          recordTime("midSurvey");
-        } else if (timeCheckOn) {
-          recordTime("round");
-        }
-
         user.bonus = Number(mturk.bonusPrice);
         updateUserInDB(user, "bonus", user.bonus);
 
@@ -2009,17 +1668,9 @@ io.on("connection", socket => {
         console.log(usersFinished, "users have finished.");
         if (notifyUs) {
           mturk.notifyWorkers(
-            ["A19MTSLG2OYDLZ"],
-            "Completed " + currentCondition + " on " + taskURL,
-            "Batch " +
-              batchID +
-              " completed: " +
-              currentCondition +
-              " on port " +
-              port +
-              " at " +
-              taskURL +
-              "."
+            notifyUsList,
+            `Completed ${currentCondition} on ${taskURL}`,
+            `Batch ${batchID} completed: ${currentCondition} on port ${port} at ${taskURL}.`
           );
         }
         ioEmitById(
@@ -2040,10 +1691,10 @@ io.on("connection", socket => {
   });
 
   // Main experiment run
-  socket.on("ready", function() {
+  socket.on("ready", runReady);
+
+  function runReady() {
     useUser(socket, user => {
-      //waits until user ends up on correct link before adding user - repeated code, make function
-      // PK: what does this comment mean/ is it still relevant?
       user.ready = true;
       console.log(socket.username, "is ready");
 
@@ -2055,16 +1706,9 @@ io.on("connection", socket => {
         return;
       }
 
-      //can we move this into its own on.*** call //PK: still relevant?
-      console.log("all users ready -> starting experiment");
-
       treatmentNow =
         currentCondition === "treatment" && currentRound === experimentRound;
       const conditionRound = conditions[currentCondition][currentRound] - 1;
-
-      // secondReadyIndex = eventSchedule.indexOf("ready", eventSchedule.indexOf("ready") + 1)
-
-      console.log("user.rooms.length:", user.rooms.length);
 
       // Replaceing user with extraRound
       if (extraRoundOn && user.rooms.length === 1) {
@@ -2138,15 +1782,15 @@ io.on("connection", socket => {
 
       //Notify user 'initiate round' and send task.
 
-      let currentProduct = products[currentRound];
+      let currentTask = tasks[currentRound];
 
-      console.log("Current Product:", currentProduct);
+      console.log("Current Product:", currentTask);
 
       let taskText =
         "Design text advertisement for <strong><a href='" +
-        currentProduct.url +
+        currentTask.url +
         "' target='_blank'>" +
-        currentProduct.name +
+        currentTask.name +
         "</a></strong>!";
 
       experimentStarted = true;
@@ -2176,11 +1820,6 @@ io.on("connection", socket => {
             u
           ); //rounds are 0 indexed
         } else {
-          // Dynamically generate teammate names
-          // even if teamSize = 1 for testing, this still works
-          // users.forEach(u => {
-          //   console.log(u.id, u.room)
-          // })
           let teamMates = u.friends.filter(friend => {
             return (
               users.byMturkId(friend.mturkId) &&
@@ -2194,6 +1833,12 @@ io.on("connection", socket => {
             teamMates.length,
             u.friends_history
           );
+
+          if (team_Aliases === false) {
+            killAll();
+            console.log(chalk.red.inverse("Friend list failure."));
+          }
+
           user.friends_history = u.friends_history.concat(team_Aliases);
           for (i = 0; i < teamMates.length; i++) {
             if (treatmentNow) {
@@ -2232,7 +1877,7 @@ io.on("connection", socket => {
         }
       });
 
-      console.log("Issued task for:", currentProduct.name);
+      console.log("Issued task for:", currentTask.name);
       console.log(
         "Started round",
         currentRound,
@@ -2247,14 +1892,39 @@ io.on("connection", socket => {
       // Initialize steps
       const taskSteps = [
         {
+          time: 0.001,
+          message: `<strong>DO NOT REFRESH OR LEAVE THE PAGE! If you do, it may terminate the task for your team members and you will not be compensated.</strong>`
+        },
+        {
+          time: 0.002,
+          message: `You will receive the bonus pay at the stated hourly rate only if you<strong> fill out all survey questions and complete all rounds.</strong>`
+        },
+        {
+          time: 0.003,
+          message: `The entire HIT will take no more than ${Math.round(
+            roundMinutes * numRounds + 15
+          )} minutes total.`
+        },
+        { time: 0.005, message: `<strong>Task:</strong><br>${taskText}` },
+        {
+          time: 0.005,
+          message: `<strong>Directions:</strong><br>1. Check out the link above and collaborate with your team members in the chat room to develop a text advertisement<br>2. The ad must be no more than <strong>30 characters long</strong>. <br>3. Instructions will be given for submitting the team's final product. <br>4. You have ${textifyTime(
+            roundMinutes
+          )} to complete this round. <br>5. Your final advertisement will appear online. <strong>The more successful it is, the larger the bonus each team member will receive.</strong>`
+        },
+        {
+          time: 0.007,
+          message: `<strong>Example:</strong><br>Text advertisements for 'Renaissance Golf Club': <br><ul style='list-style-type:disc'><li><strong>An empowering modern club</strong><br></li><li><strong>A private club with reach</strong><br></li><li><strong>Don't Wait. Discover Renaissance Today</strong></li></ul><br>`
+        },
+        {
           time: 0.01,
           message:
-            "<br><strong>HIT bot: Take a minute to review all instructions and product information.</strong>"
+            "<br><strong>HIT bot: Take a minute to review all instructions above.</strong>"
         },
         {
           time: 0.15,
           message:
-            "<br><strong>HIT bot: Say hello to your team members! Begin brainstorming advertisement ideas together.</strong>"
+            "<br><strong>HIT bot: Say hello to your team members! Begin brainstorming ideas together.</strong>"
         },
         {
           time: 0.4,
@@ -2265,6 +1935,11 @@ io.on("connection", socket => {
           time: 0.85,
           message:
             "<br><strong>HIT bot: Polish your team's favorite ad and get ready to submit.</strong>"
+        },
+        {
+          time: 0.87,
+          message:
+            "<br>Remember, your final ad can't be more than <strong>maximum 30 characters long</strong>."
         },
         {
           time: 0.9,
@@ -2286,54 +1961,38 @@ io.on("connection", socket => {
       taskSteps.forEach(step => {
         setTimeout(() => {
           if (step.message) {
-            console.log("Task step:".red, step.message);
+            console.log(chalk.inverse(" Task step "), step.message);
             ioSocketsEmit("message clients", step.message);
-            // ioEmitById(user.mturkId, "message clients", step.message)
           }
           if (typeof step.action === "function") step.action();
         }, step.time * roundMinutes * 60 * 1000);
       });
 
-      //Round warning
-      // make timers run in serial
+      //Done with round
       setTimeout(() => {
-        console.log("time warning", currentRound);
+        console.log("done with round", currentRound);
         users.forEach(user => {
           ioEmitById(
             user.mturkId,
-            "timer",
-            { time: roundMinutes * 0.2 },
+            "stop",
+            {
+              round: currentRound,
+              survey:
+                midSurveyOn ||
+                creativeSurveyOn ||
+                satisfactionSurveyOn ||
+                conflictSurveyOn ||
+                midSurveyStatusOn ||
+                teamfeedbackOn ||
+                psychologicalSafetyOn
+            },
             socket,
             user
           );
         });
-
-        //Done with round
-        setTimeout(() => {
-          console.log("done with round", currentRound);
-          users.forEach(user => {
-            ioEmitById(
-              user.mturkId,
-              "stop",
-              {
-                round: currentRound,
-                survey:
-                  midSurveyOn ||
-                  creativeSurveyOn ||
-                  satisfactionSurveyOn ||
-                  conflictSurveyOn ||
-                  midSurveyStatusOn ||
-                  teamfeedbackOn ||
-                  psychologicalSafetyOn
-              },
-              socket,
-              user
-            );
-          });
-          currentRound += 1; // guard to only do this when a round is actually done.
-          console.log(currentRound, "out of", numRounds);
-        }, 1000 * 60 * 0.2 * roundMinutes);
-      }, 1000 * 60 * 0.8 * roundMinutes);
+        currentRound += 1; // guard to only do this when a round is actually done.
+        console.log(currentRound, "out of", numRounds);
+      }, 1000 * 60 * roundMinutes);
 
       if (checkinOn) {
         let numPopups = 0;
@@ -2347,7 +2006,7 @@ io.on("connection", socket => {
         }, 1000 * 60 * checkinIntervalMinutes);
       }
     });
-  });
+  }
 
   //if broken, tell users they're done and disconnect their socket
   socket.on("broken", () => {
@@ -2358,21 +2017,20 @@ io.on("connection", socket => {
         ? "We've experienced an error. Please wait for an email from " +
             "scaledhumanity@gmail.com with restart instructions."
         : "The task has finished early. " +
-            "You will be compensated by clicking submit below."
+            "You will be compensated by clicking submit below. If you completed rounds of the main task, you will be bonused based on the time it took to complete those rounds."
     );
   });
 
-  // Starter task
   socket.on("starterSurveySubmit", data => {
     useUser(socket, user => {
-      user.results.starterCheck = parseResults(data);
+      user.results.starterCheck = responseToJSON(data);
       updateUserInDB(user, "results.starterCheck", user.results.starterCheck);
     });
   });
 
   socket.on("midSurveySubmit", data => {
     useUser(socket, user => {
-      user.results.viabilityCheck[currentRound] = parseResults(data);
+      user.results.viabilityCheck[currentRound] = responseToJSON(data);
       updateUserInDB(
         user,
         "results.viabilityCheck",
@@ -2383,21 +2041,21 @@ io.on("connection", socket => {
 
   socket.on("midSurveyStatusSubmit", data => {
     useUser(socket, user => {
-      user.results.statusCheck[currentRound] = parseResults(data);
+      user.results.statusCheck[currentRound] = responseToJSON(data);
       updateUserInDB(user, "results.statusCheck", user.results.statusCheck);
     });
   });
 
   socket.on("creativeSurveySubmit", data => {
     useUser(socket, user => {
-      user.results.creativeCheck[currentRound] = parseResults(data);
+      user.results.creativeCheck[currentRound] = responseToJSON(data);
       updateUserInDB(user, "results.creativeCheck", user.results.creativeCheck);
     });
   });
 
   socket.on("satisfactionSurveySubmit", data => {
     useUser(socket, user => {
-      user.results.satisfactionCheck[currentRound] = parseResults(data);
+      user.results.satisfactionCheck[currentRound] = responseToJSON(data);
       updateUserInDB(
         user,
         "results.satisfactionCheck",
@@ -2408,13 +2066,13 @@ io.on("connection", socket => {
 
   socket.on("conflictSurveySubmit", data => {
     useUser(socket, user => {
-      user.results.conflictCheck[currentRound] = parseResults(data);
+      user.results.conflictCheck[currentRound] = responseToJSON(data);
       updateUserInDB(user, "results.conflictCheck", user.results.conflictCheck);
     });
   });
   socket.on("psychologicalSafetySubmit", data => {
     useUser(socket, user => {
-      user.results.psychologicalSafety[currentRound] = parseResults(data);
+      user.results.psychologicalSafety[currentRound] = responseToJSON(data);
       updateUserInDB(
         user,
         "results.psychologicalSafety",
@@ -2425,14 +2083,14 @@ io.on("connection", socket => {
 
   socket.on("teamfeedbackSurveySubmit", data => {
     useUser(socket, user => {
-      user.results.teamfeedback[currentRound] = parseResults(data);
+      user.results.teamfeedback[currentRound] = responseToJSON(data);
       updateUserInDB(user, "results.teamfeedback", user.results.teamfeedback);
     });
   });
 
   socket.on("mturk_formSubmit", data => {
     useUser(socket, user => {
-      user.results.engagementFeedback = parseResults(data);
+      user.results.engagementFeedback = responseToJSON(data);
       updateUserInDB(
         user,
         "results.engagementFeedback",
@@ -2443,21 +2101,21 @@ io.on("connection", socket => {
 
   socket.on("qFifteenSubmit", data => {
     useUser(socket, user => {
-      user.results.qFifteenCheck = parseResults(data);
+      user.results.qFifteenCheck = responseToJSON(data);
       updateUserInDB(user, "results.qFifteenCheck", user.results.qFifteenCheck);
     });
   });
 
   socket.on("qSixteenSubmit", data => {
     useUser(socket, user => {
-      user.results.qSixteenCheck = parseResults(data);
+      user.results.qSixteenCheck = responseToJSON(data);
       updateUserInDB(user, "results.qSixteenCheck", user.results.qSixteenCheck);
     });
   });
 
   socket.on("postSurveySubmit", data => {
     useUser(socket, user => {
-      user.results.manipulationCheck = parseResults(data);
+      user.results.manipulationCheck = responseToJSON(data);
       updateUserInDB(
         user,
         "results.manipulationCheck",
@@ -2468,9 +2126,7 @@ io.on("connection", socket => {
 
   socket.on("demographicsSurveySubmit", data => {
     useUser(socket, user => {
-      console.log("Demographics Survey");
-      console.log(parseResults(data));
-      user.results.demographicsCheck = parseResults(data);
+      user.results.demographicsCheck = responseToJSON(data);
       updateUserInDB(
         user,
         "results.demographicsCheck",
@@ -2481,7 +2137,7 @@ io.on("connection", socket => {
 
   socket.on("blacklistSurveySubmit", data => {
     useUser(socket, user => {
-      user.results.blacklistCheck = parseResults(data);
+      user.results.blacklistCheck = responseToJSON(data);
       updateUserInDB(
         user,
         "results.blacklistCheck",
@@ -2638,7 +2294,7 @@ io.on("connection", socket => {
       console.log("Undefined user in issueFinish");
       return;
     }
-    console.log(("Issued finish to " + socket.mturkId).red);
+    console.log(chalk.red("Issued finish to " + socket.mturkId));
     ioEmitById(
       socket.mturkId,
       "finished",
@@ -2672,7 +2328,7 @@ function aliasToID(user, newString) {
   return newString;
 }
 
-//replaces other users IDs with user.friend alieses in string
+// replaces other users IDs with user.friend alieses in string
 function idToAlias(user, newString) {
   user.friends.forEach(friend => {
     let idRegEx = new RegExp(friend.mturkId, "g");
@@ -2695,28 +2351,12 @@ function replicate(arr, times) {
   return res;
 }
 
-//PK: we call this fxn many times, is it necessary?
-//PK: why do we need to record the length of each task? if this is for bonusing, can we avoid calling this
-// fxn so many times and just do once when the exp ends?
-// records length of each task
-const recordTime = event => {
-  taskEndTime = getSecondsPassed();
-  taskTime = taskStartTime - taskEndTime;
-  db.time.insert({ [event]: taskTime }, (err, timeAdded) => {
-    if (err)
-      console.log("There's a problem adding", event, "time to the DB: ", err);
-    else if (timeAdded) console.log(event, "time added to the DB");
-  });
-  taskStartTime = getSecondsPassed();
-};
-
-//returns number of users in a room: room -> int
-const numUsers = room => users.filter(user => user.room === room).length;
-
 const getTeamMembers = user => {
   // Makes a list of teams this user has worked with
   const roomTeams = user.rooms.map((room, rIndex) => {
-    return users.filter(user => user.rooms[rIndex] === room);
+    return users.filter(user => {
+      return user.rooms[rIndex] === room;
+    });
   });
 
   // Makes a human friendly string for each team with things like 'you' for the current user,
@@ -2742,7 +2382,7 @@ const getTeamMembers = user => {
   );
 };
 
-const getTeamMembersArray = user => {
+function getTeamMembersArray(user) {
   // Makes a list of teams this user has worked with
   const roomTeams = user.rooms.map((room, rIndex) => {
     return users.filter(
@@ -2773,12 +2413,12 @@ const getTeamMembersArray = user => {
       return total.concat([newTeamMember]);
     }, [])
   );
-};
+}
 
 //PK: delete this fxn and use the normal survey mechanism?
 // This function generates a post survey for a user (listing out each team they were part of),
 // and then provides the correct answer to check against.
-const postSurveyGenerator = user => {
+function postSurveyGenerator(user) {
   const answers = getTeamMembers(user);
   // Makes a list of teams that are the correct answer, e.g., "Team 1 and Team 3"
   let correctAnswer = answers
@@ -2803,7 +2443,7 @@ const postSurveyGenerator = user => {
     answerType: "checkbox",
     correctAnswer: correctAnswer
   };
-};
+}
 
 function storeHIT(currentHIT = mturk.returnCurrentHIT()) {
   db.ourHITs.insert({ HITId: currentHIT, batch: batchID }, (err, HITAdded) => {
@@ -2813,19 +2453,19 @@ function storeHIT(currentHIT = mturk.returnCurrentHIT()) {
 }
 
 // parses results from surveys to proper format for JSON file
-function parseResults(data) {
-  let parsedResults = {};
-  data.split("&").forEach(responsePair => {
+function responseToJSON(rawResposne) {
+  let JSONResponse = {};
+  rawResposne.split("&").forEach(responsePair => {
     let response = responsePair.split("=");
     index = response[0].split("-q");
-    parsedResults[index[1]] = response[1] ? decode(response[1]) : "";
+    JSONResponse[index[1]] = response[1] ? decode(response[1]) : "";
   });
-  return parsedResults;
+  return JSONResponse;
 }
 
-const decode = encoded => {
+function decode(encoded) {
   return unescape(encoded.replace(/\+/g, " "));
-};
+}
 
 const logTime = () => {
   let timeNow = new Date(Date.now());
@@ -2856,4 +2496,16 @@ function shuffle(array) {
     array[randomIndex] = temporaryValue;
   }
   return array;
+}
+
+function textifyTime(duration) {
+  let durationString = "";
+  if (duration < 1) {
+    durationString = Math.round(duration * 60) + " seconds";
+  } else if (duration === 1) {
+    durationString = "one minute";
+  } else {
+    durationString = duration + " minutes";
+  }
+  return durationString;
 }

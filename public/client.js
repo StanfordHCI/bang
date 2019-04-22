@@ -1,15 +1,15 @@
 let LeavingAlert = true;
 window.onbeforeunload = function() {
   if (LeavingAlert) {
-    console.log("Leaving is true");
     return "Leaving will stop this HIT for all users. Are you sure you want to leave?";
   } else {
-    console.log("Leaving is false");
     return null;
   }
 };
 
 const sessionStartTime = new Date().getTime();
+let timers = [];
+
 $(function() {
   const FADE_TIME = 150; // ms
   const TYPING_TIMER_LENGTH = 400; // ms
@@ -178,6 +178,8 @@ $(function() {
     URLvars.assignmentId = "test";
     URLvars.turkSubmitTo = "b01.dmorina.com";
     URLvars.workerId = sessionStartTime;
+  } else if (URL.includes("502")) {
+    URL.vars.assignmentId = "ASSIGNMENT_ID_NOT_AVAILABLE";
   } else {
     URLvars = getUrlVars(location.href);
   }
@@ -207,6 +209,7 @@ $(function() {
       });
       addChatMessage({
         username: botUsername,
+        /* TODO: change message here that will inform people about compensation*/
         message:
           "You must be able to stay for the duration of this task, around 1 hour. If you cannot stay for the entire time, please leave now. You will not be compensated if you leave preemptively. As a reminder, please do not refresh or close the page."
       });
@@ -471,7 +474,6 @@ $(function() {
     }
   });
 
-  //note: only built to handle 1 checkin question, should expand?
   $("#checkin-form").submit(event => {
     event.preventDefault(); //stops page reloading
     let selectedValue = $("input[name=checkin-q1]:checked").val();
@@ -484,7 +486,7 @@ $(function() {
     socket.emit("midSurveySubmit", $("#midForm").serialize()); //submits results alone
     socket.emit("next event");
     $midSurvey.hide();
-    $holdingPage.show();
+    submitHold();
     $("#midForm")[0].reset();
   });
 
@@ -493,7 +495,7 @@ $(function() {
     socket.emit("midSurveyStatusSubmit", $("#midFormStatusR1").serialize()); //submits results alone
     socket.emit("next event");
     $midSurveyStatusR1.hide();
-    $holdingPage.show();
+    submitHold();
     $("#midFormStatusR1")[0].reset();
   });
 
@@ -502,7 +504,7 @@ $(function() {
     socket.emit("midSurveyStatusSubmit", $("#midFormStatusR2").serialize()); //submits results alone
     socket.emit("next event");
     $midSurveyStatusR2.hide();
-    $holdingPage.show();
+    submitHold();
     $("#midFormStatusR2")[0].reset();
   });
 
@@ -511,7 +513,7 @@ $(function() {
     socket.emit("midSurveyStatusSubmit", $("#midFormStatusR3").serialize()); //submits results alone
     socket.emit("next event");
     $midSurveyStatusR3.hide();
-    $holdingPage.show();
+    submitHold();
     $("#midFormStatusR3")[0].reset();
   });
 
@@ -520,7 +522,7 @@ $(function() {
     socket.emit("midSurveyStatusSubmit", $("#midFormStatusR4").serialize()); //submits results alone
     socket.emit("next event");
     $midSurveyStatusR4.hide();
-    $holdingPage.show();
+    submitHold();
     $("#midFormStatusR4")[0].reset();
   });
   $("#creativeForm").submit(event => {
@@ -529,7 +531,7 @@ $(function() {
     socket.emit("creativeSurveySubmit", $("#creativeForm").serialize()); //submits results alone
     socket.emit("next event");
     $creativeSurvey.hide();
-    $holdingPage.show();
+    submitHold();
     $("#creativeForm")[0].reset();
   });
 
@@ -538,7 +540,7 @@ $(function() {
     socket.emit("satisfactionSurveySubmit", $("#satisfactionForm").serialize()); //submits results alone
     socket.emit("next event");
     $satisfactionSurvey.hide();
-    $holdingPage.show();
+    submitHold();
     $("#satisfactionForm")[0].reset();
   });
 
@@ -547,7 +549,7 @@ $(function() {
     socket.emit("conflictSurveySubmit", $("#conflictForm").serialize()); //submits results alone
     socket.emit("next event");
     $conflictSurvey.hide();
-    $holdingPage.show();
+    submitHold();
     $("#conflictForm")[0].reset();
   });
 
@@ -559,7 +561,7 @@ $(function() {
     ); //submits results alone
     socket.emit("next event");
     $psychologicalSafety.hide();
-    $holdingPage.show();
+    submitHold();
     $("#psychologicalSafety-form")[0].reset();
   });
 
@@ -568,7 +570,6 @@ $(function() {
     socket.emit("qFifteenSubmit", $("#qFifteenForm").serialize()); //submits results alone
     socket.emit("next event");
     $qFifteen.hide();
-    $holdingPage.show();
     $("#qFifteenForm")[0].reset();
   });
 
@@ -577,7 +578,6 @@ $(function() {
     socket.emit("qSixteenSubmit", $("#qSixteenForm").serialize()); //submits results alone
     socket.emit("next event");
     $qSixteen.hide();
-    $holdingPage.show();
     $("#qSixteenForm")[0].reset();
   });
 
@@ -586,7 +586,6 @@ $(function() {
     socket.emit("demographicsSurveySubmit", $("#demographicsForm").serialize()); //submits results alone
     socket.emit("next event");
     $demographicsSurvey.hide();
-    $holdingPage.show();
     $("#demographicsForm")[0].reset();
   });
 
@@ -776,6 +775,7 @@ $(function() {
   });
 
   socket.on("load", data => {
+    clearAllTimers();
     let element = data.element;
     let questions = data.questions;
 
@@ -831,7 +831,7 @@ $(function() {
 
   socket.on("initiate round", data => {
     messagesSafe.innerHTML = "";
-    startTimer(60 * data.duration - 1, $headerText); // start header timer, subtract 1 to give more notice
+    displayTimer(60 * data.duration - 1, $headerText); // start header timer, subtract 1 to give more notice
 
     document.getElementById("inputMessage").value = ""; //clear chat in new round
     hideAll();
@@ -840,45 +840,6 @@ $(function() {
     $headerbarPage.show();
     $("input[name=checkin-q1]").attr("checked", false); //reset checkin form
     LeavingAlert = data.runningLive; //leaving alert for users if running live
-
-    setTimeout(() => {
-      let totalLengthString = "";
-      totalLengthString = Math.round(4 * data.duration + 15) + " minutes";
-      log(
-        "<strong>DO NOT REFRESH OR LEAVE THE PAGE! If you do, it may terminate the task for your team members and you will not be compensated.</strong>"
-      );
-      log(
-        "You will receive the bonus pay at the stated hourly rate only if you<strong> fill out all survey questions and complete all rounds.</strong>"
-      );
-      log(
-        "The entire HIT will take no more than " + totalLengthString + " total."
-      );
-      log("<br><strong>Task:</strong>");
-
-      log(data.task);
-
-      log("<br><strong>Directions:</strong>");
-
-      log(
-        "1. Check out the link above and collaborate with your team members in the chat room to develop a text advertisement<br>" +
-          "2. The ad must be no more than <strong>30 characters long</strong>. <br>" +
-          "3. Instructions will be given for submitting the team's final product. <br>" +
-          "4. You have " +
-          textifyTime(data.duration) +
-          " to complete this round. <br>" +
-          "5. Your final advertisement will appear online. <strong>The more successful it is, the larger the " +
-          "bonus each team member will receive.</strong>"
-      );
-      log("<br><strong>Example:</strong>");
-      log(
-        "Text advertisements for 'Renaissance Golf Club': <br>\
-                <ul style='list-style-type:disc'> \
-                  <li><strong>An empowering modern club</strong><br></li> \
-                  <li><strong>A private club with reach</strong><br></li> \
-                  <li><strong>Don't Wait. Discover Renaissance Today</strong></li> \
-                </ul><br>"
-      );
-    }, 500);
 
     setTimeout(() => {
       for (member of data.team) {
@@ -1078,23 +1039,6 @@ $(function() {
     socket.emit("next event");
   });
 
-  socket.on("timer", data => {
-    log(
-      "<strong>You'll be done with this round in about " +
-        textifyTime(data.time) +
-        ". Enter your final result now.</strong>"
-    );
-    log(
-      "Remember, your final ad can't be more than <strong>maximum 30 characters long</strong>."
-    );
-    log(
-      "To indicate your final result, start the line with an exclamation mark. We will not count it towards your character limit."
-    );
-    log(
-      "If you enter more than one line starting with an exclamation mark, we will only count the last one."
-    );
-  });
-
   socket.on("echo", data => {
     socket.emit(data);
   });
@@ -1198,33 +1142,52 @@ $(function() {
     socket.emit("mturk_formSubmit", $("#mturk_form").serialize());
   });
 
-  // socket.on('disconnect', function () {
-  //     $disconnectedMessage.show();
-  //     HandleFinish(
-  //         finishingMessage = "We have had to cancel the rest of the task. Submit and you will be bonused for your time.",
-  //         mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit",
-  //         assignmentId = mturkVariables.assignmentId,
-  //         finishingcode = "LeftHit")
-  // });
+  //MW: Reminds the server people are ready after some time, so that we don't get stuck if people leave surveys.
+  function submitHold() {
+    $holdingPage.show();
+    clearAllTimers();
+    //Repeats until a new event is received.
+    timers.push(
+      setInterval(() => {
+        socket.emit("ready");
+      }, 10 * 60 * 1000)
+    );
+  }
 });
 
-function startTimer(duration, display) {
-  var timer = duration;
-  let interval = setInterval(function() {
-    let minutes = parseInt(timer / 60, 10);
-    let seconds = parseInt(timer % 60, 10);
+function clearAllTimers() {
+  timers.forEach(timer => clearInterval(timer));
+}
 
-    minutes = minutes < 10 ? "0" + minutes : minutes;
-    seconds = seconds < 10 ? "0" + seconds : seconds;
+function displayTimer(duration, display) {
+  clearAllTimers();
+  var start = Date.now(),
+    diff,
+    minutes,
+    seconds;
+  timers.push(
+    setInterval(() => {
+      diff = duration - (((Date.now() - start) / 1000) | 0);
 
-    display.html("Time: " + minutes + ":" + seconds);
+      // does the same job as parseInt truncates the float
+      minutes = (diff / 60) | 0;
+      seconds = diff % 60 | 0;
 
-    if (--timer < 0) {
-      clearInterval(interval);
-      display.html("");
-      //timer = duration;
-    }
-  }, 1000);
+      minutes = minutes < 10 ? "0" + minutes : minutes;
+      seconds = seconds < 10 ? "0" + seconds : seconds;
+
+      display.html(`Time: ${minutes}:${seconds}`);
+      if (diff >= duration) {
+        display.html("");
+        timers.forEach(timer => clearInterval(timer));
+      }
+      if (diff <= 0) {
+        // add one second so that the count down starts at the full duration
+        // example 05:00 not 04:59
+        start = Date.now() + 1000;
+      }
+    }, 1000)
+  );
 }
 
 function turkGetParam(name, defaultValue, uri) {

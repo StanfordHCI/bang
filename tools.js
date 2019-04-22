@@ -125,6 +125,7 @@ module.exports = {
             animals.splice(animals.indexOf(friends_history[i][1]), 1);
           } catch (err) {
             console.log("Problem with friend history:", friends_history, err);
+            return false;
           }
         }
       }

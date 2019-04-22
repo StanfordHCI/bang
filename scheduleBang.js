@@ -1,5 +1,4 @@
 require("dotenv").config();
-const http = require("http");
 const mturk = require("./mturkTools");
 const fs = require("fs");
 const chalk = require("chalk");
@@ -72,7 +71,7 @@ const title = `Get notified when our task launches. If you stay for the whole ta
 } per hour.`;
 const description = `Submit this HIT to be notified when our task launches. Space is limited.`;
 const assignmentDuration = 20;
-const reward = mturk.rewardPrice;
+const reward = 0.1;
 const autoApprovalDelay = 1;
 const keywords = "qualification, future task, notification";
 const maxAssignments = 500;

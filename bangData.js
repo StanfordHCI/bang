@@ -44,6 +44,38 @@ db.ourHITs = new Datastore({
   timestampData: true
 });
 
+const rooms = ["A", "B", "C", "D"];
+const products = [
+  {
+    category: "Tea",
+    name: "Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
+    url:
+      "https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw"
+  },
+  {
+    category: "Stool",
+    name: "Stool Nº1",
+    url: "https://www.kickstarter.com/projects/390812913/stool-no1"
+  },
+  {
+    category: "Clock",
+    name: "LetB Color - take a look at time in different ways",
+    url:
+      "https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways"
+  },
+  {
+    category: "Light",
+    name: "FLECTR 360 OMNI – cycling at night with full 360° visibility",
+    url: "https://www.kickstarter.com/projects/outsider-team/flectr-360-omni"
+  },
+  {
+    category: "Chair",
+    name: "The Ollie Chair: Shape-Shifting Seating",
+    url:
+      "https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating"
+  }
+];
+
 //Renders a full db by name.
 function renderBatch(dbName, batch) {
   db[dbName].find({}, (err, data) => {
@@ -73,22 +105,13 @@ function renderChats(batch) {
               .sort()
               .forEach(currentRoom => {
                 console.log("\nRoom", currentRoom, "in round", currentRound);
-                let ads = chats
+                chats
                   .sort((a, b) => a.time - b.time)
-                  .filter(
-                    a => a.room == currentRoom && a.round == currentRound
+                  .filter(a => a.room == currentRoom && a.round == currentRound)
+                  .forEach(m =>
+                    console.log(`${m.userID.substring(0, 5)}  ${m.message}`)
                   );
-                //.filter(a => a.message[0] === "!");
-                ads.forEach(m => console.log("  ", m.message));
-                let chosenAd = ads[ads.length - 1];
-                ad = {
-                  batch: chosenAd.batch,
-                  round: chosenAd.round,
-                  room: chosenAd.room,
-                  text: chosenAd.message.slice(1),
-                  user: chosenAd.userID
-                };
-                console.log(ad.batch, ad.round, ad.room, ad.text);
+                // console.log(`Ad: ${ad.text}`);
               });
           });
       } catch (err) {
@@ -121,27 +144,115 @@ function renderAds(batch) {
                 // console.log("\nRoom",currentRoom,"in round",currentRound);
                 let ads = chats
                   .sort((a, b) => a.time - b.time)
-                  .filter(
-                    a => a.room == currentRoom && a.round == currentRound
-                  ); //.filter(a => a.message[0] === "!")
+                  .filter(a => a.room == currentRoom && a.round == currentRound)
+                  .filter(a => a.message[0] === "!");
                 ads = ads.slice(ads.length - 5);
-                ads.forEach(m => console.log("  ", m.message));
+                // ads.forEach(m => console.log("  ", m.message));
+                console.log(batch);
                 let chosenAd = ads[ads.length - 1];
-                ad = {
-                  batch: chosenAd.batch,
-                  round: chosenAd.round,
-                  room: chosenAd.room,
-                  text: chosenAd.message.slice(1, 31),
-                  user: chosenAd.userID
-                };
-
-                console.log([ad.batch, ad.round, ad.room, ad.text].join("|"));
+                console.log(Object.keys(chosenAd).length);
+                // ad = {
+                //   batch: chosenAd.batch,
+                //   round: chosenAd.round,
+                //   room: chosenAd.room,
+                //   text: chosenAd.message.slice(1, 31),
+                //   user: chosenAd.userID
+                // };
+                // console.log([ad.batch, ad.round, ad.room, ad.text].join("|"));
                 // console.log(ad.text);
               });
           });
       } catch (err) {
-        // console.log('File ending error in batch',batch)
+        throw err;
       }
+    }
+  });
+}
+
+function generateAdsCSVRow(batch) {
+  //get chats database
+  fs.readFile(dir + batch + "/" + "chats.json", (err, chatsRAW) => {
+    if (err) throw err;
+    else {
+      fs.readFile(dir + batch + "/" + "batch.json", (err, batchRAW) => {
+        if (err) throw err;
+        else {
+          try {
+            const chats = JSON.parse(chatsRAW);
+            const batchData = JSON.parse(batchRAW)[0];
+            batchData.products.forEach((product, round) => {
+              product.category = products.filter(
+                p => p.url === product.url
+              )[0].category;
+              rooms.forEach(room => {
+                const ads = chats
+                  .filter(a => a.round === round)
+                  .filter(a => a.room === room)
+                  .filter(a => a.message[0] === "!")
+                  .sort((a, b) => a.time - b.time);
+                if (ads.length != 0) {
+                  const ad = ads[ads.length - 1];
+                  csvRow = `Enabled,Expanded text ad,${
+                    product.url
+                  },, --, --,,"${ad.message.slice(1, 31)}",Kickstarter, --,"${
+                    product.name
+                  }", --, --, --,No,"${
+                    product.category
+                  }",Under review,0,0, --,USD, --,0`;
+                  console.log(csvRow);
+                }
+              });
+            });
+          } catch (err) {
+            throw err;
+          }
+        }
+      });
+    }
+  });
+}
+
+function returnAds(batch, callback) {
+  //get chats database
+  fs.readFile(dir + batch + "/" + "chats.json", (err, chatsRAW) => {
+    if (err) throw err;
+    else {
+      fs.readFile(dir + batch + "/" + "batch.json", (err, batchRAW) => {
+        if (err) throw err;
+        else {
+          try {
+            const chats = JSON.parse(chatsRAW);
+            const batchData = JSON.parse(batchRAW)[0];
+            batchData.products.forEach((product, round) => {
+              product.category = products.filter(
+                p => p.url === product.url
+              )[0].category;
+              rooms.forEach(room => {
+                const ads = chats
+                  .filter(a => a.round === round)
+                  .filter(a => a.room === room)
+                  .filter(a => a.message[0] === "!")
+                  .sort((a, b) => a.time - b.time);
+                if (ads.length != 0) {
+                  const fullAd = ads[ads.length - 1];
+                  const ad = {
+                    batch: fullAd.batch,
+                    roundTask: product.category,
+                    round: fullAd.round,
+                    room: fullAd.room,
+                    text: fullAd.message.slice(1, 31)
+                  };
+                  if (typeof callback == "function") {
+                    return callback(ad);
+                  } else return ad;
+                }
+              });
+            });
+          } catch (err) {
+            throw err;
+          }
+        }
+      });
     }
   });
 }
@@ -343,7 +454,7 @@ function downloadData(serverFolder, callback) {
       else {
         console.log("Downloaded data from", serverURL);
         if (typeof callback == "function") {
-          callback(stdout);
+          setTimeout(callback(stdout));
         }
       }
     });
@@ -449,20 +560,113 @@ function useCompleteBatches(callback) {
     });
 }
 
-let correctCount = 0;
-let totalCount = 0;
+function importCSVdata(file, callback) {
+  var csvParser = require("csv-parse");
+  const filePath = `${dbLocation}/${file}`;
+  fs.readFile(
+    filePath,
+    {
+      encoding: "utf-8"
+    },
+    function(err, csvData) {
+      if (err) {
+        console.log(err);
+      }
+      csvParser(
+        csvData,
+        {
+          delimiter: ","
+        },
+        function(err, data) {
+          if (err) {
+            console.log(err);
+          } else {
+            if (typeof callback == "function") {
+              callback(data);
+              return data;
+            }
+          }
+        }
+      );
+    }
+  );
+}
+
+{
+  questions: {
+    1;
+  }
+}
+
+function matchAd(data, ad) {
+  data
+    .filter(row => row[7] === ad.text)
+    .forEach(row => {
+      const clicks = 1 + Number(row[17].replace(",", ""));
+      const impressions = Number(row[18].replace(",", ""));
+      const result = {
+        text: ad.text,
+        room: ad.room,
+        round: ad.round,
+        batch: ad.batch,
+        performance: clicks / impressions,
+        roundTask: ad.roundTask
+      };
+      console.log(
+        `${result.batch}, ${result.round}, ${result.room}, ${
+          result.roundTask
+        }, ${result.performance}`
+      );
+      // console.log(result);
+    });
+}
 
 // manipulationCheck(1537292004662)
 // useCompleteBatches(manipulationCheck)
 
-// useCompleteBatches(manipulationFix);
+// useCompleteBatches(manipulationFix)
 
 // Download data from your folder and save it into local batch archives
-downloadData("b02", saveDBArchives);
+// downloadData("bang");
+// saveDBArchives();
+// useCompleteBatches(manipulationFix);
 
-//Save from local folder
-/* saveAllData() */
-// renderChats(1550688611521)
-// useEachBatchDB(renderAds)
-/* retroactiveBonus() */
-/* retroactivelyFixRooms() */
+//Rendering for various things
+// useCompleteBatches(renderChats);
+// useCompleteBatches(renderAds);
+
+const adBatches = [
+  1553010760733,
+  1553019661611,
+  1553021461648,
+  1553100662161,
+  1553169662360,
+  1553170862049,
+  1553172662087,
+  1553174461586,
+  1553175061606,
+  1553176861652,
+  1553177461720,
+  1553179862174,
+  1553180462276,
+  1553181661900,
+  1553196062079,
+  1553198462284,
+  1553199661488,
+  1553200861903,
+  1553201461913
+];
+// 1553194261766 an apparent faild batch
+
+// adBatches.forEach(returnAds(parseAdsCSV));
+
+// console.log(`batch, round, room, roundTask, performance`);
+// importCSVdata("ads.csv", adsData => {
+//   adBatches.forEach(batch => {
+//     returnAds(batch, ad => {
+//       matchAd(adsData, ad);
+//     });
+//   });
+// });
+
+renderChats("1553179862174")
