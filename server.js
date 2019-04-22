@@ -57,7 +57,7 @@ const postSurveyOn = true;
 const demographicsSurveyOn = true;
 
 //Just Mark for now. Feel free to add your ID, and finish a task for us so you can get notificaions too.
-const notifyUsList = ["A19MTSLG2OYDLZ"];
+const notifyUsList = ["A19MTSLG2OYDLZ", "A1Y1EKZLN97X0O"];
 
 if (midSurveyStatusOn && teamSize != 4) {
   throw "Status survey only functions at team size 4";
