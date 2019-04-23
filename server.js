@@ -689,8 +689,6 @@ if (starterSurveyOn) {
 }
 let roundSchedule = [];
 
-roundSchedule.push("holdingPage"); //for testing purposes
-roundSchedule.push("ready"); //This is the chat task.
 if (midSurveyOn) {
   roundSchedule.push("midSurvey");
 }
