@@ -1641,7 +1641,7 @@ io.on("connection", socket => {
           user
         );
       } else if (
-        eventSchedule[currentEvent] === "finished" ||
+        eventSchedule[currentEvent] === "finished" || eventSchedule[currentEvent] === "emergency-exit" ||
         currentEvent > eventSchedule.length
       ) {
         if (!batchCompleteUpdated) {

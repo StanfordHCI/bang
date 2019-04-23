@@ -608,17 +608,18 @@ $(function() {
     );
 
     //TODO: Some way to set the worker bonus to exactly 15 here.
-    socket.emit(
-      "bonus",
-      "15"
-    );
-
-    HandleFinish(
-        (finishingMessage = "You terminated the HIT via the emergency exit. Thank you for your time."),
-        (mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit"),
-        (assignmentId = mturkVariables.assignmentId),
-        (finishingcode = "LeftHit")
-      );
+    socket.on("emergency-exit", data => {
+        socket.emit("log", "Disconnecting: " + data.finishingcode);
+        HandleFinish(
+          (finishingMessage = data.message),
+          (mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit"),
+          (assignmentId = mturkVariables.assignmentId),
+          (finishingcode = data.finishingCode)
+        );
+        LeavingAlert = false;
+        socket.disconnect(true);
+    });
+    
   });
 
   //Simple autocomplete
