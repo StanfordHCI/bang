@@ -2,7 +2,7 @@
 
 Bang is a tool to study the consistency of socio-psychological phenomenon by running within subjects studies on groups. Bang uses pseudonyms to see what happens when people work in the same groups when they think they're working in new ones.
 
-Find out more and how to use it at the (Bang wiki)[https://github.com/StanfordHCI/bang/wiki]. 
+Find out more and how to use it at the [Bang wiki](https://github.com/StanfordHCI/bang/wiki). 
 
 ## Specification
 
