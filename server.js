@@ -357,10 +357,9 @@ let batchCompleteUpdated = false;
 
 // Settings for 4 rounds.
 // const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
-//const ordering = randomRoundOrderOn
-//  ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick()
-//  : [1, 2, 1, 3];
-const ordering = [1, 1, 1, 1];
+const ordering = randomRoundOrderOn
+  ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick()
+  : [1, 2, 1, 3];
 const conditions = {
   control: ordering,
   treatment: ordering,
@@ -676,7 +675,6 @@ let startTime = 0;
 let userAcquisitionStage = true;
 let experimentOver = false;
 let usersFinished = 0;
-var unmaskedUsers = []; //MINE
 
 // keeping track of time
 let taskStartTime = getSecondsPassed(); // reset for each start of new task
@@ -1256,7 +1254,7 @@ io.on("connection", socket => {
     useUser(socket,user => {
       users
           .filter(f => f.room === user.room)
- 	  .forEach(f => {
+          .forEach(f => {
 	    socket.broadcast.to(f.mturkId).emit('typing', {
 	      username: idToAlias(f, String(socket.mturkId)),
 	    });
@@ -1737,7 +1735,7 @@ io.on("connection", socket => {
       treatmentNow =
         currentCondition === "treatment" && currentRound === experimentRound;
       const conditionRound = conditions[currentCondition][currentRound] - 1;
-	
+
       // Replaceing user with extraRound
       if (extraRoundOn && user.rooms.length === 1) {
         users.forEach(u => {
@@ -1823,19 +1821,6 @@ io.on("connection", socket => {
 
       experimentStarted = true;
 
-      // MINE
-      //console.log("!!!!!!!!!!! CHOOSING UNMASEKD !!!!!!!!!!!!!!!!");
-      Object.entries(teams[conditionRound]).forEach(([roomName, room]) => {
-        unmasked = getRandomSubarray(users, 2);
-        unmasked.forEach(u => {
-	  if (!unmaskedUsers.includes(u.mturkId)) {
-	    unmaskedUsers.push(u.mturkId);
-	  }
-	});
-      });
-      //console.log("!!!unmasked users = ");
-      //console.log(unmaskedUsers);
-
       users.forEach(u => {
         if (autocompleteTestOn) {
           let teamNames = [
@@ -1882,18 +1867,11 @@ io.on("connection", socket => {
 
           user.friends_history = u.friends_history.concat(team_Aliases);
           for (i = 0; i < teamMates.length; i++) {
-	    if (treatmentNow) {
-	      if (unmaskedUsers.includes(u.mturkId)) {
-		console.log("UNMASKED HEREEEEEEEEEEEEEEEEEEE");
-	        team_Aliases[i] = teamMates[i].alias;
-	      }
-	      else {
-		console.log("MASKED HEREEEEEEEEEEEEEEEEEEEE");
-                teamMates[i].tAlias = team_Aliases[i].join("");
-                team_Aliases[i] = team_Aliases[i].join("");
-	      }
+            if (treatmentNow) {
+              teamMates[i].tAlias = team_Aliases[i].join("");
+              team_Aliases[i] = team_Aliases[i].join("");
             } else {
-              if (currentRound == 0) {
+              if (currentRound === 0) {
                 //if first round, create aliases
                 teamMates[i].alias = team_Aliases[i].join("");
                 team_Aliases[i] = team_Aliases[i].join("");
@@ -1903,8 +1881,6 @@ io.on("connection", socket => {
               }
             }
           }
-	  console.log("HEREEEEEEEEEE  team Aliases = ");
-          console.log(team_Aliases);
 
           team_Aliases.push(u.name); //now push user for autocomplete
           //let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
@@ -2383,11 +2359,6 @@ function idToAlias(user, newString) {
   user.friends.forEach(friend => {
     let idRegEx = new RegExp(friend.mturkId, "g");
     let currentAlias = treatmentNow ? friend.tAlias : friend.alias;
-    if (treatmentNow) {
-      if (unmaskedUsers.includes(friend.mturkId)) {
-        currentAlias = friend.alias;
-      }
-    }  
     newString = newString.replace(idRegEx, currentAlias);
   });
   return newString;
