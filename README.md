@@ -2,25 +2,7 @@
 
 Bang is a tool to study the consistency of socio-psychological phenomenon by running within subjects studies on groups. Bang uses pseudonyms to see what happens when people work in the same groups when they think they're working in new ones.
 
-## Getting started
-
-Clone the repository then run npm install in the github directory to get all the dependencies.
-Make sure you're set up to use the MTurk API. I have a intro that will get you started.
-Add an .env with the following content:
-AWS_ID=YOUR_AWS_MTURK_ID
-AWS_KEY=YOUR_AWS_MTURK_KEY
-
-RUNNING_LIVE=FALSE
-RUNNING_LOCAL=TRUE
-
-TEAM_SIZE=4
-ROUND_MINUTES=10
-Start the server by running node built/server.js.
-Developing
-
-Run tsc to watch typescript files for changes and supervisor server.js so that the server will restart when files in the github folder are changed.
-
-The URL parameters are required because they are read in from Amazon Mechanical Turk. Here's an example URL for local host: http://127.0.0.1:3000/?test
+Find out more and how to use it at the (Bang wiki)[https://github.com/StanfordHCI/bang/wiki]. 
 
 ## Specification
 
@@ -59,37 +41,3 @@ We are moving toward a model where bang can be run with a variety of tasks and a
 ### Paying
 
 At the end of the task, we provide bonuses to our workers and follow up with any who experienced errors. This currently happens at the start of the next round of the experiment or on a cron script.
-
-
-## Getting Started Tips
-
-- Development Tips:
-  - Make, commit, and push changes from the `nokill` branch
-- Testing Tips:
-  - Turn off waiting room by going to `public/client.js` and `server.js` and set const `waitChaton` to `false`
-  - Set `TEAM_SIZE=1` (int must be a perfect square) and `ROUND_MINUTES=1` (or smaller value) to efficiently test
-  - To test larger team sizes, change the Worker ID in the URL. A list of 26 different Worker URL's [may be found here](https://docs.google.com/document/d/e/2PACX-1vRKrF6XJ-LUGyuumUiAyXc2mLOwPdhivliMadUKXqK_a92_vmV_9jaBxhtst3BSqK_BdtCdlZHd5VfC/pub).
-
-## Running Live Steps
-1. SSH into server. Currently we are using ubuntu@b01.dmorina.com: 
-  ```PowerShell
-  ssh -i ~/.ssh/sh-batch.pem ubuntu@b01.dmorina.com
-  ```
-2. cd into the folder you'll be working in (check for one no one else is using)
-3. Double check that the switches in the top of `server.js` and `public/client.js` are correct. Specifically:
-    - Check that the surveys you want are `true`
-    - waitChatOn is `true` in both files
-4. Adjust `.env` to reflect the group size and task duration you want.
-    - Right now running larger than 4 and longer than 10 minutes per task are not reliable
-    - Critically `RUNNING_LIVE=TRUE` and `RUNNING_LOCAL=FALSE` will be the settings you need for launching live HITs.
-    - Switching `RUNNING_LIVE=FALSE` tests in the sandbox. Other settings in that file should not need to be adjusted.
-5. Check to see if anyone else is running. Start by doing `ps -ax | grep -i node` which will tell you if there are any other node processes running. Its fine to run at the same time as others, BUT, we don't like to start new HITs while another one is still in waitChat. So if you do see another task running, try to check in to see if its finished waitChat or not.
-6. Run with:
-```PowerShell
-nohup node server.js >> status.log 2>&1 &
-```
-This command lets you run the server without staying connected and watching it closely.  You can store the log elsewhere by changing that part of the command.
-7. Follow with `tail -f status.log`
-8. If you need to cancel the hit:
-    - visit the `[HIT url]/god.html` page and press `cancel` to kill the process.
-    - terminate the node process via: 
