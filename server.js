@@ -858,6 +858,7 @@ io.on("connection", socket => {
       io.in(socket.id).emit("heartbeat");
     }
   });
+
   socket.on("accepted HIT", data => {
     console.log("ACCEPTED HIT CALLED");
     if (!userAcquisitionStage) {
