@@ -858,6 +858,7 @@ io.on("connection", socket => {
       io.in(socket.id).emit("heartbeat");
     }
   });
+
   socket.on("accepted HIT", data => {
     console.log("ACCEPTED HIT CALLED");
     if (!userAcquisitionStage) {
@@ -1248,6 +1249,32 @@ io.on("connection", socket => {
         });
     });
   }
+
+  //when the client emits 'typing', we broadcast it to tothers
+  socket.on('typing', () => {
+    useUser(socket,user => {
+      users
+          .filter(f => f.room === user.room)
+          .forEach(f => {
+	    socket.broadcast.to(f.mturkId).emit('typing', {
+	      username: idToAlias(f, String(socket.mturkId)),
+	    });
+	  });
+    });
+  });
+
+  //when the client emits 'stop typing', we broadcast it to tothers
+  socket.on('stop typing', () => {
+    useUser(socket,user => {
+      users
+          .filter(f => f.room === user.room)
+          .forEach(f => {
+            socket.broadcast.to(f.mturkId).emit('stop typing', {
+              username: idToAlias(f, String(socket.mturkId)),
+            });
+          });
+    });
+  });
 
   //when the client emits 'new checkin', this listens and executes
   socket.on("new checkin", function(data) {
@@ -1893,11 +1920,11 @@ io.on("connection", socket => {
       const taskSteps = [
         {
           time: 0.001,
-          message: `<strong>DO NOT REFRESH OR LEAVE THE PAGE! If you do, it may terminate the task for your team members and you will not be compensated.</strong>`
+          message: `<strong>Be careful not to refresh or leave the page! If you do, you will not be able to return to the task and will not be compensated for your time.</strong>`
         },
         {
           time: 0.002,
-          message: `You will receive the bonus pay at the stated hourly rate only if you<strong> fill out all survey questions and complete all rounds.</strong>`
+          message: `<strong>There are a total of 4 rounds of team interaction with a reflection survey following each one. You will receive the stated bonus pay if you thoughtfully fill out every survey question!</strong>`
         },
         {
           time: 0.003,

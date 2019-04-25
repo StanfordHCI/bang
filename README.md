@@ -2,25 +2,7 @@
 
 Bang is a tool to study the consistency of socio-psychological phenomenon by running within subjects studies on groups. Bang uses pseudonyms to see what happens when people work in the same groups when they think they're working in new ones.
 
-## Getting started
-
-Clone the repository then run npm install in the github directory to get all the dependencies.
-Make sure you're set up to use the MTurk API. I have a intro that will get you started.
-Add an .env with the following content:
-AWS_ID=YOUR_AWS_MTURK_ID
-AWS_KEY=YOUR_AWS_MTURK_KEY
-
-RUNNING_LIVE=FALSE
-RUNNING_LOCAL=TRUE
-
-TEAM_SIZE=4
-ROUND_MINUTES=10
-Start the server by running node built/server.js.
-Developing
-
-Run tsc to watch typescript files for changes and supervisor server.js so that the server will restart when files in the github folder are changed.
-
-The URL parameters are required because they are read in from Amazon Mechanical Turk. Here's an example URL for local host: http://127.0.0.1:3000/?test
+Find out more and how to use it at the [Bang wiki](https://github.com/StanfordHCI/bang/wiki). 
 
 ## Specification
 
@@ -59,7 +41,6 @@ We are moving toward a model where bang can be run with a variety of tasks and a
 ### Paying
 
 At the end of the task, we provide bonuses to our workers and follow up with any who experienced errors. This currently happens at the start of the next round of the experiment or on a cron script.
-
 
 ## Getting Started Tips
 

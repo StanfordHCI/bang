@@ -211,14 +211,21 @@ $(function() {
         username: botUsername,
         /* TODO: change message here that will inform people about compensation*/
         message:
-          "You must be able to stay for the duration of this task, around 1 hour. If you cannot stay for the entire time, please leave now. You will not be compensated if you leave preemptively. As a reminder, please do not refresh or close the page."
+          "This task will take around 1 and a half hours. " +
+          "If you cannot stay for the entire time, please exit the task now! You will not be compensated if you leave the task early."
+      });
+      addChatMessage({
+        username: botUsername,
+        /* TODO: change message here that will inform people about compensation*/
+        message:
+        "As a friendly reminder, if you refresh or close this page you will not be able to come back to this task!"   
       });
       setTimeout(() => {
         addChatMessage({
           username: botUsername,
           message:
-            "For this first task, I need you to answer a sequence of questions. " +
-            "Thanks for cooperating!"
+            "For this first task, I have some questions for you to answer. " +
+            "This will help me verify that you're an active and present human being!"
         });
         setTimeout(() => {
           socket.emit("load bot qs");
