@@ -434,8 +434,8 @@ $(function() {
     //socket.emit('get username')
     //PUTTING THE FOLLOWING LINES AFTER EVERY HOLDING PAGE.SHOW
     $emergencyExitButton.hide();
-    //setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
-    setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
+    setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
+    //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     socket.emit("add user");
     socket.emit("next event");
   });
@@ -1064,8 +1064,8 @@ $(function() {
     $holdingPage.show();
     //PUTTING BEFORE ALL HOLDING PAGE.SHOW
     $emergencyExitButton.hide();
-    //setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
-    setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
+    setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
+    //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     // messagesSafe.innerHTML = '';
     $inputMessage.unbind("keydown");
     socket.emit("next event");
@@ -1130,8 +1130,8 @@ $(function() {
     $("#starterForm")[0].reset();
     //PUTTING THE FOLLOWING LINES AFTER EVERY HOLDING PAGE.SHOW
     $emergencyExitButton.hide();
-    //setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
-    setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
+    setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
+    //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
   });
 
   $("#postForm").submit(event => {
@@ -1156,8 +1156,8 @@ $(function() {
     $("#teamfeedbackForm")[0].reset();
     //PUTTING THE FOLLOWING LINES AFTER EVERY HOLDING PAGE.SHOW
     $emergencyExitButton.hide();
-    //setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
-    setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
+    setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
+    //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     socket.emit("next event");
   });
 
@@ -1187,8 +1187,8 @@ $(function() {
     $holdingPage.show();
     //PUTTING THE FOLLOWING LINES AFTER EVERY HOLDING PAGE.SHOW
     $emergencyExitButton.hide();
-    //setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
-    setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
+    setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
+    //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     clearAllTimers();
     //Repeats until a new event is received.
     timers.push(
