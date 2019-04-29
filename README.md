@@ -20,6 +20,7 @@ ADMIN_TOKEN=your admin token
 WILL_BANG_QUAL=will bang qual id from mturk
 HAS_BANGED_QUAL=has banged qual id from mturk
 MTURK_FRAME=ON/OFF
+HIT_URL=http://localhost:3000/ or https://bang-dev.deliveryweb.ru/, url for mturk mail when FRAME=OFF
 ```
 
 4. Set up mongodb (ver. 4.0)
