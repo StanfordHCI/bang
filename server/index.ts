@@ -136,7 +136,7 @@ cron.schedule('*/10 * * * * *', async function(){
         const check = await User.findOne({mturkId: assignment.WorkerId});
         if (!check) {//add user to db and give willbang qual
           const url = process.env.MTURK_FRAME === 'ON' ? ' https://workersandbox.mturk.com/requesters/A3QTK0H2SRN96W/projects' :
-            'http://localhost:3000/?assignmentId=' + assignment.AssignmentId + '&workerId=' + assignment.WorkerId;
+            process.env.HIT_URL + '?assignmentId=' + assignment.AssignmentId + '&workerId=' + assignment.WorkerId;
 
           let prs = [
             User.create({
