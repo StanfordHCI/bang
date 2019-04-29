@@ -858,6 +858,7 @@ io.on("connection", socket => {
       io.in(socket.id).emit("heartbeat");
     }
   });
+
   socket.on("accepted HIT", data => {
     console.log("ACCEPTED HIT CALLED");
     if (!userAcquisitionStage) {
@@ -1248,6 +1249,32 @@ io.on("connection", socket => {
         });
     });
   }
+
+  //when the client emits 'typing', we broadcast it to tothers
+  socket.on('typing', () => {
+    useUser(socket,user => {
+      users
+          .filter(f => f.room === user.room)
+          .forEach(f => {
+	    socket.broadcast.to(f.mturkId).emit('typing', {
+	      username: idToAlias(f, String(socket.mturkId)),
+	    });
+	  });
+    });
+  });
+
+  //when the client emits 'stop typing', we broadcast it to tothers
+  socket.on('stop typing', () => {
+    useUser(socket,user => {
+      users
+          .filter(f => f.room === user.room)
+          .forEach(f => {
+            socket.broadcast.to(f.mturkId).emit('stop typing', {
+              username: idToAlias(f, String(socket.mturkId)),
+            });
+          });
+    });
+  });
 
   //when the client emits 'new checkin', this listens and executes
   socket.on("new checkin", function(data) {
