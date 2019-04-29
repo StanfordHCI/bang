@@ -860,6 +860,7 @@ io.on("connection", socket => {
       io.in(socket.id).emit("heartbeat");
     }
   });
+
   socket.on("accepted HIT", data => {
     console.log("ACCEPTED HIT CALLED");
     if (!userAcquisitionStage) {
@@ -1250,6 +1251,32 @@ io.on("connection", socket => {
         });
     });
   }
+
+  //when the client emits 'typing', we broadcast it to tothers
+  socket.on('typing', () => {
+    useUser(socket,user => {
+      users
+          .filter(f => f.room === user.room)
+          .forEach(f => {
+	    socket.broadcast.to(f.mturkId).emit('typing', {
+	      username: idToAlias(f, String(socket.mturkId)),
+	    });
+	  });
+    });
+  });
+
+  //when the client emits 'stop typing', we broadcast it to tothers
+  socket.on('stop typing', () => {
+    useUser(socket,user => {
+      users
+          .filter(f => f.room === user.room)
+          .forEach(f => {
+            socket.broadcast.to(f.mturkId).emit('stop typing', {
+              username: idToAlias(f, String(socket.mturkId)),
+            });
+          });
+    });
+  });
 
   //when the client emits 'new checkin', this listens and executes
   socket.on("new checkin", function(data) {
@@ -1711,7 +1738,7 @@ io.on("connection", socket => {
       treatmentNow =
         currentCondition === "treatment" && currentRound === experimentRound;
       const conditionRound = conditions[currentCondition][currentRound] - 1;
-	
+
       // Replaceing user with extraRound
       if (extraRoundOn && user.rooms.length === 1) {
         users.forEach(u => {
@@ -1914,7 +1941,7 @@ io.on("connection", socket => {
                 team_Aliases[i] = team_Aliases[i].join("");
 	      }
             } else {
-              if (currentRound == 0) {
+              if (currentRound === 0) {
                 //if first round, create aliases
                 teamMates[i].alias = team_Aliases[i].join("");
                 team_Aliases[i] = team_Aliases[i].join("");
