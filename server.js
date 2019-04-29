@@ -27,7 +27,7 @@ const notifyUs = runningLive;
 
 const cleanHITs = true;
 const assignQualifications = runningLive;
-const debugModeOn = !runningLive;
+const debugModeOn = false; //!runningLive;
 
 const suddenDeath = false;
 
@@ -358,9 +358,9 @@ let batchCompleteUpdated = false;
 // Settings for 4 rounds.
 // const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
 //const ordering = randomRoundOrderOn
-  //? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick()
-  //: [1, 2, 1, 3];
-const ordering = [1, 2, 1, 3];
+//? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick()
+//: [1, 2, 1, 3];
+const ordering = [1, 1, 2, 3];
 const conditions = {
   control: ordering,
   treatment: ordering,
@@ -1253,28 +1253,28 @@ io.on("connection", socket => {
   }
 
   //when the client emits 'typing', we broadcast it to tothers
-  socket.on('typing', () => {
-    useUser(socket,user => {
+  socket.on("typing", () => {
+    useUser(socket, user => {
       users
-          .filter(f => f.room === user.room)
-          .forEach(f => {
-	    socket.broadcast.to(f.mturkId).emit('typing', {
-	      username: idToAlias(f, String(socket.mturkId)),
-	    });
-	  });
+        .filter(f => f.room === user.room)
+        .forEach(f => {
+          socket.broadcast.to(f.mturkId).emit("typing", {
+            username: idToAlias(f, String(socket.mturkId))
+          });
+        });
     });
   });
 
   //when the client emits 'stop typing', we broadcast it to tothers
-  socket.on('stop typing', () => {
-    useUser(socket,user => {
+  socket.on("stop typing", () => {
+    useUser(socket, user => {
       users
-          .filter(f => f.room === user.room)
-          .forEach(f => {
-            socket.broadcast.to(f.mturkId).emit('stop typing', {
-              username: idToAlias(f, String(socket.mturkId)),
-            });
+        .filter(f => f.room === user.room)
+        .forEach(f => {
+          socket.broadcast.to(f.mturkId).emit("stop typing", {
+            username: idToAlias(f, String(socket.mturkId))
           });
+        });
     });
   });
 
@@ -1735,64 +1735,14 @@ io.on("connection", socket => {
         return;
       }
 
+      if (currentRound === conditions[currentCondition].length) {
+        console.log("Current round is too large.");
+        currentRound = conditions[currentCondition].length - 1;
+      }
+
       treatmentNow =
         currentCondition === "treatment" && currentRound === experimentRound;
       const conditionRound = conditions[currentCondition][currentRound] - 1;
-
-      // Replaceing user with extraRound
-      if (extraRoundOn && user.rooms.length === 1) {
-        users.forEach(u => {
-          if (
-            tools.letters.slice(0, teamSize ** 2).includes(u.person) &&
-            !u.connected
-          ) {
-            disconnectedsRoom = u.room;
-            Object.entries(teams[0]).forEach(([roomName, room]) => {
-              if (roomName === disconnectedsRoom) {
-                replacingPersonName = room[teamSize];
-              }
-            });
-            //u is the user who left
-            //replacingPersonName is the v.person of some v in users who will replace u
-            users
-              .filter(v => v.person === replacingPersonName)
-              .forEach(v => {
-                v.room = u.room;
-                v.rooms = u.rooms;
-                v.person = u.person;
-                v.name = u.name;
-                v.friends = u.friends;
-              });
-          }
-        });
-        //badUsers contains all of the users we don't need anymore. At most, this is 4 users.
-        // At minimum, it's 0.
-        badUsers = [];
-        users.forEach(u => {
-          if (u) {
-            if (
-              tools.letters
-                .slice(teamSize ** 2, teamSize ** 2 + teamSize)
-                .includes(u.person)
-            ) {
-              badUsers.push(u);
-            }
-          }
-        });
-
-        badUsers.forEach(u => {
-          issueFinish(
-            u,
-            runViaEmailOn
-              ? "Please click submit below and await further instructions " +
-                  "from scaledhumanity@gmail.com."
-              : "Thank you for participating in our task! Click the " +
-                  "submit button below and you will be compensated at the promised rate for the time you " +
-                  "have spent."
-          );
-          u.connected = false;
-        });
-      }
 
       Object.entries(teams[conditionRound]).forEach(([roomName, room]) => {
         users
@@ -1825,52 +1775,49 @@ io.on("connection", socket => {
       experimentStarted = true;
 
       // MINE
-        Object.entries(teams[conditionRound]).forEach(([roomName, room]) => {
-	  users
-	    .forEach(user => {
-	      let curTeams = getTeamMembersArray(user);
-              let lastTeam = curTeams[curTeams.length - 1];
-	      if ((curTeams.length - 1) != currentRound) {
-		throw "MINEEEEEEEEE NOT EQUALLLLLLLLLL";
-	      }
-	      var memberRatings = user.results.statusCheck[currentRound];
+      users.forEach(u => {
+        const curTeams = getTeamMembersArray(u);
+        const lastTeam = curTeams[curTeams.length - 1];
+        if (curTeams.length - 1 != currentRound) {
+          throw "MINEEEEEEEEE NOT EQUALLLLLLLLLL";
+        }
+        const memberRatings = u.results.statusCheck[currentRound];
 
-	      console.log("MINEEEEEE MEMBER RATINGS = ");
-	      console.log(memberRatings);
-	      var i = 0;
- 	      for (var key in memberRatings) {
-	        //console.log(key, memberRatings[key]);
-		console.log("user id = " + user.mturkId);
-	        console.log("last team = ");
-		console.log(lastTeam);
+        console.log("MINEEEEEE MEMBER RATINGS = ");
+        console.log(memberRatings);
+        var i = 0;
+        for (var key in memberRatings) {
+          //console.log(key, memberRatings[key]);
+          console.log("user id = " + u.mturkId);
+          console.log("last team = ");
+          console.log(lastTeam);
 
-		if (lastTeam[i]["name"] == 'you') {
-		  i++;
-		} 
-		let member = lastTeam[i]["mturkId"];
-		i++;
+          if (lastTeam[i]["name"] == "you") {
+            i++;
+          }
+          let member = lastTeam[i]["mturkId"];
+          i++;
 
-		let rating = parseFloat(memberRatings[key].substring(0,1));
-	        let liked = (rating > 4) ? true : false;
-	        console.log(member, liked);
-	        if (liked) {
-	 	  if (unmasked[user.mturkId] != undefined) {
-		    if (!unmasked[user.mturkId].includes(member)) {
-		      var memberList = unmasked[user.mturkId];
-		      memberList.push(member);
-		      unmasked[user.mturkId] = memberList;
-		    }
-		  } else {
-		    unmasked[user.mturkId] = [member];
-	  	  }
-		}
-	      }
-	      //console.log("user's " + user.mturkId + " member list = ");
-	      //console.log(unmasked[user.mturkId]);
-	      console.log("unmasked = ");
-	      console.log(unmasked);
-	    });
-        });
+          let rating = parseFloat(memberRatings[key].substring(0, 1));
+          let liked = rating > 4;
+          console.log(member, liked);
+          if (liked) {
+            if (unmasked[u.mturkId] != undefined) {
+              if (!unmasked[u.mturkId].includes(member)) {
+                var memberList = unmasked[u.mturkId];
+                memberList.push(member);
+                unmasked[u.mturkId] = memberList;
+              }
+            } else {
+              unmasked[u.mturkId] = [member];
+            }
+          }
+        }
+        //console.log("user's " + user.mturkId + " member list = ");
+        //console.log(unmasked[user.mturkId]);
+        console.log("unmasked = ");
+        console.log(unmasked);
+      });
 
       users.forEach(u => {
         if (autocompleteTestOn) {
@@ -1918,28 +1865,29 @@ io.on("connection", socket => {
 
           user.friends_history = u.friends_history.concat(team_Aliases);
           for (i = 0; i < teamMates.length; i++) {
-	    if (treatmentNow) {
-		
-	      let teamMate = teamMates[i].mturkId;
-	      if (unmasked[u.mturkId] === undefined) {
-		unmasked[u.mturkId] = [];
-	      }
-	      if (unmasked[teamMate] === undefined) {
-		unmasked[teamMate] = [];
-	      }
-	      console.log("USER'S " + u.mturkId + " LIST = ");
-	      console.log(unmasked[u.mturkId]);
+            if (treatmentNow) {
+              let teamMate = teamMates[i].mturkId;
+              if (unmasked[u.mturkId] === undefined) {
+                unmasked[u.mturkId] = [];
+              }
+              if (unmasked[teamMate] === undefined) {
+                unmasked[teamMate] = [];
+              }
+              console.log("USER'S " + u.mturkId + " LIST = ");
+              console.log(unmasked[u.mturkId]);
               console.log("TEAMMATE'S " + teamMate + " LIST = ");
               console.log(unmasked[teamMate]);
-	      if (unmasked[u.mturkId].includes(teamMate) && unmasked[teamMate].includes(u.mturkId)) {
-		console.log("UNMASKEDDDDDDDDDDDDD");
-	        team_Aliases[i] = teamMates[i].alias;
-	      }
-	      else {
-		console.log("MASKEDDDDDDDDDDDDDDD");
+              if (
+                unmasked[u.mturkId].includes(teamMate) &&
+                unmasked[teamMate].includes(u.mturkId)
+              ) {
+                console.log("UNMASKEDDDDDDDDDDDDD");
+                team_Aliases[i] = teamMates[i].alias;
+              } else {
+                console.log("MASKEDDDDDDDDDDDDDDD");
                 teamMates[i].tAlias = team_Aliases[i].join("");
                 team_Aliases[i] = team_Aliases[i].join("");
-	      }
+              }
             } else {
               if (currentRound === 0) {
                 //if first round, create aliases
@@ -2316,9 +2264,9 @@ io.on("connection", socket => {
           answerObj = scale7A;
 
           let curMember = (i - 2) % 5;
-    	  if (lastTeam[curMember]["name"] == 'you') {
-	    userThemselves = true;
-	  }
+          if (lastTeam[curMember]["name"] == "you") {
+            userThemselves = true;
+          }
           questionObj["question"] =
             `${lastTeam[curMember]["name"]}` + questionObj["question"];
 
@@ -2384,11 +2332,11 @@ io.on("connection", socket => {
 
         questionObj["required"] =
           requiredOn && answerObj.answerType === "radio";
-	if (!userThemselves) {
+        if (!userThemselves) {
           questions.push(questionObj);
-	} else {
-	  userThemselves = false;
-	}
+        } else {
+          userThemselves = false;
+        }
       });
     return questions;
   }
@@ -2440,16 +2388,19 @@ function idToAlias(user, newString) {
     //MINE
     if (currentRound != 0) {
       if (unmasked[user.mturkId] === undefined) {
-	unmasked[user.mturkId] = [];
+        unmasked[user.mturkId] = [];
       }
       if (unmasked[friend.mturkId] === undefined) {
-	unmasked[friend.mturkId] = [];
+        unmasked[friend.mturkId] = [];
       }
-      if (unmasked[user.mturkId].includes(friend.mturkId) && unmasked[friend.mturkId].includes(user.mturkId)) {
+      if (
+        unmasked[user.mturkId].includes(friend.mturkId) &&
+        unmasked[friend.mturkId].includes(user.mturkId)
+      ) {
         currentAlias = friend.alias;
       }
-    } 
-    //END 
+    }
+    //END
     newString = newString.replace(idRegEx, currentAlias);
   });
   return newString;
