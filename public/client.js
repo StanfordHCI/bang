@@ -602,24 +602,25 @@ $(function() {
   });
 
   $emergencyExitButton.click(() => {
+    event.preventDefault(); //stops page reloading
+
     socket.emit(
       "log",
       holdingUsername.innerText + " clicked emergency exit button."
     );
 
-    //TODO: Some way to set the worker bonus to exactly 15 here.
-    socket.on("emergency-exit", data => {
-        socket.emit("log", "Disconnecting: " + data.finishingcode);
-        HandleFinish(
-          (finishingMessage = data.message),
-          (mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit"),
-          (assignmentId = mturkVariables.assignmentId),
-          (finishingcode = data.finishingCode)
-        );
-        LeavingAlert = false;
-        socket.disconnect(true);
-    });
+    //TODO: Send message to the server so that the server can update bonus + shut down
+    socket.emit("log", "SOCKET DISCONNECT IN EMERGENCY EXIT BUTTON");
     
+    HandleFinish(
+      (finishingMessage = "You terminated the HIT. Thank you for your time."),
+      (mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit"),
+      (assignmentId = mturkVariables.assignmentId),
+      (finishingcode = "LeftHit")
+    );
+    socket.emit("emergency-exit", $("#emergency-exit").serialize());
+    //socket.emit("mturk_formSubmit", {});
+    // socket.disconnect(true); ///this causes an error
   });
 
   //Simple autocomplete

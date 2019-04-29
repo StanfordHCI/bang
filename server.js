@@ -2146,6 +2146,18 @@ io.on("connection", socket => {
     });
   });
 
+  socket.on("emergency-exit", data => {
+    useUser(socket, user => {
+      user.results.engagementFeedback = responseToJSON(data);
+      // updateUserInDB(
+      //   user,
+      //   "results.engagementFeedback",
+      //   user.results.engagementFeedback
+      // );
+      updateUserInDB(socket,'bonus',currentBonus());
+    });
+  });
+
   //loads qs in text file, returns json array
   function loadQuestions(questionFile, user = null) {
     const prefix = questionFile.substr(
