@@ -38,8 +38,8 @@ const randomTaskOrderOn = true;
 const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const starterSurveyOn = false;
-const midSurveyOn = true;
-const midSurveyStatusOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
+const midSurveyOn = false;
+const midSurveyStatusOn = true; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const psychologicalSafetyOn = runningLive;
 const creativeSurveyOn = false;
 const satisfactionSurveyOn = false;
@@ -357,10 +357,10 @@ let batchCompleteUpdated = false;
 
 // Settings for 4 rounds.
 // const ordering = randomRoundOrder ? [[1, 1, 2, 3], [1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 1, 3], [2, 1, 3, 1], [2, 3, 1, 1]].pick() : [1,2,1,3]
-const ordering = randomRoundOrderOn
-  ? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick()
-  : [1, 2, 1, 3];
-//const ordering = [1, 1, 1, 1];
+//const ordering = randomRoundOrderOn
+  //? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick()
+  //: [1, 2, 1, 3];
+const ordering = [1, 2, 1, 3];
 const conditions = {
   control: ordering,
   treatment: ordering,
@@ -676,7 +676,7 @@ let startTime = 0;
 let userAcquisitionStage = true;
 let experimentOver = false;
 let usersFinished = 0;
-var unmaskedUsers = []; //MINE
+var unmasked = {}; //MINE
 
 // keeping track of time
 let taskStartTime = getSecondsPassed(); // reset for each start of new task
@@ -1798,17 +1798,52 @@ io.on("connection", socket => {
       experimentStarted = true;
 
       // MINE
-      //console.log("!!!!!!!!!!! CHOOSING UNMASEKD !!!!!!!!!!!!!!!!");
-      Object.entries(teams[conditionRound]).forEach(([roomName, room]) => {
-        unmasked = getRandomSubarray(users, 2);
-        unmasked.forEach(u => {
-	  if (!unmaskedUsers.includes(u.mturkId)) {
-	    unmaskedUsers.push(u.mturkId);
-	  }
-	});
-      });
-      //console.log("!!!unmasked users = ");
-      //console.log(unmaskedUsers);
+        Object.entries(teams[conditionRound]).forEach(([roomName, room]) => {
+	  users
+	    .forEach(user => {
+	      let curTeams = getTeamMembersArray(user);
+              let lastTeam = curTeams[curTeams.length - 1];
+	      if ((curTeams.length - 1) != currentRound) {
+		throw "MINEEEEEEEEE NOT EQUALLLLLLLLLL";
+	      }
+	      var memberRatings = user.results.statusCheck[currentRound];
+
+	      console.log("MINEEEEEE MEMBER RATINGS = ");
+	      console.log(memberRatings);
+	      var i = 0;
+ 	      for (var key in memberRatings) {
+	        //console.log(key, memberRatings[key]);
+		console.log("user id = " + user.mturkId);
+	        console.log("last team = ");
+		console.log(lastTeam);
+
+		if (lastTeam[i]["name"] == 'you') {
+		  i++;
+		} 
+		let member = lastTeam[i]["mturkId"];
+		i++;
+
+		let rating = parseFloat(memberRatings[key].substring(0,1));
+	        let liked = (rating > 4) ? true : false;
+	        console.log(member, liked);
+	        if (liked) {
+	 	  if (unmasked[user.mturkId] != undefined) {
+		    if (!unmasked[user.mturkId].includes(member)) {
+		      var memberList = unmasked[user.mturkId];
+		      memberList.push(member);
+		      unmasked[user.mturkId] = memberList;
+		    }
+		  } else {
+		    unmasked[user.mturkId] = [member];
+	  	  }
+		}
+	      }
+	      //console.log("user's " + user.mturkId + " member list = ");
+	      //console.log(unmasked[user.mturkId]);
+	      console.log("unmasked = ");
+	      console.log(unmasked);
+	    });
+        });
 
       users.forEach(u => {
         if (autocompleteTestOn) {
@@ -1857,12 +1892,24 @@ io.on("connection", socket => {
           user.friends_history = u.friends_history.concat(team_Aliases);
           for (i = 0; i < teamMates.length; i++) {
 	    if (treatmentNow) {
-	      if (unmaskedUsers.includes(u.mturkId)) {
-		console.log("UNMASKED HEREEEEEEEEEEEEEEEEEEE");
+		
+	      let teamMate = teamMates[i].mturkId;
+	      if (unmasked[u.mturkId] === undefined) {
+		unmasked[u.mturkId] = [];
+	      }
+	      if (unmasked[teamMate] === undefined) {
+		unmasked[teamMate] = [];
+	      }
+	      console.log("USER'S " + u.mturkId + " LIST = ");
+	      console.log(unmasked[u.mturkId]);
+              console.log("TEAMMATE'S " + teamMate + " LIST = ");
+              console.log(unmasked[teamMate]);
+	      if (unmasked[u.mturkId].includes(teamMate) && unmasked[teamMate].includes(u.mturkId)) {
+		console.log("UNMASKEDDDDDDDDDDDDD");
 	        team_Aliases[i] = teamMates[i].alias;
 	      }
 	      else {
-		console.log("MASKED HEREEEEEEEEEEEEEEEEEEEE");
+		console.log("MASKEDDDDDDDDDDDDDDD");
                 teamMates[i].tAlias = team_Aliases[i].join("");
                 team_Aliases[i] = team_Aliases[i].join("");
 	      }
@@ -1877,8 +1924,6 @@ io.on("connection", socket => {
               }
             }
           }
-	  console.log("HEREEEEEEEEEE  team Aliases = ");
-          console.log(team_Aliases);
 
           team_Aliases.push(u.name); //now push user for autocomplete
           //let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
@@ -2172,6 +2217,7 @@ io.on("connection", socket => {
 
   //loads qs in text file, returns json array
   function loadQuestions(questionFile, user = null) {
+    var userThemselves = false;
     const prefix = questionFile.substr(
       txt.length,
       questionFile.indexOf(".") - txt.length
@@ -2243,6 +2289,9 @@ io.on("connection", socket => {
           answerObj = scale7A;
 
           let curMember = (i - 2) % 5;
+    	  if (lastTeam[curMember]["name"] == 'you') {
+	    userThemselves = true;
+	  }
           questionObj["question"] =
             `${lastTeam[curMember]["name"]}` + questionObj["question"];
 
@@ -2308,7 +2357,11 @@ io.on("connection", socket => {
 
         questionObj["required"] =
           requiredOn && answerObj.answerType === "radio";
-        questions.push(questionObj);
+	if (!userThemselves) {
+          questions.push(questionObj);
+	} else {
+	  userThemselves = false;
+	}
       });
     return questions;
   }
@@ -2357,11 +2410,19 @@ function idToAlias(user, newString) {
   user.friends.forEach(friend => {
     let idRegEx = new RegExp(friend.mturkId, "g");
     let currentAlias = treatmentNow ? friend.tAlias : friend.alias;
-    if (treatmentNow) {
-      if (unmaskedUsers.includes(friend.mturkId)) {
+    //MINE
+    if (currentRound != 0) {
+      if (unmasked[user.mturkId] === undefined) {
+	unmasked[user.mturkId] = [];
+      }
+      if (unmasked[friend.mturkId] === undefined) {
+	unmasked[friend.mturkId] = [];
+      }
+      if (unmasked[user.mturkId].includes(friend.mturkId) && unmasked[friend.mturkId].includes(user.mturkId)) {
         currentAlias = friend.alias;
       }
-    }  
+    } 
+    //END 
     newString = newString.replace(idRegEx, currentAlias);
   });
   return newString;
