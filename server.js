@@ -49,7 +49,7 @@ const teamfeedbackOn = false;
 const checkinOn = false;
 const timeCheckOn = false; // tracks time user spends on task and updates payment - also tracks
 // how long each task is taking
-const requiredOn = runningLive;
+const requiredOn = true;
 const checkinIntervalMinutes = roundMinutes / 3;
 const qFifteenOn = runningLive;
 const qSixteenOn = runningLive;
@@ -360,7 +360,7 @@ let batchCompleteUpdated = false;
 //const ordering = randomRoundOrderOn
 //? [[1, 2, 1, 3], [1, 2, 3, 1], [2, 1, 3, 1]].pick()
 //: [1, 2, 1, 3];
-const ordering = [1, 1, 2, 3];
+const ordering = [1, 2, 1, 3];
 const conditions = {
   control: ordering,
   treatment: ordering,
@@ -1775,49 +1775,39 @@ io.on("connection", socket => {
       experimentStarted = true;
 
       // MINE
-      users.forEach(u => {
-        const curTeams = getTeamMembersArray(u);
-        const lastTeam = curTeams[curTeams.length - 1];
-        if (curTeams.length - 1 != currentRound) {
-          throw "MINEEEEEEEEE NOT EQUALLLLLLLLLL";
-        }
-        const memberRatings = u.results.statusCheck[currentRound];
+      if (currentRound > 0) {
+        users.forEach(u => {
+          const perviousTeamIndex = currentRound - 1;
+          const curTeams = getTeamMembersArray(u);
+          const lastTeam = curTeams[perviousTeamIndex]; //This is callingfrom last round.
+          const memberRatings = u.results.statusCheck[perviousTeamIndex + 1]; //This should call from current round.
 
-        console.log("MINEEEEEE MEMBER RATINGS = ");
-        console.log(memberRatings);
-        var i = 0;
-        for (var key in memberRatings) {
-          //console.log(key, memberRatings[key]);
-          console.log("user id = " + u.mturkId);
-          console.log("last team = ");
-          console.log(lastTeam);
-
-          if (lastTeam[i]["name"] == "you") {
+          var i = 0;
+          for (var key in memberRatings) {
+            if (lastTeam[i]["name"] == "you") {
+              i++;
+            }
+            let member = lastTeam[i]["mturkId"];
             i++;
-          }
-          let member = lastTeam[i]["mturkId"];
-          i++;
 
-          let rating = parseFloat(memberRatings[key].substring(0, 1));
-          let liked = rating > 4;
-          console.log(member, liked);
-          if (liked) {
-            if (unmasked[u.mturkId] != undefined) {
-              if (!unmasked[u.mturkId].includes(member)) {
-                var memberList = unmasked[u.mturkId];
-                memberList.push(member);
-                unmasked[u.mturkId] = memberList;
+            let rating = parseFloat(memberRatings[key].substring(0, 1));
+            let liked = rating > 4;
+            console.log(member, liked);
+            if (liked) {
+              if (unmasked[u.mturkId] != undefined) {
+                if (!unmasked[u.mturkId].includes(member)) {
+                  var memberList = unmasked[u.mturkId];
+                  memberList.push(member);
+                  unmasked[u.mturkId] = memberList;
+                }
+              } else {
+                unmasked[u.mturkId] = [member];
               }
-            } else {
-              unmasked[u.mturkId] = [member];
             }
           }
-        }
-        //console.log("user's " + user.mturkId + " member list = ");
-        //console.log(unmasked[user.mturkId]);
-        console.log("unmasked = ");
-        console.log(unmasked);
-      });
+          console.log(`Unmasked menbers:\n${unmasked}`);
+        });
+      }
 
       users.forEach(u => {
         if (autocompleteTestOn) {

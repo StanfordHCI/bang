@@ -628,7 +628,7 @@ function matchAd(data, ad) {
 
 // Download data from your folder and save it into local batch archives
 // downloadData("bang");
-// saveDBArchives();
+saveDBArchives();
 // useCompleteBatches(manipulationFix);
 
 //Rendering for various things
@@ -669,4 +669,4 @@ const adBatches = [
 //   });
 // });
 
-renderChats("1553179862174")
+// renderChats("1553179862174")
