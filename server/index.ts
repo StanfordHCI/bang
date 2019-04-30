@@ -168,7 +168,7 @@ cron.schedule('*/10 * * * * *', async function(){
       disassociateQualificationFromWorker('A2LPEQIGMF3JJL', process.env.WILL_BANG_QUAL, 'asd'),
       disassociateQualificationFromWorker('A2RJT3346F362V', process.env.WILL_BANG_QUAL, 'asd'),
       disassociateQualificationFromWorker('A1858EK0YRX9ZV', process.env.WILL_BANG_QUAL, 'asd'),
-      disassociateQualificationFromWorker('ALIBB17V6XE1Z', process.env.HAS_BANGED_QUAL, 'asd'),
+      disassociateQualificationFromWorker('APJC0K7A2B3TM', process.env.HAS_BANGED_QUAL, 'asd'),
       disassociateQualificationFromWorker('A2LPEQIGMF3JJL', process.env.HAS_BANGED_QUAL, 'asd'),
       disassociateQualificationFromWorker('A2RJT3346F362V', process.env.HAS_BANGED_QUAL, 'asd'),
       disassociateQualificationFromWorker('A1858EK0YRX9ZV', process.env.HAS_BANGED_QUAL, 'asd'),
