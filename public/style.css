@@ -75,6 +75,12 @@ ul {
   width: max-content;
 }
 
+#emergency-exit-button{
+  height: 80%;
+  position: relative;
+  margin: 5px 10px 5px 0;
+}
+
 #character-count {
   color: black;
 }

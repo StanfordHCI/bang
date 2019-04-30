@@ -35,7 +35,7 @@ const randomConditionOn = false;
 const randomRoundOrderOn = true;
 const randomTaskOrderOn = true;
 
-const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
+const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const starterSurveyOn = false;
 const midSurveyOn = true;
@@ -1668,7 +1668,7 @@ io.on("connection", socket => {
           user
         );
       } else if (
-        eventSchedule[currentEvent] === "finished" ||
+        eventSchedule[currentEvent] === "finished" || eventSchedule[currentEvent] === "emergency-exit" ||
         currentEvent > eventSchedule.length
       ) {
         if (!batchCompleteUpdated) {
@@ -2170,6 +2170,13 @@ io.on("connection", socket => {
         "results.blacklistCheck",
         user.results.blacklistCheck
       );
+    });
+  });
+
+  socket.on("emergency-exit", data => {
+    useUser(socket, user => {
+      user.results.engagementFeedback = responseToJSON(data);
+      updateUserInDB(socket,'bonus',currentBonus());
     });
   });
 
