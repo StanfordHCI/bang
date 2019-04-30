@@ -30,7 +30,7 @@ $(function() {
   let colorAssignment = [];
 
   //toggles
-  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -44,6 +44,7 @@ $(function() {
   const $checkinPopup = $("#checkin");
   const $headerText = $("#header-text");
   const $leaveHitButton = $("#leave-hit-button");
+  const $emergencyExitButton = $("#emergency-exit-button");
   const $leaveHitPopup = $("#leave-hit-popup");
 
   const $chatLink = $("#chatLink");
@@ -105,6 +106,7 @@ $(function() {
   });
 
   const hideAll = () => {
+    $emergencyExitButton.hide();
     $headerbarPage.hide();
     $checkinPopup.hide();
     $leaveHitPopup.hide();
@@ -437,6 +439,10 @@ $(function() {
     hideAll();
     $holdingPage.show();
     //socket.emit('get username')
+    //PUTTING THE FOLLOWING LINES AFTER EVERY HOLDING PAGE.SHOW
+    $emergencyExitButton.hide();
+    setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
+    //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     socket.emit("add user");
     socket.emit("next event");
   });
@@ -604,6 +610,28 @@ $(function() {
       "log",
       holdingUsername.innerText + " clicked leave hit button."
     );
+  });
+
+  $emergencyExitButton.click(() => {
+    event.preventDefault(); //stops page reloading
+
+    socket.emit(
+      "log",
+      holdingUsername.innerText + " clicked emergency exit button."
+    );
+
+    //TODO: Send message to the server so that the server can update bonus + shut down
+    socket.emit("log", "SOCKET DISCONNECT IN EMERGENCY EXIT BUTTON");
+    
+    HandleFinish(
+      (finishingMessage = "You terminated the HIT. Thank you for your time."),
+      (mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit"),
+      (assignmentId = mturkVariables.assignmentId),
+      (finishingcode = "LeftHit")
+    );
+    socket.emit("emergency-exit", $("#emergency-exit").serialize());
+    //socket.emit("mturk_formSubmit", {});
+    // socket.disconnect(true); ///this causes an error
   });
 
   //Simple autocomplete
@@ -1041,6 +1069,10 @@ $(function() {
     // log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
     hideAll();
     $holdingPage.show();
+    //PUTTING BEFORE ALL HOLDING PAGE.SHOW
+    $emergencyExitButton.hide();
+    setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
+    //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     // messagesSafe.innerHTML = '';
     $inputMessage.unbind("keydown");
     socket.emit("next event");
@@ -1103,6 +1135,10 @@ $(function() {
     $starterSurvey.hide();
     $holdingPage.show();
     $("#starterForm")[0].reset();
+    //PUTTING THE FOLLOWING LINES AFTER EVERY HOLDING PAGE.SHOW
+    $emergencyExitButton.hide();
+    setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
+    //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
   });
 
   $("#postForm").submit(event => {
@@ -1125,6 +1161,10 @@ $(function() {
     $teamfeedbackSurvey.hide();
     $holdingPage.show();
     $("#teamfeedbackForm")[0].reset();
+    //PUTTING THE FOLLOWING LINES AFTER EVERY HOLDING PAGE.SHOW
+    $emergencyExitButton.hide();
+    setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
+    //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     socket.emit("next event");
   });
 
@@ -1152,6 +1192,10 @@ $(function() {
   //MW: Reminds the server people are ready after some time, so that we don't get stuck if people leave surveys.
   function submitHold() {
     $holdingPage.show();
+    //PUTTING THE FOLLOWING LINES AFTER EVERY HOLDING PAGE.SHOW
+    $emergencyExitButton.hide();
+    setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
+    //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     clearAllTimers();
     //Repeats until a new event is received.
     timers.push(
