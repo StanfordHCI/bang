@@ -2,7 +2,7 @@ const fs = require("fs");
 const exec = require("child_process").exec;
 const mturk = require("./mturkTools");
 
-const serverURL = "b01.dmorina.com";
+const serverURL = "c01.dmorina.com";
 const dbLocation = ".data";
 const dir = `./${dbLocation}/`;
 
@@ -627,8 +627,8 @@ function matchAd(data, ad) {
 // useCompleteBatches(manipulationFix)
 
 // Download data from your folder and save it into local batch archives
-// downloadData("bang");
-// saveDBArchives();
+// downloadData("status");
+saveDBArchives();
 // useCompleteBatches(manipulationFix);
 
 //Rendering for various things
