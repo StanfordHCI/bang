@@ -28,5 +28,6 @@ parse(bonusSheet, tsvSettings, function(err, bonusData) {
       });
     // console.log(bonusable);
     mturk.payBonuses(bonusable);
+    mturk.assignQualificationToUsers(bonusable, mturk.quals.hasBanged);
   });
 });
