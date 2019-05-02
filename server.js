@@ -35,7 +35,7 @@ const randomConditionOn = false;
 const randomRoundOrderOn = true;
 const randomTaskOrderOn = true;
 
-const waitChatOn = false; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
+const waitChatOn = true; //MAKE SURE THIS IS THE SAME IN CLIENT, MAKE SURE TRUE WHEN RUNNING LIVE
 const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const starterSurveyOn = false;
 const midSurveyOn = true;
@@ -1251,28 +1251,28 @@ io.on("connection", socket => {
   }
 
   //when the client emits 'typing', we broadcast it to tothers
-  socket.on('typing', () => {
-    useUser(socket,user => {
+  socket.on("typing", () => {
+    useUser(socket, user => {
       users
-          .filter(f => f.room === user.room)
-          .forEach(f => {
-	    socket.broadcast.to(f.mturkId).emit('typing', {
-	      username: idToAlias(f, String(socket.mturkId)),
-	    });
-	  });
+        .filter(f => f.room === user.room)
+        .forEach(f => {
+          socket.broadcast.to(f.mturkId).emit("typing", {
+            username: idToAlias(f, String(socket.mturkId))
+          });
+        });
     });
   });
 
   //when the client emits 'stop typing', we broadcast it to tothers
-  socket.on('stop typing', () => {
-    useUser(socket,user => {
+  socket.on("stop typing", () => {
+    useUser(socket, user => {
       users
-          .filter(f => f.room === user.room)
-          .forEach(f => {
-            socket.broadcast.to(f.mturkId).emit('stop typing', {
-              username: idToAlias(f, String(socket.mturkId)),
-            });
+        .filter(f => f.room === user.room)
+        .forEach(f => {
+          socket.broadcast.to(f.mturkId).emit("stop typing", {
+            username: idToAlias(f, String(socket.mturkId))
           });
+        });
     });
   });
 
@@ -1668,7 +1668,8 @@ io.on("connection", socket => {
           user
         );
       } else if (
-        eventSchedule[currentEvent] === "finished" || eventSchedule[currentEvent] === "emergency-exit" ||
+        eventSchedule[currentEvent] === "finished" ||
+        eventSchedule[currentEvent] === "emergency-exit" ||
         currentEvent > eventSchedule.length
       ) {
         if (!batchCompleteUpdated) {
@@ -2176,7 +2177,7 @@ io.on("connection", socket => {
   socket.on("emergency-exit", data => {
     useUser(socket, user => {
       user.results.engagementFeedback = responseToJSON(data);
-      updateUserInDB(socket,'bonus',currentBonus());
+      updateUserInDB(socket, "bonus", currentBonus());
     });
   });
 

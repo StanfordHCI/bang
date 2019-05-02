@@ -30,7 +30,7 @@ $(function() {
   let colorAssignment = [];
 
   //toggles
-  let waitChatOn = false; //MAKE SURE THIS IS THE SAME IN SERVER
+  let waitChatOn = true; //MAKE SURE THIS IS THE SAME IN SERVER
 
   //globals for prechat
   let preChat = waitChatOn;
@@ -212,15 +212,23 @@ $(function() {
       addChatMessage({
         username: botUsername,
         /* TODO: change message here that will inform people about compensation*/
-        message:
-          "This task will take around 1 and a half hours. " +
-          "If you cannot stay for the entire time, please exit the task now! You will not be compensated if you leave the task early."
+        message: `This task has several parts. First this chat room where you will answer a robots questions. Keep active so we know you are here.`
+      });
+      addChatMessage({
+        username: botUsername,
+        /* TODO: change message here that will inform people about compensation*/
+        message: `If it takes longer than 20 minutes we will close the HIT and you will receive the base pay. If it is ready in less than 20 minutes, you will be moved into a group task.`
+      });
+      addChatMessage({
+        username: botUsername,
+        /* TODO: change message here that will inform people about compensation*/
+        message: `Completing the entire group task will earn the full bonus. If we experience an error once the group task has started, you will receivie a prorated bonus for the time you spend on the HIT.`
       });
       addChatMessage({
         username: botUsername,
         /* TODO: change message here that will inform people about compensation*/
         message:
-        "As a friendly reminder, if you refresh or close this page you will not be able to come back to this task!"   
+          "As a friendly reminder, if you refresh or close this page you will not be able to come back to this task!"
       });
       setTimeout(() => {
         addChatMessage({
@@ -441,7 +449,9 @@ $(function() {
     //socket.emit('get username')
     //PUTTING THE FOLLOWING LINES AFTER EVERY HOLDING PAGE.SHOW
     $emergencyExitButton.hide();
-    setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
+    setTimeout(function() {
+      $emergencyExitButton.show();
+    }, 900000);
     //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     socket.emit("add user");
     socket.emit("next event");
@@ -622,7 +632,7 @@ $(function() {
 
     //TODO: Send message to the server so that the server can update bonus + shut down
     socket.emit("log", "SOCKET DISCONNECT IN EMERGENCY EXIT BUTTON");
-    
+
     HandleFinish(
       (finishingMessage = "You terminated the HIT. Thank you for your time."),
       (mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit"),
@@ -1071,7 +1081,9 @@ $(function() {
     $holdingPage.show();
     //PUTTING BEFORE ALL HOLDING PAGE.SHOW
     $emergencyExitButton.hide();
-    setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
+    setTimeout(function() {
+      $emergencyExitButton.show();
+    }, 900000);
     //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     // messagesSafe.innerHTML = '';
     $inputMessage.unbind("keydown");
@@ -1137,7 +1149,9 @@ $(function() {
     $("#starterForm")[0].reset();
     //PUTTING THE FOLLOWING LINES AFTER EVERY HOLDING PAGE.SHOW
     $emergencyExitButton.hide();
-    setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
+    setTimeout(function() {
+      $emergencyExitButton.show();
+    }, 900000);
     //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
   });
 
@@ -1163,7 +1177,9 @@ $(function() {
     $("#teamfeedbackForm")[0].reset();
     //PUTTING THE FOLLOWING LINES AFTER EVERY HOLDING PAGE.SHOW
     $emergencyExitButton.hide();
-    setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
+    setTimeout(function() {
+      $emergencyExitButton.show();
+    }, 900000);
     //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     socket.emit("next event");
   });
@@ -1194,7 +1210,9 @@ $(function() {
     $holdingPage.show();
     //PUTTING THE FOLLOWING LINES AFTER EVERY HOLDING PAGE.SHOW
     $emergencyExitButton.hide();
-    setTimeout(function(){ $emergencyExitButton.show(); }, 900000);
+    setTimeout(function() {
+      $emergencyExitButton.show();
+    }, 900000);
     //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     clearAllTimers();
     //Repeats until a new event is received.

@@ -36,7 +36,7 @@ const taskDuration = roundMinutes * numRounds * 2;
 //const taskDuration = roundMinutes * numRounds * 3 < .5 ? 1 : roundMinutes * numRounds * 3; // how many minutes - this is a Maximum for the task
 const timeActive = 10; // How long a task stays alive in minutes -  repost same task to assure top of list
 const hourlyWage = 12; // changes reward of experiment depending on length - change to 6?
-const basePrice = 0.5; // upfront cost
+const basePrice = 0.9; // upfront cost
 const maxAssignments = teamSize * teamSize * 8; //MW: Boosted to try to get more participants.
 
 let bonusPrice = (
@@ -687,10 +687,10 @@ function launchBang(batchID, callback) {
   // HIT Parameters
 
   let bangParameters = {
-    Title: `Write online ads - bonus up to $${hourlyWage}/hour (${batchID})`,
-    Description: `Work in groups to write ads for new products. This task will take approximately ${Math.round(
+    Title: `Write online ads - variable bonus up to $${bonusPrice} (${batchID})`,
+    Description: `Work in groups to write ads for new products. This task can take up to ${Math.round(
       roundMinutes * numRounds + 15
-    )} minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $${bonusPrice}.`,
+    )} minutes. There is a initial chatroom and if you are selected to move on to the next section, you will receive a prorated bonus of up to $${bonusPrice} (which translates to $${hourlyWage}/hour)`,
     AssignmentDurationInSeconds: 60 * taskDuration, // 30 minutes?
     LifetimeInSeconds: 60 * timeActive, // short lifetime, deletes and reposts often
     Reward: String(basePrice),
