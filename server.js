@@ -60,7 +60,7 @@ const postSurveyOn = true;
 const demographicsSurveyOn = true;
 
 //Just Mark for now. Feel free to add your ID, and finish a task for us so you can get notificaions too.
-const notifyUsList = ["A19MTSLG2OYDLZ"];
+const notifyUsList = ["A19MTSLG2OYDLZ", "A1Y1EKZLN97X0O"];
 
 if (midSurveyStatusOn && teamSize != 4) {
   throw "Status survey only functions at team size 4";
@@ -1265,28 +1265,28 @@ io.on("connection", socket => {
   }
 
   //when the client emits 'typing', we broadcast it to tothers
-  socket.on('typing', () => {
-    useUser(socket,user => {
+  socket.on("typing", () => {
+    useUser(socket, user => {
       users
-          .filter(f => f.room === user.room)
-          .forEach(f => {
-	    socket.broadcast.to(f.mturkId).emit('typing', {
-	      username: idToAlias(f, String(socket.mturkId)),
-	    });
-	  });
+        .filter(f => f.room === user.room)
+        .forEach(f => {
+          socket.broadcast.to(f.mturkId).emit("typing", {
+            username: idToAlias(f, String(socket.mturkId))
+          });
+        });
     });
   });
 
   //when the client emits 'stop typing', we broadcast it to tothers
-  socket.on('stop typing', () => {
-    useUser(socket,user => {
+  socket.on("stop typing", () => {
+    useUser(socket, user => {
       users
-          .filter(f => f.room === user.room)
-          .forEach(f => {
-            socket.broadcast.to(f.mturkId).emit('stop typing', {
-              username: idToAlias(f, String(socket.mturkId)),
-            });
+        .filter(f => f.room === user.room)
+        .forEach(f => {
+          socket.broadcast.to(f.mturkId).emit("stop typing", {
+            username: idToAlias(f, String(socket.mturkId))
           });
+        });
     });
   });
 
@@ -1702,6 +1702,7 @@ io.on("connection", socket => {
         );
       } else if (
         eventSchedule[currentEvent] === "finished" ||
+        eventSchedule[currentEvent] === "emergency-exit" ||
         currentEvent > eventSchedule.length
       ) {
         if (!batchCompleteUpdated) {
@@ -1945,11 +1946,11 @@ io.on("connection", socket => {
       const taskSteps = [
         {
           time: 0.001,
-          message: `<strong>DO NOT REFRESH OR LEAVE THE PAGE! If you do, it may terminate the task for your team members and you will not be compensated.</strong>`
+          message: `<strong>Be careful not to refresh or leave the page! If you do, you will not be able to return to the task and will not be compensated for your time.</strong>`
         },
         {
           time: 0.002,
-          message: `You will receive the bonus pay at the stated hourly rate only if you<strong> fill out all survey questions and complete all rounds.</strong>`
+          message: `<strong>There are a total of 4 rounds of team interaction with a reflection survey following each one. You will receive the stated bonus pay if you thoughtfully fill out every survey question!</strong>`
         },
         {
           time: 0.003,
@@ -2243,6 +2244,13 @@ io.on("connection", socket => {
         "results.blacklistCheck",
         user.results.blacklistCheck
       );
+    });
+  });
+
+  socket.on("emergency-exit", data => {
+    useUser(socket, user => {
+      user.results.engagementFeedback = responseToJSON(data);
+      updateUserInDB(socket, "bonus", currentBonus());
     });
   });
 
