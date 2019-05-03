@@ -24,7 +24,9 @@ function authorize() {
       "urn:ietf:wg:oauth:2.0:oob"
     );
     fs.readFile(tokenFile, (err, token) => {
-      if (err) reject(getAccessToken(oAuth2Client, callback));
+      if (err) {
+        return getAccessToken(oAuth2Client);
+      }
       oAuth2Client.setCredentials(JSON.parse(token));
       resolve(oAuth2Client);
     });
@@ -32,27 +34,27 @@ function authorize() {
 }
 
 // Creates access token for oAuth 2
-function getAccessToken(oAuth2Client, callback) {
+function getAccessToken(oAuth2Client) {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: "offline",
     scope: ["https://www.googleapis.com/auth/drive.readonly"]
   });
-  console.log("Authorize this app by visiting this url:", authUrl);
+  console.log("\nAuthorize by visiting this url:\n\n", authUrl, "\n");
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
   });
-  rl.question("Enter the code from that page here: ", code => {
+  rl.question("The enter code: ", code => {
     rl.close();
     oAuth2Client.getToken(code, (err, token) => {
       if (err) return console.error("Error retrieving access token", err);
       oAuth2Client.setCredentials(token);
-      // Store the token to disk for later program executions
+      // Store the token to disk for later executions
       fs.writeFile(tokenFile, JSON.stringify(token), err => {
         if (err) return console.error(err);
         console.log("Token stored to", tokenFile);
       });
-      callback(oAuth2Client);
+      // callback(oAuth2Client);
     });
   });
 }
