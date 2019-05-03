@@ -574,6 +574,14 @@ const listUsersWithQualificationRecursively = (
 const payBonuses = (users, callback) => {
   let successfullyBonusedUsers = [];
   const bonusableUsers = users
+    .map(u => {
+      // This tries to make sure the user has the correct variables
+      if (!u.mturkId && !u.assignmentId) {
+        u.mturkId = u.WorkerId;
+        u.assignmentId = u.AssignmentId;
+      }
+      return u;
+    }) //Filters out Mark and false ids and 0 bonuses.
     .filter(u => u.mturkId !== "A19MTSLG2OYDLZ" && u.mturkId.length > 5)
     .filter(u => u.bonus != 0);
   bonusableUsers.forEach((u, index) => {
@@ -830,7 +838,7 @@ const checkQualsRecursive = (
 // workOnActiveHITs(console.log);
 
 // unassignQuals(
-//   "AW0225ONUAPO5",
+//   "A364KJDYEBAWC9",
 //   quals.willBang,
 //   "You asked to be removed from our notification list."
 // );
