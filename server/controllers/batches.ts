@@ -99,7 +99,13 @@ const startBatch = async function (batch, socket, io) {
     let bangPrs = [];
     users.forEach(user => {
       bangPrs.push(assignQual(user.mturkId, process.env.HAS_BANGED_QUAL))
-      bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, 1.01))
+      bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, 1.00))
+      bangPrs.push(Bonus.create({
+        batch: batch._id,
+        user: socket.userId,
+        amount: 1.00,
+        assignment: socket.assignmentId
+      }))
     })
     await Promise.all(bangPrs)
 
@@ -218,8 +224,11 @@ export const receiveSurvey = async function (data, socket, io) {
     await Survey.create(newSurvey)
     if (newSurvey.isPost) {
       const batch = await Batch.findById(newSurvey.batch).select('roundMinutes numRounds').lean().exec();
-      let bonusPrice = (12 * ((batch.roundMinutes * batch.numRounds * 1.5) / 60) - 1.01).toFixed(2);
-      const bonus = await payBonus(socket.mturkId, socket.assignmentId, bonusPrice)
+      let bonusPrice = (12 * ((batch.roundMinutes * batch.numRounds * 1.5) / 60) - 1.00);
+      if (bonusPrice > 25) {
+        bonusPrice = 25;
+      }
+      const bonus = await payBonus(socket.mturkId, socket.assignmentId, bonusPrice.toFixed(2))
       if (bonus) {
         const newBonus = {
           batch: newSurvey.batch,

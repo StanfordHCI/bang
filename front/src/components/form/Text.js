@@ -7,3 +7,10 @@ export const renderField = ({input, label, type, meta: { touched, error, warning
     </div>
   )
 }
+
+export const renderTextArea = ({input, label, type, meta: { touched, error, warning }, disabled}) => {
+  return <div className='form__form-group-input-wrap'>
+    <textarea {...input} placeholder={label} type="textarea" disabled={disabled} rows="5"/>
+    {touched && error && <span className='form__form-group-error'>{error}</span>}
+  </div>
+}

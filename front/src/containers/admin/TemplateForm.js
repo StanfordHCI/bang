@@ -3,7 +3,7 @@ import {Col, Button, ButtonToolbar, Row, Container} from 'reactstrap';
 import {connect} from 'react-redux'
 import {Field, FieldArray, reduxForm, formValueSelector, change} from 'redux-form'
 import {bindActionCreators} from "redux";
-import {renderField} from 'Components/form/Text'
+import {renderField, renderTextArea} from 'Components/form/Text'
 
 const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
   return (<div>
@@ -25,8 +25,7 @@ const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
                 <div className='form__form-group-field'>
                   <Field
                     name={`${step}.message`}
-                    component={renderField}
-                    type='text'
+                    component={renderTextArea}
                   />
                 </div>
               </div>
@@ -54,11 +53,10 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds}) => {
     tasks.push(
       <div key={i} className='form__form-group'>
         <label className='form__form-group-label'>task:</label>
-        <div className='form__form-group-field'>
+        <div className='form__form-group-field' style={{marginBottom: '25px'}}>
           <Field
             name={`tasks[${i}].message`}
-            component={renderField}
-            type='text'
+            component={renderTextArea}
           />
         </div>
         <FieldArray
@@ -133,7 +131,7 @@ class TemplateForm extends React.Component {
               </div>
             </div>
             <FieldArray
-              name="teams"
+              name="tasks"
               component={renderTasks}
               rerenderOnEveryChange
               numRounds={numRounds}
@@ -177,6 +175,36 @@ const validate = (values, props) => {
   } else if (values.roundMinutes < 1 || values.roundMinutes > 59) {
     errors.roundMinutes = 'invalid value'
   }
+  errors.tasks = [];
+  values.tasks && values.tasks.forEach((task, i) => {
+    errors.tasks[i] = {steps: []}; let timeSum = 0
+    if (!task.message) {
+      errors.tasks[i].message = 'required';
+    } else  if (!task.steps || !task.steps.length) {
+      errors.tasks[i].message = 'add steps please';
+    }
+
+    task.steps && task.steps.forEach((step, j) => {
+      errors.tasks[i].steps[j] = {};
+      if (!step.message) {
+        errors.tasks[i].steps[j].message = 'required';
+      }
+      if (!step.time) {
+        errors.tasks[i].steps[j].time = 'required';
+      } else {
+        const time = parseFloat(step.time);
+        timeSum = timeSum + time;
+        if (time < 0.1 || time > 1) {
+          errors.tasks[i].steps[j].time = 'invalid';
+        } else {
+          if (j === task.steps.length - 1 && timeSum !== 1) {
+            errors.tasks[i].steps[j].time = 'time sum must be 1.0';
+          }
+        }
+      }
+    })
+  })
+
 
   return errors
 };

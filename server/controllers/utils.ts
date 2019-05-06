@@ -1,13 +1,11 @@
 require('dotenv').config({path: './.env'});
-const runningLive = process.env.NODE_ENV === "production";
+const runningLive = process.env.MTURK_MODE === "prod";
 import * as AWS from "aws-sdk";
 AWS.config.accessKeyId = process.env.AWS_ID;
 AWS.config.secretAccessKey = process.env.AWS_KEY;
 AWS.config.region = "us-east-1";
 AWS.config.sslEnabled = true;
-let endpoint = runningLive ? "https://mturk-requester-sandbox.us-east-1.amazonaws.com" :
-  "https://mturk-requester-sandbox.us-east-1.amazonaws.com"; //should be changed
-let submitTo = runningLive ? "https://workersandbox.mturk.com" : "https://workersandbox.mturk.com"; //should be changed
+let endpoint = runningLive ? "https://mturk-requester.us-east-1.amazonaws.com" : "https://mturk-requester-sandbox.us-east-1.amazonaws.com"
 export const mturk = new AWS.MTurk({ endpoint: endpoint });
 let fs = require("fs");
 
@@ -35,34 +33,26 @@ const quals = {
   },
   completedBang: {
     //MEW: useful to filter out people who have already done our HIT.
-    QualificationTypeId: runningLive
-      ? process.env.HAS_BANGED_QUAL
-      : process.env.HAS_BANGED_QUAL,
+    QualificationTypeId: process.env.HAS_BANGED_QUAL,
     Comparator: "DoesNotExist",
     ActionsGuarded: "DiscoverPreviewAndAccept"
   },
   joinedBang: {
     //MEW: useful to filter people who are scheduled to do our HIT.
-    QualificationTypeId: runningLive
-      ? process.env.WILL_BANG_QUAL
-      : process.env.WILL_BANG_QUAL,
+    QualificationTypeId: process.env.WILL_BANG_QUAL,
     Comparator: "DoesNotExist",
     ActionsGuarded: "DiscoverPreviewAndAccept"
   },
   willBang: {
     //MEW: useful to filter people who are scheduled to do our HIT.
-    QualificationTypeId: runningLive
-      ? process.env.WILL_BANG_QUAL
-      : process.env.WILL_BANG_QUAL,
+    QualificationTypeId: process.env.WILL_BANG_QUAL,
     Comparator: "Exists",
     ActionsGuarded: "DiscoverPreviewAndAccept"
   }
 };
 
-const testScheduleQuals = [quals.joinedBang];
-const liveScheduleQuals = [quals.onlyUSA, quals.hitsAccepted(100), quals.joinedBang]
-const testMainQuals = [quals.completedBang, quals.willBang]
-const liveMainQuals = [quals.onlyUSA, quals.hitsAccepted(100), quals.completedBang, quals.willBang]
+const scheduleQuals = runningLive ? [quals.onlyUSA, quals.hitsAccepted(100), quals.joinedBang] : [quals.joinedBang];
+const mainQuals = runningLive ? [quals.onlyUSA, quals.hitsAccepted(100), quals.completedBang, quals.willBang] : [quals.completedBang, quals.willBang]
 
 export const clearRoom = function (room, io) {
   io.of('/').in(room).clients((error, socketIds) => {
@@ -116,15 +106,10 @@ export const addHIT = (batch, isMain) => {
       ".";
     let keywords = "ads, writing, copy editing, advertising";
     let maxAssignments = isMain ? batch.teamSize * batch.teamSize * 4 : 100;
-    let hitContent;
-    if (process.env.MTURK_FRAME === 'ON') {
-      hitContent = externalHIT(isMain ? 'https://bang-dev.deliveryweb.ru' : 'https://bang-dev.deliveryweb.ru/accept');
-    } else {
-      const html = fs.readFileSync("./old/question.html").toString();
-      hitContent = html
-        .replace(/\$\{([\s]*[^;\s\{]+[\s]*)\}/g, function(_, match) {return `\$\{map.${match.trim()}\}`;})
-        .replace(/(\$\{(?!map\.)[^}]+\})/g, "");
-    }
+    let html = fs.readFileSync("./old/question.html").toString();
+    let hitContent = html
+      .replace(/\$\{([\s]*[^;\s\{]+[\s]*)\}/g, function(_, match) {return `\$\{map.${match.trim()}\}`;})
+      .replace(/(\$\{(?!map\.)[^}]+\})/g, "");
 
     let makeHITParams = {
       Title: HITTitle,
@@ -135,7 +120,7 @@ export const addHIT = (batch, isMain) => {
       AutoApprovalDelayInSeconds: 5,
       Keywords: keywords,
       MaxAssignments: maxAssignments,
-      QualificationRequirements: isMain ? testMainQuals : testScheduleQuals,
+      QualificationRequirements: isMain ? mainQuals : scheduleQuals,
       Question: hitContent
     };
 
