@@ -1784,15 +1784,30 @@ io.on("connection", socket => {
 
           var i = 0;
           for (var key in memberRatings) {
-            if (lastTeam[i]["name"] == "you") {
+            if (lastTeam[i] === undefined) {
+		console.log("LAST TEAM IS UNDEFINEDDDDDDD");
+		console.log(lastTeam);
+		console.log("i = " + i);
+		console.log("key = " + key);
+		break;
+	    }
+
+	    if (lastTeam[i]["name"] == "you") {
               i++;
             }
-            let member = lastTeam[i]["mturkId"];
+         
+            if (lastTeam[i] === undefined) {
+                console.log("LAST TEAM IS UNDEFINEDDDDDDD");
+                console.log(lastTeam);
+                console.log("i = " + i);
+                console.log("key = " + key);
+                break;
+            }
+	    let member = lastTeam[i]["mturkId"];
             i++;
 
             let rating = parseFloat(memberRatings[key].substring(0, 1));
             let liked = rating > 4;
-            console.log(member, liked);
             if (liked) {
               if (unmasked[u.mturkId] != undefined) {
                 if (!unmasked[u.mturkId].includes(member)) {
