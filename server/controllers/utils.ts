@@ -240,6 +240,19 @@ export const getHIT = (id) => {
   })
 };
 
+export const getAccountBalance = () => {
+  return new Promise((resolve, reject) => {
+    mturk.getAccountBalance((err, data) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(data)
+        }
+      }
+    );
+  })
+};
+
 export const disassociateQualificationFromWorker = (workerId, qualificationId, reason) => {
   return new Promise((resolve, reject) => {
     const params = {

@@ -6,7 +6,7 @@ import {bindActionCreators} from "redux";
 import {renderField, renderTextArea} from 'Components/form/Text'
 
 const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
-  return (<div>
+  return (<div style={{width: '100%'}}>
     {
       fields.map((step, index) => {
         return (

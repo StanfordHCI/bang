@@ -2,6 +2,7 @@ require('dotenv').config({path: './.env'});
 import {Template} from '../models/templates'
 import {Chat} from '../models/chats'
 import {Batch} from '../models/batches'
+import {Survey} from '../models/surveys'
 import {errorHandler} from '../services/common'
 import {addHIT, expireHIT} from "./utils";
 const logger = require('../services/logger');
@@ -100,5 +101,14 @@ export const addTemplate = async function (req, res) {
     res.json({template: template})
   } catch (e) {
     errorHandler(e, 'add template error')
+  }
+}
+
+export const loadBatchResult = async function (req, res) {
+  try {
+    const surveys = await Survey.find({batch: req.params.id}).lean().exec()
+    res.json({surveys: surveys})
+  } catch (e) {
+    errorHandler(e, 'load batch result error')
   }
 }

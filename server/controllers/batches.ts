@@ -8,7 +8,7 @@ import {clearRoom, expireHIT, makeName} from './utils'
 import {errorHandler} from '../services/common'
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
-import { assignQual, payBonus} from "./utils";
+import { assignQual, payBonus, getAccountBalance} from "./utils";
 
 
 export const joinBatch = async function (data, socket, io) {
@@ -94,8 +94,22 @@ export const loadBatch = async function (data, socket, io) {
 
 const startBatch = async function (batch, socket, io) {
   try {
-    await timeout(5000);
+    await timeout(4000);
+
     const users = await User.find({batch: batch._id}).lean().exec();
+    if (users.length != batch.teamSize ** 2) {
+      logger.info(module, 'wrong users length')
+      return;
+    }
+
+    let balance = await getAccountBalance();
+    balance = parseFloat(balance.AvailableBalance);
+    if (balance < (batch.teamSize ** 2 * 12) * ((batch.roundMinutes * batch.numRounds * 1.5) / 60) ) {
+      logger.info(module, 'balance problems');
+      //do smthing
+    }
+
+
     let bangPrs = [];
     users.forEach(user => {
       bangPrs.push(assignQual(user.mturkId, process.env.HAS_BANGED_QUAL))
@@ -109,9 +123,6 @@ const startBatch = async function (batch, socket, io) {
     })
     await Promise.all(bangPrs)
 
-    if (users.length != batch.teamSize ** 2) {
-      console.log('wrong users length') // do something?
-    }
     const startBatchInfo = {status: 'active', startTime: new Date()};
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: startBatchInfo}).lean().exec()
     logger.info(module, 'Main experiment start', batch._id)

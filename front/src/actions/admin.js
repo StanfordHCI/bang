@@ -15,6 +15,7 @@ export const TEMPLATE_DELETED = 'TEMPLATE_DELETED';
 export const CLEAR_TEMPLATES = 'CLEAR_TEMPLATES';
 export const USER_DELETED = 'USER_DELETED';
 export const USERS_FETCHED = 'USERS_FETCHED';
+export const SURVEYS_FETCHED = 'SURVEYS_FETCHED';
 
 
 export function updateBatch(batch) {
@@ -243,6 +244,26 @@ export function loadTemplate(templateId) {
         dispatch({
           type: TEMPLATE_FETCHED,
           data: response.data.template
+        });
+      })
+      .catch(err => {
+        errorCatcher(err, dispatch)
+      });
+  };
+}
+
+export function loadBatchResult(id) {
+  return (dispatch, getState) => {
+    dispatch(setLoading(true));
+    return axios({
+      method: 'get',
+      url: 'batch-result/' + id,
+    })
+      .then((response) => {
+        dispatch(setLoading(false));
+        dispatch({
+          type: SURVEYS_FETCHED,
+          data: response.data.surveys
         });
       })
       .catch(err => {
