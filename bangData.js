@@ -627,17 +627,9 @@ function matchAd(data, ad) {
 // useCompleteBatches(manipulationFix)
 
 // Download data from your folder and save it into local batch archives
-<<<<<<< HEAD
-//downloadData("b02");
-//saveDBArchives();
-//useCompleteBatches(manipulationFix);
-
-=======
 // downloadData("status");
 saveDBArchives();
 // useCompleteBatches(manipulationFix);
->>>>>>> master
-
 //Rendering for various things
 // useCompleteBatches(renderChats);
 // useCompleteBatches(renderAds);

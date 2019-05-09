@@ -747,15 +747,15 @@ console.log("This batch will include:", eventSchedule);
 
 app.use(express.static("public"));
 
-// Disconnect leftover users
-Object.keys(io.sockets.sockets).forEach(socketID => {
-  console.log(socketID);
-  if (userPool.every(user => user.id !== socketID)) {
-    console.log("Removing leftover socket: " + socketID);
-    io.in(socketID).emit("get IDs", "broken");
-    // io.in(socketID).disconnect(true)
-  }
-});
+// // Disconnect leftover users ---> commenting for testing purposes
+// Object.keys(io.sockets.sockets).forEach(socketID => {
+//   console.log(socketID);
+//   if (userPool.every(user => user.id !== socketID)) {
+//     console.log("Removing leftover socket: " + socketID);
+//     io.in(socketID).emit("get IDs", "broken");
+//     // io.in(socketID).disconnect(true)
+//   }
+// });
 
 //if (runExperimentNow){
 // Adds Batch data for this experiment. unique batchID based on time/date
