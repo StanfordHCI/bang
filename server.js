@@ -2276,7 +2276,7 @@ io.on("connection", socket => {
             `${lastTeam[curMember]["name"]}` + questionObj["question"];
 
           // update user object with order of status survey team members at last survey question
-          if (i === 20) {
+          if (i === 5) {
             let newTeam = [
               lastTeam[0]["mturkId"],
               lastTeam[1]["mturkId"],
