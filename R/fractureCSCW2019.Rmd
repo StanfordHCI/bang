@@ -7,6 +7,7 @@ fig_caption: yes
 
 ## Set-up packages // libraries and prepare for data import:
 ```{r echo=FALSE, include=FALSE, results='hide'}
+# aYou will need all these packages. This may require some extra instalation steps on the first time. 
 library(jsonlite)
 library(ggplot2)
 library(lme4)
@@ -20,18 +21,15 @@ library(dplyr)
 ```{r, include=TRUE, echo=TRUE}
 rm(list=ls())
 setwd("/Users/mark/Documents/Academia/Stanford/scaled-humanity/bang/R") # Change this to your working directory where Bang/R file is located 
-getwd()
-dataPath = "../.data"
-MINIMUM_BATCH_NUMBER = 1552194538000  # Identify the batch number that represents the start of the batches you'd like to include in your analysis 
-
-# last 2 days 1537366991708
-# start of final day  1537514940000 
+dataPath = "../.data" # This is set to so that we can access data where Bang usually stores it.
+MINIMUM_BATCH_NUMBER = 1552194538000  # Identify the batch number that represents the start of the batches you'd like to include in your analysis. 
+# NOTE: You might change this if you're doing different kinds of runs. You might alsop remove it and use a more specific filtering strategy. 
 
 TEAM_SIZE = 3 # Alter depending on team size in runs you're analyzing; this variable is used later on to ensure that you're filtering out all team_sizes != the size you've specified 
 
 MIN_FRACTURE_PERCENT = 0.5 # Default cut off for fracture within a team; this variable is used later to label binary 0 (no fracture), 1 (fracture) values at a group level 
 
-## Function to extract blacklist surveys:
+# This function extracts a survey that happens on a per round basis. This is nessesary because otherwise it is nested in a way that R can't easily make sense of it.
 extractBlacklistSurvey = function(frame,survey) {
   rounds = seq(1,4)
   roundResponses = lapply(rounds, function(round) {
@@ -53,7 +51,7 @@ extractBlacklistSurvey = function(frame,survey) {
   return(Reduce(rbind, roundResponses))
 }
 
-## Seperate viability function to deal with different column types
+# Similarly, to the extractBlacklistSurvey, this extracts a survey across rounds.
 extractViabilitySurvey = function(frame,survey) {
   rounds = seq(1,4)
   roundResponses = lapply(rounds, function(round) {
@@ -77,23 +75,20 @@ extractViabilitySurvey = function(frame,survey) {
   return(Reduce(bind_rows, roundResponses))
 }
 
+# These are used to identify particular task activities automatically when doing cross task analysis, e.g. Fracture work for CSCW 
 task = c("Creative", "Intellective", "Cognitive conflict")
 taskText = c("The Ollie Chair: Shape-Shifting Seating", "<ol>\n    <li>Number of miles from New York to Los Angeles</li>\n    <li>Average weight of an elephant</li>\n    <li>Number of U.S. states that border the Gulf of Mexico</li>\n    <li>Number of months per year residents of Tromoso, Norway go without seeing a sunset</li>\n    <li>Highest temperature (in degrees F) ever registered in the U.S.</li>\n    </ol>", "To purchase art for display in the community's art gallery.")
 
+# A lookup function for tasks. 
 checkTask = function(batchData) {
   frame = as.data.frame(batchData$products)
-  if(any(which(frame == taskText[1]))) {
-    return(task[1])
-  }
-  if(any(which(frame == taskText[2]))) {
-    return(task[2])
-  }
-  if(any(which(frame == taskText[3]))) {
-    return(task[3])
-  }
+  if(any(which(frame == taskText[1]))) {return(task[1])}
+  if(any(which(frame == taskText[2]))) {return(task[2])}
+  if(any(which(frame == taskText[3]))) {return(task[3])}
   return("none")
 }
 
+# loads in data from a batch allowing for batch level analysis, e.g. task tracking.
 loadBatch = function(batch){
   batchData = read_json(paste(dataPath,batch,"batch.json",sep="/"), simplifyVector = TRUE)
   c(batch,
@@ -101,11 +96,13 @@ loadBatch = function(batch){
     )
 }
 
-# Filter batches and convert JSON to data frames
+# Makes a list of batches and performs initial filters on them. This list is used when we look up batchs later
 options(scipen=999) # Change from scientific notation so we can compare batch numbers below
 batches = dir(dataPath, pattern = "^[0-9]+$" )
 batches = as.numeric(batches) 
-batches = batches[batches>MINIMUM_BATCH_NUMBER]
+batches = batches[batches>MINIMUM_BATCH_NUMBER] #Modify this filter to select different target batches
+
+# Builds a frame version of batches and extends it to include task information
 batchFrame = as.data.frame(batches)
 batchFrame = batchFrame %>% 
   filter(any(dir(paste(dataPath,batches,sep="/")) == "batch.json")) %>%
@@ -119,6 +116,7 @@ batchFrame = data.frame(
   task = as.character(batchFrame[,2])
 )
 
+# Filters batches by ones that had completions.
 batches = Filter(function(batch) {
   if (any(dir(paste(dataPath,batch,sep="/")) == "batch.json") && (any(dir(paste(dataPath,batch,sep="/")) == "users.json")) ) {
       batchData = read_json(paste(dataPath,batch,"batch.json",sep="/"), simplifyVector = TRUE)
@@ -127,15 +125,17 @@ batches = Filter(function(batch) {
     return(FALSE)
 }, batches)
 
-
+# generates a user table that basically stores all the data we have for each user (drawn from the users db)
 users <- Reduce(function(x,y) merge(x, y, all=TRUE), lapply(batches, function(batch) {
   userFile = read_json(paste(dataPath,batch,"users.json",sep="/"), simplifyVector=TRUE)
   return(flatten(userFile, recursive = TRUE))
 }))
 
-# Filter out variables not relevant to analysis: 
+# Filter out variables not relevant to analysis. NOTE: these change for different runs and configureations, so it can be useful to double check what data you need.
 # users <- users %>%
 #   select(-results.engagementFeedback.undefined, -results.qSixteenCheck.undefined, -results.qFifteenCheck.undefined, -contains("results.viabilityCheck.0"))
+
+# Fixes midsurvey that has 'why' questions, so they have the correct numbering. 
 users <- users %>%
   select(
     -results.qSixteenCheck.2, 
@@ -156,13 +156,14 @@ users <- users %>%
     results.qSixteenCheck.4 = results.qSixteenCheck.7
   )
 
+# Summarizes major demographic data from the demographics survey
 demographics = users %>% 
   select(contains("demographicsCheck")) %>%
   mutate(
     age = 2019 - as.numeric(results.demographicsCheck.3),
-    gender = as.factor(results.demographicsCheck.2),
+    gender = as.factor(results.demographicsCheck.2)
   ) %>%
-  filter(age < 200) %>%
+  filter(age < 200) %>% #No old people
   summarise(
     percentFemale = sum(gender == "Female") / n(),
     percentOther = sum(gender == "Other") / n(),
@@ -171,16 +172,16 @@ demographics = users %>%
   )
 demographics <- na.omit(demographics)
 
+# Removes instruments not in use. This helps clean things up and reduce errors
 users <- users %>% 
   select(
     -contains("results.psychologicalSafety"),
     -contains("demographicsCheck"),
     -contains("undefined")
   )
-
 users <- na.omit(users)
 
-# Function to assign round numbers in the correct order 
+# Generates a table that breks users out across rounds. Basically it makes a row per round per user, as opposed to a row per user (which is what users does). This helps us later match down to individual teams.
 usersRounds = as.data.frame(Reduce(rbind, apply(users,1,function(x) {
   roomsForIndividual = lapply(seq(1,4),function(y) {
     x$room = x$rooms[y]
@@ -194,32 +195,35 @@ usersRounds = as.data.frame(Reduce(rbind, apply(users,1,function(x) {
 usersRounds <- usersRounds %>% mutate(id = as.character(id), batch=as.numeric(batch), round=as.numeric(round), room=as.character(room))
 usersRounds <- usersRounds %>% select(id, batch, round, room)
 
-## Use extract survey function to reformat survey data:
+# processes main manipulation check data by
 manipulationCheck <- usersRounds %>%
-  left_join(users, by=c("id", "batch")) %>% # Left join 
+  left_join(users, by=c("id", "batch")) %>% 
   mutate(room=room.x) %>%
   mutate(manipulation=results.manipulation) %>%
   mutate(manipulationCheck=results.manipulationCheck.1) %>%
   mutate(teamOrder=results.format) %>%
   mutate(condition=results.condition) %>%
   select(id, batch, room, round, manipulation, manipulationCheck, teamOrder, condition) %>%
-  left_join(batchFrame, by="batch")
+  left_join(batchFrame, by="batch") #Adds in batch frame so we have task information
 
+# Imports performance data and calculates ranks within each task.
 performanceTable = read.csv("../performance.csv", header = TRUE)
-
 performanceTable = performanceTable %>%
   group_by(roundTask) %>% 
   mutate(
     performancePercentile = rank(performance) / n()
   )
 
+#Breaks out surveys happening on the per round level so we can process them for each user. 
 qFifteen <- extractBlacklistSurvey(users, 'qFifteenCheck')
 qSixteen <- extractBlacklistSurvey(users, 'qSixteenCheck')
 viabilitySurvey <- extractViabilitySurvey(users, 'viabilityCheck')
 ```
 
 # Now merge everything
+# This merges back many of the variables we've generated into some core tables to use for actual analysis
 ```{r}
+# Brings together surveys and cleans them up a bit.
 usersRounds <- manipulationCheck %>%
   left_join(qFifteen, by=c("id", "batch", "round")) %>%
   left_join(qSixteen, by=c("id", "batch", "round")) %>%
@@ -228,13 +232,14 @@ usersRounds <- manipulationCheck %>%
   select(-manipulationCheck.x, -manipulationCheck.y, -rooms, -rooms.x, -rooms.y)
 # rm(list=c("qFifteen","qSixteen","viabilitySurvey","manipulationCheck"))
 
+# Renames conditions
 usersRounds <- usersRounds %>% 
   mutate(condition = case_when(
     condition=="treatment" ~ "masked",
     condition=="control" ~ "unmasked"
   ))
 
-# Conditionally assign conditions based on treatment and results column:
+# Conditionally assign grouping types based on treatment and results column:
 ## For runs with 4 rounds:
 usersRounds <- usersRounds %>% mutate(
   team = case_when(
@@ -264,7 +269,7 @@ usersRounds <- usersRounds %>% mutate(
     teamOrder=="c(1, 2, 3, 1)" & round==4 ~ "Ap"
   ))
 
-## Factor for visualizations:
+## Converts viability to sum and cleans up extra viability data
 levels <- c("Strongly Disagree", "Disagree", "Neutral","Agree", "Strongly Agree")
 usersRounds <- usersRounds %>%
   mutate_at(.vars = vars(contains("viabilityCheck")), funs(factor(., levels = levels)))
@@ -276,12 +281,13 @@ usersRounds <- usersRounds %>%
   select(-contains("viabilityCheck"))
 rm("levels")
 
-## Rename Q15 + Q16:
+# Stores out fracture questions as true or false
 usersRounds <- usersRounds %>%
   mutate(fracture = results.qFifteenCheck == "Do not keep this team",
          fractureMeta = results.qSixteenCheck == "Do not keep this team") %>%
   select(-results.qFifteenCheck, -results.qSixteenCheck)
 
+# groups user rounds into teams, so team data is presented in one row.
 teamStats <- usersRounds %>%
   arrange(id) %>%
   group_by(room, batch, round, condition, team, task) %>%
@@ -292,9 +298,11 @@ teamStats <- usersRounds %>%
             teamProportionFracture=sum(fracture/n()),
             teamMembers = paste(id, collapse=", "))
 
-# Filter down to only partners (dyads)
+# FIlter by TEAM_SIZE. 
 teamStats <- teamStats %>%
   filter(n>=TEAM_SIZE)
+
+#Adds team level data back into userRounds
 usersRounds <- teamStats %>%
   select(room, batch, round, teamProportionFracture, condition) %>%
   left_join(usersRounds, by=c("room", "batch", "round", "condition","team"))
@@ -302,32 +310,33 @@ usersRounds <- teamStats %>%
 ## Table showing how many teams we've run in each condition combination:  
 print(table(teamStats$condition, teamStats$team))
 
+# Calculates statistics for viability
 teamViability = teamStats$teamMeanViability
 viabilityMean = mean(teamViability)
 viabilitySD = sd(teamViability)*sqrt((length(teamViability)-1)/(length(teamViability)))
 
-# Centering / standardizing viability score 
-teamStats$viabilityZ = (teamStats$teamMeanViability - viabilityMean) / viabilitySD
-
-## Define and initialize cut-off pozzint for fracture:
+# Stores teamFracture as a logical value, based on fracture percent
 teamStats <- teamStats %>%
   group_by(room, batch, round, condition) %>%
-  mutate(teamFracture = case_when (teamProportionFracture<MIN_FRACTURE_PERCENT ~ FALSE,
-                                teamProportionFracture>=MIN_FRACTURE_PERCENT ~ TRUE))
+  mutate(teamFracture = case_when (
+    teamProportionFracture<MIN_FRACTURE_PERCENT ~ FALSE,
+    teamProportionFracture>=MIN_FRACTURE_PERCENT ~ TRUE))
 
-# now add whether the team fractured to data
+# Stores fracture information back in userRounds
 usersRounds <- usersRounds %>%
   select(-teamProportionFracture, -team) %>%
   left_join(teamStats, by=c("room", "batch", "round", "condition","task"))
 
-# did they guess correctly?
+# Checks if users guessed their team's fracture correctly
 usersRounds$partnerFractured <- ifelse(usersRounds$teamProportionFracture == 0, FALSE,
                                 ifelse(usersRounds$teamProportionFracture == 1, TRUE,
                                        ifelse(usersRounds$fracture, FALSE, TRUE)))
 usersRounds$metaGuessedCorrectly <- usersRounds$fractureMeta == usersRounds$partnerFractured
 
+# Stores out main data table for processing
 data = usersRounds
 
+# Adds team data to performance table, so we can do performance analysis independently later.
 performanceTable = performanceTable %>% 
   mutate(
     room = as.character(substring(room,2)),
@@ -336,14 +345,13 @@ performanceTable = performanceTable %>%
   left_join(teamStats)
 performanceTable = na.omit(performanceTable)
 
-# For exporting data
+# For exporting data as csv.
 # teamStats$fracture = as.numeric(teamStats$teamFracture)
 # write.csv(teamStats, file = "teamStats.csv")
 ```
 
 ### Manipulation Check
-
-# R manipulationcheck
+# Reports out manipulation check statistics and saves a plot
 ```{r, echo=TRUE}
 manipulationCheckAccuracy = data %>%
   ungroup() %>%
@@ -380,8 +388,7 @@ chanceManipulation <- (1/choose(numRounds, numSameTeam))
 
 ```
 
-## 1B: Proportion test comparing treatment manipulation percent correct with chance:
-# R manipulationcheckprop
+# Proportion test comparing treatment manipulation percent correct with chance:
 ```{r}
 ## Proportion test with treatment and chance: 
 maskedAccuracy <- filter(manipulationCheckAccuracyByCondition, condition=="masked")
@@ -390,8 +397,8 @@ print(manipulationCheckChanceComparison)
 
 ```
 
-
 ### Consistency of fracture
+# Main reporting of consistancy results. Produces stats and figures
 ```{r}
 fractureFirst <- teamStats %>%
   filter(team=="A")
@@ -419,12 +426,6 @@ conditionConsistency <- fractureConsistency %>%
     # seContinuous=sqrt(percentContinuous*(1-percentContinuous))/n
     )
 print(conditionConsistency)
-
-# 1553974262035
-# Room A, round 0
-# Room A, round 3
-
-now = fractureConsistency %>% filter(batch == "1553974262035")
 
 conditionConsistency = conditionConsistency %>%
   mutate(
@@ -562,6 +563,7 @@ chatSlices = fractureConsistency %>%
   )
 ```
 
+# Processes performance data and produces stats and figures
 ```{r}
 performanceTable %>% 
   group_by(task, condition, teamFracture) %>%
@@ -570,14 +572,6 @@ performanceTable %>%
     sd = sd(performancePercentile)
   )
 
-
-
-```
-
-```{r}
-# library(lme4)
-# fractureConsistency$team = paste(fractureConsistency$batch,fractureConsistency$room.first,fractureConsistency$round.first,sep = )
-# summary(lmer(continuousAbs ~ condition + (1 | team), fractureConsistency))
 g = ggplot(teamStats, aes(factor(teamFracture), teamMeanViability)) +
   facet_grid(cols = vars(task)) +
   geom_boxplot(varwidth=T, fill="#2853C2", alpha=0.7) +
@@ -610,7 +604,7 @@ perFractureConsistencySummary <- perFractureConsistency %>%
   summarise(
     numConsistent = sum(consistent), 
     meanPerformanceAbs=mean(performanceAbs),
-    se=sqrt(meanPerformanceAbs*(1-meanPerformanceAbs))/n(),
+    se=sqrt(meanPerformanceAbs*(1-meanPerformanceAbs))/n()
     )
 perFractureConsistencySummary
 
@@ -647,6 +641,4 @@ pdf('performance.pdf', width=6, height=2.5)
 p
 dev.off();
 p
-
 ```
-

@@ -44,6 +44,7 @@ $(function() {
   const $checkinPopup = $("#checkin");
   const $headerText = $("#header-text");
   const $leaveHitButton = $("#leave-hit-button");
+  const $emergencyExitButton = $("#emergency-exit-button");
   const $leaveHitPopup = $("#leave-hit-popup");
 
   const $chatLink = $("#chatLink");
@@ -105,6 +106,7 @@ $(function() {
   });
 
   const hideAll = () => {
+    $emergencyExitButton.hide();
     $headerbarPage.hide();
     $checkinPopup.hide();
     $leaveHitPopup.hide();
@@ -210,15 +212,30 @@ $(function() {
       addChatMessage({
         username: botUsername,
         /* TODO: change message here that will inform people about compensation*/
+        message: `This task has several parts. First this chat room where you will answer a robots questions. Keep active so we know you are here.`
+      });
+      addChatMessage({
+        username: botUsername,
+        /* TODO: change message here that will inform people about compensation*/
+        message: `If it takes longer than 20 minutes we will close the HIT and you will receive the base pay. If it is ready in less than 20 minutes, you will be moved into a group task.`
+      });
+      addChatMessage({
+        username: botUsername,
+        /* TODO: change message here that will inform people about compensation*/
+        message: `Completing the entire group task will earn the full bonus. If we experience an error once the group task has started, you will receivie a prorated bonus for the time you spend on the HIT.`
+      });
+      addChatMessage({
+        username: botUsername,
+        /* TODO: change message here that will inform people about compensation*/
         message:
-          "You must be able to stay for the duration of this task, around 1 hour. If you cannot stay for the entire time, please leave now. You will not be compensated if you leave preemptively. As a reminder, please do not refresh or close the page."
+          "As a friendly reminder, if you refresh or close this page you will not be able to come back to this task!"
       });
       setTimeout(() => {
         addChatMessage({
           username: botUsername,
           message:
-            "For this first task, I need you to answer a sequence of questions. " +
-            "Thanks for cooperating!"
+            "For this first task, I have some questions for you to answer. " +
+            "This will help me verify that you're an active and present human being!"
         });
         setTimeout(() => {
           socket.emit("load bot qs");
@@ -430,6 +447,12 @@ $(function() {
     hideAll();
     $holdingPage.show();
     //socket.emit('get username')
+    //PUTTING THE FOLLOWING LINES AFTER EVERY HOLDING PAGE.SHOW
+    $emergencyExitButton.hide();
+    setTimeout(function() {
+      $emergencyExitButton.show();
+    }, 900000);
+    //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     socket.emit("add user");
     socket.emit("next event");
   });
@@ -597,6 +620,28 @@ $(function() {
       "log",
       holdingUsername.innerText + " clicked leave hit button."
     );
+  });
+
+  $emergencyExitButton.click(() => {
+    event.preventDefault(); //stops page reloading
+
+    socket.emit(
+      "log",
+      holdingUsername.innerText + " clicked emergency exit button."
+    );
+
+    //TODO: Send message to the server so that the server can update bonus + shut down
+    socket.emit("log", "SOCKET DISCONNECT IN EMERGENCY EXIT BUTTON");
+
+    HandleFinish(
+      (finishingMessage = "You terminated the HIT. Thank you for your time."),
+      (mturk_form = mturkVariables.turkSubmitTo + "/mturk/externalSubmit"),
+      (assignmentId = mturkVariables.assignmentId),
+      (finishingcode = "LeftHit")
+    );
+    socket.emit("emergency-exit", $("#emergency-exit").serialize());
+    //socket.emit("mturk_formSubmit", {});
+    // socket.disconnect(true); ///this causes an error
   });
 
   //Simple autocomplete
@@ -1034,6 +1079,12 @@ $(function() {
     // log("Time's up! You are done with ", data.round, ". You will return to the waiting page in a moment.");
     hideAll();
     $holdingPage.show();
+    //PUTTING BEFORE ALL HOLDING PAGE.SHOW
+    $emergencyExitButton.hide();
+    setTimeout(function() {
+      $emergencyExitButton.show();
+    }, 900000);
+    //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     // messagesSafe.innerHTML = '';
     $inputMessage.unbind("keydown");
     socket.emit("next event");
@@ -1096,6 +1147,12 @@ $(function() {
     $starterSurvey.hide();
     $holdingPage.show();
     $("#starterForm")[0].reset();
+    //PUTTING THE FOLLOWING LINES AFTER EVERY HOLDING PAGE.SHOW
+    $emergencyExitButton.hide();
+    setTimeout(function() {
+      $emergencyExitButton.show();
+    }, 900000);
+    //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
   });
 
   $("#postForm").submit(event => {
@@ -1118,6 +1175,12 @@ $(function() {
     $teamfeedbackSurvey.hide();
     $holdingPage.show();
     $("#teamfeedbackForm")[0].reset();
+    //PUTTING THE FOLLOWING LINES AFTER EVERY HOLDING PAGE.SHOW
+    $emergencyExitButton.hide();
+    setTimeout(function() {
+      $emergencyExitButton.show();
+    }, 900000);
+    //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     socket.emit("next event");
   });
 
@@ -1145,6 +1208,12 @@ $(function() {
   //MW: Reminds the server people are ready after some time, so that we don't get stuck if people leave surveys.
   function submitHold() {
     $holdingPage.show();
+    //PUTTING THE FOLLOWING LINES AFTER EVERY HOLDING PAGE.SHOW
+    $emergencyExitButton.hide();
+    setTimeout(function() {
+      $emergencyExitButton.show();
+    }, 900000);
+    //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     clearAllTimers();
     //Repeats until a new event is received.
     timers.push(
