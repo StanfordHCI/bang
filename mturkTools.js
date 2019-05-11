@@ -729,7 +729,7 @@ function launchBang(batchID, callback) {
   // Reposts every timeActive(x) number of minutes to keep HIT on top - stops reposting when enough people join
   setTimeout(() => {
     if (hitsLeft > 0 && !taskStarted) {
-      bangParameters.maxAssignments = hitsLeft;
+      bangParameters.MaxAssignments = hitsLeft;
       mturk.createHIT(bangParameters, (err, data) => {
         if (err) {
           console.log(err, err.stack);
@@ -838,7 +838,7 @@ const checkQualsRecursive = (
 // workOnActiveHITs(console.log);
 
 // unassignQuals(
-//   "AFZKP8TAXAUCR",
+//   "A1GFR8JGSVDO4V",
 //   quals.willBang,
 //   "You asked to be removed from our notification list."
 // );
