@@ -655,7 +655,7 @@ const adBatches = [
 //   });
 // });
 
-//Main steps for processing data: 
+//Main steps for processing data:
 //1. Download with this or with a direct download via SCP
 // downloadData("status");
 
