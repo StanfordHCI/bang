@@ -835,10 +835,11 @@ const checkQualsRecursive = (
   });
 };
 
-const unsubscribeID = args.unsubscribe || null;
-if (unsubscribeID) {
+// Performs unsubscribe for mturk user.
+// Evoke with flag `--unsubscribe=mturkID`
+if (args.unsubscribe) {
   unassignQuals(
-    unsubscribeID,
+    args.unsubscribe,
     quals.willBang,
     "You asked to be removed from our notification list."
   );
