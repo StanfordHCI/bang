@@ -41,7 +41,7 @@ class BatchList extends React.Component {
                   </thead>
                   <tbody>
                   {batchList.map((batch, index) => {
-                    return <tr key={batch._id}>
+                    return <tr key={batch._id} onClick={() => history.push('/batches/' + batch._id)}>
                       <td>{index}</td>
                       <td>{moment(batch.createdAt).format('YYYY.DD.MM-HH:mm:ss')}</td>
                       <td>{moment(batch.startTime).format('YYYY.DD.MM-HH:mm:ss')}</td>

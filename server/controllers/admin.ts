@@ -106,8 +106,30 @@ export const addTemplate = async function (req, res) {
 
 export const loadBatchResult = async function (req, res) {
   try {
-    const surveys = await Survey.find({batch: req.params.id}).lean().exec()
-    res.json({surveys: surveys})
+    let [batch, surveys] = await Promise.all([
+      Batch.findById(req.params.id).populate('users.user rounds.teams.chat').lean().exec(),
+      Survey.find({batch: req.params.id}).lean().exec()
+    ])
+    batch.rounds.forEach((round, roundNumber) => {
+      round.teams.forEach(team => {
+        team.users.forEach(user => {
+          user.survey = surveys.find(x => x.user.toString() === user.user.toString() && roundNumber === x.round)
+          //console.log(user.survey)
+          return user;
+        })
+        return team;
+      })
+      return round;
+    })
+
+    surveys = surveys.filter(x => !!x.isPost)
+
+    batch.users.forEach(user => {
+      user.survey = surveys.find(x => x.user.toString() === user.user._id.toString() && x.isPost)
+      return user;
+    })
+
+    res.json({batch: batch})
   } catch (e) {
     errorHandler(e, 'load batch result error')
   }

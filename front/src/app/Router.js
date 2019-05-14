@@ -10,7 +10,9 @@ import BatchInfo from '../containers/admin/BatchInfo'
 import BatchList from '../containers/admin/BatchList'
 import TemplateInfo from '../containers/admin/TemplateInfo'
 import AddTemplate from '../containers/admin/AddTemplate'
+import BatchResult from '../containers/admin/BatchResult'
 import TemplateList from '../containers/admin/TemplateList'
+
 import HasBanged from '../containers/HasBanged'
 import Accept from '../containers/Accept'
 import BatchEnd from '../containers/BatchEnd'
@@ -34,7 +36,7 @@ const MainRouter = (props) => {
           <Route exact path='/batches-add' component={AddBatch}/>
           <Route exact path='/templates-add' component={AddTemplate}/>
           <Route exact path='/batches' component={BatchList}/>
-          <Route path='/batches/:id' component={BatchInfo}/>
+          <Route path='/batches/:id' component={BatchResult}/>
           <Route exact path='/templates' component={TemplateList}/>
           <Route path='/templates/:id' component={TemplateInfo}/>
           <Route exact path='/hasbanged' component={HasBanged}/>

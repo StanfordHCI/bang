@@ -23,7 +23,6 @@ let  BatchSchema = new Schema({
       users: [{
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
         nickname: {type: String, required: true},
-        survey: [{type: String, required: true}],
       }],
       chat: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat', required: true},
     }],

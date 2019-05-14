@@ -257,13 +257,13 @@ export function loadBatchResult(id) {
     dispatch(setLoading(true));
     return axios({
       method: 'get',
-      url: 'batch-result/' + id,
+      url: 'admin/batch-result/' + id,
     })
       .then((response) => {
         dispatch(setLoading(false));
         dispatch({
-          type: SURVEYS_FETCHED,
-          data: response.data.surveys
+          type: BATCH_INFO_FETCHED,
+          data: response.data.batch
         });
       })
       .catch(err => {
