@@ -16,3 +16,4 @@ R/allChatFiles.csv
 .idea/*
 .DS_Store
 .Rproj.user
+token.json
