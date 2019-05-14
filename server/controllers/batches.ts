@@ -4,11 +4,10 @@ import {Chat} from '../models/chats'
 import {Batch} from '../models/batches'
 import {Bonus} from '../models/bonuses'
 import {Survey} from '../models/surveys'
-import {clearRoom, expireHIT, makeName} from './utils'
+import {clearRoom, expireHIT, makeName, notifyWorkers, assignQual, payBonus, getAccountBalance} from './utils'
 import {errorHandler} from '../services/common'
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
-import { assignQual, payBonus, getAccountBalance} from "./utils";
 
 
 export const joinBatch = async function (data, socket, io) {
@@ -104,13 +103,16 @@ const startBatch = async function (batch, socket, io) {
 
     let balance = await getAccountBalance();
     balance = parseFloat(balance.AvailableBalance);
+
     if (balance < (batch.teamSize ** 2 * 12) * ((batch.roundMinutes * batch.numRounds * 1.5) / 60) ) {
       logger.info(module, 'balance problems');
       //do smthing
     }
 
 
-    let bangPrs = [];
+    let bangPrs = [
+      notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Experiment started. Account balance:' + balance, 'Bang')
+    ];
     users.forEach(user => {
       bangPrs.push(assignQual(user.mturkId, process.env.HAS_BANGED_QUAL))
       bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, 1.00))
