@@ -116,7 +116,7 @@ authorize()
       // console.log(bonusable.map(u => u.WorkerId));
       mturk.payBonuses(bonusable);
       // Adds hasBanged qualification, to stop them baning
-      // mturk.assignQualificationToUsers(bonusable, mturk.quals.hasBanged);
+      mturk.assignQualificationToUsers(bonusable, mturk.quals.hasBanged);
     });
   })
   .catch(e => {

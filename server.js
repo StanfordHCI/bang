@@ -678,11 +678,8 @@ let usersFinished = 0;
 
 // keeping track of time
 let taskStartTime = getSecondsPassed(); // reset for each start of new task
-let taskEndTime = 0;
-let taskTime = 0;
 
 // Building task list
-//if (runExperimentNow){
 let eventSchedule = [];
 if (starterSurveyOn) {
   eventSchedule.push("starterSurvey");
