@@ -836,7 +836,7 @@ const checkQualsRecursive = (
 };
 
 // Performs unsubscribe for mturk user.
-// Evoke with flag `--unsubscribe=mturkID`
+// Evoke with flag `--unsubscribe mturkID`
 if (args.unsubscribe) {
   unassignQuals(
     args.unsubscribe,
