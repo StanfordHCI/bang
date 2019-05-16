@@ -12,8 +12,8 @@ let  SurveySchema = new Schema({
   batch: {type: mongoose.Schema.Types.ObjectId, ref: 'Batch'},
   questions: [{result: {type: String, required: true}}],
   mainQuestion: {
-    expRound1: {result: {type: Number}},
-    expRound2: {result: {type: Number}},
+    expRound1: Number,
+    expRound2: Number,
     partners: [String]
   },
   round: Number,

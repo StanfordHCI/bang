@@ -39,7 +39,7 @@ class Waiting extends React.Component {
                 </div>
                 <p>Waiting on <b>{limit - this.state.activeCounter > 0 ? limit - this.state.activeCounter : 0} </b>
                   more MTurk users to accept the task.</p>
-                <p>Only wait if you can complete the entire task. If you leave early, you will not be paid. Provided you stay for the whole task, we will bonus to a rate of approximately $10.50 per hour.</p>
+                <p>Only wait if you can complete the entire task. If you leave early, you will not be paid. Provided you stay for the whole task, we will bonus to a rate of approximately $12 per hour.</p>
                 <p>Once enough people have accepted, you will be able to begin the task.</p>
                 <p>You will receive a browser notification when we are ready. If there are never enough people we will automatically submit and accept for the base rate.</p>
                 {limit <= this.state.activeCounter &&

@@ -10,6 +10,7 @@ module.exports = function (app) {
     .delete('/users', adminController.deleteUser)
     .get('/batches/:id', adminController.loadBatch)*/
     .get('/batches', adminController.loadBatchList)
+    .get('/batch-result/:id', adminController.loadBatchResult)
     .post('/batches', adminController.addBatch)
     //.put('/batches', adminController.updateBatch)
     //.delete('/batches', adminController.deleteBatch)
