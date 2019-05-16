@@ -45,7 +45,9 @@ app
 
 const io = require('socket.io').listen(app.listen(PORT, function() {
   logger.info(module, 'App is running on port: ' + PORT);
-  logger.info(module, 'ENV: ' + process.env.NODE_ENV);
+  logger.info(module, 'NODE MODE: ' + process.env.NODE_ENV);
+  logger.info(module, 'MTURK MODE: ' + process.env.MTURK_MODE);
+  logger.info(module, 'MTURK FRAME: ' + process.env.MTURK_FRAME);
 }));
 
 const initialChecks = [
@@ -157,30 +159,4 @@ cron.schedule('*/10 * * * * *', async function(){
     errorHandler(e, 'check workers error')
   }
 });
-
-
-
-//to clear used workers
-
-/*const test = async function(){
-  try {
-    let prs = [
-      disassociateQualificationFromWorker('APJC0K7A2B3TM', process.env.WILL_BANG_QUAL, 'asd'),
-      disassociateQualificationFromWorker('A2LPEQIGMF3JJL', process.env.WILL_BANG_QUAL, 'asd'),
-      disassociateQualificationFromWorker('A2RJT3346F362V', process.env.WILL_BANG_QUAL, 'asd'),
-      disassociateQualificationFromWorker('A1858EK0YRX9ZV', process.env.WILL_BANG_QUAL, 'asd'),
-      disassociateQualificationFromWorker('APJC0K7A2B3TM', process.env.HAS_BANGED_QUAL, 'asd'),
-      disassociateQualificationFromWorker('A2LPEQIGMF3JJL', process.env.HAS_BANGED_QUAL, 'asd'),
-      disassociateQualificationFromWorker('A2RJT3346F362V', process.env.HAS_BANGED_QUAL, 'asd'),
-      disassociateQualificationFromWorker('A1858EK0YRX9ZV', process.env.HAS_BANGED_QUAL, 'asd'),
-    ]
-    await Promise.all(prs)
-
-  } catch(e) {
-    errorHandler(e, 'test error')
-  }
-
-}
-
-test()*/
 
