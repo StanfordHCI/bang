@@ -4,7 +4,7 @@ import {Chat} from '../models/chats'
 import {Batch} from '../models/batches'
 import {Survey} from '../models/surveys'
 import {errorHandler} from '../services/common'
-import {addHIT, expireHIT} from "./utils";
+import {addHIT, expireHIT, getAccountBalance, notifyWorkers} from "./utils";
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
 
@@ -17,7 +17,19 @@ export const addBatch = async function (req, res) {
       res.status(403).end();
       return;
     }
+
     let newBatch = req.body;
+
+    let balance = await getAccountBalance();
+    balance = parseFloat(balance.AvailableBalance);
+    const moneyForBatch = (newBatch.teamSize ** 2) * 12 * ((newBatch.roundMinutes * newBatch.numRounds * 1.5) / 60);
+    await notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Account balance: $' + balance + '. Experiment cost: $' + moneyForBatch.toFixed(2), 'Bang');
+    if (balance < moneyForBatch ) {
+      logger.info(module, 'balance problems');
+      res.status(403).end();
+      return;
+    }
+
     delete newBatch._id;
     newBatch.status = 'waiting';
     newBatch.users = [];

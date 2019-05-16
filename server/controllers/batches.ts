@@ -100,17 +100,6 @@ const startBatch = async function (batch, socket, io) {
       logger.info(module, 'wrong users length - ' + users.length)
     }
 
-    let balance = await getAccountBalance();
-    balance = parseFloat(balance.AvailableBalance);
-    const moneyForBatch = (batch.teamSize ** 2) * 12 * ((batch.roundMinutes * batch.numRounds * 1.5) / 60);
-    await notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Experiment started. Account balance:' + balance + '. Experiment cost: ' + moneyForBatch, 'Bang');
-
-    if (balance < moneyForBatch ) {
-      logger.info(module, 'balance problems');
-      //do smthing
-    }
-
-
     let bangPrs = [];
     users.forEach(user => {
       bangPrs.push(assignQual(user.mturkId, process.env.HAS_BANGED_QUAL))
