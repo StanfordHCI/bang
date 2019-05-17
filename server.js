@@ -1,6 +1,7 @@
 require("dotenv").config();
 const chalk = require("chalk");
 const args = require("yargs").argv;
+const spawn = require('child_process').spawn;
 
 //Environmental settings, set in .env
 const runningLocal = process.env.RUNNING_LOCAL === "TRUE";
@@ -1472,6 +1473,30 @@ io.on("connection", socket => {
         );
         ioEmitById(socket.mturkId, "echo", "ready", socket, user);
       } else if (eventSchedule[currentEvent] === "midSurvey") {
+        // run prediction for this team
+        const batchDir = './.data/' + batchID;
+        if (!fs.existsSync(batchDir)) {
+          fs.mkdirSync(batchDir);
+        }
+        db.chats.find({}, (err, data) => {
+          fs.writeFile(
+            batchDir + "/chats.json",
+            JSON.stringify(
+              data.filter(u => u.batch == batchID || u.batchID == batchID),
+              null,
+              2
+            ),
+            err => {
+              if (err) {
+                return console.log(err);
+              }
+              const pythonProcess = spawn('python', ["./prediction.py", batchID, currentRound]);
+              pythonProcess.stderr.on('data', (data) => {
+                console.log(chalk.red.inverse(`pythonProcess stderr: ${data}`));
+              });
+            }
+          )
+        });
         ioEmitById(
           socket.mturkId,
           "load",
@@ -1660,7 +1685,7 @@ io.on("connection", socket => {
               console.log(
                 err
                   ? "Err updating batch completion" + err
-                  : "Marked batch " + batchID + " competed in DB"
+                  : "Marked batch " + batchID + " completed in DB"
               )
           );
           batchCompleteUpdated = true;
