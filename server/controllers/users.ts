@@ -28,15 +28,14 @@ export const init = async function (data, socket, io) {
     //it looks irrational to check url vars before token, but user can return with another assignmentId and with the same token
     if ((process.env.MTURK_FRAME === 'ON' && data.mturkId && data.assignmentId && data.hitId && data.turkSubmitTo) ||
       (process.env.MTURK_FRAME === 'OFF' && data.mturkId && data.assignmentId)) {
-      user = await User.findOneAndUpdate({mturkId: data.mturkId}, {$set: {mainAssignmentId: data.assignmentId}}, {new: true})
-        .populate('batch').lean().exec();
+      user = await User.findOneAndUpdate({mturkId: data.mturkId}, {$set: {mainAssignmentId: data.assignmentId}}, {new: true}).lean().exec();
       if (!user) {
         logger.info(module, 'wrong credentials');
         socket.emit('init-res', null);
         return;
       }
     } else {
-      user = await User.findOne({token: token}).populate('batch').lean().exec();
+      user = await User.findOne({token: token}).lean().exec();
       if (!user) {
         logger.info(module, 'wrong credentials');
         socket.emit('init-res', null);
@@ -50,7 +49,7 @@ export const init = async function (data, socket, io) {
     socket.systemStatus = user.systemStatus;
     socket.userId = user._id;
     if (user.batch) {
-      socket.join(user.batch._id.toString()) //chat room
+      socket.join(user.batch.toString()) //chat room
     } else {
       socket.join('waitroom');
     }

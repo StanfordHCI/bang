@@ -120,7 +120,7 @@ cron.schedule('*/4 * * * *', async function(){
     if (batch) {
       const HIT = await addHIT(batch, false);
       currentHIT = HIT.HITId;
-      logger.info(module, 'Test HIT created :' + currentHIT)
+      logger.info(module, 'Test HIT created: ' + currentHIT)
     } else {
       currentHIT = '';
     }
@@ -159,3 +159,4 @@ cron.schedule('*/10 * * * * *', async function(){
     errorHandler(e, 'check workers error')
   }
 });
+
