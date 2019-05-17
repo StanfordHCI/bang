@@ -1292,8 +1292,7 @@ $(function() {
     //setTimeout(function(){ $emergencyExitButton.show(); }, 1000); //for testing purposes
     clearAllTimers();
     //Repeats until a new event is received.
-
-    playing with commenting this out
+    
     timers.push(
       setInterval(() => {
         socket.emit("ready");
