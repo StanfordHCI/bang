@@ -1293,12 +1293,12 @@ $(function() {
     clearAllTimers();
     //Repeats until a new event is received.
 
-    //playing with commenting this out
-    // timers.push(
-    //   setInterval(() => {
-    //     socket.emit("ready");
-    //   }, 10 * 60 * 1000)
-    // );
+    playing with commenting this out
+    timers.push(
+      setInterval(() => {
+        socket.emit("ready");
+      }, 10 * 60 * 1000)
+    );
   }
 });
 

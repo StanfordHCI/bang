@@ -574,6 +574,14 @@ const listUsersWithQualificationRecursively = (
 const payBonuses = (users, callback) => {
   let successfullyBonusedUsers = [];
   const bonusableUsers = users
+    .map(u => {
+      // This tries to make sure the user has the correct variables
+      if (!u.mturkId && !u.assignmentId) {
+        u.mturkId = u.WorkerId;
+        u.assignmentId = u.AssignmentId;
+      }
+      return u;
+    }) //Filters out Mark and false ids and 0 bonuses.
     .filter(u => u.mturkId !== "A19MTSLG2OYDLZ" && u.mturkId.length > 5)
     .filter(u => u.bonus != 0);
   bonusableUsers.forEach((u, index) => {
@@ -689,7 +697,7 @@ function launchBang(batchID, callback) {
     Title: `Mock Jury Deliberation - bonus up to $${hourlyWage}/hour (${batchID})`,
     Description: `Work in groups to deliberate on a jury case. This task will take approximately ${Math.round(
       roundMinutes * numRounds + 15
-    )} minutes. There is a initial chatroom and if you are selected to move on to the next section, you will receive a prorated bonus of up to $${bonusPrice} (which translates to $${hourlyWage}/hour)`,
+    )} minutes. There is a initial chatroom for up to 20 minuts for the base pay. If you are selected to move on to the next section, you will receive a prorated bonus of up to $${bonusPrice} (which translates to $${hourlyWage}/hour)`,
     AssignmentDurationInSeconds: 60 * taskDuration, // 30 minutes?
     LifetimeInSeconds: 60 * timeActive, // short lifetime, deletes and reposts often
     Reward: String(basePrice),
@@ -829,7 +837,7 @@ const checkQualsRecursive = (
 // workOnActiveHITs(console.log);
 
 // unassignQuals(
-//   "AW0225ONUAPO5",
+//   "AFZKP8TAXAUCR",
 //   quals.willBang,
 //   "You asked to be removed from our notification list."
 // );
