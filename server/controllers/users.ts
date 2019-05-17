@@ -50,7 +50,7 @@ export const init = async function (data, socket, io) {
     socket.systemStatus = user.systemStatus;
     socket.userId = user._id;
     if (user.batch) {
-      socket.join(user.batch.toString()) //chat room
+      socket.join(user.batch._id.toString()) //chat room
     } else {
       socket.join('waitroom');
     }

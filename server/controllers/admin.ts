@@ -77,6 +77,7 @@ export const addBatch = async function (req, res) {
     ]});
     const batchWithChat = await Batch.findByIdAndUpdate(batch._id, {$set: {preChat: preChat._id}})
     res.json({batch: batchWithChat})
+    logger.info(module, 'New batch added. Mturk mode: ' + process.env.MTURK_MODE + '; Mturk frame: ' + process.env.MTURK_FRAME);
   } catch (e) {
     errorHandler(e, 'add batch error')
   }

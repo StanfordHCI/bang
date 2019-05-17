@@ -148,7 +148,7 @@ cron.schedule('*/10 * * * * *', async function(){
             }),
             payBonus(assignment.WorkerId, assignment.AssignmentId, 0.01),
             assignQual(assignment.WorkerId, process.env.WILL_BANG_QUAL),
-            notifyWorkers([assignment.WorkerId], 'Experiment started. Please find and accept our main mturk task here:' + url, 'Bang')
+            notifyWorkers([assignment.WorkerId], 'Experiment started. Please find and accept our main mturk task here: ' + url, 'Bang')
           ];
           await Promise.all(prs);
           logger.info('module', 'User added to db, qual added, notify sent: ' + assignment.WorkerId)
@@ -159,4 +159,3 @@ cron.schedule('*/10 * * * * *', async function(){
     errorHandler(e, 'check workers error')
   }
 });
-
