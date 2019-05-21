@@ -56,7 +56,7 @@ const qFifteenOn = runningLive;
 const qSixteenOn = runningLive;
 const postSurveyOn = true;
 const demographicsSurveyOn = true;
-const predictionRunOn = true;
+const predictionRunOn = false;
 
 //Just Mark for now. Feel free to add your ID, and finish a task for us so you can get notificaions too.
 const notifyUsList = ["A19MTSLG2OYDLZ", "A1Y1EKZLN97X0O"];
