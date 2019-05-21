@@ -42,7 +42,7 @@ const psychologicalSafetyOn = false;
 const starterSurveyOn = false; 
 
 const midSurveyOn = true; //EMILY UDPATED THIS to be about the jury deliberation.
-const juryPreTaskOn = true; //EMILY ADDED THIS FOR JURY PRETASK
+const juryPreTaskOn = false; //EMILY ADDED THIS FOR JURY PRETASK //OFF for new task
 const midSurveyStatusOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const creativeSurveyOn = false;
 const satisfactionSurveyOn = false;
@@ -642,7 +642,7 @@ if (runExperimentNow) {
 
 
 //TODO: CHANGE THIS PART TO ALTERNATE THE CASES
-const taskPDF = ["./jury-task1.pdf", "./jury-task2.pdf"] // use .shuffle and declare list outside if you want
+const taskPDF = ["./Min-Su.pdf", "./Anna.pdf"] // use .shuffle and declare list outside if you want
 shuffle(taskPDF);
 
 //Add more products
@@ -1918,7 +1918,6 @@ io.on("connection", socket => {
       startTime = new Date().getTime();
 
       // Initialize steps
-      //const taskPDF = ["./jury-task1.pdf", "./jury-task2.pdf"] // use .shuffle and declare list outside if you want
       const currentPDF = taskPDF[currentRound%taskPDF.length]
 
       // TODO:Change the task here with new names!
@@ -1945,12 +1944,12 @@ io.on("connection", socket => {
         {
           time: 0.05,
           message:
-            `<strong>Step 1. Read the facts of the case and the jury instructions at <a href="${currentPDF}" target="_blank">this link</a>.`
+            `<strong>You have been invited to a "virtual jury" to help resolve some controversy in your Amazon Mechanical Turk community!</strong>.`
         },
         {
           time: 0.05,
           message:
-            "Remember to read both the Case Background and the Jury Instructions."
+            `<strong>Step 1. Read the case at <a href="${currentPDF}" target="_blank">this link</a>.`
         },
         {
           time: 0.05,
@@ -2021,7 +2020,7 @@ io.on("connection", socket => {
         {
           time: 0.9,
           message:
-            "<strong>Reminder, *Y means that you find the defendant negligent. *N means that you do not find the defendant negligent. Refer to the last page of the case for a helpful questionnaire!</strong>"
+            "<strong>Reminder, *Y means the tasks SHOULD be rejected. *N means that the tasks should NOT be rejected.</strong>"
         },
         {
           time: 0.96,
