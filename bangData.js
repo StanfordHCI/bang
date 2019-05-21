@@ -621,20 +621,6 @@ function matchAd(data, ad) {
     });
 }
 
-// manipulationCheck(1537292004662)
-// useCompleteBatches(manipulationCheck)
-
-// useCompleteBatches(manipulationFix)
-
-// Download data from your folder and save it into local batch archives
-// downloadData("status");
-saveDBArchives();
-// useCompleteBatches(manipulationFix);
-
-//Rendering for various things
-// useCompleteBatches(renderChats);
-// useCompleteBatches(renderAds);
-
 const adBatches = [
   1553010760733,
   1553019661611,
@@ -669,4 +655,13 @@ const adBatches = [
 //   });
 // });
 
-//renderChats("1555003102792") //pilot 3
+//Main steps for processing data:
+//1. Download with this or with a direct download via SCP
+// downloadData("status");
+
+//2. Save archives into batch folders (this can be done locally or remotely)
+saveDBArchives();
+
+//3. Perform manipulation fix on any batches that worked out
+// useCompleteBatches(manipulationFix);
+

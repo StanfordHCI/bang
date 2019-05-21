@@ -181,7 +181,7 @@ $(function() {
     URLvars.assignmentId = "ASSIGNMENT_ID_NOT_AVAILABLE";
   } else if (URL.includes("test")) {
     URLvars.assignmentId = "test";
-    URLvars.turkSubmitTo = "b01.dmorina.com";
+    URLvars.turkSubmitTo = "c01.dmorina.com";
     URLvars.workerId = sessionStartTime;
   } else if (URL.includes("502")) {
     URL.vars.assignmentId = "ASSIGNMENT_ID_NOT_AVAILABLE";
