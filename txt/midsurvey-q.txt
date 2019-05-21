@@ -1,7 +1,7 @@
-S1|1. In the case I just deliberated, the product was defective.
-S1|2. I believe that the company (defendant) was negligent.
-S1|3. I believe that the company (defendant) breached its implied warranty.
-S1|4. I believe that the breach of warranty caused the plaintiffs harm.
+S1|1. In the case I just deliberated, I believe the worker's task should have been rejected.
+S1|2. I believe that the worker should have done a better job (in completing the task).
+S1|3. I believe that the requestor should have done a better job (in creating/administering the task).
+S1|4. I believe that rejecting the task(s) was fair.
 S1|5. I was able to fully express my belief during deliberation.
 S1|6. I was able to convince others of my belief during deliberation.
 S1|7. My beliefs changed during deliberation.
