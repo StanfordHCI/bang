@@ -1479,7 +1479,7 @@ io.on("connection", socket => {
         if (!fs.existsSync(batchDir)) {
           fs.mkdirSync(batchDir);
         }
-        db.chats.find({}, (err, data) => {
+        db.chats.find({ batch: batchID }, (err, data) => {
           fs.writeFile(
             batchDir + "/chats.json",
             JSON.stringify(
