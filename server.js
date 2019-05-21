@@ -41,7 +41,7 @@ const extraRoundOn = false; //Only set to true if teamSize = 4, Requires waitCha
 const psychologicalSafetyOn = false;
 const starterSurveyOn = false; 
 
-const midSurveyOn = false; //EMILY UDPATED THIS to be about the jury deliberation. //TURNED OFF DUE TO BUG
+const midSurveyOn = true; //EMILY UDPATED THIS to be about the jury deliberation.
 const juryPreTaskOn = false; //EMILY ADDED THIS FOR JURY PRETASK //OFF for new task
 const midSurveyStatusOn = false; //Only set to true if teamSize = 4, Requires waitChatOn = true.
 const creativeSurveyOn = false;
@@ -1926,14 +1926,14 @@ io.on("connection", socket => {
           time: 0.001,
           message: `<strong>Be careful not to refresh or leave the page! If you do, you will not be able to return to the task and will not be compensated for your time.</strong>`
         },
-        {
-           time: 0.002,
-           message: `<strong>There are a total of 4 rounds of team interaction. You will receive the stated bonus pay if you thoughtfully fill out every survey question!</strong>`
-        },
         // {
-        //   time: 0.002,
-        //   message: `<strong>There are a total of 4 rounds of team interaction with a reflection survey following each one. You will receive the stated bonus pay if you thoughtfully fill out every survey question!</strong>`
+        //    time: 0.002,
+        //    message: `<strong>There are a total of 4 rounds of team interaction. You will receive the stated bonus pay if you thoughtfully fill out every survey question!</strong>`
         // },
+        {
+          time: 0.002,
+          message: `<strong>There are a total of 4 rounds of team interaction with a reflection survey following each one. You will receive the stated bonus pay if you thoughtfully fill out every survey question!</strong>`
+        },
         {
           time: 0.003,
           message: `The entire HIT will take no more than ${Math.round(
