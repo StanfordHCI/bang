@@ -4,6 +4,38 @@ import {connect} from 'react-redux'
 import {Field, FieldArray, reduxForm, formValueSelector, change} from 'redux-form'
 import {bindActionCreators} from "redux";
 import {renderField, renderTextArea} from 'Components/form/Text'
+import renderSelectField from 'Components/form/Select'
+import {generateComb} from '../../app/utils'
+
+const userOptions = (teamSize) => {
+  let result = [];
+  for (let i = 0; i < teamSize ** 2; i++) {
+    result.push({value: i + 1, label: 'user' + (i + 1)})
+  }
+  return result;
+}
+
+const generateRounds = (numRounds, teamSize, dispatch) => {
+  let rounds = [], maxUsers = teamSize ** 2;
+  for (let i = 0; i < numRounds; i++) {
+    let round = {teams: []};
+    let users = [];
+    for (let j = 0; j < teamSize; j++) {
+      let team = {users: []}
+      for (let k = 0; k < teamSize; k++) {
+        let user = Math.floor(Math.random() * maxUsers) + 1;
+        while (users.some(x => x === user)) {
+          user = Math.floor(Math.random() * maxUsers) + 1;
+        }
+        team.users.push(user);
+        users.push(user)
+      }
+      round.teams[j] = team;
+    }
+    rounds.push(round)
+  }
+  dispatch(change('TemplateForm', 'roundGen', rounds))
+}
 
 const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
   return (<div style={{width: '100%'}}>
@@ -46,7 +78,6 @@ const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
   </div>)
 }
 
-
 const renderTasks = ({fields, meta: {touched, error, warning}, numRounds}) => {
   let tasks = [];
   for (let i = 0; i < numRounds; i++) {
@@ -73,6 +104,77 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds}) => {
   </div>)
 };
 
+const renderRounds = ({fields, meta: {touched, error, warning}, numRounds, teamSize}) => {
+  let rounds = [];
+  for (let i = 0; i < numRounds; i++) {
+    rounds.push(
+      <div key={i} className='form__form-group'>
+        <label className='form__form-group-label'>{'round ' + (i + 1)}</label>
+        <FieldArray
+          name={`roundGen[${i}].teams`}
+          component={renderTeams}
+          rerenderOnEveryChange
+          numRounds={numRounds}
+          teamSize={teamSize}
+          round={i}
+        />
+      </div>
+    )
+  }
+
+  return (<div style={{marginTop: '20px'}}>
+    {rounds}
+  </div>)
+};
+
+const renderTeams = ({fields, meta: {touched, error, warning}, numRounds, teamSize, round}) => {
+  let teams = [];
+  for (let i = 0; i < teamSize; i++) {
+    teams.push(
+      <Col key={i} className='form__form-group' style={{flexDirection: 'column', alignItems: 'flex-end'}}>
+        <label className='form__form-group-label'>{'team ' + (i + 1)}</label>
+        <FieldArray
+          name={`roundGen[${round}].teams[${i}].users`}
+          component={renderUsers}
+          rerenderOnEveryChange
+          numRounds={numRounds}
+          teamSize={teamSize}
+          round={round}
+          team={i}
+        />
+      </Col>
+    )
+  }
+
+  return (<Row>
+    {teams}
+  </Row>)
+};
+
+const renderUsers = ({fields, meta: {touched, error, warning}, numRounds, teamSize, round, team}) => {
+  let users = [];
+  for (let i = 0; i < teamSize; i++) {
+    users.push(
+      <div key={i} className='form__form-group'>
+        <div className='form__form-group-field'>
+          <Field
+            name={`roundGen[${round}].teams[${team}].users[${i}]`}
+            component={renderSelectField}
+            type='number'
+            options={userOptions(parseInt(teamSize))}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  return (<div>}>
+    {users}
+  </div>)
+};
+
+
+
 class TemplateForm extends React.Component {
 
   constructor() {
@@ -80,8 +182,13 @@ class TemplateForm extends React.Component {
     this.state = {};
   }
 
+  handleGenerate(){
+    const {numRounds, teamSize, dispatch} = this.props;
+    generateRounds(parseInt(numRounds), parseInt(teamSize), dispatch)
+  }
+
   render() {
-    const {invalid, numRounds} = this.props;
+    const {invalid, numRounds, teamSize, roundGen, dispatch} = this.props;
 
     return (<div>
         <form className='form form--horizontal' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
@@ -136,11 +243,19 @@ class TemplateForm extends React.Component {
               rerenderOnEveryChange
               numRounds={numRounds}
             />
+              {/*<FieldArray
+                name="roundGen"
+                component={renderRounds}
+                rerenderOnEveryChange
+                numRounds={numRounds}
+                teamSize={teamSize}
+              />*/}
           </div></Col>
           </Row>
           <Row>
             <Col>
               <ButtonToolbar className='mx-auto form__button-toolbar'>
+                {/*<Button color='primary' size='sm' type='button' disabled={!numRounds || !teamSize} onClick={() => this.handleGenerate()}>Generate random users</Button>*/}
                 <Button color='primary' size='sm' type='submit' disabled={invalid}>Submit</Button>
               </ButtonToolbar>
             </Col>
@@ -161,12 +276,12 @@ const validate = (values, props) => {
   }
   if (!values.numRounds) {
     errors.numRounds = 'required'
-  } else if (parseInt(values.numRounds) !== 4) { //will be changed later
+  } else if (parseInt(values.numRounds) < 4) {
     errors.numRounds = 'invalid value'
   }
   if (!values.teamSize) {
     errors.teamSize = 'required'
-  } else if (parseInt(values.teamSize) !== 2) { //will be changed later
+  } else if (parseInt(values.teamSize) < 2) {
     errors.teamSize = 'invalid value'
   }
   if (!values.roundMinutes) {
@@ -220,6 +335,8 @@ const selector = formValueSelector('TemplateForm');
 function mapStateToProps(state) {
   return {
     numRounds: selector(state, 'numRounds'),
+    teamSize: selector(state, 'teamSize'),
+    roundGen: selector(state, 'roundGen'),
   }
 }
 

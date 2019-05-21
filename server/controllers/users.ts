@@ -5,6 +5,7 @@ import {errorHandler} from '../services/common'
 import {Survey} from "../models/surveys";
 const logger = require('../services/logger');
 import {notifyWorkers, assignQual, payBonus} from "./utils";
+import {globalBatchTeamSize} from '../index'
 
 
 export const activeCheck = async function (io) {
@@ -56,7 +57,7 @@ export const init = async function (data, socket, io) {
     if (data.adminToken && data.adminToken === process.env.ADMIN_TOKEN) {
       user.isAdmin = true;
     }
-    socket.emit('init-res', {user: user, teamSize: process.env.TEAM_SIZE});
+    socket.emit('init-res', {user: user, teamSize: globalBatchTeamSize});
     await User.findByIdAndUpdate(user._id, { $set: { connected : true, lastConnect: new Date(), socketId: socket.id, } });
     await activeCheck(io);
   } catch (e) {

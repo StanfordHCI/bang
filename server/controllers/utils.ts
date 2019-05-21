@@ -1,11 +1,11 @@
 require('dotenv').config({path: './.env'});
-const runningLive = process.env.MTURK_MODE === "prod";
+export const runningLive = process.env.MTURK_MODE === "prod";
 import * as AWS from "aws-sdk";
 AWS.config.accessKeyId = process.env.AWS_ID;
 AWS.config.secretAccessKey = process.env.AWS_KEY;
 AWS.config.region = "us-east-1";
 AWS.config.sslEnabled = true;
-let endpoint = runningLive ? "https://mturk-requester.us-east-1.amazonaws.com" : "https://mturk-requester-sandbox.us-east-1.amazonaws.com"
+let endpoint = runningLive ? "https://mturk-requester.us-east-1.amazonaws.com" : "https://mturk-requester-sandbox.us-east-1.amazonaws.com";
 export const mturk = new AWS.MTurk({ endpoint: endpoint });
 let fs = require("fs");
 
@@ -61,7 +61,7 @@ export const clearRoom = function (room, io) {
   });
 }
 
-const chooseOne = <T>(list: T[]): T => {
+export const chooseOne = <T>(list: T[]): T => {
   return list[Math.floor(Math.random() * list.length)];
 };
 

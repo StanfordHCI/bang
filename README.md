@@ -22,8 +22,8 @@ PROD_WILL_BANG_QUAL=will bang qual id from mturk
 PROD_HAS_BANGED_QUAL=has banged qual id from mturk
 MTURK_FRAME=ON/OFF //OFF - launch experiment without main HIT, just with site; if ON - inside mturk frame, with main HIT.
 HIT_URL=http://localhost:3000/ or https://bang-dev.deliveryweb.ru/, url for mturk mail when FRAME=OFF
-MTURK_MODE=test/prod ; DANGEROUS: if 'prod', it uses real mturk account; if no - sandbox.
-MTURK_NOTIFY_ID - special mturk worker user for notifications about experiment.
+MTURK_MODE=off/test/prod ; DANGEROUS: if 'prod', it uses real mturk account; if no - sandbox, if 'off' - work without mturk.
+MTURK_NOTIFY_ID - special mturk worker-user for notifications about experiment.
 ```
 
 4. Set up mongodb (ver. 4.0)

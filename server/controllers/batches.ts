@@ -4,10 +4,12 @@ import {Chat} from '../models/chats'
 import {Batch} from '../models/batches'
 import {Bonus} from '../models/bonuses'
 import {Survey} from '../models/surveys'
-import {clearRoom, expireHIT, makeName, notifyWorkers, assignQual, payBonus, getAccountBalance} from './utils'
+import {clearRoom, expireHIT, assignQual, payBonus, chooseOne, runningLive} from './utils'
 import {errorHandler} from '../services/common'
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
+const randomAnimal = "Bison Eagle Pony Moose Deer Duck Rabbit Spider Wolf Lion Snake Shark Bird Bear Fish Horse Badger Marten Otter Lynx".split(" ");
+const randomAdjective = "new small young little likely nice cultured snappy spry conventional".split(" ");
 
 
 export const joinBatch = async function (data, socket, io) {
@@ -20,7 +22,16 @@ export const joinBatch = async function (data, socket, io) {
       return;
     }
     if (socket.systemStatus === 'willbang' && batch.users.length < batch.teamSize ** 2) { //join to batch
-      const nickname = makeName(null, null).username;
+      let nickname;
+      while (!nickname) {
+        nickname = chooseOne(randomAdjective) + chooseOne(randomAnimal);
+        batch.users.forEach(user => {
+          if (user.nickname === nickname) {
+            nickname = false;
+          }
+        })
+      }
+
       let user;
       const prs = await Promise.all([
         Batch.findByIdAndUpdate(batch._id, { $addToSet: { users: {user: socket.userId, nickname: nickname, joinDate: new Date()}},  }, {new: true}),
@@ -100,18 +111,21 @@ const startBatch = async function (batch, socket, io) {
       logger.info(module, 'wrong users length - ' + users.length)
     }
 
-    let bangPrs = [];
-    users.forEach(user => {
-      bangPrs.push(assignQual(user.mturkId, process.env.HAS_BANGED_QUAL))
-      bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, 1.00))
-      bangPrs.push(Bonus.create({
-        batch: batch._id,
-        user: socket.userId,
-        amount: 1.00,
-        assignment: socket.assignmentId
-      }))
-    })
-    await Promise.all(bangPrs)
+
+    if (process.env.MTURK_MODE !== 'off') {
+      let bangPrs = [];
+      users.forEach(user => {
+        bangPrs.push(assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL))
+        bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, 1.00))
+        bangPrs.push(Bonus.create({
+          batch: batch._id,
+          user: socket.userId,
+          amount: 1.00,
+          assignment: socket.assignmentId
+        }))
+      })
+      await Promise.all(bangPrs)
+    }
 
     const startBatchInfo = {status: 'active', startTime: new Date()};
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: startBatchInfo}).lean().exec()
@@ -126,7 +140,7 @@ const startBatch = async function (batch, socket, io) {
       const task = batch.tasks[i];
       let emptyChats = [];
 
-      let teams = generateTeams(batch, users, i+1, oldNicks)
+      let teams = generateTeams(batch.roundGen, users, i+1, oldNicks)
 
       for (let j = 0; j < teamSize; j++) { //simple gen for tests
         emptyChats.push({batch: batch._id, messages: [{user: botId, nickname: 'helperBot', time: new Date(),
@@ -198,7 +212,7 @@ const startBatch = async function (batch, socket, io) {
     //last survey
     await timeout(120000);
 
-    if (process.env.MTURK_FRAME === 'ON') {
+    if (process.env.MTURK_FRAME === 'ON' && process.env.MTURK_MODE !== 'off') {
       await expireHIT(batch.HITId)
     }
     await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
@@ -223,7 +237,7 @@ export const receiveSurvey = async function (data, socket, io) {
       }
     }
     await Survey.create(newSurvey)
-    if (newSurvey.isPost) {
+    if (process.env.MTURK_MODE !== 'off' && newSurvey.isPost) {
       const batch = await Batch.findById(newSurvey.batch).select('roundMinutes numRounds').lean().exec();
       let bonusPrice = (12 * ((batch.roundMinutes * batch.numRounds * 1.5) / 60) - 1.00);
       if (bonusPrice > 25) {
@@ -251,61 +265,37 @@ const timeout = (ms) => {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-const generateTeams = (batch, users, roundNumber, oldNicks) => {
-  let teams = [];
-
-  const rand = Math.floor(Math.random() * 2);
-  const randomIndex1 = rand + 2; //2 or 3
-  const randomIndex2 = 5 - randomIndex1;
-
-  //logic for teamsize=2 and 4 rounds, not perfect.
-  if (roundNumber === batch.experimentRound1 || roundNumber === batch.experimentRound2) {
-    const user1 = generateTeamUser(users[0], oldNicks, users[1].realNick);
-    const user2 = generateTeamUser(users[1], oldNicks, users[0].realNick)
-    const user3 = generateTeamUser(users[2], oldNicks, users[3].realNick);
-    const user4 = generateTeamUser(users[3], oldNicks, users[2].realNick)
-    teams[0] = {users: [user1, user2]};
-    teams[1] = {users: [user3, user4]};
-    return teams;
-  }
-  if (roundNumber === 1 || roundNumber === 2) {
-    const user1 = generateTeamUser(users[0], oldNicks, users[randomIndex1].realNick);
-    const user2 = generateTeamUser(users[randomIndex1], oldNicks, users[0].realNick)
-    const user3 = generateTeamUser(users[1], oldNicks, users[randomIndex2].realNick);
-    const user4 = generateTeamUser(users[randomIndex2], oldNicks, users[1].realNick)
-    teams[0] = {users: [user1, user2]};
-    teams[1] = {users: [user3, user4]};
-    return teams;
-  }
-  if (roundNumber === 3 || roundNumber === 4) {
-    const user1 = generateTeamUser(users[0], oldNicks, users[randomIndex2].realNick);
-    const user2 = generateTeamUser(users[randomIndex2], oldNicks, users[0].realNick)
-    const user3 = generateTeamUser(users[1], oldNicks, users[randomIndex1].realNick);
-    const user4 = generateTeamUser(users[randomIndex1], oldNicks, users[1].realNick)
-    teams[0] = {users: [user1, user2]};
-    teams[1] = {users: [user3, user4]};
-    return teams;
-  }
-}
-
-const generateTeamUser = (user, oldNicks, partner) => {
-  let nickname, adj, animal, index;
-  if (partner) {
-    for (let i = 0; i < partner.length; i++) {
-      if (partner[i] === partner[i].toUpperCase()) {
-        index = i;
-        break;
+const generateTeams = (roundGen, users, roundNumber, oldNicks) => {
+  let teams = roundGen[roundNumber - 1].teams.map((team, index) => {
+    let teamAnimals = [], teamUsers = [];
+    team.users.forEach(user => {
+      let partner = users[user].realNick.slice();
+      for (let i = 0; i < partner.length; i++) {
+        if (partner[i] === partner[i].toUpperCase()) {
+          index = i;
+          break;
+        }
+      }
+      teamAnimals.push(partner.slice(0, index));
+    });
+    let animals = randomAnimal.slice().filter(x => !teamAnimals.some(y => y === x));
+    let adjectives = randomAdjective.slice();
+    for (let i = 0; i < team.users.length; i++) {
+      let nickname, animal, adj;
+      animals = animals.filter(x => !teamAnimals.some(y => y === x));
+      while (true) {
+        animal = chooseOne(animals);
+        adj = chooseOne(adjectives);
+        nickname = adj + animal;
+        if (!oldNicks.some(x => x === nickname)) {
+          oldNicks.push(nickname);
+          teamAnimals.push(animal);
+          teamUsers.push({user: users[team.users[i]]._id, nickname: nickname})
+          break;
+        }
       }
     }
-    adj = partner.slice(index, partner.length);
-    animal = partner.slice(0, index);
-  }
-  while (true) {
-    nickname = makeName(null, null).username;
-    if (!oldNicks.some(x => x === nickname) && (!partner || (nickname.indexOf(adj) === -1 && nickname.indexOf(animal) === -1))) {
-      oldNicks.push(nickname)
-      break;
-    }
-  }
-  return {user: user._id, nickname: nickname}
+    return {users: teamUsers};
+  });
+  return teams;
 }

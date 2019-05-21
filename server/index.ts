@@ -9,7 +9,7 @@ const logger = require('./services/logger');
 import {init, sendMessage, disconnect, activeCheck} from './controllers/users'
 import {joinBatch, loadBatch, receiveSurvey} from './controllers/batches'
 import {errorHandler} from './services/common'
-import {addHIT, disassociateQualificationFromWorker, listAssignmentsForHIT, notifyWorkers, assignQual, expireHIT, payBonus, mturk} from "./controllers/utils";
+import {addHIT, disassociateQualificationFromWorker, listAssignmentsForHIT, notifyWorkers, assignQual, payBonus, runningLive} from "./controllers/utils";
 import {User} from './models/users'
 import {Batch} from './models/batches'
 import {Chat} from "./models/chats";
@@ -17,6 +17,10 @@ const moment = require('moment')
 const cors = require('cors')
 const cron = require('node-cron');
 let currentHIT = '';
+export let globalBatchTeamSize = 4;
+export const setTeamSize = value => {
+  globalBatchTeamSize = parseInt(value);
+}
 
 mongoose.Promise = global.Promise;
 mongoose.connection.on('error', (err) => {
@@ -36,6 +40,7 @@ const corsOptions = {
 }
 
 app
+  .set('globalBatchTeamSize', 16)
   .set('APP_ROOT', APP_ROOT)
   .set('SERVER_ROOT', __dirname)
   .use(bodyParser.json({limit: '5mb'}))
@@ -50,11 +55,22 @@ const io = require('socket.io').listen(app.listen(PORT, function() {
   logger.info(module, 'MTURK FRAME: ' + process.env.MTURK_FRAME);
 }));
 
-const initialChecks = [
+let initialChecks = [
   User.updateMany({}, { $set: { connected : false, lastDisconnect: new Date(), socketId: '', batch: null,
       currentChat: null, realNick: null, fakeNick: null}}),
   Batch.updateMany({$or: [{status:'active'}, {status:'waiting'}]}, { $set: { status : 'completed'}}),
 ]
+
+if (process.env.MTURK_MODE === 'off') {
+  for (let i = 0; i < 16; i++ ) {
+    User.create({
+        token: (2001 + i).toString(),
+        mturkId: (2001 + i).toString(),
+        testAssignmentId: 'test'
+      }).then(() => {}).catch(err => errorHandler(err, 'Test users error'))
+  }
+}
+
 
 Promise.all(initialChecks)
   .then(() => {
@@ -82,6 +98,7 @@ const socketMiddleware = function (event, action, data, socket) {
 }
 
 const botId = '100000000000000000000001'
+
 //waiting batch afk check
 cron.schedule('* * * * *', async function(){
   const batch = await Batch.findOne({status: 'waiting'}).select('users createdAt preChat').populate('users.user').lean().exec();
@@ -114,49 +131,50 @@ cron.schedule('* * * * *', async function(){
   }
 });
 
-cron.schedule('*/4 * * * *', async function(){
-  try {
-    const batch = await Batch.findOne({status: 'waiting'}).select('teamSize roundMinutes numRounds').lean().exec();
-    if (batch) {
-      const HIT = await addHIT(batch, false);
-      currentHIT = HIT.HITId;
-      logger.info(module, 'Test HIT created: ' + currentHIT)
-    } else {
-      currentHIT = '';
+if (process.env.MTURK_MODE !== 'off') {
+  cron.schedule('*/4 * * * *', async function(){
+    try {
+      const batch = await Batch.findOne({status: 'waiting'}).select('teamSize roundMinutes numRounds').lean().exec();
+      if (batch) {
+        const HIT = await addHIT(batch, false);
+        currentHIT = HIT.HITId;
+        logger.info(module, 'Test HIT created: ' + currentHIT)
+      } else {
+        currentHIT = '';
+      }
+    } catch (e) {
+      errorHandler(e, 'create schedule HIT error')
     }
-  } catch (e) {
-    errorHandler(e, 'create schedule HIT error')
-  }
-});
+  });
 
-cron.schedule('*/10 * * * * *', async function(){
-  try {
-    if (currentHIT) {
-      const as = (await listAssignmentsForHIT(currentHIT)).Assignments;
-      if (as && as.length) for (let i = 0; i < as.length; i++) {
-        const assignment = as[i];
-        const check = await User.findOne({mturkId: assignment.WorkerId});
-        if (!check) {//add user to db and give willbang qual
-          const url = process.env.MTURK_FRAME === 'ON' ? ' https://workersandbox.mturk.com/requesters/A3QTK0H2SRN96W/projects' :
-            process.env.HIT_URL + '?assignmentId=' + assignment.AssignmentId + '&workerId=' + assignment.WorkerId;
+  cron.schedule('*/10 * * * * *', async function(){
+    try {
+      if (currentHIT) {
+        const as = (await listAssignmentsForHIT(currentHIT)).Assignments;
+        if (as && as.length) for (let i = 0; i < as.length; i++) {
+          const assignment = as[i];
+          const check = await User.findOne({mturkId: assignment.WorkerId});
+          if (!check) {//add user to db and give willbang qual
+            const url = process.env.MTURK_FRAME === 'ON' ? ' https://workersandbox.mturk.com/requesters/A3QTK0H2SRN96W/projects' :
+              process.env.HIT_URL + '?assignmentId=' + assignment.AssignmentId + '&workerId=' + assignment.WorkerId;
 
-          let prs = [
-            User.create({
-              token: assignment.WorkerId,
-              mturkId: assignment.WorkerId,
-              testAssignmentId: assignment.AssignmentId
-            }),
-            payBonus(assignment.WorkerId, assignment.AssignmentId, 0.01),
-            assignQual(assignment.WorkerId, process.env.WILL_BANG_QUAL),
-            notifyWorkers([assignment.WorkerId], 'Experiment started. Please find and accept our main mturk task here: ' + url, 'Bang')
-          ];
-          await Promise.all(prs);
-          logger.info('module', 'User added to db, qual added, notify sent: ' + assignment.WorkerId)
+            let prs = [
+              User.create({
+                token: assignment.WorkerId,
+                mturkId: assignment.WorkerId,
+                testAssignmentId: assignment.AssignmentId
+              }),
+              payBonus(assignment.WorkerId, assignment.AssignmentId, 0.01),
+              assignQual(assignment.WorkerId, runningLive ? process.env.PROD_WILL_BANG_QUAL : process.env.TEST_WILL_BANG_QUAL),
+              notifyWorkers([assignment.WorkerId], 'Experiment started. Please find and accept our main mturk task here: ' + url, 'Bang')
+            ];
+            await Promise.all(prs);
+            logger.info('module', 'User added to db, qual added, notify sent: ' + assignment.WorkerId)
+          }
         }
       }
+    } catch (e) {
+      errorHandler(e, 'check workers error')
     }
-  } catch (e) {
-    errorHandler(e, 'check workers error')
-  }
-});
-
+  });
+}

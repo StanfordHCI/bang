@@ -33,18 +33,8 @@ let  BatchSchema = new Schema({
   startTime: Date,
   teamSize: {type: Number, required: true},
   roundMinutes: {type: Number, required: true},
-  starterSurveyOn: {type: Boolean, required: true, default: false},
-  midSurveyOn: {type: Boolean, required: true, default: false},
-  blacklistOn: {type: Boolean, required: true, default: false},
-  qFifteenOn: {type: Boolean, required: true, default: false},
-  qSixteenOn: {type: Boolean, required: true, default: false},
-  teamfeedbackOn:{type: Boolean, required: true, default: false},
-  psychologicalSafetyOn: {type: Boolean, required: true, default: false},
-  checkinOn: {type: Boolean, required: true, default: false},
-  condition: { type: String, enum: ['control', 'treatment'], default: 'control',required: true },
-  format: [{type: Number, required: true}],
-  experimentRound1: {type: Number, required: true},
-  experimentRound2: {type: Number, required: true},
+  experimentRound1: {type: Number, },
+  experimentRound2: {type: Number, },
   numRounds: {type: Number, required: true},
   tasks: [{
     message: {type: String, required: true},
@@ -53,8 +43,8 @@ let  BatchSchema = new Schema({
       message: {type: String, required: true}
     }],
   }],
-  taskJSON: {},
   midQuestions: [String],
   HITId: {type: String, },
+  roundGen: [{teams: [{users: [Number]}]}]
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);
