@@ -33,19 +33,19 @@ const quals = {
   },
   completedBang: {
     //MEW: useful to filter out people who have already done our HIT.
-    QualificationTypeId: process.env.HAS_BANGED_QUAL,
+    QualificationTypeId: runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL,
     Comparator: "DoesNotExist",
     ActionsGuarded: "DiscoverPreviewAndAccept"
   },
   joinedBang: {
     //MEW: useful to filter people who are scheduled to do our HIT.
-    QualificationTypeId: process.env.WILL_BANG_QUAL,
+    QualificationTypeId: runningLive ? process.env.PROD_WILL_BANG_QUAL : process.env.TEST_WILL_BANG_QUAL,
     Comparator: "DoesNotExist",
     ActionsGuarded: "DiscoverPreviewAndAccept"
   },
   willBang: {
     //MEW: useful to filter people who are scheduled to do our HIT.
-    QualificationTypeId: process.env.WILL_BANG_QUAL,
+    QualificationTypeId: runningLive ? process.env.PROD_WILL_BANG_QUAL : process.env.TEST_WILL_BANG_QUAL,
     Comparator: "Exists",
     ActionsGuarded: "DiscoverPreviewAndAccept"
   }
@@ -284,4 +284,98 @@ export const expireHIT = (id) => {
       }
     );
   })
+};
+
+const teamChecker = roundTeams => {
+  let collaborators = {};
+  roundTeams.forEach(teams => {
+    Object.entries(teams).forEach(([teamName, team]: [string, string[]]) => {
+      team.forEach((person: string) => {
+        let others = team.filter(member => member != person);
+        if (person in collaborators) {
+          others.forEach(member => {
+            if (collaborators[person].includes(member)) {
+              return false;
+            }
+          });
+        } else {
+          collaborators[person] = [];
+        } // make sure there's a array for that person
+        collaborators[person].push(others); // add in collaborators form that team
+      });
+    });
+  });
+  return true;
+};
+
+export const createTeams = (teamSize: number, numRounds: number, people: string[]) => {
+  //MEW: helper to convert sets without a type change because we need them.
+  function set(array: any[]) {
+    const setArray = [];
+    array.forEach(element => {
+      if (!setArray.includes(element)) {
+        setArray.push(element);
+      }
+    });
+    return setArray;
+  }
+  let realPeople = people.slice(0, teamSize ** 2);
+  if (people.length != teamSize ** 2) throw "Wrong number of people.";
+  if (teamSize > numRounds + 1)
+    throw "Team size is too large for number of rounds.";
+  const teamNames = letters.slice(0, teamSize);
+
+  let roundTeams = [];
+  let collaborators = {};
+  realPeople.forEach(person => {
+    collaborators[person] = [person];
+  });
+
+  while (roundTeams.length < numRounds) {
+    let unUsedPeople = realPeople.slice();
+    let teams = {};
+
+    while (unUsedPeople.length) {
+      let team = [unUsedPeople.pop()]; // Add first person to team
+      while (team.length < teamSize) {
+        let teamCollaborators = set(
+          team
+            .map(member => collaborators[member])
+            .reduce((a, b) => a.concat(b))
+        ); //find all prior collaborators
+        let remainingOptions = unUsedPeople.filter(
+          person => !teamCollaborators.includes(person)
+        ); //find all remaining options
+        if (!remainingOptions.length) {
+          return createTeams(teamSize, numRounds, realPeople);
+        } // deal with random selection overlap
+        let newCollaborator = chooseOne(remainingOptions);
+        unUsedPeople = unUsedPeople.filter(person => person != newCollaborator); //update unused people
+
+        team.push(newCollaborator); // add new collaborator into the team
+      }
+
+      team.forEach(member => {
+        collaborators[member] = set(collaborators[member].concat(team));
+      }); //Add collaborators from new team
+      teams[teamNames[Object.keys(teams).length]] = team; //Add new team
+    }
+    roundTeams.push(teams);
+  }
+
+  if (!teamChecker(roundTeams)) throw "Valid teams were not created";
+
+  let roundGen = [];
+  for (let i in roundTeams) {
+    const round = roundTeams[i];
+
+    let newRound = {teams: []}
+    for (let j in round) {
+      const team = round[j];
+      newRound.teams.push({users: team.map(x => x.charCodeAt(0) - 65)})
+    }
+    roundGen.push(newRound)
+  }
+
+  return roundGen;
 };
