@@ -56,6 +56,7 @@ const qFifteenOn = runningLive;
 const qSixteenOn = runningLive;
 const postSurveyOn = true;
 const demographicsSurveyOn = true;
+const predictionRunOn = true;
 
 //Just Mark for now. Feel free to add your ID, and finish a task for us so you can get notificaions too.
 const notifyUsList = ["A19MTSLG2OYDLZ", "A1Y1EKZLN97X0O"];
@@ -1490,10 +1491,12 @@ io.on("connection", socket => {
               if (err) {
                 return console.log(err);
               }
-              const pythonProcess = spawn('python', ["./prediction.py", batchID, currentRound]);
-              pythonProcess.stderr.on('data', (data) => {
-                console.log(chalk.red.inverse(`pythonProcess stderr: ${data}`));
-              });
+              if (predictionRunOn) {
+                const pythonProcess = spawn('python', ["./prediction.py", batchID, currentRound]);
+                pythonProcess.stderr.on('data', (data) => {
+                  console.log(chalk.red.inverse(`pythonProcess stderr: ${data}`));
+                });
+              }
             }
           )
         });

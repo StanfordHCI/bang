@@ -698,7 +698,7 @@ function launchBang(batchID, callback) {
     Title: `Write online ads - variable bonus up to $${bonusPrice} (${batchID})`,
     Description: `Work in groups to write ads for new products. This task can take up to ${Math.round(
       roundMinutes * numRounds + 15
-    )} minutes. There is a initial chatroom for up to 20 minuts for the base pay. If you are selected to move on to the next section, you will receive a prorated bonus of up to $${bonusPrice} (which translates to $${hourlyWage}/hour)`,
+    )} minutes. There is a initial chatroom for up to 20 minutes for the base pay. If you are selected to move on to the next section, you will receive a prorated bonus of up to $${bonusPrice} (which translates to $${hourlyWage}/hour)`,
     AssignmentDurationInSeconds: 60 * taskDuration, // 30 minutes?
     LifetimeInSeconds: 60 * timeActive, // short lifetime, deletes and reposts often
     Reward: String(basePrice),
