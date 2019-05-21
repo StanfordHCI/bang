@@ -694,8 +694,8 @@ const returnCurrentHIT = () => {
 function launchBang(batchID, callback) {
   // HIT Parameters
   let bangParameters = {
-    Title: `Mock Jury Deliberation - bonus up to $${hourlyWage}/hour (${batchID})`,
-    Description: `Work in groups to deliberate on a jury case. This task will take approximately ${Math.round(
+    Title: `Moral Deliberation - bonus up to $${hourlyWage}/hour (${batchID})`,
+    Description: `Work in groups to adjudicate a real-life moral scenario. This task will take approximately ${Math.round(
       roundMinutes * numRounds + 15
     )} minutes. There is a initial chatroom for up to 20 minuts for the base pay. If you are selected to move on to the next section, you will receive a prorated bonus of up to $${bonusPrice} (which translates to $${hourlyWage}/hour)`,
     AssignmentDurationInSeconds: 60 * taskDuration, // 30 minutes?
