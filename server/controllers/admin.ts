@@ -4,9 +4,10 @@ import {Chat} from '../models/chats'
 import {Batch} from '../models/batches'
 import {Survey} from '../models/surveys'
 import {errorHandler} from '../services/common'
-import {addHIT, expireHIT, getAccountBalance, notifyWorkers} from "./utils";
+import {addHIT, getAccountBalance, notifyWorkers, letters, createTeams} from "./utils";
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
+import {setTeamSize} from '../index'
 
 
 export const addBatch = async function (req, res) {
@@ -20,25 +21,30 @@ export const addBatch = async function (req, res) {
 
     let newBatch = req.body;
 
-    let balance = await getAccountBalance();
-    balance = parseFloat(balance.AvailableBalance);
-    const moneyForBatch = (newBatch.teamSize ** 2) * 12 * ((newBatch.roundMinutes * newBatch.numRounds * 1.5) / 60);
-    await notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Account balance: $' + balance + '. Experiment cost: $' + moneyForBatch.toFixed(2), 'Bang');
-    if (balance < moneyForBatch ) {
-      logger.info(module, 'balance problems');
-      res.status(403).end();
-      return;
+    if (process.env.MTURK_MODE !== 'off') {
+      let balance = await getAccountBalance();
+      balance = parseFloat(balance.AvailableBalance);
+      const moneyForBatch = (newBatch.teamSize ** 2) * 12 * ((newBatch.roundMinutes * newBatch.numRounds * 1.5) / 60);
+      await notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Account balance: $' + balance + '. Experiment cost: $' + moneyForBatch.toFixed(2), 'Bang');
+      if (balance < moneyForBatch ) {
+        logger.info(module, 'balance problems');
+        res.status(403).end();
+        return;
+      }
     }
 
     delete newBatch._id;
     newBatch.status = 'waiting';
     newBatch.users = [];
-    newBatch.experimentRound1 = Math.floor(Math.random() * 2) + 1; //1 or 2
-    if (newBatch.experimentRound1 === 1) {
-      newBatch.experimentRound2 = Math.floor(Math.random() * 2) + 3; //3 or 4
-    } else {
-      newBatch.experimentRound2 = 4;
-    }
+    let roundGen = createTeams(newBatch.teamSize, newBatch.numRounds - 1, letters.slice(0, newBatch.teamSize ** 2));
+    newBatch.experimentRound1 = Math.floor(Math.random() * (newBatch.numRounds - 2)) + 1;
+    newBatch.experimentRound2 = Math.floor(Math.random() * (newBatch.numRounds - newBatch.experimentRound1 - 1)) + newBatch.experimentRound1 + 2;
+    let part1 = JSON.parse(JSON.stringify(roundGen)), part2 = JSON.parse(JSON.stringify(roundGen));
+    part1.splice(newBatch.experimentRound2 - 1);
+    part2.splice(0, newBatch.experimentRound2 - 1);
+    part1.push(roundGen[newBatch.experimentRound1 - 1]);
+    newBatch.roundGen = part1.concat(part2);
+
     newBatch.midQuestions = [
       'The members of this team could work for a long time together.',
       'Most of the members of this team would welcome the opportunity to work as a group again in the future.',
@@ -55,7 +61,7 @@ export const addBatch = async function (req, res) {
       'This team has the capacity to sustain itself.',
       'This team has what it takes to endure in future performance episodes.'
     ]
-    if (process.env.MTURK_FRAME === 'ON') {
+    if (process.env.MTURK_FRAME === 'ON' && process.env.MTURK_MODE !== 'off') {
       const HIT = await addHIT(newBatch, true);
       newBatch.HITId = HIT.HITId;
     }
@@ -78,6 +84,7 @@ export const addBatch = async function (req, res) {
     const batchWithChat = await Batch.findByIdAndUpdate(batch._id, {$set: {preChat: preChat._id}})
     res.json({batch: batchWithChat})
     logger.info(module, 'New batch added. Mturk mode: ' + process.env.MTURK_MODE + '; Mturk frame: ' + process.env.MTURK_FRAME);
+    setTeamSize(newBatch.teamSize)
   } catch (e) {
     errorHandler(e, 'add batch error')
   }
