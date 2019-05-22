@@ -7,52 +7,43 @@ import {renderField} from 'Components/form/Text'
 import renderSelectField from 'Components/form/Select'
 import renderMultiSelectField from 'Components/form/MultiSelect'
 
-const qOptions = [
-  {value: 1, label: '1'},
-  {value: 2, label: '2'},
-  {value: 3, label: '3'},
-  {value: 4, label: '4'},
-]
-
-const uOptions = [
-  {value: 1, label: 'Partner from round 1'},
-  {value: 2, label: 'Partner from round 2'},
-  {value: 3, label: 'Partner from round 3'},
-  {value: 4, label: 'Partner from round 4'},
-]
-
-const renderQuestions = ({fields, meta: {touched, error, warning}, questions}) => {
-  let tasks = [];
-  for (let i = 0; i < questions.length; i++) {
-    tasks.push(
-      <div key={i} className='form__form-group'>
-        <label className='form__form-group-label'>{questions[i]}</label>
-        <div className='form__form-group-field'>
-          <Field
-            name={`questions[${i}].result`}
-            component={renderSelectField}
-            type='text'
-            options={qOptions}
-          />
-        </div>
-      </div>
-    )
-  }
-
-  return (<div style={{marginTop: '20px'}}>
-    {tasks}
-  </div>)
-};
-
 class PostSurveyForm extends React.Component {
 
   constructor() {
     super();
-    this.state = {};
+    this.state = {
+      qOptions: [
+        {value: 1, label: '1'},
+        {value: 2, label: '2'},
+        {value: 3, label: '3'},
+        {value: 4, label: '4'},
+      ],
+      uOptions: []
+    };
+  }
+
+  componentDidMount() {
+    let qOptions = [], uOptions= [];
+    for (let i = 0; i < this.props.batch.numRounds; i++) {
+      qOptions[i] = {value: i + 1, label: (i + 1).toString()}
+    }
+    this.props.batch.rounds.forEach((round, index) => {
+      const userId = this.props.user._id.toString();
+      const team = round.teams.find(x => x.users.some(y => y.user.toString() === userId  ))
+      team.users.forEach(user => {
+        if (user.user.toString() !== userId) {
+          uOptions.push({value: user.user, label: user.nickname + ' (round ' + (index + 1) + ')'})
+        }
+      })
+    })
+
+    this.setState({qOptions: qOptions, uOptions: uOptions})
   }
 
   render() {
-    const {invalid, batch} = this.props;
+    const {invalid, batch, user} = this.props;
+
+
 
     return (<div>
         <form className='form' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
@@ -63,20 +54,20 @@ class PostSurveyForm extends React.Component {
                   <div className='form__form-group'>
                     <label className='form__form-group-label'>
                       <p>You met with the same partner in two of the previous four rounds.</p>
-                      <p>How do you think, in what two rounds you worked with the same person?</p>
+                      <p>How do you think, in what two rounds you worked with the same people?</p>
                     </label>
                     <div className='form__form-group-field'>
                       <Field
                         name='mainQuestion.expRound1'
                         component={renderSelectField}
                         type='text'
-                        options={qOptions}
+                        options={this.state.qOptions}
                       />
                       <Field
                         name='mainQuestion.expRound2'
                         component={renderSelectField}
                         type='text'
-                        options={qOptions}
+                        options={this.state.qOptions}
                       />
                     </div>
                   </div>
@@ -84,9 +75,9 @@ class PostSurveyForm extends React.Component {
                     <label className='form__form-group-label'>What partners do you prefer to work with in the future?</label>
                     <div className='form__form-group-field'>
                       <Field
-                        name='mainQuestion.partners'
+                        name={'mainQuestion.partners'}
                         component={renderMultiSelectField}
-                        options={uOptions}
+                        options={this.state.uOptions}
                       />
                     </div>
                   </div>
@@ -108,7 +99,25 @@ class PostSurveyForm extends React.Component {
 }
 
 const validate = (values, props) => {
-  const errors = {questions: []};
+  const errors = {mainQuestion: {}};
+  if (!values.mainQuestion) {
+    errors.mainQuestion.expRound1 = 'required';
+    errors.mainQuestion.expRound2 = 'required';
+    errors.mainQuestion.partners = 'required';
+  } else {
+    if (!values.mainQuestion.partners || !values.mainQuestion.partners.length) {
+      errors.mainQuestion.partners = 'required';
+    }
+    if (!values.mainQuestion.expRound1) {
+      errors.mainQuestion.expRound1 = 'required';
+    }
+    if (!values.mainQuestion.expRound2) {
+      errors.mainQuestion.expRound2 = 'required';
+    }
+    if (values.mainQuestion.expRound2 === values.mainQuestion.expRound1) {
+      errors.mainQuestion.expRound2 = 'invalid';
+    }
+  }
 
   return errors
 };
@@ -124,7 +133,7 @@ const selector = formValueSelector('PostSurveyForm');
 
 function mapStateToProps(state) {
   return {
-
+    user: state.app.user
   }
 }
 
