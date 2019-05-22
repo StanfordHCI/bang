@@ -14,7 +14,7 @@ let  SurveySchema = new Schema({
   mainQuestion: {
     expRound1: Number,
     expRound2: Number,
-    partners: [String]
+    partners: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}]
   },
   round: Number,
   isPost: Boolean
