@@ -635,32 +635,8 @@ if (runExperimentNow) {
   });
 }
 
-//Add more products
-let tasks = [
-  {
-    name: "Thé-tis Tea : Plant-based seaweed tea, rich in minerals",
-    url:
-      "https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw"
-  },
-  {
-    name: "Stool Nº1",
-    url: "https://www.kickstarter.com/projects/390812913/stool-no1"
-  },
-  {
-    name: "LetB Color - take a look at time in different ways",
-    url:
-      "https://www.kickstarter.com/projects/letbco/letb-color-take-a-look-at-time-in-different-ways"
-  },
-  {
-    name: "FLECTR 360 OMNI – cycling at night with full 360° visibility",
-    url: "https://www.kickstarter.com/projects/outsider-team/flectr-360-omni"
-  },
-  {
-    name: "The Ollie Chair: Shape-Shifting Seating",
-    url:
-      "https://www.kickstarter.com/projects/144629748/the-ollie-chair-shape-shifting-seating"
-  }
-];
+const taskPDF = ["./Anna.pdf", "./Min-Su.pdf"] // use .shuffle and declare list outside if you want
+shuffle(taskPDF);
 
 if (randomTaskOrderOn) {
   tasks = shuffle(tasks);
@@ -1895,67 +1871,58 @@ io.on("connection", socket => {
 
       // save start time
       startTime = new Date().getTime();
+      const currentPDF = taskPDF[currentRound%taskPDF.length]
 
       // Initialize steps
       const taskSteps = [
         {
-          time: 0.001,
-          message: `<strong>Be careful not to refresh or leave the page! If you do, you will not be able to return to the task and will not be compensated for your time.</strong>`
-        },
-        {
-          time: 0.002,
-          message: `<strong>There are a total of 4 rounds of team interaction with a reflection survey following each one. You will receive the stated bonus pay if you thoughtfully fill out every survey question!</strong>`
-        },
-        {
-          time: 0.003,
-          message: `The entire HIT will take no more than ${Math.round(
-            roundMinutes * numRounds + 15
-          )} minutes total.`
-        },
-        { time: 0.005, message: `<strong>Task:</strong><br>${taskText}` },
-        {
-          time: 0.005,
-          message: `<strong>Directions:</strong><br>1. Check out the link above and collaborate with your team members in the chat room to develop a text advertisement<br>2. The ad must be no more than <strong>30 characters long</strong>. <br>3. Instructions will be given for submitting the team's final product. <br>4. You have ${textifyTime(
-            roundMinutes
-          )} to complete this round. <br>5. Your final advertisement will appear online. <strong>The more successful it is, the larger the bonus each team member will receive.</strong>`
-        },
-        {
-          time: 0.007,
-          message: `<strong>Example:</strong><br>Text advertisements for 'Renaissance Golf Club': <br><ul style='list-style-type:disc'><li><strong>An empowering modern club</strong><br></li><li><strong>A private club with reach</strong><br></li><li><strong>Don't Wait. Discover Renaissance Today</strong></li></ul><br>`
-        },
-        {
-          time: 0.01,
+          time: 0.05,
           message:
-            "<br><strong>HIT bot: Take a minute to review all instructions above.</strong>"
+            "**************DETAILED JURY INSTRUCTIONS BELOW**************"
         },
         {
-          time: 0.15,
+          time: 0.05,
           message:
-            "<br><strong>HIT bot: Say hello to your team members! Begin brainstorming ideas together.</strong>"
+            `<strong>Step 1. Read the facts of the case and the jury instructions at <a href="${currentPDF}" target="_blank">this link</a>.`
         },
         {
-          time: 0.4,
+          time: 0.05,
           message:
-            "<br><strong>HIT bot: As a team, discuss and narrow down your ideas. Collaborate to create the most compelling text ad.</strong>"
+            "Remember to read both the Case Background and the Jury Instructions."
         },
         {
-          time: 0.85,
+          time: 0.05,
           message:
-            "<br><strong>HIT bot: Polish your team's favorite ad and get ready to submit.</strong>"
+            "<strong>Step 2: Choose a presiding juror. The presiding juror should see to it that your discussions are orderly and that everyone has a fair chance to be heard.</strong>"
         },
         {
-          time: 0.87,
+          time: 0.05,
+          message: "<strong>Step 3: Deliberate.</strong>"
+        },
+        {
+          time: 0.05,
           message:
-            "<br>Remember, your final ad can't be more than <strong>maximum 30 characters long</strong>."
+            "It is your duty to talk with one another in the jury room and to consider the views of all the jurors. Each of you must decide the case for yourself, but only after you have considered the evidence with the other members of the jury. Feel free to change your mind if you are convinced that your position should be different. You should all try to agree. But do not give up your honest beliefs just because the others think differently."
+        },
+        {
+          time: 0.05,
+          message:
+            "Please do not state your opinions too strongly at the beginning of your deliberations or immediately announce how you plan to vote as it may interfere with an open discussion. Keep an open mind so that you and your fellow jurors can easily share ideas about the case."
+        },
+        {
+          time: 0.05,
+          message:
+            "You should use your common sense and experience in deciding whether testimony is true and accurate. However, during your deliberations, do not make any statements or provide any information to other jurors based on any special training or unique personal experiences that you may have had related to matters involved in this case. What you may know or have learned through your training or experience is not a part of the evidence received in this case."
         },
         {
           time: 0.9,
           message:
-            "<br><strong>HIT bot: Submit the team's final ad by sending a message with a '!' directly in front of the text ad. Only the final submission with a '!' will be counted.</strong>"
+            "<strong>Time is running out. Come to a final decision. If you’re all in agreement, answer *Y or *N according to your decision. If you’re not all in agreement, answer *Hung jury to indicate that you were not been able to reach agreement. If you were not unanimous, report the vote counts.</strong>"
         },
         {
-          time: 0.95,
-          message: "<br><strong>HIT bot: Last chance to submit!</strong>"
+          time: 0.9,
+          message:
+            "<strong>Reminder, *Y means that you believe the task should be REJECTED. *N means that the task should be ACCEPTED.</strong>"
         },
         {
           time: 0.96,
