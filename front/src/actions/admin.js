@@ -70,7 +70,7 @@ export function deleteBatch(id) {
 
     return axios({
       method: 'delete',
-      url: 'batches/' + id,
+      url: 'batches/' + id + '/',
     })
       .then((response) => {
         dispatch(setLoading(false));
@@ -91,7 +91,7 @@ export function loadBatchList(params) {
 
     return axios({
       method: 'get',
-      url: 'admin/batches',
+      url: 'admin/batches/',
     })
       .then((response) => {
         dispatch(setLoading(false));
@@ -112,7 +112,7 @@ export function loadBatch(batchId) {
 
     return axios({
       method: 'get',
-      url: 'batches/' + batchId,
+      url: 'batches/' + batchId + '/',
     })
       .then((response) => {
         dispatch(setLoading(false));
@@ -196,7 +196,7 @@ export function deleteTemplate(id) {
     dispatch(setLoading(true));
     return axios({
       method: 'delete',
-      url: 'templates/' + id,
+      url: 'templates/' + id + '/',
     })
       .then((response) => {
         dispatch(setLoading(false));
@@ -216,7 +216,7 @@ export function loadTemplateList(params) {
     dispatch(setLoading(true));
     return axios({
       method: 'get',
-      url: 'admin/templates',
+      url: 'admin/templates/',
       params
     })
       .then((response) => {
@@ -237,7 +237,7 @@ export function loadTemplate(templateId) {
     dispatch(setLoading(true));
     return axios({
       method: 'get',
-      url: 'templates/' + templateId,
+      url: 'templates/' + templateId +'/',
     })
       .then((response) => {
         dispatch(setLoading(false));
@@ -257,7 +257,7 @@ export function loadBatchResult(id) {
     dispatch(setLoading(true));
     return axios({
       method: 'get',
-      url: 'admin/batch-result/' + id,
+      url: 'admin/batch-result/' + id + '/',
     })
       .then((response) => {
         dispatch(setLoading(false));
