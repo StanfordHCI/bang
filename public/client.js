@@ -252,7 +252,7 @@ $(function() {
 
   let currentTeam = [];
 
-  document.title = "Ad writing task";
+  document.title = "Virtual Jury Task";
 
   // Implements notifications
   let notify = () => {

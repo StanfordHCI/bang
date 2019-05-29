@@ -695,15 +695,15 @@ function launchBang(batchID, callback) {
   // HIT Parameters
 
   let bangParameters = {
-    Title: `Write online ads - variable bonus up to $${bonusPrice} (${batchID})`,
-    Description: `Work in groups to write ads for new products. This task can take up to ${Math.round(
+    Title: `Moral Deliberation - variable bonus up to $${bonusPrice} (${batchID})`,
+    Description: `Work in groups as a "virtual jury" to discuss a real-life moral dilemma. This task can take up to ${Math.round(
       roundMinutes * numRounds + 15
     )} minutes. There is a initial chatroom for up to 20 minuts for the base pay. If you are selected to move on to the next section, you will receive a prorated bonus of up to $${bonusPrice} (which translates to $${hourlyWage}/hour)`,
     AssignmentDurationInSeconds: 60 * taskDuration, // 30 minutes?
     LifetimeInSeconds: 60 * timeActive, // short lifetime, deletes and reposts often
     Reward: String(basePrice),
     AutoApprovalDelayInSeconds: 60 * taskDuration,
-    Keywords: "ads, writing, copy editing, advertising",
+    Keywords: "moral, jury, deliberation, dilemma",
     MaxAssignments: numAssignments,
     QualificationRequirements: safeQuals,
     Question: externalHIT(taskURL)

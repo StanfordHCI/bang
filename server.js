@@ -638,10 +638,6 @@ if (runExperimentNow) {
 const taskPDF = ["./Anna.pdf", "./Min-Su.pdf"] // use .shuffle and declare list outside if you want
 shuffle(taskPDF);
 
-if (randomTaskOrderOn) {
-  tasks = shuffle(tasks);
-}
-
 let users = []; //the main local user storage
 let userPool = []; //accumulates users pre-experiment
 let waitchatStart = 0;
@@ -741,7 +737,6 @@ db.batch.insert(
     format: conditions[currentCondition],
     experimentRound: experimentRound,
     numRounds: numRounds,
-    products: tasks,
     teamSize: teamSize
   },
   (err, usersAdded) => {
@@ -1764,17 +1759,8 @@ io.on("connection", socket => {
       });
 
       //Notify user 'initiate round' and send task.
-
-      let currentTask = tasks[currentRound];
-
-      console.log("Current Product:", currentTask);
-
       let taskText =
-        "Design text advertisement for <strong><a href='" +
-        currentTask.url +
-        "' target='_blank'>" +
-        currentTask.name +
-        "</a></strong>!";
+        "Virtual Jury for Real-Life Moral Dilemma";
 
       experimentStarted = true;
 
@@ -1860,7 +1846,6 @@ io.on("connection", socket => {
         }
       });
 
-      console.log("Issued task for:", currentTask.name);
       console.log(
         "Started round",
         currentRound,
