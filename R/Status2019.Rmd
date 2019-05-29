@@ -1,0 +1,849 @@
+---
+title: "Status Revision"
+output: html_document
+fig_width: 3.5
+fig_caption: yes
+---
+
+## Set-up packages // libraries and prepare for data import:
+```{r echo=FALSE, include=FALSE, results='hide'}
+# You will need all these packages. This may require some extra installation steps on the first time. 
+library(jsonlite)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(pROC)
+library(stargazer)
+library(dplyr)
+library(tidyverse)
+library(naniar)
+```
+
+## Set-up directories, import and clean data:
+```{r, include=TRUE, echo=TRUE}
+rm(list=ls())
+setwd("/Users/phoebeyao/Documents/Career/HCI\ Research/bang/R") # Change this to your working directory where Bang/R file is located 
+dataPath = "../.data" # This is set to so that we can access data where Bang usually stores it.
+MINIMUM_BATCH_NUMBER = 1555782062133  # Identify the batch number that represents the start of the batches you'd like to include in your analysis. 
+# NOTE: You might change this if you're doing different kinds of runs. You might alsop remove it and use a more specific filtering strategy. 
+
+TEAM_SIZE = 3 # Alter depending on team size in runs you're analyzing; this variable is used later on to ensure that you're filtering out all team_sizes != the size you've specified 
+
+MIN_FRACTURE_PERCENT = 0.5 # Default cut off for fracture within a team; this variable is used later to label binary 0 (no fracture), 1 (fracture) values at a group level 
+
+# This function extracts a survey that happens on a per round basis. This is nessesary because otherwise it is nested in a way that R can't easily make sense of it.
+extractBlacklistSurvey = function(frame,survey) {
+  rounds = seq(1,4)
+  roundResponses = lapply(rounds, function(round) {
+    getCol = paste("results.",survey,".",round, sep="")
+    surveyCols = Filter(function(x) grepl(getCol,x),names(frame))
+    newCols = lapply(surveyCols, function(x) gsub(getCol,paste("results.",survey, sep=""),x) )
+    surveyFrame = as.data.frame(frame[,surveyCols])
+  
+    if (is.null(newCols)) {return("No newCols")}
+    names(surveyFrame) = newCols
+    surveyFrame$mturkId = frame$mturkId
+    surveyFrame$id = frame$id
+    surveyFrame$round = round
+    surveyFrame$batch = frame$batch
+    #surveyFrame$room = frame$room
+    surveyFrame$rooms = frame$rooms
+    surveyFrame$manipulationCheck <- frame$results.manipulationCheck
+    #surveyFrame$blacklist = frame$results.blacklistCheck
+    return(surveyFrame)
+  })
+  return(Reduce(rbind, roundResponses))
+}
+
+# Similarly, to the prior two functions, this extracts a general survey across rounds.
+extractStatusSurvey = function(frame,survey) {
+  rounds = seq(1,4)
+  roundResponses = lapply(rounds, function(round) {
+    
+    getCol = paste("results.",survey,".",round,sep="")
+    getTeamCol = paste("results.statusTeams.",round,sep="")
+    
+    getCols = c(getCol, getTeamCol)
+    
+    surveyCols = Filter(function(x) grepl(paste(getCols, collapse="|"),x),names(frame))
+    
+    newCols = lapply(surveyCols, function(x) gsub(getCol,paste("results.",survey, sep=""),x) )
+    surveyFrame = as.data.frame(frame[,surveyCols])
+    
+    if (is.null(newCols)) {return("No newColNames")}
+    names(surveyFrame) = c("results.statusCheck.1", "results.statusCheck.2", "results.statusCheck.3", "results.statusCheck.4", "results.statusCheck.5", "results.statusCheck.6", "results.statusCheck.7", "results.statusCheck.8", "results.statusCheck.9", "results.statusCheck.10", "results.statusCheck.11", "results.statusCheck.12", "results.statusCheck.13", "results.statusCheck.14", "results.statusCheck.15", "results.statusCheck.16", "results.statusTeams")
+    surveyFrame$mturkId = frame$mturkId  
+    surveyFrame$id = frame$id
+    surveyFrame$round = round
+    surveyFrame$batch = frame$batch
+    surveyFrame$rooms = frame$rooms
+    return(surveyFrame)
+  })
+  return(Reduce(bind_rows, roundResponses))
+}
+
+# Similarly, to the prior two functions, this extracts a general survey across rounds.
+extractRoundSurvey = function(frame,survey) {
+  rounds = seq(1,4)
+  roundResponses = lapply(rounds, function(round) {
+    getCol = paste("results.",survey,".",round, sep="")
+    surveyCols = Filter(function(x) grepl(getCol,x),names(frame))
+    newCols = lapply(surveyCols, function(x) gsub(getCol,paste("results.",survey, sep=""),x) )
+    surveyFrame = as.data.frame(frame[,surveyCols])
+    if (is.null(newCols)) {return("No newCols")}
+    names(surveyFrame) = newCols
+    surveyFrame$mturkId = frame$mturkId
+    surveyFrame$id = frame$id
+    surveyFrame$round = round
+    surveyFrame$batch = frame$batch
+    surveyFrame$rooms = frame$rooms
+    return(surveyFrame)
+  })
+  return(Reduce(bind_rows, roundResponses))
+}
+
+# These are used to identify particular task activities automatically when doing cross task analysis, e.g. Fracture work for CSCW 
+task = c("Creative", "Intellective", "Cognitive conflict")
+taskText = c("The Ollie Chair: Shape-Shifting Seating", "<ol>\n    <li>Number of miles from New York to Los Angeles</li>\n    <li>Average weight of an elephant</li>\n    <li>Number of U.S. states that border the Gulf of Mexico</li>\n    <li>Number of months per year residents of Tromoso, Norway go without seeing a sunset</li>\n    <li>Highest temperature (in degrees F) ever registered in the U.S.</li>\n    </ol>", "To purchase art for display in the community's art gallery.")
+
+# A lookup function for tasks. 
+checkTask = function(batchData) {
+  frame = as.data.frame(batchData$products)
+  if(any(which(frame == taskText[1]))) {return(task[1])}
+  if(any(which(frame == taskText[2]))) {return(task[2])}
+  if(any(which(frame == taskText[3]))) {return(task[3])}
+  return("none")
+}
+
+# loads in data from a batch allowing for batch level analysis, e.g. task tracking.
+loadBatch = function(batch){
+  batchData = read_json(paste(dataPath,batch,"batch.json",sep="/"), simplifyVector = TRUE)
+  c(batch,
+    task = checkTask(batchData)
+    )
+}
+
+# Makes a list of batches and performs initial filters on them. This list is used when we look up batchs later
+options(scipen=999) # Change from scientific notation so we can compare batch numbers below
+batches = dir(dataPath, pattern = "^[0-9]+$" )
+batches = as.numeric(batches) 
+batches = batches[batches>MINIMUM_BATCH_NUMBER] #Modify this filter to select different target batches
+
+# Builds a frame version of batches and extends it to include task information
+batchFrame = as.data.frame(batches)
+batchFrame = batchFrame %>% 
+  filter(any(dir(paste(dataPath,batches,sep="/")) == "batch.json")) %>%
+  filter(any(dir(paste(dataPath,batches,sep="/")) == "users.json")) %>%
+  mutate(batch = batches) %>%
+  select( -batches )
+batchFrame = apply(batchFrame,1 ,loadBatch)
+batchFrame = t(batchFrame)
+batchFrame = data.frame(
+  batch = as.numeric(batchFrame[,1]),
+  task = as.character(batchFrame[,2])
+)
+
+# Filters batches by ones that had completions.
+batches = Filter(function(batch) {
+  if (any(dir(paste(dataPath,batch,sep="/")) == "batch.json") && (any(dir(paste(dataPath,batch,sep="/")) == "users.json")) ) {
+      batchData = read_json(paste(dataPath,batch,"batch.json",sep="/"), simplifyVector = TRUE)
+      return(any(batchData$batchComplete == TRUE))
+    }
+    return(FALSE)
+}, batches)
+
+# generates a user table that basically stores all the data we have for each user (drawn from the users db)
+users <- Reduce(function(x,y) merge(x, y, all=TRUE), lapply(batches, function(batch) {
+  userFile = read_json(paste(dataPath,batch,"users.json",sep="/"), simplifyVector=TRUE)
+  return(flatten(userFile, recursive = TRUE))
+}))
+
+# Filter out variables not relevant to analysis. NOTE: these change for different runs and configureations, so it can be useful to double check what data you need.
+# users <- users %>%
+#   select(-results.engagementFeedback.undefined, -results.qSixteenCheck.undefined, -results.qFifteenCheck.undefined, -contains("results.viabilityCheck.0"))
+
+# Fixes midsurvey that has 'why' questions, so they have the correct numbering. 
+users <- users %>%
+  select(
+    -results.qSixteenCheck.2, 
+    -results.qSixteenCheck.4, 
+    -results.qSixteenCheck.6, 
+    -results.qSixteenCheck.8, 
+    -results.qFifteenCheck.2, 
+    -results.qFifteenCheck.4, 
+    -results.qFifteenCheck.6, 
+    -results.qFifteenCheck.8
+  ) %>%
+  mutate(
+    results.qFifteenCheck.2 = results.qFifteenCheck.3, 
+    results.qFifteenCheck.3 = results.qFifteenCheck.5, 
+    results.qFifteenCheck.4 = results.qFifteenCheck.7, 
+    results.qSixteenCheck.2 = results.qSixteenCheck.3, 
+    results.qSixteenCheck.3 = results.qSixteenCheck.5, 
+    results.qSixteenCheck.4 = results.qSixteenCheck.7
+  )
+
+# Summarizes major demographic data from the demographics survey
+demographics = users %>% 
+  select(contains("demographicsCheck")) %>%
+  mutate(
+    age = 2019 - as.numeric(results.demographicsCheck.3),
+    gender = as.factor(results.demographicsCheck.2)
+  ) %>%
+  filter(age < 200) %>% #No old people
+  summarise(
+    percentFemale = sum(gender == "Female") / n(),
+    percentOther = sum(gender == "Other") / n(),
+    ageMean = mean(age),
+    ageSD = sd(age)
+  )
+demographics <- na.omit(demographics)
+
+# Removes instruments not in use. This helps clean things up and reduce errors
+users <- users %>% 
+  select(
+    -contains("results.psychologicalSafety"),
+    -contains("results.blacklistCheck"),
+    -contains("results.engagementFeedback"),
+    -contains("demographicsCheck"),
+    -contains("undefined")
+  )
+users <- na.omit(users)
+
+# Generates a table that breaks users out across rounds. Basically it makes a row per round per user, as opposed to a row per user (which is what users does). This helps us later match down to individual teams.
+usersRounds = as.data.frame(Reduce(rbind, apply(users,1,function(x) {
+  roomsForIndividual = lapply(seq(1,4),function(y) {
+    x$room = x$rooms[y]
+    x$round = y
+    return(x)
+  })
+  return(Reduce(rbind, roomsForIndividual))
+})))
+
+# Converting variables to their proper respective form for later analysis: 
+usersRounds <- usersRounds %>% mutate(mturkId = as.character(mturkId), id = as.character(id), batch=as.numeric(batch), round=as.numeric(round), room=as.character(room))
+usersRounds <- usersRounds %>% select(mturkId, id, batch, round, room)
+
+# processes main manipulation check data by
+manipulationCheck <- usersRounds %>%
+  left_join(users, by=c("mturkId", "id", "batch")) %>% 
+  mutate(room=room.x) %>%
+  mutate(manipulation=results.manipulation) %>%
+  mutate(manipulationCheck=results.manipulationCheck) %>%
+  mutate(teamOrder=results.format) %>%
+  mutate(condition=results.condition) %>%
+  select(mturkId, id, batch, room, round, manipulation, manipulationCheck, teamOrder, condition) %>%
+  left_join(batchFrame, by="batch") #Adds in batch frame so we have task information
+
+# Imports performance data and calculates ranks within each task.
+performanceTable = read.csv("../performance.csv", header = TRUE)
+performanceTable = performanceTable %>%
+  group_by(roundTask) %>% 
+  mutate(
+    performancePercentile = rank(performance) / n()
+  )
+
+#Breaks out surveys happening on the per round level so we can process them for each user. 
+qFifteen <- extractBlacklistSurvey(users, 'qFifteenCheck')
+qSixteen <- extractBlacklistSurvey(users, 'qSixteenCheck')
+statusSurvey <- extractStatusSurvey(users, 'statusCheck')
+conflictSurvey <- extractRoundSurvey(users, 'conflictCheck')
+creativeSurvey <- extractRoundSurvey(users, 'creativeCheck')
+satisfactionSurvey <- extractRoundSurvey(users, 'satisfactionCheck')
+
+print(statusSurvey)
+print(conflictSurvey)
+print(creativeSurvey)
+print(satisfactionSurvey)
+```
+
+# Now merge everything
+# This merges back many of the variables we've generated into some core tables to use for actual analysis
+```{r}
+# Brings together surveys and cleans them up a bit.
+usersRounds <- manipulationCheck %>%
+  left_join(qFifteen, by=c("mturkId", "id", "batch", "round")) %>%
+  left_join(qSixteen, by=c("mturkId", "id", "batch", "round")) %>%
+  left_join(statusSurvey, by=c("mturkId", "id", "batch", "round")) %>%
+  left_join(conflictSurvey, by=c("mturkId", "id", "batch", "round")) %>%
+  left_join(creativeSurvey, by=c("mturkId", "id", "batch", "round")) %>%
+  left_join(satisfactionSurvey, by=c("mturkId", "id", "batch", "round")) %>%
+  mutate(
+    statusTeams = map_chr(results.statusTeams, paste, collapse = ","),
+    rooms = rooms.x,
+    manipulation = as.character(manipulation),
+    manipulationCheck = as.character(manipulationCheck.x)) %>%
+    separate(statusTeams, c("member.1", "member.2", "member.3", "member.4"))  %>%
+  select(-results.statusTeams, -manipulationCheck.x, -manipulationCheck.y, -rooms, -rooms.x, -rooms.y, -rooms.x.x, -rooms.y.y, -rooms.x.x.x, -rooms.y.y.y) %>%
+  replace_with_na(replace = list(member.4 = "N/A"))
+
+# Renames conditions
+usersRounds <- usersRounds %>% 
+  mutate(condition = case_when(
+    condition=="treatment" ~ "masked",
+    condition=="control" ~ "unmasked"
+  ))
+
+# Conditionally assign grouping types based on treatment and results column:
+## For runs with 4 rounds:
+usersRounds <- usersRounds %>% mutate(
+  team = case_when(
+    teamOrder=="c(1, 1, 2, 3)" & round==1 ~ "A",
+    teamOrder=="c(1, 1, 2, 3)" & round==2 ~ "Ap",
+    teamOrder=="c(1, 1, 2, 3)" & round==3 ~ "B",
+    teamOrder=="c(1, 1, 2, 3)" & round==4 ~ "B",
+    teamOrder=="c(1, 2, 1, 3)" & round==1 ~ "A",
+    teamOrder=="c(1, 2, 1, 3)" & round==2 ~ "B",
+    teamOrder=="c(1, 2, 1, 3)" & round==3 ~ "Ap",
+    teamOrder=="c(1, 2, 1, 3)" & round==4 ~ "B",
+    teamOrder=="c(2, 1, 1, 3)" & round==1 ~ "B",
+    teamOrder=="c(2, 1, 1, 3)" & round==2 ~ "A",
+    teamOrder=="c(2, 1, 1, 3)" & round==3 ~ "Ap",
+    teamOrder=="c(2, 1, 1, 3)" & round==4 ~ "B",
+    teamOrder=="c(2, 3, 1, 1)" & round==1 ~ "B",
+    teamOrder=="c(2, 3, 1, 1)" & round==2 ~ "B",
+    teamOrder=="c(2, 3, 1, 1)" & round==3 ~ "A",
+    teamOrder=="c(2, 3, 1, 1)" & round==4 ~ "Ap",
+    teamOrder=="c(2, 1, 3, 1)" & round==1 ~ "B",
+    teamOrder=="c(2, 1, 3, 1)" & round==2 ~ "A",
+    teamOrder=="c(2, 1, 3, 1)" & round==3 ~ "B",
+    teamOrder=="c(2, 1, 3, 1)" & round==4 ~ "Ap",
+    teamOrder=="c(1, 2, 3, 1)" & round==1 ~ "A",
+    teamOrder=="c(1, 2, 3, 1)" & round==2 ~ "B",
+    teamOrder=="c(1, 2, 3, 1)" & round==3 ~ "B",
+    teamOrder=="c(1, 2, 3, 1)" & round==4 ~ "Ap"
+  ))
+
+## Converts satisfaction to sum and cleans up extra satisfaction data
+satisfactionLevels <- c("1 (Not at all)", "2", "3", "4", "5 (Highly)")
+satisfactionFaceLevels <- c("D:", "]:", "|:", "[:", ":D")
+usersRounds <- usersRounds %>%
+  mutate_at(.vars = vars(contains("satisfactionCheck.1")), funs(factor(., levels = satisfactionLevels)))
+usersRounds$satisfactionScale.1 <- usersRounds %>%
+  select(contains("satisfactionCheck.1")) %>%
+  mutate_all(as.numeric) %>%
+  rowSums()
+usersRounds <- usersRounds %>%
+  select(-contains("satisfactionCheck.1"))
+rm("satisfactionLevels")
+
+usersRounds <- usersRounds %>%
+  mutate_at(.vars = vars(contains("satisfactionCheck")), funs(factor(., levels = satisfactionFaceLevels)))
+usersRounds$satisfactionScale.2 <- usersRounds %>%
+  select(contains("satisfactionCheck.2")) %>%
+  mutate_all(as.numeric) %>%
+  rowSums()
+usersRounds <- usersRounds %>%
+  select(-contains("satisfactionCheck.2"))
+rm("satisfactionFaceLevels")
+
+## Converts status to sum as well as sum per user and cleans up extra status data
+statusLevels <- c("1 (Disagree Strongly)","2","3","4","5","6","7 (Agree Strongly)")
+usersRounds <- usersRounds %>%
+  mutate_at(.vars = vars(contains("statusCheck")), funs(factor(., levels = statusLevels)))
+
+usersRounds$statusScaleSum <- usersRounds %>%
+  select(contains("statusCheck")) %>%
+  mutate_all(as.numeric) %>%
+  rowSums()
+usersRounds$statusScale.1 <- usersRounds %>%
+  select("results.statusCheck.1", "results.statusCheck.5", "results.statusCheck.9", "results.statusCheck.13") %>%
+  mutate_all(as.numeric) %>%
+  rowSums()
+usersRounds$statusScale.2 <- usersRounds %>%
+  select("results.statusCheck.2", "results.statusCheck.6", "results.statusCheck.10", "results.statusCheck.14") %>%
+  mutate_all(as.numeric) %>%
+  rowSums()
+usersRounds$statusScale.3 <- usersRounds %>%
+  select("results.statusCheck.3", "results.statusCheck.7", "results.statusCheck.11", "results.statusCheck.15") %>%
+  mutate_all(as.numeric) %>%
+  rowSums()
+usersRounds$statusScale.4 <- usersRounds %>%
+  select("results.statusCheck.4", "results.statusCheck.8", "results.statusCheck.12", "results.statusCheck.16") %>%
+  mutate_all(as.numeric) %>%
+  rowSums()
+
+usersRounds <- usersRounds %>% mutate(
+  statusScale.4 = case_when(
+    is.na(member.4) ~ NA,
+    TRUE ~ statusScale.4))
+
+usersRounds <- usersRounds %>%
+  select(-contains("statusCheck"))
+rm("statusLevels")
+
+## Converts conflict to sum and cleans up extra conflict data
+conflictLevels <- c("1 (None)", "2", "3", "4", "5 (A lot)")
+usersRounds <- usersRounds %>%
+  mutate_at(.vars = vars(contains("conflictCheck")), funs(factor(., levels = conflictLevels)))
+usersRounds$conflictScale <- usersRounds %>%
+  select(contains("conflictCheck")) %>%
+  mutate_all(as.numeric) %>%
+  rowSums()
+usersRounds <- usersRounds %>%
+  select(-contains("conflictCheck"))
+rm("conflictLevels")
+
+## Converts creative to sum and cleans up extra creative data
+creativeLevels <- c("1 (Not at all)", "2", "3", "4", "5", "6", "7 (Highly)")
+usersRounds <- usersRounds %>%
+  mutate_at(.vars = vars(contains("creativeCheck")), funs(factor(., levels = creativeLevels)))
+usersRounds$creativeScale <- usersRounds %>%
+  select(contains("creativeCheck")) %>%
+  mutate_all(as.numeric) %>%
+  rowSums()
+usersRounds <- usersRounds %>%
+  select(-contains("creativeCheck"))
+rm("creativeLevels")
+
+# Stores out fracture questions as true or false
+usersRounds <- usersRounds %>%
+  mutate(fracture = results.qFifteenCheck == "Do not keep this team",
+         fractureMeta = results.qSixteenCheck == "Do not keep this team") %>%
+  select(-results.qFifteenCheck, -results.qSixteenCheck)
+
+# groups user rounds into teams, so team data is presented in one row.
+teamStats <- usersRounds %>%
+  arrange(id) %>%
+  group_by(room, batch, round, condition, team) %>%
+  summarise(n=n(), 
+            teamMeanStatusSum=mean(statusScaleSum), 
+            teamMedianStatusSum=median(statusScaleSum),
+            teamMeanStatus.1=mean(statusScale.1), 
+            teamMedianStatus.1=median(statusScale.1),
+            teamMeanStatus.2=mean(statusScale.2), 
+            teamMedianStatus.2=median(statusScale.2),
+            teamMeanStatus.3=mean(statusScale.3), 
+            teamMedianStatus.3=median(statusScale.3),
+            teamMeanStatus.4=mean(statusScale.4), 
+            teamMedianStatus.4=median(statusScale.4),
+            teamMeanSatisfaction.1=mean(satisfactionScale.1), 
+            teamMedianSatisfaction.1=median(satisfactionScale.1),
+            teamMeanSatisfaction.2=mean(satisfactionScale.2), 
+            teamMedianSatisfaction.2=median(satisfactionScale.2),
+            teamMeanConflict=mean(conflictScale), 
+            teamMedianConflict=median(conflictScale),
+            teamMeanCreativity=mean(creativeScale), 
+            teamMedianCreativity=median(creativeScale),
+            groupManipulationCheck=sum(as.numeric(manipulationCheck==manipulation)/n()),
+            teamProportionFracture=sum(fracture/n()),
+            teamMembers = paste(id, collapse=", "))
+
+# FIlter by TEAM_SIZE. 
+teamStats <- teamStats %>%
+  filter(n>=TEAM_SIZE)
+
+#Adds team level data back into userRounds
+usersRounds <- teamStats %>%
+  select(room, batch, round, teamProportionFracture, condition, team) %>%
+  left_join(usersRounds, by=c("room", "batch", "round", "condition", "team"))
+
+statusData <- teamStats %>%
+  select(teamMedianStatus.1, teamMedianStatus.2, teamMedianStatus.3, teamMedianStatus.4)
+
+userRounds$maxStatus = c(1, 2, 3, 4)[apply(statusData, 1, which.max)]
+
+## Table showing how many teams we've run in each condition combination:  
+print(table(teamStats$condition, teamStats$team))
+
+# Calculates statistics for satisfaction 1
+teamSatisfaction.1 = teamStats$teamMeanSatisfaction.1
+satisfactionMean.1 = mean(teamSatisfaction.1)
+satisfactionSD.1 = sd(teamSatisfaction.1)*sqrt((length(teamSatisfaction.1)-1)/(length(teamSatisfaction.1)))
+
+# Calculates statistics for satisfaction 2
+teamSatisfaction.2 = teamStats$teamMeanSatisfaction.2
+satisfactionMean.2 = mean(teamSatisfaction.2)
+satisfactionSD.2 = sd(teamSatisfaction.2)*sqrt((length(teamSatisfaction.2)-1)/(length(teamSatisfaction.2)))
+
+# Calculates statistics for status
+teamStatus = teamStats$teamMeanStatusSum
+statusMean = mean(teamStatus)
+statusSD = sd(teamStatus)*sqrt((length(teamStatus)-1)/(length(teamStatus)))
+
+# Calculates statistics for conflict
+teamConflict = teamStats$teamMeanConflict
+conflictMean = mean(teamConflict)
+conflictSD = sd(teamConflict)*sqrt((length(teamConflict)-1)/(length(teamConflict)))
+
+# Calculates statistics for creativity
+teamCreativity = teamStats$teamMeanCreativity
+creativityyMean = mean(teamCreativity)
+creativitySD = sd(teamCreativity)*sqrt((length(teamCreativity)-1)/(length(teamCreativity)))
+
+# Stores teamFracture as a logical value, based on fracture percent
+teamStats <- teamStats %>%
+  group_by(room, batch, round, condition) %>%
+  mutate(teamFracture = case_when (
+    teamProportionFracture<MIN_FRACTURE_PERCENT ~ FALSE,
+    teamProportionFracture>=MIN_FRACTURE_PERCENT ~ TRUE))
+
+# Stores fracture information back in userRounds
+usersRounds <- usersRounds %>%
+  select(-teamProportionFracture, -team) %>%
+  left_join(teamStats, by=c("room", "batch", "round", "condition"))
+
+# Checks if users guessed their team's fracture correctly
+usersRounds$partnerFractured <- ifelse(usersRounds$teamProportionFracture == 0, FALSE,
+                                ifelse(usersRounds$teamProportionFracture == 1, TRUE,
+                                       ifelse(usersRounds$fracture, FALSE, TRUE)))
+usersRounds$metaGuessedCorrectly <- usersRounds$fractureMeta == usersRounds$partnerFractured
+
+# Stores out main data table for processing
+data = usersRounds
+
+# Adds team data to performance table, so we can do performance analysis independently later.
+performanceTable = performanceTable %>% 
+  mutate(
+    room = as.character(substring(room,2)),
+    round = as.double(round+1) 
+  ) %>%
+  left_join(teamStats)
+performanceTable = na.omit(performanceTable)
+
+# For exporting data as csv.
+# teamStats$fracture = as.numeric(teamStats$teamFracture)
+# write.csv(teamStats, file = "teamStats.csv")
+```
+```{r}
+medianStatusUser <- teamStats %>%
+  filter(team=="Ap"|team=="A") %>%
+  group_by(condition, team, batch, round)
+
+print(medianStatusUser)
+
+medianStatusChanges <- teamStats %>%
+  filter(team=="Ap"|team=="A") %>%
+  group_by(condition, team) %>%
+  summarise(medianStatus = median(teamMedianStatusSum))
+
+medianConflictChanges <- teamStats %>%
+  filter(team=="Ap"|team=="A") %>%
+  group_by(condition, team) %>%
+  summarise(medianConflict = median(teamMedianConflict))
+
+medianCreativeChanges <- teamStats %>%
+  filter(team=="Ap"|team=="A") %>%
+  group_by(condition, team) %>%
+  summarise(medianCreative = median(teamMedianCreativity))
+
+medianSatisfactionChanges <- teamStats %>%
+  filter(team=="Ap"|team=="A") %>%
+  group_by(condition, team) %>%
+  summarise(medianSatisfaction1 = median(teamMedianSatisfaction.1), medianSatisfaction2 = median(teamMedianSatisfaction.2))
+
+stat <- ggplot(data=medianStatusChanges, aes(x=team, y=medianStatus))+
+  geom_bar(stat="identity")+
+  facet_wrap(~condition)
+con <- ggplot(data=medianConflictChanges, aes(x=team, y=medianConflict))+
+  geom_bar(stat="identity")+
+  facet_wrap(~condition)
+cre <- ggplot(data=medianCreativeChanges, aes(x=team, y=medianCreative))+
+  geom_bar(stat="identity")+
+  facet_wrap(~condition)
+sat1 <- ggplot(data=medianSatisfactionChanges, aes(x=team, y=medianSatisfaction1))+
+  geom_bar(stat="identity")+
+  facet_wrap(~condition)
+sat2 <- ggplot(data=medianSatisfactionChanges, aes(x=team, y=medianSatisfaction2))+
+  geom_bar(stat="identity")+
+  facet_wrap(~condition)
+
+print(stat)
+print(con)
+print(cre)
+print(sat1)
+print(sat2)
+```
+
+### Manipulation Check
+# Reports out manipulation check statistics and saves a plot
+```{r, echo=TRUE}
+manipulationCheckAccuracy = data %>%
+  ungroup() %>%
+  distinct(id, batch, condition, manipulation, manipulationCheck, task) %>%
+  mutate(manipulationCheckCorrect = grepl(manipulation, manipulationCheck, fixed=TRUE))
+
+manipulationCheckAccuracyByCondition <- manipulationCheckAccuracy %>%
+  group_by(condition) %>%
+  summarise(numCorrect = sum(manipulationCheckCorrect), n=n(), accuracy = numCorrect/n, se = sqrt(accuracy*(1-accuracy)/n))
+print(manipulationCheckAccuracyByCondition)
+print(table(manipulationCheckAccuracyByCondition))
+
+manipulationCheckAccuracyByTeams <- teamStats %>%
+  group_by(condition) %>%
+  summarise(meanCorrect=sum(groupManipulationCheck>=.5),n=n(),accuracy=meanCorrect/n)
+manipulationCheckAccuracyByTeams
+
+numRounds = lengths(data$teamOrder)[1] # split up the list of teams in order to figure out how many rounds they had
+numSameTeam = 2 # number of times they meet with the same team
+chanceManipulation <- (1/choose(numRounds, numSameTeam))
+
+# p <- ggplot(data=filter(manipulationCheckAccuracyByCondition), aes(x=condition, y=accuracy)) + # add  , condition=="masked" to filter for only masked
+#   geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
+#   geom_hline(yintercept=chanceManipulation, size=1, color="grey") +   
+#   geom_errorbar(aes(ymin=accuracy-se, ymax=accuracy+se), width = 0.1) +
+#   scale_x_discrete(labels=c("Masked teams","Unmasked teams")) +
+#   scale_y_continuous(labels = scales::percent_format(1)) + 
+#   theme_classic() + labs(subtitle="", 
+#        x="",
+#        y="Accuracy at identifying\n the repeat collaborators")
+
+# pdf('manipulationcheck.pdf', width=3.5, height=2.5)
+# dev.off();
+
+```
+
+# Proportion test comparing treatment manipulation percent correct with chance:
+```{r}
+## Proportion test with treatment and chance: 
+maskedAccuracy <- filter(manipulationCheckAccuracyByCondition, condition=="masked")
+manipulationCheckChanceComparison <- prop.test(maskedAccuracy[1,]$numCorrect, maskedAccuracy[1,]$n, chanceManipulation)
+print(manipulationCheckChanceComparison)
+
+```
+
+### Consistency of fracture
+# Main reporting of consistancy results. Produces stats and figures
+```{r}
+fractureFirst <- teamStats %>%
+  filter(team=="A")
+
+fractureSecond <- teamStats %>%
+  filter(team=="Ap")
+fractureConsistency <- fractureFirst %>%
+  # ungroup() %>%
+  left_join(fractureSecond, by=c("teamMembers", "batch", "condition","task"), suffix=c(".first", ".second"))
+fractureConsistency$consistent <- fractureConsistency$teamFracture.first == fractureConsistency$teamFracture.second
+fractureConsistency$continuous <- fractureConsistency$teamMeanViability.second - fractureConsistency$teamMeanViability.first
+fractureConsistency$continuousAbs <- abs(fractureConsistency$continuous)
+# rm("fractureFirst","fractureSecond")
+
+conditionConsistency <- fractureConsistency %>%
+  group_by(task, condition) %>%
+  summarise(
+    numConsistent = sum(consistent), 
+    n=n(), 
+    percentConsistent=numConsistent/n, 
+    se=sqrt(percentConsistent*(1-percentConsistent))/n,
+    meanContinuousAbs = mean(continuousAbs),
+    fractureRate = mean(mean(teamFracture.first),mean(teamFracture.second))
+    # percentContinuous = numContinuousAbs / viabilityMean,
+    # seContinuous=sqrt(percentContinuous*(1-percentContinuous))/n
+    )
+print(conditionConsistency)
+
+conditionConsistency = conditionConsistency %>%
+  mutate(
+    percentString = paste(formatC(100 * percentConsistent),"%",sep="")
+  )
+p = ggplot(data=filter(conditionConsistency), aes(x=condition, y=percentConsistent)) +
+  facet_grid(cols = vars(task)) +
+  geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
+  geom_text(aes(label=percentString), vjust=2.8, color="white", size=2.5)+
+  geom_errorbar(aes(ymin=percentConsistent-se, ymax=percentConsistent+se), width = 0.1) +
+  scale_x_discrete(labels=c("Masked","Unmasked")) +
+  scale_y_continuous(labels = scales::percent_format(1)) + 
+  theme_classic() +
+  theme(strip.background = element_blank(), 
+        strip.text = element_text(size = 8),
+        text = element_text(size = 10)
+          ) +  
+   labs(subtitle="", 
+       x="",
+       y="Consistency of fracture")
+pdf('Consistency.pdf', width=6, height=2.5)
+p
+dev.off();
+p
+
+fractureConsistencyCreative = fractureConsistency %>% filter(task == "Creative")
+fractureConsistencyIntellective = fractureConsistency %>% filter(task == "Intellective")
+fractureConsistencyCognitive = fractureConsistency %>% filter(task == "Cognitive conflict")
+model <- glm(consistent ~ condition,family=binomial(link='logit'),data=fractureConsistency)
+
+modelCreative <- glm(consistent ~ condition,family=binomial(link='logit'),data=fractureConsistencyCreative)
+modelIntellective <- glm(consistent ~ condition,family=binomial(link='logit'),data=fractureConsistencyIntellective)
+modelCognitive <- glm(consistent ~ condition,family=binomial(link='logit'),data=fractureConsistencyCognitive)
+
+summary(modelCreative)
+summary(modelIntellective)
+summary(modelCognitive)
+
+stargazer(modelCreative,
+          label = "tab:consistencyCreative", 
+          title="In the creative task, unmasked teams were significantly more consistent in their fracture outcome than masked teams.",
+          table.placement = "tb",
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          covariate.labels = c("Unmasked", "Intercept"), 
+          dep.var.labels=c("Consistency") 
+          )
+stargazer(modelIntellective,
+          label = "tab:consistencyIntellective", 
+          title="In the intellective task, unmasked and masked teams were not significantly different in their fracture consistency.",
+          table.placement = "tb",
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          covariate.labels = c("Unmasked", "Intercept"), 
+          dep.var.labels=c("Consistency") 
+          )
+stargazer(modelCognitive,
+          label = "tab:consistencyCognitive", 
+          title="In the cognitive conflict task, much like the intellective task, unmasked and masked teams were not significantly different in their fracture consistency.",
+          table.placement = "tb",
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          covariate.labels = c("Unmasked", "Intercept"), 
+          dep.var.labels=c("Consistency") 
+          )
+
+
+stargazer(model,
+          label = "tab:consistency", 
+          title="A significant interaction effect beween task type and condition in predicting the consistancy of fracture outcomes, suggests that teams are more consistant in some types of tasks than others",
+          table.placement = "tb",
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          covariate.labels = c("Intellective", "Cognitive conflict", "Unmasked", "Intellective * unmasked", "Cognitive conflict * unmasked", "Intercept"), 
+          dep.var.labels=c("Consistency") 
+          )
+
+continousConsistency = fractureConsistency %>% group_by(task, condition) %>% summarise(
+  mean = mean(continuousAbs),
+  sd = sd(continuousAbs)
+)
+
+# maskedConsistency <- fractureConsistency %>% filter(condition=="masked")
+# unmaskedConsistency <- fractureConsistency %>% filter(condition=="unmasked")
+
+# prop.test(conditionConsistency$numConsistent, conditionConsistency$n, p=NULL, alternative = "two.sided", correct = TRUE)
+# 
+# t.test(maskedConsistency$teamMeanViability.first,maskedConsistency$teamMeanViability.second,paired = TRUE)
+# t.test(unmaskedConsistency$teamMeanViability.first,unmaskedConsistency$teamMeanViability.second,paired = TRUE)
+# t.test(fractureConsistency$continuousAbs~fractureConsistency$condition, var.equal = TRUE)
+# t.test(fractureConsistency$continuousAbs~fractureConsistency$condition)
+
+
+# p2 <- ggplot(data=filter(continousConsistency), aes(x=condition, y=mean)) +
+#   facet_grid(cols = vars(task)) +
+#   geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
+#   geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width = 0.1) +
+#   scale_x_discrete(labels=c("Masked teams","Unmasked teams")) +
+#   theme_classic() + labs(subtitle="",
+#        x="",
+#        y="Consistancy of fracture")
+# 
+# p2
+# 
+# pdf('manipulationcheck.pdf', width=3.5, height=2.5)
+# dev.off();
+
+```
+```{r}
+baseline = teamStats %>% filter(team == "B")
+mean(baseline$teamFracture)
+baseline = baseline %>% group_by(round) %>% summarize(
+  meanFracture = mean(teamFracture),
+  sd = sd(teamFracture)
+  )
+
+mean(teamStats$teamMeanCreativity)
+sd(teamStats$teamMeanCreativity)
+
+teamStats %>% group_by(teamFracture) %>% summarize(
+  mu = mean(teamMeanCreativity),
+  sigma = sd(teamMeanCreativity)
+)
+
+fractured = teamStats %>% filter(teamFracture == TRUE)
+nofracture = teamStats %>% filter(teamFracture == FALSE)
+t.test(nofracture$teamMeanCreativity,fractured$teamMeanCreativity)
+
+```
+```{r}
+chatSlices = fractureConsistency %>% 
+  filter(
+    consistent == FALSE,
+    task == "Creative",
+    condition == "masked"
+    ) %>% 
+  select(
+    batch, round.first, room.first, teamFracture.first, round.second, room.second, teamFracture.second
+  )
+```
+
+# Processes performance data and produces stats and figures
+```{r}
+performanceTable %>% 
+  group_by(task, condition, teamFracture) %>%
+  summarize(
+    mean = mean(performancePercentile),
+    sd = sd(performancePercentile)
+  )
+
+g = ggplot(teamStats, aes(factor(teamFracture), teamMeanViability)) +
+  facet_grid(cols = vars(task)) +
+  geom_boxplot(varwidth=T, fill="#2853C2", alpha=0.7) +
+  labs(x="",
+       y="Average viability score") +
+  scale_x_discrete(labels=c("No fracture", "Fracture")) + 
+  theme_classic() + 
+  expand_limits(x = 0, y = 0) + 
+  theme(text = element_text(size=10),
+        strip.background = element_blank(), 
+        strip.text = element_text(size = 8))
+pdf('viabilityplot.pdf', width=6, height=2)
+g
+dev.off();
+g
+
+```
+```{r}
+perFractureFirst <- performanceTable %>% filter(team=="A")
+perFractureSecond <- performanceTable %>% filter(team=="Ap")
+perFractureConsistency <- perFractureFirst %>%
+  left_join(perFractureSecond, by=c("teamMembers", "batch", "condition","task"), suffix=c(".first", ".second"))
+perFractureConsistency$consistent <- perFractureConsistency$teamFracture.first == perFractureConsistency$teamFracture.second
+perFractureConsistency$performanceDiff <- perFractureConsistency$performancePercentile.second - perFractureConsistency$performancePercentile.first
+perFractureConsistency$performanceAbs <- abs(perFractureConsistency$performanceDiff)
+perFractureConsistency = na.omit(perFractureConsistency)
+
+perFractureConsistencySummary <- perFractureConsistency %>%
+  group_by(task, consistent) %>%
+  summarise(
+    numConsistent = sum(consistent), 
+    meanPerformanceAbs=mean(performanceAbs),
+    se=sqrt(meanPerformanceAbs*(1-meanPerformanceAbs))/n()
+    )
+perFractureConsistencySummary
+
+model <- glm(performanceAbs ~ consistent*task,family=binomial(link='logit'),data=perFractureConsistency)
+summary(model)
+stargazer(model)
+stargazer(model,
+          label = "tab:performance", 
+          title="Absolute performance change is not statistically predictive to consistency of fracture, suggesting that fracture and performance are not tightly related.",
+          table.placement = "tb",
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          covariate.labels = c("Inconsistent", "Intellective", "Intellective * consistent","Intercept"), 
+          dep.var.labels=c("Absolute performance change") 
+          )
+
+summary(glm(performanceAbs ~ consistent + task, data = perFractureConsistency))
+
+p = ggplot(data=perFractureConsistencySummary, aes(x=consistent, y=meanPerformanceAbs)) +
+  facet_grid(cols = vars(task)) +
+  geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
+  # geom_text(aes(label=percentString), vjust=2.8, color="white", size=2.5)+
+  geom_errorbar(aes(ymin=meanPerformanceAbs-se, ymax=meanPerformanceAbs+se), width = 0.1) +
+  scale_x_discrete(labels=c("Inconsistent","Consistent")) +
+  # scale_y_continuous(labels = scales::percent_format(1)) + 
+  theme_classic() +
+  theme(strip.background = element_blank(), 
+        strip.text = element_text(size = 8),
+        text = element_text(size = 10)
+          ) +  
+   labs(subtitle="", 
+       x="",
+       y="Change in performance")
+pdf('performance.pdf', width=6, height=2.5)
+p
+dev.off();
+p
+```
