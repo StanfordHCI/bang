@@ -164,7 +164,7 @@ if (process.env.MTURK_MODE !== 'off') {
                 mturkId: assignment.WorkerId,
                 testAssignmentId: assignment.AssignmentId
               }),
-              payBonus(assignment.WorkerId, assignment.AssignmentId, 0.01),
+              //payBonus(assignment.WorkerId, assignment.AssignmentId, 0.01),
               assignQual(assignment.WorkerId, runningLive ? process.env.PROD_WILL_BANG_QUAL : process.env.TEST_WILL_BANG_QUAL),
               notifyWorkers([assignment.WorkerId], 'Experiment started. Please find and accept our main mturk task here: ' + url, 'Bang')
             ];
