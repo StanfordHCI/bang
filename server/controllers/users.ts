@@ -30,18 +30,14 @@ export const init = async function (data, socket, io) {
     if ((process.env.MTURK_FRAME === 'ON' && data.mturkId && data.assignmentId && data.hitId && data.turkSubmitTo) ||
       (process.env.MTURK_FRAME === 'OFF' && data.mturkId && data.assignmentId)) {
       user = await User.findOneAndUpdate({mturkId: data.mturkId}, {$set: {mainAssignmentId: data.assignmentId}}, {new: true}).lean().exec();
-      if (!user) {
-        logger.info(module, 'wrong credentials');
-        socket.emit('init-res', null);
-        return;
-      }
     } else {
       user = await User.findOne({token: token}).lean().exec();
-      if (!user) {
-        logger.info(module, 'wrong credentials');
-        socket.emit('init-res', null);
-        return;
-      }
+    }
+
+    if (!user || user.systemStatus === 'hasbanged') {
+      logger.info(module, 'wrong credentials');
+      socket.emit('init-res', null);
+      return;
     }
 
     socket.mturkId = user.mturkId;

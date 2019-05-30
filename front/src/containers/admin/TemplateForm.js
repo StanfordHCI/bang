@@ -309,7 +309,7 @@ const validate = (values, props) => {
       } else {
         const time = parseFloat(step.time);
         timeSum = timeSum + time;
-        if (time < 0.05 || time > 1) {
+        if (time <= 0 || time >= 1) {
           errors.tasks[i].steps[j].time = 'invalid';
         } else {
           if (j === task.steps.length - 1 && timeSum !== 1) {

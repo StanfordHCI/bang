@@ -66,7 +66,8 @@ if (process.env.MTURK_MODE === 'off') {
     User.create({
         token: (2001 + i).toString(),
         mturkId: (2001 + i).toString(),
-        testAssignmentId: 'test'
+        testAssignmentId: 'test',
+        systemStatus: 'willbang'
       }).then(() => {}).catch(err => errorHandler(err, 'Test users error'))
   }
 }

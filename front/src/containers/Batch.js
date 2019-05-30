@@ -9,7 +9,7 @@ import MidSurveyForm from './MidSurveyForm'
 import PostSurveyForm from './PostSurveyForm'
 import {history} from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
-
+import Linkify from 'react-linkify';
 const MAX_LENGTH = 240;
 
 const fuzzyMatched = (comparer, comparitor, matchCount) => {
@@ -325,7 +325,7 @@ class Batch extends React.Component {
                       <div className='chat__bubble-message-wrap'>
                         <p
                           className='chat__bubble-contact-name'>{message.user.toString() === user._id.toString() ? user.realNick : message.nickname}</p>
-                        <p className='chat__bubble-message'>{message.message}</p>
+                        <p className='chat__bubble-message'><Linkify>{message.message}</Linkify></p>
                         <p className='chat__bubble-date'>{moment(message.time).format('LTS')}</p>
                       </div>
                     </div>
