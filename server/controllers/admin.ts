@@ -1,20 +1,32 @@
+import {User} from "../models/users";
+const moment = require('moment')
 require('dotenv').config({path: './.env'});
 import {Template} from '../models/templates'
 import {Chat} from '../models/chats'
 import {Batch} from '../models/batches'
 import {Survey} from '../models/surveys'
 import {errorHandler} from '../services/common'
-import {addHIT, getAccountBalance, notifyWorkers, letters, createTeams} from "./utils";
+import {
+  addHIT,
+  getAccountBalance,
+  notifyWorkers,
+  letters,
+  createTeams,
+  expireHIT,
+  assignQual,
+  runningLive, payBonus
+} from "./utils";
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
-import {setTeamSize} from '../index'
+import {setTeamSize, io} from '../index'
+import {Bonus} from "../models/bonuses";
 
 
 export const addBatch = async function (req, res) {
   try {
     const check = await Batch.findOne({status: 'waiting'}).select('_id') ;
     if (check) {
-      logger.error(module, 'There is 1 waiting batch, you cant and more');
+      logger.error(module, 'There is 1 waiting batch, you cannot add more');
       res.status(403).end();
       return;
     }
@@ -121,6 +133,42 @@ export const addTemplate = async function (req, res) {
     res.json({template: template})
   } catch (e) {
     errorHandler(e, 'add template error')
+  }
+}
+
+export const stopBatch = async function (req, res) {
+  try {
+    const batch = await Batch.findByIdAndUpdate(req.params.id, {$set: {status: 'completed'}}, {new: true}).populate('users.user').lean().exec()
+    if (batch.status === 'active' && process.env.MTURK_MODE !== 'off') { //compensations
+      if (process.env.MTURK_FRAME === 'ON') {
+        await expireHIT(batch.HITId) //close main task
+      }
+      const batchLiveTime = moment().diff(moment(batch.startTime), 'seconds') / 3600;
+      let bonus = 12 * batchLiveTime - 1;
+      if (bonus > 40) bonus = 40;
+      let bangPrs = [];
+      batch.users.forEach(userObject => {
+        const user = userObject.user;
+        bangPrs.push(assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL))
+        if (bonus > 0) {
+          bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, bonus))
+          bangPrs.push(Bonus.create({
+            batch: batch._id,
+            user: user._id,
+            amount: bonus,
+            assignment: user.testAssignmentId
+          }))
+        }
+      })
+      await Promise.all(bangPrs)
+    }
+
+    await User.updateMany({batch:  batch._id}, { $set: { batch: null, realNick: null, fakeNick: null, currentChat: null, systemStatus: 'hasbanged' }})
+    io.to(batch._id.toString()).emit('refresh-batch', true)
+    logger.info(module, 'Batch stopped: ' + batch._id);
+    res.json({batch: batch})
+  } catch (e) {
+    errorHandler(e, 'stop batch error')
   }
 }
 

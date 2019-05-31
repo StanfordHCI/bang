@@ -119,9 +119,9 @@ const startBatch = async function (batch, socket, io) {
         bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, 1.00))
         bangPrs.push(Bonus.create({
           batch: batch._id,
-          user: socket.userId,
+          user: user._id,
           amount: 1.00,
-          assignment: socket.assignmentId
+          assignment: user.testAssignmentId
         }))
       })
       await Promise.all(bangPrs)
@@ -240,8 +240,8 @@ export const receiveSurvey = async function (data, socket, io) {
     if (process.env.MTURK_MODE !== 'off' && newSurvey.isPost) {
       const batch = await Batch.findById(newSurvey.batch).select('roundMinutes numRounds').lean().exec();
       let bonusPrice = (12 * ((batch.roundMinutes * batch.numRounds * 1.5) / 60) - 1.00);
-      if (bonusPrice > 25) {
-        bonusPrice = 25;
+      if (bonusPrice > 40) {
+        bonusPrice = 40;
       }
       const bonus = await payBonus(socket.mturkId, socket.assignmentId, bonusPrice.toFixed(2))
       if (bonus) {

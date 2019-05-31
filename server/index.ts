@@ -48,7 +48,7 @@ app
   .use(cors(corsOptions))
   .use(require('./routes')(app))
 
-const io = require('socket.io').listen(app.listen(PORT, function() {
+export const io = require('socket.io').listen(app.listen(PORT, function() {
   logger.info(module, 'App is running on port: ' + PORT);
   logger.info(module, 'NODE MODE: ' + process.env.NODE_ENV);
   logger.info(module, 'MTURK MODE: ' + process.env.MTURK_MODE);

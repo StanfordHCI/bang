@@ -3,7 +3,7 @@ import {Card, CardBody, Col, Row, Container, Button, Table} from 'reactstrap';
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 import {socket} from 'Actions/app'
-import {loadBatchList, addBatch} from 'Actions/admin'
+import {loadBatchList, addBatch, stopBatch} from 'Actions/admin'
 import moment from 'moment'
 import {history} from 'App/history';
 
@@ -37,6 +37,7 @@ class BatchList extends React.Component {
                     <th>created</th>
                     <th>start time</th>
                     <th>status</th>
+                    <th>stop</th>
                   </tr>
                   </thead>
                   <tbody>
@@ -46,6 +47,14 @@ class BatchList extends React.Component {
                       <td>{moment(batch.createdAt).format('YYYY.DD.MM-HH:mm:ss')}</td>
                       <td>{moment(batch.startTime).format('YYYY.DD.MM-HH:mm:ss')}</td>
                       <td>{batch.status}</td>
+                      <td>
+                        <Button className="btn btn-primary"
+                                style={{padding: '2px 10px', marginBottom: '0px'}}
+                                onClick={() => this.props.stopBatch(batch._id)}
+                                disabled={batch.status === 'completed'}>
+                          stop
+                        </Button>
+                      </td>
                     </tr>
                   })}
                   </tbody>
@@ -69,7 +78,8 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
   return bindActionCreators({
     loadBatchList,
-    addBatch
+    addBatch,
+    stopBatch
   }, dispatch);
 }
 
