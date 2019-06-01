@@ -1,0 +1,19 @@
+﻿{
+  "tasks" : [
+    {
+      "suid" : "placeholdersuid1",
+      "scaffold":  "lorem ipsum 1",
+      "url": "https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw"
+    },
+    {
+      "suid": "placeholdersuid2",
+      "scaffold": "lorem ipsum 2",
+      "url": "https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw"
+    },
+    {
+      "suid": "placeholdersuid3",
+      "scaffold": "lorem ipsum 3 this one is longer by a lot this one is longer by a lot this one is longer by a lot this one is longer by a lot this one is longer by a lot this one is longer by a lot this one is longer by a lot this one is longer by a lot this one is longer by a lot this one is longer by a lot this one is longer by a lot this one is longer by a lot",
+      "url": "https://www.kickstarter.com/projects/1636469325/the-tis-tea-plant-based-high-rich-minerals-in-seaw"
+    },
+  ]
+}
