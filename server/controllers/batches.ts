@@ -168,7 +168,9 @@ const startBatch = async function (batch, socket, io) {
 
       let stepsSumTime = 0;
       if (task && task.steps && task.steps.length) for (let j = 0; j < task.steps.length; j++) {
-        const step = batch.tasks[i].steps[j];
+        const step = task.steps[j];
+        let time = j === 0 ? step.time : step.time - task.steps[j - 1].time;
+        await timeout(batch.roundMinutes * time * 60000);
         const stepMessage = {
           user: botId,
           nickname: 'helperBot',
@@ -182,10 +184,9 @@ const startBatch = async function (batch, socket, io) {
         })
         await Promise.all(ps)
         stepsSumTime = stepsSumTime + step.time;
-        await timeout(batch.roundMinutes * step.time * 60000)
       }
 
-      await timeout(batch.roundMinutes * (1 - stepsSumTime) * 60000);
+      await timeout(batch.roundMinutes * (1 - task.steps[task.steps.length - 1].time) * 60000);
 
       roundObject.status = 'survey';
       const midRoundInfo =  {rounds: rounds};
@@ -240,8 +241,9 @@ export const receiveSurvey = async function (data, socket, io) {
     if (process.env.MTURK_MODE !== 'off' && newSurvey.isPost) {
       const batch = await Batch.findById(newSurvey.batch).select('roundMinutes numRounds').lean().exec();
       let bonusPrice = (12 * ((batch.roundMinutes * batch.numRounds * 1.5) / 60) - 1.00);
-      if (bonusPrice > 40) {
-        bonusPrice = 40;
+      if (bonusPrice > 15) {
+        logger.info(module, 'Bonus was changed for batch ' + newSurvey.batch)
+        bonusPrice = 15;
       }
       const bonus = await payBonus(socket.mturkId, socket.assignmentId, bonusPrice.toFixed(2))
       if (bonus) {

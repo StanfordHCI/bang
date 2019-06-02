@@ -145,7 +145,7 @@ export const stopBatch = async function (req, res) {
       }
       const batchLiveTime = moment().diff(moment(batch.startTime), 'seconds') / 3600;
       let bonus = 12 * batchLiveTime - 1;
-      if (bonus > 40) bonus = 40;
+      if (bonus > 15) bonus = 15;
       let bangPrs = [];
       batch.users.forEach(userObject => {
         const user = userObject.user;
