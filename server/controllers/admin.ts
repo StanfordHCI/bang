@@ -14,7 +14,7 @@ import {
   createTeams,
   expireHIT,
   assignQual,
-  runningLive, payBonus
+  runningLive, payBonus, clearRoom
 } from "./utils";
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
@@ -164,7 +164,10 @@ export const stopBatch = async function (req, res) {
     }
 
     await User.updateMany({batch:  batch._id}, { $set: { batch: null, realNick: null, fakeNick: null, currentChat: null, systemStatus: 'hasbanged' }})
-    io.to(batch._id.toString()).emit('refresh-batch', true)
+    batch.users.forEach(user => {
+      io.to(user.user.socketId).emit('stop-batch', true);
+    })
+    clearRoom(batch._id, io)
     logger.info(module, 'Batch stopped: ' + batch._id);
     res.json({batch: batch})
   } catch (e) {

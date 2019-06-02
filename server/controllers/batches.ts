@@ -4,7 +4,7 @@ import {Chat} from '../models/chats'
 import {Batch} from '../models/batches'
 import {Bonus} from '../models/bonuses'
 import {Survey} from '../models/surveys'
-import {clearRoom, expireHIT, assignQual, payBonus, chooseOne, runningLive} from './utils'
+import {clearRoom, expireHIT, assignQual, payBonus, chooseOne, runningLive, notifyWorkers} from './utils'
 import {errorHandler} from '../services/common'
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
@@ -233,16 +233,24 @@ export const receiveSurvey = async function (data, socket, io) {
     if (newSurvey.isPost) {
       const check = await Survey.findOne({batch: newSurvey.batch, user: newSurvey.user, isPost: true})
       if (check) {
-        logger.info(module, 'Blocked survey');
+        logger.info(module, 'Blocked survey, survey exists');
         return;
       }
     }
     await Survey.create(newSurvey)
     if (process.env.MTURK_MODE !== 'off' && newSurvey.isPost) {
-      const batch = await Batch.findById(newSurvey.batch).select('roundMinutes numRounds').lean().exec();
+      const [batch, user] = await Promise.all([
+        Batch.findById(newSurvey.batch).select('roundMinutes numRounds').lean().exec(),
+        User.findById(newSurvey.user).select('systemStatus mturkId').lean().exec()
+      ])
+      if (user.systemStatus === 'hasbanged') {
+        logger.info(module, 'Blocked survey, hasbanged status');
+        return;
+      }
       let bonusPrice = (12 * ((batch.roundMinutes * batch.numRounds * 1.5) / 60) - 1.00);
       if (bonusPrice > 15) {
         logger.info(module, 'Bonus was changed for batch ' + newSurvey.batch)
+        await notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Bonus was changed from ' + bonusPrice + '$ to 15$ for user ' + user.mturkId, 'Bang');
         bonusPrice = 15;
       }
       const bonus = await payBonus(socket.mturkId, socket.assignmentId, bonusPrice.toFixed(2))
