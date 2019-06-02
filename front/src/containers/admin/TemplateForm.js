@@ -291,6 +291,11 @@ const validate = (values, props) => {
     errors.roundMinutes = 'invalid value'
   }
   errors.tasks = [];
+
+  if (!values.tasks || !values.tasks.length) {
+    errors.name = 'add tasks please'
+  }
+
   values.tasks && values.tasks.forEach((task, i) => {
     errors.tasks[i] = {steps: []}; let timeSum = 0
     if (!task.message) {
@@ -299,7 +304,8 @@ const validate = (values, props) => {
       errors.tasks[i].message = 'add steps please';
     }
 
-    task.steps && task.steps.forEach((step, j) => {
+    if (task.steps) for (let j = 0; j < task.steps.length; j++) {
+      const step = task.steps[j];
       errors.tasks[i].steps[j] = {};
       if (!step.message) {
         errors.tasks[i].steps[j].message = 'required';
@@ -308,18 +314,17 @@ const validate = (values, props) => {
         errors.tasks[i].steps[j].time = 'required';
       } else {
         const time = parseFloat(step.time);
-        timeSum = timeSum + time;
-        if (time < 0.1 || time > 1) {
+        if (time <= 0 || time >= 1) {
           errors.tasks[i].steps[j].time = 'invalid';
         } else {
-          if (j === task.steps.length - 1 && timeSum !== 1) {
-            errors.tasks[i].steps[j].time = 'time sum must be 1.0';
+          if (j > 0 && parseFloat(task.steps[j - 1].time) > time ) {
+            errors.tasks[i].steps[j].time = 'must be > previous step';
           }
         }
       }
-    })
-  })
+    }
 
+  })
 
   return errors
 };

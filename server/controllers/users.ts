@@ -14,9 +14,6 @@ export const activeCheck = async function (io) {
     const activeCounter = activeUsers ? activeUsers.length : 0;
     io.to('waitroom').emit('clients-active', activeCounter);
     logger.info(module, 'Active clients: ' + activeCounter);
-    if (activeCounter > 3) {
-      //await notifyWorkers(activeUsers.map(user => user.mturkId), 'You can join our experiment', 'Bang')
-    }
   } catch (e) {
     errorHandler(e, 'active check error')
   }
@@ -30,18 +27,14 @@ export const init = async function (data, socket, io) {
     if ((process.env.MTURK_FRAME === 'ON' && data.mturkId && data.assignmentId && data.hitId && data.turkSubmitTo) ||
       (process.env.MTURK_FRAME === 'OFF' && data.mturkId && data.assignmentId)) {
       user = await User.findOneAndUpdate({mturkId: data.mturkId}, {$set: {mainAssignmentId: data.assignmentId}}, {new: true}).lean().exec();
-      if (!user) {
-        logger.info(module, 'wrong credentials');
-        socket.emit('init-res', null);
-        return;
-      }
     } else {
       user = await User.findOne({token: token}).lean().exec();
-      if (!user) {
-        logger.info(module, 'wrong credentials');
-        socket.emit('init-res', null);
-        return;
-      }
+    }
+
+    if (!user || user.systemStatus === 'hasbanged') {
+      logger.info(module, 'wrong credentials');
+      socket.emit('init-res', null);
+      return;
     }
 
     socket.mturkId = user.mturkId;

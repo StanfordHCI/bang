@@ -11,6 +11,7 @@ module.exports = function (app) {
     .get('/batches/:id', adminController.loadBatch)*/
     .get('/batches/', adminController.loadBatchList)
     .get('/batch-result/:id/', adminController.loadBatchResult)
+    .put('/batches/:id/stop/', adminController.stopBatch)
     .post('/batches/', adminController.addBatch)
     //.put('/batches', adminController.updateBatch)
     //.delete('/batches', adminController.deleteBatch)

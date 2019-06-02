@@ -48,7 +48,7 @@ app
   .use(cors(corsOptions))
   .use(require('./routes')(app))
 
-const io = require('socket.io').listen(app.listen(PORT, function() {
+export const io = require('socket.io').listen(app.listen(PORT, function() {
   logger.info(module, 'App is running on port: ' + PORT);
   logger.info(module, 'NODE MODE: ' + process.env.NODE_ENV);
   logger.info(module, 'MTURK MODE: ' + process.env.MTURK_MODE);
@@ -66,7 +66,8 @@ if (process.env.MTURK_MODE === 'off') {
     User.create({
         token: (2001 + i).toString(),
         mturkId: (2001 + i).toString(),
-        testAssignmentId: 'test'
+        testAssignmentId: 'test',
+        systemStatus: 'willbang'
       }).then(() => {}).catch(err => errorHandler(err, 'Test users error'))
   }
 }
@@ -164,7 +165,7 @@ if (process.env.MTURK_MODE !== 'off') {
                 mturkId: assignment.WorkerId,
                 testAssignmentId: assignment.AssignmentId
               }),
-              payBonus(assignment.WorkerId, assignment.AssignmentId, 0.01),
+              //payBonus(assignment.WorkerId, assignment.AssignmentId, 0.01),
               assignQual(assignment.WorkerId, runningLive ? process.env.PROD_WILL_BANG_QUAL : process.env.TEST_WILL_BANG_QUAL),
               notifyWorkers([assignment.WorkerId], 'Experiment started. Please find and accept our main mturk task here: ' + url, 'Bang')
             ];
@@ -178,3 +179,4 @@ if (process.env.MTURK_MODE !== 'off') {
     }
   });
 }
+

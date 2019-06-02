@@ -272,6 +272,27 @@ export function loadBatchResult(id) {
   };
 }
 
+export function stopBatch(id) {
+  return (dispatch, getState) => {
+    dispatch(setLoading(true));
+    return axios({
+      method: 'put',
+      url: 'admin/batches/' + id + '/stop/',
+    })
+      .then((response) => {
+        dispatch(setLoading(false));
+        dispatch({
+          type: BATCH_UPDATED,
+          data: response.data.batch
+        });
+        dispatch(setSnackbar('Batch was stopped'))
+      })
+      .catch(err => {
+        errorCatcher(err, dispatch)
+      });
+  };
+}
+
 export function chooseTemplate(template) {
   return (dispatch) => {
     dispatch({
