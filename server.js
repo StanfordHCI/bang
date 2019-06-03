@@ -53,11 +53,11 @@ const requiredOn = runningLive;
 const checkinIntervalMinutes = roundMinutes / 3;
 const qFifteenOn = false;
 const qSixteenOn = false;
-const postSurveyOn = true;
+const postSurveyOn = false;
 const demographicsSurveyOn = true;
 
 //Just Mark for now. Feel free to add your ID, and finish a task for us so you can get notificaions too.
-const notifyUsList = ["A19MTSLG2OYDLZ", "A1Y1EKZLN97X0O"];
+const notifyUsList = ["A19MTSLG2OYDLZ", "A1Y1EKZLN97X0O", "AY2B3BC40LYOO"];
 
 if (midSurveyStatusOn && teamSize != 4) {
   throw "Status survey only functions at team size 4";
@@ -362,11 +362,11 @@ console.log(currentCondition, "with", conditions[currentCondition]);
 
 const numRounds = conditions.baseline.length;
 
-const numberOfRooms = teamSize * numRounds;
+//const numberOfRooms = teamSize * numRounds; // DOESN'T DO ANYTHING
 const people = extraRoundOn
   ? tools.letters.slice(0, teamSize ** 2 + teamSize)
   : tools.letters.slice(0, teamSize ** 2);
-const teams = tools.createTeams(teamSize, numRounds - 1, people, extraRoundOn);
+const teams = tools.createTeams(teamSize, numRounds, people, extraRoundOn);
 
 const batchID = Date.now();
 console.log("Launching batch", batchID);
@@ -2054,207 +2054,242 @@ io.on("connection", socket => {
 
       //Notify user 'initiate round' and send task.
 
-      let currentTask = tasks[currentRound];
+      db.batch.count({batchComplete: true}, function (err, batchnum){
+        experimentStarted = true;
 
-      console.log(currentRound);
-
-      console.log("Current Product:", currentTask);
-      db.batch.count({}, function (err, count){
-        console.log(count);
-      });
-      db.batch.count({batchComplete: true}, function (err, count){
-        console.log(count);
-      });
-
-      let taskText = currentTask.scaffold;
-
-      experimentStarted = true;
-
-      users.forEach(u => {
-        if (autocompleteTestOn) {
-          let teamNames = [
-            tools.makeName().username,
-            tools.makeName().username,
-            tools.makeName().username,
-            tools.makeName().username,
-            tools.makeName().username
-          ];
-          console.log(teamNames);
-          ioEmitById(
-            u.mturkId,
-            "initiate round",
-            {
-              task: taskText,
-              team: teamNames,
-              duration: roundMinutes,
-              randomAnimal: tools.randomAnimal,
-              round: currentRound + 1,
-              runningLive: runningLive
-            },
-            socket,
-            u
-          ); //rounds are 0 indexed
-        } else {
-          let teamMates = u.friends.filter(friend => {
-            return (
-              users.byMturkId(friend.mturkId) &&
-              users.byMturkId(friend.mturkId).connected &&
-              users.byMturkId(friend.mturkId).room === u.room &&
-              friend.mturkId !== u.mturkId
+        users.forEach(u => {
+          if (autocompleteTestOn) {
+          // WE DON'T USE THIS FOR 278
+            let currentTask = tasks[batchnum*4 + currentRound];
+            console.log("Current Product:", currentTask);
+            let taskText = currentTask.scaffold;
+            let teamNames = [
+              tools.makeName().username,
+              tools.makeName().username,
+              tools.makeName().username,
+              tools.makeName().username,
+              tools.makeName().username
+            ];
+            ioEmitById(
+              u.mturkId,
+              "initiate round",
+              {
+                task: taskText,
+                team: teamNames,
+                duration: roundMinutes,
+                randomAnimal: tools.randomAnimal,
+                round: currentRound + 1,
+                runningLive: runningLive
+              },
+              socket,
+              u
+            ); //rounds are 0 indexed
+          } else {
+            let teamMates = u.friends.filter(friend => {
+              return (
+                users.byMturkId(friend.mturkId) &&
+                users.byMturkId(friend.mturkId).connected &&
+                users.byMturkId(friend.mturkId).room === u.room &&
+                friend.mturkId !== u.mturkId
+              );
+            });
+            // console.log(teamMates)
+            let team_Aliases = tools.makeName(
+              teamMates.length,
+              u.friends_history
             );
-          });
-          // console.log(teamMates)
-          let team_Aliases = tools.makeName(
-            teamMates.length,
-            u.friends_history
-          );
 
-          if (team_Aliases === false) {
-            killAll();
-            console.log(chalk.red.inverse("Friend list failure."));
-          }
+            if (team_Aliases === false) {
+              killAll();
+              console.log(chalk.red.inverse("Friend list failure."));
+            }
 
-          user.friends_history = u.friends_history.concat(team_Aliases);
-          for (i = 0; i < teamMates.length; i++) {
-            if (treatmentNow) {
-              teamMates[i].tAlias = team_Aliases[i].join("");
-              team_Aliases[i] = team_Aliases[i].join("");
-            } else {
-              if (currentRound === 0) {
-                //if first round, create aliases
-                teamMates[i].alias = team_Aliases[i].join("");
+            user.friends_history = u.friends_history.concat(team_Aliases);
+            for (i = 0; i < teamMates.length; i++) {
+              if (treatmentNow) {
+                teamMates[i].tAlias = team_Aliases[i].join("");
                 team_Aliases[i] = team_Aliases[i].join("");
               } else {
-                //if not, use previously created aliases
-                team_Aliases[i] = teamMates[i].alias;
+                if (currentRound === 0) {
+                  //if first round, create aliases
+                  teamMates[i].alias = team_Aliases[i].join("");
+                  team_Aliases[i] = team_Aliases[i].join("");
+                } else {
+                  //if not, use previously created aliases
+                  team_Aliases[i] = teamMates[i].alias;
+                }
               }
             }
-          }
 
-          team_Aliases.push(u.name); //now push user for autocomplete
-          //let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
-          // io.in(user.id).emit('initiate round', {task: taskText, team: user.friends.filter(friend =>
-          // { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow
-          // ? friend.tAlias : friend.alias }), duration: roundMinutes })
-          ioEmitById(
-            u.mturkId,
-            "initiate round",
-            {
-              task: taskText,
-              team: team_Aliases,
-              duration: roundMinutes,
-              randomAnimal: tools.randomAnimal,
-              round: currentRound + 1
-            },
-            socket,
-            u
-          ); //round 0 indexed
+            team_Aliases.push(u.name); //now push user for autocomplete
+            //let myteam = user.friends.filter(friend => { return (users.byID(friend.id).room == user.room)});
+            // io.in(user.id).emit('initiate round', {task: taskText, team: user.friends.filter(friend =>
+            // { return users.byID(friend.id).room == user.room }).map(friend => { return treatmentNow
+            // ? friend.tAlias : friend.alias }), duration: roundMinutes })
+            let done_batch_pairs = Math.floor(batchnum/2);
+            let tasks_per_pair = 12;
+            let curr_rooms = Object.keys(teams[conditionRound]);
+            let room_num = curr_rooms.indexOf(u.room);
+            let rooms_per_round = curr_rooms.length;
+            let task_index = tasks_per_pair*done_batch_pairs + currentRound*rooms_per_round + room_num;
+            console.log(task_index);
+        
+            let currentTask = tasks[task_index];
+
+            console.log("Current Product:", currentTask);
+
+            let taskText = currentTask.scaffold;
+
+            ioEmitById(
+              u.mturkId,
+              "initiate round",
+              {
+                task: taskText,
+                team: team_Aliases,
+                duration: roundMinutes,
+                randomAnimal: tools.randomAnimal,
+                round: currentRound + 1
+              },
+              socket,
+              u
+            ); //round 0 indexed
+          }
+        });
+
+        //console.log("Issued task for:", currentTask.student);
+        console.log(
+          "Started round",
+          currentRound,
+          "with,",
+          roundMinutes,
+          "minute timer."
+        );
+
+        // save start time
+        startTime = new Date().getTime();
+
+        // Initialize steps
+        const taskSteps = [
+          {
+            id: 1,
+            time: 0.001,
+            message: `<strong>Be careful not to refresh or leave the page! If you do, you will not be able to return to the task and will not be compensated for your time.</strong>`
+          },
+          {
+            id: 2,
+            time: 0.002,
+            message: `<strong>There are a total of 4 rounds of team interaction with a reflection survey following each one. You will receive the stated bonus pay if you thoughtfully fill out every survey question!</strong>`
+          },
+          {
+            id: 3,
+            time: 0.003,
+            message: `The entire HIT will take no more than ${Math.round(
+              roundMinutes * numRounds + 15
+            )} minutes total.`
+          },
+          { id: 4, time: 0.005, message: `edited` },
+          {
+            id: 5,
+            time: 0.005,
+            message: `<strong>Reminders:</strong><br>1. Check out the instructions above and collaborate with your team members in the chat room to develop a text advertisement<br>2. The ad must be no more than <strong>30 characters long</strong>. <br>3. Instructions will be given for submitting the team's final product. <br>4. You have ${textifyTime(
+              roundMinutes
+            )} to complete this round.`
+          },
+          {
+            id: 6,
+            time: 0.007,
+            message: `<strong>Example:</strong><br>Text advertisements for 'Renaissance Golf Club': <br><ul style='list-style-type:disc'><li><strong>An empowering modern club</strong><br></li><li><strong>A private club with reach</strong><br></li><li><strong>Don't Wait. Discover Renaissance Today</strong></li></ul><br>`
+          },
+          {
+            id: 7,
+            time: 0.01,
+            message:
+              "<br><strong>HIT bot: Take a minute to review all instructions above.</strong>"
+          },
+          {
+            id: 8,
+            time: 0.9,
+            message:
+              "<br><strong>HIT bot: Submit the team's final ad by sending a message with a '!' directly in front of the text ad. Only the final submission with a '!' will be counted.</strong>"
+          },
+          {
+            id: 9,
+            time: 0.95,
+            message: "<br><strong>HIT bot: Last chance to submit!</strong>"
+          },
+        ];
+
+        // Execute steps
+        taskSteps.forEach(step => {
+          setTimeout(() => {
+            if (step.message) {
+              if (step.id === 4) {
+                console.log(chalk.inverse(" Task step "), "variable");
+                let curr_rooms = Object.keys(teams[conditionRound]);
+                curr_rooms.forEach(r => {
+                  users.filter(u => u.room === r).forEach(user => {
+                    let done_batch_pairs = Math.floor(batchnum/2);
+                    let tasks_per_pair = 12;
+                    let room_num = curr_rooms.indexOf(user.room);
+                    let rooms_per_round = curr_rooms.length;
+                    let task_index = tasks_per_pair*done_batch_pairs + currentRound*rooms_per_round + room_num;
+                    let taskText = tasks[task_index].scaffold;
+                    let message = `<strong>Directions:</strong><br><br><strong>${taskText}</strong>`;
+                    ioEmitById(user.mturkId,
+                      "message clients",
+                      message, 
+                      socket,
+                      user
+                    );
+                  });
+                });
+              } else {
+                console.log(chalk.inverse(" Task step "), step.message);
+                ioSocketsEmit("message clients", step.message);
+              }
+            }
+            if (typeof step.action === "function") step.action();
+          }, step.time * roundMinutes * 60 * 1000);
+        });
+
+        //Done with round
+        setTimeout(() => {
+          console.log("done with round", currentRound);
+          users.forEach(user => {
+            ioEmitById(
+              user.mturkId,
+              "stop",
+              {
+                round: currentRound,
+                survey:
+                  midSurveyOn ||
+                  creativeSurveyOn ||
+                  satisfactionSurveyOn ||
+                  conflictSurveyOn ||
+                  midSurveyStatusOn ||
+                  teamfeedbackOn ||
+                  psychologicalSafetyOn
+              },
+              socket,
+              user
+            );
+          });
+          currentRound += 1; // guard to only do this when a round is actually done.
+          console.log(currentRound, "out of", numRounds);
+        }, 1000 * 60 * roundMinutes);
+
+        if (checkinOn) {
+          let numPopups = 0;
+          let interval = setInterval(() => {
+            if (numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
+              clearInterval(interval);
+            } else {
+              socket.emit("checkin popup");
+              numPopups++;
+            }
+          }, 1000 * 60 * checkinIntervalMinutes);
         }
       });
-
-      console.log("Issued task for:", currentTask.student);
-      console.log(
-        "Started round",
-        currentRound,
-        "with,",
-        roundMinutes,
-        "minute timer."
-      );
-
-      // save start time
-      startTime = new Date().getTime();
-
-      // Initialize steps
-      const taskSteps = [
-        {
-          time: 0.001,
-          message: `<strong>Be careful not to refresh or leave the page! If you do, you will not be able to return to the task and will not be compensated for your time.</strong>`
-        },
-        {
-          time: 0.002,
-          message: `<strong>There are a total of 4 rounds of team interaction with a reflection survey following each one. You will receive the stated bonus pay if you thoughtfully fill out every survey question!</strong>`
-        },
-        {
-          time: 0.003,
-          message: `The entire HIT will take no more than ${Math.round(
-            roundMinutes * numRounds + 15
-          )} minutes total.`
-        },
-        { time: 0.005, message: `<strong>Directions:</strong><br><br><strong>${taskText}</strong>` },
-        {
-          time: 0.005,
-          message: `<strong>Reminders:</strong><br>1. Check out the instructions above and collaborate with your team members in the chat room to develop a text advertisement<br>2. The ad must be no more than <strong>30 characters long</strong>. <br>3. Instructions will be given for submitting the team's final product. <br>4. You have ${textifyTime(
-            roundMinutes
-          )} to complete this round.`
-        },
-        {
-          time: 0.007,
-          message: `<strong>Example:</strong><br>Text advertisements for 'Renaissance Golf Club': <br><ul style='list-style-type:disc'><li><strong>An empowering modern club</strong><br></li><li><strong>A private club with reach</strong><br></li><li><strong>Don't Wait. Discover Renaissance Today</strong></li></ul><br>`
-        },
-        {
-          time: 0.01,
-          message:
-            "<br><strong>HIT bot: Take a minute to review all instructions above.</strong>"
-        },
-        {
-          time: 0.9,
-          message:
-            "<br><strong>HIT bot: Submit the team's final ad by sending a message with a '!' directly in front of the text ad. Only the final submission with a '!' will be counted.</strong>"
-        },
-        {
-          time: 0.95,
-          message: "<br><strong>HIT bot: Last chance to submit!</strong>"
-        },
-      ];
-
-      // Execute steps
-      taskSteps.forEach(step => {
-        setTimeout(() => {
-          if (step.message) {
-            console.log(chalk.inverse(" Task step "), step.message);
-            ioSocketsEmit("message clients", step.message);
-          }
-          if (typeof step.action === "function") step.action();
-        }, step.time * roundMinutes * 60 * 1000);
-      });
-
-      //Done with round
-      setTimeout(() => {
-        console.log("done with round", currentRound);
-        users.forEach(user => {
-          ioEmitById(
-            user.mturkId,
-            "stop",
-            {
-              round: currentRound,
-              survey:
-                midSurveyOn ||
-                creativeSurveyOn ||
-                satisfactionSurveyOn ||
-                conflictSurveyOn ||
-                midSurveyStatusOn ||
-                teamfeedbackOn ||
-                psychologicalSafetyOn
-            },
-            socket,
-            user
-          );
-        });
-        currentRound += 1; // guard to only do this when a round is actually done.
-        console.log(currentRound, "out of", numRounds);
-      }, 1000 * 60 * roundMinutes);
-
-      if (checkinOn) {
-        let numPopups = 0;
-        let interval = setInterval(() => {
-          if (numPopups >= roundMinutes / checkinIntervalMinutes - 1) {
-            clearInterval(interval);
-          } else {
-            socket.emit("checkin popup");
-            numPopups++;
-          }
-        }, 1000 * 60 * checkinIntervalMinutes);
-      }
     });
   }
 
