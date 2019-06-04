@@ -46,6 +46,7 @@ export const addBatch = async function (req, res) {
     }
 
     delete newBatch._id;
+    newBatch.templateName = newBatch.name;
     newBatch.status = 'waiting';
     newBatch.users = [];
     let roundGen = createTeams(newBatch.teamSize, newBatch.numRounds - 1, letters.slice(0, newBatch.teamSize ** 2));
@@ -104,7 +105,7 @@ export const addBatch = async function (req, res) {
 
 export const loadBatchList = async function (req, res) {
   try {
-    const batchList = await Batch.find({}).select('createdAt startTime status currentRound teamSize').lean().exec();
+    const batchList = await Batch.find({}).select('createdAt startTime status currentRound teamSize templateName note').lean().exec();
     res.json({batchList: batchList})
   } catch (e) {
     errorHandler(e, 'add batch error')

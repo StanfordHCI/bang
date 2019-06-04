@@ -28,6 +28,7 @@ let  BatchSchema = new Schema({
     }],
     number: Number,
   }],
+  templateName: {type: String, required: true},
   preChat: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat'},
   currentRound: {type: Number, required: true, default: 0},
   startTime: Date,
@@ -45,6 +46,7 @@ let  BatchSchema = new Schema({
   }],
   midQuestions: [String],
   HITId: {type: String, },
+  note: {type: String, },
   roundGen: [{teams: [{users: [Number]}]}]
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);

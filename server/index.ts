@@ -179,4 +179,3 @@ if (process.env.MTURK_MODE !== 'off') {
     }
   });
 }
-
