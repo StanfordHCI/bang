@@ -1089,6 +1089,7 @@ io.on("connection", socket => {
       mturk.setAssignmentsPending(getUsersConnected().length);
     }
     if (userPool.byMturkId(mturkId)) {
+      console.log(data);
       let user = userPool.byMturkId(mturkId);
       console.log(
         chalk.blue(
