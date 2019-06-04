@@ -1095,8 +1095,14 @@ io.on("connection", socket => {
           `RECONNECTED ${mturkId} in user pool (${user.id} => ${socket.id})`
         )
       );
-      socket.name_structure = data.name_structure;
-      socket.username = data.name_structure.username;
+      if (data.name_structure !== undefined && data.name_structure.username !== undefined) {
+        console.log("DIDN'T HAVE TO CALL CREATEUSERNAME");
+        socket.name_structure = data.name_structure;
+        socket.username = data.name_structure.username;
+      } else {
+        console.log("HAD TO CALL CREATEUSERNAME");
+        createUsername();
+      }
       user.connected = true;
       user.active = false;
       user.assignmentId = assignmentId;
