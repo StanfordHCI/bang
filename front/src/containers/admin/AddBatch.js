@@ -13,7 +13,8 @@ class BatchInfo extends React.Component {
     this.state = {
       template: '',
       isReady: false,
-      options: []
+      options: [],
+      note: ''
     }
   }
 
@@ -27,11 +28,17 @@ class BatchInfo extends React.Component {
   }
 
   handleSubmit = () => {
-    this.props.addBatch(this.props.templateList.find(x => x._id === this.state.template))
+    let batch = Object.assign(this.props.templateList.find(x => x._id === this.state.template));
+    batch.note = this.state.note;
+    this.props.addBatch(batch)
   }
 
-  handleChange = (e) => {
+  handleTemplateChange = (e) => {
     this.setState({template: e.value})
+  }
+
+  handleNoteChange = (e) => {
+    this.setState({note: e.target.value})
   }
 
   render() {
@@ -45,13 +52,16 @@ class BatchInfo extends React.Component {
             <div className='form'>
               <Select
                 value={this.state.template}
-                onChange={(e) => this.handleChange(e)}
+                onChange={this.handleTemplateChange}
                 options={this.state.options}
                 clearable={false}
                 multi={false}
                 className='form__form-group-select'
                 placeholder="Select template..."
               />
+              <div className='form__form-group-input-wrap'>
+                <textarea placeholder="add note..." rows="5" value={this.state.note} onChange={this.handleNoteChange}/>
+              </div>
             </div>
             <ButtonToolbar className='mx-auto form__button-toolbar'>
               <Button onClick={this.handleSubmit} disabled={!this.state.template} color='primary' size='sm' type='button' >Add batch</Button>

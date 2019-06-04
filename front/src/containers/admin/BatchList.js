@@ -30,23 +30,27 @@ class BatchList extends React.Component {
                   <h5 className='bold-text'>Batch list</h5>
                   <Button className="btn btn-primary" onClick={() => history.push('/batches-add')}>Add Batch</Button>
                 </div>
-                <Table className='table table--bordered table--head-accent'>
+                <Table className='table table--bordered table--head-accent table-hover'>
                   <thead>
                   <tr>
                     <th>#</th>
                     <th>created</th>
                     <th>start time</th>
                     <th>status</th>
+                    <th>template</th>
+                    <th>note</th>
                     <th>stop</th>
                   </tr>
                   </thead>
                   <tbody>
                   {batchList.map((batch, index) => {
-                    return <tr key={batch._id} >
+                    return <tr key={batch._id} onClick={() => history.push('/batches/' + batch._id)}>
                       <td>{index}</td>
                       <td>{moment(batch.createdAt).format('YYYY.DD.MM-HH:mm:ss')}</td>
-                      <td>{moment(batch.startTime).format('YYYY.DD.MM-HH:mm:ss')}</td>
+                      <td>{batch.status === 'active' ? moment(batch.startTime).format('YYYY.DD.MM-HH:mm:ss') : 'not started'}</td>
                       <td>{batch.status}</td>
+                      <td>{batch.templateName}</td>
+                      <td>{batch.note}</td>
                       <td>
                         <Button className="btn btn-primary"
                                 style={{padding: '2px 10px', marginBottom: '0px'}}
