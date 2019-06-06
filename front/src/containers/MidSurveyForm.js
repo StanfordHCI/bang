@@ -14,7 +14,7 @@ const qOptions = [
   {value: 5, label: 'Strongly Agree'},
 ]
 
-const renderQuestions = ({fields, meta: {touched, error, warning}, questions}) => {
+const renderQuestions = ({fields, meta: {touched, error, warning}, questions, readOnly}) => {
   let tasks = [];
   for (let i = 0; i < questions.length; i++) {
     tasks.push(
@@ -25,6 +25,7 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, questions}) =
             name={`questions[${i}].result`}
             component={renderSelectField}
             type='text'
+            disabled={readOnly}
             options={qOptions}
           />
         </div>
@@ -45,7 +46,7 @@ class MidSurveyForm extends React.Component {
   }
 
   render() {
-    const {invalid, questions} = this.props;
+    const {invalid, questions, readOnly} = this.props;
 
     return (<div>
         <form className='form' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
@@ -58,17 +59,18 @@ class MidSurveyForm extends React.Component {
                     component={renderQuestions}
                     rerenderOnEveryChange
                     questions={questions}
+                    readOnly={readOnly}
                   />
               </div>
               </Col>
             </Row>
-            <Row>
+            {!readOnly && <Row>
               <Col>
                 <ButtonToolbar className='mx-auto form__button-toolbar'>
                   <Button color='primary' size='sm' type='submit' disabled={invalid}>Submit</Button>
                 </ButtonToolbar>
               </Col>
-            </Row>
+            </Row>}
           </Container>
         </form>
       </div>

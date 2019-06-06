@@ -185,8 +185,7 @@ export const loadBatchResult = async function (req, res) {
     batch.rounds.forEach((round, roundNumber) => {
       round.teams.forEach(team => {
         team.users.forEach(user => {
-          user.survey = surveys.find(x => x.user.toString() === user.user.toString() && roundNumber === x.round)
-          //console.log(user.survey)
+          user.survey = surveys.find(x => x.user.toString() === user.user.toString() && roundNumber + 1 === x.round)
           return user;
         })
         return team;
