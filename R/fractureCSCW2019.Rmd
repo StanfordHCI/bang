@@ -348,6 +348,7 @@ performanceTable = na.omit(performanceTable)
 # For exporting data as csv.
 # teamStats$fracture = as.numeric(teamStats$teamFracture)
 # write.csv(teamStats, file = "teamStats.csv")
+# write.csv(fractureConsistency, file = "fractureStats.csv")
 ```
 
 ### Manipulation Check
