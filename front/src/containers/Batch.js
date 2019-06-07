@@ -72,15 +72,10 @@ class Batch extends React.Component {
       isReady: false,
       autoNames: []
     };
-    this.refresher = this.refresher.bind(this)
   }
 
   componentWillMount() {
     this.props.loadBatch()
-  }
-
-  componentDidUpdate() {
-    this.scrollDown();
   }
 
   componentWillReceiveProps(nextProps, nextState) {
@@ -95,16 +90,11 @@ class Batch extends React.Component {
       this.setState({timerActive: false, surveyDone: false})
       clearInterval(this.roundTimer)
     }
+    setTimeout(() => this.scrollDown(), 1)
   }
 
   timer(round) {
     this.setState({timeLeft: moment(round.startTime).add(this.props.batch.roundMinutes, 'minute').diff(moment(), 'seconds')})
-  }
-
-  refresher(data) {
-    let chat = this.state.chat;
-    chat.push(data);
-    this.setState({chat: chat});
   }
 
   scrollDown() {
