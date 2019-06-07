@@ -2201,6 +2201,7 @@ io.on("connection", socket => {
             let curr_rooms = Object.keys(teams[conditionRound]);
             let room_num = curr_rooms.indexOf(u.room);
             let rooms_per_round = curr_rooms.length;
+            while (room_num === -1) console.log("Room_num is", room_num);
             let task_index =
               tasks_per_pair * done_batch_pairs +
               currentRound * rooms_per_round +
