@@ -51,7 +51,7 @@ const quals = {
   }
 };
 
-const scheduleQuals = runningLive ? [quals.onlyUSA, quals.hitsAccepted(100), quals.joinedBang] : [quals.joinedBang];
+const scheduleQuals = runningLive ? [quals.onlyUSA, quals.hitsAccepted(100), quals.joinedBang] : [];
 const mainQuals = runningLive ? [quals.onlyUSA, quals.hitsAccepted(100), quals.completedBang, quals.willBang] : [quals.completedBang, quals.willBang]
 
 export const clearRoom = function (room, io) {
