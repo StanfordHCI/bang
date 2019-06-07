@@ -96,8 +96,6 @@ bang-admin-token:  (value ADMIN_TOKEN from the .env file)
 /batches
 /batches-add
 
-For now application works only in Mturk sandbox. To test application you need at least 4 Mturk workers in the sandbox. 
-
 inside frame, MTURK_FRAME=ON
 
     For start experiment you need to add new batch at the /batches-add page. After that in will have “waiting” status and server will start posting qualification HITs every 4 minutes. Qualification HITs’ lifetime is 250 sec. 
@@ -106,12 +104,15 @@ All people which are ready with the qualification HIT achieve willBang qualifica
 When in the waiting room there’re enough participants, for now four people are required, they get ability to join the batch. After enough people are joined batch experiment automatically starts. 
 As experiment is started all joined participants get start bonus, for now it’s $1.01, and achieve hasBanged qualification on Mturk. 
 From now those participants can’t see our Mturk’s task anymore. After final survey is completed by participant he/she achieve remaining part of his bonus on the basis of $12 per hour. For the last step server delete main task on Mturk.
-After it, if you wanna use your users again, you should clear their qualifications (‘test’ script in /index.ts, for example)and you should delete them from db.
+After it, if you wanna use your users again, you should clear their qualifications and you should delete them from db.
 
 without frame, MTURK_FRAME=OFF
 For start experiment you need to add new batch at the /batches-add page. After that in will have “waiting” status and server will start posting qualification HITs every 4 minutes. Qualification HITs’ lifetime is 250 sec. 
 All people which are ready with the qualification HIT achieve willBang qualification on Mturk and get email invite to the main task in our site. 
 When in the waiting room there’re enough participants, for now four people are required, they get ability to join the batch. After enough people are joined batch experiment automatically starts. 
-As experiment is started all joined participants get start bonus, for now it’s $1.01, and achieve hasBanged qualification on Mturk. 
+As experiment is started all joined participants get start bonus, for now it’s $1.00, and achieve hasBanged qualification on Mturk. 
 From now those participants can’t see our Mturk’s task anymore. After final survey is completed by participant he/she achieve remaining part of his bonus on the basis of $12 per hour..
-After it, if you wanna use your users again, you should clear their qualifications (‘test’ script in /index.ts, for example)and you should delete them from db.
+After it, if you wanna use your users again, you should clear their qualifications and you should delete them from db.
+
+without mturk, MTURK_MODE=OFF
+When server starts with MTURK_MODE=OFF, it will add 16 (ids are 2001, 2002, ..., 2016) users to db. You can use them for batch, login from url, example: localhost:3000/?workerId=2001&assignmentId=test. All Mturk things are off.
