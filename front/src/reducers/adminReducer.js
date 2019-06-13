@@ -10,7 +10,8 @@ import {
   TEMPLATE_UPDATED,
   TEMPLATE_DELETED,
   USERS_FETCHED,
-  USER_DELETED
+  USER_DELETED,
+  USER_ADDED
 } from "../actions/admin";
 
 const initialState = {
@@ -29,7 +30,7 @@ export default function (state = initialState, action) {
         userList: action.data
       };
     case USER_DELETED:
-      let deletedUserList = state.batchList.slice();
+      let deletedUserList = state.userList.slice();
       for (let i = 0; i < deletedUserList.length; i++) {
         if (deletedUserList[i]._id === action.data._id) {
           deletedUserList.splice(i, 1);
@@ -39,6 +40,11 @@ export default function (state = initialState, action) {
       return {
         ...state,
         userList: deletedUserList,
+      };
+    case USER_ADDED:
+      return {
+        ...state,
+        userList: [...state.userList, action.data],
       };
     case BATCHES_FETCHED:
       return {
@@ -90,16 +96,17 @@ export default function (state = initialState, action) {
     case TEMPLATE_FETCHED:
       return {
         ...state,
-        template: action.data
+        template: action.data,
       };
     case TEMPLATE_ADDED:
+      console.log(action.data, 'redsfsdf')
       return {
         ...state,
         template: action.data,
-        templateList: [...state.batchList, action.data],
+        templateList: [...state.templateList, action.data],
       };
     case TEMPLATE_UPDATED:
-      let updatedTemplateList = state.batchList.slice();
+      let updatedTemplateList = state.templateList.slice();
       for (let i = 0; i < updatedTemplateList.length; i++) {
         if (updatedTemplateList[i]._id === action.data._id) {
           updatedTemplateList[i] = action.data;
@@ -112,7 +119,7 @@ export default function (state = initialState, action) {
         templateList: updatedTemplateList,
       };
     case TEMPLATE_DELETED:
-      let deletedTemplateList = state.batchList.slice();
+      let deletedTemplateList = state.templateList.slice();
       for (let i = 0; i < deletedTemplateList.length; i++) {
         if (deletedTemplateList[i]._id === action.data._id) {
           deletedTemplateList.splice(i, 1);

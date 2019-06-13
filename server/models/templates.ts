@@ -11,7 +11,9 @@ let  TemplateSchema = new Schema({
   name: {type: String, required: true},
   teamSize: {type: Number, required: true},
   roundMinutes: {type: Number, required: true},
+  surveyMinutes: {type: Number, required: true},
   numRounds: {type: Number, required: true},
+  HITTitle: String,
   tasks: [{
     message: {type: String, required: true},
     steps: [{

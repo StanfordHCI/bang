@@ -2,8 +2,7 @@ import React from 'react';
 import {Card, CardBody, Col, Row, Container, Button, Table} from 'reactstrap';
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
-import {socket} from 'Actions/app'
-import {loadUserList} from 'Actions/admin'
+import {loadUserList, addUser, deleteUser} from 'Actions/admin'
 import moment from 'moment'
 
 class UserList extends React.Component {
@@ -28,16 +27,17 @@ class UserList extends React.Component {
               <CardBody>
                 <div className='card__title'>
                   <h5 className='bold-text'>User list</h5>
-                  <Button className="btn btn-primary" onClick={() => history.push('/users-add')}>Add User</Button>
+                  <Button className="btn btn-primary" onClick={() => this.props.addUser()}>Add User</Button>
                 </div>
                 <Table className='table table--bordered table--head-accent'>
                   <thead>
                   <tr>
                     <th>#</th>
                     <th>mturk id</th>
-                    <th>created</th>
+                    <th>login link</th>
+                    <th>status</th>
                     <th>connected</th>
-                    <th>last connect time</th>
+                    <th>delete</th>
                   </tr>
                   </thead>
                   <tbody>
@@ -45,9 +45,16 @@ class UserList extends React.Component {
                     return <tr key={user._id}>
                       <td>{index + 1}</td>
                       <td>{user.mturkId}</td>
-                      <td>{moment(user.createdAt).format('YYYY.DD.MM-HH:mm:ss')}</td>
+                      <td>{user.loginLink}</td>
+                      <td>{user.systemStatus}</td>
                       <td>{user.connected ? 'yes' : 'no'}</td>
-                      <td>{moment(user.lastConnect).format('YYYY.DD.MM-HH:mm:ss')}</td>
+                      <td>
+                        <Button className="btn btn-danger"
+                                style={{padding: '2px 10px', marginBottom: '0px'}}
+                                onClick={() => this.props.deleteUser(user._id)}>
+                          delete
+                        </Button>
+                      </td>
                     </tr>
                   })}
                   </tbody>
@@ -71,6 +78,8 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
   return bindActionCreators({
     loadUserList,
+    addUser,
+    deleteUser
   }, dispatch);
 }
 

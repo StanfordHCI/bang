@@ -61,7 +61,7 @@ let initialChecks = [
   Batch.updateMany({$or: [{status:'active'}, {status:'waiting'}]}, { $set: { status : 'completed'}}),
 ]
 
-if (process.env.MTURK_MODE === 'off') {
+/*if (process.env.MTURK_MODE === 'off') {
   for (let i = 0; i < 16; i++ ) {
     User.create({
         token: (2001 + i).toString(),
@@ -70,7 +70,7 @@ if (process.env.MTURK_MODE === 'off') {
         systemStatus: 'willbang'
       }).then(() => {}).catch(err => errorHandler(err, 'Test users error'))
   }
-}
+}*/
 
 
 Promise.all(initialChecks)
@@ -106,7 +106,7 @@ cron.schedule('* * * * *', async function(){
   if (batch) {
     const botMessage = {
       nickname: 'helperBot',
-      message: 'Type something or we will kick you',
+      message: "This is your friendly reminder to type something so we know you're active and ready!",
       user: botId,
       time: new Date
     }

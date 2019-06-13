@@ -6,6 +6,7 @@ import {bindActionCreators} from "redux";
 import BatchForm from './BatchForm'
 import moment from 'moment'
 import Select from 'react-select';
+import {Field} from "redux-form";
 
 class BatchInfo extends React.Component {
   constructor(props) {
@@ -14,7 +15,8 @@ class BatchInfo extends React.Component {
       template: '',
       isReady: false,
       options: [],
-      note: ''
+      note: '',
+      maskType: ''
     }
   }
 
@@ -30,11 +32,16 @@ class BatchInfo extends React.Component {
   handleSubmit = () => {
     let batch = Object.assign(this.props.templateList.find(x => x._id === this.state.template));
     batch.note = this.state.note;
+    batch.maskType = this.state.maskType;
     this.props.addBatch(batch)
   }
 
   handleTemplateChange = (e) => {
     this.setState({template: e.value})
+  }
+
+  handleMaskTypeChange = (e) => {
+    this.setState({maskType: e.value})
   }
 
   handleNoteChange = (e) => {
@@ -57,9 +64,20 @@ class BatchInfo extends React.Component {
                 clearable={false}
                 multi={false}
                 className='form__form-group-select'
-                placeholder="Select template..."
+                placeholder="select template"
               />
-              <div className='form__form-group-input-wrap'>
+              <div className='form__form-group-input-wrap' style={{marginTop: '10px'}}>
+                <Select
+                  value={this.state.maskType}
+                  onChange={this.handleMaskTypeChange}
+                  options={[{value: 'masked', label: 'masked'}, {value: 'unmasked', label: 'unmasked'}]}
+                  clearable={false}
+                  multi={false}
+                  className='form__form-group-select'
+                  placeholder="select type"
+                />
+              </div>
+              <div className='form__form-group-input-wrap' style={{marginTop: '10px'}}>
                 <textarea placeholder="add note..." rows="5" value={this.state.note} onChange={this.handleNoteChange}/>
               </div>
             </div>

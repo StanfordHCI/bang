@@ -199,7 +199,7 @@ const startBatch = async function (batch, socket, io) {
       //survey logic
 
       //.....
-      await timeout(batch.roundMinutes * 30000);
+      await timeout(batch.surveyMinutes * 60000);
       roundObject.endTime = new Date();
       roundObject.status = 'completed';
       const endRoundInfo = {rounds: rounds};
@@ -216,7 +216,9 @@ const startBatch = async function (batch, socket, io) {
     if (process.env.MTURK_FRAME === 'ON' && process.env.MTURK_MODE !== 'off') {
       await expireHIT(batch.HITId)
     }
-    await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
+    if (runningLive) {
+      await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
+    }
     logger.info(module, 'Main experiment end', batch._id)
     clearRoom(batch._id, io)
   } catch (e) {
@@ -240,14 +242,14 @@ export const receiveSurvey = async function (data, socket, io) {
     await Survey.create(newSurvey)
     if (process.env.MTURK_MODE !== 'off' && newSurvey.isPost) {
       const [batch, user] = await Promise.all([
-        Batch.findById(newSurvey.batch).select('roundMinutes numRounds').lean().exec(),
+        Batch.findById(newSurvey.batch).select('roundMinutes numRounds surveyMinutes').lean().exec(),
         User.findById(newSurvey.user).select('systemStatus mturkId').lean().exec()
       ])
       if (user.systemStatus === 'hasbanged') {
         logger.info(module, 'Blocked survey, hasbanged status');
         return;
       }
-      let bonusPrice = (12 * ((batch.roundMinutes * batch.numRounds * 1.5) / 60) - 1.00);
+      let bonusPrice = (12 * (((batch.roundMinutes + batch.surveyMinutes) * batch.numRounds) / 60) - 1.00);
       if (bonusPrice > 15) {
         logger.info(module, 'Bonus was changed for batch ' + newSurvey.batch)
         await notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Bonus was changed from ' + bonusPrice + '$ to 15$ for user ' + user.mturkId, 'Bang');

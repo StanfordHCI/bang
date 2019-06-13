@@ -39,18 +39,20 @@ class BatchList extends React.Component {
                     <th>status</th>
                     <th>template</th>
                     <th>note</th>
+                    <th>type</th>
                     <th>stop</th>
                   </tr>
                   </thead>
                   <tbody>
                   {batchList.map((batch, index) => {
-                    return <tr key={batch._id} onClick={() => history.push('/batches/' + batch._id)}>
-                      <td>{index}</td>
-                      <td>{moment(batch.createdAt).format('YYYY.DD.MM-HH:mm:ss')}</td>
-                      <td>{batch.status === 'active' ? moment(batch.startTime).format('YYYY.DD.MM-HH:mm:ss') : 'not started'}</td>
-                      <td>{batch.status}</td>
-                      <td>{batch.templateName}</td>
-                      <td>{batch.note}</td>
+                    return <tr key={batch._id}>
+                      <td onClick={() => history.push('/batches/' + batch._id)}>{index}</td>
+                      <td onClick={() => history.push('/batches/' + batch._id)}>{moment(batch.createdAt).format('YYYY.DD.MM-HH:mm:ss')}</td>
+                      <td onClick={() => history.push('/batches/' + batch._id)}>{batch.status === 'active' ? moment(batch.startTime).format('YYYY.DD.MM-HH:mm:ss') : 'not started'}</td>
+                      <td onClick={() => history.push('/batches/' + batch._id)}>{batch.status}</td>
+                      <td onClick={() => history.push('/batches/' + batch._id)}>{batch.templateName}</td>
+                      <td onClick={() => history.push('/batches/' + batch._id)}>{batch.note}</td>
+                      <td onClick={() => history.push('/batches/' + batch._id)}>{batch.maskType}</td>
                       <td>
                         <Button className="btn btn-primary"
                                 style={{padding: '2px 10px', marginBottom: '0px'}}

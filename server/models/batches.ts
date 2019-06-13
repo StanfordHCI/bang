@@ -34,6 +34,7 @@ let  BatchSchema = new Schema({
   startTime: Date,
   teamSize: {type: Number, required: true},
   roundMinutes: {type: Number, required: true},
+  surveyMinutes: {type: Number, required: true},
   experimentRound1: {type: Number, },
   experimentRound2: {type: Number, },
   numRounds: {type: Number, required: true},
@@ -46,6 +47,8 @@ let  BatchSchema = new Schema({
   }],
   midQuestions: [String],
   HITId: {type: String, },
+  HITTitle: String,
+  maskType: {type: String, required: true, $enum: ['masked', 'unmasked']},
   note: {type: String, },
   roundGen: [{teams: [{users: [Number]}]}]
 }, options);
