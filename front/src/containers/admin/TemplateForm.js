@@ -211,7 +211,7 @@ class TemplateForm extends React.Component {
   }
 
   render() {
-    const {invalid, numRounds, teamSize, roundGen, dispatch} = this.props;
+    const {invalid, numRounds, teamSize, roundGen, dispatch, pristine, isAdd} = this.props;
 
     return (<div>
         <form className='form form--horizontal' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
@@ -302,7 +302,7 @@ class TemplateForm extends React.Component {
             <Col>
               <ButtonToolbar className='mx-auto form__button-toolbar'>
                 {/*<Button color='primary' size='sm' type='button' disabled={!numRounds || !teamSize} onClick={() => this.handleGenerate()}>Generate random users</Button>*/}
-                <Button color='primary' size='sm' type='submit' disabled={invalid}>Submit</Button>
+                <Button color='primary' size='sm' type='submit' disabled={invalid || (!isAdd && pristine)}>Submit</Button>
               </ButtonToolbar>
             </Col>
           </Row>
