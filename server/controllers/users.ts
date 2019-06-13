@@ -10,10 +10,10 @@ import {globalBatchTeamSize} from '../index'
 
 export const activeCheck = async function (io) {
   try {
-    const activeUsers = await User.find({connected: true}).select('mturkId').lean().exec()
+    const activeUsers = await User.find({connected: true, batch: null}).select('mturkId').lean().exec()
     const activeCounter = activeUsers ? activeUsers.length : 0;
     io.to('waitroom').emit('clients-active', activeCounter);
-    logger.info(module, 'Active clients: ' + activeCounter);
+    logger.info(module, 'People in waitroom: ' + activeCounter);
   } catch (e) {
     errorHandler(e, 'active check error')
   }

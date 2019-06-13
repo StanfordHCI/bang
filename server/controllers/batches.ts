@@ -1,3 +1,5 @@
+import {activeCheck} from "./users";
+
 require('dotenv').config({path: './.env'});
 import {User} from '../models/users'
 import {Chat} from '../models/chats'
@@ -104,7 +106,8 @@ export const loadBatch = async function (data, socket, io) {
 
 const startBatch = async function (batch, socket, io) {
   try {
-    await timeout(4000);
+    await activeCheck(io);
+    await timeout(3000);
 
     const users = await User.find({batch: batch._id}).lean().exec();
     if (users.length !== parseInt(batch.teamSize) ** 2) {
