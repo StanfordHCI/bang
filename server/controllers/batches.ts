@@ -85,10 +85,12 @@ export const loadBatch = async function (data, socket, io) {
         })
         const prs = await Promise.all([
           Chat.findById(chatId).lean().exec(),
-          User.find({currentChat: chatId}).select('realNick fakeNick currentChat').lean().exec()
+          User.find({currentChat: chatId}).select('realNick fakeNick currentChat').lean().exec(),
+          Survey.findOne({user: socket.userId, batch: data.batch, round: batch.currentRound}).select('_id').lean().exec()
         ])
         chat = prs[0];
         chat.members = prs[1]
+        if (prs[2]) batch.surveyDone = true;
         userInfo = chat.members.find(x => x._id.toString() === socket.userId.toString())
         socket.join(chatId.toString())
       } else {
@@ -96,6 +98,9 @@ export const loadBatch = async function (data, socket, io) {
         chat.members = [];
         chat.messages = [];
       }
+    } else if (batch.status === 'completed') {
+      const finalSurveyCheck = Survey.findOne({user: socket.userId, batch: data.batch, isPost: true}).select('_id').lean().exec();
+      if (finalSurveyCheck) batch.finalSurveyDone = true;
     }
 
     socket.emit('loaded-batch', {batch: batch, chat: chat, userInfo: userInfo})
@@ -220,7 +225,7 @@ const startBatch = async function (batch, socket, io) {
       await expireHIT(batch.HITId)
     }
     if (runningLive) {
-      await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
+      await User.updateMany({batch: batch._id}, { $set: { realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
     }
     logger.info(module, 'Main experiment end', batch._id)
     clearRoom(batch._id, io)

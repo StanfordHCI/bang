@@ -330,7 +330,7 @@
     right: 36px;
     color: $color-additional;
     font-size: 10px;
-    margin: 0;
+    margin: 0px 6px 0px 0px;
     top: 10px;
 
     @media screen and (min-width: 1366px) {
@@ -352,7 +352,7 @@
     }
 
     &.chat__bubble--active {
-
+      justify-content: flex-end;
       .chat__bubble-message-wrap {
 
         @include themify($themes) {

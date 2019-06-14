@@ -126,6 +126,7 @@ PostSurveyForm = reduxForm({
   form: 'PostSurveyForm',
   enableReinitialize: true,
   destroyOnUnmount: true,
+  touchOnChange: true,
   validate,
 })(PostSurveyForm);
 

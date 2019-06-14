@@ -61,6 +61,12 @@ const fuzzyMatched = (comparer, comparitor, matchCount) => {
 
 const formatTimer = time => (Math.floor(parseInt(time) / 60)) + ':' + (parseInt(time) % 60 < 10 ? '0' : '') + (parseInt(time) % 60)
 
+const componentDecorator = (href, text, key) => (
+  <a href={href} key={key} target="_blank">
+    {text}
+  </a>
+);
+
 class Batch extends React.Component {
 
   constructor(props) {
@@ -70,7 +76,6 @@ class Batch extends React.Component {
       message: '',
       members: [],
       timeLeft: 0,
-      timerActive: false,
       surveyDone: false,
       isReady: false,
       autoNames: []
@@ -78,26 +83,42 @@ class Batch extends React.Component {
   }
 
   componentWillMount() {
-    this.props.loadBatch()
+    this.props.loadBatch();
+
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.roundTimer);
   }
 
   componentWillReceiveProps(nextProps, nextState) {
-    if (!this.state.isReady && nextProps.chat && nextProps.batch) {
-      this.setState({isReady: true})
+    if (!this.state.isReady && nextProps.chat && nextProps.batch) { //init here because loadBatch is not promise
+      if (nextProps.batch.finalSurveyDone) {
+        history.push('batch-end')
+        return;
+      }
+      this.setState({isReady: true, surveyDone: nextProps.batch.surveyDone})
+      const {batch, currentRound} = nextProps;
+      if (currentRound && batch.status === 'active') {
+        this.roundTimer = setInterval(() => this.timer(), 1000);
+      }
     }
-    if (!this.state.timerActive && nextProps.currentRound && nextProps.currentRound.status === 'active') {
-      this.setState({timerActive: true})
-      this.roundTimer = setInterval(() => this.timer(nextProps.currentRound), 1000);
+    if (this.props.batch && this.props.batch.status === 'active' && nextProps.batch.status === 'completed') {
+      clearInterval(this.roundTimer);
     }
-    if (this.state.timerActive && this.props.currentRound && this.props.currentRound.status === 'active' && nextProps.currentRound.status === 'survey') {
-      this.setState({timerActive: false, surveyDone: false})
-      clearInterval(this.roundTimer)
+    if (this.props.currentRound && this.props.currentRound.status === 'active' && nextProps.currentRound.status === 'survey') {
+      this.setState({surveyDone: false})
     }
     setTimeout(() => this.scrollDown(), 1)
   }
 
-  timer(round) {
-    this.setState({timeLeft: moment(round.startTime).add(this.props.batch.roundMinutes, 'minute').diff(moment(), 'seconds')})
+  timer() {
+    const {batch, currentRound} = this.props;
+    if (batch && currentRound) {
+      let endMoment = currentRound.status === 'active' ? batch.roundMinutes : batch.roundMinutes + batch.surveyMinutes
+      const timeLeft = moment(currentRound.startTime).add(endMoment, 'minute');
+      this.setState({timeLeft: timeLeft.diff(moment(), 'seconds')})
+    }
   }
 
   scrollDown() {
@@ -313,15 +334,16 @@ class Batch extends React.Component {
               <div className='chat__dialog-messages'>
                 {chat.messages.map((message, index) => {
                   let messageClass = message.user === user._id ? 'chat__bubble chat__bubble--active' : 'chat__bubble';
+                  let messageContent = message.message;
                   if (message.user.toString() === botId) {
                     messageClass = 'chat__bubble chat_bot'
+                    messageContent = (<Linkify componentDecorator={componentDecorator}>{message.message}</Linkify>);
                   }
                   return (
                     <div className={messageClass} key={index + 1}>
                       <div className='chat__bubble-message-wrap'>
-                        <p
-                          className='chat__bubble-contact-name'>{message.user.toString() === user._id.toString() ? user.realNick : message.nickname}</p>
-                        <p className='chat__bubble-message'><Linkify>{message.message}</Linkify></p>
+                        <p className='chat__bubble-contact-name'>{message.user.toString() === user._id.toString() ? user.realNick : message.nickname}</p>
+                        <p className='chat__bubble-message'>{messageContent}</p>
                         <p className='chat__bubble-date'>{moment(message.time).format('LTS')}</p>
                       </div>
                     </div>
@@ -366,13 +388,15 @@ class Batch extends React.Component {
   renderMidSurvey() {
     return (
       <div>
-        <h5 className='bold-text'>Round survey</h5>
         {!this.state.surveyDone && <MidSurveyForm
           initialValues={{questions: this.props.batch.midQuestions.map(x => {return {result: ''}})}}
           questions={this.props.batch.midQuestions}
           onSubmit={this.submitSurvey}
         />}
-        {this.state.surveyDone && <h5 className='bold-text'>Done!</h5>}
+        {this.state.surveyDone && <div>
+          <p>Thanks for completing the survey for this round!</p>
+          <p style={{marginBottom: '0px'}}>There are {this.props.batch.numRounds - this.props.batch.currentRound} more round(s) remaining, but we are waiting for your teammates to complete the surveys. Hang tight!</p>
+        </div>}
       </div>)
   }
 
@@ -407,7 +431,6 @@ class Batch extends React.Component {
   renderRound() {
     return (
       <div>
-        <h5 className='bold-text'>Time left: {formatTimer(this.state.timeLeft)}</h5>
         {this.renderChat()}
       </div>)
   }
@@ -417,7 +440,8 @@ class Batch extends React.Component {
     const round = batch.rounds[batch.currentRound - 1];
 
     return round ? (<div>
-      <h5 className='bold-text'>Round {batch.currentRound}</h5>
+      <h5 className='bold-text'>Round {batch.currentRound + (round.status === 'survey' ? ' survey' : '')}</h5>
+      <h5 className='bold-text'>Time left: {formatTimer(this.state.timeLeft)}</h5>
       {round.status === 'active' && this.renderRound()}
       {round.status === 'survey' && this.renderMidSurvey()}
     </div>) : (
@@ -444,9 +468,9 @@ class Batch extends React.Component {
           <Col md={12} lg={12} xl={12}>
             <Card>
               {this.state.isReady && <CardBody>
-                <div className='card__title'>
+                {/*<div className='card__title'>
                   <h5 className='bold-text'>Current batch status: {batch.status}</h5>
-                </div>
+                </div>*/}
                 {batch.status === 'waiting' && this.renderWaitingStage()}
                 {batch.status === 'active' && this.renderActiveStage()}
                 {batch.status === 'completed' && this.renderCompletedStage()}

@@ -56,7 +56,7 @@ export const io = require('socket.io').listen(app.listen(PORT, function() {
 }));
 
 let initialChecks = [
-  User.updateMany({}, { $set: { connected : false, lastDisconnect: new Date(), socketId: '', batch: null,
+  User.updateMany({}, { $set: { connected : false, lastDisconnect: new Date(), socketId: '',
       currentChat: null, realNick: null, fakeNick: null}}),
   Batch.updateMany({$or: [{status:'active'}, {status:'waiting'}]}, { $set: { status : 'completed'}}),
 ]
@@ -135,7 +135,7 @@ cron.schedule('* * * * *', async function(){
 if (process.env.MTURK_MODE !== 'off') {
   cron.schedule('*/4 * * * *', async function(){
     try {
-      const batch = await Batch.findOne({status: 'waiting'}).select('teamSize roundMinutes numRounds').lean().exec();
+      const batch = await Batch.findOne({status: 'waiting'}).select('teamSize roundMinutes numRounds HITTitle surveyMinutes').lean().exec();
       if (batch) {
         const HIT = await addHIT(batch, false);
         currentHIT = HIT.HITId;

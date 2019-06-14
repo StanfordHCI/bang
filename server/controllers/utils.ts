@@ -94,12 +94,12 @@ export const addHIT = (batch, isMain) => {
     const hourlyWage = 12;
     const rewardPrice = 0.01;
     const duration = isMain ? 36000 : 250;
-    let bonusPrice = (hourlyWage * ((batch.roundMinutes * batch.numRounds * 1.5) / 60) - rewardPrice).toFixed(2);
+    let bonusPrice = (hourlyWage * (((batch.roundMinutes + batch.surveyMinutes) * batch.numRounds) / 60)).toFixed(2);
     let bg = process.env.MTURK_FRAME === 'ON' ? (isMain ? 'Main task. ' : 'Test task. ') : 'Recruit task. ';
-    let HITTitle = batch.HITTitle ? batch.HITTitle : bg + "Write online ads - bonus up to $" + hourlyWage + " / hour (" + time + ")";
+    let HITTitle = batch.HITTitle ? batch.HITTitle : bg + "Write online ads - bonus up to $" + hourlyWage + " / hour (";
     let description =
       "Work in groups to write ads for new products. This task will take approximately " +
-      Math.round(batch.roundMinutes * batch.numRounds + 10) +
+      Math.round((batch.roundMinutes + batch.surveyMinutes) * batch.numRounds ) +
       " minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" +
       bonusPrice +
       ".";
