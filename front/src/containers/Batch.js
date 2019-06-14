@@ -78,6 +78,7 @@ class Batch extends React.Component {
       timeLeft: 0,
       surveyDone: false,
       isReady: false,
+      timerIsReady: false,
       autoNames: []
     };
   }
@@ -98,10 +99,10 @@ class Batch extends React.Component {
         return;
       }
       this.setState({isReady: true, surveyDone: nextProps.batch.surveyDone})
-      const {batch, currentRound} = nextProps;
-      if (currentRound && batch.status === 'active') {
-        this.roundTimer = setInterval(() => this.timer(), 1000);
-      }
+    }
+    if (!this.state.timerIsReady && nextProps.batch && nextProps.currentRound && nextProps.batch.status === 'active') {
+      this.roundTimer = setInterval(() => this.timer(), 1000);
+      this.setState({timerIsReady: true})
     }
     if (this.props.batch && this.props.batch.status === 'active' && nextProps.batch.status === 'completed') {
       clearInterval(this.roundTimer);

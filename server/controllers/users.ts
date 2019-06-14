@@ -4,13 +4,13 @@ import {Chat} from '../models/chats'
 import {errorHandler} from '../services/common'
 import {Survey} from "../models/surveys";
 const logger = require('../services/logger');
-import {notifyWorkers, assignQual, payBonus} from "./utils";
+import {notifyWorkers, assignQual, payBonus, runningLive} from "./utils";
 import {globalBatchTeamSize} from '../index'
 
 
 export const activeCheck = async function (io) {
   try {
-    const activeUsers = await User.find({connected: true}).select('mturkId').lean().exec()
+    const activeUsers = await User.find({connected: true, batch: null}).select('mturkId').lean().exec()
     const activeCounter = activeUsers ? activeUsers.length : 0;
     io.to('waitroom').emit('clients-active', activeCounter);
     logger.info(module, 'People in waitroom: ' + activeCounter);
@@ -36,6 +36,7 @@ export const init = async function (data, socket, io) {
       socket.emit('init-res', null);
       return;
     }
+    if (!runningLive && user.systemStatus === 'hasbanged') user.systemStatus = 'willbang';
 
     socket.mturkId = user.mturkId;
     socket.token = user.token;

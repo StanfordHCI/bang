@@ -99,7 +99,7 @@ export const loadBatch = async function (data, socket, io) {
         chat.messages = [];
       }
     } else if (batch.status === 'completed') {
-      const finalSurveyCheck = Survey.findOne({user: socket.userId, batch: data.batch, isPost: true}).select('_id').lean().exec();
+      const finalSurveyCheck = await Survey.findOne({user: socket.userId, batch: data.batch, isPost: true}).select('_id').lean().exec();
       if (finalSurveyCheck) batch.finalSurveyDone = true;
     }
 
@@ -224,9 +224,7 @@ const startBatch = async function (batch, socket, io) {
     if (process.env.MTURK_FRAME === 'ON' && process.env.MTURK_MODE !== 'off') {
       await expireHIT(batch.HITId)
     }
-    if (runningLive) {
-      await User.updateMany({batch: batch._id}, { $set: { realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
-    }
+    await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
     logger.info(module, 'Main experiment end', batch._id)
     clearRoom(batch._id, io)
   } catch (e) {

@@ -327,7 +327,7 @@ const validate = (values, props) => {
   }
   if (!values.teamSize) {
     errors.teamSize = 'required'
-  } else if (parseInt(values.teamSize) < 2) {
+  } else if (parseInt(values.teamSize) < 1) {
     errors.teamSize = 'invalid value'
   }
   if (!values.maskType) {

@@ -92,6 +92,8 @@ export const whoami = () => {
           } else {
             history.push('/waiting');
           }
+        } else if (data.user.systemStatus ==='hasbanged') {
+          history.push('/batch-end');
         }
       }
     });
