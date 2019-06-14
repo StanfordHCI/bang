@@ -4,7 +4,7 @@ import {Chat} from '../models/chats'
 import {errorHandler} from '../services/common'
 import {Survey} from "../models/surveys";
 const logger = require('../services/logger');
-import {notifyWorkers, assignQual, payBonus} from "./utils";
+import {notifyWorkers, assignQual, payBonus, runningLive} from "./utils";
 import {globalBatchTeamSize} from '../index'
 
 
@@ -31,11 +31,12 @@ export const init = async function (data, socket, io) {
       user = await User.findOne({token: token}).lean().exec();
     }
 
-    if (!user || user.systemStatus === 'hasbanged') {
+    if (!user) {
       logger.info(module, 'wrong credentials');
       socket.emit('init-res', null);
       return;
     }
+    if (!runningLive && user.systemStatus === 'hasbanged') user.systemStatus = 'willbang';
 
     socket.mturkId = user.mturkId;
     socket.token = user.token;

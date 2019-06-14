@@ -60,7 +60,7 @@ export const whoami = () => {
       } else {
         dispatch(setLoading(true));
         socket.emit('init', initData)
-        history.push('/waiting')
+        //history.push('/waiting')
       }
     }
     socket.once('init-res', (data) => {
@@ -92,13 +92,9 @@ export const whoami = () => {
           } else {
             history.push('/waiting');
           }
-        } else if (data.user.systemStatus ==='notbanged') {
-          history.push('/notbanged');
-        } else {
-          history.push('/hasbanged');
+        } else if (data.user.systemStatus ==='hasbanged') {
+          history.push('/batch-end');
         }
-      } else {
-
       }
     });
     socket.on('send-error', (data) => {

@@ -16,17 +16,16 @@ class Waiting extends React.Component {
     socket.on('clients-active', this.refresher)
   }
 
-  componentWillMount() {
-
+  componentDidMount() {
   }
 
   refresher(data) {
+    console.log(data)
     this.setState({activeCounter: data});
   }
 
   render() {
     const {user, limit, joinBatch} = this.props;
-    console.log(limit)
 
     return (
       <Container>
