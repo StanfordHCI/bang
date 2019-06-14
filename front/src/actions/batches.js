@@ -53,7 +53,7 @@ export const loadBatch = () => {
         teamAnimals = {}
         currentTeam = chat.members.map(x => {
           let animalIndex;
-          const nick = x._id.toString() === user._id.toString() ? x.realNick : x.fakeNick;
+          const nick = data.batch.maskType === 'unmasked' || x._id.toString() === user._id.toString() ? x.realNick : x.fakeNick;
           if (!nick) return ''
           if (nick) for (let i = 0; i < nick.length; i++) {
             if (nick[i] === nick[i].toUpperCase()) {

@@ -11,6 +11,7 @@ import {history} from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
 import Linkify from 'react-linkify';
 const MAX_LENGTH = 240;
+const botId = '100000000000000000000001'
 
 const fuzzyMatched = (comparer, comparitor, matchCount) => {
   let isMatched = false;
@@ -57,6 +58,8 @@ const fuzzyMatched = (comparer, comparitor, matchCount) => {
 
   return isMatched;
 }
+
+const formatTimer = time => (Math.floor(parseInt(time) / 60)) + ':' + (parseInt(time) % 60 < 10 ? '0' : '') + (parseInt(time) % 60)
 
 class Batch extends React.Component {
 
@@ -184,11 +187,11 @@ class Batch extends React.Component {
 
 
     if (e.keyCode === 13) {
-      newMessage = newMessage.replace(new RegExp(user.realNick, "ig"), user.fakeNick)
+      if (batch.maskType === 'masked') newMessage = newMessage.replace(new RegExp(user.realNick, "ig"), user.fakeNick)
       this.setState({message: '', autoNames: []});
       sendMessage({
         message: newMessage,
-        nickname: batch.status === 'active' ? user.fakeNick : user.realNick,
+        nickname: batch.status === 'active' && batch.maskType === 'masked' ? user.fakeNick : user.realNick,
         chat: chat._id
       })
     }
@@ -292,10 +295,10 @@ class Batch extends React.Component {
                     </td>
                   </tr> :
                   <tr key={member._id}
-                      onClick={() => this.setState({message: this.state.message + ' ' + member.fakeNick})}>
+                      onClick={() => this.setState({message: this.state.message + ' ' + (batch.maskType === 'masked' ? member.fakeNick : member.realNick)})}>
                     <td>
                       <div className='chat__bubble-contact-name'>
-                        {member.fakeNick}
+                        {batch.maskType === 'masked' ? member.fakeNick : member.realNick}
                       </div>
                     </td>
                   </tr>
@@ -310,6 +313,9 @@ class Batch extends React.Component {
               <div className='chat__dialog-messages'>
                 {chat.messages.map((message, index) => {
                   let messageClass = message.user === user._id ? 'chat__bubble chat__bubble--active' : 'chat__bubble';
+                  if (message.user.toString() === botId) {
+                    messageClass = 'chat__bubble chat_bot'
+                  }
                   return (
                     <div className={messageClass} key={index + 1}>
                       <div className='chat__bubble-message-wrap'>
@@ -401,7 +407,7 @@ class Batch extends React.Component {
   renderRound() {
     return (
       <div>
-        <h5 className='bold-text'>Time left: {this.state.timeLeft}</h5>
+        <h5 className='bold-text'>Time left: {formatTimer(this.state.timeLeft)}</h5>
         {this.renderChat()}
       </div>)
   }
@@ -462,7 +468,7 @@ function mapStateToProps(state) {
     chat.members = chat.members.filter(x => x._id.toString() === state.app.user._id.toString())
     chat.messages = chat.messages.filter(x => x.user.toString() === state.app.user._id.toString() || x.user.toString() === '100000000000000000000001')
   }
-  if (batch && batch.status ==='active' && !!state.app.user.fakeNick && typeof(state.app.user.fakeNick) === 'string') {
+  if (batch && batch.status ==='active' && batch.maskType === 'masked' && !!state.app.user.fakeNick && typeof(state.app.user.fakeNick) === 'string') {
     chat.messages.forEach(message => {
       let checkedMessage = message.message || '';
       checkedMessage = checkedMessage.replace(new RegExp(state.app.user.fakeNick, "ig"), state.app.user.realNick);

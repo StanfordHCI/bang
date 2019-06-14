@@ -6,13 +6,9 @@ import {bindActionCreators} from "redux";
 import TemplateForm from './TemplateForm'
 import moment from 'moment'
 
-class TemplateInfo extends PureComponent {
+class AddTemplate extends PureComponent {
   constructor(props) {
     super(props);
-  }
-
-  handleSubmit(form) {
-    this.props.addTemplate(form)
   }
 
   render() {
@@ -46,4 +42,4 @@ function mapDispatchToProps(dispatch) {
   }, dispatch);
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(TemplateInfo);
+export default connect(mapStateToProps, mapDispatchToProps)(AddTemplate);

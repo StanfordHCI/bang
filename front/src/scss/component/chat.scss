@@ -343,6 +343,14 @@
     margin-bottom: 20px;
     position: relative;
 
+    &.chat_bot {
+      .chat__bubble-message-wrap {
+        @include themify($themes) {
+          background-color: themed('colorBubbleBot');
+        }
+      }
+    }
+
     &.chat__bubble--active {
 
       .chat__bubble-message-wrap {

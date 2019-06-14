@@ -52,7 +52,7 @@ const quals = {
 };
 
 const scheduleQuals = runningLive ? [quals.onlyUSA, quals.hitsAccepted(100), quals.joinedBang] : [];
-const mainQuals = runningLive ? [quals.onlyUSA, quals.hitsAccepted(100), quals.completedBang, quals.willBang] : [quals.completedBang, quals.willBang]
+const mainQuals = runningLive ? [quals.onlyUSA, quals.hitsAccepted(100), quals.completedBang, quals.willBang] : []
 
 export const clearRoom = function (room, io) {
   io.of('/').in(room).clients((error, socketIds) => {
@@ -96,8 +96,7 @@ export const addHIT = (batch, isMain) => {
     const duration = isMain ? 36000 : 250;
     let bonusPrice = (hourlyWage * ((batch.roundMinutes * batch.numRounds * 1.5) / 60) - rewardPrice).toFixed(2);
     let bg = process.env.MTURK_FRAME === 'ON' ? (isMain ? 'Main task. ' : 'Test task. ') : 'Recruit task. ';
-
-    let HITTitle = bg + "Write online ads - bonus up to $" + hourlyWage + " / hour (" + time + ")";
+    let HITTitle = batch.HITTitle ? batch.HITTitle : bg + "Write online ads - bonus up to $" + hourlyWage + " / hour (" + time + ")";
     let description =
       "Work in groups to write ads for new products. This task will take approximately " +
       Math.round(batch.roundMinutes * batch.numRounds + 10) +

@@ -70,7 +70,7 @@ export const whoami = () => {
           type: APP_READY,
         });
         dispatch(setSnackbar('wrong credentials'));
-        localStorage.clear()
+        //localStorage.clear()
         history.push('/not-logged')
         return;
       }

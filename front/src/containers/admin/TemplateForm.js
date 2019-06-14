@@ -6,8 +6,9 @@ import {bindActionCreators} from "redux";
 import {renderField, renderTextArea} from 'Components/form/Text'
 import renderSelectField from 'Components/form/Select'
 import {generateComb} from '../../app/utils'
+import Select from "react-select";
 
-const userOptions = (teamSize) => {
+/*const userOptions = (teamSize) => {
   let result = [];
   for (let i = 0; i < teamSize ** 2; i++) {
     result.push({value: i + 1, label: 'user' + (i + 1)})
@@ -35,7 +36,7 @@ const generateRounds = (numRounds, teamSize, dispatch) => {
     rounds.push(round)
   }
   dispatch(change('TemplateForm', 'roundGen', rounds))
-}
+}*/
 
 const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
   return (<div style={{width: '100%'}}>
@@ -78,12 +79,27 @@ const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
   </div>)
 }
 
-const renderTasks = ({fields, meta: {touched, error, warning}, numRounds}) => {
-  let tasks = [];
+const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneTask}) => {
+  let tasks = [], options = [];
+  for (let i = 0; i < numRounds; i++) {
+    options.push({value: i, label: 'task ' + (i + 1)})
+  }
   for (let i = 0; i < numRounds; i++) {
     tasks.push(
       <div key={i} className='form__form-group'>
-        <label className='form__form-group-label'>task:</label>
+        <label className='form__form-group-label' style={{margin: '0'}}>
+          <p>task {i + 1}</p>
+          <div>
+            <Select
+              onChange={(e) => cloneTask(i, e.value)}
+              options={options.filter(x => x.value !== i)}
+              clearable={false}
+              multi={false}
+              className='form__form-group-select'
+              placeholder="clone task"
+            />
+          </div>
+        </label>
         <div className='form__form-group-field' style={{marginBottom: '25px'}}>
           <Field
             name={`tasks[${i}].message`}
@@ -95,6 +111,7 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds}) => {
           component={renderSteps}
           rerenderOnEveryChange
         />
+
       </div>
     )
   }
@@ -104,6 +121,7 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds}) => {
   </div>)
 };
 
+/*
 const renderRounds = ({fields, meta: {touched, error, warning}, numRounds, teamSize}) => {
   let rounds = [];
   for (let i = 0; i < numRounds; i++) {
@@ -172,6 +190,7 @@ const renderUsers = ({fields, meta: {touched, error, warning}, numRounds, teamSi
     {users}
   </div>)
 };
+*/
 
 
 
@@ -182,13 +201,17 @@ class TemplateForm extends React.Component {
     this.state = {};
   }
 
-  handleGenerate(){
+  /*handleGenerate(){
     const {numRounds, teamSize, dispatch} = this.props;
     generateRounds(parseInt(numRounds), parseInt(teamSize), dispatch)
+  }*/
+
+  cloneTask = (from, to) => {
+    this.props.dispatch(change('TemplateForm', 'tasks[' + from + ']', this.props.tasks[to]))
   }
 
   render() {
-    const {invalid, numRounds, teamSize, roundGen, dispatch} = this.props;
+    const {invalid, numRounds, teamSize, roundGen, dispatch, pristine, isAdd} = this.props;
 
     return (<div>
         <form className='form form--horizontal' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
@@ -206,35 +229,57 @@ class TemplateForm extends React.Component {
                   />
                 </div>
               </div>
+              <Row>
+                <Col className='form__form-group'>
+                  <label className='form__form-group-label'>Team size:</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                      name='teamSize'
+                      component={renderField}
+                      type='number'
+                    />
+                  </div>
+                </Col>
+                <Col className='form__form-group'>
+                  <label className='form__form-group-label'>Round minutes:</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                      name='roundMinutes'
+                      component={renderField}
+                      type='number'
+                    />
+                  </div>
+                </Col>
+                <Col className='form__form-group'>
+                  <label className='form__form-group-label'>Survey minutes:</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                      name='surveyMinutes'
+                      component={renderField}
+                      type='number'
+                    />
+                  </div>
+                </Col>
+                <Col className='form__form-group'>
+                  <label className='form__form-group-label'>Number of rounds:</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                      name='numRounds'
+                      component={renderField}
+                      type='number'
+                    />
+                  </div>
+                </Col>
+              </Row>
               <div className='form__form-group'>
-                <label className='form__form-group-label'>Team size:</label>
+                <label className='form__form-group-label'>HIT Title:</label>
                 <div className='form__form-group-field'>
                   <Field
-                    name='teamSize'
+                    name='HITTitle'
                     component={renderField}
-                    type='number'
+                    type='text'
                   />
                 </div>
-              </div>
-              <div className='form__form-group'>
-                <label className='form__form-group-label'>Round minutes:</label>
-                <div className='form__form-group-field'>
-                  <Field
-                    name='roundMinutes'
-                    component={renderField}
-                    type='number'
-                  />
-                </div>
-              </div>
-            </div>
-            <div className='form__form-group'>
-              <label className='form__form-group-label'>Number of rounds:</label>
-              <div className='form__form-group-field'>
-                <Field
-                  name='numRounds'
-                  component={renderField}
-                  type='number'
-                />
               </div>
             </div>
             <FieldArray
@@ -242,6 +287,7 @@ class TemplateForm extends React.Component {
               component={renderTasks}
               rerenderOnEveryChange
               numRounds={numRounds}
+              cloneTask={this.cloneTask}
             />
               {/*<FieldArray
                 name="roundGen"
@@ -256,7 +302,7 @@ class TemplateForm extends React.Component {
             <Col>
               <ButtonToolbar className='mx-auto form__button-toolbar'>
                 {/*<Button color='primary' size='sm' type='button' disabled={!numRounds || !teamSize} onClick={() => this.handleGenerate()}>Generate random users</Button>*/}
-                <Button color='primary' size='sm' type='submit' disabled={invalid}>Submit</Button>
+                <Button color='primary' size='sm' type='submit' disabled={invalid || (!isAdd && pristine)}>Submit</Button>
               </ButtonToolbar>
             </Col>
           </Row>
@@ -284,11 +330,18 @@ const validate = (values, props) => {
   } else if (parseInt(values.teamSize) < 2) {
     errors.teamSize = 'invalid value'
   }
+  if (!values.maskType) {
+    errors.maskType = 'required'
+  }
   if (!values.roundMinutes) {
     errors.roundMinutes = 'required'
-
   } else if (values.roundMinutes < 1 || values.roundMinutes > 59) {
     errors.roundMinutes = 'invalid value'
+  }
+  if (!values.surveyMinutes) {
+    errors.surveyMinutes = 'required'
+  } else if (values.surveyMinutes < 1 || values.surveyMinutes > 10) {
+    errors.surveyMinutes = 'invalid value'
   }
   errors.tasks = [];
 
@@ -342,6 +395,7 @@ function mapStateToProps(state) {
     numRounds: selector(state, 'numRounds'),
     teamSize: selector(state, 'teamSize'),
     roundGen: selector(state, 'roundGen'),
+    tasks: selector(state, 'tasks'),
   }
 }
 

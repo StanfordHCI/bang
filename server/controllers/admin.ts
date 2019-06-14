@@ -36,7 +36,7 @@ export const addBatch = async function (req, res) {
     if (process.env.MTURK_MODE !== 'off') {
       let balance = await getAccountBalance();
       balance = parseFloat(balance.AvailableBalance);
-      const moneyForBatch = (newBatch.teamSize ** 2) * 12 * ((newBatch.roundMinutes * newBatch.numRounds * 1.5) / 60);
+      const moneyForBatch = (newBatch.teamSize ** 2) * 12 * (((newBatch.roundMinutes + newBatch.surveyMinutes)  * newBatch.numRounds) / 60);
       await notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Account balance: $' + balance + '. Experiment cost: $' + moneyForBatch.toFixed(2), 'Bang');
       if (balance < moneyForBatch ) {
         logger.info(module, 'balance problems');
@@ -93,6 +93,13 @@ export const addBatch = async function (req, res) {
           user: botId,
           time: new Date
         },
+        {
+          nickname: 'helperBot',
+          message: "We ask for your patience as we wait for enough active users to begin the task! " +
+            "Each minute, you will be reminded to type something into the chat so that we know you're active and ready to begin.",
+          user: botId,
+          time: new Date
+        },
     ]});
     const batchWithChat = await Batch.findByIdAndUpdate(batch._id, {$set: {preChat: preChat._id}})
     res.json({batch: batchWithChat})
@@ -105,7 +112,7 @@ export const addBatch = async function (req, res) {
 
 export const loadBatchList = async function (req, res) {
   try {
-    const batchList = await Batch.find({}).select('createdAt startTime status currentRound teamSize templateName note').lean().exec();
+    const batchList = await Batch.find({}).select('createdAt startTime status currentRound teamSize templateName note maskType').lean().exec();
     res.json({batchList: batchList})
   } catch (e) {
     errorHandler(e, 'add batch error')
@@ -116,9 +123,9 @@ export const loadTemplateList = async function (req, res) {
   try {
     let select = '';
     if (req.query.full) {
-      select = 'name roundMinutes numRounds experimentRound tasks teamSize'
+      select = ''
     } else {
-      select = 'name createdAt'
+      select = 'name teamSize'
     }
     const templateList = await Template.find({}).select(select).lean().exec();
     res.json({templateList: templateList})
@@ -134,6 +141,86 @@ export const addTemplate = async function (req, res) {
     res.json({template: template})
   } catch (e) {
     errorHandler(e, 'add template error')
+  }
+}
+
+export const deleteTemplate = async function (req, res) {
+  try {
+    await Template.findByIdAndRemove(req.body._id).exec();
+    res.json({template: {_id: req.body._id}})
+  } catch (e) {
+    errorHandler(e, 'add template error')
+  }
+}
+
+export const cloneTemplate = async function (req, res) {
+  try {
+    let original = await Template.findById(req.body._id).lean().exec();
+    delete original._id;
+    original.name = original.name + ' (copy)';
+    const template = await Template.create(original);
+    res.json({template: {_id: template._id, name: template.name, teamSize: template.teamSize}})
+  } catch (e) {
+    errorHandler(e, 'clone template error')
+  }
+}
+
+export const updateTemplate = async function (req, res) {
+  try {
+    const template = await Template.findByIdAndUpdate(req.body._id, {$set: req.body}, {new: true}).lean().exec();
+    res.json({template: template})
+  } catch (e) {
+    errorHandler(e, 'add template error')
+  }
+}
+
+export const loadUserList = async function (req, res) {
+  try {
+    const users = await User.find({testAssignmentId: 'test'}).select('mturkId systemStatus connected testAssignmentId').lean().exec();
+    users.forEach(user => {
+      user.loginLink = process.env.HIT_URL + '?workerId=' + user.mturkId + '&assignmentId=' + user.testAssignmentId;
+      return user;
+    })
+    res.json({users: users})
+  } catch (e) {
+    errorHandler(e, 'load users error')
+  }
+}
+
+export const loadTemplate = async function (req, res) {
+  try {
+    const template = await Template.findById(req.params.id).lean().exec();
+    res.json({template: template})
+  } catch (e) {
+    errorHandler(e, 'load template error')
+  }
+}
+
+export const deleteUser = async function (req, res) {
+  try {
+    await User.findByIdAndRemove(req.body._id).lean().exec();
+    res.json({user: {_id: req.body._id}})
+  } catch (e) {
+    errorHandler(e, 'delete user error')
+  }
+}
+
+export const addUser = async function (req, res) {
+  try {
+    const token = Math.floor(Math.random() * 10000) + Date.now()
+    let user = {
+      token: token,
+      mturkId: token,
+      testAssignmentId: 'test',
+      systemStatus: 'willbang',
+      connected: false,
+    }
+    await User.create(user);
+    delete user.token;
+    user.loginLink = process.env.HIT_URL + '?workerId=' + user.mturkId + '&assignmentId=' + user.testAssignmentId;
+    res.json({user: user})
+  } catch (e) {
+    errorHandler(e, 'add user error')
   }
 }
 
