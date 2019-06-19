@@ -1,3 +1,12 @@
+/** DatePicker.js
+ *  front-end
+ * 
+ *  helper methods & jsx for displaying date picker
+ * 
+ *  called by:
+ *    1. unused    
+ */
+
 import React, {PureComponent} from 'react';
 import DatePicker from 'react-datepicker';
 import PropTypes from 'prop-types';

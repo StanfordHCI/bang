@@ -1,3 +1,16 @@
+/** utils.js
+ *  code sraps, front-end helper
+ * 
+ *  helper functions, but currently uncalled / dead
+ * 
+ *  functions:
+ *  - generatecomb = generates combinatinos of m and n and returns an array,
+ *    applying some filter
+ * 
+ *  called by:
+ *    1. TemplateForm.js (not used) *     
+ */
+
 export const generateComb = (m, n) => {
   'use strict';
   const comb = (m, n) => combinations(m, enumFromTo(0, n - 1));

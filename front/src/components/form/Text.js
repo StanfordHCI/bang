@@ -1,3 +1,14 @@
+/** Text.js
+ *  front-end
+ * 
+ *  helper methods & jsx for displaying a field or text area
+ * 
+ *  called by:
+ *    1. TemplateForm - textarea
+ *    2. MidSurveyForm - field (unused)
+ *    3. PostSurveyForm - field (unused) 
+ */
+
 import React from 'react'
 export const renderField = ({input, label, type, meta: { touched, error, warning }, hidden, disabled}) => {
   return hidden ? null : (

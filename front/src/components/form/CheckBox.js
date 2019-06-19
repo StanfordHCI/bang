@@ -1,3 +1,12 @@
+/** CheckBox.js
+ *  front-end
+ * 
+ *  helper methods & jsx for displaying CheckBox
+ * 
+ *  called by:
+ *    1. unused    
+ */
+
 import React, {PureComponent} from 'react';
 import CheckIcon from 'mdi-react/CheckIcon';
 import CloseIcon from 'mdi-react/CloseIcon';

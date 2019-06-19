@@ -1,3 +1,14 @@
+/** SnackBar.js
+ *  front-end
+ * 
+ *  snackbar error message popup bound to top right
+ * 
+ *  called by:
+ *    1. MainWrapper.js 
+ * 
+ *  used: a lot, but rendered in mainwrapper   
+ */
+
 import React from 'react';
 import Snackbar  from '@material-ui/core/Snackbar';
 import {connect} from 'react-redux';

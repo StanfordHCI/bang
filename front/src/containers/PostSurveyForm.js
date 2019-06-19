@@ -1,3 +1,18 @@
+/** postsurveyform.js
+ *  front-end
+ * 
+ *  final survey that asks who duplicate partners were and when 
+ *  
+ *  renders:  
+ *    1. at batch-end for worker
+ *    2. when viewing final results for admin
+ * 
+ *  called by:
+ *    1. Batch.js (for worker view)
+ *    2. BatchResult.js (for admin results view)
+ *    
+ */
+
 import React from 'react';
 import {Col, Button, ButtonToolbar, Row, Container} from 'reactstrap';
 import {connect} from 'react-redux'

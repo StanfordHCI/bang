@@ -1,3 +1,7 @@
+/** EditTemplate.js
+ *  code scrap 
+ */
+
 import React, {PureComponent} from 'react';
 import {Card, CardBody, Col, Badge, Row, Container, Button, Nav, NavItem, NavLink, TabContent, TabPane} from 'reactstrap';
 import {connect} from "react-redux";

@@ -1,3 +1,12 @@
+/** blockcolorpicker.js
+ *  front-end
+ * 
+ *  helper methods & jsx for displaying a block color picker
+ * 
+ *  called by:
+ *    1. unused    
+ */
+
 import React, {PureComponent} from 'react';
 import {BlockPicker} from 'react-color';
 import {Popover} from 'reactstrap';

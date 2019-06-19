@@ -1,3 +1,20 @@
+/** mainwrapper.js
+ *  front-end
+ * 
+ *  site wrapper, all other pages are wrapped inside
+ *  renders snackbar, not clear how message gets mapped
+ * 
+ *  controls:
+ *    - theme
+ *  
+ *  renders:  
+ *    1. throughout
+ * 
+ *  called by:
+ *    1. router.js
+ *     
+ */
+
 import React, {PureComponent} from 'react';
 import {connect} from 'react-redux';
 import classNames from 'classnames';

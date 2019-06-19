@@ -1,3 +1,13 @@
+/** store.js
+ *  redux state manager
+ * 
+ *  code to apply redux to app
+ *
+ *  called by:
+ *    1. src/index.js
+ *    
+ */
+
 import {combineReducers, createStore, applyMiddleware, compose} from 'redux';
 import {reducer as reduxFormReducer} from 'redux-form';
 import appReducer from '../reducers/appReducer';

@@ -1,3 +1,13 @@
+/** scrolltotop.js
+ *  front-end helper
+ * 
+ *  function to scroll window to top
+ * 
+ *  called by:
+ *    1. src/index.js to ensure window starts at top
+ *    
+ */
+
 import {PureComponent} from 'react';
 import {withRouter} from 'react-router-dom';
 

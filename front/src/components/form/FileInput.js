@@ -1,4 +1,13 @@
-import React, {PureComponent} from 'react';
+/** FileInput.js
+ *  front-end
+ * 
+ *  helper methods & jsx for displaying file picker
+ * 
+ *  called by:
+ *    1. unused    
+ */
+
+ import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 
 class FileInputField extends PureComponent {
