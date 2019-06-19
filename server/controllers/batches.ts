@@ -251,8 +251,8 @@ export const receiveSurvey = async function (data, socket, io) {
         Batch.findById(newSurvey.batch).select('roundMinutes numRounds surveyMinutes').lean().exec(),
         User.findById(newSurvey.user).select('systemStatus mturkId').lean().exec()
       ])
-      if (user.systemStatus === 'hasbanged') {
-        logger.info(module, 'Blocked survey, hasbanged status');
+      if (!batch) {
+        logger.info(module, 'Blocked survey, survey/user does not have batch');
         return;
       }
       let bonusPrice = (12 * (((batch.roundMinutes + batch.surveyMinutes) * batch.numRounds) / 60) - 1.00);

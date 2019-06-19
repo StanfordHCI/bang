@@ -104,9 +104,19 @@ export const addBatch = async function (req, res) {
     ]});
     const batchWithChat = await Batch.findByIdAndUpdate(batch._id, {$set: {preChat: preChat._id}})
     res.json({batch: batchWithChat})
-    logger.info(module, 'New batch added. Mturk mode: ' + process.env.MTURK_MODE + '; Mturk frame: ' + process.env.MTURK_FRAME);
-    await activeCheck(io);
+    let prs = [];
+
+    if (process.env.MTURK_MODE !== 'off') {
+      const users = await User.find({systemStatus: 'willbang', isTest: false}).select('mturkId testAssignmentId').lean().exec();
+      users.forEach(user => {
+        const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
+        prs.push(notifyWorkers([user.mturkId], 'Experiment started. Please join us here: ' + url, 'Bang'))
+      })
+    }
+    prs.push(activeCheck(io))
     setTeamSize(newBatch.teamSize)
+    logger.info(module, 'New batch added. Mturk mode: ' + process.env.MTURK_MODE + '; Mturk frame: ' + process.env.MTURK_FRAME);
+    await Promise.all(prs)
   } catch (e) {
     errorHandler(e, 'add batch error')
   }
@@ -178,7 +188,7 @@ export const updateTemplate = async function (req, res) {
 
 export const loadUserList = async function (req, res) {
   try {
-    const users = await User.find({testAssignmentId: 'test'}).select('mturkId systemStatus connected testAssignmentId').lean().exec();
+    const users = await User.find({}).select('mturkId systemStatus connected testAssignmentId isTest').lean().exec();
     users.forEach(user => {
       user.loginLink = process.env.HIT_URL + '?workerId=' + user.mturkId + '&assignmentId=' + user.testAssignmentId;
       return user;
@@ -216,6 +226,7 @@ export const addUser = async function (req, res) {
       testAssignmentId: 'test',
       systemStatus: 'willbang',
       connected: false,
+      isTest: true
     }
     await User.create(user);
     delete user.token;

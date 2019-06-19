@@ -20,7 +20,7 @@ class UserList extends React.Component {
     const {userList} = this.props;
 
     return (
-      <Container>
+      <Container style={{maxWidth: '100%'}}>
         <Row>
           <Col md={12} lg={12} xl={12}>
             <Card>
@@ -50,6 +50,7 @@ class UserList extends React.Component {
                       <td>{user.connected ? 'yes' : 'no'}</td>
                       <td>
                         <Button className="btn btn-danger"
+                                disabled={!user.isTest}
                                 style={{padding: '2px 10px', marginBottom: '0px'}}
                                 onClick={() => this.props.deleteUser(user._id)}>
                           delete

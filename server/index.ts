@@ -68,6 +68,7 @@ let initialChecks = [
         mturkId: (2001 + i).toString(),
         testAssignmentId: 'test',
         systemStatus: 'willbang'
+        isTest: true
       }).then(() => {}).catch(err => errorHandler(err, 'Test users error'))
   }
 }*/
