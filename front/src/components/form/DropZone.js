@@ -1,4 +1,13 @@
-import React, {PureComponent} from 'react';
+/** DropZone.js
+ *  front-end
+ * 
+ *  helper methods & jsx for displaying drag&drop file picker
+ * 
+ *  called by:
+ *    1. unused    
+ */
+
+ import React, {PureComponent} from 'react';
 import Dropzone from 'react-dropzone';
 import PropTypes from 'prop-types';
 

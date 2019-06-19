@@ -1,3 +1,14 @@
+/** Table.js
+ *  front-end / code scrap
+ * 
+ *  helper methods & jsx for displaying a table that knows its striped/hover
+ *  status...as far as I can see this is exactly the same as calling table
+ *  from reactstrap directly 
+ * 
+ *  called by:
+ *    1. unused; devs call Table directly from reactstrap instead  
+ */
+
 import React, {PureComponent} from 'react';
 import {Table} from 'reactstrap';
 import PropTypes from 'prop-types';

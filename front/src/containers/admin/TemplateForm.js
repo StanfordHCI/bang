@@ -1,3 +1,14 @@
+/** TemplateForm.js
+ *  front-end
+ * 
+ *  admin only layout for adding / editing (validating) a template
+ * 
+ *  called by:
+ *    1. AddTemplate.js 
+ *    2. EditTemplate.js (empty, code scrap)
+ *    3. TemplateInfo.js   
+ */
+
 import React from 'react';
 import {Col, Button, ButtonToolbar, Row, Container} from 'reactstrap';
 import {connect} from 'react-redux'

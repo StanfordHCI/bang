@@ -1,3 +1,19 @@
+/** router.js
+ *  front-end
+ * 
+ *  controls what view components are displayed based on route
+ *  
+ *  controlled by (logic for unauthorized access is handled by):
+ *    1. src/actions/app.js
+ *  
+ *  controls:  
+ *    1. throughout
+ * 
+ *  called by:
+ *    1. App.js
+ *    
+ */
+
 import React from 'react';
 import {Route, Switch, Redirect} from 'react-router-dom';
 import MainWrapper from './MainWrapper';
@@ -27,10 +43,9 @@ const MainRouter = (props) => {
 
   return appReady ? (
     <MainWrapper>
-      <main>
+      <main> 
         <Switch>
           <Route exact path='/waiting' component={Waiting}/>
-          <Route exact path='/notbanged' component={Accept}/>
           <Route exact path='/batch' component={Batch}/>
           <Route exact path='/batch-end' component={BatchEnd}/>
           <Route exact path='/batches-add' component={AddBatch}/>

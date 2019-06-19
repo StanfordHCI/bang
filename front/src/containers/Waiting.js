@@ -1,3 +1,16 @@
+/** Waiting.js
+ *  front-end
+ * 
+ *  display waiting room info to worker
+ *  
+ *  renders:  
+ *    1. when worker is waiting
+ * 
+ *  called by:
+ *    1. Router.js
+ */
+
+
 import React from 'react';
 import {Card, CardBody, Col, Row, Container, Button} from 'reactstrap';
 import {connect} from "react-redux";

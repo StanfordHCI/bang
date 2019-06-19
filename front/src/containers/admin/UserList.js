@@ -1,4 +1,13 @@
-import React from 'react';
+/** UserList.js
+ *  front-end
+ * 
+ *  admin only layout for viewing all users
+ * 
+ *  called by:
+ *    1. Router.js    
+ */
+
+ import React from 'react';
 import {Card, CardBody, Col, Row, Container, Button, Table} from 'reactstrap';
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";

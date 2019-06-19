@@ -1,3 +1,12 @@
+/** ToggleButton.js
+ *  front-end
+ * 
+ *  helper methods & jsx for displaying a checkbox that calls some onChange fx
+ * 
+ *  called by:
+ *    1. unused    
+ */
+
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 

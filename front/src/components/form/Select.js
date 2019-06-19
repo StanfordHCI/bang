@@ -1,3 +1,14 @@
+/** Select.js
+ *  front-end
+ * 
+ *  helper methods & jsx for displaying a single select with options of misc types
+ * 
+ *  called by:
+ *    1. TemplateForm.js
+ *    2. MidSurveyForm.js
+ *    3. PostSurveyForm.js    
+ */
+
 import React, {PureComponent} from 'react';
 import Select from 'react-select';
 import PropTypes from 'prop-types';

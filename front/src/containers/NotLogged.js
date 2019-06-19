@@ -1,3 +1,15 @@
+/** notlogged.js
+ *  front-end
+ * 
+ *  error message if user has invalid bang-token 
+ *  
+ *  renders:  
+ *    1. if we directly go to server without correct bang-token
+ * 
+ *  called by:
+ *    1. router.js
+ */
+
 import React from 'react';
 import {Card, CardBody, Col, Row, Container, Table} from 'reactstrap';
 import {connect} from "react-redux";
@@ -12,7 +24,7 @@ class NotLogged extends React.PureComponent {
             <Card>
               <CardBody>
                 <div className='card__title'>
-                  <h5 className='bold-text'>Not logged. Wrong credentials.</h5>
+                  <h5 className='bold-text'>Not logged in as a valid user. Wrong credentials.</h5>
                 </div>
               </CardBody>
             </Card>

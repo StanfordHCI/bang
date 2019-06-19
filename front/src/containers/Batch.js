@@ -1,3 +1,22 @@
+/** batch.js
+ *  front-end
+ * 
+ *  worker view of a current batch
+ *  
+ *  major functions:
+ *  - fuzzyMatched = user pairing alg
+ *  - autocomplete methods
+ *  - methods to render each of the workflow pages (chat, midsurvey, postsurvey)
+ * 
+ *  chat messages will automatically linkify
+ *  
+ *  renders:  
+ *    1. when admin is looking at batch
+ * 
+ *  called by:
+ *    1. router.js
+ */
+
 import React from 'react';
 import {Card, CardBody, Col, Row, Container, Table} from 'reactstrap';
 import {connect} from "react-redux";
@@ -10,6 +29,7 @@ import PostSurveyForm from './PostSurveyForm'
 import {history} from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
 import Linkify from 'react-linkify';
+
 const MAX_LENGTH = 240;
 const botId = '100000000000000000000001'
 
@@ -140,6 +160,7 @@ class Batch extends React.Component {
     }
   }
 
+  // called for every keydown
   handleSubmit = (e) => {
     const {sendMessage, user, chat, batch, currentTeam, teamAnimals} = this.props;
     if (batch.status === 'waiting') {
@@ -222,6 +243,7 @@ class Batch extends React.Component {
     }
   }
 
+  // used for chat message onchange
   handleType = (event) => {
     const {currentTeam, teamAnimals, batch} = this.props;
     if (batch.status === 'waiting') {
@@ -336,10 +358,13 @@ class Batch extends React.Component {
                 {chat.messages.map((message, index) => {
                   let messageClass = message.user === user._id ? 'chat__bubble chat__bubble--active' : 'chat__bubble';
                   let messageContent = message.message;
+
+                  // specially format bot messages
                   if (message.user.toString() === botId) {
                     messageClass = 'chat__bubble chat_bot'
                     messageContent = (<Linkify componentDecorator={componentDecorator}>{message.message}</Linkify>);
                   }
+                  
                   return (
                     <div className={messageClass} key={index + 1}>
                       <div className='chat__bubble-message-wrap'>

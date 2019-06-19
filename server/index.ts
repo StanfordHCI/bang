@@ -2,7 +2,8 @@ require('dotenv').config({path: './.env'});
 const path = require('path');
 const express = require('express');
 const app = express();
-const bodyParser = require('body-parser');const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 const PORT = process.env.PORT || 3001;
 const APP_ROOT = path.resolve(__dirname, '..');
 const logger = require('./services/logger');
@@ -61,7 +62,8 @@ let initialChecks = [
   Batch.updateMany({$or: [{status:'active'}, {status:'waiting'}]}, { $set: { status : 'completed'}}),
 ]
 
-/*if (process.env.MTURK_MODE === 'off') {
+/**if (process.env.MTURK_MODE === 'off') {
+  logger.info(module, 'created fake users');
   for (let i = 0; i < 16; i++ ) {
     User.create({
         token: (2001 + i).toString(),
@@ -70,7 +72,7 @@ let initialChecks = [
         systemStatus: 'willbang'
       }).then(() => {}).catch(err => errorHandler(err, 'Test users error'))
   }
-}*/
+}**/
 
 
 Promise.all(initialChecks)

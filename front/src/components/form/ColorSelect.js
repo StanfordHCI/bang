@@ -1,3 +1,12 @@
+/** ColorSelect.js
+ *  front-end
+ * 
+ *  helper methods & jsx for displaying ColorSelect
+ * 
+ *  called by:
+ *    1. unused    
+ */
+
 import React, {PureComponent} from 'react';
 import Select from 'react-select';
 import PropTypes from 'prop-types';

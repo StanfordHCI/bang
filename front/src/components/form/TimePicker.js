@@ -1,3 +1,12 @@
+/** TimePicker.js
+ *  front-end
+ * 
+ *  helper methods & jsx for displaying time picker
+ * 
+ *  called by:
+ *    1. unused    
+ */
+
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 import TimePicker from 'rc-time-picker';

@@ -1,3 +1,11 @@
+/** index.js
+ *  front-end
+ * 
+ *  base js file ran
+ *  calls app and router
+ */
+
+
 import React from 'react';
 import App from './app/App';
 import {render} from 'react-dom'

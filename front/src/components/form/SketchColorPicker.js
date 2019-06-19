@@ -1,4 +1,14 @@
-import React, {PureComponent} from 'react';
+/** ChromeColorPicker.js
+ *  front-end
+ * 
+ *  helper methods & jsx for displaying sketch style color picker
+ *  how many color pickers could you possibly have out there
+ * 
+ *  called by:
+ *    1. unused    
+ */
+
+ import React, {PureComponent} from 'react';
 import {SketchPicker} from 'react-color';
 import {Popover} from 'reactstrap';
 import PropTypes from 'prop-types';

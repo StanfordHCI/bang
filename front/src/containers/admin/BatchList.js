@@ -1,3 +1,12 @@
+/** BatchList.js
+ *  front-end
+ * 
+ *  admin only layout for viewing all batches
+ * 
+ *  called by:
+ *    1. Router.js    
+ */
+
 import React from 'react';
 import {Card, CardBody, Col, Row, Container, Button, Table} from 'reactstrap';
 import {connect} from "react-redux";
