@@ -57,7 +57,7 @@ export const io = require('socket.io').listen(app.listen(PORT, function() {
 
 let initialChecks = [
   User.updateMany({}, { $set: { connected : false, lastDisconnect: new Date(), socketId: '', batch: null,
-      currentChat: null, realNick: null, fakeNick: null, systemStatus: 'hasbanged'}}),
+      currentChat: null, realNick: null, fakeNick: null}}),
   Batch.updateMany({$or: [{status:'active'}, {status:'waiting'}]}, { $set: { status : 'completed'}}),
 ]
 
@@ -167,7 +167,7 @@ if (process.env.MTURK_MODE !== 'off') {
               }),
               //payBonus(assignment.WorkerId, assignment.AssignmentId, 0.01),
               assignQual(assignment.WorkerId, runningLive ? process.env.PROD_WILL_BANG_QUAL : process.env.TEST_WILL_BANG_QUAL),
-              notifyWorkers([assignment.WorkerId], 'Experiment started. Please find and accept our main mturk task here: ' + url, 'Bang')
+              notifyWorkers([assignment.WorkerId], 'Experiment started. Please find and accept our main task here: ' + url, 'Bang')
             ];
             await Promise.all(prs);
             logger.info('module', 'User added to db, qual added, notify sent: ' + assignment.WorkerId)

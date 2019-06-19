@@ -20,6 +20,7 @@ const logger = require('../services/logger');
 const botId = '100000000000000000000001'
 import {setTeamSize, io} from '../index'
 import {Bonus} from "../models/bonuses";
+import {activeCheck} from "./users";
 
 
 export const addBatch = async function (req, res) {
@@ -104,6 +105,7 @@ export const addBatch = async function (req, res) {
     const batchWithChat = await Batch.findByIdAndUpdate(batch._id, {$set: {preChat: preChat._id}})
     res.json({batch: batchWithChat})
     logger.info(module, 'New batch added. Mturk mode: ' + process.env.MTURK_MODE + '; Mturk frame: ' + process.env.MTURK_FRAME);
+    await activeCheck(io);
     setTeamSize(newBatch.teamSize)
   } catch (e) {
     errorHandler(e, 'add batch error')

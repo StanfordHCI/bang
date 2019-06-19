@@ -71,11 +71,11 @@ const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
             </Col>
           </Row>)
       })}
-    {fields.length < 5 && <Row className="centered-and-flexed" noGutters>
+     <Row className="centered-and-flexed" noGutters>
       <Button type="button" size="sm" onClick={() => fields.push({})}>
         <i className="fa fa-plus"/>Add step
       </Button>
-    </Row>}
+    </Row>
   </div>)
 }
 
