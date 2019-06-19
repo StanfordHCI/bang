@@ -10,10 +10,13 @@ import {globalBatchTeamSize} from '../index'
 
 export const activeCheck = async function (io) {
   try {
-    const activeUsers = await User.find({connected: true}).select('mturkId').lean().exec()
+    const [activeUsers, batch] = await Promise.all([
+      User.find({connected: true}).select('mturkId').lean().exec(),
+      Batch.findOne({status: 'waiting'}).select('_id').lean().exec()
+    ])
     const activeCounter = activeUsers ? activeUsers.length : 0;
-    io.to('waitroom').emit('clients-active', activeCounter);
-    logger.info(module, 'People in waitroom: ' + activeCounter);
+    io.to('waitroom').emit('clients-active', {activeCounter: activeCounter, batchReady: !!batch});
+    logger.info(module, 'Active people(all): ' + activeCounter);
   } catch (e) {
     errorHandler(e, 'active check error')
   }

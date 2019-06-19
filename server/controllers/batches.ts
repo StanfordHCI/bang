@@ -20,7 +20,7 @@ export const joinBatch = async function (data, socket, io) {
 
     if (!batch) {
       logger.error(module, 'There is no waiting batch');
-      socket.emit('send-error', 'There is no batch. Join us later please.')
+      socket.emit('send-error', 'We are full now, sorry. Join us later please.')
       return;
     }
     if (socket.systemStatus === 'willbang' && batch.users.length < batch.teamSize ** 2) { //join to batch
