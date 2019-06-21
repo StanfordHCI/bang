@@ -127,13 +127,13 @@ class Batch extends React.Component {
       }
       this.setState({isReady: true, surveyDone: nextProps.batch.surveyDone})
     }
-    if (!this.state.timerIsReady && nextProps.batch && nextProps.currentRound && nextProps.batch.status === 'active') {
+    if (!this.state.timerIsReady && nextProps.batch && nextProps.currentRound && nextProps.batch.status !== 'waiting') {
       this.roundTimer = setInterval(() => this.timer(), 1000);
       this.setState({timerIsReady: true})
     }
-    if (this.props.batch && this.props.batch.status === 'active' && nextProps.batch.status === 'completed') {
+    /*if (this.props.batch && this.props.batch.status === 'active' && nextProps.batch.status === 'completed') {
       clearInterval(this.roundTimer);
-    }
+    }*/
     if (this.props.currentRound && this.props.currentRound.status === 'active' && nextProps.currentRound.status === 'survey') {
       this.setState({surveyDone: false})
     }
@@ -143,9 +143,18 @@ class Batch extends React.Component {
   timer() {
     const {batch, currentRound} = this.props;
     if (batch && currentRound) {
-      let endMoment = currentRound.status === 'active' ? batch.roundMinutes : batch.roundMinutes + batch.surveyMinutes
-      const timeLeft = moment(currentRound.startTime).add(endMoment, 'minute');
-      this.setState({timeLeft: timeLeft.diff(moment(), 'seconds')})
+      if (batch.status === 'active') {
+        let endMoment = currentRound.status === 'active' ? batch.roundMinutes : batch.roundMinutes + batch.surveyMinutes
+        let timeLeft = moment(currentRound.startTime).add(endMoment, 'minute');
+        timeLeft = timeLeft.diff(moment(), 'seconds');
+        if (timeLeft < 0) timeLeft = 0;
+        this.setState({timeLeft: timeLeft})
+      } else if (batch.status === 'completed') {
+        let timeLeft = moment(currentRound.endTime).add(4, 'minute');
+        timeLeft = timeLeft.diff(moment(), 'seconds');
+        if (timeLeft < 0) timeLeft = 0;
+        this.setState({timeLeft: timeLeft})
+      }
     }
   }
 
@@ -433,17 +442,6 @@ class Batch extends React.Component {
       </div>)
   }
 
-  renderPostSurvey() {
-    return (
-      <div>
-        <h5 className='bold-text'>Final survey</h5>
-        <PostSurveyForm
-          batch={this.props.batch}
-          onSubmit={this.submitSurvey}
-        />}
-      </div>)
-  }
-
   submitSurvey = (form) => {
     const batch = this.props.batch;
     let data = form;
@@ -486,8 +484,14 @@ class Batch extends React.Component {
 
   renderCompletedStage() {
     return (<div>
-      <h5 className='bold-text'>Experiment completed.</h5>
-      {this.renderPostSurvey()}
+      <h5 className='bold-text'>Experiment completed. This is final survey.</h5>
+      <h5 className='bold-text'>Time left: {formatTimer(this.state.timeLeft)}</h5>
+      {<div>
+        <PostSurveyForm
+          batch={this.props.batch}
+          onSubmit={this.submitSurvey}
+        />}
+      </div>}
     </div>)
   }
 

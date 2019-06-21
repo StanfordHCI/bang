@@ -233,7 +233,7 @@ const startBatch = async function (batch, socket, io) {
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: postBatchInfo}).lean().exec();
     io.to(batch._id.toString()).emit('end-batch', postBatchInfo);
     //last survey
-    await timeout(120000);
+    await timeout(240000);
 
     if (process.env.MTURK_FRAME === 'ON' && process.env.MTURK_MODE !== 'off') {
       await expireHIT(batch.HITId)

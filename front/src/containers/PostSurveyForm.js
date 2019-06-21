@@ -120,7 +120,7 @@ const validate = (values, props) => {
     errors.mainQuestion.expRound2 = 'required';
     errors.mainQuestion.partners = 'required';
   } else {
-    if (props.batch.teamSize > 1 && !values.mainQuestion.partners || !values.mainQuestion.partners.length) {
+    if (props.batch.teamSize > 1 && !values.mainQuestion.partners || !values.mainQuestion.partners || !values.mainQuestion.partners.length) {
       errors.mainQuestion.partners = 'required';
     }
     if (!values.mainQuestion.expRound1) {

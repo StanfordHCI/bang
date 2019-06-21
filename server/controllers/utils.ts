@@ -9,7 +9,6 @@ let endpoint = runningLive ? "https://mturk-requester.us-east-1.amazonaws.com" :
 export const mturk = new AWS.MTurk({ endpoint: endpoint });
 let fs = require("fs");
 
-
 const quals = {
   notUSA: {
     QualificationTypeId: "00000000000000000071",
@@ -105,7 +104,7 @@ export const addHIT = (batch, isMain) => {
       ".";
     let keywords = "ads, writing, copy editing, advertising";
     let maxAssignments = isMain ? batch.teamSize * batch.teamSize * 4 : 100;
-    let html = fs.readFileSync("./old/question.html").toString();
+    let html = fs.readFileSync('./server/services/HITContent.html').toString();
     let hitContent = html
       .replace(/\$\{([\s]*[^;\s\{]+[\s]*)\}/g, function(_, match) {return `\$\{map.${match.trim()}\}`;})
       .replace(/(\$\{(?!map\.)[^}]+\})/g, "");

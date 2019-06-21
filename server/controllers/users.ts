@@ -16,7 +16,7 @@ export const activeCheck = async function (io) {
     ])
     const activeCounter = activeUsers ? activeUsers.length : 0;
     io.to('waitroom').emit('clients-active', {activeCounter: activeCounter, batchReady: !!batch});
-    logger.info(module, 'Active people(all): ' + activeCounter);
+    logger.info(module, 'all connected people: ' + activeCounter);
   } catch (e) {
     errorHandler(e, 'active check error')
   }
