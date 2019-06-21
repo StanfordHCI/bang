@@ -129,8 +129,9 @@ const startBatch = async function (batch, socket, io) {
 
     const users = await User.find({batch: batch._id}).lean().exec();
     if (users.length !== parseInt(batch.teamSize) ** 2) {
-      logger.error(module, 'wrong users length - ' + users.length);
+      logger.error(module, 'wrong users length - ' + users.length + '; batch will be finished');
       await Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}).lean().exec()
+      await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null}})
       return;
     }
 
@@ -218,10 +219,9 @@ const startBatch = async function (batch, socket, io) {
       chats.forEach(chat => {
         clearRoom(chat._id, io)
       })
-      //survey logic
 
-      //.....
       await timeout(batch.surveyMinutes * 60000);
+
       roundObject.endTime = new Date();
       roundObject.status = 'completed';
       const endRoundInfo = {rounds: rounds};
@@ -243,6 +243,12 @@ const startBatch = async function (batch, socket, io) {
     clearRoom(batch._id, io)
   } catch (e) {
     errorHandler(e, 'batch main run error')
+    logger.error(module, 'batch will be finished');
+    await Promise.all([
+      notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Batch main run error. Batch was finished. Check logs please.', 'Bang'),
+      Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}).lean().exec(),
+      User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
+    ])
   }
 }
 

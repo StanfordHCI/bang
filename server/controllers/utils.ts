@@ -30,28 +30,25 @@ const quals = {
       RequiredToPreview: true
     };
   },
-  completedBang: {
-    //MEW: useful to filter out people who have already done our HIT.
+  notHasBanged: {
     QualificationTypeId: runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL,
     Comparator: "DoesNotExist",
     ActionsGuarded: "DiscoverPreviewAndAccept"
   },
-  joinedBang: {
-    //MEW: useful to filter people who are scheduled to do our HIT.
+  notJoinedBang: {
     QualificationTypeId: runningLive ? process.env.PROD_WILL_BANG_QUAL : process.env.TEST_WILL_BANG_QUAL,
     Comparator: "DoesNotExist",
     ActionsGuarded: "DiscoverPreviewAndAccept"
   },
-  willBang: {
-    //MEW: useful to filter people who are scheduled to do our HIT.
+  canJoinFrameBang: {
     QualificationTypeId: runningLive ? process.env.PROD_WILL_BANG_QUAL : process.env.TEST_WILL_BANG_QUAL,
     Comparator: "Exists",
     ActionsGuarded: "DiscoverPreviewAndAccept"
   }
 };
 
-const scheduleQuals = runningLive ? [quals.onlyUSA, quals.hitsAccepted(100), quals.joinedBang] : [];
-const mainQuals = runningLive ? [quals.onlyUSA, quals.hitsAccepted(100), quals.completedBang, quals.willBang] : []
+const scheduleQuals = runningLive ? [quals.onlyUSA, quals.hitsAccepted(100), quals.notJoinedBang, quals.notHasBanged] : [];
+const mainQuals = runningLive ? [quals.onlyUSA, quals.hitsAccepted(100), quals.canJoinFrameBang, quals.notHasBanged] : []
 
 export const clearRoom = function (room, io) {
   io.of('/').in(room).clients((error, socketIds) => {
