@@ -20,6 +20,11 @@ let  TemplateSchema = new Schema({
       time: {type: Number, required: true},
       message: {type: String, required: true}
     }],
+    survey: [{
+      question: {type: String, required: true},
+      type: {type: String, required: true},
+      options: [{option: {type: String, required: true}}]
+    }]
   }],
 }, options);
 export const Template = mongoose.model('Template', TemplateSchema);

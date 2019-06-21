@@ -30,6 +30,7 @@ class AddTemplate extends PureComponent {
                 </div>
                 <TemplateForm
                   isAdd
+                  initialValues={{tasks: []}}
                   onSubmit={this.props.addTemplate}
                 />
               </CardBody>
