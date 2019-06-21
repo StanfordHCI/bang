@@ -105,11 +105,18 @@ class Batch extends React.Component {
 
   componentWillMount() {
     this.props.loadBatch();
-
+    window.addEventListener("beforeunload", (ev) =>
+    {
+      return ev.returnValue = `Are you sure you want to leave?`;
+    });
   }
 
   componentWillUnmount() {
     clearInterval(this.roundTimer);
+    window.removeEventListener("beforeunload", (ev) =>
+    {
+      return ev.returnValue = `Are you sure you want to leave?`;
+    });
   }
 
   componentWillReceiveProps(nextProps, nextState) {

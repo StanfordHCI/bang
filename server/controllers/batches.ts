@@ -23,7 +23,8 @@ export const joinBatch = async function (data, socket, io) {
       socket.emit('send-error', 'We are full now, sorry. Join us later please.')
       return;
     }
-    if (socket.systemStatus === 'willbang' && batch.users.length < batch.teamSize ** 2) { //join to batch
+    if (socket.systemStatus === 'willbang' && batch.users.length < batch.teamSize ** 2 &&
+      !batch.users.some(x => x.user.toString() === socket.userId.toString())) { //join to batch
       let nickname;
       while (!nickname) {
         nickname = chooseOne(randomAdjective) + chooseOne(randomAnimal);
@@ -46,6 +47,18 @@ export const joinBatch = async function (data, socket, io) {
       socket.join(batch._id.toString()) //common room, not chat
       socket.emit('joined-batch', {user: user});
       io.to(batch._id.toString()).emit('refresh-batch', true)
+    } else {
+      let reason;
+      if (socket.systemStatus !== 'willbang') {
+        reason = 'wrong system status';
+      } else if (batch.users.length >= batch.teamSize ** 2) {
+        reason = 'experiment is full';
+      } else {
+        reason = 'already joined'
+      }
+      logger.error(module, 'User ' + socket.mturkId + ' cannot join to batch. Reason: ' + reason);
+      socket.emit('send-error', 'You cannot join. Reason: ' + reason)
+      return;
     }
     if (batch.users.length >= batch.teamSize ** 2 && batch.status === 'waiting') { //start batch
       //clearRoom('waitroom', io);
@@ -116,9 +129,10 @@ const startBatch = async function (batch, socket, io) {
 
     const users = await User.find({batch: batch._id}).lean().exec();
     if (users.length !== parseInt(batch.teamSize) ** 2) {
-      logger.info(module, 'wrong users length - ' + users.length)
+      logger.error(module, 'wrong users length - ' + users.length);
+      await Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}).lean().exec()
+      return;
     }
-
 
     if (process.env.MTURK_MODE !== 'off') {
       let bangPrs = [];

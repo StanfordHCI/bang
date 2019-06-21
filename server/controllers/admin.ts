@@ -38,15 +38,17 @@ export const addBatch = async function (req, res) {
       let balance = await getAccountBalance();
       balance = parseFloat(balance.AvailableBalance);
       const moneyForBatch = (newBatch.teamSize ** 2) * 12 * (((newBatch.roundMinutes + newBatch.surveyMinutes)  * newBatch.numRounds) / 60);
-      await notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Account balance: $' + balance + '. Experiment cost: $' + moneyForBatch.toFixed(2), 'Bang');
       if (balance < moneyForBatch ) {
-        logger.info(module, 'balance problems');
+        await notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Account balance: $' + balance + '. Experiment cost: $' + moneyForBatch.toFixed(2), 'Bang');
+        logger.error(module, 'balance problems');
         res.status(403).end();
         return;
       }
     }
 
     delete newBatch._id;
+    delete newBatch.createdAt;
+    delete newBatch.updatedAt;
     newBatch.templateName = newBatch.name;
     newBatch.status = 'waiting';
     newBatch.users = [];
