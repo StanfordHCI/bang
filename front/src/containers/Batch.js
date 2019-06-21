@@ -450,7 +450,9 @@ class Batch extends React.Component {
       data.round = batch.currentRound
     } else if (batch.status === 'completed') {
       data.isPost = true;
-      data.mainQuestion.partners = data.mainQuestion.partners.map(x => x.value)
+      data.mainQuestion.partners = data.mainQuestion.partners.map(x => {
+        return x.value.substring(2) //cut prefix
+      })
     }
     this.props.submitSurvey(data)
     this.setState({surveyDone: true})
