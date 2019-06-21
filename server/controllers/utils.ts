@@ -96,16 +96,16 @@ export const addHIT = (batch, isMain) => {
     let bonusPrice = (hourlyWage * (((batch.roundMinutes + batch.surveyMinutes) * batch.numRounds) / 60)).toFixed(2);
     let bg = process.env.MTURK_FRAME === 'ON' ? (isMain ? 'Main task. ' : 'Test task. ') : 'Recruit task. ';
     let HITTitle = batch.HITTitle ? batch.HITTitle : bg + "Write online ads - bonus up to $" + hourlyWage + " / hour (";
+    const batchTime = Math.round((batch.roundMinutes + batch.surveyMinutes) * batch.numRounds );
     let description =
-      "Work in groups to write ads for new products. This task will take approximately " +
-      Math.round((batch.roundMinutes + batch.surveyMinutes) * batch.numRounds ) +
-      " minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" +
-      bonusPrice +
-      ".";
+      "Work in groups to write ads for new products. This task will take approximately " + batchTime + " minute(s). " +
+      "There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" + bonusPrice + ".";
     let keywords = "ads, writing, copy editing, advertising";
     let maxAssignments = isMain ? batch.teamSize * batch.teamSize * 4 : 100;
     let html = fs.readFileSync('./server/services/HITContent.html').toString();
     let hitContent = html
+      .replace('ad_writing_task', batch.HITTitle)
+      .replace('40-50', batchTime.toString())
       .replace(/\$\{([\s]*[^;\s\{]+[\s]*)\}/g, function(_, match) {return `\$\{map.${match.trim()}\}`;})
       .replace(/(\$\{(?!map\.)[^}]+\})/g, "");
 
