@@ -1,3 +1,12 @@
+/** MultiSelect.js
+ *  front-end
+ * 
+ *  helper methods & jsx for displaying dropdown multiselect
+ * 
+ *  called by:
+ *    1. PostSurveyForm for choosing fav partners    
+ */
+
 import React, {PureComponent} from 'react';
 import Select from 'react-select';
 import PropTypes from 'prop-types';

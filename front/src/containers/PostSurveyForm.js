@@ -1,3 +1,18 @@
+/** postsurveyform.js
+ *  front-end
+ * 
+ *  final survey that asks who duplicate partners were and when 
+ *  
+ *  renders:  
+ *    1. at batch-end for worker
+ *    2. when viewing final results for admin
+ * 
+ *  called by:
+ *    1. Batch.js (for worker view)
+ *    2. BatchResult.js (for admin results view)
+ *    
+ */
+
 import React from 'react';
 import {Col, Button, ButtonToolbar, Row, Container} from 'reactstrap';
 import {connect} from 'react-redux'
@@ -28,11 +43,12 @@ class PostSurveyForm extends React.Component {
       qOptions[i] = {value: i + 1, label: (i + 1).toString()}
     }
     this.props.batch.rounds.forEach((round, index) => {
+      const roundPrefix = index < 10 ? '0' + index : index; //to solve problem with same option values (same users with different nicks)
       const userId = this.props.user._id.toString();
       const team = round.teams.find(x => x.users.some(y => y.user.toString() === userId  ))
       team.users.forEach(user => {
         if (user.user.toString() !== userId) {
-          uOptions.push({value: user.user, label: user.nickname + ' (round ' + (index + 1) + ')'})
+          uOptions.push({value: roundPrefix + user.user, label: user.nickname + ' (round ' + (index + 1) + ')'})
         }
       })
     })
@@ -105,7 +121,7 @@ const validate = (values, props) => {
     errors.mainQuestion.expRound2 = 'required';
     errors.mainQuestion.partners = 'required';
   } else {
-    if (props.batch.teamSize > 1 && !values.mainQuestion.partners || !values.mainQuestion.partners.length) {
+    if (props.batch.teamSize > 1 && !values.mainQuestion.partners || !values.mainQuestion.partners || !values.mainQuestion.partners.length) {
       errors.mainQuestion.partners = 'required';
     }
     if (!values.mainQuestion.expRound1) {

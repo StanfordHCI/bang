@@ -1,3 +1,13 @@
+
+/** DropZoneMultiple.js
+ *  front-end
+ * 
+ *  helper methods & jsx for displaying drag&drop file picker for mult
+ * 
+ *  called by:
+ *    1. unused    
+ */
+
 import React, {PureComponent} from 'react';
 import Dropzone from 'react-dropzone';
 import PropTypes from 'prop-types';

@@ -1,4 +1,13 @@
-import React, {PureComponent} from 'react';
+/** AddTemplate.js
+ *  front-end
+ * 
+ *  admin only layout for adding a template
+ * 
+ *  called by:
+ *    1. Router.js    
+ */
+
+ import React, {PureComponent} from 'react';
 import {Card, CardBody, Col, Badge, Row, Container, Button, Nav, NavItem, NavLink, TabContent, TabPane} from 'reactstrap';
 import {connect} from "react-redux";
 import {addTemplate} from "Actions/admin";

@@ -1,3 +1,12 @@
+/** ChromeColorPicker.js
+ *  front-end
+ * 
+ *  helper methods & jsx for displaying chrome style color picker
+ * 
+ *  called by:
+ *    1. unused    
+ */
+
 import React, {PureComponent} from 'react';
 import {ChromePicker} from 'react-color';
 import {Popover} from 'reactstrap';

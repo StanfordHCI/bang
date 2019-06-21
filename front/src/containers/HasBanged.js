@@ -1,3 +1,16 @@
+/** HasBanged.js
+ *  front-end
+ * 
+ *  display error message if user has already participated
+ * 
+ *  renders:  
+ *    1. when user already participates tries to go to website again
+ * 
+ *  called by:
+ *    1. Router.js
+ */
+
+
 import React from 'react';
 import {Card, CardBody, Col, Row, Container, Table} from 'reactstrap';
 import {connect} from "react-redux";

@@ -1,3 +1,12 @@
+/** PhotoshopColorPicker.js
+ *  front-end
+ * 
+ *  helper methods & jsx for displaying photoshop style color picker
+ * 
+ *  called by:
+ *    1. unused    
+ */
+
 import React, {PureComponent} from 'react';
 import {PhotoshopPicker} from 'react-color';
 import {Popover} from 'reactstrap';

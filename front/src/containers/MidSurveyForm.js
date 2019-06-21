@@ -1,3 +1,18 @@
+/** midsurveyform.js
+ *  front-end
+ * 
+ *  team viability questionnaire in middle
+ *  
+ *  renders:  
+ *    1. during worker's mid-surveys (not read-only)
+ *    2. when viewing results (as read-only)
+ * 
+ *  called by:
+ *    1. Batch.js
+ *    2. BatchResult.js
+ */
+
+
 import React from 'react';
 import {Col, Button, ButtonToolbar, Row, Container} from 'reactstrap';
 import {connect} from 'react-redux'

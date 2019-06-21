@@ -1,3 +1,14 @@
+/** TemplateForm.js
+ *  front-end
+ * 
+ *  admin only layout for adding / editing (validating) a template
+ * 
+ *  called by:
+ *    1. AddTemplate.js 
+ *    2. EditTemplate.js (empty, code scrap)
+ *    3. TemplateInfo.js   
+ */
+
 import React from 'react';
 import {Col, Button, ButtonToolbar, Row, Container} from 'reactstrap';
 import {connect} from 'react-redux'
@@ -322,12 +333,12 @@ const validate = (values, props) => {
   }
   if (!values.numRounds) {
     errors.numRounds = 'required'
-  } else if (parseInt(values.numRounds) < 4) {
+  } else if (parseInt(values.numRounds) < 4 || parseInt(values.teamSize) > 1 && (parseInt(values.numRounds) > parseInt(values.teamSize) + 2)) {
     errors.numRounds = 'invalid value'
   }
   if (!values.teamSize) {
     errors.teamSize = 'required'
-  } else if (parseInt(values.teamSize) < 1) {
+  } else if (parseInt(values.teamSize) < 1 || parseInt(values.teamSize) > 10) {
     errors.teamSize = 'invalid value'
   }
   if (!values.maskType) {

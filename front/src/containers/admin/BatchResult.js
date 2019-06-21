@@ -1,3 +1,15 @@
+/** batchresult.js
+ *  front-end
+ * 
+ *  admin view of a batch's results
+ *  
+ *  renders:  
+ *    1. when admin is looking at batch
+ * 
+ *  called by:
+ *    1. router.js
+ */
+
 import React from 'react';
 import {Card, CardBody, Col, Row, Container, Table} from 'reactstrap';
 import {connect} from "react-redux";

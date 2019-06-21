@@ -23,7 +23,8 @@ export const joinBatch = async function (data, socket, io) {
       socket.emit('send-error', 'We are full now, sorry. Join us later please.')
       return;
     }
-    if (socket.systemStatus === 'willbang' && batch.users.length < batch.teamSize ** 2) { //join to batch
+    if (socket.systemStatus === 'willbang' && batch.users.length < batch.teamSize ** 2 &&
+      !batch.users.some(x => x.user.toString() === socket.userId.toString())) { //join to batch
       let nickname;
       while (!nickname) {
         nickname = chooseOne(randomAdjective) + chooseOne(randomAnimal);
@@ -46,6 +47,18 @@ export const joinBatch = async function (data, socket, io) {
       socket.join(batch._id.toString()) //common room, not chat
       socket.emit('joined-batch', {user: user});
       io.to(batch._id.toString()).emit('refresh-batch', true)
+    } else {
+      let reason;
+      if (socket.systemStatus !== 'willbang') {
+        reason = 'wrong system status';
+      } else if (batch.users.length >= batch.teamSize ** 2) {
+        reason = 'experiment is full';
+      } else {
+        reason = 'already joined'
+      }
+      logger.error(module, 'User ' + socket.mturkId + ' cannot join to batch. Reason: ' + reason);
+      socket.emit('send-error', 'You cannot join. Reason: ' + reason)
+      return;
     }
     if (batch.users.length >= batch.teamSize ** 2 && batch.status === 'waiting') { //start batch
       //clearRoom('waitroom', io);
@@ -116,9 +129,11 @@ const startBatch = async function (batch, socket, io) {
 
     const users = await User.find({batch: batch._id}).lean().exec();
     if (users.length !== parseInt(batch.teamSize) ** 2) {
-      logger.info(module, 'wrong users length - ' + users.length)
+      logger.error(module, 'wrong users length - ' + users.length + '; batch will be finished');
+      await Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}).lean().exec()
+      await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null}})
+      return;
     }
-
 
     if (process.env.MTURK_MODE !== 'off') {
       let bangPrs = [];
@@ -204,10 +219,9 @@ const startBatch = async function (batch, socket, io) {
       chats.forEach(chat => {
         clearRoom(chat._id, io)
       })
-      //survey logic
 
-      //.....
       await timeout(batch.surveyMinutes * 60000);
+
       roundObject.endTime = new Date();
       roundObject.status = 'completed';
       const endRoundInfo = {rounds: rounds};
@@ -219,7 +233,7 @@ const startBatch = async function (batch, socket, io) {
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: postBatchInfo}).lean().exec();
     io.to(batch._id.toString()).emit('end-batch', postBatchInfo);
     //last survey
-    await timeout(120000);
+    await timeout(240000);
 
     if (process.env.MTURK_FRAME === 'ON' && process.env.MTURK_MODE !== 'off') {
       await expireHIT(batch.HITId)
@@ -229,6 +243,12 @@ const startBatch = async function (batch, socket, io) {
     clearRoom(batch._id, io)
   } catch (e) {
     errorHandler(e, 'batch main run error')
+    logger.error(module, 'batch will be finished');
+    await Promise.all([
+      notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Batch main run error. Batch was finished. Check logs please.', 'Bang'),
+      Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}).lean().exec(),
+      User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
+    ])
   }
 }
 
@@ -251,8 +271,8 @@ export const receiveSurvey = async function (data, socket, io) {
         Batch.findById(newSurvey.batch).select('roundMinutes numRounds surveyMinutes').lean().exec(),
         User.findById(newSurvey.user).select('systemStatus mturkId').lean().exec()
       ])
-      if (user.systemStatus === 'hasbanged') {
-        logger.info(module, 'Blocked survey, hasbanged status');
+      if (!batch) {
+        logger.info(module, 'Blocked survey, survey/user does not have batch');
         return;
       }
       let bonusPrice = (12 * (((batch.roundMinutes + batch.surveyMinutes) * batch.numRounds) / 60) - 1.00);

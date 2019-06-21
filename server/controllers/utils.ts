@@ -9,7 +9,6 @@ let endpoint = runningLive ? "https://mturk-requester.us-east-1.amazonaws.com" :
 export const mturk = new AWS.MTurk({ endpoint: endpoint });
 let fs = require("fs");
 
-
 const quals = {
   notUSA: {
     QualificationTypeId: "00000000000000000071",
@@ -31,28 +30,25 @@ const quals = {
       RequiredToPreview: true
     };
   },
-  completedBang: {
-    //MEW: useful to filter out people who have already done our HIT.
+  notHasBanged: {
     QualificationTypeId: runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL,
     Comparator: "DoesNotExist",
     ActionsGuarded: "DiscoverPreviewAndAccept"
   },
-  joinedBang: {
-    //MEW: useful to filter people who are scheduled to do our HIT.
+  notJoinedBang: {
     QualificationTypeId: runningLive ? process.env.PROD_WILL_BANG_QUAL : process.env.TEST_WILL_BANG_QUAL,
     Comparator: "DoesNotExist",
     ActionsGuarded: "DiscoverPreviewAndAccept"
   },
-  willBang: {
-    //MEW: useful to filter people who are scheduled to do our HIT.
+  canJoinFrameBang: {
     QualificationTypeId: runningLive ? process.env.PROD_WILL_BANG_QUAL : process.env.TEST_WILL_BANG_QUAL,
     Comparator: "Exists",
     ActionsGuarded: "DiscoverPreviewAndAccept"
   }
 };
 
-const scheduleQuals = runningLive ? [quals.onlyUSA, quals.hitsAccepted(100), quals.joinedBang] : [];
-const mainQuals = runningLive ? [quals.onlyUSA, quals.hitsAccepted(100), quals.completedBang, quals.willBang] : []
+const scheduleQuals = runningLive ? [quals.onlyUSA, quals.hitsAccepted(100), quals.notJoinedBang, quals.notHasBanged] : [];
+const mainQuals = runningLive ? [quals.onlyUSA, quals.hitsAccepted(100), quals.canJoinFrameBang, quals.notHasBanged] : []
 
 export const clearRoom = function (room, io) {
   io.of('/').in(room).clients((error, socketIds) => {
@@ -97,16 +93,16 @@ export const addHIT = (batch, isMain) => {
     let bonusPrice = (hourlyWage * (((batch.roundMinutes + batch.surveyMinutes) * batch.numRounds) / 60)).toFixed(2);
     let bg = process.env.MTURK_FRAME === 'ON' ? (isMain ? 'Main task. ' : 'Test task. ') : 'Recruit task. ';
     let HITTitle = batch.HITTitle ? batch.HITTitle : bg + "Write online ads - bonus up to $" + hourlyWage + " / hour (";
+    const batchTime = Math.round((batch.roundMinutes + batch.surveyMinutes) * batch.numRounds );
     let description =
-      "Work in groups to write ads for new products. This task will take approximately " +
-      Math.round((batch.roundMinutes + batch.surveyMinutes) * batch.numRounds ) +
-      " minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" +
-      bonusPrice +
-      ".";
+      "Work in groups to write ads for new products. This task will take approximately " + batchTime + " minute(s). " +
+      "There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" + bonusPrice + ".";
     let keywords = "ads, writing, copy editing, advertising";
     let maxAssignments = isMain ? batch.teamSize * batch.teamSize * 4 : 100;
-    let html = fs.readFileSync("./old/question.html").toString();
+    let html = fs.readFileSync('./server/services/HITContent.html').toString();
     let hitContent = html
+      .replace('ad_writing_task', batch.HITTitle)
+      .replace('40-50', batchTime.toString())
       .replace(/\$\{([\s]*[^;\s\{]+[\s]*)\}/g, function(_, match) {return `\$\{map.${match.trim()}\}`;})
       .replace(/(\$\{(?!map\.)[^}]+\})/g, "");
 

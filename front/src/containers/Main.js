@@ -1,3 +1,9 @@
+/** Main.js
+ *  front-end
+ * 
+ *  seems to be uncalled  / dead code??
+ */
+
 import React from 'react';
 import {bindActionCreators} from 'redux';
 import {connect} from 'react-redux';

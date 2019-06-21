@@ -1,3 +1,13 @@
+/** Accept.js
+ *  code scrap
+ * 
+ *  layout for joining bang, but mapped by router to an unreachable route
+ *  and buttons map to old/bad functions
+ * 
+ *  called by:
+ *    1.   
+ */
+
 import React from 'react';
 import {Card, CardBody, Col, Row, Container, Button} from 'reactstrap';
 import {connect} from "react-redux";

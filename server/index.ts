@@ -2,7 +2,8 @@ require('dotenv').config({path: './.env'});
 const path = require('path');
 const express = require('express');
 const app = express();
-const bodyParser = require('body-parser');const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 const PORT = process.env.PORT || 3001;
 const APP_ROOT = path.resolve(__dirname, '..');
 const logger = require('./services/logger');
@@ -61,16 +62,18 @@ let initialChecks = [
   Batch.updateMany({$or: [{status:'active'}, {status:'waiting'}]}, { $set: { status : 'completed'}}),
 ]
 
-/*if (process.env.MTURK_MODE === 'off') {
+/**if (process.env.MTURK_MODE === 'off') {
+  logger.info(module, 'created fake users');
   for (let i = 0; i < 16; i++ ) {
     User.create({
         token: (2001 + i).toString(),
         mturkId: (2001 + i).toString(),
         testAssignmentId: 'test',
         systemStatus: 'willbang'
+        isTest: true
       }).then(() => {}).catch(err => errorHandler(err, 'Test users error'))
   }
-}*/
+}**/
 
 
 Promise.all(initialChecks)
@@ -139,7 +142,7 @@ if (process.env.MTURK_MODE !== 'off') {
       if (batch) {
         const HIT = await addHIT(batch, false);
         currentHIT = HIT.HITId;
-        logger.info(module, 'Test HIT created: ' + currentHIT)
+        logger.info(module, 'Recruit HIT created: ' + currentHIT)
       } else {
         currentHIT = '';
       }
@@ -156,7 +159,7 @@ if (process.env.MTURK_MODE !== 'off') {
           const assignment = as[i];
           const check = await User.findOne({mturkId: assignment.WorkerId});
           if (!check) {//add user to db and give willbang qual
-            const url = process.env.MTURK_FRAME === 'ON' ? ' https://workersandbox.mturk.com/requesters/A3QTK0H2SRN96W/projects' :
+            const url = process.env.MTURK_FRAME === 'ON' ? ' https://workersandbox.mturk.com/requesters/A3QTK0H2SRN96W/projects' : //inside frame logic; should be changed if we wanna use it
               process.env.HIT_URL + '?assignmentId=' + assignment.AssignmentId + '&workerId=' + assignment.WorkerId;
 
             let prs = [
@@ -165,7 +168,6 @@ if (process.env.MTURK_MODE !== 'off') {
                 mturkId: assignment.WorkerId,
                 testAssignmentId: assignment.AssignmentId
               }),
-              //payBonus(assignment.WorkerId, assignment.AssignmentId, 0.01),
               assignQual(assignment.WorkerId, runningLive ? process.env.PROD_WILL_BANG_QUAL : process.env.TEST_WILL_BANG_QUAL),
               notifyWorkers([assignment.WorkerId], 'Experiment started. Please find and accept our main task here: ' + url, 'Bang')
             ];

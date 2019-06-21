@@ -1,3 +1,12 @@
+/** BatchList.js
+ *  front-end
+ * 
+ *  admin only layout for viewing all batches
+ * 
+ *  called by:
+ *    1. Router.js    
+ */
+
 import React from 'react';
 import {Card, CardBody, Col, Row, Container, Button, Table} from 'reactstrap';
 import {connect} from "react-redux";
@@ -48,7 +57,7 @@ class BatchList extends React.Component {
                     return <tr key={batch._id}>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{index}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{moment(batch.createdAt).format('YYYY.DD.MM-HH:mm:ss')}</td>
-                      <td onClick={() => history.push('/batches/' + batch._id)}>{batch.status === 'active' ? moment(batch.startTime).format('YYYY.DD.MM-HH:mm:ss') : 'not started'}</td>
+                      <td onClick={() => history.push('/batches/' + batch._id)}>{batch.status !== 'waiting' ? moment(batch.startTime).format('YYYY.DD.MM-HH:mm:ss') : 'not started'}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{batch.status}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{batch.templateName}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{batch.note}</td>

@@ -1,3 +1,13 @@
+/** app.js
+ *  client-side controller
+ * 
+ *  logic to process most recent action and push correct route to window 
+ *  e.g. push not-logged, or push /batch if batch is starting.
+ *   
+ *  called by:
+ *     ???
+ */
+
 import {history} from '../app/history';
 import constants from "../constants"
 import openSocket from 'socket.io-client';

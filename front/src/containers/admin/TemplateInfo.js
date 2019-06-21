@@ -1,3 +1,13 @@
+/** TemplateInfo.js
+ *  front-end
+ * 
+ *  admin only layout for editing a template
+ *  note: the actual file called edittemplate is a code scrap
+ * 
+ *  called by:
+ *    1. Router.js    
+ */
+
 import React, {PureComponent} from 'react';
 import {Card, CardBody, Col, Badge, Row, Container, Button, Nav, NavItem, NavLink, TabContent, TabPane} from 'reactstrap';
 import {connect} from "react-redux";

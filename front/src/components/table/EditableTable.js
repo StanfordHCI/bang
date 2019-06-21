@@ -1,3 +1,12 @@
+/** EditableTable.js
+ *  front-end
+ * 
+ *  helper methods & jsx for an editable table??
+ * 
+ *  called by:
+ *    1. unused    
+ */
+
 import React, {PureComponent} from 'react';
 import ReactDataGrid from 'react-data-grid';
 import update from 'immutability-helper';

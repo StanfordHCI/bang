@@ -1,3 +1,12 @@
+/** AddBatch.js
+ *  front-end
+ * 
+ *  admin only layout for adding  a batch
+ * 
+ *  called by:
+ *    1. Router.js    
+ */
+
 import React, {PureComponent} from 'react';
 import {Card, CardBody, Col, Row, Container, Button, ButtonToolbar} from 'reactstrap';
 import {connect} from "react-redux";

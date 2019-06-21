@@ -1,3 +1,10 @@
+/** App.test.js
+ *  code scraps
+ * 
+ *  legacy wrapper to check if app renders without crashing
+ *    
+ */
+
 import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './App';

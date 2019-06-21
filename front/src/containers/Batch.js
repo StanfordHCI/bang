@@ -1,3 +1,22 @@
+/** batch.js
+ *  front-end
+ * 
+ *  worker view of a current batch
+ *  
+ *  major functions:
+ *  - fuzzyMatched = user pairing alg
+ *  - autocomplete methods
+ *  - methods to render each of the workflow pages (chat, midsurvey, postsurvey)
+ * 
+ *  chat messages will automatically linkify
+ *  
+ *  renders:  
+ *    1. when admin is looking at batch
+ * 
+ *  called by:
+ *    1. router.js
+ */
+
 import React from 'react';
 import {Card, CardBody, Col, Row, Container, Table} from 'reactstrap';
 import {connect} from "react-redux";
@@ -10,6 +29,7 @@ import PostSurveyForm from './PostSurveyForm'
 import {history} from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
 import Linkify from 'react-linkify';
+
 const MAX_LENGTH = 240;
 const botId = '100000000000000000000001'
 
@@ -85,11 +105,18 @@ class Batch extends React.Component {
 
   componentWillMount() {
     this.props.loadBatch();
-
+    window.addEventListener("beforeunload", (ev) =>
+    {
+      return ev.returnValue = `Are you sure you want to leave?`;
+    });
   }
 
   componentWillUnmount() {
     clearInterval(this.roundTimer);
+    window.removeEventListener("beforeunload", (ev) =>
+    {
+      return ev.returnValue = `Are you sure you want to leave?`;
+    });
   }
 
   componentWillReceiveProps(nextProps, nextState) {
@@ -100,13 +127,13 @@ class Batch extends React.Component {
       }
       this.setState({isReady: true, surveyDone: nextProps.batch.surveyDone})
     }
-    if (!this.state.timerIsReady && nextProps.batch && nextProps.currentRound && nextProps.batch.status === 'active') {
+    if (!this.state.timerIsReady && nextProps.batch && nextProps.currentRound && nextProps.batch.status !== 'waiting') {
       this.roundTimer = setInterval(() => this.timer(), 1000);
       this.setState({timerIsReady: true})
     }
-    if (this.props.batch && this.props.batch.status === 'active' && nextProps.batch.status === 'completed') {
+    /*if (this.props.batch && this.props.batch.status === 'active' && nextProps.batch.status === 'completed') {
       clearInterval(this.roundTimer);
-    }
+    }*/
     if (this.props.currentRound && this.props.currentRound.status === 'active' && nextProps.currentRound.status === 'survey') {
       this.setState({surveyDone: false})
     }
@@ -116,9 +143,18 @@ class Batch extends React.Component {
   timer() {
     const {batch, currentRound} = this.props;
     if (batch && currentRound) {
-      let endMoment = currentRound.status === 'active' ? batch.roundMinutes : batch.roundMinutes + batch.surveyMinutes
-      const timeLeft = moment(currentRound.startTime).add(endMoment, 'minute');
-      this.setState({timeLeft: timeLeft.diff(moment(), 'seconds')})
+      if (batch.status === 'active') {
+        let endMoment = currentRound.status === 'active' ? batch.roundMinutes : batch.roundMinutes + batch.surveyMinutes
+        let timeLeft = moment(currentRound.startTime).add(endMoment, 'minute');
+        timeLeft = timeLeft.diff(moment(), 'seconds');
+        if (timeLeft < 0) timeLeft = 0;
+        this.setState({timeLeft: timeLeft})
+      } else if (batch.status === 'completed') {
+        let timeLeft = moment(currentRound.endTime).add(4, 'minute');
+        timeLeft = timeLeft.diff(moment(), 'seconds');
+        if (timeLeft < 0) timeLeft = 0;
+        this.setState({timeLeft: timeLeft})
+      }
     }
   }
 
@@ -140,6 +176,7 @@ class Batch extends React.Component {
     }
   }
 
+  // called for every keydown
   handleSubmit = (e) => {
     const {sendMessage, user, chat, batch, currentTeam, teamAnimals} = this.props;
     if (batch.status === 'waiting') {
@@ -222,6 +259,7 @@ class Batch extends React.Component {
     }
   }
 
+  // used for chat message onchange
   handleType = (event) => {
     const {currentTeam, teamAnimals, batch} = this.props;
     if (batch.status === 'waiting') {
@@ -336,10 +374,13 @@ class Batch extends React.Component {
                 {chat.messages.map((message, index) => {
                   let messageClass = message.user === user._id ? 'chat__bubble chat__bubble--active' : 'chat__bubble';
                   let messageContent = message.message;
+
+                  // specially format bot messages
                   if (message.user.toString() === botId) {
                     messageClass = 'chat__bubble chat_bot'
                     messageContent = (<Linkify componentDecorator={componentDecorator}>{message.message}</Linkify>);
                   }
+                  
                   return (
                     <div className={messageClass} key={index + 1}>
                       <div className='chat__bubble-message-wrap'>
@@ -401,17 +442,6 @@ class Batch extends React.Component {
       </div>)
   }
 
-  renderPostSurvey() {
-    return (
-      <div>
-        <h5 className='bold-text'>Final survey</h5>
-        <PostSurveyForm
-          batch={this.props.batch}
-          onSubmit={this.submitSurvey}
-        />}
-      </div>)
-  }
-
   submitSurvey = (form) => {
     const batch = this.props.batch;
     let data = form;
@@ -420,7 +450,9 @@ class Batch extends React.Component {
       data.round = batch.currentRound
     } else if (batch.status === 'completed') {
       data.isPost = true;
-      data.mainQuestion.partners = data.mainQuestion.partners.map(x => x.value)
+      data.mainQuestion.partners = data.mainQuestion.partners.map(x => {
+        return x.value.substring(2) //cut prefix
+      })
     }
     this.props.submitSurvey(data)
     this.setState({surveyDone: true})
@@ -454,8 +486,14 @@ class Batch extends React.Component {
 
   renderCompletedStage() {
     return (<div>
-      <h5 className='bold-text'>Experiment completed.</h5>
-      {this.renderPostSurvey()}
+      <h5 className='bold-text'>Experiment completed. This is final survey.</h5>
+      <h5 className='bold-text'>Time left: {formatTimer(this.state.timeLeft)}</h5>
+      {<div>
+        <PostSurveyForm
+          batch={this.props.batch}
+          onSubmit={this.submitSurvey}
+        />}
+      </div>}
     </div>)
   }
 
