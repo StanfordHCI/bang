@@ -13,7 +13,7 @@ const tokenFile = "token.json"; //Local token
 const bonusSheetID = "1IaXChzJI0sSxm2uWKrb8Do4HeP6LNSxoCqUyomNFRMQ";
 
 // The HIT id of the repay hit.
-const repayHITId = "3OWZNK3RYL458YRWPLQDTVVVY9PU2X";
+const repayHITId = "31J7RYECZL5V0NM6X3YYXPP7U361L0";
 
 // Logs into Google Account
 function authorize() {
