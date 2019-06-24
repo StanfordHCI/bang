@@ -14,7 +14,7 @@ import PropTypes from 'prop-types';
 
 const styles = {
   padding: '3%',
-  maxWidth: '15px'
+  margin: '0% 5px 0% 5px'
 }
 
 class RadioButtonField extends PureComponent {
