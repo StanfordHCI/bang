@@ -262,18 +262,31 @@ const getHITURL = (hitId, callback = null) => {
 //
 // Returns an array of Active HITs.
 
-const workOnActiveHITs = callback => {
-  mturk.listHITs({ MaxResults: 100 }, (err, data) => {
-    if (err) {
-      console.log("Error: " + err.message);
-    } else {
-      if (typeof callback === "function") {
-        callback(
-          data.HITs.filter(h => h.HITStatus === "Assignable").map(h => h.HITId)
-        );
+const workOnActiveHITs = (
+  callback,
+  paginationToken = null,
+  passthrough = []
+) => {
+  mturk.listHITs(
+    { MaxResults: 100, NextToken: paginationToken },
+    (err, data) => {
+      if (err) {
+        console.log("Error: " + err.message);
+      } else {
+        passthrough = passthrough.concat(data.HITs);
+        if (data.NumResults === 100) {
+          workOnActiveHITs(callback, data.NextToken, passthrough);
+        } else {
+          if (typeof callback === "function")
+            callback(
+              passthrough
+                .filter(h => h.HITStatus === "Assignable")
+                .map(h => h.HITId)
+            );
+        }
       }
     }
-  });
+  );
 };
 
 // * listAssignments *
