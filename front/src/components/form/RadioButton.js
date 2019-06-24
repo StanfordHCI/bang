@@ -12,6 +12,11 @@ import CheckIcon from 'mdi-react/CheckIcon';
 import CloseIcon from 'mdi-react/CloseIcon';
 import PropTypes from 'prop-types';
 
+const styles = {
+  padding: '3%',
+  maxWidth: '15px'
+}
+
 class RadioButtonField extends PureComponent {
   componentDidMount() {
     if (this.props.defaultChecked) {
@@ -26,7 +31,7 @@ class RadioButtonField extends PureComponent {
   render() {
     const disabled = this.props.disabled;
     return (
-      <label
+      <label style={styles}
         className={`radio-btn${disabled ? ' disabled' : ''}${this.props.class ? ` radio-btn--${this.props.class}` : ''}`}>
         <input className='radio-btn__radio' name={this.props.name} type='radio'
           onChange={this.onChange} checked={this.props.value == this.props.radioValue} disabled={disabled} />
