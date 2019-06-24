@@ -1,11 +1,16 @@
 /** app.js
- *  client-side controller
+ *  redux state manager
  * 
- *  logic to process most recent action and push correct route to window 
- *  e.g. push not-logged, or push /batch if batch is starting.
- *   
- *  called by:
- *     ???
+ *  app actions, with explicit db connection;
+ *  e.g. logic to check if we're logged in
+ *  these actions are processed by reducer
+ *
+ *  used by:
+ *    1. Accept.js (code scrap)
+ *    2. BatchList.js (socket)
+ *    3. TemplateList.js (socket)
+ *    4. Waiting.js (socket)
+ *    5. actions/admin.js
  */
 
 import {history} from '../app/history';

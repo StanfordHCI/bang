@@ -22,12 +22,12 @@ class Waiting extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = {
-      activeCounter: 0,
-      batchReady: false
+    this.state = { //test conditions
+      activeCounter: 1,
+      batchReady: true
     };
     this.refresher = this.refresher.bind(this)
-    socket.on('clients-active', this.refresher)
+    //socket.on('clients-active', this.refresher)
   }
 
   componentDidMount() {

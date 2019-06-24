@@ -1,3 +1,12 @@
+/** batchreducer.js
+ *  redux state manager
+ * 
+ *  reducer for fetching batch info from db, accessed by dispatch
+ *
+ *  called by:
+ *    1. store.js
+ */
+
 import {
   BATCH_FETCHED,
   CHAT_FETCHED,

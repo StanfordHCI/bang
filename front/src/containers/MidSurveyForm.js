@@ -1,3 +1,4 @@
+  
 /** midsurveyform.js
  *  front-end
  * 
@@ -19,7 +20,8 @@ import {connect} from 'react-redux'
 import {Field, FieldArray, reduxForm, formValueSelector, change} from 'redux-form'
 import {bindActionCreators} from "redux";
 import {renderField} from 'Components/form/Text'
-import renderSelectField from 'Components/form/Select'
+import renderSelectField from 'Components/form/Select';
+import renderRadioPanel from 'Components/form/RadioPanel';
 
 const qOptions = [
   {value: 1, label: 'Strongly Disagree'},
@@ -38,7 +40,7 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, questions, re
         <div className='form__form-group-field' style={{maxWidth: '200px'}}>
           <Field
             name={`questions[${i}].result`}
-            component={renderSelectField}
+            component={renderRadioPanel}
             type='text'
             disabled={readOnly}
             options={qOptions}
@@ -61,10 +63,10 @@ class MidSurveyForm extends React.Component {
   }
 
   render() {
-    const {invalid, questions, readOnly} = this.props;
+    const {invalid, questions, readOnly, handleSubmit} = this.props;
 
     return (<div>
-        <form className='form' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
+        <form className='form' style={{paddingBottom: '5vh'}} onSubmit={handleSubmit}>
           <Container>
             <Row>
               <Col>
@@ -101,6 +103,8 @@ const validate = (values, props) => {
       errors.questions[i] = {result: 'required'}
     }
   }
+
+  console.log(errors);
 
   return errors
 };
