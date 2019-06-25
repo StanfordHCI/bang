@@ -1,4 +1,14 @@
-import {
+/** appreducer.js
+ *  redux state manager
+ * 
+ *  reducer for general background app actions (e.g. snackbars)
+ *  accessed by dispatch
+ *
+ *  called by:
+ *    1. store.js
+ */
+
+ import {
   APP_READY,
   SET_LOADING,
   SET_SNACKBAR,

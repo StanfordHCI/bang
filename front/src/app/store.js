@@ -1,11 +1,10 @@
 /** store.js
  *  redux state manager
  * 
- *  code to apply redux to app
+ *  code to init store and combine reducers (in reducers folder)
  *
  *  called by:
  *    1. src/index.js
- *    
  */
 
 import {combineReducers, createStore, applyMiddleware, compose} from 'redux';
@@ -26,7 +25,7 @@ const reducer = combineReducers({
 const composeEnhancers =
   typeof window === 'object' &&
   window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ ?
-    window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__({}) : compose;
+    window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__({}) : compose; // debugging tool
 
 const middleware = [thunk];
 const store = createStore(reducer, composeEnhancers(

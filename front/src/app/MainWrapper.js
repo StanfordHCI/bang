@@ -37,7 +37,7 @@ class MainWrapper extends PureComponent {
   render() {
 
     return (
-      <div className="theme-dark">
+      <div className="theme-light">
          <div className="wrapper">
            <div className='container__wrap'>
              {this.props.appReady && this.props.children}

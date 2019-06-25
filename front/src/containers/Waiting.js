@@ -22,12 +22,12 @@ class Waiting extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = {
-      activeCounter: 0,
-      batchReady: false
+    this.state = { //test conditions
+      activeCounter: 1,
+      batchReady: true
     };
     this.refresher = this.refresher.bind(this)
-    socket.on('clients-active', this.refresher)
+    //socket.on('clients-active', this.refresher)
   }
 
   componentDidMount() {
@@ -50,11 +50,13 @@ class Waiting extends React.Component {
                   <h5 className='bold-text'>Waiting room</h5>
                 </div>
                 {this.state.batchReady && <div>
-                  <p>Waiting on <b>{limit - this.state.activeCounter > 0 ? limit - this.state.activeCounter : 0} </b>
+                  <p>Hello! Thanks for accepting our task.</p>
+                  <p>We are currently waiting on <b>{limit - this.state.activeCounter > 0 ? limit - this.state.activeCounter : 0} </b>
                   more MTurk users to accept the task.</p>
-                  <p>Only wait if you can complete the entire task. If you leave early, you will not be paid. Provided you stay for the whole task, we will bonus to a rate of approximately $12 per hour.</p>
-                  <p>Once enough people have accepted, you will be able to begin the task.</p>
-                  <p>If there are never enough people we will automatically submit and accept for the base rate.</p>
+                  <p>The task will only begin once 16 users accept the task.</p>
+                  <p>Once enough users have joined the waitroom, a "Join Batch" button will appear. You will be redirected to a chatroom that ensures that other MTurkers are present and not away from keyboard. You will only remain in the chatroom until everyone has clicked the button to join the batch.</p>
+                  <p>After everyone joins the batch, the task will initiate! IMPORTANT: If you intend to complete the task, please do not leave because it will mean other MTurkers will have to wait longer for the task.</p>
+                  <p>Provided you stay for the whole task, we will bonus to a rate of approximately $12 per hour. If there are never enough people, we will automatically submit and accept for the base rate.</p>
                   {limit <= this.state.activeCounter &&
                     <Button className="btn btn-primary" onClick={() => joinBatch()}>Join Batch</Button>
                   }

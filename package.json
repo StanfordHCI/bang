@@ -45,6 +45,7 @@
     "file-loader": "1.1.5",
     "html-webpack-plugin": "2.29.0",
     "i18next": "^11.5.0",
+    "mdi-react": "^5.4.0",
     "moment": "^2.23.0",
     "mongoose": "^5.4.14",
     "node-cron": "^2.0.3",

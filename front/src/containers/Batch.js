@@ -443,6 +443,7 @@ class Batch extends React.Component {
   }
 
   submitSurvey = (form) => {
+    console.log("submitting");
     const batch = this.props.batch;
     let data = form;
     data.batch = batch._id;
