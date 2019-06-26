@@ -12,7 +12,6 @@ import {Card, CardBody, Col, Row, Container, Button, Table} from 'reactstrap';
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 import {loadUserList, addUser, deleteUser, clearUsers} from 'Actions/admin'
-import moment from 'moment'
 import Pagination from 'Components/Pagination';
 
 const pageSize = 10;

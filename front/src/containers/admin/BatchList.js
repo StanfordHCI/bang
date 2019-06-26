@@ -11,8 +11,7 @@ import React from 'react';
 import {Card, CardBody, Col, Row, Container, Button, Table} from 'reactstrap';
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
-import {socket} from 'Actions/app'
-import {loadBatchList, addBatch, stopBatch} from 'Actions/admin'
+import {loadBatchList, addBatch, stopBatch, clearBatches} from 'Actions/admin'
 import moment from 'moment'
 import {history} from 'App/history';
 import Pagination from 'Components/Pagination';
@@ -36,6 +35,10 @@ class BatchList extends React.Component {
       .then(() => {
         this.setState({isReady: true, })
       })
+  }
+
+  componentWillUnmount() {
+    this.props.clearBatches()
   }
 
   onChangePage = (page) => {
@@ -115,7 +118,8 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators({
     loadBatchList,
     addBatch,
-    stopBatch
+    stopBatch,
+    clearBatches
   }, dispatch);
 }
 
