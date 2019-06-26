@@ -5,18 +5,30 @@ import {errorHandler} from '../services/common'
 import {Survey} from "../models/surveys";
 const logger = require('../services/logger');
 import {notifyWorkers, assignQual, payBonus, runningLive} from "./utils";
-import {globalBatchTeamSize} from '../index'
-
+import {timeout} from './batches'
 
 export const activeCheck = async function (io) {
   try {
-    const [activeUsers, batch] = await Promise.all([
-      User.find({connected: true}).select('mturkId').lean().exec(),
-      Batch.findOne({status: 'waiting'}).select('_id').lean().exec()
+    const [users, batch] = await Promise.all([
+      User.find({connected: true}).populate({path: 'batch', select: 'status'}).select('mturkId').lean().exec(),
+      Batch.findOne({status: 'waiting'}).select('teamSize').lean().exec()
     ])
-    const activeCounter = activeUsers ? activeUsers.length : 0;
-    io.to('waitroom').emit('clients-active', {activeCounter: activeCounter, batchReady: !!batch});
-    logger.info(module, 'all connected people: ' + activeCounter);
+    let counter = {all: 0, waitchat: 0, waitroom: 0, active: 0}
+    if (users && users.length) {
+      counter.all = users.length;
+      users.forEach(user => {
+        if (!user.batch) {
+          counter.waitroom++;
+        } else if (user.batch.status === 'waiting') {
+          counter.waitchat++;
+        } else if (user.batch.status === 'active') {
+          counter.active++;
+        }
+      })
+    }
+
+    io.to('waitroom').emit('clients-active', {activeCounter: counter.waitroom + counter.waitchat, batchReady: !!batch, limit: batch ? batch.teamSize ** 2 : 999});
+    logger.info(module, 'connected: ' + counter.all + '; waitroom: ' + counter.waitroom + '; waitchat: ' + counter.waitchat + '; in active batches: ' + counter.active);
   } catch (e) {
     errorHandler(e, 'active check error')
   }
@@ -54,8 +66,9 @@ export const init = async function (data, socket, io) {
     if (data.adminToken && data.adminToken === process.env.ADMIN_TOKEN) {
       user.isAdmin = true;
     }
-    socket.emit('init-res', {user: user, teamSize: globalBatchTeamSize});
+    socket.emit('init-res', {user: user});
     await User.findByIdAndUpdate(user._id, { $set: { connected : true, lastConnect: new Date(), socketId: socket.id, } });
+    await timeout(200)
     await activeCheck(io);
   } catch (e) {
     errorHandler(e, 'init error')

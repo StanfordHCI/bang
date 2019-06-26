@@ -31,7 +31,7 @@ class TemplateList extends React.Component {
     const {templateList} = this.props;
 
     return (
-      <Container>
+      <Container style={{maxWidth: '100%'}}>
         <Row>
           <Col md={12} lg={12} xl={12}>
             <Card>

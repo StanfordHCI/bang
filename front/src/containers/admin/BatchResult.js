@@ -138,7 +138,7 @@ class BatchResult extends React.Component {
                   />}
                   {this.state.survey && this.state.survey.questions && <Row><MidSurveyForm
                     initialValues={{questions: this.state.survey.questions}}
-                    questions={this.props.batch.midQuestions}
+                    questions={this.props.batch.tasks[this.state.round - 1].survey}
                     readOnly
                   /></Row>}
                   {this.state.user && this.state.finalSurvey &&

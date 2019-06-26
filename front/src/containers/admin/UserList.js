@@ -11,18 +11,41 @@
 import {Card, CardBody, Col, Row, Container, Button, Table} from 'reactstrap';
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
-import {loadUserList, addUser, deleteUser} from 'Actions/admin'
+import {loadUserList, addUser, deleteUser, clearUsers} from 'Actions/admin'
 import moment from 'moment'
+import Pagination from 'Components/Pagination';
+
+const pageSize = 10;
 
 class UserList extends React.Component {
 
   constructor(props) {
     super(props);
+  }
 
+  state = {
+    isReady: false,
+    page: 1,
+    pageOfItems: []
   }
 
   componentWillMount() {
-    this.props.loadUserList();
+    this.props.loadUserList()
+      .then(() => {
+        this.setState({isReady: true, })
+      })
+  }
+
+  onChangePage = (page) => {
+    if (page) {
+      const from = (parseInt(page) - 1) * pageSize;
+      const to = from + pageSize;
+      this.setState({page: page, pageOfItems: this.props.userList.filter((x, index) => from <= index && index < to)});
+    }
+  }
+
+  componentWillUnmount() {
+    this.props.clearUsers()
   }
 
   render() {
@@ -33,7 +56,7 @@ class UserList extends React.Component {
         <Row>
           <Col md={12} lg={12} xl={12}>
             <Card>
-              <CardBody>
+              {this.state.isReady && <CardBody>
                 <div className='card__title'>
                   <h5 className='bold-text'>User list</h5>
                   <Button className="btn btn-primary" onClick={() => this.props.addUser()}>Add User</Button>
@@ -50,9 +73,9 @@ class UserList extends React.Component {
                   </tr>
                   </thead>
                   <tbody>
-                  {userList.map((user, index) => {
+                  {this.state.pageOfItems.map((user, index) => {
                     return <tr key={user._id}>
-                      <td>{index + 1}</td>
+                      <td>{(this.state.page - 1) * pageSize + index + 1}</td>
                       <td>{user.mturkId}</td>
                       <td>{user.loginLink}</td>
                       <td>{user.systemStatus}</td>
@@ -69,7 +92,8 @@ class UserList extends React.Component {
                   })}
                   </tbody>
                 </Table>
-              </CardBody>
+                <Pagination items={userList} pageSize={pageSize} onChangePage={this.onChangePage}/>
+              </CardBody>}
             </Card>
           </Col>
         </Row>
@@ -89,7 +113,8 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators({
     loadUserList,
     addUser,
-    deleteUser
+    deleteUser,
+    clearUsers
   }, dispatch);
 }
 

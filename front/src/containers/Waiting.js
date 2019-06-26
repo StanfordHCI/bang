@@ -24,7 +24,9 @@ class Waiting extends React.Component {
     super(props);
     this.state = {
       activeCounter: 0,
-      batchReady: false
+      limit: 999,
+      batchReady: false,
+      isReady: false
     };
     this.refresher = this.refresher.bind(this)
     socket.on('clients-active', this.refresher)
@@ -34,18 +36,19 @@ class Waiting extends React.Component {
   }
 
   refresher(data) {
-    this.setState({activeCounter: data.activeCounter, batchReady: data.batchReady});
+    this.setState({activeCounter: data.activeCounter, batchReady: data.batchReady, limit: data.limit, isReady: true});
   }
 
   render() {
-    const {user, limit, joinBatch} = this.props;
+    const {user, joinBatch} = this.props;
+    const limit = this.state.limit;
 
     return (
       <Container>
         <Row>
           <Col md={12} lg={12} xl={12}>
             <Card>
-              <CardBody>
+              {this.state.isReady && <CardBody>
                 <div className='card__title'>
                   <h5 className='bold-text'>Waiting room</h5>
                 </div>
@@ -62,7 +65,7 @@ class Waiting extends React.Component {
                 {!this.state.batchReady && <div>
                   <p>We don't have an experiment right now. Join us later please. We will notify you.</p>
                 </div>}
-              </CardBody>
+              </CardBody>}
             </Card>
           </Col>
         </Row>
@@ -75,7 +78,6 @@ class Waiting extends React.Component {
 function mapStateToProps(state) {
   return {
     user: state.app.user,
-    limit: state.app.teamSize ** 2
   }
 }
 

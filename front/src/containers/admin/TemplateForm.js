@@ -454,9 +454,9 @@ const validate = (values, props) => {
       errors.tasks[i].message = 'required';
     } else  if (!task.steps || !task.steps.length) {
       errors.tasks[i].message = 'add steps please';
-    } /*else if (!task.survey || !task.survey.length) {
+    } else if (!task.survey || !task.survey.length) {
       errors.tasks[i].message = 'add survey please';
-    }*/
+    }
 
     if (task.steps) for (let j = 0; j < task.steps.length; j++) {
       const step = task.steps[j];
@@ -485,7 +485,7 @@ const validate = (values, props) => {
       }
       if (!survey.type) {
         errors.tasks[i].survey[j].type = 'required';
-      } else if (survey.type === 'select' && (!survey.options || !survey.options.length)) {
+      } else if (survey.type === 'select' && (!survey.options || survey.options.length < 2 )) {
         errors.tasks[i].survey[j].type = 'add options please';
       }
 

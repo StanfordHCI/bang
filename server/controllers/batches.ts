@@ -16,13 +16,14 @@ const randomAdjective = "new small young little likely nice cultured snappy spry
 
 export const joinBatch = async function (data, socket, io) {
   try {
-    let batch = await Batch.findOne({status: 'waiting'}).lean().exec();
-
-    if (!batch) {
+    let batches = await Batch.find({status: 'waiting'}).sort({'createdAt': 1}).lean().exec();
+    if (!batches || !batches.length) {
       logger.error(module, 'There is no waiting batch');
       socket.emit('send-error', 'We are full now, sorry. Join us later please.')
       return;
     }
+    let batch = batches[0];
+
     if (socket.systemStatus === 'willbang' && batch.users.length < batch.teamSize ** 2 &&
       !batch.users.some(x => x.user.toString() === socket.userId.toString())) { //join to batch
       let nickname;
@@ -47,6 +48,7 @@ export const joinBatch = async function (data, socket, io) {
       socket.join(batch._id.toString()) //common room, not chat
       socket.emit('joined-batch', {user: user});
       io.to(batch._id.toString()).emit('refresh-batch', true)
+      await activeCheck(io);
     } else {
       let reason;
       if (socket.systemStatus !== 'willbang') {
@@ -61,8 +63,6 @@ export const joinBatch = async function (data, socket, io) {
       return;
     }
     if (batch.users.length >= batch.teamSize ** 2 && batch.status === 'waiting') { //start batch
-      //clearRoom('waitroom', io);
-
       clearRoom(batch.preChat, io);
       await startBatch(batch, socket, io)
     }
@@ -124,7 +124,6 @@ export const loadBatch = async function (data, socket, io) {
 
 const startBatch = async function (batch, socket, io) {
   try {
-    await activeCheck(io);
     await timeout(3000);
 
     const users = await User.find({batch: batch._id}).lean().exec();
@@ -152,7 +151,8 @@ const startBatch = async function (batch, socket, io) {
 
     const startBatchInfo = {status: 'active', startTime: new Date()};
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: startBatchInfo}).lean().exec()
-    logger.info(module, 'Main experiment start', batch._id)
+    await activeCheck(io);
+    logger.info(module, 'Main experiment start: ' + batch._id)
     io.to(batch._id.toString()).emit('start-batch', startBatchInfo);
     const teamSize = batch.teamSize, numRounds = batch.numRounds;
     let rounds = [];
@@ -186,7 +186,7 @@ const startBatch = async function (batch, socket, io) {
       await Promise.all(prsHelper);
       const startRoundInfo = {rounds: rounds, currentRound: roundObject.number};
       batch = await Batch.findByIdAndUpdate(batch._id, {$set: startRoundInfo}).lean().exec();
-      logger.info(module, 'Begin round ' + roundObject.number)
+      logger.info(module, batch._id + ' : Begin round ' + roundObject.number)
       io.to(batch._id.toString()).emit('refresh-batch', true)
 
       let stepsSumTime = 0;
@@ -214,7 +214,7 @@ const startBatch = async function (batch, socket, io) {
       roundObject.status = 'survey';
       const midRoundInfo =  {rounds: rounds};
       batch = await Batch.findByIdAndUpdate(batch._id, {$set: midRoundInfo}).lean().exec();
-      logger.info(module, 'Begin survey for round ' + roundObject.number)
+      logger.info(module, batch._id + ' : Begin survey for round ' + roundObject.number)
       io.to(batch._id.toString()).emit('mid-round', midRoundInfo);
       chats.forEach(chat => {
         clearRoom(chat._id, io)
@@ -226,7 +226,7 @@ const startBatch = async function (batch, socket, io) {
       roundObject.status = 'completed';
       const endRoundInfo = {rounds: rounds};
       batch = await Batch.findByIdAndUpdate(batch._id, {$set: endRoundInfo}).lean().exec();
-      logger.info(module, 'End round ' + roundObject.number)
+      logger.info(module, batch._id + ' : End round ' + roundObject.number)
       io.to(batch._id.toString()).emit('end-round', endRoundInfo);
     }
     const postBatchInfo = {status: 'completed'};
@@ -239,11 +239,11 @@ const startBatch = async function (batch, socket, io) {
       await expireHIT(batch.HITId)
     }
     await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
-    logger.info(module, 'Main experiment end', batch._id)
+    logger.info(module, 'Main experiment end: ' + batch._id)
     clearRoom(batch._id, io)
   } catch (e) {
     errorHandler(e, 'batch main run error')
-    logger.error(module, 'batch will be finished');
+    logger.info(module, 'batch finished: ' +  batch._id);
     await Promise.all([
       notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Batch main run error. Batch was finished. Check logs please.', 'Bang'),
       Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}).lean().exec(),
@@ -299,7 +299,7 @@ export const receiveSurvey = async function (data, socket, io) {
   }
 }
 
-const timeout = (ms) => {
+export const timeout = (ms) => {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 

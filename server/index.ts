@@ -18,10 +18,6 @@ const moment = require('moment')
 const cors = require('cors')
 const cron = require('node-cron');
 let currentHIT = '';
-export let globalBatchTeamSize = 4;
-export const setTeamSize = value => {
-  globalBatchTeamSize = parseInt(value);
-}
 
 mongoose.Promise = global.Promise;
 mongoose.connection.on('error', (err) => {
@@ -41,7 +37,6 @@ const corsOptions = {
 }
 
 app
-  .set('globalBatchTeamSize', 16)
   .set('APP_ROOT', APP_ROOT)
   .set('SERVER_ROOT', __dirname)
   .use(bodyParser.json({limit: '5mb'}))

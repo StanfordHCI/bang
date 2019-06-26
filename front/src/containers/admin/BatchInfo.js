@@ -1,3 +1,0 @@
-/** BatchInfo.js
- *  code scrap   
- */

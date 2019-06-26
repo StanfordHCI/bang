@@ -23,7 +23,8 @@ let  TemplateSchema = new Schema({
     survey: [{
       question: {type: String, required: true},
       type: {type: String, required: true},
-      options: [{option: {type: String, required: true}}]
+      options: [{option: {type: String, required: true}}],
+      selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
     }]
   }],
 }, options);

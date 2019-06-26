@@ -18,8 +18,10 @@
 import React, {PureComponent} from 'react';
 import {connect} from 'react-redux';
 import classNames from 'classnames';
+import {Navbar, Container} from 'reactstrap'
 import ReactLoader from 'react-loader'
 import UiSnackbar from "../components/Snackbar"
+import {Link} from 'react-router-dom'
 import {bindActionCreators} from "redux";
 
 const loaderOptions = {
@@ -35,16 +37,40 @@ const loaderOptions = {
 
 class MainWrapper extends PureComponent {
   render() {
+    const {user, appReady, loading} = this.props;
 
     return (
       <div className="theme-dark">
-         <div className="wrapper">
-           <div className='container__wrap'>
-             {this.props.appReady && this.props.children}
+        {appReady &&  <div className="wrapper">
+          {user && !!user.isAdmin && <Navbar
+            color="dark"
+            dark expand="xl"
+            className="topbar-main fixed-top"
+          >
+            <Container
+              fluid
+              className="justify-content-md-start"
+            >
+              <Link className='topbar__collapse-link' to='/users'>
+                users
+              </Link>
+              <Link className='topbar__collapse-link' to='/batches'>
+                batches
+              </Link>
+              <Link className='topbar__collapse-link' to='/templates'>
+                templates
+              </Link>
+              <Link className='topbar__collapse-link' to='/waiting'>
+                waitroom
+              </Link>
+            </Container>
+          </Navbar>}
+           <div className='container__wrap' style={{paddingTop: user.isAdmin ? '60px': '30px'}}>
+             {this.props.children}
            </div>
-        </div>
+        </div>}
         <UiSnackbar/>
-        {this.props.loading && <div style={loaderOptions}>
+        {loading && <div style={loaderOptions}>
           <ReactLoader loaded={false}/>
         </div>}
       </div>
@@ -61,6 +87,7 @@ function mapDispatchToProps(dispatch) {
 export default connect(state => {
   return {
     appReady: state.app.appReady,
+    user: state.app.user,
     loading: state.app.loading
   }
 }, mapDispatchToProps)(MainWrapper);

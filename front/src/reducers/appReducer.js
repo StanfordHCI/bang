@@ -10,7 +10,6 @@ import {
 
 const initialState = {
   user: null,
-  teamSize: 999,
   appReady: false,
   loading: false,
   socket: null,
@@ -38,7 +37,6 @@ export default function (state = initialState, action) {
       return {
         ...state,
         user: action.data.user,
-        teamSize: parseInt(action.data.teamSize)
       };
     case SET_LOADING:
       return {

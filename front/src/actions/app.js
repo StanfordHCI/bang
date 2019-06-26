@@ -75,7 +75,7 @@ export const whoami = () => {
     }
     socket.once('init-res', (data) => {
       dispatch(setLoading(false));
-      if (!data || !data.user || !data.teamSize) { //init goes wrong
+      if (!data || !data.user) { //init goes wrong
         dispatch({
           type: APP_READY,
         });
@@ -90,7 +90,7 @@ export const whoami = () => {
       }
       dispatch({
         type: INIT_SUCCESS,
-        data: {user: data.user, teamSize: data.teamSize}
+        data: {user: data.user}
       });
       dispatch({
         type: APP_READY,
@@ -111,6 +111,10 @@ export const whoami = () => {
       dispatch(setSnackbar(data));
     })
     socket.on('kick-afk', (data) => {
+      window.removeEventListener("beforeunload", (ev) =>
+      {
+        return ev.returnValue = `Are you sure you want to leave?`;
+      });
       dispatch(setSnackbar('You are afk'));
       window.location.reload();
     })
