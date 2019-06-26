@@ -1,12 +1,3 @@
-/** adminreducer.js
- *  redux state manager
- * 
- *  reducer for admin actions, accessed by dispatch
- *
- *  called by:
- *    1. store.js
- */
-
 import {
   BATCH_INFO_FETCHED,
   BATCHES_FETCHED,

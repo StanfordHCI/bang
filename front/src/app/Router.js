@@ -32,7 +32,6 @@ import UserList from '../containers/admin/UserList'
 import HasBanged from '../containers/HasBanged'
 import Accept from '../containers/Accept'
 import BatchEnd from '../containers/BatchEnd'
-import PostSurveyForm from '../containers/PostSurveyForm'
 
 import constants from 'Constants'
 
@@ -58,7 +57,7 @@ const MainRouter = (props) => {
           <Route path='/templates/:id' component={TemplateInfo}/>
           <Route exact path='/hasbanged' component={HasBanged}/>
           <Route exact path='/not-logged' component={NotLogged}/>
-          </Switch>
+        </Switch>
       </main>
     </MainWrapper>
   ) : null

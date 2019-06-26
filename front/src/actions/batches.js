@@ -1,12 +1,3 @@
-/** batches.js
- *  redux state manager
- * 
- *  batch actions, with explicit server connection
- *
- *  used by:
- *    1. Batch.js
- */
-
 import {SET_CHAT_INFO, SET_USER, setSnackbar, socket} from "./app";
 import {history} from "../app/history";
 
@@ -37,7 +28,6 @@ export const sendMessage = (message) => {
 
 export const submitSurvey = (data) => {
   return function (dispatch) {
-    console.log(data);
     dispatch(setSnackbar('Survey submitted'));
     socket.emit('send-survey', data);
   }

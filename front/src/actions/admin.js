@@ -1,15 +1,3 @@
-/** admin.js
- *  redux state manager
- * 
- *  admin actions, with explicit db connection
- *
- *  used by:
- *    1. BatchList.js
- *    2. BatchResult.js
- *    3. TemplateList.js
- *    4. UserList.js
- */
-
 import {errorCatcher, setLoading, setSnackbar} from './app'
 import {history} from '../app/history';
 import {axios} from "./axiosConfig";
