@@ -22,7 +22,7 @@ export const joinBatch = () => {
 
 export const sendMessage = (message) => {
   return function (dispatch) {
-    socket.emit('send-message', message);
+    socket.emit('send-message', );
   }
 }
 
@@ -31,6 +31,10 @@ export const submitSurvey = (data) => {
     dispatch(setSnackbar('Survey submitted'));
     socket.emit('send-survey', data);
   }
+}
+
+export const refreshActiveUsers = () => {
+  socket.emit('refresh-active-users', {});
 }
 
 export const loadBatch = () => {

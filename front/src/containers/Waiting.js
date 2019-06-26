@@ -16,7 +16,7 @@ import {Card, CardBody, Col, Row, Container, Button} from 'reactstrap';
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 import {socket} from 'Actions/app'
-import {joinBatch} from 'Actions/batches'
+import {joinBatch, refreshActiveUsers} from 'Actions/batches'
 
 class Waiting extends React.Component {
 
@@ -33,6 +33,7 @@ class Waiting extends React.Component {
   }
 
   componentDidMount() {
+    refreshActiveUsers()
   }
 
   refresher(data) {

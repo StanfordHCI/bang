@@ -34,6 +34,10 @@ export const activeCheck = async function (io) {
   }
 }
 
+export const refreshActiveUsers = async (data, socket, io) => {
+  await activeCheck(io)
+}
+
 export const init = async function (data, socket, io) {
   try {
     let user;
@@ -68,7 +72,6 @@ export const init = async function (data, socket, io) {
     }
     socket.emit('init-res', {user: user});
     await User.findByIdAndUpdate(user._id, { $set: { connected : true, lastConnect: new Date(), socketId: socket.id, } });
-    await timeout(200)
     await activeCheck(io);
   } catch (e) {
     errorHandler(e, 'init error')
