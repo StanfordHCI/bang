@@ -8,6 +8,7 @@ fig_caption: yes
 ## Set-up packages // libraries and prepare for data import:
 ```{r echo=FALSE, include=FALSE, results='hide'}
 # You will need all these packages. This may require some extra installation steps on the first time. 
+library(tidyverse)
 library(jsonlite)
 library(ggplot2)
 library(lme4)
@@ -15,16 +16,17 @@ library(lmerTest)
 library(pROC)
 library(stargazer)
 library(dplyr)
-library(tidyverse)
 library(naniar)
+library(tidyr)
+library(pwr)
 ```
 
 ## Set-up directories, import and clean data:
 ```{r, include=TRUE, echo=TRUE}
-rm(list=ls())
+rm(list=ls(all=TRUE))
 setwd("/Users/phoebeyao/Documents/Career/HCI\ Research/bang/R") # Change this to your working directory where Bang/R file is located 
 dataPath = "../.data" # This is set to so that we can access data where Bang usually stores it.
-MINIMUM_BATCH_NUMBER = 1555782062133  # Identify the batch number that represents the start of the batches you'd like to include in your analysis. 
+MINIMUM_BATCH_NUMBER = 1555782062132  # Identify the batch number that represents the start of the batches you'd like to include in your analysis. 
 # NOTE: You might change this if you're doing different kinds of runs. You might alsop remove it and use a more specific filtering strategy. 
 
 TEAM_SIZE = 3 # Alter depending on team size in runs you're analyzing; this variable is used later on to ensure that you're filtering out all team_sizes != the size you've specified 
@@ -184,23 +186,22 @@ users <- users %>%
   )
 
 # Summarizes major demographic data from the demographics survey
-demographics = users %>% 
-  select(contains("demographicsCheck")) %>%
+demographicsSurvey = users %>% 
+  select(mturkId, id, batch, contains("demographicsCheck")) %>%
   mutate(
     age = 2019 - as.numeric(results.demographicsCheck.3),
-    gender = as.factor(results.demographicsCheck.2)
+    gender = as.character(results.demographicsCheck.2),
+    education = as.character(results.demographicsCheck.1),
+    latin = as.character(results.demographicsCheck.5),
+    race = as.character(results.demographicsCheck.6),
+    income = as.character(results.demographicsCheck.4),
   ) %>%
-  filter(age < 200) %>% #No old people
-  summarise(
-    percentFemale = sum(gender == "Female") / n(),
-    percentOther = sum(gender == "Other") / n(),
-    ageMean = mean(age),
-    ageSD = sd(age)
-  )
-demographics <- na.omit(demographics)
-
+  filter(age < 200) %>%
+  select(-contains("demographicsCheck"))
+  
 # Removes instruments not in use. This helps clean things up and reduce errors
-users <- users %>% 
+users <- users %>%
+  left_join(demographicsSurvey, by=c("mturkId", "id", "batch")) %>%
   select(
     -contains("results.psychologicalSafety"),
     -contains("results.blacklistCheck"),
@@ -208,6 +209,8 @@ users <- users %>%
     -contains("demographicsCheck"),
     -contains("undefined")
   )
+
+  
 users <- na.omit(users)
 
 # Generates a table that breaks users out across rounds. Basically it makes a row per round per user, as opposed to a row per user (which is what users does). This helps us later match down to individual teams.
@@ -222,17 +225,23 @@ usersRounds = as.data.frame(Reduce(rbind, apply(users,1,function(x) {
 
 # Converting variables to their proper respective form for later analysis: 
 usersRounds <- usersRounds %>% mutate(mturkId = as.character(mturkId), id = as.character(id), batch=as.numeric(batch), round=as.numeric(round), room=as.character(room))
-usersRounds <- usersRounds %>% select(mturkId, id, batch, round, room)
+usersRounds <- usersRounds %>% select(mturkId, id, batch, round, room, age, gender, latin, race, education, income)
 
 # processes main manipulation check data by
 manipulationCheck <- usersRounds %>%
   left_join(users, by=c("mturkId", "id", "batch")) %>% 
   mutate(room=room.x) %>%
+  mutate(age=as.numeric(age.x)) %>%
+  mutate(gender=as.character(gender.x)) %>%
+  mutate(race=as.character(race.x)) %>%
+  mutate(latin=as.character(latin.x)) %>%
+  mutate(education=as.character(education.x)) %>%
+  mutate(income=as.character(income.x)) %>%
   mutate(manipulation=results.manipulation) %>%
   mutate(manipulationCheck=results.manipulationCheck) %>%
   mutate(teamOrder=results.format) %>%
   mutate(condition=results.condition) %>%
-  select(mturkId, id, batch, room, round, manipulation, manipulationCheck, teamOrder, condition) %>%
+  select(mturkId, id, batch, age, gender, race, latin, education, income, room, round, manipulation, manipulationCheck, teamOrder, condition) %>%
   left_join(batchFrame, by="batch") #Adds in batch frame so we have task information
 
 # Imports performance data and calculates ranks within each task.
@@ -250,11 +259,6 @@ statusSurvey <- extractStatusSurvey(users, 'statusCheck')
 conflictSurvey <- extractRoundSurvey(users, 'conflictCheck')
 creativeSurvey <- extractRoundSurvey(users, 'creativeCheck')
 satisfactionSurvey <- extractRoundSurvey(users, 'satisfactionCheck')
-
-print(statusSurvey)
-print(conflictSurvey)
-print(creativeSurvey)
-print(satisfactionSurvey)
 ```
 
 # Now merge everything
@@ -317,24 +321,19 @@ usersRounds <- usersRounds %>% mutate(
 ## Converts satisfaction to sum and cleans up extra satisfaction data
 satisfactionLevels <- c("1 (Not at all)", "2", "3", "4", "5 (Highly)")
 satisfactionFaceLevels <- c("D:", "]:", "|:", "[:", ":D")
-usersRounds <- usersRounds %>%
-  mutate_at(.vars = vars(contains("satisfactionCheck.1")), funs(factor(., levels = satisfactionLevels)))
-usersRounds$satisfactionScale.1 <- usersRounds %>%
-  select(contains("satisfactionCheck.1")) %>%
-  mutate_all(as.numeric) %>%
-  rowSums()
-usersRounds <- usersRounds %>%
-  select(-contains("satisfactionCheck.1"))
-rm("satisfactionLevels")
 
 usersRounds <- usersRounds %>%
-  mutate_at(.vars = vars(contains("satisfactionCheck")), funs(factor(., levels = satisfactionFaceLevels)))
-usersRounds$satisfactionScale.2 <- usersRounds %>%
-  select(contains("satisfactionCheck.2")) %>%
+  mutate_at(.vars = vars(contains("satisfactionCheck.1")), funs(factor(., levels = satisfactionLevels)))
+usersRounds <- usersRounds %>%
+  mutate_at(.vars = vars(contains("satisfactionCheck.2")), funs(factor(., levels = satisfactionFaceLevels)))
+
+usersRounds$satisfactionScale <- usersRounds %>%
+  select(contains("satisfactionCheck")) %>%
   mutate_all(as.numeric) %>%
   rowSums()
 usersRounds <- usersRounds %>%
-  select(-contains("satisfactionCheck.2"))
+  select(-contains("satisfactionCheck"))
+rm("satisfactionLevels")
 rm("satisfactionFaceLevels")
 
 ## Converts status to sum as well as sum per user and cleans up extra status data
@@ -342,7 +341,7 @@ statusLevels <- c("1 (Disagree Strongly)","2","3","4","5","6","7 (Agree Strongly
 usersRounds <- usersRounds %>%
   mutate_at(.vars = vars(contains("statusCheck")), funs(factor(., levels = statusLevels)))
 
-usersRounds$statusScaleSum <- usersRounds %>%
+usersRounds$statusScale <- usersRounds %>%
   select(contains("statusCheck")) %>%
   mutate_all(as.numeric) %>%
   rowSums()
@@ -362,11 +361,6 @@ usersRounds$statusScale.4 <- usersRounds %>%
   select("results.statusCheck.4", "results.statusCheck.8", "results.statusCheck.12", "results.statusCheck.16") %>%
   mutate_all(as.numeric) %>%
   rowSums()
-
-usersRounds <- usersRounds %>% mutate(
-  statusScale.4 = case_when(
-    is.na(member.4) ~ NA,
-    TRUE ~ statusScale.4))
 
 usersRounds <- usersRounds %>%
   select(-contains("statusCheck"))
@@ -407,20 +401,16 @@ teamStats <- usersRounds %>%
   arrange(id) %>%
   group_by(room, batch, round, condition, team) %>%
   summarise(n=n(), 
-            teamMeanStatusSum=mean(statusScaleSum), 
-            teamMedianStatusSum=median(statusScaleSum),
-            teamMeanStatus.1=mean(statusScale.1), 
-            teamMedianStatus.1=median(statusScale.1),
-            teamMeanStatus.2=mean(statusScale.2), 
-            teamMedianStatus.2=median(statusScale.2),
-            teamMeanStatus.3=mean(statusScale.3), 
-            teamMedianStatus.3=median(statusScale.3),
-            teamMeanStatus.4=mean(statusScale.4), 
-            teamMedianStatus.4=median(statusScale.4),
-            teamMeanSatisfaction.1=mean(satisfactionScale.1), 
-            teamMedianSatisfaction.1=median(satisfactionScale.1),
-            teamMeanSatisfaction.2=mean(satisfactionScale.2), 
-            teamMedianSatisfaction.2=median(satisfactionScale.2),
+            meanStatus.1=mean(statusScale.1), 
+            medianStatus.1=median(statusScale.1),
+            meanStatus.2=mean(statusScale.2), 
+            medianStatus.2=median(statusScale.2),
+            meanStatus.3=mean(statusScale.3), 
+            medianStatus.3=median(statusScale.3),
+            meanStatus.4=mean(statusScale.4), 
+            medianStatus.4=median(statusScale.4),
+            teamMeanSatisfaction=mean(satisfactionScale), 
+            teamMedianSatisfaction=median(satisfactionScale),
             teamMeanConflict=mean(conflictScale), 
             teamMedianConflict=median(conflictScale),
             teamMeanCreativity=mean(creativeScale), 
@@ -435,14 +425,19 @@ teamStats <- teamStats %>%
 
 #Adds team level data back into userRounds
 usersRounds <- teamStats %>%
-  select(room, batch, round, teamProportionFracture, condition, team) %>%
+  select(room, batch, round, medianStatus.1, medianStatus.2, medianStatus.3, medianStatus.4, teamProportionFracture, condition, team) %>%
   left_join(usersRounds, by=c("room", "batch", "round", "condition", "team"))
 
-statusData <- teamStats %>%
-  select(teamMedianStatus.1, teamMedianStatus.2, teamMedianStatus.3, teamMedianStatus.4)
-
-userRounds$maxStatus = c(1, 2, 3, 4)[apply(statusData, 1, which.max)]
-
+userScales <- usersRounds %>%
+  select(room, round, batch, condition, team, mturkId, age, gender, education, income, latin, race, member.1, member.2, member.3, member.4, medianStatus.1, medianStatus.2, medianStatus.3, medianStatus.4, satisfactionScale, creativeScale, conflictScale) %>%
+  mutate(medianStatus = case_when(
+    mturkId == member.1 ~ medianStatus.1,
+    mturkId == member.2 ~ medianStatus.2,
+    mturkId == member.3 ~ medianStatus.3,
+    mturkId == member.4 ~ medianStatus.4
+  )) %>%
+  select(-member.1, -member.2, -member.3, -member.4, -medianStatus.1, -medianStatus.2, -medianStatus.3, -medianStatus.4)
+  
 ## Table showing how many teams we've run in each condition combination:  
 print(table(teamStats$condition, teamStats$team))
 
@@ -481,7 +476,7 @@ teamStats <- teamStats %>%
 # Stores fracture information back in userRounds
 usersRounds <- usersRounds %>%
   select(-teamProportionFracture, -team) %>%
-  left_join(teamStats, by=c("room", "batch", "round", "condition"))
+  left_join(teamStats, by=c("room", "batch", "round", "condition", "medianStatus.1", "medianStatus.2", "medianStatus.3", "medianStatus.4"))
 
 # Checks if users guessed their team's fracture correctly
 usersRounds$partnerFractured <- ifelse(usersRounds$teamProportionFracture == 0, FALSE,
@@ -506,16 +501,112 @@ performanceTable = na.omit(performanceTable)
 # write.csv(teamStats, file = "teamStats.csv")
 ```
 ```{r}
-medianStatusUser <- teamStats %>%
-  filter(team=="Ap"|team=="A") %>%
-  group_by(condition, team, batch, round)
+# demographics of filtered users
+demographics = userScales %>%
+  group_by(condition) %>%
+  summarise(
+    percentFemale = sum(gender == "Female") / n(),
+    percentOther = sum(gender == "Other") / n(),
+    ageMean = mean(age),
+    ageSD = sd(age)
+  )
+demographics <- na.omit(demographics)
 
-print(medianStatusUser)
-
-medianStatusChanges <- teamStats %>%
+# organize table of user status values for Ap and A rounds
+userStatus <- userScales %>%
+  ungroup() %>%
+  select(mturkId, room, batch, age, gender, race, income, education, team, condition, medianStatus) %>%
   filter(team=="Ap"|team=="A") %>%
+  group_by(mturkId) %>%
+  spread(team, medianStatus)
+
+# apply spearman rank correlation on user status between A and Ap rounds
+spearmanRankStatus <- userStatus %>%
+  group_by(room, batch, condition) %>%
+  summarize(rho = cor.test(x=A, y=Ap, method = 'spearman')$estimate, p = cor.test(x=A, y=Ap, method = 'spearman')$p.value)
+# get rid of na values
+split_spearmanRankStat <- na.omit(spearmanRankStatus)
+spearmanRankStatus <- na.omit(spearmanRankStatus) %>%
+  group_by(condition) %>%
+  summarise(medianRho = median(rho), meanRho = mean(rho), sd = sd(rho))
+
+# correlation between A and Ap between masked and unmasked result: no difference, which means change in individual status seems consistent regardless of masked or unmasked condition
+pearsonStatus <- userStatus %>%
+  group_by(condition, batch, room) %>%
+  summarize(rho = cor.test(x=A, y=Ap, method = 'pearson')$estimate, p = cor.test(x=A, y=Ap, method = 'pearson')$p.value)
+
+# masked condition results in less consistent status values for females, while consistency of male status values do not vary much per condition
+pearsonGender <- userStatus %>%
+  group_by(gender, condition) %>%
+  summarize(rho = cor.test(x=A, y=Ap, method = 'pearson')$estimate, p = cor.test(x=A, y=Ap, method = 'pearson')$p.value)
+
+# Table of true false depending on if leader is the same per team
+leaderProb <- userStatus %>%
+  group_by(room, batch, condition) %>%
+  summarize(sameLeader = case_when (
+    order(A, decreasing = TRUE)[1] == order(Ap, decreasing = TRUE)[1] ~ TRUE,
+    TRUE ~ FALSE))
+# Creates probability and confidence intervals
+leaderProbStat <- leaderProb %>%
+  group_by(condition) %>%
+  summarise(
+    estimate = prop.test(sum(sameLeader == TRUE), length(sameLeader))$estimate[1],
+    SE = sqrt((sum(sameLeader == TRUE)/length(sameLeader)) * (1 - (sum(sameLeader == TRUE)/length(sameLeader)))/length(sameLeader)),
+    conf.int.1 = prop.test(sum(sameLeader == TRUE), length(sameLeader))$conf.int[1],
+    conf.int.2 = prop.test(sum(sameLeader == TRUE), length(sameLeader))$conf.int[2])
+
+
+# Create table of user scales for satisfaction, creative, conflict, and status scales
+userScales <- userScales %>%
+  ungroup() %>%
+  select(mturkId, room, batch, age, gender,race, income, education, team, medianStatus, condition, satisfactionScale, creativeScale, conflictScale) %>%
+  group_by(mturkId)
+
+# individual satisfaction vs individual status: satisfaction positively correlates with status
+pearsonSatStatus <- userScales %>%
   group_by(condition, team) %>%
-  summarise(medianStatus = median(teamMedianStatusSum))
+  summarize(rho = cor.test(x=satisfactionScale, y=medianStatus, method = 'pearson')$estimate, p = cor.test(x=satisfactionScale, y=medianStatus, method = 'pearson')$p.value)
+
+# team creativity vs individual status: seems like greater status correlates with lower creativity
+pearsonCreStatus <- userScales %>%
+  group_by(condition, team) %>%
+  summarize(rho = cor.test(x=creativeScale, y=medianStatus, method = 'pearson')$estimate, p = cor.test(x=creativeScale, y=medianStatus, method = 'pearson')$p.value)
+
+# team conflict vs individual status: seems like greater status correlates with lower conflict
+pearsonConStatus <- userScales %>%
+  group_by(condition, team) %>%
+  summarize(rho = cor.test(x=conflictScale, y=medianStatus, method = 'pearson')$estimate, p = cor.test(x=satisfactionScale, y=medianStatus, method = 'pearson')$p.value)
+
+# understand relationship between user characteristic rank and user status rank in team
+# apply spearman rank correlation on team user satisfaction and median user status
+spearmanRankSat <- userScales %>%
+  group_by(room, batch, condition) %>%
+  summarize(rho = cor.test(x=satisfactionScale, y=medianStatus, method = 'spearman')$estimate, p = cor.test(x=satisfactionScale, y=medianStatus, method = 'spearman')$p.value)
+# get rid of na and split/group
+split_spearmanRankSat <- na.omit(spearmanRankSat)
+spearmanRankSat <- na.omit(spearmanRankSat) %>%
+  group_by(condition) %>%
+  summarise(medianRho = median(rho), meanRho = mean(rho), sd = sd(rho))
+
+# apply spearman rank correlation on team user creativity and median user status
+spearmanRankCre <- userScales %>%
+  group_by(room, batch, condition) %>%
+  summarize(rho = cor.test(x=creativeScale, y=medianStatus, method = 'spearman')$estimate, p = cor.test(x=creativeScale, y=medianStatus, method = 'spearman')$p.value)
+# get rid of na values and split/group
+split_spearmanRankCre <- na.omit(spearmanRankCre)
+spearmanRankCre <- na.omit(spearmanRankCre) %>%
+  group_by(condition) %>%
+  summarise(medianRho = median(rho), meanRho = mean(rho), sd = sd(rho))
+
+# apply spearman rank correlation on team user conflict and median user status
+spearmanRankCon <- userScales %>%
+  group_by(room, batch, condition) %>%
+  summarize(rho = cor.test(x=conflictScale, y=medianStatus, method = 'spearman')$estimate, p = cor.test(x=conflictScale, y=medianStatus, method = 'spearman')$p.value)
+# get rid of na values and split/group
+split_spearmanRankCon <- na.omit(spearmanRankCon)
+spearmanRankCon <- na.omit(spearmanRankCon) %>%
+  group_by(condition) %>%
+  summarise(medianRho = median(rho), meanRho = mean(rho), sd = sd(rho))
 
 medianConflictChanges <- teamStats %>%
   filter(team=="Ap"|team=="A") %>%
@@ -530,29 +621,89 @@ medianCreativeChanges <- teamStats %>%
 medianSatisfactionChanges <- teamStats %>%
   filter(team=="Ap"|team=="A") %>%
   group_by(condition, team) %>%
-  summarise(medianSatisfaction1 = median(teamMedianSatisfaction.1), medianSatisfaction2 = median(teamMedianSatisfaction.2))
+  summarise(medianSatisfaction = median(teamMedianSatisfaction))
 
-stat <- ggplot(data=medianStatusChanges, aes(x=team, y=medianStatus))+
-  geom_bar(stat="identity")+
-  facet_wrap(~condition)
-con <- ggplot(data=medianConflictChanges, aes(x=team, y=medianConflict))+
-  geom_bar(stat="identity")+
-  facet_wrap(~condition)
-cre <- ggplot(data=medianCreativeChanges, aes(x=team, y=medianCreative))+
-  geom_bar(stat="identity")+
-  facet_wrap(~condition)
-sat1 <- ggplot(data=medianSatisfactionChanges, aes(x=team, y=medianSatisfaction1))+
-  geom_bar(stat="identity")+
-  facet_wrap(~condition)
-sat2 <- ggplot(data=medianSatisfactionChanges, aes(x=team, y=medianSatisfaction2))+
-  geom_bar(stat="identity")+
-  facet_wrap(~condition)
+statbox <- ggplot(split_spearmanRankStat, aes(x = condition, y = rho)) +
+  geom_boxplot() +
+  ggtitle("Rho of Status Rank Correlation Between A and Ap")
 
-print(stat)
-print(con)
-print(cre)
-print(sat1)
-print(sat2)
+satbox <- ggplot(split_spearmanRankSat, aes(x = condition, y = rho)) +
+  geom_boxplot() +
+  ggtitle("Rho of Satisfaction and Median Member Status Rank Correlation Between A and Ap")
+
+crebox <- ggplot(split_spearmanRankCre, aes(x = condition, y = rho)) +
+  geom_boxplot() +
+  ggtitle("Rho of Creativity and Median Member Status Rank Correlation Between A and Ap")
+
+conbox <- ggplot(split_spearmanRankCon, aes(x = condition, y = rho)) +
+  geom_boxplot() +
+  ggtitle("Rho of Conflict and Median Member Status Rank Correlation Between A and Ap")
+
+pstat <- ggplot(data=leaderProbStat, aes(x=condition, y=estimate))+
+  geom_bar(stat="identity")+
+  geom_errorbar(aes(ymin=estimate-SE, ymax=estimate+SE), width=.1)+
+  ggtitle("Probability of Same Leader Between A and Ap Rounds") 
+
+statRank <- ggplot(data=spearmanRankStatus, aes(x=condition, y=medianRho))+
+  geom_bar(stat="identity")+
+  geom_errorbar(aes(ymin=medianRho-sd, ymax=medianRho+sd), width=.1)+
+  ggtitle("Median Rank Correlation Between A and Ap Median Member Status Across Teams")
+
+satRank <- ggplot(data=spearmanRankSat, aes(x=condition, y=medianRho))+
+  geom_bar(stat="identity")+
+  geom_errorbar(aes(ymin=medianRho-sd, ymax=medianRho+sd), width=.1)+
+  ggtitle("Rank Correlation Between Satisfaction and Median Member Status Across Teams")
+
+creRank <- ggplot(data=spearmanRankCre, aes(x=condition, y=medianRho))+
+  geom_bar(stat="identity")+
+  geom_errorbar(aes(ymin=medianRho-sd, ymax=medianRho+sd), width=.1)+
+  ggtitle("Rank Correlation Between Creative and Median Member Status Across Teams")
+
+conRank <- ggplot(data=spearmanRankCon, aes(x=condition, y=medianRho))+
+  geom_bar(stat="identity")+
+  geom_errorbar(aes(ymin=medianRho-sd, ymax=medianRho+sd), width=.1)+
+  ggtitle("Rank Correlation Between Conflict and Median Member Status Across Teams")
+
+pwrTest <- pwr.p.test(h = ES.h(p1 = 0.66, p2 = 0.40), 
+           sig.level = 0.05, 
+           power = 0.80, 
+           alternative = "greater")
+```
+
+# Run to print tables and graphs
+```{r}
+
+# Histograms
+hist(userScales$medianStatus, 
+     main="Histogram of Median Status Values Across Rounds", 
+     xlab="Median Status Values", 
+     las=1, 
+     breaks=20)
+
+hist(userScales$age, 
+     main="Histogram of Age", 
+     xlab="Median Status Values", 
+     las=1, 
+     breaks=20)
+
+print(pearsonGender) # correlation between A and Ap status values by condition and gender
+print(pearsonStatus) # correlation between A and Ap status values by condition
+print(pearsonSatStatus) # ccorrelation between individual satisfaction and status by condition
+print(pearsonCreStatus) # ccorrelation between perceived team creativity and status by condition
+print(pearsonConStatus) # ccorrelation between percieved team conflict and status by condition
+
+# Box Plots
+print(statbox)
+print(satbox)
+print(crebox)
+print(conbox)
+
+# Bar Graphs
+print(pstat)
+print(statRank)
+print(satRank)
+print(creRank)
+print(conRank)
 ```
 
 ### Manipulation Check
