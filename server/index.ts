@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 const PORT = process.env.PORT || 3001;
 const APP_ROOT = path.resolve(__dirname, '..');
 const logger = require('./services/logger');
-import {init, sendMessage, disconnect, activeCheck} from './controllers/users'
+import {init, sendMessage, disconnect, activeCheck, refreshActiveUsers} from './controllers/users'
 import {joinBatch, loadBatch, receiveSurvey} from './controllers/batches'
 import {errorHandler} from './services/common'
 import {addHIT, disassociateQualificationFromWorker, listAssignmentsForHIT, notifyWorkers, assignQual, payBonus, runningLive} from "./controllers/utils";
@@ -18,10 +18,6 @@ const moment = require('moment')
 const cors = require('cors')
 const cron = require('node-cron');
 let currentHIT = '';
-export let globalBatchTeamSize = 4;
-export const setTeamSize = value => {
-  globalBatchTeamSize = parseInt(value);
-}
 
 mongoose.Promise = global.Promise;
 mongoose.connection.on('error', (err) => {
@@ -41,7 +37,6 @@ const corsOptions = {
 }
 
 app
-  .set('globalBatchTeamSize', 16)
   .set('APP_ROOT', APP_ROOT)
   .set('SERVER_ROOT', __dirname)
   .use(bodyParser.json({limit: '5mb'}))
@@ -81,7 +76,7 @@ Promise.all(initialChecks)
     activeCheck(io);
     io.sockets.on('connection', function (socket) {
       socket.on('init', data => socketMiddleware('init', init, data, socket));
-      //socket.on('join-bang', data => socketMiddleware('join-bang', joinBang, data, socket));
+      socket.on('refresh-active-users', data => socketMiddleware('refresh-active-users', refreshActiveUsers, data, socket));
       socket.on('disconnect', data => socketMiddleware('disconnect', disconnect, data, socket));
       socket.on('send-message', data => socketMiddleware('send-message', sendMessage, data, socket));
       socket.on('join-batch', data => socketMiddleware('join-batch', joinBatch, data, socket));
@@ -94,7 +89,7 @@ Promise.all(initialChecks)
   })
 
 const socketMiddleware = function (event, action, data, socket) {
-  if (event !== 'init' && event !== 'disconnect' && !socket.userId) {
+  if (!socket.userId && event !== 'init' && event !== 'disconnect') {
     logger.error(module, 'User is not logged in');
     return;
   }

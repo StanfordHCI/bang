@@ -39,6 +39,8 @@ export default function (state = initialState, action) {
         batch: action.data
       };
     case CHAT_FETCHED:
+
+
       return {
         ...state,
         chat: action.data.chat,

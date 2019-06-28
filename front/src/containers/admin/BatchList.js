@@ -11,10 +11,12 @@ import React from 'react';
 import {Card, CardBody, Col, Row, Container, Button, Table} from 'reactstrap';
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
-import {socket} from 'Actions/app'
-import {loadBatchList, addBatch, stopBatch} from 'Actions/admin'
+import {loadBatchList, addBatch, stopBatch, clearBatches} from 'Actions/admin'
 import moment from 'moment'
 import {history} from 'App/history';
+import Pagination from 'Components/Pagination';
+
+const pageSize = 10;
 
 class BatchList extends React.Component {
 
@@ -22,19 +24,40 @@ class BatchList extends React.Component {
     super(props);
   }
 
+  state = {
+    isReady: false,
+    page: 1,
+    pageOfItems: []
+  }
+
   componentWillMount() {
-    this.props.loadBatchList();
+    this.props.loadBatchList()
+      .then(() => {
+        this.setState({isReady: true, })
+      })
+  }
+
+  componentWillUnmount() {
+    this.props.clearBatches()
+  }
+
+  onChangePage = (page) => {
+    if (page) {
+      const from = (parseInt(page) - 1) * pageSize;
+      const to = from + pageSize;
+      this.setState({page: page, pageOfItems: this.props.batchList.filter((x, index) => from <= index && index < to)});
+    }
   }
 
   render() {
     const {batchList} = this.props;
 
     return (
-      <Container>
+      <Container style={{maxWidth: '100%'}}>
         <Row>
           <Col md={12} lg={12} xl={12}>
             <Card>
-              <CardBody>
+              {this.state.isReady && <CardBody>
                 <div className='card__title'>
                   <h5 className='bold-text'>Batch list</h5>
                   <Button className="btn btn-primary" onClick={() => history.push('/batches-add')}>Add Batch</Button>
@@ -53,11 +76,11 @@ class BatchList extends React.Component {
                   </tr>
                   </thead>
                   <tbody>
-                  {batchList.map((batch, index) => {
+                  {this.state.pageOfItems.map((batch, index) => {
                     return <tr key={batch._id}>
-                      <td onClick={() => history.push('/batches/' + batch._id)}>{index}</td>
+                      <td onClick={() => history.push('/batches/' + batch._id)}>{(this.state.page - 1) * pageSize + index + 1}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{moment(batch.createdAt).format('YYYY.DD.MM-HH:mm:ss')}</td>
-                      <td onClick={() => history.push('/batches/' + batch._id)}>{batch.status !== 'waiting' ? moment(batch.startTime).format('YYYY.DD.MM-HH:mm:ss') : 'not started'}</td>
+                      <td onClick={() => history.push('/batches/' + batch._id)}>{!!batch.startTime ? moment(batch.startTime).format('YYYY.DD.MM-HH:mm:ss') : 'not started'}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{batch.status}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{batch.templateName}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{batch.note}</td>
@@ -74,7 +97,8 @@ class BatchList extends React.Component {
                   })}
                   </tbody>
                 </Table>
-              </CardBody>
+                <Pagination items={batchList} pageSize={pageSize} onChangePage={this.onChangePage}/>
+              </CardBody>}
             </Card>
           </Col>
         </Row>
@@ -94,7 +118,8 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators({
     loadBatchList,
     addBatch,
-    stopBatch
+    stopBatch,
+    clearBatches
   }, dispatch);
 }
 

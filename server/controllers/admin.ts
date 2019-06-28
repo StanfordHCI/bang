@@ -18,19 +18,19 @@ import {
 } from "./utils";
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
-import {setTeamSize, io} from '../index'
+import { io} from '../index'
 import {Bonus} from "../models/bonuses";
 import {activeCheck} from "./users";
 
 
 export const addBatch = async function (req, res) {
   try {
-    const check = await Batch.findOne({status: 'waiting'}).select('_id') ;
-    if (check) {
-      logger.error(module, 'There is 1 waiting batch, you cannot add more');
-      res.status(403).end();
-      return;
-    }
+    const batches = await Batch.find({$or: [{status: 'waiting'}, {status: 'active'}]}).select('teamSize roundMinutes surveyMinutes numRounds').lean().exec();
+    let batchSumCost = 0;
+    batches.forEach(batch => {
+      const moneyForBatch = (batch.teamSize ** 2) * 12 * (((batch.roundMinutes + batch.surveyMinutes)  * batch.numRounds) / 60);
+      batchSumCost = batchSumCost + moneyForBatch;
+    })
 
     let newBatch = req.body;
 
@@ -39,8 +39,10 @@ export const addBatch = async function (req, res) {
       balance = parseFloat(balance.AvailableBalance);
       const moneyForBatch = (newBatch.teamSize ** 2) * 12 * (((newBatch.roundMinutes + newBatch.surveyMinutes)  * newBatch.numRounds) / 60);
       if (balance < moneyForBatch ) {
-        await notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Account balance: $' + balance + '. Experiment cost: $' + moneyForBatch.toFixed(2), 'Bang');
-        logger.error(module, 'balance problems');
+        const message = 'Account balance: $' + balance + '. Experiment cost: $' + moneyForBatch.toFixed(2) +
+          ' . Waiting/active batches cost: ' + batchSumCost.toFixed(2)
+        await notifyWorkers([process.env.MTURK_NOTIFY_ID], message, 'Bang');
+        logger.error(module, 'balance problems: ' + message);
         res.status(403).end();
         return;
       }
@@ -116,7 +118,6 @@ export const addBatch = async function (req, res) {
       })
     }
     prs.push(activeCheck(io))
-    setTeamSize(newBatch.teamSize)
     logger.info(module, 'New batch added. Mturk mode: ' + process.env.MTURK_MODE + '; Mturk frame: ' + process.env.MTURK_FRAME);
     await Promise.all(prs)
   } catch (e) {
@@ -126,7 +127,7 @@ export const addBatch = async function (req, res) {
 
 export const loadBatchList = async function (req, res) {
   try {
-    const batchList = await Batch.find({}).select('createdAt startTime status currentRound teamSize templateName note maskType').lean().exec();
+    const batchList = await Batch.find({}).sort({createdAt: -1}).select('createdAt startTime status currentRound teamSize templateName note maskType').lean().exec();
     res.json({batchList: batchList})
   } catch (e) {
     errorHandler(e, 'add batch error')
@@ -242,7 +243,9 @@ export const addUser = async function (req, res) {
 export const stopBatch = async function (req, res) {
   try {
     const batch = await Batch.findByIdAndUpdate(req.params.id, {$set: {status: 'completed'}}, {new: true}).populate('users.user').lean().exec()
+    let usersChangeQuery = { batch: null, realNick: null, fakeNick: null, currentChat: null }
     if (batch.status === 'active' && process.env.MTURK_MODE !== 'off') { //compensations
+      usersChangeQuery.systemStatus = 'hasbanged';
       if (process.env.MTURK_FRAME === 'ON') {
         await expireHIT(batch.HITId) //close main task
       }
@@ -266,7 +269,7 @@ export const stopBatch = async function (req, res) {
       await Promise.all(bangPrs)
     }
 
-    await User.updateMany({batch:  batch._id}, { $set: { batch: null, realNick: null, fakeNick: null, currentChat: null, systemStatus: 'hasbanged' }})
+    await User.updateMany({batch:  batch._id}, { $set: usersChangeQuery})
     batch.users.forEach(user => {
       io.to(user.user.socketId).emit('stop-batch', true);
     })

@@ -1,0 +1,19 @@
+.topbar__collapse-link {
+  display: block;
+  padding: 10px;
+  text-transform: uppercase;
+  color: $color-accent;
+  transition: 0.3s;
+  text-align: center;
+  font-weight: 500;
+  font-size: 10px;
+  line-height: 1.6;
+
+  &:hover {
+    color: $color-accent-hover;
+  }
+}
+
+.topbar-main {
+  height: 52px;
+}

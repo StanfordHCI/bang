@@ -1,3 +1,0 @@
-/** BatchForm.js
- *  code scrap
- */

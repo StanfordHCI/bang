@@ -428,11 +428,13 @@ class Batch extends React.Component {
   }
 
   renderMidSurvey() {
+    const task = this.props.batch.tasks[this.props.batch.currentRound - 1]
+
     return (
       <div>
         {!this.state.surveyDone && <MidSurveyForm
-          initialValues={{questions: this.props.batch.midQuestions.map(x => {return {result: ''}})}}
-          questions={this.props.batch.midQuestions}
+          initialValues={{questions: task.survey.map(x => {return {result: ''}})}}
+          questions={task.survey}
           onSubmit={this.submitSurvey}
         />}
         {this.state.surveyDone && <div>
