@@ -150,6 +150,7 @@ const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
                 <div className='form__form-group-field'>
                   <Field
                     name={`${step}.message`}
+                    type="text"
                     component={renderTextArea}
                   />
                 </div>
@@ -196,6 +197,7 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
           <Field
             name={`tasks[${i}].message`}
             component={renderTextArea}
+            type="text"
           />
         </div>
         <FieldArray
@@ -449,7 +451,6 @@ const validate = (values, props) => {
 
   values.tasks && values.tasks.forEach((task, i) => {
     errors.tasks[i] = {steps: [], survey: []}; let timeSum = 0
-    console.log(task)
     if (!task.message) {
       errors.tasks[i].message = 'required';
     } else  if (!task.steps || !task.steps.length) {

@@ -28,7 +28,7 @@ import MidSurveyForm from './MidSurveyForm'
 import PostSurveyForm from './PostSurveyForm'
 import {history} from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
-import Linkify from 'react-linkify';
+import ReactHtmlParser from "react-html-parser";
 
 const MAX_LENGTH = 240;
 const botId = '100000000000000000000001'
@@ -378,7 +378,7 @@ class Batch extends React.Component {
                   // specially format bot messages
                   if (message.user.toString() === botId) {
                     messageClass = 'chat__bubble chat_bot'
-                    messageContent = (<Linkify componentDecorator={componentDecorator}>{message.message}</Linkify>);
+                    messageContent = (ReactHtmlParser(messageContent));
                   }
                   
                   return (
@@ -509,9 +509,6 @@ class Batch extends React.Component {
           <Col md={12} lg={12} xl={12}>
             <Card>
               {this.state.isReady && <CardBody>
-                {/*<div className='card__title'>
-                  <h5 className='bold-text'>Current batch status: {batch.status}</h5>
-                </div>*/}
                 {batch.status === 'waiting' && this.renderWaitingStage()}
                 {batch.status === 'active' && this.renderActiveStage()}
                 {batch.status === 'completed' && this.renderCompletedStage()}

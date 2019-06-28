@@ -99,7 +99,7 @@ export default class PaginationComponent extends PureComponent {
     return (
       <div className='pagination__wrap'>
         {(!this.pager.pages || this.pager.pages.length <= 1) ? '' :
-          <Pagination className='pagination'>
+          <Pagination className='pagination' style={{marginBottom: '0px'}}>
             <PaginationItem className='pagination__item' disabled={this.pager.currentPage === 1}>
               <PaginationLink className='pagination__link' href='#' onClick={() => this.setPage(1)}>
                 <ChevronLeftIcon className='pagination__link-icon'/>

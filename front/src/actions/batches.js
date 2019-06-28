@@ -22,7 +22,7 @@ export const joinBatch = () => {
 
 export const sendMessage = (message) => {
   return function (dispatch) {
-    socket.emit('send-message', );
+    socket.emit('send-message', message);
   }
 }
 
