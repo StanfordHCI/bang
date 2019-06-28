@@ -678,11 +678,8 @@ let usersFinished = 0;
 
 // keeping track of time
 let taskStartTime = getSecondsPassed(); // reset for each start of new task
-let taskEndTime = 0;
-let taskTime = 0;
 
 // Building task list
-//if (runExperimentNow){
 let eventSchedule = [];
 if (starterSurveyOn) {
   eventSchedule.push("starterSurvey");
@@ -1087,33 +1084,18 @@ io.on("connection", socket => {
     if (!userAcquisitionStage) {
       issueFinish(
         socket,
-        runViaEmailOn
-          ? "We don't need you to work at this specific moment, but we may have " +
-              "tasks for you soon. Please await further instructions from scaledhumanity@gmail.com."
-          : "We have enough users on this task. Hit the button below and you will be compensated appropriately " +
-              "for your time. If you are interested in participating in a future task, we launch HITs frequently. " +
-              "Thank you!"
-      ); //PK: come back to this
+        `We have enough users for this task. Please submit this task and you will be conpensated.<br>We will release more tasks like this soon and you can participate in the entire task to reach the full bonus.`
+      );
       return;
     }
-    if (users.byMturkId(socket.mturkId)) {
-      console.log("ERR: ADDING A USER ALREADY IN USERS");
-    }
-    let newUser = makeUser(userPool.byMturkId(socket.mturkId));
+    const newUser = makeUser(userPool.byMturkId(socket.mturkId));
     users.push(newUser);
-    console.log(
-      `${newUser.name} (${newUser.mturkId}) added to users.\nTotal users: ${
-        users.length
-      }`
-    );
+    console.log(`${newUser.name} (${newUser.mturkId}) added to users.`);
+
     //add friends for each user once the correct number of users is reached
-    let numUsersRequired = extraRoundOn
-      ? teamSize ** 2 + teamSize
-      : teamSize ** 2;
+    const numUsersRequired = teamSize ** 2;
     if (users.length === numUsersRequired) {
-      // if the last user was just added
-      console.log("USER POOL:\n" + userPool.map(u => u.mturkID));
-      console.log("MTURK IDS: ");
+      console.log(`USER POOL: ${userPool.map(u => u.mturkId)}`);
       users.forEach(user => {
         //mutate the friend list of each user
         user.friends = users.map(u => {
@@ -1132,23 +1114,20 @@ io.on("connection", socket => {
             };
           }
         });
-        console.log(user.mturkId);
       });
       // assign people to rooms/teams
       users.forEach(u => {
-        // console.log("People length:", people.length, ", People:", people)
         u.person = people.pop();
       });
+      const batchMturkIds = users.map(a => a.mturkId);
       // assigns hasBanged to new users
       if (assignQualifications && runningLive) {
-        const hasBangers = users.map(a => a.mturkId);
-        hasBangers.forEach(u => mturk.assignQuals(u, mturk.quals.hasBanged));
+        batchMturkIds.forEach(u => mturk.assignQuals(u, mturk.quals.hasBanged));
       }
       // remove willBang qualification from people who rolled over
       // remove people who rolled over from willBang database
-      if (usingWillBang) {
-        const hasBangers = users.map(a => a.mturkId);
-        hasBangers.forEach(u => {
+      if (usingWillBang && runningLive) {
+        batchMturkIds.forEach(u => {
           mturk.unassignQuals(
             u,
             mturk.quals.willBang,
@@ -1166,7 +1145,7 @@ io.on("connection", socket => {
       if (notifyUs) {
         mturk.notifyWorkers(
           notifyUsList,
-          `Rolled ${currentCondition} on ${taskURL}`,
+          `Rolled ${batchID} ${currentCondition} on ${taskURL}`,
           `Rolled over with: ${currentCondition} on port ${port} at ${taskURL}.`
         );
       }
@@ -1176,7 +1155,7 @@ io.on("connection", socket => {
 
     db.users.insert(newUser, err => {
       console.log(
-        err ? `Didn't store user: ${err}` : `Added ${newUser.name} to DB.`
+        err ? `Didn't store user: ${err}` : `Added ${newUser.mturkId} to DB.`
       );
     });
   });

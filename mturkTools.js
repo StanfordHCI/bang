@@ -262,18 +262,31 @@ const getHITURL = (hitId, callback = null) => {
 //
 // Returns an array of Active HITs.
 
-const workOnActiveHITs = callback => {
-  mturk.listHITs({ MaxResults: 100 }, (err, data) => {
-    if (err) {
-      console.log("Error: " + err.message);
-    } else {
-      if (typeof callback === "function") {
-        callback(
-          data.HITs.filter(h => h.HITStatus === "Assignable").map(h => h.HITId)
-        );
+const workOnActiveHITs = (
+  callback,
+  paginationToken = null,
+  passthrough = []
+) => {
+  mturk.listHITs(
+    { MaxResults: 100, NextToken: paginationToken },
+    (err, data) => {
+      if (err) {
+        console.log("Error: " + err.message);
+      } else {
+        passthrough = passthrough.concat(data.HITs);
+        if (data.NumResults === 100) {
+          workOnActiveHITs(callback, data.NextToken, passthrough);
+        } else {
+          if (typeof callback === "function")
+            callback(
+              passthrough
+                .filter(h => h.HITStatus === "Assignable")
+                .map(h => h.HITId)
+            );
+        }
       }
     }
-  });
+  );
 };
 
 // * listAssignments *
@@ -729,7 +742,7 @@ function launchBang(batchID, callback) {
   // Reposts every timeActive(x) number of minutes to keep HIT on top - stops reposting when enough people join
   setTimeout(() => {
     if (hitsLeft > 0 && !taskStarted) {
-      bangParameters.maxAssignments = hitsLeft;
+      bangParameters.MaxAssignments = hitsLeft;
       mturk.createHIT(bangParameters, (err, data) => {
         if (err) {
           console.log(err, err.stack);
@@ -835,10 +848,12 @@ const checkQualsRecursive = (
   });
 };
 
-// workOnActiveHITs(console.log);
-
-// unassignQuals(
-//   "AFZKP8TAXAUCR",
-//   quals.willBang,
-//   "You asked to be removed from our notification list."
-// );
+// Performs unsubscribe for mturk user.
+// Evoke with flag `--unsubscribe mturkID`
+if (args.unsubscribe) {
+  unassignQuals(
+    args.unsubscribe,
+    quals.willBang,
+    "You asked to be removed from our notification list."
+  );
+}

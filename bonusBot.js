@@ -4,7 +4,7 @@
 require("dotenv").config(); //Enables .env
 const fs = require("fs");
 const readline = require("readline"); //Used for setting token
-const { google } = require("googleapis");
+const { google } = require("googleapis"); //Used for accessing google drive
 const mturk = require("./mturkTools"); //Our Mturk API
 const parse = require("csv-parse"); //CSV parser
 const tokenFile = "token.json"; //Local token
@@ -13,7 +13,7 @@ const tokenFile = "token.json"; //Local token
 const bonusSheetID = "1IaXChzJI0sSxm2uWKrb8Do4HeP6LNSxoCqUyomNFRMQ";
 
 // The HIT id of the repay hit.
-const repayHITId = "3OWZNK3RYL458YRWPLQDTVVVY9PU2X";
+const repayHITId = "31J7RYECZL5V0NM6X3YYXPP7U361L0";
 
 // Logs into Google Account
 function authorize() {
@@ -69,7 +69,7 @@ function parseCSV(csvData) {
   });
 }
 
-// Merges two objects via a single shared key
+// Merges two arrays of objects via a single shared key
 function merge(Obj1, Obj2, key) {
   return Obj1.map(u => {
     try {
@@ -106,6 +106,16 @@ function getHITAssignments(HITId) {
   });
 }
 
+//Notifies Mark if there're any issues
+function notifyUsOfError(error) {
+  console.log(error);
+  mturk.notifyWorkers(
+    ["A19MTSLG2OYDLZ"],
+    `Bonusing script encountered an error`,
+    `${error}\n\n${error.stack}`
+  );
+}
+
 // Gets bonus sheet, converts sheet to JSON, gets HIT results, merges and executes bonus.
 authorize()
   .then(getBonusSheet)
@@ -116,15 +126,7 @@ authorize()
       // console.log(bonusable.map(u => u.WorkerId));
       mturk.payBonuses(bonusable);
       // Adds hasBanged qualification, to stop them baning
-      // mturk.assignQualificationToUsers(bonusable, mturk.quals.hasBanged);
+      mturk.assignQualificationToUsers(bonusable, mturk.quals.hasBanged);
     });
   })
-  .catch(e => {
-    //Notifies Mark if there're any issues
-    console.log(e);
-    mturk.notifyWorkers(
-      ["A19MTSLG2OYDLZ"],
-      `Bonusing script encountered an error`,
-      `${e}\n\n${e.stack}`
-    );
-  });
+  .catch(notifyUsOfError);

@@ -71,7 +71,7 @@ const title = `Get notified when our task launches. If you stay for the whole ta
 } per hour.`;
 const description = `Submit this HIT to be notified when our task launches. Space is limited.`;
 const assignmentDuration = 20;
-const reward = 0.1;
+const reward = 0.01;
 const autoApprovalDelay = 1;
 const keywords = "qualification, future task, notification";
 const maxAssignments = 500;
