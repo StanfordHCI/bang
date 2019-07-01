@@ -18,6 +18,8 @@ let UserSchema = new Schema({
   turkSubmitTo:  { type: String, },
   connected:  { type: Boolean, required: true, default: false },
   realNick: String,
+  realAnimal: String,
+  fakeAnimal: String,
   fakeNick: String,
   currentChat: {type: mongoose.Schema.Types.ObjectId, ref: 'Chat'},
   lastConnect: Date,

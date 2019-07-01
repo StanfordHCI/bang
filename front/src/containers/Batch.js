@@ -381,14 +381,16 @@ class Batch extends React.Component {
                     messageClass = 'chat__bubble chat_bot'
                     messageContent = (ReactHtmlParser(messageContent));
                   }
+
+                  let isSelf = message.user.toString() === user._id.toString();
                   
                   return (
                     <div className={messageClass} key={index + 1}>
                       <div className='chat__avatar mr-2'>
-                        <Avatar><span className="small">{message.user.toString() === user._id.toString() ? user.realNick : message.nickname}</span></Avatar>
+                        <Avatar src={"../img/" + (isSelf) ? user.realAnimal : message.animal + ".jpg"}> <span className="small">{(isSelf) ? user.realNick : message.nickname + ".jpg"}</span></Avatar>
                       </div>
                       <div className='chat__bubble-message-wrap'>
-                        <p className='chat__bubble-contact-name'>{message.user.toString() === user._id.toString() ? user.realNick : message.nickname}</p>
+                        <p className='chat__bubble-contact-name'>{(isSelf) ? user.realNick : message.nickname}</p>
                         <p className='chat__bubble-message'>{messageContent}</p>
                         <p className='chat__bubble-date'>{moment(message.time).format('LTS')}</p>
                       </div>
