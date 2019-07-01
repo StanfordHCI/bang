@@ -65,7 +65,7 @@ class MainWrapper extends PureComponent {
               </Link>
             </Container>
           </Navbar>}
-           <div className='container__wrap' style={{paddingTop: user.isAdmin ? '60px': '30px'}}>
+           <div className='container__wrap' style={{paddingTop: user && user.isAdmin ? '60px': '30px'}}>
              {this.props.children}
            </div>
         </div>}
