@@ -29,6 +29,7 @@ import PostSurveyForm from './PostSurveyForm'
 import {history} from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
 import ReactHtmlParser from "react-html-parser";
+import {Avatar} from'@material-ui/core';
 
 const MAX_LENGTH = 240;
 const botId = '100000000000000000000001'
@@ -383,6 +384,9 @@ class Batch extends React.Component {
                   
                   return (
                     <div className={messageClass} key={index + 1}>
+                      <div className='chat__avatar mr-2'>
+                        <Avatar><span className="small">{message.user.toString() === user._id.toString() ? user.realNick : message.nickname}</span></Avatar>
+                      </div>
                       <div className='chat__bubble-message-wrap'>
                         <p className='chat__bubble-contact-name'>{message.user.toString() === user._id.toString() ? user.realNick : message.nickname}</p>
                         <p className='chat__bubble-message'>{messageContent}</p>
