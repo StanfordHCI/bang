@@ -27,10 +27,12 @@ export const joinBatch = async function (data, socket, io) {
     if (socket.systemStatus === 'willbang' && batch.users.length < batch.teamSize ** 2 &&
       !batch.users.some(x => x.user.toString() === socket.userId.toString())) { //join to batch
       let nickname;
+      let adjective;
       let animal;
       while (!nickname) {
         animal = chooseOne(randomAnimal);
-        nickname = chooseOne(randomAdjective) + animal;
+        adjective = chooseOne(randomAdjective);
+        nickname = adjective + animal;
         batch.users.forEach(user => {
           if (user.nickname === nickname) {
             nickname = false;
@@ -42,7 +44,7 @@ export const joinBatch = async function (data, socket, io) {
       const prs = await Promise.all([
         Batch.findByIdAndUpdate(batch._id, { $addToSet: { users: {user: socket.userId, nickname: nickname, joinDate: new Date()}},  }, {new: true}),
         User.findByIdAndUpdate(socket.userId,
-          { $set: { batch: batch._id, realNick: nickname, realAnimal: animal, currentChat: batch.preChat} }, {new: true}).lean().exec()
+          { $set: { batch: batch._id, realNick: nickname, realAdj: adjective, realAnimal: animal, currentChat: batch.preChat} }, {new: true}).lean().exec()
       ])
       user = prs[1]
       batch = prs[0]
@@ -177,7 +179,7 @@ const startBatch = async function (batch, socket, io) {
       teams.forEach((team, index) => {
         team.chat = chats[index]._id;
         team.users.forEach(user => {
-          prsHelper.push(User.findByIdAndUpdate(user.user, {$set: {fakeNick: user.nickname, fakeAnimal: user.animal, currentChat: team.chat}}));
+          prsHelper.push(User.findByIdAndUpdate(user.user, {$set: {fakeNick: user.nickname, fakeAdj: user.adjective, fakeAnimal: user.animal, currentChat: team.chat}}));
           return user;
         })
         return team;
@@ -330,7 +332,7 @@ const generateTeams = (roundGen, users, roundNumber, oldNicks) => {
         if (!oldNicks.some(x => x === nickname)) {
           oldNicks.push(nickname);
           teamAnimals.push(animal);
-          teamUsers.push({user: users[team.users[i]]._id, nickname: nickname, animal: animal})
+          teamUsers.push({user: users[team.users[i]]._id, nickname: nickname, adjective: adj, animal: animal})
           break;
         }
       }
