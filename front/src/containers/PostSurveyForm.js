@@ -69,8 +69,8 @@ class PostSurveyForm extends React.Component {
                 <div className='form__panel'>
                   <div className='form__form-group'>
                     <label className='form__form-group-label'>
-                      <p>You met with the same partner in two of the previous four rounds.</p>
-                      <p>How do you think, in what two rounds you worked with the same people?</p>
+                      <p>You worked with the same team in two of the previous four rounds.</p>
+                      <p>In which two rounds do you think that you worked with the same people?</p>
                     </label>
                     <div className='form__form-group-field'>
                       <Field
