@@ -30,6 +30,26 @@ import {history} from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
 import ReactHtmlParser from "react-html-parser";
 import {Avatar} from'@material-ui/core';
+import SquirrelSrc from '../app/src/img/Squirrel.svg';
+import RhinoSrc from '../app/src/img/Rhino.svg';
+import HorseSrc from '../app/src/img/Horse.svg';
+import PigSrc from '../app/src/img/Pig.svg';
+import PandaSrc from '../app/src/img/Panda.svg';
+import MonkeySrc from '../app/src/img/Monkey.svg';
+import LionSrc from '../app/src/img/Lion.svg';
+import OrangutanSrc from '../app/src/img/Orangutan.svg';
+import GorillaSrc from '../app/src/img/Gorilla.svg';
+import HippoSrc from '../app/src/img/Hippo.svg';
+import RabbitSrc from '../app/src/img/Rabbit.svg';
+import WolfSrc from '../app/src/img/Wolf.svg';
+import GoatSrc from '../app/src/img/Goat.svg';
+import GiraffeSrc from '../app/src/img/Giraffe.svg';
+import DonkeySrc from '../app/src/img/Donkey.svg';
+import CowSrc from '../app/src/img/Cow.svg';
+import BearSrc from '../app/src/img/Bear.svg';
+import BisonSrc from '../app/src/img/Bison.svg';
+
+
 
 const MAX_LENGTH = 240;
 const botId = '100000000000000000000001'
@@ -335,6 +355,26 @@ class Batch extends React.Component {
       className: 'chat__field-input'
     };
 
+    const animalMap = new Map();
+    animalMap.set("Squirrel", <Squirrel />);
+    animalMap.set("Rhino", <Rhino />);
+    animalMap.set("Horse", <Horse />);
+    animalMap.set("Pig", <Pig />);
+    animalMap.set("Panda", <Panda />);
+    animalMap.set("Monkey", <Monkey />);
+    animalMap.set("Lion", <Lion />);
+    animalMap.set("Orangutan", <Orangutan />);
+    animalMap.set("Gorilla", <Gorilla />);
+    animalMap.set("Hippo", <Hippo />);
+    animalMap.set("Rabbit", <Rabbit />);
+    animalMap.set("Wolf", <Wolf />);
+    animalMap.set("Goat", <Goat />);
+    animalMap.set("Giraffe", <Giraffe />);
+    animalMap.set("Donkey", <Donkey />);
+    animalMap.set("Cow", <Cow />);
+    animalMap.set("Bear", <Bear />);
+    animalMap.set("Bison", <Bison />);
+
     return (
       <div className='chat'>
         <div className='chat__contact-list'>
@@ -387,7 +427,8 @@ class Batch extends React.Component {
                   return (
                     <div className={messageClass} key={index + 1}>
                       <div className='chat__avatar mr-2'>
-                        <Avatar src={"../img/" + (isSelf) ? user.realAnimal : message.animal + ".jpg"}> <span className="small">{(isSelf) ? user.realNick : message.nickname + ".jpg"}</span></Avatar>
+                        {/* <Avatar src={"../img/" + (isSelf) ? user.realAnimal : message.animal + ".svg"}> <span className="small">{(isSelf) ? user.realNick : message.nickname + ".jpg"}</span></Avatar> */}
+                        <Avatar src={animalMap.get((isSelf) ? user.realAnimal : message.animal)}> <span className="small">{(isSelf) ? user.realNick : message.nickname + ".jpg"}</span></Avatar>
                       </div>
                       <div className='chat__bubble-message-wrap'>
                         <p className='chat__bubble-contact-name'>{(isSelf) ? user.realNick : message.nickname}</p>
