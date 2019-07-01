@@ -18,38 +18,20 @@
  */
 
 import React from 'react';
-import {Card, CardBody, Col, Row, Container, Table} from 'reactstrap';
-import {connect} from "react-redux";
-import {findDOMNode} from 'react-dom'
-import {bindActionCreators} from "redux";
+import { Card, CardBody, Col, Row, Container, Table } from 'reactstrap';
+import { connect } from "react-redux";
+import { findDOMNode } from 'react-dom'
+import { bindActionCreators } from "redux";
 import moment from 'moment'
-import {loadBatch, sendMessage, submitSurvey} from 'Actions/batches'
+import { loadBatch, sendMessage, submitSurvey } from 'Actions/batches'
 import MidSurveyForm from './MidSurveyForm'
 import PostSurveyForm from './PostSurveyForm'
-import {history} from "../app/history";
+import { history } from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
 import ReactHtmlParser from "react-html-parser";
-import {Avatar} from'@material-ui/core';
-import SquirrelSrc from '../img/Squirrel.svg';
-import RhinoSrc from '../img/Rhino.svg';
-import HorseSrc from '../img/Horse.svg';
-import PigSrc from '../img/Pig.svg';
-import PandaSrc from '../img/Panda.svg';
-import MonkeySrc from '../img/Monkey.svg';
-import LionSrc from '../img/Lion.svg';
-import OrangutanSrc from '../img/Orangutan.svg';
-import GorillaSrc from '../img/Gorilla.svg';
-import HippoSrc from '../img/Hippo.svg';
-import RabbitSrc from '../img/Rabbit.svg';
-import WolfSrc from '../img/Wolf.svg';
-import GoatSrc from '../img/Goat.svg';
-import GiraffeSrc from '../img/Giraffe.svg';
-import DonkeySrc from '../img/Donkey.svg';
-import CowSrc from '../img/Cow.svg';
-import BearSrc from '../img/Bear.svg';
-import BisonSrc from '../img/Bison.svg';
-
-
+import { Avatar } from '@material-ui/core';
+import { animalMap, adjMap } from '../constants/nicknames';
+import Bot from '../img/Bot.svg';
 
 const MAX_LENGTH = 240;
 const botId = '100000000000000000000001'
@@ -126,16 +108,14 @@ class Batch extends React.Component {
 
   componentWillMount() {
     this.props.loadBatch();
-    window.addEventListener("beforeunload", (ev) =>
-    {
+    window.addEventListener("beforeunload", (ev) => {
       return ev.returnValue = `Are you sure you want to leave?`;
     });
   }
 
   componentWillUnmount() {
     clearInterval(this.roundTimer);
-    window.removeEventListener("beforeunload", (ev) =>
-    {
+    window.removeEventListener("beforeunload", (ev) => {
       return ev.returnValue = `Are you sure you want to leave?`;
     });
   }
@@ -146,35 +126,35 @@ class Batch extends React.Component {
         history.push('batch-end')
         return;
       }
-      this.setState({isReady: true, surveyDone: nextProps.batch.surveyDone})
+      this.setState({ isReady: true, surveyDone: nextProps.batch.surveyDone })
     }
     if (!this.state.timerIsReady && nextProps.batch && nextProps.currentRound && nextProps.batch.status !== 'waiting') {
       this.roundTimer = setInterval(() => this.timer(), 1000);
-      this.setState({timerIsReady: true})
+      this.setState({ timerIsReady: true })
     }
     /*if (this.props.batch && this.props.batch.status === 'active' && nextProps.batch.status === 'completed') {
       clearInterval(this.roundTimer);
     }*/
     if (this.props.currentRound && this.props.currentRound.status === 'active' && nextProps.currentRound.status === 'survey') {
-      this.setState({surveyDone: false})
+      this.setState({ surveyDone: false })
     }
     setTimeout(() => this.scrollDown(), 1)
   }
 
   timer() {
-    const {batch, currentRound} = this.props;
+    const { batch, currentRound } = this.props;
     if (batch && currentRound) {
       if (batch.status === 'active') {
         let endMoment = currentRound.status === 'active' ? batch.roundMinutes : batch.roundMinutes + batch.surveyMinutes
         let timeLeft = moment(currentRound.startTime).add(endMoment, 'minute');
         timeLeft = timeLeft.diff(moment(), 'seconds');
         if (timeLeft < 0) timeLeft = 0;
-        this.setState({timeLeft: timeLeft})
+        this.setState({ timeLeft: timeLeft })
       } else if (batch.status === 'completed') {
         let timeLeft = moment(currentRound.endTime).add(4, 'minute');
         timeLeft = timeLeft.diff(moment(), 'seconds');
         if (timeLeft < 0) timeLeft = 0;
-        this.setState({timeLeft: timeLeft})
+        this.setState({ timeLeft: timeLeft })
       }
     }
   }
@@ -191,15 +171,15 @@ class Batch extends React.Component {
 
   setAutocompltete = (names) => {
     if (names && names.length) {
-      this.setState({autoNames: names})
+      this.setState({ autoNames: names })
     } else {
-      this.setState({autoNames: []})
+      this.setState({ autoNames: [] })
     }
   }
 
   // called for every keydown
   handleSubmit = (e) => {
-    const {sendMessage, user, chat, batch, currentTeam, teamAnimals} = this.props;
+    const { sendMessage, user, chat, batch, currentTeam, teamAnimals } = this.props;
     if (batch.status === 'waiting') {
       if (e.keyCode === 13) {
         sendMessage({
@@ -207,7 +187,7 @@ class Batch extends React.Component {
           nickname: user.realNick,
           chat: chat._id
         })
-        this.setState({message: ''});
+        this.setState({ message: '' });
       }
       return;
     }
@@ -268,7 +248,7 @@ class Batch extends React.Component {
 
     if (e.keyCode === 13) {
       if (batch.maskType === 'masked') newMessage = newMessage.replace(new RegExp(user.realNick, "ig"), user.fakeNick)
-      this.setState({message: '', autoNames: []});
+      this.setState({ message: '', autoNames: [] });
       sendMessage({
         message: newMessage,
         nickname: batch.status === 'active' && batch.maskType === 'masked' ? user.fakeNick : user.realNick,
@@ -276,15 +256,15 @@ class Batch extends React.Component {
       })
     }
     if (e.keyCode === 32) {
-      this.setState({message: newMessage, autoNames: []});
+      this.setState({ message: newMessage, autoNames: [] });
     }
   }
 
   // used for chat message onchange
   handleType = (event) => {
-    const {currentTeam, teamAnimals, batch} = this.props;
+    const { currentTeam, teamAnimals, batch } = this.props;
     if (batch.status === 'waiting') {
-      this.setState({message: event.target.value})
+      this.setState({ message: event.target.value })
       return;
     }
     const message = event.target.value;
@@ -330,7 +310,7 @@ class Batch extends React.Component {
       }
     }
 
-    this.setState({message: newMessage})
+    this.setState({ message: newMessage })
   }
 
 
@@ -342,11 +322,11 @@ class Batch extends React.Component {
     } else {
       newMessage = name;
     }
-    this.setState({message: newMessage, autoNames: []})
+    this.setState({ message: newMessage, autoNames: [] })
   }
 
   renderChat() {
-    const {sendMessage, user, chat, batch} = this.props;
+    const { sendMessage, user, chat, batch } = this.props;
     const inputProps = {
       placeholder: 'type here...',
       value: this.state.message,
@@ -355,25 +335,7 @@ class Batch extends React.Component {
       className: 'chat__field-input'
     };
 
-    const animalMap = new Map();
-    animalMap.set("Squirrel", SquirrelSrc);
-    animalMap.set("Rhino", RhinoSrc);
-    animalMap.set("Horse", HorseSrc);
-    animalMap.set("Pig", PigSrc);
-    animalMap.set("Panda", PandaSrc);
-    animalMap.set("Monkey", MonkeySrc);
-    animalMap.set("Lion", LionSrc);
-    animalMap.set("Orangutan", OrangutanSrc);
-    animalMap.set("Gorilla", GorillaSrc);
-    animalMap.set("Hippo", HippoSrc);
-    animalMap.set("Rabbit", RabbitSrc);
-    animalMap.set("Wolf", WolfSrc);
-    animalMap.set("Goat", GoatSrc);
-    animalMap.set("Giraffe", GiraffeSrc);
-    animalMap.set("Donkey", DonkeySrc);
-    animalMap.set("Cow", CowSrc);
-    animalMap.set("Bear", BearSrc);
-    animalMap.set("Bison", BisonSrc);
+
 
     return (
       <div className='chat'>
@@ -381,34 +343,34 @@ class Batch extends React.Component {
           <div className='chat__contacts'>
             <Table className='table table--bordered table--head-accent'>
               <thead>
-              <tr>
-                <th>members</th>
-              </tr>
+                <tr>
+                  <th>members</th>
+                </tr>
               </thead>
               <tbody>
-              {chat.members.map((member) => {
-                return (member._id.toString() === user._id.toString()) ?
-                  <tr key={member._id}>
-                    <td>
-                      <div className='chat__bubble-contact-name'>
-                        {member.realNick + ' (you)'}
-                      </div>
-                    </td>
-                  </tr> :
-                  <tr key={member._id}
-                      onClick={() => this.setState({message: this.state.message + ' ' + (batch.maskType === 'masked' ? member.fakeNick : member.realNick)})}>
-                    <td>
-                      <div className='chat__bubble-contact-name'>
-                        {batch.maskType === 'masked' ? member.fakeNick : member.realNick}
-                      </div>
-                    </td>
-                  </tr>
-              })}
+                {chat.members.map((member) => {
+                  return (member._id.toString() === user._id.toString()) ?
+                    <tr key={member._id}>
+                      <td>
+                        <div className='chat__bubble-contact-name'>
+                          {member.realNick + ' (you)'}
+                        </div>
+                      </td>
+                    </tr> :
+                    <tr key={member._id}
+                      onClick={() => this.setState({ message: this.state.message + ' ' + (batch.maskType === 'masked' ? member.fakeNick : member.realNick) })}>
+                      <td>
+                        <div className='chat__bubble-contact-name'>
+                          {batch.maskType === 'masked' ? member.fakeNick : member.realNick}
+                        </div>
+                      </td>
+                    </tr>
+                })}
               </tbody>
             </Table>
           </div>
         </div>
-        <div className='chat__dialog' style={{marginLeft: 10}}>
+        <div className='chat__dialog' style={{ marginLeft: 10 }}>
           <div className="chat__scroll" ref="chatScroll">
             <div className='chat__dialog-messages-wrap'>
               <div className='chat__dialog-messages'>
@@ -423,17 +385,36 @@ class Batch extends React.Component {
                   }
 
                   let isSelf = message.user.toString() === user._id.toString();
-                  
+
                   return (
                     <div className={messageClass} key={index + 1}>
-                      <div className='chat__avatar mr-2'>
-                        {/* <Avatar src={"../img/" + (isSelf) ? user.realAnimal : message.animal + ".svg"}> <span className="small">{(isSelf) ? user.realNick : message.nickname + ".jpg"}</span></Avatar> */}
-                        <Avatar src={animalMap.get((isSelf) ? user.realAnimal : message.animal)}> <span className="small">{(isSelf) ? user.realNick : message.nickname + ".jpg"}</span></Avatar>
+                      <div className="chat__avatar mr-2">
+                        {(message.user.toString() === botId) ?
+                          <Avatar
+                            size={{ width: "auto" }}
+                            src={Bot}
+                          />
+                          : 
+                          <Avatar
+                            style={{
+                              border: "3px solid" + adjMap.get(isSelf ? user.realAdj : message.adj)
+                            }}
+                            imgProps={{ style: { padding: "5px", background: "white" } }}
+                            size={{ width: "auto" }}
+                            src={animalMap.get(isSelf ? user.realAnimal : message.animal)}
+                          >
+                            <span className="small">
+                              {isSelf ? user.realNick : message.nickname + ".jpg"}
+                            </span>
+                          </Avatar>
+                        }
                       </div>
-                      <div className='chat__bubble-message-wrap'>
-                        <p className='chat__bubble-contact-name'>{(isSelf) ? user.realNick : message.nickname}</p>
-                        <p className='chat__bubble-message'>{messageContent}</p>
-                        <p className='chat__bubble-date'>{moment(message.time).format('LTS')}</p>
+                      <div className="chat__bubble-message-wrap">
+                        <p className="chat__bubble-contact-name">
+                          {isSelf ? user.realNick : message.nickname}
+                        </p>
+                        <p className="chat__bubble-message">{messageContent}</p>
+                        <p className="chat__bubble-date">{moment(message.time).format("LTS")}</p>
                       </div>
                     </div>
                   )
@@ -441,7 +422,7 @@ class Batch extends React.Component {
               </div>
             </div>
           </div>
-          <div className='chat__text-field' style={{flexDirection: 'column'}}>
+          <div className='chat__text-field' style={{ flexDirection: 'column' }}>
             <input
               className='chat__field-input'
               value={this.state.message}
@@ -450,18 +431,18 @@ class Batch extends React.Component {
               onKeyDown={this.handleSubmit}
             />
             {this.state.autoNames.length > 0 &&
-            <div className="autocompl">
-              {this.state.autoNames.map(item => {
+              <div className="autocompl">
+                {this.state.autoNames.map(item => {
 
-                return (<div onClick={() => this.handleChooseName(item)}
-                  className="autocompl-row">{item}
+                  return (<div onClick={() => this.handleChooseName(item)}
+                    className="autocompl-row">{item}
                   </div>)
-              })}
-            </div>
+                })}
+              </div>
             }
           </div>
           {this.state.message.length > MAX_LENGTH &&
-          <p className='chat__error'>Message is too long (max length: {MAX_LENGTH} symbols)</p>}
+            <p className='chat__error'>Message is too long (max length: {MAX_LENGTH} symbols)</p>}
         </div>
       </div>
     )
@@ -480,13 +461,13 @@ class Batch extends React.Component {
     return (
       <div>
         {!this.state.surveyDone && <MidSurveyForm
-          initialValues={{questions: task.survey.map(x => {return {result: ''}})}}
+          initialValues={{ questions: task.survey.map(x => { return { result: '' } }) }}
           questions={task.survey}
           onSubmit={this.submitSurvey}
         />}
         {this.state.surveyDone && <div>
           <p>Thanks for completing the survey for this round!</p>
-          <p style={{marginBottom: '0px'}}>There are {this.props.batch.numRounds - this.props.batch.currentRound} more round(s) remaining, but we are waiting for your teammates to complete the surveys. Hang tight!</p>
+          <p style={{ marginBottom: '0px' }}>There are {this.props.batch.numRounds - this.props.batch.currentRound} more round(s) remaining, but we are waiting for your teammates to complete the surveys. Hang tight!</p>
         </div>}
       </div>)
   }
@@ -504,7 +485,7 @@ class Batch extends React.Component {
       })
     }
     this.props.submitSurvey(data)
-    this.setState({surveyDone: true})
+    this.setState({ surveyDone: true })
     if (batch.status === 'completed') {
       history.push('batch-end')
     }
@@ -527,10 +508,10 @@ class Batch extends React.Component {
       {round.status === 'active' && this.renderRound()}
       {round.status === 'survey' && this.renderMidSurvey()}
     </div>) : (
-      <div>
-        <h5 className='bold-text'>Wait for round start</h5>
-      </div>
-    )
+        <div>
+          <h5 className='bold-text'>Wait for round start</h5>
+        </div>
+      )
   }
 
   renderCompletedStage() {
@@ -548,7 +529,7 @@ class Batch extends React.Component {
 
 
   render() {
-    const {batch} = this.props;
+    const { batch } = this.props;
 
     return batch ? (
       <Container>
@@ -573,11 +554,11 @@ function mapStateToProps(state) {
   const batch = state.batch.batch;
   const round = batch && batch.rounds ? batch.rounds[batch.currentRound - 1] : null;
   let chat = state.batch.chat;
-  if (batch && batch.status ==='waiting') {
+  if (batch && batch.status === 'waiting') {
     chat.members = chat.members.filter(x => x._id.toString() === state.app.user._id.toString())
     chat.messages = chat.messages.filter(x => x.user.toString() === state.app.user._id.toString() || x.user.toString() === '100000000000000000000001')
   }
-  if (batch && batch.status ==='active' && batch.maskType === 'masked' && !!state.app.user.fakeNick && typeof(state.app.user.fakeNick) === 'string') {
+  if (batch && batch.status === 'active' && batch.maskType === 'masked' && !!state.app.user.fakeNick && typeof (state.app.user.fakeNick) === 'string') {
     chat.messages.forEach(message => {
       let checkedMessage = message.message || '';
       checkedMessage = checkedMessage.replace(new RegExp(state.app.user.fakeNick, "ig"), state.app.user.realNick);
