@@ -30,6 +30,8 @@ class BatchEnd extends React.PureComponent {
               <CardBody>
                 <p>Thank you for your work. We will pay you shortly for your work based on $12/hour pay rate.</p>
                 <p>If you faced any problems, please contact us on our HIT page.</p>
+                <hr />
+                <span><a href="https://www.freepik.com/free-photos-vectors/design">Vectors designed by katemangostar - www.freepik.com</a></span>
               </CardBody>
             </Card>
           </Col>

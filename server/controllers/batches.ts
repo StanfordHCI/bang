@@ -10,7 +10,7 @@ import {clearRoom, expireHIT, assignQual, payBonus, chooseOne, runningLive, noti
 import {errorHandler} from '../services/common'
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
-const randomAnimal = "Bison Eagle Pony Moose Deer Duck Rabbit Spider Wolf Lion Snake Shark Bird Bear Fish Horse Badger Marten Otter Lynx".split(" ");
+const randomAnimal = "Squirrel Rhino Horse Pig Panda Monkey Lion Orangutan Gorilla Hippo Rabbit Wolf Goat Giraffe Donkey Cow Bear Bison".split(" ");
 const randomAdjective = "new small young little likely nice cultured snappy spry conventional".split(" ");
 
 
@@ -27,8 +27,10 @@ export const joinBatch = async function (data, socket, io) {
     if (socket.systemStatus === 'willbang' && batch.users.length < batch.teamSize ** 2 &&
       !batch.users.some(x => x.user.toString() === socket.userId.toString())) { //join to batch
       let nickname;
+      let animal;
       while (!nickname) {
-        nickname = chooseOne(randomAdjective) + chooseOne(randomAnimal);
+        animal = chooseOne(randomAnimal);
+        nickname = chooseOne(randomAdjective) + animal;
         batch.users.forEach(user => {
           if (user.nickname === nickname) {
             nickname = false;
@@ -40,7 +42,7 @@ export const joinBatch = async function (data, socket, io) {
       const prs = await Promise.all([
         Batch.findByIdAndUpdate(batch._id, { $addToSet: { users: {user: socket.userId, nickname: nickname, joinDate: new Date()}},  }, {new: true}),
         User.findByIdAndUpdate(socket.userId,
-          { $set: { batch: batch._id, realNick: nickname, currentChat: batch.preChat} }, {new: true}).lean().exec()
+          { $set: { batch: batch._id, realNick: nickname, realAnimal: animal, currentChat: batch.preChat} }, {new: true}).lean().exec()
       ])
       user = prs[1]
       batch = prs[0]
@@ -175,7 +177,7 @@ const startBatch = async function (batch, socket, io) {
       teams.forEach((team, index) => {
         team.chat = chats[index]._id;
         team.users.forEach(user => {
-          prsHelper.push(User.findByIdAndUpdate(user.user, {$set: {fakeNick: user.nickname, currentChat: team.chat}}));
+          prsHelper.push(User.findByIdAndUpdate(user.user, {$set: {fakeNick: user.nickname, fakeAnimal: user.animal, currentChat: team.chat}}));
           return user;
         })
         return team;
@@ -328,7 +330,7 @@ const generateTeams = (roundGen, users, roundNumber, oldNicks) => {
         if (!oldNicks.some(x => x === nickname)) {
           oldNicks.push(nickname);
           teamAnimals.push(animal);
-          teamUsers.push({user: users[team.users[i]]._id, nickname: nickname})
+          teamUsers.push({user: users[team.users[i]]._id, nickname: nickname, animal: animal})
           break;
         }
       }
