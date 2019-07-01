@@ -30,24 +30,24 @@ import {history} from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
 import ReactHtmlParser from "react-html-parser";
 import {Avatar} from'@material-ui/core';
-import SquirrelSrc from '../app/src/img/Squirrel.svg';
-import RhinoSrc from '../app/src/img/Rhino.svg';
-import HorseSrc from '../app/src/img/Horse.svg';
-import PigSrc from '../app/src/img/Pig.svg';
-import PandaSrc from '../app/src/img/Panda.svg';
-import MonkeySrc from '../app/src/img/Monkey.svg';
-import LionSrc from '../app/src/img/Lion.svg';
-import OrangutanSrc from '../app/src/img/Orangutan.svg';
-import GorillaSrc from '../app/src/img/Gorilla.svg';
-import HippoSrc from '../app/src/img/Hippo.svg';
-import RabbitSrc from '../app/src/img/Rabbit.svg';
-import WolfSrc from '../app/src/img/Wolf.svg';
-import GoatSrc from '../app/src/img/Goat.svg';
-import GiraffeSrc from '../app/src/img/Giraffe.svg';
-import DonkeySrc from '../app/src/img/Donkey.svg';
-import CowSrc from '../app/src/img/Cow.svg';
-import BearSrc from '../app/src/img/Bear.svg';
-import BisonSrc from '../app/src/img/Bison.svg';
+import SquirrelSrc from '../img/Squirrel.svg';
+import RhinoSrc from '../img/Rhino.svg';
+import HorseSrc from '../img/Horse.svg';
+import PigSrc from '../img/Pig.svg';
+import PandaSrc from '../img/Panda.svg';
+import MonkeySrc from '../img/Monkey.svg';
+import LionSrc from '../img/Lion.svg';
+import OrangutanSrc from '../img/Orangutan.svg';
+import GorillaSrc from '../img/Gorilla.svg';
+import HippoSrc from '../img/Hippo.svg';
+import RabbitSrc from '../img/Rabbit.svg';
+import WolfSrc from '../img/Wolf.svg';
+import GoatSrc from '../img/Goat.svg';
+import GiraffeSrc from '../img/Giraffe.svg';
+import DonkeySrc from '../img/Donkey.svg';
+import CowSrc from '../img/Cow.svg';
+import BearSrc from '../img/Bear.svg';
+import BisonSrc from '../img/Bison.svg';
 
 
 
@@ -356,24 +356,24 @@ class Batch extends React.Component {
     };
 
     const animalMap = new Map();
-    animalMap.set("Squirrel", <Squirrel />);
-    animalMap.set("Rhino", <Rhino />);
-    animalMap.set("Horse", <Horse />);
-    animalMap.set("Pig", <Pig />);
-    animalMap.set("Panda", <Panda />);
-    animalMap.set("Monkey", <Monkey />);
-    animalMap.set("Lion", <Lion />);
-    animalMap.set("Orangutan", <Orangutan />);
-    animalMap.set("Gorilla", <Gorilla />);
-    animalMap.set("Hippo", <Hippo />);
-    animalMap.set("Rabbit", <Rabbit />);
-    animalMap.set("Wolf", <Wolf />);
-    animalMap.set("Goat", <Goat />);
-    animalMap.set("Giraffe", <Giraffe />);
-    animalMap.set("Donkey", <Donkey />);
-    animalMap.set("Cow", <Cow />);
-    animalMap.set("Bear", <Bear />);
-    animalMap.set("Bison", <Bison />);
+    animalMap.set("Squirrel", SquirrelSrc);
+    animalMap.set("Rhino", RhinoSrc);
+    animalMap.set("Horse", HorseSrc);
+    animalMap.set("Pig", PigSrc);
+    animalMap.set("Panda", PandaSrc);
+    animalMap.set("Monkey", MonkeySrc);
+    animalMap.set("Lion", LionSrc);
+    animalMap.set("Orangutan", OrangutanSrc);
+    animalMap.set("Gorilla", GorillaSrc);
+    animalMap.set("Hippo", HippoSrc);
+    animalMap.set("Rabbit", RabbitSrc);
+    animalMap.set("Wolf", WolfSrc);
+    animalMap.set("Goat", GoatSrc);
+    animalMap.set("Giraffe", GiraffeSrc);
+    animalMap.set("Donkey", DonkeySrc);
+    animalMap.set("Cow", CowSrc);
+    animalMap.set("Bear", BearSrc);
+    animalMap.set("Bison", BisonSrc);
 
     return (
       <div className='chat'>
