@@ -33,6 +33,10 @@ export const submitSurvey = (data) => {
   }
 }
 
+export const refreshActiveUsers = () => {
+  socket.emit('refresh-active-users', {});
+}
+
 export const loadBatch = () => {
   return function (dispatch, getState) {
     const user = getState().app.user;

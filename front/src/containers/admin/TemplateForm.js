@@ -16,6 +16,7 @@ import {Field, FieldArray, reduxForm, formValueSelector, change} from 'redux-for
 import {bindActionCreators} from "redux";
 import {renderField, renderTextArea} from 'Components/form/Text'
 import renderSelectField from 'Components/form/Select'
+import renderMultiSelectField from 'Components/form/MultiSelect'
 import {generateComb} from '../../app/utils'
 import Select from "react-select";
 
@@ -49,14 +50,94 @@ const generateRounds = (numRounds, teamSize, dispatch) => {
   dispatch(change('TemplateForm', 'roundGen', rounds))
 }*/
 
-const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
+const renderSurvey = ({fields, meta: {touched, error, warning}, task}) => {
+  return (<div style={{width: '100%', marginTop: '20px', borderBottom: '2px solid grey'}}>
+    {
+      fields.map((question, index) => {
+        return (
+          <Row key={index} >
+            <Col>
+              <div className='form__form-group'>
+                <label className='form__form-group-label'>question:</label>
+                <div className='form__form-group-field'>
+                  <Field
+                    name={`${question}.question`}
+                    component={renderField}
+                    type='text'
+                  />
+                </div>
+                <label className='form__form-group-label'>answer type:</label>
+                <div className='form__form-group-field'>
+                  <Field
+                    name={`${question}.type`}
+                    component={renderSelectField}
+                    type='text'
+                    options={[{value: 'text', label: 'text'}, {value: 'select', label: 'select'}]}
+                  />
+                </div>
+              </div>
+              {task && task.survey[index] && task.survey[index].type === 'select' &&
+              <FieldArray
+                name={`${question}.options`}
+                component={renderQuestionOptions}
+                rerenderOnEveryChange
+              />
+              }
+            </Col>
+            <Col>
+              <div className='centered-and-flexed'>
+                <Button type="button" size="sm"
+                        onClick={() => fields.splice(index, 1)}>delete question</Button>
+              </div>
+            </Col>
+          </Row>)
+      })}
+     <Row className="centered-and-flexed" noGutters>
+      <Button type="button" size="sm" onClick={() => fields.push({})}>
+        <i className="fa fa-plus"/>add question
+      </Button>
+    </Row>
+  </div>)
+}
+
+const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRounds}) => {
   return (<div style={{width: '100%'}}>
     {
       fields.map((step, index) => {
         return (
-          <Row>
+          <Row key={index}>
+            <div className='form__form-group' style={{maxWidth: '300px', marginLeft: '50px'}}>
+              <label className='form__form-group-label' style={{maxWidth: '50px'}}>option: </label>
+              <div className='form__form-group-field'>
+                <Field
+                  name={`${step}.option`}
+                  component={renderField}
+                  type='text'
+                />
+              </div>
+            </div>
+            <div className='centered-and-flexed'>
+              <Button type="button" size="sm"
+                      onClick={() => fields.splice(index, 1)}>delete option</Button>
+            </div>
+          </Row>)
+      })}
+    <Row className="centered-and-flexed" noGutters>
+      <Button type="button" size="sm" onClick={() => fields.push({})}>
+        <i className="fa fa-plus"/>add option
+      </Button>
+    </Row>
+  </div>)
+}
+
+const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
+  return (<div style={{width: '100%', borderBottom: '1px solid grey'}}>
+    {
+      fields.map((step, index) => {
+        return (
+          <Row key={index}>
             <Col>
-              <div key={index} className='form__form-group'>
+              <div className='form__form-group'>
                 <label className='form__form-group-label'>step time:</label>
                 <div className='form__form-group-field'>
                   <Field
@@ -69,6 +150,7 @@ const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
                 <div className='form__form-group-field'>
                   <Field
                     name={`${step}.message`}
+                    type="text"
                     component={renderTextArea}
                   />
                 </div>
@@ -77,20 +159,20 @@ const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
             <Col>
               <div className='centered-and-flexed'>
                 <Button type="button" size="sm"
-                        onClick={() => fields.splice(index, 1)}>Delete step</Button>
+                        onClick={() => fields.splice(index, 1)}>delete step</Button>
               </div>
             </Col>
           </Row>)
       })}
-     <Row className="centered-and-flexed" noGutters>
+    <Row className="centered-and-flexed" noGutters>
       <Button type="button" size="sm" onClick={() => fields.push({})}>
-        <i className="fa fa-plus"/>Add step
+        <i className="fa fa-plus"/>add step
       </Button>
     </Row>
   </div>)
 }
 
-const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneTask}) => {
+const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneTask, taskArray}) => {
   let tasks = [], options = [];
   for (let i = 0; i < numRounds; i++) {
     options.push({value: i, label: 'task ' + (i + 1)})
@@ -115,6 +197,7 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
           <Field
             name={`tasks[${i}].message`}
             component={renderTextArea}
+            type="text"
           />
         </div>
         <FieldArray
@@ -122,7 +205,12 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
           component={renderSteps}
           rerenderOnEveryChange
         />
-
+        <FieldArray
+          name={`tasks[${i}].survey`}
+          component={renderSurvey}
+          rerenderOnEveryChange
+          task={taskArray && taskArray[i]}
+        />
       </div>
     )
   }
@@ -222,14 +310,14 @@ class TemplateForm extends React.Component {
   }
 
   render() {
-    const {invalid, numRounds, teamSize, roundGen, dispatch, pristine, isAdd} = this.props;
+    const {invalid, numRounds, teamSize, roundGen, dispatch, pristine, isAdd, tasks} = this.props;
 
     return (<div>
         <form className='form form--horizontal' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
         <Container>
           <Row>
             <Col><div className='form__panel'>
-            <div className='form__panel-body'>
+            <div className='form__panel-body' style={{borderBottom: '2px solid grey'}}>
               <div className='form__form-group'>
                 <label className='form__form-group-label'>Name:</label>
                 <div className='form__form-group-field'>
@@ -299,6 +387,7 @@ class TemplateForm extends React.Component {
               rerenderOnEveryChange
               numRounds={numRounds}
               cloneTask={this.cloneTask}
+              taskArray={tasks}
             />
               {/*<FieldArray
                 name="roundGen"
@@ -361,11 +450,13 @@ const validate = (values, props) => {
   }
 
   values.tasks && values.tasks.forEach((task, i) => {
-    errors.tasks[i] = {steps: []}; let timeSum = 0
+    errors.tasks[i] = {steps: [], survey: []}; let timeSum = 0
     if (!task.message) {
       errors.tasks[i].message = 'required';
     } else  if (!task.steps || !task.steps.length) {
       errors.tasks[i].message = 'add steps please';
+    } else if (!task.survey || !task.survey.length) {
+      errors.tasks[i].message = 'add survey please';
     }
 
     if (task.steps) for (let j = 0; j < task.steps.length; j++) {
@@ -387,6 +478,19 @@ const validate = (values, props) => {
         }
       }
     }
+    if (task.survey) for (let j = 0; j < task.survey.length; j++){
+      const survey = task.survey[j];
+      errors.tasks[i].survey[j] = {};
+      if (!survey.question) {
+        errors.tasks[i].survey[j].question = 'required';
+      }
+      if (!survey.type) {
+        errors.tasks[i].survey[j].type = 'required';
+      } else if (survey.type === 'select' && (!survey.options || survey.options.length < 2 )) {
+        errors.tasks[i].survey[j].type = 'add options please';
+      }
+
+    }
 
   })
 
@@ -396,6 +500,7 @@ const validate = (values, props) => {
 TemplateForm = reduxForm({
   form: 'TemplateForm',
   enableReinitialize: true,
+  touchOnChange: true,
   validate,
 })(TemplateForm);
 

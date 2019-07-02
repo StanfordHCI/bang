@@ -16,7 +16,7 @@ import {Card, CardBody, Col, Row, Container, Button} from 'reactstrap';
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 import {socket} from 'Actions/app'
-import {joinBatch} from 'Actions/batches'
+import {joinBatch, refreshActiveUsers} from 'Actions/batches'
 
 class Waiting extends React.Component {
 
@@ -24,37 +24,43 @@ class Waiting extends React.Component {
     super(props);
     this.state = {
       activeCounter: 0,
-      batchReady: false
+      limit: 999,
+      batchReady: false,
+      isReady: false
     };
     this.refresher = this.refresher.bind(this)
     socket.on('clients-active', this.refresher)
   }
 
   componentDidMount() {
+    refreshActiveUsers()
   }
 
   refresher(data) {
-    this.setState({activeCounter: data.activeCounter, batchReady: data.batchReady});
+    this.setState({activeCounter: data.activeCounter, batchReady: data.batchReady, limit: data.limit, isReady: true});
   }
 
   render() {
-    const {user, limit, joinBatch} = this.props;
+    const {user, joinBatch} = this.props;
+    const limit = this.state.limit;
 
     return (
       <Container>
         <Row>
           <Col md={12} lg={12} xl={12}>
             <Card>
-              <CardBody>
+              {this.state.isReady && <CardBody>
                 <div className='card__title'>
                   <h5 className='bold-text'>Waiting room</h5>
                 </div>
                 {this.state.batchReady && <div>
-                  <p>Waiting on <b>{limit - this.state.activeCounter > 0 ? limit - this.state.activeCounter : 0} </b>
-                  more MTurk users to accept the task.</p>
-                  <p>Only wait if you can complete the entire task. If you leave early, you will not be paid. Provided you stay for the whole task, we will bonus to a rate of approximately $12 per hour.</p>
-                  <p>Once enough people have accepted, you will be able to begin the task.</p>
-                  <p>If there are never enough people we will automatically submit and accept for the base rate.</p>
+                  <p>Hello! Thanks for accepting our task.</p>
+                  <p>We are currently waiting on <b>{limit - this.state.activeCounter > 0 ? limit - this.state.activeCounter : 0} </b>
+                    more MTurk users to accept the task.</p>
+                  <p>The task will only begin once {limit} users accept the task.</p>
+                  <p>Once enough users have joined the waitroom, a "Join Batch" button will appear. You will be redirected to a chatroom that ensures that other MTurkers are present and not away from keyboard. You will only remain in the chatroom until everyone has clicked the button to join the batch.</p>
+                  <p>After everyone joins the batch, the task will initiate! IMPORTANT: If you intend to complete the task, please do not leave because it will mean other MTurkers will have to wait longer for the task.</p>
+                  <p>Provided you stay for the whole task, we will bonus to a rate of approximately $12 per hour. If there are never enough people, we will automatically submit and accept for the base rate.</p>
                   {limit <= this.state.activeCounter &&
                     <Button className="btn btn-primary" onClick={() => joinBatch()}>Join Batch</Button>
                   }
@@ -62,7 +68,7 @@ class Waiting extends React.Component {
                 {!this.state.batchReady && <div>
                   <p>We don't have an experiment right now. Join us later please. We will notify you.</p>
                 </div>}
-              </CardBody>
+              </CardBody>}
             </Card>
           </Col>
         </Row>
@@ -75,7 +81,6 @@ class Waiting extends React.Component {
 function mapStateToProps(state) {
   return {
     user: state.app.user,
-    limit: state.app.teamSize ** 2
   }
 }
 

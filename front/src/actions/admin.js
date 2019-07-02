@@ -136,10 +136,20 @@ export function chooseBatch(batch) {
   };
 }
 
-export function clearBatches(batch) {
+export function clearBatches() {
   return (dispatch) => {
     dispatch({
-      type: CLEAR_BATCHES,
+      type: BATCHES_FETCHED,
+      data: []
+    });
+  };
+}
+
+export function clearUsers() {
+  return (dispatch) => {
+    dispatch({
+      type: USERS_FETCHED,
+      data: []
     });
   };
 }
@@ -256,7 +266,7 @@ export function updateTemplate(template) {
     return axios({
       method: 'put',
       url: 'admin/templates/',
-      data: template,
+      data: generateSelectOptions(template),
     })
       .then((response) => {
         dispatch(setLoading(false));
@@ -274,12 +284,13 @@ export function updateTemplate(template) {
 }
 
 export function addTemplate(template) {
+
   return dispatch => {
     dispatch(setLoading(true));
     return axios({
       method: 'post',
       url: 'admin/templates/',
-      data: template,
+      data: generateSelectOptions(template),
     })
       .then((response) => {
         dispatch(setLoading(false));
@@ -396,6 +407,19 @@ export function clearTemplates(template) {
       type: CLEAR_TEMPLATES,
     });
   };
+}
+
+const generateSelectOptions = (template) => {
+  template.tasks.forEach(task => {
+    task.survey.forEach(survey => {
+      if (survey.type === 'select') {
+        survey.selectOptions = survey.options.map((x, index) => {return {value: index, label: x.option}})
+      }
+      return survey;
+    })
+    return task;
+  })
+  return template
 }
 
 

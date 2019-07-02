@@ -12,12 +12,11 @@ import {Card, CardBody, Col, Row, Container, Button, ButtonToolbar} from 'reacts
 import {connect} from "react-redux";
 import {addBatch, loadTemplateList} from "Actions/admin";
 import {bindActionCreators} from "redux";
-import BatchForm from './BatchForm'
 import moment from 'moment'
 import Select from 'react-select';
 import {Field} from "redux-form";
 
-class BatchInfo extends React.Component {
+class AddBatch extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -113,4 +112,4 @@ function mapDispatchToProps(dispatch) {
   }, dispatch);
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(BatchInfo);
+export default connect(mapStateToProps, mapDispatchToProps)(AddBatch);

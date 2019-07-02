@@ -34,14 +34,14 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, questions, re
   for (let i = 0; i < questions.length; i++) {
     tasks.push(
       <div key={i} className='form__form-group'>
-        <label className='form__form-group-label'>{questions[i]}</label>
+        <label className='form__form-group-label'>{questions[i].question}</label>
         <div className='form__form-group-field' style={{maxWidth: '200px'}}>
           <Field
             name={`questions[${i}].result`}
-            component={renderSelectField}
-            type='text'
+            component={questions[i].type ==='select' ? renderSelectField : renderField}
+            type={questions[i].type}
             disabled={readOnly}
-            options={qOptions}
+            options={questions[i].type ==='select' ? questions[i].selectOptions : []}
           />
         </div>
       </div>
@@ -97,7 +97,7 @@ const validate = (values, props) => {
   console.log(values)
   const errors = {questions: []};
   if (values.questions) for (let i = 0; i < values.questions.length; i++) {
-    if (!values.questions[i].result) {
+    if (!values.questions[i].result && values.questions[i].result !== 0) {
       errors.questions[i] = {result: 'required'}
     }
   }
