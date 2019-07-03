@@ -64,6 +64,7 @@
     "react-router-dom": "^4.3.1",
     "react-select": "^1.2.1",
     "react-vis": "^1.9.1",
+    "react-web-notification": "^0.6.0",
     "reactstrap": "^6.3.0",
     "redux": "^4.0.0",
     "redux-form": "^7.4.2",

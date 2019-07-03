@@ -21,14 +21,6 @@ import {bindActionCreators} from "redux";
 import {renderField} from 'Components/form/Text'
 import renderSelectField from 'Components/form/Select'
 
-const qOptions = [
-  {value: 1, label: 'Strongly Disagree'},
-  {value: 2, label: 'Disagree'},
-  {value: 3, label: 'Neutral'},
-  {value: 4, label: 'Agree'},
-  {value: 5, label: 'Strongly Agree'},
-]
-
 const renderQuestions = ({fields, meta: {touched, error, warning}, questions, readOnly}) => {
   let tasks = [];
   for (let i = 0; i < questions.length; i++) {

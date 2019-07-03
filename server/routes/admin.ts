@@ -22,6 +22,7 @@ module.exports = function (app) {
     .post('/templates/', adminController.addTemplate)
     .put('/templates', adminController.updateTemplate)
     .delete('/templates', adminController.deleteTemplate)
+    .post('/notify/', adminController.notifyUsers)
 
   return adminRoutes;
 };

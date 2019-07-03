@@ -99,7 +99,6 @@ export default function (state = initialState, action) {
         template: action.data,
       };
     case TEMPLATE_ADDED:
-      console.log(action.data, 'redsfsdf')
       return {
         ...state,
         template: action.data,

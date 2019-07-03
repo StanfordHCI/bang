@@ -55,30 +55,16 @@ export const addBatch = async function (req, res) {
     newBatch.status = 'waiting';
     newBatch.users = [];
     let roundGen = createTeams(newBatch.teamSize, newBatch.numRounds - 1, letters.slice(0, newBatch.teamSize ** 2));
-    newBatch.experimentRound1 = Math.floor(Math.random() * (newBatch.numRounds - 2)) + 1;
-    newBatch.experimentRound2 = Math.floor(Math.random() * (newBatch.numRounds - newBatch.experimentRound1 - 1)) + newBatch.experimentRound1 + 2;
+    if (!newBatch.experimentRound1) {
+      newBatch.experimentRound1 = Math.floor(Math.random() * (newBatch.numRounds - 2)) + 1;
+      newBatch.experimentRound2 = Math.floor(Math.random() * (newBatch.numRounds - newBatch.experimentRound1 - 1)) + newBatch.experimentRound1 + 2;
+    }
     let part1 = JSON.parse(JSON.stringify(roundGen)), part2 = JSON.parse(JSON.stringify(roundGen));
     part1.splice(newBatch.experimentRound2 - 1);
     part2.splice(0, newBatch.experimentRound2 - 1);
     part1.push(roundGen[newBatch.experimentRound1 - 1]);
     newBatch.roundGen = part1.concat(part2);
 
-    newBatch.midQuestions = [
-      'The members of this team could work for a long time together.',
-      'Most of the members of this team would welcome the opportunity to work as a group again in the future.',
-      'This team has the capacity for long-term success.',
-      'This team has what it takes to be effective in the future.',
-      'This team would work well together in the future.',
-      'This team has positioned itself well for continued success.',
-      'This team has the ability to perform well in the future.',
-      'This team has the ability to function as an ongoing unit.',
-      'This team should continue to function as a unit.',
-      'This team has the resources to perform well in the future.',
-      'This team is well positioned for growth over time.',
-      'This team can develop to meet future challenges.',
-      'This team has the capacity to sustain itself.',
-      'This team has what it takes to endure in future performance episodes.'
-    ]
     if (process.env.MTURK_FRAME === 'ON' && process.env.MTURK_MODE !== 'off') {
       const HIT = await addHIT(newBatch, true);
       newBatch.HITId = HIT.HITId;
@@ -108,17 +94,23 @@ export const addBatch = async function (req, res) {
     ]});
     const batchWithChat = await Batch.findByIdAndUpdate(batch._id, {$set: {preChat: preChat._id}})
     res.json({batch: batchWithChat})
-    let prs = [];
-
-    if (process.env.MTURK_MODE !== 'off') {
-      const users = await User.find({systemStatus: 'willbang', isTest: false}).select('mturkId testAssignmentId').lean().exec();
-      users.forEach(user => {
-        const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
-        prs.push(notifyWorkers([user.mturkId], 'Experiment started. Please join us here: ' + url, 'Bang'))
-      })
-    }
-    prs.push(activeCheck(io))
     logger.info(module, 'New batch added. Mturk mode: ' + process.env.MTURK_MODE + '; Mturk frame: ' + process.env.MTURK_FRAME);
+
+    let prs = [];
+    prs.push(activeCheck(io))
+    if (process.env.MTURK_MODE !== 'off') {
+      const users = await User.find({systemStatus: 'willbang', isTest: false}).select('mturkId').lean().exec();
+
+      let workers = [];
+      users.forEach(user => {
+        workers.push(user.mturkId);
+        if (workers.length >= 99) {
+          prs.push(notifyWorkers(workers.slice(), 'Experiment started. Please find first email from us and join with your login link.', 'Bang'))
+          workers = [];
+        }
+      })
+      prs.push(notifyWorkers(workers.slice(), 'Experiment started. Please find first email from us and join with your login link.', 'Bang'))
+    }
     await Promise.all(prs)
   } catch (e) {
     errorHandler(e, 'add batch error')
@@ -308,5 +300,28 @@ export const loadBatchResult = async function (req, res) {
     res.json({batch: batch})
   } catch (e) {
     errorHandler(e, 'load batch result error')
+  }
+}
+
+export const notifyUsers = async function (req, res) {
+  try {
+    const users = await User.find({systemStatus: 'willbang', isTest: false}).select('mturkId').lean().exec();
+
+    let workers = [], prs = [];
+    users.forEach(user => {
+      workers.push(user.mturkId);
+      if (workers.length >= 99) {
+        prs.push(notifyWorkers(workers.slice(), req.body.message, 'Bang'))
+        workers = [];
+      }
+    })
+    prs.push(notifyWorkers(workers.slice(), req.body.message, 'Bang'))
+
+    await Promise.all(prs)
+    logger.info(module, 'Notification sent to ' + users.length + ' users');
+
+    res.json({})
+  } catch (e) {
+    errorHandler(e, 'notify users error')
   }
 }

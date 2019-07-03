@@ -63,6 +63,9 @@ class MainWrapper extends PureComponent {
               <Link className='topbar__collapse-link' to='/waiting'>
                 waitroom
               </Link>
+              <Link className='topbar__collapse-link' to='/notify'>
+                notify
+              </Link>
             </Container>
           </Navbar>}
            <div className='container__wrap' style={{paddingTop: user && user.isAdmin ? '60px': '30px'}}>
