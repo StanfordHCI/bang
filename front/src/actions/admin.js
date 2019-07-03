@@ -392,6 +392,24 @@ export function loadTemplate(templateId) {
   };
 }
 
+export function notifyUsers(message) {
+  return (dispatch, getState) => {
+    dispatch(setLoading(true));
+    return axios({
+      method: 'post',
+      url: 'admin/notify/',
+      data: {message: message}
+    })
+      .then((response) => {
+        dispatch(setLoading(false));
+        dispatch(setSnackbar('Done'))
+      })
+      .catch(err => {
+        errorCatcher(err, dispatch)
+      });
+  };
+}
+
 export function chooseTemplate(template) {
   return (dispatch) => {
     dispatch({

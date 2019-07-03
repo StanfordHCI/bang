@@ -17,6 +17,8 @@ import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 import {socket} from 'Actions/app'
 import {joinBatch, refreshActiveUsers} from 'Actions/batches'
+import Notification  from 'react-web-notification';
+
 
 class Waiting extends React.Component {
 
@@ -26,7 +28,9 @@ class Waiting extends React.Component {
       activeCounter: 0,
       limit: 999,
       batchReady: false,
-      isReady: false
+      isReady: false,
+      ignore: true,
+      title: ''
     };
     this.refresher = this.refresher.bind(this)
     socket.on('clients-active', this.refresher)
@@ -36,7 +40,33 @@ class Waiting extends React.Component {
     refreshActiveUsers()
   }
 
+  handlePermissionGranted(){
+    this.setState({
+      ignore: false
+    });
+  }
+  handlePermissionDenied(){
+    this.setState({
+      ignore: true
+    });
+  }
+  handleNotSupported(){
+    this.setState({
+      ignore: true
+    });
+  }
+
   refresher(data) {
+    if (this.state.activeCounter < this.state.limit && data.activeCounter >= data.limit && !this.state.ignore) {
+      this.setState({
+        title: 'Bang: you can join now! ',
+        options: {
+          body: 'You can join now.',
+          lang: 'en',
+          dir: 'ltr',
+        }
+      });
+    }
     this.setState({activeCounter: data.activeCounter, batchReady: data.batchReady, limit: data.limit, isReady: true});
   }
 
@@ -50,6 +80,16 @@ class Waiting extends React.Component {
           <Col md={12} lg={12} xl={12}>
             <Card>
               {this.state.isReady && <CardBody>
+                <Notification
+                  ignore={this.state.ignore && this.state.title !== ''}
+                  notSupported={this.handleNotSupported.bind(this)}
+                  onPermissionGranted={this.handlePermissionGranted.bind(this)}
+                  onPermissionDenied={this.handlePermissionDenied.bind(this)}
+                  timeout={5000}
+                  title={this.state.title}
+                  options={this.state.options}
+                />
+
                 <div className='card__title'>
                   <h5 className='bold-text'>Waiting room</h5>
                 </div>

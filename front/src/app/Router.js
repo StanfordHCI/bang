@@ -29,7 +29,7 @@ import BatchResult from '../containers/admin/BatchResult'
 import TemplateList from '../containers/admin/TemplateList'
 import UserList from '../containers/admin/UserList'
 import HasBanged from '../containers/HasBanged'
-import Accept from '../containers/Accept'
+import Notify from '../containers/admin/Notify'
 import BatchEnd from '../containers/BatchEnd'
 
 import constants from 'Constants'
@@ -53,6 +53,7 @@ const MainRouter = (props) => {
           <Route path='/batches/:id' component={BatchResult}/>
           <Route exact path='/templates' component={TemplateList}/>
           <Route exact path='/users' component={UserList}/>
+          <Route exact path='/notify' component={Notify}/>
           <Route path='/templates/:id' component={TemplateInfo}/>
           <Route exact path='/hasbanged' component={HasBanged}/>
           <Route exact path='/not-logged' component={NotLogged}/>

@@ -318,17 +318,17 @@ class TemplateForm extends React.Component {
           <Row>
             <Col><div className='form__panel'>
             <div className='form__panel-body' style={{borderBottom: '2px solid grey'}}>
-              <div className='form__form-group'>
-                <label className='form__form-group-label'>Name:</label>
-                <div className='form__form-group-field'>
-                  <Field
-                    name='name'
-                    component={renderField}
-                    type='text'
-                  />
-                </div>
-              </div>
               <Row>
+                <Col className='form__form-group'>
+                  <label className='form__form-group-label'>Name:</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                      name='name'
+                      component={renderField}
+                      type='text'
+                    />
+                  </div>
+                </Col>
                 <Col className='form__form-group'>
                   <label className='form__form-group-label'>Team size:</label>
                   <div className='form__form-group-field'>
@@ -339,6 +339,18 @@ class TemplateForm extends React.Component {
                     />
                   </div>
                 </Col>
+                <Col className='form__form-group'>
+                  <label className='form__form-group-label'>Number of rounds:</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                      name='numRounds'
+                      component={renderField}
+                      type='number'
+                    />
+                  </div>
+                </Col>
+              </Row>
+              <Row>
                 <Col className='form__form-group'>
                   <label className='form__form-group-label'>Round minutes:</label>
                   <div className='form__form-group-field'>
@@ -360,10 +372,20 @@ class TemplateForm extends React.Component {
                   </div>
                 </Col>
                 <Col className='form__form-group'>
-                  <label className='form__form-group-label'>Number of rounds:</label>
+                  <label className='form__form-group-label'>Experiment round 1</label>
                   <div className='form__form-group-field'>
                     <Field
-                      name='numRounds'
+                      name='experimentRound1'
+                      component={renderField}
+                      type='number'
+                    />
+                  </div>
+                </Col>
+                <Col className='form__form-group'>
+                  <label className='form__form-group-label'>Experiment round 2</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                      name='experimentRound2'
                       component={renderField}
                       type='number'
                     />
@@ -429,6 +451,17 @@ const validate = (values, props) => {
     errors.teamSize = 'required'
   } else if (parseInt(values.teamSize) < 1 || parseInt(values.teamSize) > 10) {
     errors.teamSize = 'invalid value'
+  }
+  if (!values.experimentRound1) {
+    errors.experimentRound1 = 'required'
+  } else if (parseInt(values.experimentRound1) < 1 || parseInt(values.experimentRound1) > parseInt(values.numRounds) - 2) {
+    errors.experimentRound1 = 'invalid value'
+  }
+  if (!values.experimentRound2) {
+    errors.experimentRound2 = 'required'
+  } else if (parseInt(values.experimentRound2) < 1 || parseInt(values.experimentRound2) < parseInt(values.experimentRound1) + 2 ||
+    parseInt(values.experimentRound2) > parseInt(values.numRounds)) {
+    errors.experimentRound2 = 'invalid value'
   }
   if (!values.maskType) {
     errors.maskType = 'required'
