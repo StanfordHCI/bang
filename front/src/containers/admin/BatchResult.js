@@ -85,7 +85,7 @@ class BatchResult extends React.Component {
 
 
   render() {
-    const {batch} = this.props;
+    const {batch, defaultMidQuestions} = this.props;
 
     return (
       <Container>
@@ -138,7 +138,7 @@ class BatchResult extends React.Component {
                   />}
                   {this.state.survey && this.state.survey.questions && <Row><MidSurveyForm
                     initialValues={{questions: this.state.survey.questions}}
-                    questions={this.props.batch.tasks[this.state.round - 1].survey}
+                    questions={batch.tasks[this.state.round - 1].survey || defaultMidQuestions}
                     readOnly
                   /></Row>}
                   {this.state.user && this.state.finalSurvey &&
@@ -150,8 +150,6 @@ class BatchResult extends React.Component {
                       return (<p className="row-p">{this.state.userOptions.find(x => x.value === user).label}</p>)
                     })}
                   </div>}
-
-
                 </div>
               </CardBody>}
             </Card>
@@ -164,8 +162,23 @@ class BatchResult extends React.Component {
 
 
 function mapStateToProps(state) {
+  let defaultMidQuestions = !state.admin.batch ? [] : state.admin.batch.midQuestions.map(q => {
+    let question = {};
+    question.type = 'select';
+    question.question = q;
+    question.selectOptions = [
+      {value: 1, label: 'Strongly Disagree'},
+      {value: 2, label: 'Disagree'},
+      {value: 3, label: 'Neutral'},
+      {value: 4, label: 'Agree'},
+      {value: 5, label: 'Strongly Agree'},
+    ]
+    return question;
+  });
+
   return {
-    batch: state.admin.batch
+    batch: state.admin.batch,
+    defaultMidQuestions: defaultMidQuestions
   }
 }
 
