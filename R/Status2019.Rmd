@@ -417,7 +417,9 @@ teamStats <- usersRounds %>%
             teamMedianCreativity=median(creativeScale),
             groupManipulationCheck=sum(as.numeric(manipulationCheck==manipulation)/n()),
             teamProportionFracture=sum(fracture/n()),
-            teamMembers = paste(id, collapse=", "))
+            teamMembers = paste(id, collapse=", "),
+            proportionFemale = sum(gender=="Female")/n())
+            
 
 # FIlter by TEAM_SIZE. 
 teamStats <- teamStats %>%
@@ -425,11 +427,11 @@ teamStats <- teamStats %>%
 
 #Adds team level data back into userRounds
 usersRounds <- teamStats %>%
-  select(room, batch, round, medianStatus.1, medianStatus.2, medianStatus.3, medianStatus.4, teamProportionFracture, condition, team) %>%
+  select(room, batch, round, medianStatus.1, medianStatus.2, medianStatus.3, medianStatus.4, teamProportionFracture, proportionFemale, condition, team) %>%
   left_join(usersRounds, by=c("room", "batch", "round", "condition", "team"))
 
 userScales <- usersRounds %>%
-  select(room, round, batch, condition, team, mturkId, age, gender, education, income, latin, race, member.1, member.2, member.3, member.4, medianStatus.1, medianStatus.2, medianStatus.3, medianStatus.4, satisfactionScale, creativeScale, conflictScale) %>%
+  select(room, round, batch, condition, team, mturkId, age, gender, education, income, latin, race, member.1, member.2, member.3, member.4, medianStatus.1, medianStatus.2, medianStatus.3, medianStatus.4, satisfactionScale, creativeScale, conflictScale, proportionFemale) %>%
   mutate(medianStatus = case_when(
     mturkId == member.1 ~ medianStatus.1,
     mturkId == member.2 ~ medianStatus.2,
@@ -515,7 +517,7 @@ demographics <- na.omit(demographics)
 # organize table of user status values for Ap and A rounds
 userStatus <- userScales %>%
   ungroup() %>%
-  select(mturkId, room, batch, age, gender, race, income, education, team, condition, medianStatus) %>%
+  select(mturkId, room, batch, age, gender, race, income, education, team, condition, medianStatus, proportionFemale) %>%
   filter(team=="Ap"|team=="A") %>%
   group_by(mturkId) %>%
   spread(team, medianStatus)
@@ -532,7 +534,7 @@ spearmanRankStatus <- na.omit(spearmanRankStatus) %>%
 
 # correlation between A and Ap between masked and unmasked result: no difference, which means change in individual status seems consistent regardless of masked or unmasked condition
 pearsonStatus <- userStatus %>%
-  group_by(condition, batch, room) %>%
+  group_by(condition) %>%
   summarize(rho = cor.test(x=A, y=Ap, method = 'pearson')$estimate, p = cor.test(x=A, y=Ap, method = 'pearson')$p.value)
 
 # masked condition results in less consistent status values for females, while consistency of male status values do not vary much per condition
@@ -540,15 +542,27 @@ pearsonGender <- userStatus %>%
   group_by(gender, condition) %>%
   summarize(rho = cor.test(x=A, y=Ap, method = 'pearson')$estimate, p = cor.test(x=A, y=Ap, method = 'pearson')$p.value)
 
+pearsonGenderProportion <- userStatus %>%
+  group_by(proportionFemale) %>%
+  summarize(rho = cor.test(x=A, y=Ap, method = 'pearson')$estimate, p = cor.test(x=A, y=Ap, method = 'pearson')$p.value)
+
 # Table of true false depending on if leader is the same per team
 leaderProb <- userStatus %>%
-  group_by(room, batch, condition) %>%
+  group_by(room, batch, condition, proportionFemale) %>%
   summarize(sameLeader = case_when (
     order(A, decreasing = TRUE)[1] == order(Ap, decreasing = TRUE)[1] ~ TRUE,
     TRUE ~ FALSE))
 # Creates probability and confidence intervals
 leaderProbStat <- leaderProb %>%
   group_by(condition) %>%
+  summarise(
+    estimate = prop.test(sum(sameLeader == TRUE), length(sameLeader))$estimate[1],
+    SE = sqrt((sum(sameLeader == TRUE)/length(sameLeader)) * (1 - (sum(sameLeader == TRUE)/length(sameLeader)))/length(sameLeader)),
+    conf.int.1 = prop.test(sum(sameLeader == TRUE), length(sameLeader))$conf.int[1],
+    conf.int.2 = prop.test(sum(sameLeader == TRUE), length(sameLeader))$conf.int[2])
+
+leaderProbStatGender <- leaderProb %>%
+  group_by(proportionFemale) %>%
   summarise(
     estimate = prop.test(sum(sameLeader == TRUE), length(sameLeader))$estimate[1],
     SE = sqrt((sum(sameLeader == TRUE)/length(sameLeader)) * (1 - (sum(sameLeader == TRUE)/length(sameLeader)))/length(sameLeader)),
@@ -564,18 +578,23 @@ userScales <- userScales %>%
 
 # individual satisfaction vs individual status: satisfaction positively correlates with status
 pearsonSatStatus <- userScales %>%
-  group_by(condition, team) %>%
+  group_by(condition) %>%
   summarize(rho = cor.test(x=satisfactionScale, y=medianStatus, method = 'pearson')$estimate, p = cor.test(x=satisfactionScale, y=medianStatus, method = 'pearson')$p.value)
 
 # team creativity vs individual status: seems like greater status correlates with lower creativity
 pearsonCreStatus <- userScales %>%
-  group_by(condition, team) %>%
+  group_by(condition) %>%
   summarize(rho = cor.test(x=creativeScale, y=medianStatus, method = 'pearson')$estimate, p = cor.test(x=creativeScale, y=medianStatus, method = 'pearson')$p.value)
 
 # team conflict vs individual status: seems like greater status correlates with lower conflict
 pearsonConStatus <- userScales %>%
-  group_by(condition, team) %>%
-  summarize(rho = cor.test(x=conflictScale, y=medianStatus, method = 'pearson')$estimate, p = cor.test(x=satisfactionScale, y=medianStatus, method = 'pearson')$p.value)
+  group_by(condition) %>%
+  summarize(rho = cor.test(x=conflictScale, y=medianStatus, method = 'pearson')$estimate, p = cor.test(x=conflictScale, y=medianStatus, method = 'pearson')$p.value)
+
+# individual age vs individual status: seems like greater status correlates with lower conflict
+pearsonAgeStatus <- userScales %>%
+  group_by(condition) %>%
+  summarize(rho = cor.test(x=age, y=medianStatus, method = 'pearson')$estimate, p = cor.test(x=age, y=medianStatus, method = 'pearson')$p.value)
 
 # understand relationship between user characteristic rank and user status rank in team
 # apply spearman rank correlation on team user satisfaction and median user status
@@ -625,24 +644,29 @@ medianSatisfactionChanges <- teamStats %>%
 
 statbox <- ggplot(split_spearmanRankStat, aes(x = condition, y = rho)) +
   geom_boxplot() +
-  ggtitle("Rho of Status Rank Correlation Between A and Ap")
+  ggtitle("Status Rank Correlation Between A and Ap")
 
 satbox <- ggplot(split_spearmanRankSat, aes(x = condition, y = rho)) +
   geom_boxplot() +
-  ggtitle("Rho of Satisfaction and Median Member Status Rank Correlation Between A and Ap")
+  ggtitle("Satisfaction and Median Member Status Rank Correlation")
 
 crebox <- ggplot(split_spearmanRankCre, aes(x = condition, y = rho)) +
   geom_boxplot() +
-  ggtitle("Rho of Creativity and Median Member Status Rank Correlation Between A and Ap")
+  ggtitle("Creativity and Median Member Status Rank Correlation")
 
 conbox <- ggplot(split_spearmanRankCon, aes(x = condition, y = rho)) +
   geom_boxplot() +
-  ggtitle("Rho of Conflict and Median Member Status Rank Correlation Between A and Ap")
+  ggtitle("Conflict and Median Member Status Rank Correlation")
 
 pstat <- ggplot(data=leaderProbStat, aes(x=condition, y=estimate))+
   geom_bar(stat="identity")+
   geom_errorbar(aes(ymin=estimate-SE, ymax=estimate+SE), width=.1)+
   ggtitle("Probability of Same Leader Between A and Ap Rounds") 
+
+pGenderstat <- ggplot(data=leaderProbStatGender, aes(x=proportionFemale, y=estimate))+
+  geom_bar(stat="identity")+
+  geom_errorbar(aes(ymin=estimate-SE, ymax=estimate+SE), width=.1)+
+  ggtitle("Probability of Same Leader Between A and Ap Rounds Per Proportion Females") 
 
 statRank <- ggplot(data=spearmanRankStatus, aes(x=condition, y=medianRho))+
   geom_bar(stat="identity")+
@@ -675,22 +699,41 @@ pwrTest <- pwr.p.test(h = ES.h(p1 = 0.66, p2 = 0.40),
 
 # Histograms
 hist(userScales$medianStatus, 
-     main="Histogram of Median Status Values Across Rounds", 
+     main="Median Status Values Across All Rounds", 
      xlab="Median Status Values", 
      las=1, 
      breaks=20)
 
+hist(userScales$satisfactionScale, 
+     main="Satisfaction Values Across All Rounds", 
+     xlab="Median Conflict Values", 
+     las=1, 
+     breaks=20)
+
+hist(userScales$conflictScale, 
+     main="Conflict Values Across All Rounds", 
+     xlab="Median Conflict Values", 
+     las=1, 
+     breaks=20)
+
+hist(userScales$creativeScale, 
+     main="Creative Values Across All Rounds", 
+     xlab="Median Conflict Values", 
+     las=1, 
+     breaks=20)
+
 hist(userScales$age, 
-     main="Histogram of Age", 
-     xlab="Median Status Values", 
+     main="Age", 
+     xlab="Age", 
      las=1, 
      breaks=20)
 
 print(pearsonGender) # correlation between A and Ap status values by condition and gender
 print(pearsonStatus) # correlation between A and Ap status values by condition
-print(pearsonSatStatus) # ccorrelation between individual satisfaction and status by condition
-print(pearsonCreStatus) # ccorrelation between perceived team creativity and status by condition
-print(pearsonConStatus) # ccorrelation between percieved team conflict and status by condition
+print(pearsonSatStatus) # correlation between individual satisfaction and status by condition
+print(pearsonCreStatus) # correlation between perceived team creativity and status by condition
+print(pearsonConStatus) # correlation between percieved team conflict and status by condition
+print(pearsonAgeStatus) # no correlation between age and status
 
 # Box Plots
 print(statbox)
@@ -700,6 +743,7 @@ print(conbox)
 
 # Bar Graphs
 print(pstat)
+print(pGenderstat)
 print(statRank)
 print(satRank)
 print(creRank)
