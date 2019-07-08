@@ -177,7 +177,9 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
   for (let i = 0; i < numRounds; i++) {
     options.push({value: i, label: 'task ' + (i + 1)})
   }
-  for (let i = 0; i < numRounds; i++) {
+  const taskNumber = taskArray && taskArray.length ? taskArray.length : numRounds
+
+  for (let i = 0; i < taskNumber; i++) {
     tasks.push(
       <div key={i} className='form__form-group'>
         <label className='form__form-group-label' style={{margin: '0'}}>
@@ -309,6 +311,13 @@ class TemplateForm extends React.Component {
     this.props.dispatch(change('TemplateForm', 'tasks[' + from + ']', this.props.tasks[to]))
   }
 
+  numRoundsChange = (e) => {
+    const num = parseInt(e.target.value)
+    let tasks = this.props.tasks.filter((x, index) => index < num);
+    this.props.dispatch(change('TemplateForm', 'tasks', tasks))
+    console.log(this.props.tasks)
+  }
+
   render() {
     const {invalid, numRounds, teamSize, roundGen, dispatch, pristine, isAdd, tasks} = this.props;
 
@@ -346,6 +355,7 @@ class TemplateForm extends React.Component {
                       name='numRounds'
                       component={renderField}
                       type='number'
+                      onChange={this.numRoundsChange}
                     />
                   </div>
                 </Col>
@@ -480,10 +490,13 @@ const validate = (values, props) => {
 
   if (!values.tasks || !values.tasks.length) {
     errors.name = 'add tasks please'
+  } else if (values.tasks.length !== parseInt(values.numRounds) ) {
+    console.log(values.tasks, values.numRounds)
+    errors.numRounds = 'number of rounds != number of tasks'
   }
 
   values.tasks && values.tasks.forEach((task, i) => {
-    errors.tasks[i] = {steps: [], survey: []}; let timeSum = 0
+    errors.tasks[i] = {steps: [], survey: []};
     if (!task.message) {
       errors.tasks[i].message = 'required';
     } else  if (!task.steps || !task.steps.length) {

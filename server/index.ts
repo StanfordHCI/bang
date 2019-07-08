@@ -10,7 +10,16 @@ const logger = require('./services/logger');
 import {init, sendMessage, disconnect, activeCheck, refreshActiveUsers} from './controllers/users'
 import {joinBatch, loadBatch, receiveSurvey} from './controllers/batches'
 import {errorHandler} from './services/common'
-import {addHIT, disassociateQualificationFromWorker, listAssignmentsForHIT, notifyWorkers, assignQual, payBonus, runningLive} from "./controllers/utils";
+import {
+  addHIT,
+  disassociateQualificationFromWorker,
+  listAssignmentsForHIT,
+  notifyWorkers,
+  assignQual,
+  payBonus,
+  runningLive,
+  clearRoom
+} from "./controllers/utils";
 import {User} from './models/users'
 import {Batch} from './models/batches'
 import {Chat} from "./models/chats";
@@ -133,11 +142,26 @@ cron.schedule('* * * * *', async function(){
 if (process.env.MTURK_MODE !== 'off') {
   cron.schedule('*/4 * * * *', async function(){
     try {
-      const batch = await Batch.findOne({status: 'waiting'}).select('teamSize roundMinutes numRounds HITTitle surveyMinutes').lean().exec();
-      if (batch) {
-        const HIT = await addHIT(batch, false);
+      const batches = await Batch.find({status: 'waiting'}).select('createdAt teamSize roundMinutes numRounds HITTitle surveyMinutes users')
+        .sort({'createdAt': 1}).populate('users.user').lean().exec();
+      if (batches && batches.length) {
+        const HIT = await addHIT(batches[0], false);
         currentHIT = HIT.HITId;
         logger.info(module, 'Recruit HIT created: ' + currentHIT)
+        let prs = []
+        batches.forEach(batch => {
+          const liveTime = (moment()).diff(moment(batch.createdAt), 'minutes')
+          if (liveTime > 37 && batch.users.length < (batch.teamSize**2) - 2 || liveTime > 57) {
+            prs.push(Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}));
+            prs.push(User.updateMany({batch:  batch._id}, { $set: { batch: null, realNick: null, fakeNick: null, currentChat: null }}))
+            batch.users.forEach(user => {
+              io.to(user.user.socketId).emit('stop-batch', true);
+            })
+            clearRoom(batch._id, io)
+            logger.info(module, 'Batch stopped: ' + batch._id);
+          }
+        })
+        await Promise.all(prs)
       } else {
         currentHIT = '';
       }

@@ -106,7 +106,6 @@ export const sendMessage = async function (data, socket, io) {
     io.to(data.chat).emit('receive-message', newMessage);
     if (chat.batch.status === 'waiting') {
       await User.findByIdAndUpdate(socket.userId, { $set: { lastCheckTime: new Date()}})
-      logger.info(module, 'afk timer refreshed')
     }
   } catch (e) {
     errorHandler(e, 'send message error')

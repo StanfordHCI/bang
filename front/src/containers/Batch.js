@@ -473,6 +473,7 @@ class Batch extends React.Component {
           initialValues={{ questions: task.survey.map(x => { return { result: '' } }) }}
           questions={task.survey}
           onSubmit={this.submitSurvey}
+          members={this.props.chat.members}
         />}
         {this.state.surveyDone && <div>
           <p>Thanks for completing the survey for this round!</p>

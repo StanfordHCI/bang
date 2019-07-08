@@ -21,12 +21,20 @@ import {bindActionCreators} from "redux";
 import {renderField} from 'Components/form/Text'
 import renderSelectField from 'Components/form/Select'
 
-const renderQuestions = ({fields, meta: {touched, error, warning}, questions, readOnly}) => {
+const replaceNicksInSurvey = (message, users, currentUser) => {
+  users.filter(user => currentUser._id.toString() !== user._id.toString()).forEach((user, index) => {
+    message = message.replace(new RegExp('team_partner_' + (index + 1), "ig"), user.fakeNick)
+  })
+  return message;
+}
+
+
+const renderQuestions = ({fields, meta: {touched, error, warning}, questions, readOnly, users, currentUser}) => {
   let tasks = [];
   for (let i = 0; i < questions.length; i++) {
     tasks.push(
       <div key={i} className='form__form-group'>
-        <label className='form__form-group-label'>{questions[i].question}</label>
+        <label className='form__form-group-label'>{replaceNicksInSurvey(questions[i].question, users, currentUser)}</label>
         <div className='form__form-group-field' style={{maxWidth: '200px'}}>
           <Field
             name={`questions[${i}].result`}
@@ -53,7 +61,7 @@ class MidSurveyForm extends React.Component {
   }
 
   render() {
-    const {invalid, questions, readOnly} = this.props;
+    const {invalid, questions, readOnly, currentUser, members} = this.props;
 
     return (<div>
         <form className='form' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
@@ -67,6 +75,8 @@ class MidSurveyForm extends React.Component {
                     rerenderOnEveryChange
                     questions={questions}
                     readOnly={readOnly}
+                    users={members}
+                    currentUser={currentUser}
                   />
               </div>
               </Col>
@@ -108,7 +118,7 @@ const selector = formValueSelector('SurveyForm');
 
 function mapStateToProps(state) {
   return {
-
+    currentUser: state.app.user
   }
 }
 
