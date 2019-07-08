@@ -99,17 +99,12 @@ export const addBatch = async function (req, res) {
     let prs = [];
     prs.push(activeCheck(io))
     if (process.env.MTURK_MODE !== 'off') {
-      const users = await User.find({systemStatus: 'willbang', isTest: false}).select('mturkId').lean().exec();
+      const users = await User.find({systemStatus: 'willbang', isTest: false}).select('mturkId testAssignmentId isTest').lean().exec();
 
-      let workers = [];
       users.forEach(user => {
-        workers.push(user.mturkId);
-        if (workers.length >= 99) {
-          prs.push(notifyWorkers(workers.slice(), 'Experiment started. Please find first email from us and join with your login link.', 'Bang'))
-          workers = [];
-        }
+        user.loginLink = process.env.HIT_URL + '?workerId=' + user.mturkId + '&assignmentId=' + user.testAssignmentId;
+        prs.push(notifyWorkers([user.mturkId], 'Experiment started. Join at this link: ' + user.loginLink, 'Bang'))
       })
-      prs.push(notifyWorkers(workers.slice(), 'Experiment started. Please find first email from us and join with your login link.', 'Bang'))
     }
     await Promise.all(prs)
   } catch (e) {
