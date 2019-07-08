@@ -103,7 +103,11 @@ export const addBatch = async function (req, res) {
 
       users.forEach(user => {
         user.loginLink = process.env.HIT_URL + '?workerId=' + user.mturkId + '&assignmentId=' + user.testAssignmentId;
-        prs.push(notifyWorkers([user.mturkId], 'Experiment started. Join at this link: ' + user.loginLink, 'Bang'))
+        prs.push(notifyWorkers([user.mturkId], 'Hello, our HIT is now active. ' +  
+        'Participation will earn a bonus of ~$12/hour. ' +
+        'Join at this link: ' + user.loginLink + 
+        ' Our records indicate that you were interested in joining this HIT previously. ' + 
+        'If you are no longer interested in participating, please email us and we will remove you from this list.', 'Bang'))
       })
     }
     await Promise.all(prs)

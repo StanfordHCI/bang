@@ -97,8 +97,10 @@ class Waiting extends React.Component {
                   <p>Hello! Thanks for accepting our task.</p>
                   <p>We are currently waiting on <b>{limit - this.state.activeCounter > 0 ? limit - this.state.activeCounter : 0} </b>
                     more MTurk users to accept the task.</p>
-                  <p>The task will only begin once {limit} users accept the task.</p>
-                  <p>Once enough users have joined the waitroom, a "Join Batch" button will appear. You will be redirected to a chatroom that ensures that other MTurkers are present and not away from keyboard. You will only remain in the chatroom until everyone has clicked the button to join the batch.</p>
+                  <p>The task will only begin once {limit} users accept the task. Once enough users have joined the waitroom, a "Join Batch" button will appear.</p>
+                  <p>We will notify you with a browser alert when it's time to click the button. We suggest you also periodically check back to see the task status. Until then, you may work on other tabs. NOTE: YOU MUST KEEP THIS TAB OPEN IN ORDER TO RECEIVE THE ALERT.</p>
+                  <p>The wait averages between 5-40 minutes. If you cannot stay the entire time, please close this tab so that we do not count you as waiting to participate in this task.</p>
+                  <p>After clicking the button, you will be redirected to a chatroom that ensures that other MTurkers are present and not away from keyboard. You will only remain in the chatroom until everyone has clicked the button to join the batch.</p>
                   <p>After everyone joins the batch, the task will initiate! IMPORTANT: If you intend to complete the task, please do not leave because it will mean other MTurkers will have to wait longer for the task.</p>
                   <p>Provided you stay for the whole task, we will bonus to a rate of approximately $12 per hour. If there are never enough people, we will automatically submit and accept for the base rate.</p>
                   {limit <= this.state.activeCounter &&
