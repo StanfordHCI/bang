@@ -315,7 +315,6 @@ class TemplateForm extends React.Component {
     const num = parseInt(e.target.value)
     let tasks = this.props.tasks.filter((x, index) => index < num);
     this.props.dispatch(change('TemplateForm', 'tasks', tasks))
-    console.log(this.props.tasks)
   }
 
   render() {
