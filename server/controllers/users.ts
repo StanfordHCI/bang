@@ -98,6 +98,8 @@ export const sendMessage = async function (data, socket, io) {
   try {
     const newMessage = {
       user: socket.userId,
+      adj: data.adj,
+      animal: data.animal,
       nickname: data.nickname,
       message: data.message,
       time: new Date()

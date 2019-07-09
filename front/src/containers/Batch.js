@@ -192,6 +192,8 @@ class Batch extends React.Component {
       if (e.keyCode === 13) {
         sendMessage({
           message: this.state.message,
+          adj: user.realAdj,
+          animal: user.realAnimal,
           nickname: user.realNick,
           chat: chat._id
         })
@@ -259,6 +261,8 @@ class Batch extends React.Component {
       this.setState({ message: '', autoNames: [] });
       sendMessage({
         message: newMessage,
+        adj: batch.status === 'active' && batch.maskType === 'masked' ? user.fakeAdj : user.realAdj,
+        animal: batch.status === 'active' && batch.maskType === 'masked' ? user.fakeAnimal : user.realAnimal,
         nickname: batch.status === 'active' && batch.maskType === 'masked' ? user.fakeNick : user.realNick,
         chat: chat._id
       })
