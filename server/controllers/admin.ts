@@ -87,7 +87,7 @@ export const addBatch = async function (req, res) {
         {
           nickname: 'helperBot',
           message: "We ask for your patience as we wait for enough active users to begin the task! " +
-            "Each minute, you will be reminded to type something into the chat so that we know you're active and ready to begin.",
+            "Each 3 minutes, you will be reminded to type something into the chat so that we know you're active and ready to begin.",
           user: botId,
           time: new Date
         },
