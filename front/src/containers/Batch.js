@@ -29,6 +29,7 @@ import PostSurveyForm from './PostSurveyForm'
 import {history} from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
 import ReactHtmlParser from "react-html-parser";
+import Notification from "react-web-notification";
 
 const MAX_LENGTH = 240;
 const botId = '100000000000000000000001'
@@ -107,7 +108,9 @@ class Batch extends React.Component {
       surveyDone: false,
       isReady: false,
       timerIsReady: false,
-      autoNames: []
+      autoNames: [],
+      ignore: true,
+      isStartNotifySent: false
     };
   }
 
@@ -128,6 +131,18 @@ class Batch extends React.Component {
   }
 
   componentWillReceiveProps(nextProps, nextState) {
+    /*if (!this.state.isStartNotifySent && nextProps.batch.status === 'active') {
+      console.log('start')
+      this.setState({
+        isStartNotifySent: true,
+        notifyTitle: 'Bang: started!',
+        notifyOptions: {
+          body: 'Bang: started!',
+          lang: 'en',
+          dir: 'ltr',
+        }
+      });
+    }*/
     if (!this.state.isReady && nextProps.chat && nextProps.batch) { //init here because loadBatch is not promise
       if (nextProps.batch.finalSurveyDone) {
         history.push('batch-end')
@@ -430,8 +445,12 @@ class Batch extends React.Component {
   }
 
   renderWaitingStage() {
+    const {limit, activeCounter} = this.props;
+
     return (<div>
       <h5 className='bold-text'></h5>
+      <p>We are currently waiting on <b>{limit - activeCounter > 0 ? limit - activeCounter : 0} </b>
+        more MTurk users to accept the task.</p>
       {this.renderChat()}
     </div>)
   }
@@ -508,6 +527,21 @@ class Batch extends React.Component {
     </div>)
   }
 
+  handlePermissionGranted(){
+    this.setState({
+      ignore: false
+    });
+  }
+  handlePermissionDenied(){
+    this.setState({
+      ignore: true
+    });
+  }
+  handleNotSupported(){
+    this.setState({
+      ignore: true
+    });
+  }
 
   render() {
     const {batch} = this.props;
@@ -518,6 +552,15 @@ class Batch extends React.Component {
           <Col md={12} lg={12} xl={12}>
             <Card>
               {this.state.isReady && <CardBody>
+                {/*<Notification
+                  ignore={this.state.ignore && this.state.title !== ''}
+                  notSupported={this.handleNotSupported.bind(this)}
+                  onPermissionGranted={this.handlePermissionGranted.bind(this)}
+                  onPermissionDenied={this.handlePermissionDenied.bind(this)}
+                  timeout={5000}
+                  title={this.state.notifyTitle}
+                  options={this.state.notifyOptions}
+                />*/}
                 {batch.status === 'waiting' && this.renderWaitingStage()}
                 {batch.status === 'active' && this.renderActiveStage()}
                 {batch.status === 'completed' && this.renderCompletedStage()}
@@ -549,6 +592,8 @@ function mapStateToProps(state) {
   }
 
   return {
+    limit: batch ? batch.teamSize ** 2 : 999,
+    activeCounter: batch ? batch.users.length : 0,
     user: state.app.user,
     batch: batch,
     chat: chat,

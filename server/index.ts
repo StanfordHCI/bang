@@ -99,7 +99,7 @@ const socketMiddleware = function (event, action, data, socket) {
 const botId = '100000000000000000000001'
 
 //waiting batch afk check
-cron.schedule('* * * * *', async function(){
+cron.schedule('*/3 * * * *', async function(){
   const batch = await Batch.findOne({status: 'waiting'}).select('users createdAt preChat').populate('users.user').lean().exec();
   if (batch) {
     const botMessage = {
@@ -114,7 +114,7 @@ cron.schedule('* * * * *', async function(){
     let prs = [], kicked = [];
     batch.users.forEach(item => {
       const user = item.user;
-      if (moment().diff(moment(item.joinDate), 'second') > 61 && (!user.lastCheckTime || moment().diff(moment(user.lastCheckTime), 'second') > 60)) { //kick user
+      if (moment().diff(moment(item.joinDate), 'second') > 181 && (!user.lastCheckTime || moment().diff(moment(user.lastCheckTime), 'second') > 180)) { //kick user
         prs.push(User.findByIdAndUpdate(user._id, { $set: { batch: null, realNick: null, currentChat: null }}))
         prs.push(Batch.findByIdAndUpdate(batch._id, {$pull: { users: {user: user._id}}}))
         kicked.push(user)
