@@ -27,7 +27,7 @@ export const activeCheck = async function (io) {
       })
     }
 
-    io.to('waitroom').emit('clients-active', {activeCounter: counter.waitroom + counter.waitchat, batchReady: !!batch, limit: batch ? batch.teamSize ** 2 : 999});
+    io.to('waitroom').emit('clients-active', {activeCounter: counter.waitchat, batchReady: !!batch, limit: batch ? batch.teamSize ** 2 : 999});
     logger.info(module, 'connected: ' + counter.all + '; waitroom: ' + counter.waitroom + '; waitchat: ' + counter.waitchat + '; in active batches: ' + counter.active);
   } catch (e) {
     errorHandler(e, 'active check error')
