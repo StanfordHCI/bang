@@ -44,7 +44,7 @@ export const joinBatch = async function (data, socket, io) {
       const prs = await Promise.all([
         Batch.findByIdAndUpdate(batch._id, { $addToSet: { users: {user: socket.userId, nickname: nickname, joinDate: new Date()}},  }, {new: true}),
         User.findByIdAndUpdate(socket.userId,
-          { $set: { batch: batch._id, realNick: nickname, realAdj: adjective, realAnimal: animal, currentChat: batch.preChat} }, {new: true}).lean().exec()
+          { $set: { batch: batch._id, realNick: nickname, currentChat: batch.preChat} }, {new: true}).lean().exec()
       ])
       user = prs[1]
       batch = prs[0]
@@ -179,7 +179,7 @@ const startBatch = async function (batch, socket, io) {
       teams.forEach((team, index) => {
         team.chat = chats[index]._id;
         team.users.forEach(user => {
-          prsHelper.push(User.findByIdAndUpdate(user.user, {$set: {fakeNick: user.nickname, fakeAdj: user.adjective, fakeAnimal: user.animal, currentChat: team.chat}}));
+          prsHelper.push(User.findByIdAndUpdate(user.user, {$set: {fakeNick: user.nickname, currentChat: team.chat}}));
           return user;
         })
         return team;
