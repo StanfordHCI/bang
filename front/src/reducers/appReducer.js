@@ -22,7 +22,7 @@ export default function (state = initialState, action) {
     case SET_CHAT_INFO:
       let user = state.user;
       user.realNick = action.data.realNick;
-      user.fakeNick = action.data.fakeNick;
+      user.fakeNick = user.fakeAdj + user.fakeAnimal;
       user.currentChat = action.data.currentChat;
       return {
         ...state,

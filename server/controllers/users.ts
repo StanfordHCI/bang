@@ -1,61 +1,97 @@
-import {User} from '../models/users'
-import {Batch} from '../models/batches'
-import {Chat} from '../models/chats'
-import {errorHandler} from '../services/common'
-import {Survey} from "../models/surveys";
-const logger = require('../services/logger');
-import {notifyWorkers, assignQual, payBonus, runningLive} from "./utils";
-import {timeout} from './batches'
+import { User } from "../models/users";
+import { Batch } from "../models/batches";
+import { Chat } from "../models/chats";
+import { errorHandler } from "../services/common";
+import { Survey } from "../models/surveys";
+const logger = require("../services/logger");
+import { notifyWorkers, assignQual, payBonus, runningLive } from "./utils";
+import { timeout } from "./batches";
 
-export const activeCheck = async function (io) {
+export const activeCheck = async function(io) {
   try {
     const [users, batch] = await Promise.all([
-      User.find({connected: true}).populate({path: 'batch', select: 'status'}).select('mturkId').lean().exec(),
-      Batch.findOne({status: 'waiting'}).select('teamSize').lean().exec()
-    ])
-    let counter = {all: 0, waitchat: 0, waitroom: 0, active: 0}
+      User.find({ connected: true })
+        .populate({ path: "batch", select: "status" })
+        .select("mturkId")
+        .lean()
+        .exec(),
+      Batch.findOne({ status: "waiting" })
+        .select("teamSize")
+        .lean()
+        .exec()
+    ]);
+    let counter = { all: 0, waitchat: 0, waitroom: 0, active: 0 };
     if (users && users.length) {
       counter.all = users.length;
       users.forEach(user => {
         if (!user.batch) {
           counter.waitroom++;
-        } else if (user.batch.status === 'waiting') {
+        } else if (user.batch.status === "waiting") {
           counter.waitchat++;
-        } else if (user.batch.status === 'active') {
+        } else if (user.batch.status === "active") {
           counter.active++;
         }
-      })
+      });
     }
 
-    io.to('waitroom').emit('clients-active', {activeCounter: counter.waitroom + counter.waitchat, batchReady: !!batch, limit: batch ? batch.teamSize ** 2 : 999});
-    logger.info(module, 'connected: ' + counter.all + '; waitroom: ' + counter.waitroom + '; waitchat: ' + counter.waitchat + '; in active batches: ' + counter.active);
+    io.to("waitroom").emit("clients-active", {
+      activeCounter: counter.waitroom + counter.waitchat,
+      batchReady: !!batch,
+      limit: batch ? batch.teamSize ** 2 : 999
+    });
+    logger.info(
+      module,
+      "connected: " +
+        counter.all +
+        "; waitroom: " +
+        counter.waitroom +
+        "; waitchat: " +
+        counter.waitchat +
+        "; in active batches: " +
+        counter.active
+    );
   } catch (e) {
-    errorHandler(e, 'active check error')
+    errorHandler(e, "active check error");
   }
-}
+};
 
 export const refreshActiveUsers = async (data, socket, io) => {
-  await activeCheck(io)
-}
+  await activeCheck(io);
+};
 
-export const init = async function (data, socket, io) {
+export const init = async function(data, socket, io) {
   try {
     let user;
-    let token = data.token || '';
+    let token = data.token || "";
     //it looks irrational to check url vars before token, but user can return with another assignmentId and with the same token
-    if ((process.env.MTURK_FRAME === 'ON' && data.mturkId && data.assignmentId && data.hitId && data.turkSubmitTo) ||
-      (process.env.MTURK_FRAME === 'OFF' && data.mturkId && data.assignmentId)) {
-      user = await User.findOneAndUpdate({mturkId: data.mturkId}, {$set: {mainAssignmentId: data.assignmentId}}, {new: true}).lean().exec();
+    if (
+      (process.env.MTURK_FRAME === "ON" &&
+        data.mturkId &&
+        data.assignmentId &&
+        data.hitId &&
+        data.turkSubmitTo) ||
+      (process.env.MTURK_FRAME === "OFF" && data.mturkId && data.assignmentId)
+    ) {
+      user = await User.findOneAndUpdate(
+        { mturkId: data.mturkId },
+        { $set: { mainAssignmentId: data.assignmentId } },
+        { new: true }
+      )
+        .lean()
+        .exec();
     } else {
-      user = await User.findOne({token: token}).lean().exec();
+      user = await User.findOne({ token: token })
+        .lean()
+        .exec();
     }
 
     if (!user) {
-      logger.info(module, 'wrong credentials');
-      socket.emit('init-res', null);
+      logger.info(module, "wrong credentials");
+      socket.emit("init-res", null);
       return;
     }
-    if (!runningLive && user.systemStatus === 'hasbanged') user.systemStatus = 'willbang';
+    if (!runningLive && user.systemStatus === "hasbanged")
+      user.systemStatus = "willbang";
 
     socket.mturkId = user.mturkId;
     socket.token = user.token;
@@ -63,38 +99,45 @@ export const init = async function (data, socket, io) {
     socket.systemStatus = user.systemStatus;
     socket.userId = user._id;
     if (user.batch) {
-      socket.join(user.batch.toString()) //chat room
+      socket.join(user.batch.toString()); //chat room
     } else {
-      socket.join('waitroom');
+      socket.join("waitroom");
     }
     if (data.adminToken && data.adminToken === process.env.ADMIN_TOKEN) {
       user.isAdmin = true;
     }
-    socket.emit('init-res', {user: user});
-    await User.findByIdAndUpdate(user._id, { $set: { connected : true, lastConnect: new Date(), socketId: socket.id, } });
+    socket.emit("init-res", { user: user });
+    await User.findByIdAndUpdate(user._id, {
+      $set: { connected: true, lastConnect: new Date(), socketId: socket.id }
+    });
     await activeCheck(io);
   } catch (e) {
-    errorHandler(e, 'init error')
+    errorHandler(e, "init error");
   }
-}
+};
 
-export const disconnect = async function (reason, socket, io) {
+export const disconnect = async function(reason, socket, io) {
   try {
-    if (socket.userId) { //disconnect from logged user
-      const user = await User.findByIdAndUpdate(socket.userId, { $set: { connected : false, lastDisconnect: new Date(), socketId: ''}})
-        .populate('batch').lean().exec();
-      if (user && user.batch && user.batch.status === 'active ') {
+    if (socket.userId) {
+      //disconnect from logged user
+      const user = await User.findByIdAndUpdate(socket.userId, {
+        $set: { connected: false, lastDisconnect: new Date(), socketId: "" }
+      })
+        .populate("batch")
+        .lean()
+        .exec();
+      if (user && user.batch && user.batch.status === "active ") {
         //io.to(user.batch._id.toString()).emit('refresh-batch', true)
-        console.log('stop batch')
+        console.log("stop batch");
       }
       await activeCheck(io);
     }
   } catch (e) {
-    errorHandler(e, 'disconnect error')
+    errorHandler(e, "disconnect error");
   }
-}
+};
 
-export const sendMessage = async function (data, socket, io) {
+export const sendMessage = async function(data, socket, io) {
   try {
     const newMessage = {
       user: socket.userId,
@@ -103,17 +146,26 @@ export const sendMessage = async function (data, socket, io) {
       nickname: data.nickname,
       message: data.message,
       time: new Date()
-    }
-    const chat = await Chat.findByIdAndUpdate(data.chat, { $addToSet: { messages: newMessage} }, {new: true}).populate('batch').lean().exec();
-    io.to(data.chat).emit('receive-message', newMessage);
-    if (chat.batch.status === 'waiting') {
-      await User.findByIdAndUpdate(socket.userId, { $set: { lastCheckTime: new Date()}})
-      logger.info(module, 'afk timer refreshed')
+    };
+    const chat = await Chat.findByIdAndUpdate(
+      data.chat,
+      { $addToSet: { messages: newMessage } },
+      { new: true }
+    )
+      .populate("batch")
+      .lean()
+      .exec();
+    io.to(data.chat).emit("receive-message", newMessage);
+    if (chat.batch.status === "waiting") {
+      await User.findByIdAndUpdate(socket.userId, {
+        $set: { lastCheckTime: new Date() }
+      });
+      logger.info(module, "afk timer refreshed");
     }
   } catch (e) {
-    errorHandler(e, 'send message error')
+    errorHandler(e, "send message error");
   }
-}
+};
 
 /*
 export const joinBang = async function (data, socket, io) {

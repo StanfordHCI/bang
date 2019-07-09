@@ -12,6 +12,8 @@ let ChatSchema = new Schema({
   batch: { type: mongoose.Schema.Types.ObjectId, ref: 'Batch', required: true },
   messages: [{
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
+    adj: { type: String, required: true },
+    animal: { type: String, required: true },
     nickname: { type: String, required: true},
     message: { type: String, required: true},
     time: { type: Date, required: true},

@@ -73,12 +73,16 @@ export const addBatch = async function (req, res) {
     const preChat = await Chat.create({batch: batch._id, messages: [
         {
           nickname: 'helperBot',
+          adj: 'Beautiful',
+          animal: 'Bot',
           message: 'Hi, I am helperBot, welcome to our HIT!',
           user: botId,
           time: new Date
         },
         {
           nickname: 'helperBot',
+          adj: 'Beautiful',
+          animal: 'Bot',
           message: 'You must be able to stay for the duration of this task, around 1 hour. If you cannot stay for the entire time, ' +
           'please leave now. You will not be compensated if you leave preemptively.',
           user: botId,
@@ -86,6 +90,8 @@ export const addBatch = async function (req, res) {
         },
         {
           nickname: 'helperBot',
+          adj: 'Beautiful',
+          animal: 'Bot',
           message: "We ask for your patience as we wait for enough active users to begin the task! " +
             "Each minute, you will be reminded to type something into the chat so that we know you're active and ready to begin.",
           user: botId,

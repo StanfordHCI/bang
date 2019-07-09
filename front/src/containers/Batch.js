@@ -398,7 +398,7 @@ class Batch extends React.Component {
                   }
 
                   let isSelf = message.user.toString() === user._id.toString();
-
+                  console.log({message})
                   return (
                     <div className={messageClass} key={index + 1}>
                       <div className="chat__avatar mr-2">
@@ -415,11 +415,7 @@ class Batch extends React.Component {
                             imgProps={{ style: { padding: "5px", background: "white" } }}
                             size={{ width: "auto" }}
                             src={animalMap.get(isSelf ? user.realAnimal : message.animal)}
-                          >
-                            <span className="small">
-                              {isSelf ? user.realNick : message.nickname + ".jpg"}
-                            </span>
-                          </Avatar>
+                          />
                         }
                       </div>
                       <div className="chat__bubble-message-wrap">

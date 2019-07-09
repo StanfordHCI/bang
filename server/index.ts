@@ -104,6 +104,8 @@ cron.schedule('* * * * *', async function(){
   if (batch) {
     const botMessage = {
       nickname: 'helperBot',
+      adj: 'Beautiful',
+      animal: 'Bot',
       message: "This is your friendly reminder to type something so we know you're active and ready!",
       user: botId,
       time: new Date
