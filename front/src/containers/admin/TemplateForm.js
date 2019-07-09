@@ -177,7 +177,7 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
   for (let i = 0; i < numRounds; i++) {
     options.push({value: i, label: 'task ' + (i + 1)})
   }
-  const taskNumber = taskArray && taskArray.length ? taskArray.length : numRounds
+  const taskNumber = taskArray && taskArray.length && taskArray.length > numRounds ? taskArray.length : numRounds
 
   for (let i = 0; i < taskNumber; i++) {
     tasks.push(
