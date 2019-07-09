@@ -14,19 +14,12 @@ import { bindActionCreators } from "redux";
 import RenderRadioButtonField from './RadioButton'
 import { connect } from 'react-redux'
 
-
-const styles = {
-    display: 'flex',
-    flexFlow: 'row',
-    justifyContent: 'space-around'
-}
-
 const RadioPanel = ({ name, value, disabled, options, onChange, dispatch }) => {
 
     const [selected, setSelected] = useState(value);
 
     return (
-        <div className="radio-panel" style={styles}>
+        <div className="radio-panel">
             {options.map(option =>
                 <RenderRadioButtonField
                     key={option.value}
