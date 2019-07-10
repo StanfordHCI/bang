@@ -8,13 +8,14 @@ import {Survey} from '../models/surveys'
 import {errorHandler} from '../services/common'
 import {
   addHIT,
+  disassociateQualificationFromWorker,
   getAccountBalance,
   notifyWorkers,
   letters,
   createTeams,
   expireHIT,
   assignQual,
-  runningLive, payBonus, clearRoom
+  runningLive, payBonus, clearRoom, mturk
 } from "./utils";
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
@@ -200,6 +201,43 @@ export const loadTemplate = async function (req, res) {
     res.json({template: template})
   } catch (e) {
     errorHandler(e, 'load template error')
+  }
+}
+
+export const unsubscribe = async function (req, res) {
+  try {
+    logger.info(module, "Unsubscribe was called with the the MTurkId=" + req.params.id)
+    
+    if (!req.params.id) res.json({user: ''})
+
+    const userOfInterest = await User.findOne({mturkId: `${req.params.id}`}).lean().exec();
+    
+    if (userOfInterest === null || userOfInterest === undefined) {
+      res.json({user: userOfInterest})
+    }
+
+    if (userOfInterest.systemStatus === 'willbang') {
+
+      if (process.env.MTURK_MODE !== 'off') {
+        await disassociateQualificationFromWorker(
+          userOfInterest.mturkId,
+          runningLive
+            ? process.env.PROD_WILL_BANG_QUAL
+            : process.env.TEST_WILL_BANG_QUAL,
+          "User never got to complete the HIT; hence why this unsubscription."
+        );
+      }
+      await User.findByIdAndRemove(userOfInterest._id).lean().exec();
+      res.json({user: userOfInterest.mturkId})
+
+    }
+    else {
+      // throw "User has already completed a HIT"
+      res.json({ user: '' });
+    }
+
+  } catch(e) {
+    errorHandler(e, 'unsubscribe user error')
   }
 }
 

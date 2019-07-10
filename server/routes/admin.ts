@@ -23,6 +23,7 @@ module.exports = function (app) {
     .put('/templates', adminController.updateTemplate)
     .delete('/templates', adminController.deleteTemplate)
     .post('/notify/', adminController.notifyUsers)
+    .delete('/unsubscribe/:id/', adminController.unsubscribe)
 
   return adminRoutes;
 };
