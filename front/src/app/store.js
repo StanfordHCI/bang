@@ -13,6 +13,7 @@ import {reducer as reduxFormReducer} from 'redux-form';
 import appReducer from '../reducers/appReducer';
 import batchReducer from '../reducers/batchReducer';
 import adminReducer from '../reducers/adminReducer';
+import unsubscribeReducer from '../reducers/unsubscribeReducer';
 import thunk from 'redux-thunk'
 import {whoami} from "../actions/app";
 
@@ -21,6 +22,7 @@ const reducer = combineReducers({
   batch: batchReducer,
   admin: adminReducer,
   app: appReducer,
+  unsubscribeStatus: unsubscribeReducer,
 });
 
 const composeEnhancers =

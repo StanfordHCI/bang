@@ -4,9 +4,10 @@
  *
  * */
 
-import React, { PureComponent, Component } from "react";
+import React, { Component } from "react";
 import { connect } from "react-redux";
 import { Button, Card, CardBody, Container, Col, Row } from "reactstrap";
+import { unsubscribe } from "../actions/unsubscribe"
 
 class Unsubscribe extends Component {
   //PureComponent {
@@ -14,9 +15,7 @@ class Unsubscribe extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      parsedUrl: "",
       mTurkId: "",
-      error: "",
       isReady: false
     };
     this.handleChange = this.handleChange.bind(this);
@@ -24,7 +23,7 @@ class Unsubscribe extends Component {
 
   componentWillMount() {
     // Parse from the link if there is no mTurkId in the box 
-    // and there is a value in a link
+    // and if there is a value in a link
     this.setState({
       isReady: true,
       mTurkId:
@@ -38,7 +37,10 @@ class Unsubscribe extends Component {
     this.setState({ mTurkId: event.target.value });
   }
 
+
   render() {
+    const { status, unsubscribe } = this.props;
+
     return (
       <Container>
         <Row>
@@ -76,12 +78,18 @@ class Unsubscribe extends Component {
                         minWidth: "10%",
                         marginTop: "20px"
                       }}
-                      onClick={() => alert(`You wanna unsubscribe mTurkId = ${this.state.mTurkId}`)}
+                      onClick={() => unsubscribe(this.state.mTurkId)}
                       className="btn btn-primary"
                     >
                       Unsubscribe
                     </Button>
                   </div>
+                  { status && 
+                  <div
+                    style={{backgroundColor: "#6c757d", color: "white"}}
+                  >
+                    {status}
+                  </div>}
                 </CardBody>
               )}
             </Card>
@@ -92,7 +100,13 @@ class Unsubscribe extends Component {
   }
 }
 
+function mapStateToProps(state) {
+  return {
+    status: state.unsubscribeStatus.status,
+  }
+}
+
 export default connect(
-  null,
-  null
+  mapStateToProps,
+  { unsubscribe }
 )(Unsubscribe);

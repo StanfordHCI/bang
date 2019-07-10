@@ -11,7 +11,7 @@ export const unsubscribe = async function(req, res) {
       `Unsubscribe was called with the the MTurkId= ${req.params.id}`
     );
 
-    if (!req.params.id) res.json({ user: "" });
+    if (!req.params.id) res.json({ user: "", error: "" });
 
     const userOfInterest = await User.findOne({ mturkId: `${req.params.id}` })
       .lean()
@@ -19,7 +19,7 @@ export const unsubscribe = async function(req, res) {
 
     if (userOfInterest === null || userOfInterest === undefined) 
     {
-      res.json({ error: "User was not found" });
+      res.json({ user: `${req.params.id}`, error: 2 });
     } 
     else 
     {
@@ -42,7 +42,7 @@ export const unsubscribe = async function(req, res) {
         
         await User.findByIdAndRemove(userOfInterest._id).lean().exec();
 
-        res.json({ user: userOfInterest.mturkId });
+        res.json({ user: userOfInterest.mturkId, error: 0 });
 
         logger.info(
             module,
@@ -52,7 +52,7 @@ export const unsubscribe = async function(req, res) {
       else 
       {
         // throw "User has already completed a HIT"
-        res.json({ error: "User has already completed a HIT" });
+        res.json({ user: "", error: 1 });
       }
     }
   } catch (e) {
