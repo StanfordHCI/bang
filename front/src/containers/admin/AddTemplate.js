@@ -10,7 +10,8 @@
  import React, {PureComponent} from 'react';
 import {Card, CardBody, Col, Badge, Row, Container, Button, Nav, NavItem, NavLink, TabContent, TabPane} from 'reactstrap';
 import {connect} from "react-redux";
-import {addTemplate, loadSurveyList} from "Actions/admin";
+import {addTemplate} from "Actions/templates";
+import {loadSurveyList} from "Actions/surveys";
 import {bindActionCreators} from "redux";
 import TemplateForm from './TemplateForm'
 import moment from 'moment'
@@ -19,18 +20,18 @@ class AddTemplate extends PureComponent {
   constructor(props) {
     super(props);
     this.state = {
-      isReady: true
+      isReady: false
     };
   }
 
-  /*componentWillMount(){
+  componentWillMount(){
     Promise.all([
-      this.props.loadSurveyList()
+      this.props.loadSurveyList({full: true})
     ])
       .then(()=>{
         this.setState({isReady: true})
       })
-  };*/
+  };
 
   render() {
     return (

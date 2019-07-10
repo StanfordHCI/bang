@@ -4,11 +4,6 @@ import {
   BATCH_ADDED,
   BATCH_UPDATED,
   BATCH_DELETED,
-  TEMPLATE_FETCHED,
-  TEMPLATES_FETCHED,
-  TEMPLATE_ADDED,
-  TEMPLATE_UPDATED,
-  TEMPLATE_DELETED,
   USERS_FETCHED,
   USER_DELETED,
   USER_ADDED
@@ -17,8 +12,6 @@ import {
 const initialState = {
   batch: null,
   batchList: [],
-  template: null,
-  templateList: [],
   userList: []
 };
 
@@ -87,48 +80,6 @@ export default function (state = initialState, action) {
         ...state,
         batchList: deletedBatchList,
         batch: null
-      };
-    case TEMPLATES_FETCHED:
-      return {
-        ...state,
-        templateList: action.data
-      };
-    case TEMPLATE_FETCHED:
-      return {
-        ...state,
-        template: action.data,
-      };
-    case TEMPLATE_ADDED:
-      return {
-        ...state,
-        template: action.data,
-        templateList: [...state.templateList, action.data],
-      };
-    case TEMPLATE_UPDATED:
-      let updatedTemplateList = state.templateList.slice();
-      for (let i = 0; i < updatedTemplateList.length; i++) {
-        if (updatedTemplateList[i]._id === action.data._id) {
-          updatedTemplateList[i] = action.data;
-          break;
-        }
-      }
-      return {
-        ...state,
-        template: action.data,
-        templateList: updatedTemplateList,
-      };
-    case TEMPLATE_DELETED:
-      let deletedTemplateList = state.templateList.slice();
-      for (let i = 0; i < deletedTemplateList.length; i++) {
-        if (deletedTemplateList[i]._id === action.data._id) {
-          deletedTemplateList.splice(i, 1);
-          break;
-        }
-      }
-      return {
-        ...state,
-        templateList: deletedTemplateList,
-        template: null
       };
     default:
       return state;

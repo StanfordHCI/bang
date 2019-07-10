@@ -11,9 +11,7 @@ import React from 'react';
 import {Card, CardBody, Col, Row, Container, Button, Table} from 'reactstrap';
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
-import {socket} from 'Actions/app'
-import {loadTemplateList, cloneTemplate, deleteTemplate} from 'Actions/admin'
-import moment from 'moment'
+import {loadTemplateList, cloneTemplate, deleteTemplate} from 'Actions/templates'
 import {history} from 'App/history';
 
 class TemplateList extends React.Component {
@@ -86,7 +84,7 @@ class TemplateList extends React.Component {
 
 function mapStateToProps(state) {
   return {
-    templateList: state.admin.templateList
+    templateList: state.template.templateList
   }
 }
 

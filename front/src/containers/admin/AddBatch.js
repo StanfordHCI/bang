@@ -10,7 +10,8 @@
 import React, {PureComponent} from 'react';
 import {Card, CardBody, Col, Row, Container, Button, ButtonToolbar} from 'reactstrap';
 import {connect} from "react-redux";
-import {addBatch, loadTemplateList} from "Actions/admin";
+import {addBatch} from "Actions/admin";
+import {loadTemplateList} from "Actions/templates";
 import {bindActionCreators} from "redux";
 import moment from 'moment'
 import Select from 'react-select';
@@ -101,7 +102,7 @@ class AddBatch extends React.Component {
 
 function mapStateToProps(state) {
   return {
-    templateList: state.admin.templateList
+    templateList: state.template.templateList
   }
 }
 
