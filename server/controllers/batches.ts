@@ -77,9 +77,9 @@ export const joinBatch = async function (data, socket, io) {
 }
 
 export const loadBatch = async function (data, socket, io) {
+  let chat, userInfo;
   try {
     const batch = await Batch.findById(data.batch).lean().exec();
-    let chat, userInfo;
     if (batch.status === 'waiting') {
       const prs = await Promise.all([
         Chat.findById(batch.preChat).lean().exec(),
@@ -122,7 +122,8 @@ export const loadBatch = async function (data, socket, io) {
 
     socket.emit('loaded-batch', {batch: batch, chat: chat, userInfo: userInfo})
   } catch (e) {
-    errorHandler(e, 'load batch error')
+    errorHandler(e, 'load batch error, user: ' + socket.userId)
+    console.log(chat)
   }
 }
 

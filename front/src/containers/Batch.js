@@ -113,15 +113,13 @@ class Batch extends React.Component {
       timerIsReady: false,
       autoNames: [],
       ignore: true,
-      isStartNotifySent: false
+      isStartNotifySent: false,
+      closeBlockReady: false
     };
   }
 
   componentWillMount() {
     this.props.loadBatch();
-    window.addEventListener("beforeunload", (ev) => {
-      return ev.returnValue = `Are you sure you want to leave?`;
-    });
   }
 
   componentWillUnmount() {
@@ -132,6 +130,14 @@ class Batch extends React.Component {
   }
 
   componentWillReceiveProps(nextProps, nextState) {
+    if (!this.state.closeBlockReady && nextProps.batch.status === 'active') {
+      window.addEventListener("beforeunload", (ev) =>
+      {
+        return ev.returnValue = `Are you sure you want to leave?`;
+      });
+      this.setState({closeBlockReady: true})
+    }
+
     /*if (!this.state.isStartNotifySent && nextProps.batch.status === 'active') {
       console.log('start')
       this.setState({
