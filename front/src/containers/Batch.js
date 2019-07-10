@@ -30,6 +30,7 @@ import { history } from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
 import ReactHtmlParser from "react-html-parser";
 import { Avatar } from '@material-ui/core';
+import { parseNick } from '../utils'
 import { animalMap, adjMap } from '../constants/nicknames';
 import Bot from '../img/Bot.svg';
 
@@ -399,6 +400,12 @@ class Batch extends React.Component {
                 {chat.messages.map((message, index) => {
                   let messageClass = message.user === user._id ? 'chat__bubble chat__bubble--active' : 'chat__bubble';
                   let messageContent = message.message;
+                  let parsedMessageNickname = parseNick(message.nickname);
+                  let messageAdjective = parsedMessageNickname[0];
+                  let messageAnimal = parsedMessageNickname[1];
+                  let parsedRealnickname = parseNick(user.realNick);
+                  let realAdjective = parsedRealnickname[0];
+                  let realAnimal = parsedRealnickname[1];
 
                   // specially format bot messages
                   if (message.user.toString() === botId) {
@@ -420,16 +427,16 @@ class Batch extends React.Component {
                           : 
                           <Avatar
                             style={{
-                              border: "3px solid" + adjMap.get(isSelf ? user.realAdj : message.adj)
+                              border: "3px solid" + adjMap.get(isSelf ? realAdjective : messageAdjective)
                             }}
                             imgProps={{ style: { padding: "5px", background: "white" } }}
                             size={{ width: "auto" }}
-                            src={animalMap.get(isSelf ? user.realAnimal : message.animal)}
-                          >
-                            <span className="small">
+                            src={animalMap.get(isSelf ? realAnimal : messageAnimal)}
+                          />
+                            /* <span className="small">
                               {isSelf ? user.realNick : message.nickname + ".jpg"}
-                            </span>
-                          </Avatar>
+                            </span> */
+                          /* </Avatar> */
                         }
                       </div>
                       <div className="chat__bubble-message-wrap">
