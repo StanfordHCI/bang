@@ -115,7 +115,6 @@ class SurveyForm extends React.Component {
     for (let i in survey) {
       this.props.dispatch(change('SurveyForm', i, survey[i]))
     }
-    console.log(survey)
   }
 
   handleFileUpload = event => {

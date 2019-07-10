@@ -13,7 +13,6 @@ let  SurveyTemplateSchema = new Schema({
     question: {type: String, required: true},
     type: {type: String, required: true},
     options: [{option: {type: String, required: true}}],
-    selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
   }]
 }, options);
 export const SurveyTemplate = mongoose.model('SurveyTemplate', SurveyTemplateSchema);

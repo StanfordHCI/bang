@@ -406,7 +406,6 @@ const validate = (values, props) => {
   if (!values.tasks || !values.tasks.length) {
     errors.name = 'add tasks please'
   } else if (values.tasks.length !== parseInt(values.numRounds) ) {
-    console.log(values.tasks, values.numRounds)
     errors.numRounds = 'number of rounds != number of tasks'
   }
 
