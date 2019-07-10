@@ -100,16 +100,20 @@ export const addBatch = async function (req, res) {
     prs.push(activeCheck(io))
     if (process.env.MTURK_MODE !== 'off') {
       const users = await User.find({systemStatus: 'willbang', isTest: false}).select('mturkId').lean().exec();
-
+      const message = 'Hello, our HIT is now active. ' +  
+      'Participation will earn a bonus of ~$12/hour. ' +
+      'Please find the first email we sent you and join using that link: '  + 
+      ' Our records indicate that you were interested in joining this HIT previously. ' + 
+      'If you are no longer interested in participating, please email us and we will remove you from this list.';
       let workers = [];
       users.forEach(user => {
         workers.push(user.mturkId);
         if (workers.length >= 99) {
-          prs.push(notifyWorkers(workers.slice(), 'Experiment started. Please find first email from us and join with your login link.', 'Bang'))
+          prs.push(notifyWorkers(workers.slice(), message, 'Bang'))
           workers = [];
         }
       })
-      prs.push(notifyWorkers(workers.slice(), 'Experiment started. Please find first email from us and join with your login link.', 'Bang'))
+      prs.push(notifyWorkers(workers.slice(), message, 'Bang'))
     }
     await Promise.all(prs)
   } catch (e) {
