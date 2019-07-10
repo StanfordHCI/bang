@@ -87,16 +87,44 @@ class PostSurveyForm extends React.Component {
                       />
                     </div>
                   </div>
+
+                  <div className='form__form-group'>
+                    <label className='form__form-group-label'>
+                      <p>Why do you think it was these two rounds?</p>
+                    </label>
+                    <div className='form__form-group-field'>
+                      <Field
+                        name='mainQuestion.expRound3'
+                        component={renderField}
+                        type='text'
+                      />
+                    </div>
+                  </div>
+
+
+
                   <div className='form__form-group'>
                     <label className='form__form-group-label'>What partners do you prefer to work with in the future?</label>
                     <div className='form__form-group-field'>
                       <Field
-                        name={'mainQuestion.partners'}
+                        name={'mainQuestion.partners1'}
                         component={renderMultiSelectField}
                         options={this.state.uOptions}
                       />
                     </div>
                   </div>
+
+                  <div className='form__form-group'>
+                    <label className='form__form-group-label'>Why do you prefer these partners?</label>
+                    <div className='form__form-group-field'>
+                      <Field
+                        name={'mainQuestion.partners1'}
+                        component={renderField}
+                      />
+                    </div>
+                  </div>
+
+
                 </div>
               </Col>
             </Row>
