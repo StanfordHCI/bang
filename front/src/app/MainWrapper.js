@@ -40,7 +40,7 @@ class MainWrapper extends PureComponent {
     const {user, appReady, loading} = this.props;
 
     return (
-      <div className="theme-dark">
+      <div className={process.env.NODE_ENV === 'production' ? "theme-light" : "theme-dark"}>
         {appReady &&  <div className="wrapper">
           {user && !!user.isAdmin && <Navbar
             color="dark"

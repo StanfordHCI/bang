@@ -299,7 +299,9 @@ class TemplateForm extends React.Component {
 
   constructor() {
     super();
-    this.state = {};
+    this.state = {
+
+    };
   }
 
   /*handleGenerate(){
@@ -317,6 +319,21 @@ class TemplateForm extends React.Component {
     this.props.dispatch(change('TemplateForm', 'tasks', tasks))
   }
 
+  dispatchJsonData = (data) => {
+    const template = JSON.parse(data.target.result)
+    for (let i in template) {
+      this.props.dispatch(change('TemplateForm', i, template[i]))
+    }
+    console.log(template)
+  }
+
+  handleFileUpload = event => {
+    const file = event.target.files[0];
+    let fileReader = new FileReader();
+    fileReader.onloadend = this.dispatchJsonData
+    fileReader.readAsText(file);
+  }
+
   render() {
     const {invalid, numRounds, teamSize, roundGen, dispatch, pristine, isAdd, tasks} = this.props;
 
@@ -326,6 +343,9 @@ class TemplateForm extends React.Component {
           <Row>
             <Col><div className='form__panel'>
             <div className='form__panel-body' style={{borderBottom: '2px solid grey'}}>
+              <Row style={{paddingBottom: '10px'}}>
+                <input type="file" name="json" id="json" onChange={this.handleFileUpload} />
+              </Row>
               <Row>
                 <Col className='form__form-group'>
                   <label className='form__form-group-label'>Name:</label>

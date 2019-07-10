@@ -16,7 +16,28 @@ export const CLEAR_TEMPLATES = 'CLEAR_TEMPLATES';
 export const USER_DELETED = 'USER_DELETED';
 export const USERS_FETCHED = 'USERS_FETCHED';
 export const USER_ADDED = 'USER_ADDED';
+export const SURVEYS_FETCHED = 'SURVEYS_FETCHED'
 
+export function loadSurveyList() {
+  return dispatch => {
+    dispatch(setLoading(true));
+
+    return axios({
+      method: 'get',
+      url: 'admin/surveys/',
+    })
+      .then((response) => {
+        dispatch(setLoading(false));
+        dispatch({
+          type: SURVEYS_FETCHED,
+          data: response.data.surveyList
+        });
+      })
+      .catch(err => {
+        errorCatcher(err, dispatch)
+      });
+  };
+}
 
 export function updateBatch(batch) {
   return dispatch => {
