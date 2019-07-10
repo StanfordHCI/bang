@@ -28,15 +28,14 @@ const replaceNicksInSurvey = (message, users, currentUser) => {
   return message;
 }
 
-
 const renderQuestions = ({fields, meta: {touched, error, warning}, questions, readOnly, users, currentUser}) => {
   let tasks = [];
   for (let i = 0; i < questions.length; i++) {
     tasks.push(
-      <div key={i} className='form__form-group'>
+      <div tabindex={i} key={i} className='form__form-group'>
         <label className='form__form-group-label'>{replaceNicksInSurvey(questions[i].question, users, currentUser)}</label>
         <div className='form__form-group-field' style={{maxWidth: '700px'}}>
-          <Field
+          <Field 
             name={`questions[${i}].result`}
             component={questions[i].type ==='select' ? renderRadioPanel : renderField}
             type={questions[i].type}
@@ -58,6 +57,23 @@ class MidSurveyForm extends React.Component {
   constructor() {
     super();
     this.state = {};
+    this.myRef = React.createRef();
+  }
+
+  componentDidMount() {
+    this.moveFocus();
+  }
+  moveFocus() {
+    const node = this.myRef.current;
+    node.addEventListener('keydown', function(e) {
+      const active = document.activeElement;
+      if(e.keyCode === 40 && active.nextSibling) {
+        active.nextSibling.focus();
+      }
+      if(e.keyCode === 38 && active.previousSibling) {
+        active.previousSibling.focus();
+      }
+    });
   }
 
   render() {
@@ -68,7 +84,7 @@ class MidSurveyForm extends React.Component {
           <Container>
             <Row>
               <Col>
-                <div className='form__panel'>
+                <div ref={this.myRef} className='form__panel'>
                   <FieldArray
                     name="questions"
                     component={renderQuestions}
