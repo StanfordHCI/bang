@@ -674,13 +674,14 @@ const launchBang = callback => {
   let time = Date.now();
 
   let HITTitle =
-    "Write online ads - bonus up to $" + hourlyWage + " / hour (" + time + ")";
+    'Write online ads - bonus up to $' + hourlyWage + ' / hour (' + time + ')';
   let description =
-    "Work in groups to write ads for new products. This task will take approximately " +
+    'Work in groups to write ads for new Kickstarter products on a new platform that allows creators to ' +
+    'outsource their ad campaigns. This task will take approximately ' +
     Math.round(roundMinutes * numRounds + 10) +
-    " minutes. There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" +
-    bonusPrice +
-    ".";
+    ' minutes. When you accept this HIT, you will receive an email with a link to the task platform. ' +
+    'This HIT does involve a waiting period, which will be compensated if you complete the entire task. ' +
+    'Additionally, if you complete the task you will receive a bonus of $' + bonusPrice + '.';
   let assignmentDuration = 60 * taskDuration;
   let lifetime = 60 * timeActive;
   let reward = String(rewardPrice);

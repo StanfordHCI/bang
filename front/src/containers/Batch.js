@@ -30,6 +30,7 @@ import { history } from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
 import ReactHtmlParser from "react-html-parser";
 import { Avatar } from '@material-ui/core';
+import { parseNick } from '../utils'
 import { animalMap, adjMap } from '../constants/nicknames';
 import Bot from '../img/Bot.svg';
 
@@ -110,15 +111,15 @@ class Batch extends React.Component {
       surveyDone: false,
       isReady: false,
       timerIsReady: false,
-      autoNames: []
+      autoNames: [],
+      ignore: true,
+      isStartNotifySent: false,
+      closeBlockReady: false
     };
   }
 
   componentWillMount() {
     this.props.loadBatch();
-    window.addEventListener("beforeunload", (ev) => {
-      return ev.returnValue = `Are you sure you want to leave?`;
-    });
   }
 
   componentWillUnmount() {
@@ -129,6 +130,26 @@ class Batch extends React.Component {
   }
 
   componentWillReceiveProps(nextProps, nextState) {
+    if (!this.state.closeBlockReady && nextProps.batch.status === 'active') {
+      window.addEventListener("beforeunload", (ev) =>
+      {
+        return ev.returnValue = `Are you sure you want to leave?`;
+      });
+      this.setState({closeBlockReady: true})
+    }
+
+    /*if (!this.state.isStartNotifySent && nextProps.batch.status === 'active') {
+      console.log('start')
+      this.setState({
+        isStartNotifySent: true,
+        notifyTitle: 'Bang: started!',
+        notifyOptions: {
+          body: 'Bang: started!',
+          lang: 'en',
+          dir: 'ltr',
+        }
+      });
+    }*/
     if (!this.state.isReady && nextProps.chat && nextProps.batch) { //init here because loadBatch is not promise
       if (nextProps.batch.finalSurveyDone) {
         history.push('batch-end')
@@ -385,6 +406,12 @@ class Batch extends React.Component {
                 {chat.messages.map((message, index) => {
                   let messageClass = message.user === user._id ? 'chat__bubble chat__bubble--active' : 'chat__bubble';
                   let messageContent = message.message;
+                  let parsedMessageNickname = parseNick(message.nickname);
+                  let messageAdjective = parsedMessageNickname[0];
+                  let messageAnimal = parsedMessageNickname[1];
+                  let parsedRealnickname = parseNick(user.realNick);
+                  let realAdjective = parsedRealnickname[0];
+                  let realAnimal = parsedRealnickname[1];
 
                   // specially format bot messages
                   if (message.user.toString() === botId) {
@@ -406,16 +433,16 @@ class Batch extends React.Component {
                           : 
                           <Avatar
                             style={{
-                              border: "3px solid" + adjMap.get(isSelf ? user.realAdj : message.adj)
+                              border: "3px solid" + adjMap.get(isSelf ? realAdjective : messageAdjective)
                             }}
                             imgProps={{ style: { padding: "5px", background: "white" } }}
                             size={{ width: "auto" }}
-                            src={animalMap.get(isSelf ? user.realAnimal : message.animal)}
-                          >
-                            <span className="small">
+                            src={animalMap.get(isSelf ? realAnimal : messageAnimal)}
+                          />
+                            /* <span className="small">
                               {isSelf ? user.realNick : message.nickname + ".jpg"}
-                            </span>
-                          </Avatar>
+                            </span> */
+                          /* </Avatar> */
                         }
                       </div>
                       <div className="chat__bubble-message-wrap">
@@ -458,8 +485,12 @@ class Batch extends React.Component {
   }
 
   renderWaitingStage() {
+    const {limit, activeCounter} = this.props;
+
     return (<div>
       <h5 className='bold-text'></h5>
+      <p>We are currently waiting on <b>{limit - activeCounter > 0 ? limit - activeCounter : 0} </b>
+        more MTurk users to accept the task.</p>
       {this.renderChat()}
     </div>)
   }
@@ -537,6 +568,21 @@ class Batch extends React.Component {
     </div>)
   }
 
+  handlePermissionGranted(){
+    this.setState({
+      ignore: false
+    });
+  }
+  handlePermissionDenied(){
+    this.setState({
+      ignore: true
+    });
+  }
+  handleNotSupported(){
+    this.setState({
+      ignore: true
+    });
+  }
 
   render() {
     const { batch } = this.props;
@@ -547,6 +593,15 @@ class Batch extends React.Component {
           <Col md={12} lg={12} xl={12}>
             <Card>
               {this.state.isReady && <CardBody>
+                {/*<Notification
+                  ignore={this.state.ignore && this.state.title !== ''}
+                  notSupported={this.handleNotSupported.bind(this)}
+                  onPermissionGranted={this.handlePermissionGranted.bind(this)}
+                  onPermissionDenied={this.handlePermissionDenied.bind(this)}
+                  timeout={5000}
+                  title={this.state.notifyTitle}
+                  options={this.state.notifyOptions}
+                />*/}
                 {batch.status === 'waiting' && this.renderWaitingStage()}
                 {batch.status === 'active' && this.renderActiveStage()}
                 {batch.status === 'completed' && this.renderCompletedStage()}
@@ -578,6 +633,8 @@ function mapStateToProps(state) {
   }
 
   return {
+    limit: batch ? batch.teamSize ** 2 : 999,
+    activeCounter: batch ? batch.users.length : 0,
     user: state.app.user,
     batch: batch,
     chat: chat,

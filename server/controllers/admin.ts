@@ -1,7 +1,6 @@
 import {User} from "../models/users";
 const moment = require('moment')
 require('dotenv').config({path: './.env'});
-import {Template} from '../models/templates'
 import {Chat} from '../models/chats'
 import {Batch} from '../models/batches'
 import {Survey} from '../models/surveys'
@@ -87,7 +86,7 @@ export const addBatch = async function (req, res) {
         {
           nickname: 'helperBot',
           message: "We ask for your patience as we wait for enough active users to begin the task! " +
-            "Each minute, you will be reminded to type something into the chat so that we know you're active and ready to begin.",
+            "Each 3 minutes, you will be reminded to type something into the chat so that we know you're active and ready to begin.",
           user: botId,
           time: new Date
         },
@@ -99,17 +98,17 @@ export const addBatch = async function (req, res) {
     let prs = [];
     prs.push(activeCheck(io))
     if (process.env.MTURK_MODE !== 'off') {
-      const users = await User.find({systemStatus: 'willbang', isTest: false}).select('mturkId').lean().exec();
-
-      let workers = [];
+      const users = await User.find({systemStatus: 'willbang', isTest: false}).sort({createdAt: 1}).limit(200)
+        .select('mturkId testAssignmentId').lean().exec();
       users.forEach(user => {
-        workers.push(user.mturkId);
-        if (workers.length >= 99) {
-          prs.push(notifyWorkers(workers.slice(), 'Experiment started. Please find first email from us and join with your login link.', 'Bang'))
-          workers = [];
-        }
+        const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
+        const message = 'Hello, our HIT is now active. ' +
+          'Participation will earn a bonus of ~$12/hour. ' +
+          'Please join us here: ' + url +
+          ' Our records indicate that you were interested in joining this HIT previously. ' +
+          'If you are no longer interested in participating, please email us and we will remove you from this list.';
+        prs.push(notifyWorkers([user.mturkId], message, 'Bang'))
       })
-      prs.push(notifyWorkers(workers.slice(), 'Experiment started. Please find first email from us and join with your login link.', 'Bang'))
     }
     await Promise.all(prs)
   } catch (e) {
@@ -126,61 +125,6 @@ export const loadBatchList = async function (req, res) {
   }
 }
 
-export const loadTemplateList = async function (req, res) {
-  try {
-    let select = '';
-    if (req.query.full) {
-      select = ''
-    } else {
-      select = 'name teamSize'
-    }
-    const templateList = await Template.find({}).select(select).lean().exec();
-    res.json({templateList: templateList})
-  } catch (e) {
-    errorHandler(e, 'load templates error')
-  }
-}
-
-export const addTemplate = async function (req, res) {
-  try {
-    let newTemplate = req.body;
-    const template = await Template.create(req.body);
-    res.json({template: template})
-  } catch (e) {
-    errorHandler(e, 'add template error')
-  }
-}
-
-export const deleteTemplate = async function (req, res) {
-  try {
-    await Template.findByIdAndRemove(req.body._id).exec();
-    res.json({template: {_id: req.body._id}})
-  } catch (e) {
-    errorHandler(e, 'add template error')
-  }
-}
-
-export const cloneTemplate = async function (req, res) {
-  try {
-    let original = await Template.findById(req.body._id).lean().exec();
-    delete original._id;
-    original.name = original.name + ' (copy)';
-    const template = await Template.create(original);
-    res.json({template: {_id: template._id, name: template.name, teamSize: template.teamSize}})
-  } catch (e) {
-    errorHandler(e, 'clone template error')
-  }
-}
-
-export const updateTemplate = async function (req, res) {
-  try {
-    const template = await Template.findByIdAndUpdate(req.body._id, {$set: req.body}, {new: true}).lean().exec();
-    res.json({template: template})
-  } catch (e) {
-    errorHandler(e, 'add template error')
-  }
-}
-
 export const loadUserList = async function (req, res) {
   try {
     const users = await User.find({}).select('mturkId systemStatus connected testAssignmentId isTest').lean().exec();
@@ -191,15 +135,6 @@ export const loadUserList = async function (req, res) {
     res.json({users: users})
   } catch (e) {
     errorHandler(e, 'load users error')
-  }
-}
-
-export const loadTemplate = async function (req, res) {
-  try {
-    const template = await Template.findById(req.params.id).lean().exec();
-    res.json({template: template})
-  } catch (e) {
-    errorHandler(e, 'load template error')
   }
 }
 

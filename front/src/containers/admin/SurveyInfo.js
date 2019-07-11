@@ -1,23 +1,23 @@
-/** TemplateInfo.js
+/** SurveyInfo.js
  *  front-end
- * 
- *  admin only layout for editing a template
- *  note: the actual file called edittemplate is a code scrap
- * 
+ *
+ *  admin only layout for editing a survey
+ *  note: the actual file called editsurvey is a code scrap
+ *
  *  called by:
- *    1. Router.js    
+ *    1. Router.js
  */
 
 import React, {PureComponent} from 'react';
 import {Card, CardBody, Col, Badge, Row, Container, Button, Nav, NavItem, NavLink, TabContent, TabPane} from 'reactstrap';
 import {connect} from "react-redux";
-import {loadTemplate, updateTemplate} from "Actions/templates";
+import {loadSurvey, updateSurvey} from "Actions/surveys";
 import {loadSurveyList} from "Actions/surveys";
 import {bindActionCreators} from "redux";
-import TemplateForm from './TemplateForm'
+import SurveyForm from './SurveyForm'
 import moment from 'moment'
 
-class TemplateInfo extends PureComponent {
+class SurveyInfo extends PureComponent {
   constructor(props) {
     super(props);
     this.state = {
@@ -27,8 +27,7 @@ class TemplateInfo extends PureComponent {
 
   componentWillMount(){
     Promise.all([
-      this.props.loadTemplate(this.props.match.params.id),
-      this.props.loadSurveyList({full: true})
+      this.props.loadSurvey(this.props.match.params.id),
     ])
       .then(()=>{
         this.setState({isReady: true})
@@ -36,7 +35,7 @@ class TemplateInfo extends PureComponent {
   };
 
   render() {
-    const {template, updateTemplate} = this.props;
+    const {survey, updateSurvey} = this.props;
 
     return (
       <Container>
@@ -45,9 +44,9 @@ class TemplateInfo extends PureComponent {
             <Card>
               {this.state.isReady && <CardBody>
                 <div className='card__title'>
-                  <h5 className='bold-text'>Template Info</h5>
+                  <h5 className='bold-text'>Survey Info</h5>
                 </div>
-                <TemplateForm initialValues={template} onSubmit={updateTemplate}/>
+                <SurveyForm initialValues={survey} onSubmit={updateSurvey}/>
               </CardBody>}
             </Card>
           </Col>
@@ -59,17 +58,16 @@ class TemplateInfo extends PureComponent {
 
 function mapStateToProps(state) {
   return {
-    template: state.template.template,
-
+    survey: state.survey.survey
   }
 }
 
 function mapDispatchToProps(dispatch) {
   return bindActionCreators({
-    loadTemplate,
-    updateTemplate,
+    loadSurvey,
+    updateSurvey,
     loadSurveyList
   }, dispatch);
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(TemplateInfo);
+export default connect(mapStateToProps, mapDispatchToProps)(SurveyInfo);

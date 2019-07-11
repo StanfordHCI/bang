@@ -44,7 +44,7 @@ export const joinBatch = async function (data, socket, io) {
       const prs = await Promise.all([
         Batch.findByIdAndUpdate(batch._id, { $addToSet: { users: {user: socket.userId, nickname: nickname, joinDate: new Date()}},  }, {new: true}),
         User.findByIdAndUpdate(socket.userId,
-          { $set: { batch: batch._id, realNick: nickname, realAdj: adjective, realAnimal: animal, currentChat: batch.preChat} }, {new: true}).lean().exec()
+          { $set: { batch: batch._id, realNick: nickname, currentChat: batch.preChat} }, {new: true}).lean().exec()
       ])
       user = prs[1]
       batch = prs[0]
@@ -77,9 +77,9 @@ export const joinBatch = async function (data, socket, io) {
 }
 
 export const loadBatch = async function (data, socket, io) {
+  let chat, userInfo;
   try {
     const batch = await Batch.findById(data.batch).lean().exec();
-    let chat, userInfo;
     if (batch.status === 'waiting') {
       const prs = await Promise.all([
         Chat.findById(batch.preChat).lean().exec(),
@@ -122,7 +122,8 @@ export const loadBatch = async function (data, socket, io) {
 
     socket.emit('loaded-batch', {batch: batch, chat: chat, userInfo: userInfo})
   } catch (e) {
-    errorHandler(e, 'load batch error')
+    errorHandler(e, 'load batch error, user: ' + socket.userId)
+    console.log(chat)
   }
 }
 
@@ -179,7 +180,7 @@ const startBatch = async function (batch, socket, io) {
       teams.forEach((team, index) => {
         team.chat = chats[index]._id;
         team.users.forEach(user => {
-          prsHelper.push(User.findByIdAndUpdate(user.user, {$set: {fakeNick: user.nickname, fakeAdj: user.adjective, fakeAnimal: user.animal, currentChat: team.chat}}));
+          prsHelper.push(User.findByIdAndUpdate(user.user, {$set: {fakeNick: user.nickname, currentChat: team.chat}}));
           return user;
         })
         return team;
