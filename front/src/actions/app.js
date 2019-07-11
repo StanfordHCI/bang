@@ -53,10 +53,8 @@ export const whoami = () => {
       });
 
       let unsubLink = link.slice(link.indexOf("unsubscribe"))
-      console.log(link)
-      console.log(unsubLink)
       localStorage.clear()
-      history.push(unsubLink)
+      history.push(`/${unsubLink}`)
     }
     else 
     {
