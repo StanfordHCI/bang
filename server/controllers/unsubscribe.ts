@@ -23,7 +23,7 @@ export const unsubscribe = async function(req, res) {
     } 
     else 
     {
-      if (userOfInterest.systemStatus === "willbang") 
+      if (userOfInterest.systemStatus === "willbang" || userOfInterest.batch)
       {
         if (process.env.MTURK_MODE !== "off") 
         {
