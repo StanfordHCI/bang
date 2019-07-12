@@ -44,85 +44,103 @@ export const whoami = () => {
   return function (dispatch) {
     const token = localStorage.getItem('bang-token');
     const adminToken = localStorage.getItem('bang-admin-token')
-    const URLvars = getUrlVars(window.location.href);
-    let initData = {
-      mturkId: URLvars.workerId,
-      assignmentId: URLvars.assignmentId,
-      hitId: URLvars.hitId,
-      turkSubmitTo: decodeURL(URLvars.turkSubmitTo),
-    }
-    if (adminToken) {
-      initData.adminToken = adminToken;
-    }
+    let link = window.location.href
 
-    if (token) {
-      initData.token = token;
-      dispatch(setLoading(true));
-      socket.emit('init', initData)
-    } else {
-      if  (!initData.mturkId || !initData.assignmentId) { //not logged, wrong info
-        dispatch({
-          type: APP_READY,
-        });
-        dispatch(setSnackbar('wrong credentials'));
-        localStorage.clear()
-        history.push('/not-logged')
-      } else {
-        dispatch(setLoading(true));
-        socket.emit('init', initData)
-        //history.push('/waiting')
-      }
-    }
-    socket.once('init-res', (data) => {
-      dispatch(setLoading(false));
-      if (!data || !data.user) { //init goes wrong
-        dispatch({
-          type: APP_READY,
-        });
-        dispatch(setSnackbar('wrong credentials'));
-        //localStorage.clear()
-        history.push('/not-logged')
-        return;
-      }
-      //init goes right
-      if (!token || token !== data.user.token) {
-        localStorage.setItem('bang-token', data.user.token)
-      }
-      dispatch({
-        type: INIT_SUCCESS,
-        data: {user: data.user}
-      });
+    if (link.indexOf("unsubscribe") !== -1) {
+      
       dispatch({
         type: APP_READY,
       });
-      if (!data.user.isAdmin) {
-        if (data.user.systemStatus ==='willbang') {
-          if (data.user.batch) {
-            history.push('/batch');
-          } else {
-            history.push('/waiting');
-          }
-        } else if (data.user.systemStatus ==='hasbanged') {
-          history.push('/batch-end');
+
+      let unsubLink = link.slice(link.indexOf("unsubscribe"))
+      localStorage.clear()
+      history.push(`/${unsubLink}`)
+    }
+    else 
+    {
+      
+      const URLvars = getUrlVars(link);
+      let initData = {
+        mturkId: URLvars.workerId,
+        assignmentId: URLvars.assignmentId,
+        hitId: URLvars.hitId,
+        turkSubmitTo: decodeURL(URLvars.turkSubmitTo),
+      }
+      if (adminToken) {
+        initData.adminToken = adminToken;
+      }
+  
+      if (token) {
+        initData.token = token;
+        dispatch(setLoading(true));
+        socket.emit('init', initData)
+      } else {
+        if  (!initData.mturkId || !initData.assignmentId) { //not logged, wrong info
+          dispatch({
+            type: APP_READY,
+          });
+  
+          dispatch(setSnackbar('wrong credentials'));
+          localStorage.clear()
+          history.push('/not-logged')
+        } else {
+          dispatch(setLoading(true));
+          socket.emit('init', initData)
+          //history.push('/waiting')
         }
       }
-    });
-    socket.on('send-error', (data) => {
-      dispatch(setSnackbar(data));
-    })
-    socket.on('kick-afk', (data) => {
-      window.removeEventListener("beforeunload", (ev) =>
-      {
-        return ev.returnValue = `Are you sure you want to leave?`;
+      socket.once('init-res', (data) => {
+        dispatch(setLoading(false));
+        if (!data || !data.user) { //init goes wrong
+          dispatch({
+            type: APP_READY,
+          });
+          dispatch(setSnackbar('wrong credentials'));
+          //localStorage.clear()
+          history.push('/not-logged')
+          return;
+        }
+        //init goes right
+        if (!token || token !== data.user.token) {
+          localStorage.setItem('bang-token', data.user.token)
+        }
+        dispatch({
+          type: INIT_SUCCESS,
+          data: {user: data.user}
+        });
+        dispatch({
+          type: APP_READY,
+        });
+        if (!data.user.isAdmin) {
+          if (data.user.systemStatus ==='willbang') {
+            if (data.user.batch) {
+              history.push('/batch');
+            } else {
+              history.push('/waiting');
+            }
+          } else if (data.user.systemStatus ==='hasbanged') {
+            history.push('/batch-end');
+          }
+        }
       });
-      dispatch(setSnackbar('You are afk'));
-      window.location.reload();
-    })
-    socket.on('stop-batch', (data) => {
-      dispatch(setSnackbar('Batch was stopped'));
-      history.push('/batch-end')
-    })
-    socket.emit('send-error', 'There is no right batch')
+      socket.on('send-error', (data) => {
+        dispatch(setSnackbar(data));
+      })
+      socket.on('kick-afk', (data) => {
+        window.removeEventListener("beforeunload", (ev) =>
+        {
+          return ev.returnValue = `Are you sure you want to leave?`;
+        });
+        dispatch(setSnackbar('You are afk'));
+        window.location.reload();
+      })
+      socket.on('stop-batch', (data) => {
+        dispatch(setSnackbar('Batch was stopped'));
+        history.push('/batch-end')
+      })
+      socket.emit('send-error', 'There is no right batch')
+    }
+
   }
 }
 

@@ -36,7 +36,7 @@ mongoose.connection.on('error', (err) => {
 mongoose.connection.once('open', function () {
   logger.info(module, 'DB: connected');
 });
-mongoose.connect(process.env.MONGO_URI, {useNewUrlParser: true});
+mongoose.connect(process.env.MONGO_URI, {useNewUrlParser: true, useFindAndModify: false});
 
 const corsOptions = {
   origin: '*', //process.env.NODE_ENV === 'production' ? process.env.API_HOST : 'http://localhost:3000',

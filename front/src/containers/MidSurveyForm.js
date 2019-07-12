@@ -19,7 +19,7 @@ import {connect} from 'react-redux'
 import {Field, FieldArray, reduxForm, formValueSelector, change} from 'redux-form'
 import {bindActionCreators} from "redux";
 import {renderField} from 'Components/form/Text'
-import renderSelectField from 'Components/form/Select'
+import renderRadioPanel from 'Components/form/RadioPanel'
 
 const replaceNicksInSurvey = (message, users, currentUser) => {
   users.filter(user => currentUser._id.toString() !== user._id.toString()).forEach((user, index) => {
@@ -35,10 +35,10 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, questions, re
     tasks.push(
       <div key={i} className='form__form-group'>
         <label className='form__form-group-label'>{replaceNicksInSurvey(questions[i].question, users, currentUser)}</label>
-        <div className='form__form-group-field' style={{maxWidth: '200px'}}>
+        <div className='form__form-group-field' style={{maxWidth: '700px'}}>
           <Field
             name={`questions[${i}].result`}
-            component={questions[i].type ==='select' ? renderSelectField : renderField}
+            component={questions[i].type ==='select' ? renderRadioPanel : renderField}
             type={questions[i].type}
             disabled={readOnly}
             options={questions[i].type ==='select' ? questions[i].selectOptions : []}

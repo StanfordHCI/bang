@@ -1,5 +1,6 @@
 import * as express from 'express';
 const adminRoutes = require('./admin')
+const publicRoutes = require('./public')
 
 const cors = require('cors')
 
@@ -22,6 +23,7 @@ module.exports = function (app) {
   rootRoutes
     .options('*', cors())
     .use('/api/admin', isAdmin, adminRoutes(app))
+    .use('/api/public', publicRoutes(app))
     .get('/ping', ping)
 
   return rootRoutes;
