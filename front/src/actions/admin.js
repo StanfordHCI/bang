@@ -392,13 +392,13 @@ export function loadTemplate(templateId) {
   };
 }
 
-export function notifyUsers(message) {
+export function notifyUsers(params) {
   return (dispatch, getState) => {
     dispatch(setLoading(true));
     return axios({
       method: 'post',
       url: 'admin/notify/',
-      data: {message: message}
+      data: params
     })
       .then((response) => {
         dispatch(setLoading(false));

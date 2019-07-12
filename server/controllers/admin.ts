@@ -101,10 +101,15 @@ export const addBatch = async function (req, res) {
     if (process.env.MTURK_MODE !== 'off') {
       const users = await User.find({systemStatus: 'willbang', isTest: false}).sort({createdAt: 1}).limit(200)
         .select('mturkId testAssignmentId').lean().exec();
-      users.forEach(user => {
+      for (let i = 0; i < users.length; i++) {
+        const user = users[i];
         const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
         prs.push(notifyWorkers([user.mturkId], 'Experiment started. Please join us here: ' + url, 'Bang'))
-      })
+        if (i % 20 === 0) {
+          await Promise.all(prs);
+          prs = [];
+        }
+      }
     }
     await Promise.all(prs)
   } catch (e) {
@@ -300,20 +305,40 @@ export const loadBatchResult = async function (req, res) {
 
 export const notifyUsers = async function (req, res) {
   try {
-    const users = await User.find({systemStatus: 'willbang', isTest: false}).select('mturkId').lean().exec();
+    let prs = [];
+    if (req.body.start) {
+      const users = await User.find({systemStatus: 'willbang', isTest: false}).sort({createdAt: 1}).limit(parseInt(req.body.pass) + parseInt(req.body.limit))
+        .select('mturkId testAssignmentId').lean().exec();
 
-    let workers = [], prs = [];
-    users.forEach(user => {
-      workers.push(user.mturkId);
-      if (workers.length >= 99) {
-        prs.push(notifyWorkers(workers.slice(), req.body.message, 'Bang'))
-        workers = [];
+      for (let i = 0; i < users.length; i++) {
+        if (i + 1 > parseInt(req.body.pass)) {
+          const user = users[i];
+          const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
+          prs.push(notifyWorkers([user.mturkId], 'Experiment started. Please join us here: ' + url, 'Bang'))
+          if (i % 20 === 0) {
+            await Promise.all(prs);
+            logger.info(module, 'Notification sent to 20 users');
+            prs = [];
+          }
+        }
       }
-    })
-    prs.push(notifyWorkers(workers.slice(), req.body.message, 'Bang'))
+      await Promise.all(prs);
+      logger.info(module, 'Notification sent to ' + prs.length + ' users');
 
-    await Promise.all(prs)
-    logger.info(module, 'Notification sent to ' + users.length + ' users');
+    } else {
+      const users = await User.find({systemStatus: 'willbang', isTest: false}).select('mturkId').lean().exec();
+      let workers = [];
+      users.forEach(user => {
+        workers.push(user.mturkId);
+        if (workers.length >= 99) {
+          prs.push(notifyWorkers(workers.slice(), req.body.message, 'Bang'))
+          workers = [];
+        }
+      })
+      prs.push(notifyWorkers(workers.slice(), req.body.message, 'Bang'))
+      await Promise.all(prs)
+      logger.info(module, 'Notification sent to ' + users.length + ' users');
+    }
 
     res.json({})
   } catch (e) {
