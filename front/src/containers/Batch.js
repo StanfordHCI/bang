@@ -150,6 +150,7 @@ class Batch extends React.Component {
         }
       });
     }*/
+    
     if (!this.state.isReady && nextProps.chat && nextProps.batch) { //init here because loadBatch is not promise
       if (nextProps.batch.finalSurveyDone) {
         history.push('batch-end')
