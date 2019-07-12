@@ -424,7 +424,7 @@ class Batch extends React.Component {
 
                   return (
                     <div className={messageClass} key={index + 1}>
-                      <div className="chat__avatar mr-2">
+                      {(batch.withAvatar) && <div className="chat__avatar mr-2">
                         {(message.user.toString() === botId) ?
                           <Avatar
                             size={{ width: "auto" }}
@@ -444,7 +444,7 @@ class Batch extends React.Component {
                             </span> */
                           /* </Avatar> */
                         }
-                      </div>
+                      </div>}
                       <div className="chat__bubble-message-wrap">
                         <p className="chat__bubble-contact-name">
                           {isSelf ? user.realNick : message.nickname}

@@ -25,7 +25,8 @@ class AddBatch extends React.Component {
       isReady: false,
       options: [],
       note: '',
-      maskType: ''
+      maskType: '',
+      avatarType: false,
     }
   }
 
@@ -42,6 +43,7 @@ class AddBatch extends React.Component {
     let batch = Object.assign(this.props.templateList.find(x => x._id === this.state.template));
     batch.note = this.state.note;
     batch.maskType = this.state.maskType;
+    batch.withAvatar = this.state.avatarType;
     this.props.addBatch(batch)
   }
 
@@ -51,6 +53,10 @@ class AddBatch extends React.Component {
 
   handleMaskTypeChange = (e) => {
     this.setState({maskType: e.value})
+  }
+
+  handleAvatarTypeChange = (e) => {
+    this.setState({avatarType: e.value})
   }
 
   handleNoteChange = (e) => {
@@ -80,6 +86,17 @@ class AddBatch extends React.Component {
                   value={this.state.maskType}
                   onChange={this.handleMaskTypeChange}
                   options={[{value: 'masked', label: 'masked'}, {value: 'unmasked', label: 'unmasked'}]}
+                  clearable={false}
+                  multi={false}
+                  className='form__form-group-select'
+                  placeholder="select type"
+                />
+              </div>
+              <div className='form__form-group-input-wrap' style={{marginTop: '10px'}}>
+                <Select
+                  value={this.state.avatarType}
+                  onChange={this.handleAvatarTypeChange}
+                  options={[{value: true, label: 'With Avatars'}, {value: false, label: 'Without Avatars'}]}
                   clearable={false}
                   multi={false}
                   className='form__form-group-select'
