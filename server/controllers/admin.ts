@@ -16,6 +16,7 @@ import {
   assignQual,
   runningLive, payBonus, clearRoom
 } from "./utils";
+import {timeout} from './batches'
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
 import { io} from '../index'
@@ -96,20 +97,26 @@ export const addBatch = async function (req, res) {
     res.json({batch: batchWithChat})
     logger.info(module, 'New batch added. Mturk mode: ' + process.env.MTURK_MODE + '; Mturk frame: ' + process.env.MTURK_FRAME);
 
-    let prs = [];
+    let prs = [], counter = 0;
     prs.push(activeCheck(io))
     if (process.env.MTURK_MODE !== 'off') {
       const users = await User.find({systemStatus: 'willbang', isTest: false}).sort({createdAt: 1}).limit(200)
         .select('mturkId testAssignmentId').lean().exec();
+
       for (let i = 0; i < users.length; i++) {
         const user = users[i];
         const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
-        prs.push(notifyWorkers([user.mturkId], 'Experiment started. Please join us here: ' + url, 'Bang'))
+        notifyWorkers([user.mturkId], 'Experiment started. Please join us here: ' + url, 'Bang')
+          .then(() => {
+            counter++;
+          })
         if (i % 20 === 0) {
-          await Promise.all(prs);
-          prs = [];
+          await timeout(500);
+          logger.info(module, 'Notification sent to ' + counter + ' users');
         }
       }
+      logger.info(module, 'Notification sent to ' + users.length + ' users');
+
     }
     await Promise.all(prs)
   } catch (e) {
@@ -305,7 +312,7 @@ export const loadBatchResult = async function (req, res) {
 
 export const notifyUsers = async function (req, res) {
   try {
-    let prs = [];
+    let prs = [], counter = 0;
     if (req.body.start) {
       const users = await User.find({systemStatus: 'willbang', isTest: false}).sort({createdAt: 1}).limit(parseInt(req.body.pass) + parseInt(req.body.limit))
         .select('mturkId testAssignmentId').lean().exec();
@@ -314,16 +321,17 @@ export const notifyUsers = async function (req, res) {
         if (i + 1 > parseInt(req.body.pass)) {
           const user = users[i];
           const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
-          prs.push(notifyWorkers([user.mturkId], 'Experiment started. Please join us here: ' + url, 'Bang'))
+          notifyWorkers([user.mturkId], 'Experiment started. Please join us here: ' + url, 'Bang')
+            .then(() => {
+              counter++;
+            })
           if (i % 20 === 0) {
-            await Promise.all(prs);
-            logger.info(module, 'Notification sent to 20 users');
-            prs = [];
+            await timeout(500);
+            logger.info(module, 'Notification sent to ' + counter + ' users');
           }
         }
       }
-      await Promise.all(prs);
-      logger.info(module, 'Notification sent to ' + prs.length + ' users');
+      logger.info(module, 'Notification sent to ' + users.length + ' users');
 
     } else {
       const users = await User.find({systemStatus: 'willbang', isTest: false}).select('mturkId').lean().exec();
