@@ -38,7 +38,7 @@ export const addBatch = async function (req, res) {
       let balance = await getAccountBalance();
       balance = parseFloat(balance.AvailableBalance);
       const moneyForBatch = (newBatch.teamSize ** 2) * 12 * (((newBatch.roundMinutes + newBatch.surveyMinutes)  * newBatch.numRounds) / 60);
-      if (balance < moneyForBatch ) {
+      if (balance < moneyForBatch + batchSumCost) {
         const message = 'Account balance: $' + balance + '. Experiment cost: $' + moneyForBatch.toFixed(2) +
           ' . Waiting/active batches cost: ' + batchSumCost.toFixed(2)
         await notifyWorkers([process.env.MTURK_NOTIFY_ID], message, 'Bang');
@@ -114,7 +114,7 @@ export const addBatch = async function (req, res) {
           .then(() => {
             counter++;
           })
-        if (i % 20 === 0) {
+        if (i % 10 === 0) {
           await timeout(500);
           logger.info(module, 'Notification sent to ' + counter + ' users');
         }
@@ -261,11 +261,16 @@ export const notifyUsers = async function (req, res) {
         if (i + 1 > parseInt(req.body.pass)) {
           const user = users[i];
           const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
-          notifyWorkers([user.mturkId], 'Experiment started. Please join us here: ' + url, 'Bang')
+          const message = 'Hello, our HIT is now active. ' +
+            'Participation will earn a bonus of ~$12/hour. ' +
+            'Please join us here: ' + url +
+            ' Our records indicate that you were interested in joining this HIT previously. ' +
+            'If you are no longer interested in participating, please email us and we will remove you from this list.';
+          notifyWorkers([user.mturkId], message, 'Bang')
             .then(() => {
               counter++;
             })
-          if (i % 20 === 0) {
+          if (i % 10 === 0) {
             await timeout(500);
             logger.info(module, 'Notification sent to ' + counter + ' users');
           }
