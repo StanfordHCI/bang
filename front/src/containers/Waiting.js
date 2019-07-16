@@ -57,8 +57,6 @@ class Waiting extends React.Component {
                 </div>
                 {this.state.batchReady && <div>
                   <p>Hello! Thanks for accepting our task.</p>
-                  <p>The task will only begin once {limit} users accept the task.</p>
-                  <p>With "Join Batch" button, you will be redirected to a chatroom that ensures that other MTurkers are present and not away from keyboard. You will only remain in the chatroom until everyone has clicked the button to join the batch.</p>
                   <p>After everyone joins the batch, the task will initiate! IMPORTANT: If you intend to complete the task, please do not leave because it will mean other MTurkers will have to wait longer for the task.</p>
                   <p>Provided you stay for the whole task, we will bonus to a rate of approximately $12 per hour. If there are never enough people, we will automatically submit and accept for the base rate.</p>
                   <Button className="btn btn-primary" onClick={() => joinBatch()}>Join Batch</Button>

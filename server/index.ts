@@ -10,7 +10,16 @@ const logger = require('./services/logger');
 import {init, sendMessage, disconnect, activeCheck, refreshActiveUsers} from './controllers/users'
 import {joinBatch, loadBatch, receiveSurvey} from './controllers/batches'
 import {errorHandler} from './services/common'
-import {addHIT, disassociateQualificationFromWorker, listAssignmentsForHIT, notifyWorkers, assignQual, payBonus, runningLive} from "./controllers/utils";
+import {
+  addHIT,
+  disassociateQualificationFromWorker,
+  listAssignmentsForHIT,
+  notifyWorkers,
+  assignQual,
+  payBonus,
+  runningLive,
+  clearRoom
+} from "./controllers/utils";
 import {User} from './models/users'
 import {Batch} from './models/batches'
 import {Chat} from "./models/chats";
@@ -27,7 +36,7 @@ mongoose.connection.on('error', (err) => {
 mongoose.connection.once('open', function () {
   logger.info(module, 'DB: connected');
 });
-mongoose.connect(process.env.MONGO_URI, {useNewUrlParser: true});
+mongoose.connect(process.env.MONGO_URI, {useNewUrlParser: true, useFindAndModify: false});
 
 const corsOptions = {
   origin: '*', //process.env.NODE_ENV === 'production' ? process.env.API_HOST : 'http://localhost:3000',
@@ -133,11 +142,26 @@ cron.schedule('*/3 * * * *', async function(){
 if (process.env.MTURK_MODE !== 'off') {
   cron.schedule('*/4 * * * *', async function(){
     try {
-      const batch = await Batch.findOne({status: 'waiting'}).select('teamSize roundMinutes numRounds HITTitle surveyMinutes').lean().exec();
-      if (batch) {
-        const HIT = await addHIT(batch, false);
+      const batches = await Batch.find({status: 'waiting'}).select('createdAt teamSize roundMinutes numRounds HITTitle surveyMinutes users')
+        .sort({'createdAt': 1}).populate('users.user').lean().exec();
+      if (batches && batches.length) {
+        const HIT = await addHIT(batches[0], false);
         currentHIT = HIT.HITId;
         logger.info(module, 'Recruit HIT created: ' + currentHIT)
+        let prs = []
+        batches.forEach(batch => {
+          const liveTime = (moment()).diff(moment(batch.createdAt), 'minutes')
+          if (liveTime > 27 && batch.users.length < (batch.teamSize**2) - 2 || liveTime > 37) {
+            prs.push(Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}));
+            prs.push(User.updateMany({batch:  batch._id}, { $set: { batch: null, realNick: null, fakeNick: null, currentChat: null }}))
+            batch.users.forEach(user => {
+              io.to(user.user.socketId).emit('stop-batch', true);
+            })
+            clearRoom(batch._id, io)
+            logger.info(module, 'Batch stopped: ' + batch._id);
+          }
+        })
+        await Promise.all(prs)
       } else {
         currentHIT = '';
       }
@@ -164,7 +188,7 @@ if (process.env.MTURK_MODE !== 'off') {
                 testAssignmentId: assignment.AssignmentId
               }),
               assignQual(assignment.WorkerId, runningLive ? process.env.PROD_WILL_BANG_QUAL : process.env.TEST_WILL_BANG_QUAL),
-              notifyWorkers([assignment.WorkerId], 'Experiment started. Please find and accept our main task here: ' + url, 'Bang')
+              notifyWorkers([assignment.WorkerId], 'Thanks for accepting our HIT. You can join the task here: ' + url, 'Bang')
             ];
             await Promise.all(prs);
             logger.info('module', 'User added to db, qual added, notify sent: ' + assignment.WorkerId)

@@ -10,7 +10,7 @@ import {clearRoom, expireHIT, assignQual, payBonus, chooseOne, runningLive, noti
 import {errorHandler} from '../services/common'
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
-const randomAnimal = "Bison Eagle Pony Moose Deer Duck Rabbit Spider Wolf Lion Snake Shark Bird Bear Fish Horse Badger Marten Otter Lynx".split(" ");
+const randomAnimal = "Squirrel Rhino Horse Pig Panda Monkey Lion Orangutan Gorilla Hippo Rabbit Wolf Goat Giraffe Donkey Cow Bear Bison".split(" ");
 const randomAdjective = "new small young little likely nice cultured snappy spry conventional".split(" ");
 
 
@@ -27,8 +27,12 @@ export const joinBatch = async function (data, socket, io) {
     if (socket.systemStatus === 'willbang' && batch.users.length < batch.teamSize ** 2 &&
       !batch.users.some(x => x.user.toString() === socket.userId.toString())) { //join to batch
       let nickname;
+      let adjective;
+      let animal;
       while (!nickname) {
-        nickname = chooseOne(randomAdjective) + chooseOne(randomAnimal);
+        animal = chooseOne(randomAnimal);
+        adjective = chooseOne(randomAdjective);
+        nickname = adjective + animal;
         batch.users.forEach(user => {
           if (user.nickname === nickname) {
             nickname = false;
@@ -329,7 +333,7 @@ const generateTeams = (roundGen, users, roundNumber, oldNicks) => {
         if (!oldNicks.some(x => x === nickname)) {
           oldNicks.push(nickname);
           teamAnimals.push(animal);
-          teamUsers.push({user: users[team.users[i]]._id, nickname: nickname})
+          teamUsers.push({user: users[team.users[i]]._id, nickname: nickname, adjective: adj, animal: animal})
           break;
         }
       }

@@ -23,14 +23,18 @@ import Waiting from '../containers/Waiting'
 import NotLogged from '../containers/NotLogged'
 import AddBatch from '../containers/admin/AddBatch'
 import BatchList from '../containers/admin/BatchList'
+import TemplateList from '../containers/admin/TemplateList'
 import TemplateInfo from '../containers/admin/TemplateInfo'
 import AddTemplate from '../containers/admin/AddTemplate'
+import SurveyList from '../containers/admin/SurveyList'
+import SurveyInfo from '../containers/admin/SurveyInfo'
+import AddSurvey from '../containers/admin/AddSurvey'
 import BatchResult from '../containers/admin/BatchResult'
-import TemplateList from '../containers/admin/TemplateList'
 import UserList from '../containers/admin/UserList'
 import HasBanged from '../containers/HasBanged'
 import Notify from '../containers/admin/Notify'
 import BatchEnd from '../containers/BatchEnd'
+import Unsubscribe from '../containers/Unsubscribe'
 
 import constants from 'Constants'
 
@@ -48,15 +52,20 @@ const MainRouter = (props) => {
           <Route exact path='/batch' component={Batch}/>
           <Route exact path='/batch-end' component={BatchEnd}/>
           <Route exact path='/batches-add' component={AddBatch}/>
-          <Route exact path='/templates-add' component={AddTemplate}/>
           <Route exact path='/batches' component={BatchList}/>
           <Route path='/batches/:id' component={BatchResult}/>
           <Route exact path='/templates' component={TemplateList}/>
+          <Route exact path='/templates-add' component={AddTemplate}/>
+          <Route path='/templates/:id' component={TemplateInfo}/>
+          <Route exact path='/surveys' component={SurveyList}/>
+          <Route exact path='/surveys-add' component={AddSurvey}/>
+          <Route path='/surveys/:id' component={SurveyInfo}/>
           <Route exact path='/users' component={UserList}/>
           <Route exact path='/notify' component={Notify}/>
-          <Route path='/templates/:id' component={TemplateInfo}/>
           <Route exact path='/hasbanged' component={HasBanged}/>
           <Route exact path='/not-logged' component={NotLogged}/>
+          <Route exact path='/unsubscribe/' component={Unsubscribe} />
+          <Route path='/unsubscribe/:id' component={Unsubscribe} />
         </Switch>
       </main>
     </MainWrapper>

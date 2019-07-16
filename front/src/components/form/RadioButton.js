@@ -20,7 +20,7 @@ class RadioButtonField extends PureComponent {
   }
 
   onChange = () => {
-    this.props.onChange(this.props.radioValue);
+    this.props.onChange(this.props.value);
   };
 
   render() {
@@ -37,29 +37,32 @@ class RadioButtonField extends PureComponent {
               <CheckIcon className='radio-btn__label-check' />
               <CloseIcon className='radio-btn__label-uncheck' />
             </span> : ''}
-        <span className='radio-btn__label'>{this.props.label}</span>
+        <p className='radio-btn__label'>{this.props.label}</p>
       </label>
     )
   }
 }
 
-const renderRadioButtonField = (props) => (
-  <RadioButtonField
-    {...props.input}
-    label={props.label}
-    defaultChecked={props.defaultChecked}
-    disabled={props.disabled}
-    radioValue={props.radioValue}
-    class={props.class}
-  />
-);
+
+
+
+const renderRadioButtonField = (props) => {
+  return <RadioButtonField
+  {...props.input}
+  label={props.label}
+  value={props.value}
+  defaultChecked={props.defaultChecked}
+  disabled={props.disabled}
+  class={props.class}
+  radioValue={props.radioValue}
+  onChange={props.onChange}/>
+};
 
 renderRadioButtonField.propTypes = {
-  input: PropTypes.object.isRequired,
-  label: PropTypes.object,
+  label: PropTypes.string,
+  value: PropTypes.number,
   defaultChecked: PropTypes.bool,
   disabled: PropTypes.bool,
-  radioValue: PropTypes.string,
   class: PropTypes.string
 };
 

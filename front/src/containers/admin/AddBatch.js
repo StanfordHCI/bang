@@ -10,7 +10,8 @@
 import React, {PureComponent} from 'react';
 import {Card, CardBody, Col, Row, Container, Button, ButtonToolbar} from 'reactstrap';
 import {connect} from "react-redux";
-import {addBatch, loadTemplateList} from "Actions/admin";
+import {addBatch} from "Actions/admin";
+import {loadTemplateList} from "Actions/templates";
 import {bindActionCreators} from "redux";
 import moment from 'moment'
 import Select from 'react-select';
@@ -24,7 +25,8 @@ class AddBatch extends React.Component {
       isReady: false,
       options: [],
       note: '',
-      maskType: ''
+      maskType: '',
+      avatarType: false,
     }
   }
 
@@ -41,6 +43,7 @@ class AddBatch extends React.Component {
     let batch = Object.assign(this.props.templateList.find(x => x._id === this.state.template));
     batch.note = this.state.note;
     batch.maskType = this.state.maskType;
+    batch.withAvatar = this.state.avatarType;
     this.props.addBatch(batch)
   }
 
@@ -50,6 +53,10 @@ class AddBatch extends React.Component {
 
   handleMaskTypeChange = (e) => {
     this.setState({maskType: e.value})
+  }
+
+  handleAvatarTypeChange = (e) => {
+    this.setState({avatarType: e.value})
   }
 
   handleNoteChange = (e) => {
@@ -86,6 +93,17 @@ class AddBatch extends React.Component {
                 />
               </div>
               <div className='form__form-group-input-wrap' style={{marginTop: '10px'}}>
+                <Select
+                  value={this.state.avatarType}
+                  onChange={this.handleAvatarTypeChange}
+                  options={[{value: true, label: 'With Avatars'}, {value: false, label: 'Without Avatars'}]}
+                  clearable={false}
+                  multi={false}
+                  className='form__form-group-select'
+                  placeholder="select type"
+                />
+              </div>
+              <div className='form__form-group-input-wrap' style={{marginTop: '10px'}}>
                 <textarea placeholder="add note..." rows="5" value={this.state.note} onChange={this.handleNoteChange}/>
               </div>
             </div>
@@ -101,7 +119,7 @@ class AddBatch extends React.Component {
 
 function mapStateToProps(state) {
   return {
-    templateList: state.admin.templateList
+    templateList: state.template.templateList
   }
 }
 

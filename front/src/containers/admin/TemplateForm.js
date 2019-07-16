@@ -16,39 +16,7 @@ import {Field, FieldArray, reduxForm, formValueSelector, change} from 'redux-for
 import {bindActionCreators} from "redux";
 import {renderField, renderTextArea} from 'Components/form/Text'
 import renderSelectField from 'Components/form/Select'
-import renderMultiSelectField from 'Components/form/MultiSelect'
-import {generateComb} from '../../app/utils'
 import Select from "react-select";
-
-/*const userOptions = (teamSize) => {
-  let result = [];
-  for (let i = 0; i < teamSize ** 2; i++) {
-    result.push({value: i + 1, label: 'user' + (i + 1)})
-  }
-  return result;
-}
-
-const generateRounds = (numRounds, teamSize, dispatch) => {
-  let rounds = [], maxUsers = teamSize ** 2;
-  for (let i = 0; i < numRounds; i++) {
-    let round = {teams: []};
-    let users = [];
-    for (let j = 0; j < teamSize; j++) {
-      let team = {users: []}
-      for (let k = 0; k < teamSize; k++) {
-        let user = Math.floor(Math.random() * maxUsers) + 1;
-        while (users.some(x => x === user)) {
-          user = Math.floor(Math.random() * maxUsers) + 1;
-        }
-        team.users.push(user);
-        users.push(user)
-      }
-      round.teams[j] = team;
-    }
-    rounds.push(round)
-  }
-  dispatch(change('TemplateForm', 'roundGen', rounds))
-}*/
 
 const renderSurvey = ({fields, meta: {touched, error, warning}, task}) => {
   return (<div style={{width: '100%', marginTop: '20px', borderBottom: '2px solid grey'}}>
@@ -172,17 +140,19 @@ const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
   </div>)
 }
 
-const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneTask, taskArray}) => {
+const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneTask, surveyTemplatesOptions, taskArray, fillSurvey}) => {
   let tasks = [], options = [];
   for (let i = 0; i < numRounds; i++) {
     options.push({value: i, label: 'task ' + (i + 1)})
   }
-  for (let i = 0; i < numRounds; i++) {
+  const taskNumber = taskArray && taskArray.length && taskArray.length > numRounds ? taskArray.length : numRounds
+
+  for (let i = 0; i < taskNumber; i++) {
     tasks.push(
-      <div key={i} className='form__form-group'>
+      <div key={'task' + i} className='form__form-group'>
         <label className='form__form-group-label' style={{margin: '0'}}>
           <p>task {i + 1}</p>
-          <div>
+          <div style={{marginBottom: '10px'}}>
             <Select
               onChange={(e) => cloneTask(i, e.value)}
               options={options.filter(x => x.value !== i)}
@@ -205,6 +175,14 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
           component={renderSteps}
           rerenderOnEveryChange
         />
+        <Select
+          onChange={(e) => fillSurvey(i, e.value)}
+          options={surveyTemplatesOptions}
+          clearable={true}
+          multi={false}
+          className='form__form-group-select'
+          placeholder="select survey"
+        />
         <FieldArray
           name={`tasks[${i}].survey`}
           component={renderSurvey}
@@ -220,97 +198,46 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
   </div>)
 };
 
-/*
-const renderRounds = ({fields, meta: {touched, error, warning}, numRounds, teamSize}) => {
-  let rounds = [];
-  for (let i = 0; i < numRounds; i++) {
-    rounds.push(
-      <div key={i} className='form__form-group'>
-        <label className='form__form-group-label'>{'round ' + (i + 1)}</label>
-        <FieldArray
-          name={`roundGen[${i}].teams`}
-          component={renderTeams}
-          rerenderOnEveryChange
-          numRounds={numRounds}
-          teamSize={teamSize}
-          round={i}
-        />
-      </div>
-    )
-  }
-
-  return (<div style={{marginTop: '20px'}}>
-    {rounds}
-  </div>)
-};
-
-const renderTeams = ({fields, meta: {touched, error, warning}, numRounds, teamSize, round}) => {
-  let teams = [];
-  for (let i = 0; i < teamSize; i++) {
-    teams.push(
-      <Col key={i} className='form__form-group' style={{flexDirection: 'column', alignItems: 'flex-end'}}>
-        <label className='form__form-group-label'>{'team ' + (i + 1)}</label>
-        <FieldArray
-          name={`roundGen[${round}].teams[${i}].users`}
-          component={renderUsers}
-          rerenderOnEveryChange
-          numRounds={numRounds}
-          teamSize={teamSize}
-          round={round}
-          team={i}
-        />
-      </Col>
-    )
-  }
-
-  return (<Row>
-    {teams}
-  </Row>)
-};
-
-const renderUsers = ({fields, meta: {touched, error, warning}, numRounds, teamSize, round, team}) => {
-  let users = [];
-  for (let i = 0; i < teamSize; i++) {
-    users.push(
-      <div key={i} className='form__form-group'>
-        <div className='form__form-group-field'>
-          <Field
-            name={`roundGen[${round}].teams[${team}].users[${i}]`}
-            component={renderSelectField}
-            type='number'
-            options={userOptions(parseInt(teamSize))}
-          />
-        </div>
-      </div>
-    )
-  }
-
-  return (<div>}>
-    {users}
-  </div>)
-};
-*/
-
-
 
 class TemplateForm extends React.Component {
 
   constructor() {
     super();
-    this.state = {};
-  }
+    this.state = {
 
-  /*handleGenerate(){
-    const {numRounds, teamSize, dispatch} = this.props;
-    generateRounds(parseInt(numRounds), parseInt(teamSize), dispatch)
-  }*/
+    };
+  }
 
   cloneTask = (from, to) => {
     this.props.dispatch(change('TemplateForm', 'tasks[' + from + ']', this.props.tasks[to]))
   }
 
+  fillSurvey = (taskNumber, surveyIndex) => {
+    this.props.dispatch(change('TemplateForm', 'tasks[' + taskNumber + '].survey', this.props.surveyList[surveyIndex].questions))
+  }
+
+  numRoundsChange = (e) => {
+    const num = parseInt(e.target.value)
+    let tasks = this.props.tasks.filter((x, index) => index < num);
+    this.props.dispatch(change('TemplateForm', 'tasks', tasks))
+  }
+
+  dispatchJsonData = (data) => {
+    const template = JSON.parse(data.target.result)
+    for (let i in template) {
+      this.props.dispatch(change('TemplateForm', i, template[i]))
+    }
+  }
+
+  handleFileUpload = event => {
+    const file = event.target.files[0];
+    let fileReader = new FileReader();
+    fileReader.onloadend = this.dispatchJsonData
+    fileReader.readAsText(file);
+  }
+
   render() {
-    const {invalid, numRounds, teamSize, roundGen, dispatch, pristine, isAdd, tasks} = this.props;
+    const {invalid, numRounds, surveyTemplatesOptions, pristine, isAdd, tasks} = this.props;
 
     return (<div>
         <form className='form form--horizontal' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
@@ -318,6 +245,9 @@ class TemplateForm extends React.Component {
           <Row>
             <Col><div className='form__panel'>
             <div className='form__panel-body' style={{borderBottom: '2px solid grey'}}>
+              <Row style={{paddingBottom: '10px'}}>
+                <input type="file" name="json" id="json" onChange={this.handleFileUpload} />
+              </Row>
               <Row>
                 <Col className='form__form-group'>
                   <label className='form__form-group-label'>Name:</label>
@@ -346,6 +276,7 @@ class TemplateForm extends React.Component {
                       name='numRounds'
                       component={renderField}
                       type='number'
+                      onChange={this.numRoundsChange}
                     />
                   </div>
                 </Col>
@@ -409,21 +340,15 @@ class TemplateForm extends React.Component {
               rerenderOnEveryChange
               numRounds={numRounds}
               cloneTask={this.cloneTask}
+              fillSurvey={this.fillSurvey}
               taskArray={tasks}
+              surveyTemplatesOptions={surveyTemplatesOptions}
             />
-              {/*<FieldArray
-                name="roundGen"
-                component={renderRounds}
-                rerenderOnEveryChange
-                numRounds={numRounds}
-                teamSize={teamSize}
-              />*/}
           </div></Col>
           </Row>
           <Row>
             <Col>
               <ButtonToolbar className='mx-auto form__button-toolbar'>
-                {/*<Button color='primary' size='sm' type='button' disabled={!numRounds || !teamSize} onClick={() => this.handleGenerate()}>Generate random users</Button>*/}
                 <Button color='primary' size='sm' type='submit' disabled={invalid || (!isAdd && pristine)}>Submit</Button>
               </ButtonToolbar>
             </Col>
@@ -480,10 +405,12 @@ const validate = (values, props) => {
 
   if (!values.tasks || !values.tasks.length) {
     errors.name = 'add tasks please'
+  } else if (values.tasks.length !== parseInt(values.numRounds) ) {
+    errors.numRounds = 'number of rounds != number of tasks'
   }
 
   values.tasks && values.tasks.forEach((task, i) => {
-    errors.tasks[i] = {steps: [], survey: []}; let timeSum = 0
+    errors.tasks[i] = {steps: [], survey: []};
     if (!task.message) {
       errors.tasks[i].message = 'required';
     } else  if (!task.steps || !task.steps.length) {
@@ -545,6 +472,8 @@ function mapStateToProps(state) {
     teamSize: selector(state, 'teamSize'),
     roundGen: selector(state, 'roundGen'),
     tasks: selector(state, 'tasks'),
+    surveyList: state.survey.surveyList,
+    surveyTemplatesOptions: state.survey.surveyList.map((x, index) => {return {value: index, label: x.name}})
   }
 }
 

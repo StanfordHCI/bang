@@ -62,7 +62,7 @@ export const chooseOne = <T>(list: T[]): T => {
 };
 
 export const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-export const randomAnimal = "Bison Eagle Pony Moose Deer Duck Rabbit Spider Wolf Lion Snake Shark Bird Bear Fish Horse Badger Marten Otter Lynx".split(
+export const randomAnimal = "Squirrel Rhino Horse Pig Panda Monkey Lion Orangutan Gorilla Hippo Rabbit Wolf Goat Giraffe Donkey Cow Bear Bison".split(
   " "
 );
 const randomAdjective = "new small young little likely nice cultured snappy spry conventional".split(

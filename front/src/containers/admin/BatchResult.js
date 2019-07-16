@@ -88,7 +88,7 @@ class BatchResult extends React.Component {
     const {batch, defaultMidQuestions} = this.props;
 
     return (
-      <Container>
+      <Container style={{maxWidth: '100%'}}>
         <Row>
           <Col md={12} lg={12} xl={12}>
             <Card>
@@ -103,7 +103,7 @@ class BatchResult extends React.Component {
                   <p className="row-p">Template: {batch.templateName}</p>
                   <p className="row-p">Team size: {batch.teamSize}</p>
                   <p className="row-p">Rounds: {batch.numRounds}</p>
-                  <p className="row-p">Round (minutes): {batch.roundMinutes}</p>
+                  <p className="row-p">Experiment rounds: {batch.experimentRound1} and {batch.experimentRound2}</p>
                 </Row>
                 <Row style={{marginBottom: '20px'}}>
                   <p className="row-p">Note: {batch.note}</p>
@@ -144,7 +144,7 @@ class BatchResult extends React.Component {
                   {this.state.user && this.state.finalSurvey &&
                   <div>
                     <p>Final survey:</p>
-                    <p>Experiment rounds: {this.state.finalSurvey.mainQuestion.expRound1} and {this.state.finalSurvey.mainQuestion.expRound2} </p>
+                    <p>Experiment rounds (USER'S RESPONSE): {this.state.finalSurvey.mainQuestion.expRound1} and {this.state.finalSurvey.mainQuestion.expRound2} </p>
                     <p>Choosen partners:</p>
                     {this.state.finalSurvey.mainQuestion.partners.map(user => {
                       return (<p className="row-p">{this.state.userOptions.find(x => x.value === user).label}</p>)

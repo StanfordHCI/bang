@@ -11,7 +11,8 @@
 import React, {PureComponent} from 'react';
 import {Card, CardBody, Col, Badge, Row, Container, Button, Nav, NavItem, NavLink, TabContent, TabPane} from 'reactstrap';
 import {connect} from "react-redux";
-import {loadTemplate, updateTemplate} from "Actions/admin";
+import {loadTemplate, updateTemplate} from "Actions/templates";
+import {loadSurveyList} from "Actions/surveys";
 import {bindActionCreators} from "redux";
 import TemplateForm from './TemplateForm'
 import moment from 'moment'
@@ -27,6 +28,7 @@ class TemplateInfo extends PureComponent {
   componentWillMount(){
     Promise.all([
       this.props.loadTemplate(this.props.match.params.id),
+      this.props.loadSurveyList({full: true})
     ])
       .then(()=>{
         this.setState({isReady: true})
@@ -57,14 +59,16 @@ class TemplateInfo extends PureComponent {
 
 function mapStateToProps(state) {
   return {
-    template: state.admin.template
+    template: state.template.template,
+
   }
 }
 
 function mapDispatchToProps(dispatch) {
   return bindActionCreators({
     loadTemplate,
-    updateTemplate
+    updateTemplate,
+    loadSurveyList
   }, dispatch);
 }
 
