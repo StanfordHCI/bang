@@ -261,7 +261,12 @@ export const notifyUsers = async function (req, res) {
         if (i + 1 > parseInt(req.body.pass)) {
           const user = users[i];
           const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
-          notifyWorkers([user.mturkId], 'Experiment started. Please join us here: ' + url, 'Bang')
+          const message = 'Hello, our HIT is now active. ' +
+            'Participation will earn a bonus of ~$12/hour. ' +
+            'Please join us here: ' + url +
+            ' Our records indicate that you were interested in joining this HIT previously. ' +
+            'If you are no longer interested in participating, please email us and we will remove you from this list.';
+          notifyWorkers([user.mturkId], message, 'Bang')
             .then(() => {
               counter++;
             })
