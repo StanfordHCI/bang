@@ -38,7 +38,7 @@ export const addBatch = async function (req, res) {
       let balance = await getAccountBalance();
       balance = parseFloat(balance.AvailableBalance);
       const moneyForBatch = (newBatch.teamSize ** 2) * 12 * (((newBatch.roundMinutes + newBatch.surveyMinutes)  * newBatch.numRounds) / 60);
-      if (balance < moneyForBatch ) {
+      if (balance < moneyForBatch + batchSumCost) {
         const message = 'Account balance: $' + balance + '. Experiment cost: $' + moneyForBatch.toFixed(2) +
           ' . Waiting/active batches cost: ' + batchSumCost.toFixed(2)
         await notifyWorkers([process.env.MTURK_NOTIFY_ID], message, 'Bang');
@@ -114,7 +114,7 @@ export const addBatch = async function (req, res) {
           .then(() => {
             counter++;
           })
-        if (i % 20 === 0) {
+        if (i % 10 === 0) {
           await timeout(500);
           logger.info(module, 'Notification sent to ' + counter + ' users');
         }
@@ -265,7 +265,7 @@ export const notifyUsers = async function (req, res) {
             .then(() => {
               counter++;
             })
-          if (i % 20 === 0) {
+          if (i % 10 === 0) {
             await timeout(500);
             logger.info(module, 'Notification sent to ' + counter + ' users');
           }
