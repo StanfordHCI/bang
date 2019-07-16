@@ -9,13 +9,15 @@
 
 .radio-btn__radio {
     float: left;
+    position: relative; 
 }
 
 .radio-btn__label {
    width: 100%;
-   margin-left: -75%;
    float: right;
    text-align: left; 
+   position: absolute; 
+   left: 100px; 
 }
 
 .radio-panel {
