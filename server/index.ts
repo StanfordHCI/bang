@@ -151,7 +151,7 @@ if (process.env.MTURK_MODE !== 'off') {
         let prs = []
         batches.forEach(batch => {
           const liveTime = (moment()).diff(moment(batch.createdAt), 'minutes')
-          if (liveTime > 37 && batch.users.length < (batch.teamSize**2) - 2 || liveTime > 57) {
+          if (liveTime > 27 && batch.users.length < (batch.teamSize**2) - 2 || liveTime > 37) {
             prs.push(Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}));
             prs.push(User.updateMany({batch:  batch._id}, { $set: { batch: null, realNick: null, fakeNick: null, currentChat: null }}))
             batch.users.forEach(user => {

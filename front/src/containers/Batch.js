@@ -130,7 +130,7 @@ class Batch extends React.Component {
   }
 
   componentWillReceiveProps(nextProps, nextState) {
-    if (!this.state.closeBlockReady && nextProps.batch.status === 'active') {
+    if (!this.state.closeBlockReady && nextProps.batch &&  nextProps.batch.status === 'active') {
       window.addEventListener("beforeunload", (ev) =>
       {
         return ev.returnValue = `Are you sure you want to leave?`;
