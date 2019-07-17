@@ -147,7 +147,7 @@ class BatchResult extends React.Component {
                     <p>Experiment rounds (USER'S RESPONSE): {this.state.finalSurvey.mainQuestion.expRound1} and {this.state.finalSurvey.mainQuestion.expRound2} and
                     {this.state.finalSurvey.mainQuestion.expRound3} </p>
                     <p>Choosen partners:</p>
-                    {this.state.finalSurvey.mainQuestion.partners1.map(user => {
+                    {this.state.finalSurvey.mainQuestion.partners.map(user => {
                       return (<p className="row-p">{this.state.userOptions.find(x => x.value === user).label}</p>)
                     })}
                     <p> Rational for manipulation check:

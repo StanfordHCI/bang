@@ -107,7 +107,7 @@ class PostSurveyForm extends React.Component {
                     <label className='form__form-group-label'>What partners do you prefer to work with in the future?</label>
                     <div className='form__form-group-field'>
                       <Field
-                        name={'mainQuestion.partners1'}
+                        name={'mainQuestion.partners'}
                         component={renderMultiSelectField}
                         options={this.state.uOptions}
                       />
