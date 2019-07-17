@@ -66,7 +66,7 @@ class Waiting extends React.Component {
                   
                   <p>
                   Our task requires {limit} users to participate simultaneously and <b>cannot start until all {limit} users have clicked “Join Batch” and are active at once.</b> Once there are {limit}  users in the waiting chat, they are moved into the actual task.</p>
-                  <p>The waiting chat last up to <b>20 minutes</b>. If there are never {limit} users within this time, the waiting period will terminate. If the time limit is reached before enough before have arrived, you'll be paid $2 for waiting.</p>
+                  <p>The waiting chat last up to <b>20 minutes</b>. If there are never {limit} users within this time, the waiting period will terminate. </p>
 
                   <p> <b>IMPORTANT:</b> If you intend to complete the task, please do not leave because it will mean other MTurkers will have to wait longer for the task. If enough people arrive, you'll be bonused $1 for waiting. Provided you stay for the <b>whole task,</b> we will bonus to a rate of approximately <b>$12 per hour</b>. If there are never enough people, we will automatically submit and accept for the base rate.</p>
                   
@@ -75,9 +75,10 @@ class Waiting extends React.Component {
                   <Button className="btn btn-secondary"> <Link className='noDecoration' target="_blank" to='/faq'> FAQ  </Link></Button>
                 </div>}
                 {!this.state.batchReady && <div>
-                  <p>Hey! Thanks for accepting our task. We don't have an experiment right now, which means that the task filled up before you got here! 
-                    </p>
-                    <p>Join us later please. We will notify you.</p>
+                  <p>Hey! Thanks for accepting our task. 
+
+                  We send out an email immediately after our experiments launch. We don't have an experiment right now, which means that the task filled up with other users before you got here. 
+                  Join us later please! We will notify you.</p>
                 </div>}
               </CardBody>}
             </Card>

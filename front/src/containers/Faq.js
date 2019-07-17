@@ -1,6 +1,6 @@
-/** Unsubscribe.js
+/** FAQ.js
  *
- * Allows a worker with 'willbang' status to unsubscribe from our email lists
+ * FAQ Questions
  *
  * */
 
@@ -37,13 +37,12 @@ class Faq extends Component {
             <p>When the task starts, we would like you to be active and ready to begin, so that others who are ready do not have to delay even more. We also want to make sure you’re not just away from the keyboard and taking a spot away from someone else who would be engaged in the task. </p>
             <p>We realize that the attention checks from the helperBot can be a little bit annoying, but it’s the best way for us to make sure that you’re ready to go so that the experiment will run smoothly from the get-go. </p>
             <h2>Will I be paid for waiting?</h2>
-            <p>Yes, you will be paid $2 for waiting if we never get enough people. If we do get enough people,
-              you will be paid $1 for waiting and then a rate of $12/hr for the actual task. </p>
+            <p>Yes, you will be paid $1 for waiting if we get enough people. </p>
             <h2>How much will I be paid for the task?</h2>
             <p>Provided you stay for the entire task, we will bonus at a rate of $12/hr.</p>
             <h2>I was waiting. Why did the task cancel?</h2>
             <p>To prevent excessive waiting, we will cancel the task if we don't get enough users
-              to begin the task. As we stated before, you will be paid $2 for waiting. </p>
+              to begin the task. As we stated before, you will be paid $1 for waiting. </p>
    
       </Container>
     );
