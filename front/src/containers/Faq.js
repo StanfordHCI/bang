@@ -34,7 +34,7 @@ class Faq extends Component {
             <p>This experiment is a group task, and we need enough people to be online at the same time so that they can collaborate with each other! The reason you’re waiting is because we need to get enough people to collaborate in groups, and then everyone can start at the same time. 
             </p>
             <h2>What is the purpose of helperBot/Waiting room?</h2>
-            <p>When the task starts, we would like you to be active and ready to begin, so that others who are ready do not have to delay even more. We also want to make sure you’re not just away from the keyboard and taking a spot away from someone else who would be engaged in the task. </p>
+            <p>The bot and waiting room lets us know that users are engaged in the task and that we can move forward to the main experiment once enough are ready. </p>
             <p>We realize that the attention checks from the helperBot can be a little bit annoying, but it’s the best way for us to make sure that you’re ready to go so that the experiment will run smoothly from the get-go. </p>
             <h2>Will I be paid for waiting?</h2>
             <p>Yes, you will be paid $1 for waiting if we get enough people. </p>
