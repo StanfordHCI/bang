@@ -25,7 +25,7 @@ class Faq extends Component {
     return (
       <Container className="faq" style={pStyle}>
             <h1>Frequently Asked Questions</h1>
-            <p>Hey! Thanks for coming to our FAQ page. We are always
+            <p>Hello! Thanks for coming to our FAQ page. We are always
                 trying to make our tasks better and more clear. We put together this 
                 FAQ to answer your questions. Please feel free to email us if your question isn't listed here.
             </p>
