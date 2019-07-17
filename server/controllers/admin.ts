@@ -130,10 +130,11 @@ export const addBatch = async function (req, res) {
 
 export const loadBatchList = async function (req, res) {
   try {
-    const batchList = await Batch.find({}).sort({createdAt: -1}).select('createdAt startTime status currentRound teamSize templateName note maskType').lean().exec();
+    const batchList = await Batch.find({ $or:[  {status: {$in: ['active', 'waiting']}}, {status: 'completed', startTime: {$exists: true}} ]})
+      .sort({createdAt: -1}).select('createdAt startTime status currentRound teamSize templateName note maskType').lean().exec();
     res.json({batchList: batchList})
   } catch (e) {
-    errorHandler(e, 'add batch error')
+    errorHandler(e, 'load batches error')
   }
 }
 
