@@ -67,6 +67,8 @@ class MidSurveyForm extends React.Component {
     const {invalid, questions, readOnly, currentUser, members} = this.props;
 
     return (<div>
+             <p> IMPORTANT: Finishing the survey is <b>required</b> to participate in this experiment.</p>
+               <p> If you do not finish the survey, <b>you will NOT be paid for this task.</b> </p>
         <form className='form' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
           <Container>
             <Row>
