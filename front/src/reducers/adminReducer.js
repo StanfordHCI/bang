@@ -12,7 +12,8 @@ import {
 const initialState = {
   batch: null,
   batchList: [],
-  userList: []
+  userList: [],
+  willbangLength: 0
 };
 
 export default function (state = initialState, action) {
@@ -20,7 +21,8 @@ export default function (state = initialState, action) {
     case USERS_FETCHED:
       return {
         ...state,
-        userList: action.data
+        userList: action.data,
+        willbangLength: action.data.filter(x => x.systemStatus === 'willbang' && !x.isTest).length
       };
     case USER_DELETED:
       let deletedUserList = state.userList.slice();

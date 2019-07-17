@@ -48,7 +48,7 @@ class UserList extends React.Component {
   }
 
   render() {
-    const {userList} = this.props;
+    const {userList, willbangLength} = this.props;
 
     return (
       <Container style={{maxWidth: '100%'}}>
@@ -57,7 +57,7 @@ class UserList extends React.Component {
             <Card>
               {this.state.isReady && <CardBody>
                 <div className='card__title'>
-                  <h5 className='bold-text'>User list</h5>
+                  <h5 className='bold-text'>User list ({willbangLength} real willbang users)</h5>
                   <Button className="btn btn-primary" onClick={() => this.props.addUser()}>Add User</Button>
                 </div>
                 <Table className='table table--bordered table--head-accent'>
@@ -104,7 +104,8 @@ class UserList extends React.Component {
 
 function mapStateToProps(state) {
   return {
-    userList: state.admin.userList
+    userList: state.admin.userList,
+    willbangLength: state.admin.willbangLength
   }
 }
 
