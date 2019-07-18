@@ -97,6 +97,16 @@ class PostSurveyForm extends React.Component {
                       />
                     </div>
                   </div>
+                  <div className='form__form-group'>
+                    <label className='form__form-group-label'>Why do you prefer these partners?</label>
+                    <div className='form__form-group-field'>
+                      <Field
+                        name={'mainQuestion.partners2'}
+                        component={renderField}
+                      />
+                    </div>
+                  </div>
+
                 </div>
               </Col>
             </Row>
@@ -129,6 +139,9 @@ const validate = (values, props) => {
     }
     if (!values.mainQuestion.expRound2) {
       errors.mainQuestion.expRound2 = 'required';
+    }
+    if (!values.mainQuestion.expRound3) {
+      errors.mainQuestion.expRound3 = 'required';
     }
     if (values.mainQuestion.expRound2 === values.mainQuestion.expRound1) {
       errors.mainQuestion.expRound2 = 'invalid';

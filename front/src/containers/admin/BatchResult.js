@@ -144,11 +144,16 @@ class BatchResult extends React.Component {
                   {this.state.user && this.state.finalSurvey &&
                   <div>
                     <p>Final survey:</p>
-                    <p>Experiment rounds (USER'S RESPONSE): {this.state.finalSurvey.mainQuestion.expRound1} and {this.state.finalSurvey.mainQuestion.expRound2} </p>
+                    <p>Experiment rounds (USER'S RESPONSE): {this.state.finalSurvey.mainQuestion.expRound1} and {this.state.finalSurvey.mainQuestion.expRound2} and
+                    {this.state.finalSurvey.mainQuestion.expRound3} </p>
                     <p>Choosen partners:</p>
                     {this.state.finalSurvey.mainQuestion.partners.map(user => {
                       return (<p className="row-p">{this.state.userOptions.find(x => x.value === user).label}</p>)
                     })}
+                    <p> Rational for manipulation check:
+                    {this.state.finalSurvey.mainQuestion.partners2}
+                    </p>
+
                   </div>}
                 </div>
               </CardBody>}
