@@ -1,0 +1,909 @@
+---
+title: "Fracture CHI 2019 Results: n=2"
+output: html_document
+fig_width: 3.5
+fig_caption: yes
+---
+
+## Set-up packages // libraries and prepare for data import:
+```{r echo=FALSE, include=FALSE, results='hide'}
+library(jsonlite)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(pROC)
+library(stargazer)
+library(dplyr)
+library(stringr)
+library(sentimentr)
+library(tensorflow)
+```
+
+## Set-up directories, import and clean data:
+```{r, include=TRUE, echo=TRUE}
+rm(list=ls())
+setwd("/Users/mark/Documents/Academia/Stanford/scaled-humanity/bang/R") # Change this to your working directory where Bang/R file is located 
+getwd()
+dataPath = "../.data"
+MINIMUM_BATCH_NUMBER = 1552194538000  # Identify the batch number that represents the start of the batches you'd like to include in your analysis 
+
+# last 2 days 1537366991708
+# start of final day  1537514940000 
+
+TEAM_SIZE = 3 # Alter depending on team size in runs you're analyzing; this variable is used later on to ensure that you're filtering out all team_sizes != the size you've specified 
+
+MIN_FRACTURE_PERCENT = 0.5 # Default cut off for fracture within a team; this variable is used later to label binary 0 (no fracture), 1 (fracture) values at a group level 
+
+## Function to extract blacklist surveys:
+extractBlacklistSurvey = function(frame,survey) {
+  rounds = seq(1,4)
+  roundResponses = lapply(rounds, function(round) {
+    getCol = paste("results.",survey,".",round, sep="")
+    surveyCols = Filter(function(x) grepl(getCol,x),names(frame))
+    newCols = lapply(surveyCols, function(x) gsub(getCol,paste("results.",survey, sep=""),x) )
+    surveyFrame = as.data.frame(frame[,surveyCols])
+    if (is.null(newCols)) {return("No newCols")}
+    names(surveyFrame) = newCols
+    surveyFrame$id = frame$id
+    surveyFrame$round = round
+    surveyFrame$batch = frame$batch
+    #surveyFrame$room = frame$room
+    surveyFrame$rooms = frame$rooms
+    surveyFrame$manipulationCheck <- frame$results.manipulationCheck
+    #surveyFrame$blacklist = frame$results.blacklistCheck
+    return(surveyFrame)
+  })
+  return(Reduce(rbind, roundResponses))
+}
+
+## Seperate viability function to deal with different column types
+extractViabilitySurvey = function(frame,survey) {
+  rounds = seq(1,4)
+  roundResponses = lapply(rounds, function(round) {
+    getCol = paste("results.",survey,".",round, sep="")
+    surveyCols = Filter(function(x) grepl(getCol,x),names(frame))
+    newCols = lapply(surveyCols, function(x) gsub(getCol,paste("results.",survey, sep=""),x) )
+    surveyFrame = as.data.frame(frame[,surveyCols])
+    if (is.null(newCols)) {return("No newCols")}
+    names(surveyFrame) = newCols
+    surveyFrame$id = frame$id
+    surveyFrame$round = round
+    surveyFrame$batch = frame$batch
+    surveyFrame$rooms = frame$rooms
+    #surveyFrame$room = frame$room
+    surveyFrame$manipulationCheck.1 = frame$results.manipulationCheck.1
+    #surveyFrame$blacklist = frame$results.blacklistCheck
+    return(surveyFrame)
+    print(surveyFrame)
+  dim(surveyFrame)
+  })
+  return(Reduce(bind_rows, roundResponses))
+}
+
+task = c("Creative", "Intellective", "Cognitive conflict")
+taskText = c("The Ollie Chair: Shape-Shifting Seating", "<ol>\n    <li>Number of miles from New York to Los Angeles</li>\n    <li>Average weight of an elephant</li>\n    <li>Number of U.S. states that border the Gulf of Mexico</li>\n    <li>Number of months per year residents of Tromoso, Norway go without seeing a sunset</li>\n    <li>Highest temperature (in degrees F) ever registered in the U.S.</li>\n    </ol>", "To purchase art for display in the community's art gallery.")
+
+checkTask = function(batchData) {
+  frame = as.data.frame(batchData$products)
+  if(any(which(frame == taskText[1]))) {
+    return(task[1])
+  }
+  if(any(which(frame == taskText[2]))) {
+    return(task[2])
+  }
+  if(any(which(frame == taskText[3]))) {
+    return(task[3])
+  }
+  return("none")
+}
+
+loadBatch = function(batch){
+  batchData = read_json(paste(dataPath,batch,"batch.json",sep="/"), simplifyVector = TRUE)
+  c(batch,
+    task = checkTask(batchData)
+    )
+}
+
+loadChat = function(chat) {
+  chatData = read_json(paste(dataPath,chat,"chats.json", sep="/"), simplifyVector = TRUE)
+}
+
+# Filter batches and convert JSON to data frames
+options(scipen=999) # Change from scientific notation so we can compare batch numbers below
+batches = dir(dataPath, pattern = "^[0-9]+$" )
+batches = as.numeric(batches) 
+batches = batches[batches>MINIMUM_BATCH_NUMBER]
+batchFrame = as.data.frame(batches)
+batchFrame = batchFrame %>% 
+  filter(any(dir(paste(dataPath,batches,sep="/")) == "batch.json")) %>%
+  filter(any(dir(paste(dataPath,batches,sep="/")) == "users.json")) %>%
+  mutate(batch = batches) %>%
+  select( -batches )
+batchFrame = apply(batchFrame,1,loadBatch)
+batchFrame = t(batchFrame)
+batchFrame = data.frame(
+  batch = as.numeric(batchFrame[,1]),
+  task = as.character(batchFrame[,2])
+)
+
+batches = Filter(function(batch) {
+  if (any(dir(paste(dataPath,batch,sep="/")) == "batch.json") && (any(dir(paste(dataPath,batch,sep="/")) == "users.json")) ) {
+      batchData = read_json(paste(dataPath,batch,"batch.json",sep="/"), simplifyVector = TRUE)
+      return(any(batchData$batchComplete == TRUE))
+    }
+    return(FALSE)
+}, batches)
+
+# Create table to store info about all of the chats
+allChats = data.frame()
+for (batch in batches) {
+  thisChat = read_json(paste(dataPath,batch,"chats.json",sep="/"), simplifyVector = TRUE)
+  allChats = rbind(allChats, thisChat)
+}
+
+# Add column for the length of each message
+allChats = allChats %>%
+  mutate(messageLength = str_length(message))
+
+# Add sentiment analysis
+allChats = allChats %>%
+  mutate(sentiment = (sentiment_by(message))$ave_sentiment)
+
+# count turn-taking in a given chat room
+turnTaking = allChats %>%
+  arrange(createdAt) %>%
+  group_by(room, batch, round) %>%
+  mutate(switchedUser=(lag(userID) != userID)) %>%
+  summarise(turnsTaken=sum(switchedUser, na.rm = TRUE))
+
+# get chat length
+chatLengths = allChats %>%
+  group_by(room, batch, round) %>%
+  summarise(numMessages=n(),
+            chatLength=sum(messageLength))
+
+sentimentsByChatroom = allChats %>%
+  group_by(room, batch, round) %>%
+  summarise(avg_sentiment=sum(sentiment)/n())
+
+users <- Reduce(function(x,y) merge(x, y, all=TRUE), lapply(batches, function(batch) {
+  userFile = read_json(paste(dataPath,batch,"users.json",sep="/"), simplifyVector=TRUE)
+  return(flatten(userFile, recursive = TRUE))
+}))
+
+# Filter out variables not relevant to analysis: 
+# users <- users %>%
+#   select(-results.engagementFeedback.undefined, -results.qSixteenCheck.undefined, -results.qFifteenCheck.undefined, -contains("results.viabilityCheck.0"))
+users <- users %>%
+  select(
+    -results.qSixteenCheck.2, 
+    -results.qSixteenCheck.4, 
+    -results.qSixteenCheck.6, 
+    -results.qSixteenCheck.8, 
+    -results.qFifteenCheck.2, 
+    -results.qFifteenCheck.4, 
+    -results.qFifteenCheck.6, 
+    -results.qFifteenCheck.8
+  ) %>%
+  mutate(
+    results.qFifteenCheck.2 = results.qFifteenCheck.3, 
+    results.qFifteenCheck.3 = results.qFifteenCheck.5, 
+    results.qFifteenCheck.4 = results.qFifteenCheck.7, 
+    results.qSixteenCheck.2 = results.qSixteenCheck.3, 
+    results.qSixteenCheck.3 = results.qSixteenCheck.5, 
+    results.qSixteenCheck.4 = results.qSixteenCheck.7
+  )
+
+demographics = users %>% 
+  select(contains("demographicsCheck")) %>%
+  mutate(
+    age = 2019 - as.numeric(results.demographicsCheck.3),
+    gender = as.factor(results.demographicsCheck.2),
+  ) %>%
+  filter(age < 200) %>%
+  summarise(
+    percentFemale = sum(gender == "Female") / n(),
+    percentOther = sum(gender == "Other") / n(),
+    ageMean = mean(age),
+    ageSD = sd(age)
+  )
+demographics <- na.omit(demographics)
+
+users <- users %>% 
+  select(
+    -contains("results.psychologicalSafety"),
+    -contains("demographicsCheck"),
+    -contains("undefined")
+  )
+
+users <- na.omit(users)
+
+# Function to assign round numbers in the correct order 
+usersRounds = as.data.frame(Reduce(rbind, apply(users,1,function(x) {
+  roomsForIndividual = lapply(seq(1,4),function(y) {
+    x$room = x$rooms[y]
+    x$round = y
+    return(x)
+  })
+  return(Reduce(rbind, roomsForIndividual))
+})))
+
+# Converting variables to their proper respective form for later analysis: 
+usersRounds <- usersRounds %>% mutate(id = as.character(id), batch=as.numeric(batch), round=as.numeric(round), room=as.character(room))
+usersRounds <- usersRounds %>% select(id, batch, round, room)
+
+## Use extract survey function to reformat survey data:
+manipulationCheck <- usersRounds %>%
+  left_join(users, by=c("id", "batch")) %>% # Left join 
+  mutate(room=room.x) %>%
+  mutate(manipulation=results.manipulation) %>%
+  mutate(manipulationCheck=results.manipulationCheck.1) %>%
+  mutate(teamOrder=results.format) %>%
+  mutate(condition=results.condition) %>%
+  select(id, batch, room, round, manipulation, manipulationCheck, teamOrder, condition) %>%
+  left_join(batchFrame, by="batch")
+
+performanceTable = read.csv("../performance.csv", header = TRUE)
+
+performanceTable = performanceTable %>%
+  group_by(roundTask) %>% 
+  mutate(
+    performancePercentile = rank(performance) / n()
+  )
+
+qFifteen <- extractBlacklistSurvey(users, 'qFifteenCheck')
+qSixteen <- extractBlacklistSurvey(users, 'qSixteenCheck')
+viabilitySurvey <- extractViabilitySurvey(users, 'viabilityCheck')
+```
+
+# Now merge everything
+```{r}
+usersRounds <- manipulationCheck %>%
+  left_join(qFifteen, by=c("id", "batch", "round")) %>%
+  left_join(qSixteen, by=c("id", "batch", "round")) %>%
+  left_join(viabilitySurvey, by=c("id", "batch", "round")) %>%
+  mutate(rooms = rooms.x, manipulation = as.character(manipulation), manipulationCheck = as.character(manipulationCheck.x)) %>%
+  select(-manipulationCheck.x, -manipulationCheck.y, -rooms, -rooms.x, -rooms.y)
+# rm(list=c("qFifteen","qSixteen","viabilitySurvey","manipulationCheck"))
+
+usersRounds <- usersRounds %>% 
+  mutate(condition = case_when(
+    condition=="treatment" ~ "masked",
+    condition=="control" ~ "unmasked"
+  ))
+
+# Conditionally assign conditions based on treatment and results column:
+## For runs with 4 rounds:
+usersRounds <- usersRounds %>% mutate(
+  team = case_when(
+    teamOrder=="c(1, 1, 2, 3)" & round==1 ~ "A",
+    teamOrder=="c(1, 1, 2, 3)" & round==2 ~ "Ap",
+    teamOrder=="c(1, 1, 2, 3)" & round==3 ~ "B",
+    teamOrder=="c(1, 1, 2, 3)" & round==4 ~ "B",
+    teamOrder=="c(1, 2, 1, 3)" & round==1 ~ "A",
+    teamOrder=="c(1, 2, 1, 3)" & round==2 ~ "B",
+    teamOrder=="c(1, 2, 1, 3)" & round==3 ~ "Ap",
+    teamOrder=="c(1, 2, 1, 3)" & round==4 ~ "B",
+    teamOrder=="c(2, 1, 1, 3)" & round==1 ~ "B",
+    teamOrder=="c(2, 1, 1, 3)" & round==2 ~ "A",
+    teamOrder=="c(2, 1, 1, 3)" & round==3 ~ "Ap",
+    teamOrder=="c(2, 1, 1, 3)" & round==4 ~ "B",
+    teamOrder=="c(2, 3, 1, 1)" & round==1 ~ "B",
+    teamOrder=="c(2, 3, 1, 1)" & round==2 ~ "B",
+    teamOrder=="c(2, 3, 1, 1)" & round==3 ~ "A",
+    teamOrder=="c(2, 3, 1, 1)" & round==4 ~ "Ap",
+    teamOrder=="c(2, 1, 3, 1)" & round==1 ~ "B",
+    teamOrder=="c(2, 1, 3, 1)" & round==2 ~ "A",
+    teamOrder=="c(2, 1, 3, 1)" & round==3 ~ "B",
+    teamOrder=="c(2, 1, 3, 1)" & round==4 ~ "Ap",
+    teamOrder=="c(1, 2, 3, 1)" & round==1 ~ "A",
+    teamOrder=="c(1, 2, 3, 1)" & round==2 ~ "B",
+    teamOrder=="c(1, 2, 3, 1)" & round==3 ~ "B",
+    teamOrder=="c(1, 2, 3, 1)" & round==4 ~ "Ap"
+  ))
+
+## Factor for visualizations:
+levels <- c("Strongly Disagree", "Disagree", "Neutral","Agree", "Strongly Agree")
+usersRounds <- usersRounds %>%
+  mutate_at(.vars = vars(contains("viabilityCheck")), funs(factor(., levels = levels)))
+usersRounds$viabilityScale <- usersRounds %>%
+  select(contains("viabilityCheck")) %>%
+  mutate_all(as.numeric) %>%
+  rowSums()
+usersRounds <- usersRounds %>%
+  select(-contains("viabilityCheck"))
+rm("levels")
+
+## Rename Q15 + Q16:
+usersRounds <- usersRounds %>%
+  mutate(fracture = results.qFifteenCheck == "Do not keep this team",
+         fractureMeta = results.qSixteenCheck == "Do not keep this team") %>%
+  select(-results.qFifteenCheck, -results.qSixteenCheck)
+
+teamStats <- usersRounds %>%
+  arrange(id) %>%
+  group_by(room, batch, round, condition, team, task) %>%
+  summarise(n=n(), 
+            teamMeanViability=mean(viabilityScale), 
+            teamMedianViability=median(viabilityScale),
+            groupManipulationCheck=sum(as.numeric(manipulationCheck==manipulation)/n()),
+            teamProportionFracture=sum(fracture/n()),
+            teamMembers = paste(id, collapse=", "))
+
+# Add info about numMessages, chatLength, and turnsTaken to teamStats
+teamStats <- teamStats %>%
+  left_join(chatLengths, by=c("room", "batch", "round")) %>%
+  left_join(turnTaking, by=c("room", "batch", "round")) %>%
+  left_join(sentimentsByChatroom, by=c("room", "batch", "round"))
+
+# Remove weird NAs across numMessages, chatLength, turnsTaken, and sentiment
+teamStats <- na.omit(teamStats)
+
+# Did sentiment predict correctly?
+teamStats$sentimentAccuracy<- FALSE
+teamStats$sentimentAccuracy[teamStats$avg_sentiment > 0 & teamStats$teamProportionFracture < 0.5] <- TRUE
+teamStats$sentimentAccuracy[teamStats$avg_sentiment < 0 & teamStats$teamProportionFracture >= 0.5] <- TRUE
+
+print(mean(teamStats$sentimentAccuracy))
+
+# Filter down to only partners (dyads)
+teamStats <- teamStats %>%
+  filter(n>=TEAM_SIZE)
+usersRounds <- teamStats %>%
+  select(room, batch, round, teamProportionFracture, condition) %>%
+  left_join(usersRounds, by=c("room", "batch", "round", "condition","team"))
+
+## Table showing how many teams we've run in each condition combination:  
+print(table(teamStats$condition, teamStats$team))
+
+teamViability = teamStats$teamMeanViability
+viabilityMean = mean(teamViability)
+viabilitySD = sd(teamViability)*sqrt((length(teamViability)-1)/(length(teamViability)))
+
+# Centering / standardizing viability score 
+teamStats$viabilityZ = (teamStats$teamMeanViability - viabilityMean) / viabilitySD
+
+## Define and initialize cut-off point for fracture:
+teamStats <- teamStats %>%
+  group_by(room, batch, round, condition) %>%
+  mutate(teamFracture = case_when (teamProportionFracture<MIN_FRACTURE_PERCENT ~ FALSE,
+                                teamProportionFracture>=MIN_FRACTURE_PERCENT ~ TRUE))
+
+# now add whether the team fractured to data
+usersRounds <- usersRounds %>%
+  select(-teamProportionFracture, -team) %>%
+  left_join(teamStats, by=c("room", "batch", "round", "condition","task"))
+
+# did they guess correctly?
+usersRounds$partnerFractured <- ifelse(usersRounds$teamProportionFracture == 0, FALSE,
+                                ifelse(usersRounds$teamProportionFracture == 1, TRUE,
+                                       ifelse(usersRounds$fracture, FALSE, TRUE)))
+usersRounds$metaGuessedCorrectly <- usersRounds$fractureMeta == usersRounds$partnerFractured
+
+viabilityTest <- usersRounds %>%
+  select(task, viabilityScale)
+  #filter(task == "Creative") %>%
+  #summarise(averageViabilityCreative = mean(viabilityScale))
+
+data = usersRounds
+
+performanceTable = performanceTable %>% 
+  mutate(
+    room = as.character(substring(room,2)),
+    round = as.double(round+1) 
+  ) %>%
+  left_join(teamStats)
+performanceTable = na.omit(performanceTable)
+
+sentimentInfo <- teamStats %>%
+  group_by(sentimentAccuracy) %>%
+  summarise(n=n())
+
+sentimentInfoGGPLOT <- ggplot(sentimentInfo) +
+  geom_bar(aes(x=sentimentAccuracy, y=n), stat="identity", fill="skyblue", alpha=0.7)
+
+print(sentimentInfoGGPLOT)
+
+supplementaryInfo <- teamStats %>%
+  group_by(teamFracture, task, condition) %>%
+  summarise(meanTurnsTaken=mean(turnsTaken),
+            sdTurnsTaken=sd(turnsTaken),
+            meanChatLength=mean(chatLength),
+            sdChatLength=sd(chatLength),
+            meanNumMessages=mean(numMessages),
+            sdNumMessages=sd(numMessages),
+            meanSentiment=mean(avg_sentiment),
+            sdSentiment=sd(avg_sentiment))
+
+suppInfoGGPLOT <- ggplot(supplementaryInfo) +
+  facet_grid(rows = vars(condition), cols= vars(task)) +
+  geom_bar(aes(x=teamFracture, y=meanChatLength), stat="identity", fill="skyblue", alpha=0.7) +
+  geom_errorbar(aes(x=teamFracture, ymin=meanChatLength-sdChatLength, ymax=meanSentiment+sdChatLength), width=0.4,
+                colour="orange", alpha=0.9, size=1.3)
+
+print(suppInfoGGPLOT)
+
+performanceSuppInfo <- performanceTable %>%
+  group_by(teamFracture, task, condition) %>%
+  summarise(meanPerformancePercentile=mean(performancePercentile),
+            sdPerformancePercentile=sd(performancePercentile),
+            meanPerformance=mean(performance),
+            sdPerformance=sd(performance))
+
+performanceSuppGGPLOT <- ggplot(performanceSuppInfo) +
+  facet_grid(rows = vars(task), cols= vars(condition)) +
+  geom_bar(aes(x=teamFracture, y=meanPerformancePercentile), stat="identity", fill="skyblue", alpha=0.7) +
+  geom_errorbar(aes(x=teamFracture, ymin=meanPerformancePercentile-sdPerformancePercentile, ymax=meanPerformancePercentile+sdPerformancePercentile), width=0.4, colour="orange", alpha=0.9, size=1.3)
+
+#plot(performanceTable$teamMeanViability, performanceTable$performancePercentile)
+
+print(performanceSuppGGPLOT)
+
+supplementaryInfo <- supplementaryInfo %>%
+  left_join(performanceSuppInfo, by=c("teamFracture", "task"))
+
+# For exporting data
+# teamStats$fracture = as.numeric(teamStats$teamFracture)
+# write.csv(teamStats, file = "teamStats.csv")
+```
+
+### Manipulation Check
+
+# R manipulationcheck
+```{r, echo=TRUE}
+manipulationCheckAccuracy = data %>%
+  ungroup() %>%
+  distinct(id, batch, condition, manipulation, manipulationCheck, task) %>%
+  mutate(manipulationCheckCorrect = manipulation == manipulationCheck)
+
+manipulationCheckAccuracyByCondition <- manipulationCheckAccuracy %>%
+  group_by(condition) %>%
+  summarise(numCorrect = sum(manipulationCheckCorrect), n=n(), accuracy = numCorrect/n, se = sqrt(accuracy*(1-accuracy)/n))
+print(manipulationCheckAccuracyByCondition)
+print(table(manipulationCheckAccuracyByCondition))
+
+manipulationCheckAccuracyByTeams <- teamStats %>%
+  group_by(condition) %>%
+  summarise(meanCorrect=sum(groupManipulationCheck>=.5),n=n(),accuracy=meanCorrect/n)
+manipulationCheckAccuracyByTeams
+
+numRounds = lengths(data$teamOrder)[1] # split up the list of teams in order to figure out how many rounds they had
+numSameTeam = 2 # number of times they meet with the same team
+chanceManipulation <- (1/choose(numRounds, numSameTeam))
+
+p <- ggplot(data=filter(manipulationCheckAccuracyByCondition), aes(x=condition, y=accuracy)) + # add  , condition=="masked" to filter for only masked
+  geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
+  geom_hline(yintercept=chanceManipulation, size=1, color="grey") +
+  geom_errorbar(aes(ymin=accuracy-se, ymax=accuracy+se), width = 0.1) +
+  scale_x_discrete(labels=c("Masked teams","Unmasked teams")) +
+  scale_y_continuous(labels = scales::percent_format(1)) +
+  theme_classic() + labs(subtitle="",
+       x="",
+       y="Accuracy at identifying\n the repeat collaborators")
+
+pdf('manipulationcheck.pdf', width=3.5, height=2.5)
+dev.off();
+
+```
+
+## 1B: Proportion test comparing treatment manipulation percent correct with chance:
+# R manipulationcheckprop
+```{r}
+## Proportion test with treatment and chance: 
+maskedAccuracy <- filter(manipulationCheckAccuracyByCondition, condition=="masked")
+manipulationCheckChanceComparison <- prop.test(maskedAccuracy[1,]$numCorrect, maskedAccuracy[1,]$n, chanceManipulation)
+print(manipulationCheckChanceComparison)
+
+```
+
+
+### Consistency of fracture
+```{r}
+fractureFirst <- teamStats %>%
+  filter(team=="A")
+
+fractureSecond <- teamStats %>%
+  filter(team=="Ap")
+fractureConsistency <- fractureFirst %>%
+  # ungroup() %>%
+  left_join(fractureSecond, by=c("teamMembers", "batch", "condition","task"), suffix=c(".first", ".second"))
+fractureConsistency$consistent <- fractureConsistency$teamFracture.first == fractureConsistency$teamFracture.second
+fractureConsistency$continuous <- fractureConsistency$teamMeanViability.second - fractureConsistency$teamMeanViability.first
+fractureConsistency$continuousAbs <- abs(fractureConsistency$continuous)
+# rm("fractureFirst","fractureSecond")
+
+conditionConsistency <- fractureConsistency %>%
+  group_by(task, condition) %>%
+  summarise(
+    numConsistent = sum(consistent), 
+    n=n(), 
+    percentConsistent=numConsistent/n, 
+    se=sqrt(percentConsistent*(1-percentConsistent))/n,
+    meanContinuousAbs = mean(continuousAbs),
+    fractureRate = mean(mean(teamFracture.first),mean(teamFracture.second))
+    # percentContinuous = numContinuousAbs / viabilityMean,
+    # seContinuous=sqrt(percentContinuous*(1-percentContinuous))/n
+    )
+print(conditionConsistency)
+
+# 1553974262035
+# Room A, round 0
+# Room A, round 3
+
+now = fractureConsistency %>% filter(batch == "1553974262035")
+
+conditionConsistency = conditionConsistency %>%
+  mutate(
+    percentString = paste(formatC(100 * percentConsistent),"%",sep="")
+  )
+p = ggplot(data=filter(conditionConsistency), aes(x=condition, y=percentConsistent)) +
+  facet_grid(cols = vars(task)) +
+  geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
+  geom_text(aes(label=percentString), vjust=2.8, color="white", size=2.5)+
+  geom_errorbar(aes(ymin=percentConsistent-se, ymax=percentConsistent+se), width = 0.1) +
+  scale_x_discrete(labels=c("Masked","Unmasked")) +
+  scale_y_continuous(labels = scales::percent_format(1)) + 
+  theme_classic() +
+  theme(strip.background = element_blank(), 
+        strip.text = element_text(size = 8),
+        text = element_text(size = 10)
+          ) +  
+   labs(subtitle="", 
+       x="",
+       y="Consistency of fracture")
+pdf('Consistency.pdf', width=6, height=2.5)
+p
+dev.off();
+p
+
+fractureConsistencyCreative = fractureConsistency %>% filter(task == "Creative")
+fractureConsistencyIntellective = fractureConsistency %>% filter(task == "Intellective")
+fractureConsistencyCognitive = fractureConsistency %>% filter(task == "Cognitive conflict")
+model <- glm(consistent ~ condition,family=binomial(link='logit'),data=fractureConsistency)
+
+modelCreative <- glm(consistent ~ condition,family=binomial(link='logit'),data=fractureConsistencyCreative)
+modelIntellective <- glm(consistent ~ condition,family=binomial(link='logit'),data=fractureConsistencyIntellective)
+modelCognitive <- glm(consistent ~ condition,family=binomial(link='logit'),data=fractureConsistencyCognitive)
+
+summary(modelCreative)
+summary(modelIntellective)
+summary(modelCognitive)
+
+stargazer(modelCreative,
+          label = "tab:consistencyCreative", 
+          title="In the creative task, unmasked teams were significantly more consistent in their fracture outcome than masked teams.",
+          table.placement = "tb",
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          covariate.labels = c("Unmasked", "Intercept"), 
+          dep.var.labels=c("Consistency") 
+          )
+stargazer(modelIntellective,
+          label = "tab:consistencyIntellective", 
+          title="In the intellective task, unmasked and masked teams were not significantly different in their fracture consistency.",
+          table.placement = "tb",
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          covariate.labels = c("Unmasked", "Intercept"), 
+          dep.var.labels=c("Consistency") 
+          )
+stargazer(modelCognitive,
+          label = "tab:consistencyCognitive", 
+          title="In the cognitive conflict task, much like the intellective task, unmasked and masked teams were not significantly different in their fracture consistency.",
+          table.placement = "tb",
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          covariate.labels = c("Unmasked", "Intercept"), 
+          dep.var.labels=c("Consistency") 
+          )
+
+
+stargazer(model,
+          label = "tab:consistency", 
+          title="A significant interaction effect beween task type and condition in predicting the consistancy of fracture outcomes, suggests that teams are more consistant in some types of tasks than others",
+          table.placement = "tb",
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          covariate.labels = c("Intellective", "Cognitive conflict", "Unmasked", "Intellective * unmasked", "Cognitive conflict * unmasked", "Intercept"), 
+          dep.var.labels=c("Consistency") 
+          )
+
+continousConsistency = fractureConsistency %>% group_by(task, condition) %>% summarise(
+  mean = mean(continuousAbs),
+  sd = sd(continuousAbs)
+)
+
+# maskedConsistency <- fractureConsistency %>% filter(condition=="masked")
+# unmaskedConsistency <- fractureConsistency %>% filter(condition=="unmasked")
+
+# prop.test(conditionConsistency$numConsistent, conditionConsistency$n, p=NULL, alternative = "two.sided", correct = TRUE)
+# 
+# t.test(maskedConsistency$teamMeanViability.first,maskedConsistency$teamMeanViability.second,paired = TRUE)
+# t.test(unmaskedConsistency$teamMeanViability.first,unmaskedConsistency$teamMeanViability.second,paired = TRUE)
+# t.test(fractureConsistency$continuousAbs~fractureConsistency$condition, var.equal = TRUE)
+# t.test(fractureConsistency$continuousAbs~fractureConsistency$condition)
+
+
+# p2 <- ggplot(data=filter(continousConsistency), aes(x=condition, y=mean)) +
+#   facet_grid(cols = vars(task)) +
+#   geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
+#   geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width = 0.1) +
+#   scale_x_discrete(labels=c("Masked teams","Unmasked teams")) +
+#   theme_classic() + labs(subtitle="",
+#        x="",
+#        y="Consistancy of fracture")
+# 
+# p2
+# 
+# pdf('manipulationcheck.pdf', width=3.5, height=2.5)
+# dev.off();
+
+```
+```{r}
+baseline = teamStats %>% filter(team == "B")
+mean(baseline$teamFracture)
+baseline = baseline %>% group_by(round) %>% summarize(
+  meanFracture = mean(teamFracture),
+  sd = sd(teamFracture)
+  )
+
+mean(teamStats$teamMeanViability)
+sd(teamStats$teamMeanViability)
+
+teamStats %>% group_by(teamFracture) %>% summarize(
+  mu = mean(teamMeanViability),
+  sigma = sd(teamMeanViability)
+)
+
+fractured = teamStats %>% filter(teamFracture == TRUE)
+nofracture = teamStats %>% filter(teamFracture == FALSE)
+t.test(nofracture$teamMeanViability,fractured$teamMeanViability)
+
+```
+```{r}
+chatSlices = fractureConsistency %>% 
+  filter(
+    consistent == FALSE,
+    task == "Creative",
+    condition == "masked"
+    ) %>% 
+  select(
+    batch, round.first, room.first, teamFracture.first, round.second, room.second, teamFracture.second
+  )
+```
+
+```{r}
+performanceTable %>% 
+  group_by(task, condition, teamFracture) %>%
+  summarize(
+    mean = mean(performancePercentile),
+    sd = sd(performancePercentile)
+  )
+
+
+
+```
+
+```{r}
+# library(lme4)
+# fractureConsistency$team = paste(fractureConsistency$batch,fractureConsistency$room.first,fractureConsistency$round.first,sep = )
+# summary(lmer(continuousAbs ~ condition + (1 | team), fractureConsistency))
+g = ggplot(teamStats, aes(factor(teamFracture), teamMeanViability)) +
+  facet_grid(cols = vars(task)) +
+  geom_boxplot(varwidth=T, fill="#2853C2", alpha=0.7) +
+  labs(x="",
+       y="Average viability score") +
+  scale_x_discrete(labels=c("No fracture", "Fracture")) + 
+  theme_classic() + 
+  expand_limits(x = 0, y = 0) + 
+  theme(text = element_text(size=10),
+        strip.background = element_blank(), 
+        strip.text = element_text(size = 8))
+pdf('viabilityplot.pdf', width=6, height=2)
+g
+dev.off();
+g
+
+sentimentViolin = ggplot(teamStats, aes(factor(teamFracture), avg_sentiment)) +
+  facet_grid(cols = vars(task)) +
+  geom_boxplot(varwidth=T, fill="#2853C2", alpha=0.7) +
+  labs(x="",
+       y="Average sentiment analysis score") +
+  scale_x_discrete(labels=c("No fracture", "Fracture")) + 
+  theme_classic() + 
+  expand_limits(x = 0, y = 0) + 
+  theme(text = element_text(size=10),
+        strip.background = element_blank(), 
+        strip.text = element_text(size = 8))
+sentimentViolin
+
+```
+```{r}
+# performance
+perFractureFirst <- performanceTable %>% filter(team=="A")
+perFractureSecond <- performanceTable %>% filter(team=="Ap")
+perFractureConsistency <- perFractureFirst %>%
+  left_join(perFractureSecond, by=c("teamMembers", "batch", "condition","task"), suffix=c(".first", ".second"))
+perFractureConsistency$consistent <- perFractureConsistency$teamFracture.first == perFractureConsistency$teamFracture.second
+perFractureConsistency$performanceDiff <- perFractureConsistency$performancePercentile.second - perFractureConsistency$performancePercentile.first
+perFractureConsistency$performanceAbs <- abs(perFractureConsistency$performanceDiff)
+perFractureConsistency = na.omit(perFractureConsistency)
+
+perFractureConsistencySummary <- perFractureConsistency %>%
+  group_by(task, consistent) %>%
+  summarise(
+    numConsistent = sum(consistent), 
+    meanPerformanceAbs=mean(performanceAbs),
+    performanceSE=sqrt(meanPerformanceAbs*(1-meanPerformanceAbs))/n(),
+    )
+perFractureConsistencySummary
+
+model <- glm(performanceAbs ~ consistent*task,family=binomial(link='logit'),data=perFractureConsistency)
+summary(model)
+stargazer(model)
+stargazer(model,
+          label = "tab:performance", 
+          title="Absolute performance change is not statistically predictive to consistency of fracture, suggesting that fracture and performance are not tightly related.",
+          table.placement = "tb",
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          covariate.labels = c("Inconsistent", "Intellective", "Intellective * consistent","Intercept"), 
+          dep.var.labels=c("Absolute performance change") 
+          )
+
+summary(glm(performanceAbs ~ consistent + task, data = perFractureConsistency))
+
+p = ggplot(data=perFractureConsistencySummary, aes(x=consistent, y=meanPerformanceAbs)) +
+  facet_grid(cols = vars(task)) +
+  geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
+  # geom_text(aes(label=percentString), vjust=2.8, color="white", size=2.5)+
+  geom_errorbar(aes(ymin=meanPerformanceAbs-performanceSE, ymax=meanPerformanceAbs+performanceSE), width = 0.1) +
+  scale_x_discrete(labels=c("Inconsistent","Consistent")) +
+  # scale_y_continuous(labels = scales::percent_format(1)) + 
+  theme_classic() +
+  theme(strip.background = element_blank(), 
+        strip.text = element_text(size = 8),
+        text = element_text(size = 10)
+          ) +  
+   labs(subtitle="", 
+       x="",
+       y="Change in performance")
+pdf('performance.pdf', width=6, height=2.5)
+p
+dev.off();
+p
+
+# turns taken
+ttFractureFirst <- teamStats %>% filter(team=="A")
+ttFractureSecond <- teamStats %>% filter(team=="Ap")
+ttFractureConsistency <- ttFractureFirst %>%
+  left_join(ttFractureSecond, by=c("teamMembers", "batch", "condition", "task"),
+  suffix=c(".first", ".second"))
+ttFractureConsistency$consistent <- ttFractureConsistency$teamFracture.first ==
+  ttFractureConsistency$teamFracture.second
+ttFractureConsistency$turnsTakenDiff <- ttFractureConsistency$turnsTaken.second -
+  ttFractureConsistency$turnsTaken.first
+ttFractureConsistency$turnsTakenAbs <- abs(ttFractureConsistency$turnsTakenDiff)
+ttFractureConsistency = na.omit(ttFractureConsistency)
+
+ttFractureConsistencySummary <- ttFractureConsistency %>%
+  group_by(task, consistent) %>%
+  summarise(
+    numConsistent = sum(consistent),
+    meanTurnsTakenAbs=mean(turnsTakenAbs),
+    n=n(),
+    turnsTakenSE=sqrt(meanTurnsTakenAbs*(1-meanTurnsTakenAbs))/n(),
+    )
+ttFractureConsistencySummary
+
+# ttModel <- glm(turnsTakenAbs ~ consistent*task, family=binomial(link='logit'),
+#                data=ttFractureConsistency)
+# summary(ttModel)
+# stargazer(ttModel)
+# stargazer(ttModel,
+#           label = "tab:turnsTaken", 
+#           title="Title TBD.",
+#           table.placement = "tb",
+#           star.cutoffs = c(0.05, 0.01, 0.001),
+#           covariate.labels = c("Inconsistent", "Intellective", "Intellective * consistent","Intercept"), 
+#           dep.var.labels=c("Absolute turns taken change") 
+#           )
+# 
+# summary(glm(turnsTakenAbs ~ consistent + task, data = ttFractureConsistency))
+
+tt = ggplot(data=ttFractureConsistencySummary, aes(x=consistent, y=meanTurnsTakenAbs)) +
+  facet_grid(cols = vars(task)) +
+  geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
+  # geom_text(aes(label=percentString), vjust=2.8, color="white", size=2.5)+
+  geom_errorbar(aes(ymin=meanTurnsTakenAbs-turnsTakenSE, ymax=meanTurnsTakenAbs+turnsTakenSE), width = 0.1) +
+  scale_x_discrete(labels=c("Inconsistent","Consistent")) +
+  # scale_y_continuous(labels = scales::percent_format(1)) + 
+  theme_classic() +
+  theme(strip.background = element_blank(), 
+        strip.text = element_text(size = 8),
+        text = element_text(size = 10)
+          ) +  
+   labs(subtitle="", 
+       x="",
+       y="Change in turns taken")
+pdf('turnsTaken.pdf', width=6, height=2.5)
+tt
+dev.off();
+tt
+
+# chat length
+clFractureFirst <- teamStats %>% filter(team=="A")
+clFractureSecond <- teamStats %>% filter(team=="Ap")
+clFractureConsistency <- clFractureFirst %>%
+  left_join(clFractureSecond, by=c("teamMembers", "batch", "condition", "task"),
+  suffix=c(".first", ".second"))
+clFractureConsistency$consistent <- clFractureConsistency$teamFracture.first ==
+  clFractureConsistency$teamFracture.second
+clFractureConsistency$chatLengthDiff <- clFractureConsistency$chatLength.second -
+  clFractureConsistency$chatLength.first
+clFractureConsistency$chatLengthAbs <- abs(clFractureConsistency$chatLengthDiff)
+clFractureConsistency = na.omit(clFractureConsistency)
+
+clFractureConsistencySummary <- clFractureConsistency %>%
+  group_by(task, consistent) %>%
+  summarise(
+    numConsistent = sum(consistent),
+    meanChatLengthAbs=mean(chatLengthAbs),
+    chatLengthSE=sqrt(meanChatLengthAbs*(1-meanChatLengthAbs))/n(),
+    )
+clFractureConsistencySummary
+
+cl = ggplot(data=clFractureConsistencySummary, aes(x=consistent, y=meanChatLengthAbs)) +
+  facet_grid(cols = vars(task)) +
+  geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
+  geom_errorbar(aes(ymin=meanChatLengthAbs-chatLengthSE, ymax=meanChatLengthAbs+chatLengthSE), width = 0.1) +
+  scale_x_discrete(labels=c("Inconsistent","Consistent")) +
+  theme_classic() +
+  theme(strip.background = element_blank(), 
+        strip.text = element_text(size = 8),
+        text = element_text(size = 10)
+          ) +  
+   labs(subtitle="", 
+       x="",
+       y="Change in chat length")
+pdf('chatLength.pdf', width=6, height=2.5)
+cl
+dev.off();
+cl
+
+# num messages
+nmFractureFirst <- teamStats %>% filter(team=="A")
+nmFractureSecond <- teamStats %>% filter(team=="Ap")
+nmFractureConsistency <- nmFractureFirst %>%
+  left_join(nmFractureSecond, by=c("teamMembers", "batch", "condition", "task"),
+  suffix=c(".first", ".second"))
+nmFractureConsistency$consistent <- nmFractureConsistency$teamFracture.first ==
+  nmFractureConsistency$teamFracture.second
+nmFractureConsistency$numMessagesDiff<- nmFractureConsistency$numMessages.second -
+  nmFractureConsistency$numMessages.first
+nmFractureConsistency$numMessagesAbs <- abs(nmFractureConsistency$numMessagesDiff)
+nmFractureConsistency = na.omit(nmFractureConsistency)
+
+nmFractureConsistencySummary <- nmFractureConsistency %>%
+  group_by(task, consistent) %>%
+  summarise(
+    numConsistent = sum(consistent),
+    meanNumMessagesAbs=mean(numMessagesAbs),
+    numMessagesSE=sqrt(meanNumMessagesAbs*(1-meanNumMessagesAbs))/n(),
+    )
+nmFractureConsistencySummary
+
+nm = ggplot(data=nmFractureConsistencySummary, aes(x=consistent, y=meanNumMessagesAbs)) +
+  facet_grid(cols = vars(task)) +
+  geom_bar(stat="identity", fill="#2853C2", alpha=.7)+
+  geom_errorbar(aes(ymin=meanNumMessagesAbs-numMessagesSE, ymax=meanNumMessagesAbs+numMessagesSE), width = 0.1) +
+  scale_x_discrete(labels=c("Inconsistent","Consistent")) +
+  theme_classic() +
+  theme(strip.background = element_blank(), 
+        strip.text = element_text(size = 8),
+        text = element_text(size = 10)
+          ) +  
+   labs(subtitle="", 
+       x="",
+       y="Change in number of messages")
+pdf('numMessages.pdf', width=6, height=2.5)
+nm
+dev.off();
+nm
+```
+
