@@ -88,7 +88,7 @@ export const addHIT = (batch, isMain) => {
   return new Promise((resolve, reject) => {
     let time = Date.now();
     const hourlyWage = 12;
-    const rewardPrice = 0.01;
+    const rewardPrice = 1.00;
     const duration = isMain ? 36000 : 250;
     let bonusPrice = (hourlyWage * (((batch.roundMinutes + batch.surveyMinutes) * batch.numRounds) / 60)).toFixed(2);
     let bg = process.env.MTURK_FRAME === 'ON' ? (isMain ? 'Main task. ' : 'Test task. ') : 'Recruit task. ';

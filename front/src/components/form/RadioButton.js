@@ -37,7 +37,7 @@ class RadioButtonField extends PureComponent {
               <CheckIcon className='radio-btn__label-check' />
               <CloseIcon className='radio-btn__label-uncheck' />
             </span> : ''}
-        <span className='radio-btn__label'>{this.props.label}</span>
+        <p className='radio-btn__label'>{this.props.label}</p>
       </label>
     )
   }

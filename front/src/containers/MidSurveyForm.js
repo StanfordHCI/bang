@@ -21,27 +21,30 @@ import {bindActionCreators} from "redux";
 import {renderField} from 'Components/form/Text'
 import renderRadioPanel from 'Components/form/RadioPanel'
 
-const replaceNicksInSurvey = (message, users, currentUser) => {
+const replaceNicksInSurvey = (message, users, currentUser, readOnly) => {
+  if (readOnly) return message;
   users.filter(user => currentUser._id.toString() !== user._id.toString()).forEach((user, index) => {
     message = message.replace(new RegExp('team_partner_' + (index + 1), "ig"), user.fakeNick)
   })
+  message = message.replace(new RegExp('user_own_name', "ig"), currentUser.realNick)
   return message;
 }
 
 
 const renderQuestions = ({fields, meta: {touched, error, warning}, questions, readOnly, users, currentUser}) => {
   let tasks = [];
+
   for (let i = 0; i < questions.length; i++) {
     tasks.push(
       <div key={i} className='form__form-group'>
-        <label className='form__form-group-label'>{replaceNicksInSurvey(questions[i].question, users, currentUser)}</label>
+        <label className='form__form-group-label'>{replaceNicksInSurvey(questions[i].question, users, currentUser, readOnly)}</label>
         <div className='form__form-group-field' style={{maxWidth: '700px'}}>
           <Field
             name={`questions[${i}].result`}
             component={questions[i].type ==='select' ? renderRadioPanel : renderField}
             type={questions[i].type}
             disabled={readOnly}
-            options={questions[i].type ==='select' ? questions[i].selectOptions : []}
+            options={questions[i].type ==='select' ? questions[i].selectOptions.map(x => {return {label: replaceNicksInSurvey(x.label, users, currentUser, readOnly), value: x.value}}) : []}
           />
         </div>
       </div>
@@ -64,6 +67,8 @@ class MidSurveyForm extends React.Component {
     const {invalid, questions, readOnly, currentUser, members} = this.props;
 
     return (<div>
+             <p> IMPORTANT: Finishing the survey is <b>required</b> to participate in this experiment.</p>
+               <p> If you do not finish the survey, <b>you will NOT be paid for this task.</b> </p>
         <form className='form' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
           <Container>
             <Row>
@@ -96,7 +101,6 @@ class MidSurveyForm extends React.Component {
 }
 
 const validate = (values, props) => {
-  console.log(values)
   const errors = {questions: []};
   if (values.questions) for (let i = 0; i < values.questions.length; i++) {
     if (!values.questions[i].result && values.questions[i].result !== 0) {
