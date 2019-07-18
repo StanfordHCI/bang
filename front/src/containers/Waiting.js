@@ -17,6 +17,7 @@ import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 import {socket} from 'Actions/app'
 import {joinBatch, refreshActiveUsers} from 'Actions/batches'
+import {Link} from 'react-router-dom'
 
 class Waiting extends React.Component {
 
@@ -34,6 +35,7 @@ class Waiting extends React.Component {
     socket.on('clients-active', this.refresher)
   }
 
+
   componentDidMount() {
     refreshActiveUsers()
   }
@@ -45,24 +47,38 @@ class Waiting extends React.Component {
   render() {
     const {user, joinBatch} = this.props;
     const limit = this.state.limit;
+    const topPadding = {
+      marginTop: '36px',
+    };
 
     return (
-      <Container>
+      <Container style={topPadding}>
         <Row>
           <Col md={12} lg={12} xl={12}>
             <Card>
               {this.state.isReady && <CardBody>
                 <div className='card__title'>
-                  <h5 className='bold-text'>Waiting room</h5>
+                  <h5 className='bold-text'>Waiting Room</h5>
                 </div>
                 {this.state.batchReady && <div>
-                  <p>Hello! Thanks for accepting our task.</p>
-                  <p>After everyone joins the batch, the task will initiate! IMPORTANT: If you intend to complete the task, please do not leave because it will mean other MTurkers will have to wait longer for the task.</p>
-                  <p>Provided you stay for the whole task, we will bonus to a rate of approximately $12 per hour. If there are never enough people, we will automatically submit and accept for the base rate.</p>
+                  <p>Hey there! Thanks for accepting our task.</p>
+                  <p> The task has not started yet. After <b>everyone</b> joins the batch, the task will initiate! </p> 
+                  
+                  <p>
+                  Our task requires {limit} users to participate simultaneously and <b>cannot start until all {limit} users have clicked “Join Batch” and are active at once.</b> Once there are {limit}  users in the waiting chat, they are moved into the actual task.</p>
+                  <p>The waiting chat last up to <b>20 minutes</b>. If there are never {limit} users within this time, the waiting period will terminate. </p>
+
+                  <p> <b>IMPORTANT:</b> If you intend to complete the task, please do not leave because it will mean other MTurkers will have to wait longer for the task. If enough people arrive, you'll be bonused $1 for waiting. Provided you stay for the <b>whole task,</b> we will bonus to a rate of approximately <b>$12 per hour</b>. If there are never enough people, we will automatically submit and accept for the base rate.</p>
+                  
+                  
                   <Button className="btn btn-primary" onClick={() => joinBatch()}>Join Batch</Button>
+                  <Button className="btn btn-secondary"> <Link className='noDecoration' target="_blank" to='/faq'> FAQ  </Link></Button>
                 </div>}
                 {!this.state.batchReady && <div>
-                  <p>We don't have an experiment right now. Join us later please. We will notify you.</p>
+                  <p>Hey! Thanks for accepting our task. 
+
+                  We send out an email immediately after our experiments launch. We don't have an experiment right now, which means that the task filled up with other users before you got here. 
+                  Join us later please! We will notify you.</p>
                 </div>}
               </CardBody>}
             </Card>

@@ -35,6 +35,7 @@ import HasBanged from '../containers/HasBanged'
 import Notify from '../containers/admin/Notify'
 import BatchEnd from '../containers/BatchEnd'
 import Unsubscribe from '../containers/Unsubscribe'
+import Faq from '../containers/Faq'
 
 import constants from 'Constants'
 
@@ -66,6 +67,7 @@ const MainRouter = (props) => {
           <Route exact path='/not-logged' component={NotLogged}/>
           <Route exact path='/unsubscribe/' component={Unsubscribe} />
           <Route path='/unsubscribe/:id' component={Unsubscribe} />
+          <Route path='/faq' component={Faq} />
         </Switch>
       </main>
     </MainWrapper>
