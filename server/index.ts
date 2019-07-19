@@ -73,7 +73,7 @@ let initialChecks = [
         token: (2001 + i).toString(),
         mturkId: (2001 + i).toString(),
         testAssignmentId: 'test',
-        systemStatus: 'willbang'
+        systemStatus: 'willbang',
         isTest: true
       }).then(() => {}).catch(err => errorHandler(err, 'Test users error'))
   }
@@ -142,7 +142,7 @@ cron.schedule('*/3 * * * *', async function(){
 if (process.env.MTURK_MODE !== 'off') {
   cron.schedule('*/4 * * * *', async function(){
     try {
-      const batches = await Batch.find({status: 'waiting'}).select('createdAt teamSize roundMinutes numRounds HITTitle surveyMinutes users')
+      const batches = await Batch.find({status: 'waiting'}).select('tasks createdAt teamSize roundMinutes numRounds HITTitle surveyMinutes users')
         .sort({'createdAt': 1}).populate('users.user').lean().exec();
       if (batches && batches.length) {
         const HIT = await addHIT(batches[0], false);
@@ -155,7 +155,7 @@ if (process.env.MTURK_MODE !== 'off') {
             prs.push(Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}));
             prs.push(User.updateMany({batch:  batch._id}, { $set: { batch: null, realNick: null, fakeNick: null, currentChat: null }}))
             batch.users.forEach(user => {
-              io.to(user.user.socketId).emit('stop-batch', true);
+              io.to(user.user.socketId).emit('stop-batch', {status: 'waiting'});
             })
             clearRoom(batch._id, io)
             logger.info(module, 'Batch stopped: ' + batch._id);

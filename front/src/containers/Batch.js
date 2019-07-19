@@ -24,7 +24,7 @@ import { findDOMNode } from 'react-dom'
 import { bindActionCreators } from "redux";
 import moment from 'moment'
 import { loadBatch, sendMessage, submitSurvey } from 'Actions/batches'
-import MidSurveyForm from './MidSurveyForm'
+import RoundSurveyForm from './RoundSurveyForm'
 import PostSurveyForm from './PostSurveyForm'
 import { history } from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
@@ -161,10 +161,7 @@ class Batch extends React.Component {
       this.roundTimer = setInterval(() => this.timer(), 1000);
       this.setState({ timerIsReady: true })
     }
-    /*if (this.props.batch && this.props.batch.status === 'active' && nextProps.batch.status === 'completed') {
-      clearInterval(this.roundTimer);
-    }*/
-    if (this.props.currentRound && this.props.currentRound.status === 'active' && nextProps.currentRound.status === 'survey') {
+    if (this.props.currentRound && this.props.currentRound.status !== nextProps.currentRound.status) {
       this.setState({ surveyDone: false })
     }
     setTimeout(() => this.scrollDown(), 1)
@@ -174,7 +171,19 @@ class Batch extends React.Component {
     const { batch, currentRound } = this.props;
     if (batch && currentRound) {
       if (batch.status === 'active') {
-        let endMoment = currentRound.status === 'active' ? batch.roundMinutes : batch.roundMinutes + batch.surveyMinutes
+        const task = batch.tasks[batch.currentRound - 1];
+        let endMoment;
+        switch (currentRound.status) {
+          case 'presurvey':
+            endMoment = batch.surveyMinutes;
+            break;
+          case 'active':
+            endMoment = task.hasPreSurvey ? batch.roundMinutes + batch.surveyMinutes : batch.roundMinutes;
+            break;
+          case 'midsurvey':
+            endMoment = task.hasPreSurvey ? batch.roundMinutes + batch.surveyMinutes * 2 : batch.roundMinutes + batch.surveyMinutes;
+            break;
+        }
         let timeLeft = moment(currentRound.startTime).add(endMoment, 'minute');
         timeLeft = timeLeft.diff(moment(), 'seconds');
         if (timeLeft < 0) timeLeft = 0;
@@ -500,7 +509,7 @@ class Batch extends React.Component {
 
     return (
       <div>
-        {!this.state.surveyDone && <MidSurveyForm
+        {!this.state.surveyDone && <RoundSurveyForm
           initialValues={{ questions: task.survey.map(x => { return { result: '' } }) }}
           questions={task.survey}
           onSubmit={this.submitSurvey}
@@ -513,14 +522,35 @@ class Batch extends React.Component {
       </div>)
   }
 
+  renderPreSurvey() {
+    const task = this.props.batch.tasks[this.props.batch.currentRound - 1]
+
+    return (
+      <div>
+        {!this.state.surveyDone && <RoundSurveyForm
+          initialValues={{ questions: task.preSurvey.map(x => { return { result: '' } }) }}
+          questions={task.preSurvey}
+          onSubmit={this.submitSurvey}
+          members={this.props.chat.members}
+        />}
+        {this.state.surveyDone && <div>
+          <p>Thanks for completing pre-survey for this round!</p>
+          <p style={{ marginBottom: '0px' }}>There are {this.props.batch.numRounds - this.props.batch.currentRound + 1} more round(s) remaining, but we are waiting for your teammates to complete pre-surveys. Hang tight!</p>
+        </div>}
+      </div>)
+  }
+
   submitSurvey = (form) => {
     const batch = this.props.batch;
     let data = form;
     data.batch = batch._id;
     if (batch.status === 'active') {
-      data.round = batch.currentRound
+      data.round = batch.currentRound;
+      console.log(batch)
+      data.surveyType = batch.rounds[batch.currentRound - 1].status;
     } else if (batch.status === 'completed') {
       data.isPost = true;
+      data.surveyType = 'final';
       data.mainQuestion.partners = data.mainQuestion.partners.map(x => {
         return x.value.substring(2) //cut prefix
       })
@@ -544,10 +574,11 @@ class Batch extends React.Component {
     const round = batch.rounds[batch.currentRound - 1];
 
     return round ? (<div>
-      <h5 className='bold-text'>Round {batch.currentRound + (round.status === 'survey' ? ' survey' : '')}</h5>
+      <h5 className='bold-text'>Round {batch.currentRound}</h5>
       <h5 className='bold-text'>Time left: {formatTimer(this.state.timeLeft)}</h5>
+      {round.status === 'presurvey' && this.renderPreSurvey()}
       {round.status === 'active' && this.renderRound()}
-      {round.status === 'survey' && this.renderMidSurvey()}
+      {round.status === 'midsurvey' && this.renderMidSurvey()}
     </div>) : (
         <div>
           <h5 className='bold-text'>Wait for round start</h5>

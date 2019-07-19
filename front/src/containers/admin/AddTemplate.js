@@ -35,7 +35,7 @@ class AddTemplate extends PureComponent {
 
   render() {
     return (
-      <Container>
+      <Container style={{maxWidth: '100%'}}>
             <Card>
               {this.state.isReady && <CardBody>
                 <div className='card__title'>

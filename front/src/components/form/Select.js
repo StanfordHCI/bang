@@ -5,7 +5,7 @@
  * 
  *  called by:
  *    1. TemplateForm.js
- *    2. MidSurveyForm.js
+ *    2. RoundSurveyForm.js
  *    3. PostSurveyForm.js    
  */
 

@@ -19,7 +19,7 @@ import Select from "react-select";
 import Chat from '../Chat'
 import moment from "moment";
 import PostSurveyForm from "../PostSurveyForm";
-import MidSurveyForm from "../MidSurveyForm";
+import RoundSurveyForm from "../RoundSurveyForm";
 
 class BatchResult extends React.Component {
   state = {
@@ -29,7 +29,8 @@ class BatchResult extends React.Component {
     roundOptions: [],
     chat: {},
     members: [],
-    survey: {},
+    preSurvey: {},
+    midSurvey: {},
     finalSurvey: null,
     isReady: false,
     downloadLink: ''
@@ -48,26 +49,28 @@ class BatchResult extends React.Component {
 
   handleChangeUser = (e) => {
     const user = e.value;
-    let chat = {}, members = [], survey = {};
+    let chat = {}, members = [], preSurvey = {}, midSurvey = {};
     if (!!this.state.round && user) {
       const batch = this.props.batch;
       const team = batch.rounds[this.state.round - 1].teams[batch.rounds[this.state.round - 1].teams
         .findIndex(x => x.users.some(y => y.user === user))]
       chat = team.chat;
       console.log(team.users)
-      survey = team.users.find(x => x.user === user).survey;
+      preSurvey = team.users.find(x => x.user === user).preSurvey;
+      midSurvey = team.users.find(x => x.user === user).midSurvey;
       members = team.users.map(user=> {
         let newUser = JSON.parse(JSON.stringify(user))
         newUser.nickname = user.nickname + ' | ' + this.state.userOptions.find(x => x.value === user.user).label
         return newUser;
       });
     }
-    this.setState({user: user, chat: chat, members: members, survey: survey, finalSurvey: this.props.batch.users.find(x => x.user._id === user).survey})
+    this.setState({user: user, chat: chat, members: members, midSurvey: midSurvey, preSurvey: preSurvey,
+      finalSurvey: this.props.batch.users.find(x => x.user._id === user).survey})
   }
 
   handleChangeRound = (e) => {
     const round = e.value;
-    let chat = {}, members = [], survey = {};
+    let chat = {}, members = [], preSurvey = {}, midSurvey = {};
     if (!!this.state.user && round) {
       const batch = this.props.batch;
       const team = batch.rounds[round - 1].teams[batch.rounds[round - 1].teams
@@ -78,9 +81,10 @@ class BatchResult extends React.Component {
         newUser.nickname = user.nickname + ' | ' + this.state.userOptions.find(x => x.value === user.user).label
         return newUser;
       });
-      survey = team.users.find(x => x.user === this.state.user).survey;
+      preSurvey = team.users.find(x => x.user === this.state.user).preSurvey;
+      midSurvey = team.users.find(x => x.user === this.state.user).midSurvey;
     }
-    this.setState({round: round, chat: chat, members: members, survey: survey})
+    this.setState({round: round, chat: chat, members: members, preSurvey: preSurvey, midSurvey: midSurvey})
   }
 
 
@@ -136,8 +140,13 @@ class BatchResult extends React.Component {
                     chat={this.state.chat}
                     members={this.state.members}
                   />}
-                  {this.state.survey && this.state.survey.questions && <Row><MidSurveyForm
-                    initialValues={{questions: this.state.survey.questions}}
+                  {this.state.preSurvey && this.state.preSurvey.questions && <Row><RoundSurveyForm
+                    initialValues={{questions: this.state.preSurvey.questions}}
+                    questions={batch.tasks[this.state.round - 1].preSurvey}
+                    readOnly
+                  /></Row>}
+                  {this.state.midSurvey && this.state.midSurvey.questions && <Row><RoundSurveyForm
+                    initialValues={{questions: this.state.midSurvey.questions}}
                     questions={batch.tasks[this.state.round - 1].survey || defaultMidQuestions}
                     readOnly
                   /></Row>}

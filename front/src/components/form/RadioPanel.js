@@ -5,7 +5,7 @@
  *  where only one can be selected
  * 
  *  called by:
- *    1. MidSurveyForm.js
+ *    1. RoundSurveyForm.js
  */
 
 import React, { useState } from 'react';

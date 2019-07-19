@@ -56,7 +56,7 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, questions, re
   </div>)
 };
 
-class MidSurveyForm extends React.Component {
+class RoundSurveyForm extends React.Component {
 
   constructor() {
     super();
@@ -109,12 +109,12 @@ const validate = (values, props) => {
   return errors
 };
 
-MidSurveyForm = reduxForm({
+RoundSurveyForm = reduxForm({
   form: 'SurveyForm',
   enableReinitialize: true,
   destroyOnUnmount: true,
   validate,
-})(MidSurveyForm);
+})(RoundSurveyForm);
 
 const selector = formValueSelector('SurveyForm');
 
@@ -128,4 +128,4 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators({}, dispatch);
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(MidSurveyForm);
+export default connect(mapStateToProps, mapDispatchToProps)(RoundSurveyForm);

@@ -166,6 +166,12 @@ const generateSelectOptions = (template) => {
       }
       return survey;
     })
+    task.preSurvey.forEach(preSurvey => {
+      if (preSurvey.type === 'select') {
+        preSurvey.selectOptions = preSurvey.options.map((x, index) => {return {value: index, label: x.option}})
+      }
+      return preSurvey;
+    })
     return task;
   })
   return template

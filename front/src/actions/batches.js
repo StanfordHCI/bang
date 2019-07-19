@@ -99,15 +99,15 @@ export const loadBatch = () => {
         data: data
       });
     })
-    socket.on('start-round', (data) =>{
+    socket.on('start-task', (data) =>{
       dispatch(setSnackbar('Round start'));
       dispatch({
         type: REFRESH_BATCH,
         data: data
       });
     })
-    socket.on('mid-round', (data) =>{
-      dispatch(setSnackbar('Mid survey'));
+    socket.on('mid-survey', (data) =>{
+      dispatch(setSnackbar('Middle survey'));
       dispatch({
         type: REFRESH_BATCH,
         data: data

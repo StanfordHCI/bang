@@ -5,7 +5,7 @@
  * 
  *  called by:
  *    1. TemplateForm - textarea
- *    2. MidSurveyForm - field (unused)
+ *    2. RoundSurveyForm - field (unused)
  *    3. PostSurveyForm - field (unused) 
  */
 

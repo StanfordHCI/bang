@@ -17,6 +17,7 @@ let  SurveySchema = new Schema({
     partners: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}]
   },
   round: Number,
-  isPost: Boolean
+  isPost: Boolean,
+  surveyType: { type: String, enum: ['presurvey', 'midsurvey', 'final'], required: true },
 }, options);
 export const Survey = mongoose.model('Survey', SurveySchema);
