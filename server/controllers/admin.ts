@@ -105,11 +105,14 @@ export const addBatch = async function (req, res) {
       for (let i = 0; i < users.length; i++) {
         const user = users[i];
         const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
-        const message = 'Hello, our HIT is now active. ' +
-          'Participation will earn a bonus of ~$12/hour. ' +
-          'Please join us here: ' + url +
-          ' Our records indicate that you were interested in joining this HIT previously. ' +
-          'If you are no longer interested in participating, please email us and we will remove you from this list.';
+        const unsubscribe_url = process.env.HIT_URL + 'unsubscribe/' + user.mturkId; 
+        const message = 'Hi! Our HIT is now active. We are starting a new experiment on Bang. ' + 
+          'Your FULL participation will earn you a bonus of ~$12/hour. ' + '\n\n' +
+          'Please join the HIT here: ' + url + '\n\n' +
+          'The link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. ' + 
+          'NOTE: You will be bonused $1 if enough users join the waiting room and the task starts.' + '\n\n' + 
+          'Our records indicate that you were interested in joining this HIT previously. ' +
+          'If you are no longer interested in participating, please UNSUBSCRIBE here: ' + unsubscribe_url;
         notifyWorkers([user.mturkId], message, 'Bang')
           .then(() => {
             counter++;
@@ -257,16 +260,19 @@ export const notifyUsers = async function (req, res) {
     if (req.body.start) {
       const users = await User.find({systemStatus: 'willbang', isTest: false}).sort({createdAt: 1}).limit(parseInt(req.body.pass) + parseInt(req.body.limit))
         .select('mturkId testAssignmentId').lean().exec();
-
+       
       for (let i = 0; i < users.length; i++) {
         if (i + 1 > parseInt(req.body.pass)) {
           const user = users[i];
           const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
-          const message = 'Hello, our HIT is now active. ' +
-            'Participation will earn a bonus of ~$12/hour. ' +
-            'Please join us here: ' + url +
-            ' Our records indicate that you were interested in joining this HIT previously. ' +
-            'If you are no longer interested in participating, please email us and we will remove you from this list.';
+          const unsubscribe_url = process.env.HIT_URL + 'unsubscribe/' + user.mturkId; 
+          const message = 'Hi! Our HIT is now active. We are starting a new experiment on Bang. ' + 
+          'Your FULL participation will earn you a bonus of ~$12/hour. ' + '\n\n' +
+          'Please join the HIT here: ' + url + '\n\n' +
+          'The link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. ' + 
+          'NOTE: You will be bonused $1 if enough users join the waiting room and the task starts.' + '\n\n' + 
+          'Our records indicate that you were interested in joining this HIT previously. ' +
+          'If you are no longer interested in participating, please UNSUBSCRIBE here: ' + unsubscribe_url;
           notifyWorkers([user.mturkId], message, 'Bang')
             .then(() => {
               counter++;
