@@ -160,17 +160,17 @@ export function clearTemplates(template) {
 
 const generateSelectOptions = (template) => {
   template.tasks.forEach(task => {
-    task.survey.forEach(survey => {
-      if (survey.type === 'select') {
-        survey.selectOptions = survey.options.map((x, index) => {return {value: index, label: x.option}})
-      }
-      return survey;
-    })
-    task.preSurvey.forEach(preSurvey => {
+    if (task.hasPreSurvey) task.preSurvey.forEach(preSurvey => {
       if (preSurvey.type === 'select') {
         preSurvey.selectOptions = preSurvey.options.map((x, index) => {return {value: index, label: x.option}})
       }
       return preSurvey;
+    })
+    if (task.hasMidSurvey) task.survey.forEach(survey => {
+      if (survey.type === 'select') {
+        survey.selectOptions = survey.options.map((x, index) => {return {value: index, label: x.option}})
+      }
+      return survey;
     })
     return task;
   })

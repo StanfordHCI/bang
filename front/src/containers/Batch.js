@@ -574,7 +574,7 @@ class Batch extends React.Component {
     const round = batch.rounds[batch.currentRound - 1];
 
     return round ? (<div>
-      <h5 className='bold-text'>Round {batch.currentRound}</h5>
+      <h5 className='bold-text'>Round {batch.currentRound + (round.status === 'active' ? '' : (round.status === 'presurvey' ? ' (before-task survey)' : ' (after-task survey)'))}</h5>
       <h5 className='bold-text'>Time left: {formatTimer(this.state.timeLeft)}</h5>
       {round.status === 'presurvey' && this.renderPreSurvey()}
       {round.status === 'active' && this.renderRound()}

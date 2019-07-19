@@ -66,7 +66,7 @@ class RoundSurveyForm extends React.Component {
   render() {
     const {invalid, questions, readOnly, currentUser, members} = this.props;
 
-    return (<div>
+    return (<div style={{width: '100%'}}>
         <form className='form' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
           <Container>
             <Row>

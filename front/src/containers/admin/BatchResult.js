@@ -116,7 +116,7 @@ class BatchResult extends React.Component {
                   <a href={this.state.downloadLink} download="batch.json">download all data</a>
                 </Row>
 
-                <div className='form'>
+                <Col className='form' style={{display: 'flex', flexDirection: 'column'}}>
                   <Select
                     value={this.state.user}
                     onChange={(e) => this.handleChangeUser(e)}
@@ -135,31 +135,38 @@ class BatchResult extends React.Component {
                     className='form__form-group-select'
                     placeholder="Select round..."
                   />
-                  {this.state.user && this.state.round &&
-                  <Chat
-                    chat={this.state.chat}
-                    members={this.state.members}
-                  />}
-                  {this.state.preSurvey && this.state.preSurvey.questions && <Row><RoundSurveyForm
-                    initialValues={{questions: this.state.preSurvey.questions}}
-                    questions={batch.tasks[this.state.round - 1].preSurvey}
-                    readOnly
-                  /></Row>}
-                  {this.state.midSurvey && this.state.midSurvey.questions && <Row><RoundSurveyForm
-                    initialValues={{questions: this.state.midSurvey.questions}}
-                    questions={batch.tasks[this.state.round - 1].survey || defaultMidQuestions}
-                    readOnly
-                  /></Row>}
+                  {this.state.user && this.state.round && <Row>
+                    <Chat
+                      chat={this.state.chat}
+                      members={this.state.members}
+                    />
+                  </Row>}
+                  {this.state.preSurvey && this.state.preSurvey.questions && <Row>
+                    <p>pre-survey result:</p>
+                    <RoundSurveyForm
+                      initialValues={{questions: this.state.preSurvey.questions}}
+                      questions={batch.tasks[this.state.round - 1].preSurvey}
+                      readOnly
+                    />
+                  </Row>}
+                  {this.state.midSurvey && this.state.midSurvey.questions && <Row>
+                    <p>mid-survey result:</p>
+                    <RoundSurveyForm
+                      initialValues={{questions: this.state.midSurvey.questions}}
+                      questions={batch.tasks[this.state.round - 1].survey || defaultMidQuestions}
+                      readOnly
+                    />
+                  </Row>}
                   {this.state.user && this.state.finalSurvey &&
-                  <div>
+                  <Row>
                     <p>Final survey:</p>
                     <p>Experiment rounds (USER'S RESPONSE): {this.state.finalSurvey.mainQuestion.expRound1} and {this.state.finalSurvey.mainQuestion.expRound2} </p>
                     <p>Choosen partners:</p>
                     {this.state.finalSurvey.mainQuestion.partners.map(user => {
                       return (<p className="row-p">{this.state.userOptions.find(x => x.value === user).label}</p>)
                     })}
-                  </div>}
-                </div>
+                  </Row>}
+                </Col>
               </CardBody>}
             </Card>
           </Col>
