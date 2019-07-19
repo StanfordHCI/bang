@@ -132,7 +132,8 @@ export const addBatch = async function (req, res) {
 
 export const loadBatchList = async function (req, res) {
   try {
-    const batchList = await Batch.find({ $or:[  {status: {$in: ['active', 'waiting']}}, {status: 'completed', startTime: {$exists: true}} ]})
+    //{ $or:[  {status: {$in: ['active', 'waiting']}}, {status: 'completed', startTime: {$exists: true}} ]}
+    const batchList = await Batch.find({})
       .sort({createdAt: -1}).select('createdAt startTime status currentRound teamSize templateName note maskType').lean().exec();
     res.json({batchList: batchList})
   } catch (e) {
@@ -184,7 +185,7 @@ export const addUser = async function (req, res) {
 
 export const stopBatch = async function (req, res) {
   try {
-    const batch = await Batch.findByIdAndUpdate(req.params.id, {$set: {status: 'completed'}}).populate('users.user').lean().exec()
+    let batch = await Batch.findByIdAndUpdate(req.params.id, {$set: {status: 'completed'}}).populate('users.user').lean().exec()
     let usersChangeQuery = { batch: null, realNick: null, fakeNick: null, currentChat: null }
     if (batch.status === 'active' && process.env.MTURK_MODE !== 'off') { //compensations
       usersChangeQuery.systemStatus = 'hasbanged';
@@ -217,6 +218,7 @@ export const stopBatch = async function (req, res) {
     })
     clearRoom(batch._id, io)
     logger.info(module, 'Batch stopped: ' + batch._id);
+    batch.status = 'completed';
     res.json({batch: batch})
   } catch (e) {
     errorHandler(e, 'stop batch error')

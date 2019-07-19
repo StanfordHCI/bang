@@ -11,7 +11,7 @@ import React from 'react';
 import {Card, CardBody, Col, Row, Container, Button, Table} from 'reactstrap';
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
-import {loadBatchList, addBatch, stopBatch, clearBatches} from 'Actions/admin'
+import {loadBatchList, addBatch, stopBatch, clearBatches, switchBatchesVisibility} from 'Actions/admin'
 import moment from 'moment'
 import {history} from 'App/history';
 import Pagination from 'Components/Pagination';
@@ -59,7 +59,12 @@ class BatchList extends React.Component {
             <Card>
               {this.state.isReady && <CardBody>
                 <div className='card__title'>
-                  <h5 className='bold-text'>Batch list</h5>
+                  <Row style={{marginLeft: '0px', marginBottom: '10px', justifyContent: 'space-between'}}>
+                    <h5 className='bold-text' >Batch list</h5>
+                    <Button className="btn btn-primary" onClick={() => this.props.switchBatchesVisibility(!this.props.hideEmptyBatches)}>
+                      {this.props.hideEmptyBatches ? 'show' : 'hide'} empty batches
+                    </Button>
+                  </Row>
                   <Button className="btn btn-primary" onClick={() => history.push('/batches-add')}>Add Batch</Button>
                 </div>
                 <Table className='table table--bordered table--head-accent table-hover'>
@@ -110,7 +115,8 @@ class BatchList extends React.Component {
 
 function mapStateToProps(state) {
   return {
-    batchList: state.admin.batchList
+    hideEmptyBatches: state.admin.hideEmptyBatches,
+    batchList: state.admin.hideEmptyBatches ? state.admin.batchList.filter(x => (x.status !== 'completed' || (x.status === 'completed' && x.startTime))) : state.admin.batchList
   }
 }
 
@@ -119,7 +125,8 @@ function mapDispatchToProps(dispatch) {
     loadBatchList,
     addBatch,
     stopBatch,
-    clearBatches
+    clearBatches,
+    switchBatchesVisibility
   }, dispatch);
 }
 
