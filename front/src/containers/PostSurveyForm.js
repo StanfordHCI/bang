@@ -32,17 +32,19 @@ class PostSurveyForm extends React.Component {
 				{ value: 3, label: '3' },
 				{ value: 4, label: '4' }
 			],
-			uOptions: []
+			uOptions: [],
+			roster: []
 		};
 	}
 
 	componentDidMount() {
-		let qOptions = [],
-			uOptions = [];
-		for (let i = 0; i < this.props.batch.numRounds; i++) {
+		const batch = this.props.batch;
+		let qOptions = [], uOptions = [];
+		for (let i = 0; i < batch.numRounds; i++) {
 			qOptions[i] = { value: i + 1, label: (i + 1).toString() };
 		}
-		this.props.batch.rounds.forEach((round, index) => {
+		batch.rounds.forEach((round, index) => {
+			let roundRoster = '';
 			const roundPrefix = index < 10 ? '0' + index : index; //to solve problem with same option values (same users with different nicks)
 			const userId = this.props.user._id.toString();
 			const team = round.teams.find((x) => x.users.some((y) => y.user.toString() === userId));
@@ -52,8 +54,13 @@ class PostSurveyForm extends React.Component {
 						value: roundPrefix + user.user,
 						label: user.nickname + ' (round ' + (index + 1) + ')'
 					});
+					console.log(batch.users, team.users, user)
+          roundRoster = roundRoster + (batch.maskType === 'unmasked' ? batch.users.find(x => x.user === user.user).nickname : user.nickname) + ' '
 				}
 			});
+			let roster = this.state.roster;
+			roster[index] = roundRoster;
+			this.setState({roster: roster})
 		});
 
 		this.setState({ qOptions: qOptions, uOptions: uOptions });
@@ -70,6 +77,12 @@ class PostSurveyForm extends React.Component {
 							<Col>
 								<div className="form__panel">
 									<div className="form__form-group">
+										{batch.withRoster && <div>
+											<p>Team Rosters</p>
+											{this.state.roster.map((round, index) => {
+												return (<p>Round {index + 1}: {this.state.roster[index]}</p>)
+											})}
+										</div>}
 										<label className="form__form-group-label">
 											<p>You worked with the same team in two of the previous four rounds.</p>
 											<p>
@@ -101,7 +114,7 @@ class PostSurveyForm extends React.Component {
 										</div>
 									</div>
 
-									<div className="form__form-group">
+									<div className="form__form-group" style={{marginBottom: '50px'}}>
 										<label className="form__form-group-label">
 											What partners do you prefer to work with in the future?
 										</label>

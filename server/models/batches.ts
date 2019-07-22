@@ -65,6 +65,7 @@ let  BatchSchema = new Schema({
   maskType: {type: String, required: true, $enum: ['masked', 'unmasked']},
   note: {type: String, },
   roundGen: [{teams: [{users: [Number]}]}],
-  withAvatar: {type: Boolean, default: false},
+  withAvatar: {type: Boolean, default: false, required: true},
+  withRoster: {type: Boolean, default: false, required: true},
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);
