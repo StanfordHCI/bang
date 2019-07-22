@@ -591,12 +591,12 @@ class Batch extends React.Component {
     return (<div>
       <h5 className='bold-text'>Experiment completed. This is final survey.</h5>
       <h5 className='bold-text'>Time left: {formatTimer(this.state.timeLeft)}</h5>
-      {<div>
+      <div>
         <PostSurveyForm
           batch={this.props.batch}
           onSubmit={this.submitSurvey}
-        />}
-      </div>}
+        />
+      </div>
     </div>)
   }
 
