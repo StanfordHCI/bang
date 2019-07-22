@@ -21,23 +21,23 @@ import {bindActionCreators} from "redux";
 import {renderField} from 'Components/form/Text'
 import renderRadioPanel from 'Components/form/RadioPanel'
 
-const replaceNicksInSurvey = (message, users, currentUser, readOnly) => {
+const replaceNicksInSurvey = (message, users, currentUser, readOnly, unmasked) => {
   if (readOnly) return message;
   users.filter(user => currentUser._id.toString() !== user._id.toString()).forEach((user, index) => {
-    message = message.replace(new RegExp('team_partner_' + (index + 1), "ig"), user.fakeNick)
+    message = message.replace(new RegExp('team_partner_' + (index + 1), "ig"), unmasked ? user.realNick : user.fakeNick)
   })
   message = message.replace(new RegExp('user_own_name', "ig"), currentUser.realNick)
   return message;
 }
 
 
-const renderQuestions = ({fields, meta: {touched, error, warning}, questions, readOnly, users, currentUser}) => {
+const renderQuestions = ({fields, meta: {touched, error, warning}, questions, readOnly, users, currentUser, unmasked}) => {
   let tasks = [];
 
   for (let i = 0; i < questions.length; i++) {
     tasks.push(
       <div key={i} className='form__form-group'>
-        <label className='form__form-group-label'>{replaceNicksInSurvey(questions[i].question, users, currentUser, readOnly)}</label>
+        <label className='form__form-group-label'>{replaceNicksInSurvey(questions[i].question, users, currentUser, readOnly, unmasked)}</label>
         <div className='form__form-group-field' style={{maxWidth: '700px'}}>
           <Field
             name={`questions[${i}].result`}
@@ -64,7 +64,7 @@ class RoundSurveyForm extends React.Component {
   }
 
   render() {
-    const {invalid, questions, readOnly, currentUser, members} = this.props;
+    const {invalid, questions, readOnly, currentUser, members, batch} = this.props;
 
     return (<div style={{width: '100%'}}>
       <p> IMPORTANT: Finishing the survey is <b>required</b> to participate in this experiment.</p>
@@ -82,6 +82,7 @@ class RoundSurveyForm extends React.Component {
                     readOnly={readOnly}
                     users={members}
                     currentUser={currentUser}
+                    unmasked={batch.maskType === 'unmasked'}
                   />
               </div>
               </Col>
@@ -122,7 +123,8 @@ const selector = formValueSelector('SurveyForm');
 
 function mapStateToProps(state) {
   return {
-    currentUser: state.app.user
+    currentUser: state.app.user,
+    batch: state.batch.batch
   }
 }
 

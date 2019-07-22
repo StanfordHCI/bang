@@ -17,7 +17,7 @@ import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 import {socket} from 'Actions/app'
 import {joinBatch, refreshActiveUsers} from 'Actions/batches'
-import {Link} from 'react-router-dom'
+import Modal from 'Components/Modal'
 
 class Waiting extends React.Component {
 
@@ -42,6 +42,10 @@ class Waiting extends React.Component {
 
   refresher(data) {
     this.setState({activeCounter: data.activeCounter, batchReady: data.batchReady, limit: data.limit, isReady: true});
+  }
+
+  showFAQ = () => {
+
   }
 
   render() {
@@ -72,7 +76,30 @@ class Waiting extends React.Component {
                   
                   
                   <Button className="btn btn-primary" onClick={() => joinBatch()}>Join Batch</Button>
-                  <Button className="btn btn-secondary"> <Link className='noDecoration' target="_blank" to='/faq'> FAQ  </Link></Button>
+                  <Modal color='primary' btn='FAQ'
+                         content={(<Container className="faq" >
+                           <h4>Frequently Asked Questions</h4>
+                           <p>Hello! Thanks for coming to our FAQ page. We are always
+                             trying to make our tasks better and more clear. We put together this
+                             FAQ to answer your questions. Please feel free to email us if your question isn't listed here.
+                           </p>
+                           <br></br>
+                           <h5>Why do we have to wait?</h5>
+                           <p>This experiment is a group task, and we need enough people to be online at the same time so that they can collaborate with each other! The reason you’re waiting is because we need to get enough people to collaborate in groups, and then everyone can start at the same time.
+                           </p>
+                           <h5>What is the purpose of helperBot/Waiting room?</h5>
+                           <p>The bot and waiting room lets us know that users are engaged in the task and that we can move forward to the main experiment once enough are ready. </p>
+                           <p>We realize that the attention checks from the helperBot can be a little bit annoying, but it’s the best way for us to make sure that you’re ready to go so that the experiment will run smoothly from the get-go. </p>
+                           <h5>Will I be paid for waiting?</h5>
+                           <p>Yes, you will be paid $1 for waiting if we get enough people. </p>
+                           <h5>How much will I be paid for the task?</h5>
+                           <p>Provided you stay for the entire task, we will bonus at a rate of $12/hr.</p>
+                           <h5>I was waiting. Why did the task cancel?</h5>
+                           <p>To prevent excessive waiting, we will cancel the task if we don't get enough users
+                             to begin the task. As we stated before, you will be paid $1 for waiting. </p>
+
+                         </Container>)}
+                  />
                 </div>}
                 {!this.state.batchReady && <div>
                   <p>Hey! Thanks for accepting our task. 

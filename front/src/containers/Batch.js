@@ -83,9 +83,9 @@ const fuzzyMatched = (comparer, comparitor, matchCount) => {
   return isMatched;
 }
 
-const replaceNicksInTask = (message, users, currentUser) => {
+const replaceNicksInTask = (message, users, currentUser, unmasked) => {
   users.forEach((user, index) => {
-    const newNick = currentUser._id.toString() === user._id.toString() ? currentUser.realNick : user.fakeNick
+    const newNick = currentUser._id.toString() === user._id.toString() ? currentUser.realNick : (unmasked ? user.realNick : user.fakeNick)
     message = message.replace(new RegExp('team_user_' + (index + 1), "ig"), newNick)
   })
   return message;
@@ -426,7 +426,7 @@ class Batch extends React.Component {
                   // specially format bot messages
                   if (message.user.toString() === botId) {
                     messageClass = 'chat__bubble chat_bot'
-                    messageContent = replaceNicksInTask(messageContent, chat.members, user)
+                    messageContent = replaceNicksInTask(messageContent, chat.members, user, batch.maskType === 'unmasked')
                     messageContent = (ReactHtmlParser(messageContent));
                   }
 
