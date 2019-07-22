@@ -16,12 +16,19 @@ import {Field, FieldArray, reduxForm, formValueSelector, change} from 'redux-for
 import {bindActionCreators} from "redux";
 import {renderField, renderTextArea} from 'Components/form/Text'
 import renderSelectField from 'Components/form/Select'
+import renderCheckBoxField from 'Components/form/CheckBox'
 import Select from "react-select";
 
-const renderSurvey = ({fields, meta: {touched, error, warning}, task}) => {
-  return (<div style={{width: '100%', marginTop: '20px', borderBottom: '2px solid grey'}}>
+const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType}) => {
+  return (<div style={{width: '100%', marginTop: '20px', borderBottom: '1px solid grey'}}>
     {
       fields.map((question, index) => {
+        let isSelect = false;
+        if (surveyType === 'mid' && task && task.survey[index] && task.survey[index].type === 'select' ||
+          surveyType === 'pre' && task && task.preSurvey[index] && task.preSurvey[index].type === 'select') {
+          isSelect = true;
+        }
+
         return (
           <Row key={index} >
             <Col>
@@ -44,7 +51,7 @@ const renderSurvey = ({fields, meta: {touched, error, warning}, task}) => {
                   />
                 </div>
               </div>
-              {task && task.survey[index] && task.survey[index].type === 'select' &&
+              {isSelect &&
               <FieldArray
                 name={`${question}.options`}
                 component={renderQuestionOptions}
@@ -140,7 +147,7 @@ const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
   </div>)
 }
 
-const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneTask, surveyTemplatesOptions, taskArray, fillSurvey}) => {
+const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneTask, surveyTemplatesOptions, taskArray, fillSurvey, deleteSurvey}) => {
   let tasks = [], options = [];
   for (let i = 0; i < numRounds; i++) {
     options.push({value: i, label: 'task ' + (i + 1)})
@@ -148,11 +155,14 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
   const taskNumber = taskArray && taskArray.length && taskArray.length > numRounds ? taskArray.length : numRounds
 
   for (let i = 0; i < taskNumber; i++) {
-    tasks.push(
-      <div key={'task' + i} className='form__form-group'>
-        <label className='form__form-group-label' style={{margin: '0'}}>
-          <p>task {i + 1}</p>
-          <div style={{marginBottom: '10px'}}>
+    const taskLabel = i === 0 ? 'TASK FOR FIRST EXPERIMENT ROUND' : (i === 1 ? 'TASK FOR SECOND EXPERIMENT ROUND' : 'TASK FOR NON-EXPERIMENT ROUND')
+      tasks.push(
+      <div key={'task' + i} className='form__form-group' style={{ borderBottom: '3px solid grey'}}>
+        <Row style={{width: '80%'}}>
+          <Col style={{width: '100%'}}>
+            <p>{taskLabel}</p>
+          </Col>
+          <Col>
             <Select
               onChange={(e) => cloneTask(i, e.value)}
               options={options.filter(x => x.value !== i)}
@@ -161,8 +171,28 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
               className='form__form-group-select'
               placeholder="clone task"
             />
-          </div>
-        </label>
+          </Col>
+          <Col>
+            <p>Has pre-survey?</p>
+          </Col>
+          <Col>
+            <Field
+              name={`tasks[${i}].hasPreSurvey`}
+              component={renderCheckBoxField}
+              onChange={(e) => {deleteSurvey(e, i, 'preSurvey')}}
+            />
+          </Col>
+          <Col>
+            <p>Has mid-survey?</p>
+          </Col>
+          <Col>
+            <Field
+              name={`tasks[${i}].hasMidSurvey`}
+              component={renderCheckBoxField}
+              onChange={(e) => {deleteSurvey(e, i, 'survey')}}
+            />
+          </Col>
+        </Row>
         <div className='form__form-group-field' style={{marginBottom: '25px'}}>
           <Field
             name={`tasks[${i}].message`}
@@ -175,20 +205,42 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
           component={renderSteps}
           rerenderOnEveryChange
         />
-        <Select
-          onChange={(e) => fillSurvey(i, e.value)}
-          options={surveyTemplatesOptions}
-          clearable={true}
-          multi={false}
-          className='form__form-group-select'
-          placeholder="select survey"
-        />
-        <FieldArray
-          name={`tasks[${i}].survey`}
-          component={renderSurvey}
-          rerenderOnEveryChange
-          task={taskArray && taskArray[i]}
-        />
+        {taskArray && taskArray[i] && taskArray[i].hasPreSurvey && <div style={{width: '100%'}}>
+          <p>pre - survey</p>
+          <Select
+            onChange={(e) => fillSurvey(i, e.value, 'preSurvey')}
+            options={surveyTemplatesOptions}
+            clearable={true}
+            multi={false}
+            className='form__form-group-select'
+            placeholder="select pre-survey"
+          />
+          <FieldArray
+            name={`tasks[${i}].preSurvey`}
+            component={renderSurvey}
+            surveyType="pre"
+            rerenderOnEveryChange
+            task={taskArray && taskArray[i]}
+          />
+        </div>}
+        {taskArray && taskArray[i] && taskArray[i].hasMidSurvey && <div style={{width: '100%'}}>
+          <p>mid - survey</p>
+          <Select
+            onChange={(e) => fillSurvey(i, e.value, 'survey')}
+            options={surveyTemplatesOptions}
+            clearable={true}
+            multi={false}
+            className='form__form-group-select'
+            placeholder="select mid-survey"
+          />
+          <FieldArray
+            name={`tasks[${i}].survey`}
+            component={renderSurvey}
+            surveyType="mid"
+            rerenderOnEveryChange
+            task={taskArray && taskArray[i]}
+          />
+        </div>}
       </div>
     )
   }
@@ -212,14 +264,23 @@ class TemplateForm extends React.Component {
     this.props.dispatch(change('TemplateForm', 'tasks[' + from + ']', this.props.tasks[to]))
   }
 
-  fillSurvey = (taskNumber, surveyIndex) => {
-    this.props.dispatch(change('TemplateForm', 'tasks[' + taskNumber + '].survey', this.props.surveyList[surveyIndex].questions))
+  fillSurvey = (taskNumber, surveyIndex, fieldName) => {
+    this.props.dispatch(change('TemplateForm', 'tasks[' + taskNumber + '].' + fieldName, this.props.surveyList[surveyIndex].questions))
   }
 
   numRoundsChange = (e) => {
     const num = parseInt(e.target.value)
     let tasks = this.props.tasks.filter((x, index) => index < num);
     this.props.dispatch(change('TemplateForm', 'tasks', tasks))
+  }
+
+  deleteSurvey = (newValue, taskNumber, fieldName) => {
+    if (newValue.target) {
+      if (!newValue.target.checked) {
+        console.log(taskNumber, fieldName)
+        this.props.dispatch(change('TemplateForm', 'tasks[' + taskNumber + '].' + fieldName, null))
+      }
+    }
   }
 
   dispatchJsonData = (data) => {
@@ -241,10 +302,9 @@ class TemplateForm extends React.Component {
 
     return (<div>
         <form className='form form--horizontal' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
-        <Container>
           <Row>
             <Col><div className='form__panel'>
-            <div className='form__panel-body' style={{borderBottom: '2px solid grey'}}>
+            <div className='form__panel-body' style={{borderBottom: '3px solid grey'}}>
               <Row style={{paddingBottom: '10px'}}>
                 <input type="file" name="json" id="json" onChange={this.handleFileUpload} />
               </Row>
@@ -280,8 +340,6 @@ class TemplateForm extends React.Component {
                     />
                   </div>
                 </Col>
-              </Row>
-              <Row>
                 <Col className='form__form-group'>
                   <label className='form__form-group-label'>Round minutes:</label>
                   <div className='form__form-group-field'>
@@ -302,6 +360,8 @@ class TemplateForm extends React.Component {
                     />
                   </div>
                 </Col>
+              </Row>
+              {/*<Row>
                 <Col className='form__form-group'>
                   <label className='form__form-group-label'>Experiment round 1</label>
                   <div className='form__form-group-field'>
@@ -322,7 +382,7 @@ class TemplateForm extends React.Component {
                     />
                   </div>
                 </Col>
-              </Row>
+              </Row>*/}
               <div className='form__form-group'>
                 <label className='form__form-group-label'>HIT Title:</label>
                 <div className='form__form-group-field'>
@@ -341,6 +401,7 @@ class TemplateForm extends React.Component {
               numRounds={numRounds}
               cloneTask={this.cloneTask}
               fillSurvey={this.fillSurvey}
+              deleteSurvey={this.deleteSurvey}
               taskArray={tasks}
               surveyTemplatesOptions={surveyTemplatesOptions}
             />
@@ -353,7 +414,6 @@ class TemplateForm extends React.Component {
               </ButtonToolbar>
             </Col>
           </Row>
-        </Container>
         </form>
       </div>
     )
@@ -361,6 +421,7 @@ class TemplateForm extends React.Component {
 }
 
 const validate = (values, props) => {
+  console.log(values, props)
   const errors = {};
   if (!values.name) {
     errors.name = 'required'
@@ -377,7 +438,7 @@ const validate = (values, props) => {
   } else if (parseInt(values.teamSize) < 1 || parseInt(values.teamSize) > 10) {
     errors.teamSize = 'invalid value'
   }
-  if (!values.experimentRound1) {
+  /*if (!values.experimentRound1) {
     errors.experimentRound1 = 'required'
   } else if (parseInt(values.experimentRound1) < 1 || parseInt(values.experimentRound1) > parseInt(values.numRounds) - 2) {
     errors.experimentRound1 = 'invalid value'
@@ -387,7 +448,7 @@ const validate = (values, props) => {
   } else if (parseInt(values.experimentRound2) < 1 || parseInt(values.experimentRound2) < parseInt(values.experimentRound1) + 2 ||
     parseInt(values.experimentRound2) > parseInt(values.numRounds)) {
     errors.experimentRound2 = 'invalid value'
-  }
+  }*/
   if (!values.maskType) {
     errors.maskType = 'required'
   }
@@ -410,13 +471,15 @@ const validate = (values, props) => {
   }
 
   values.tasks && values.tasks.forEach((task, i) => {
-    errors.tasks[i] = {steps: [], survey: []};
+    errors.tasks[i] = {steps: [], survey: [], preSurvey: []};
     if (!task.message) {
       errors.tasks[i].message = 'required';
     } else  if (!task.steps || !task.steps.length) {
       errors.tasks[i].message = 'add steps please';
-    } else if (!task.survey || !task.survey.length) {
-      errors.tasks[i].message = 'add survey please';
+    } else if (task.hasPreSurvey && (!task.preSurvey || !task.preSurvey.length)) {
+      errors.tasks[i].message = 'add pre survey questions please';
+    } else if (task.hasMidSurvey && (!task.survey || !task.survey.length)) {
+      errors.tasks[i].message = 'add mid survey questions please';
     }
 
     if (task.steps) for (let j = 0; j < task.steps.length; j++) {
@@ -438,6 +501,18 @@ const validate = (values, props) => {
         }
       }
     }
+    if (task.preSurvey) for (let j = 0; j < task.preSurvey.length; j++){
+      const preSurvey = task.preSurvey[j];
+      errors.tasks[i].preSurvey[j] = {};
+      if (!preSurvey.question) {
+        errors.tasks[i].preSurvey[j].question = 'required';
+      }
+      if (!preSurvey.type) {
+        errors.tasks[i].preSurvey[j].type = 'required';
+      } else if (preSurvey.type === 'select' && (!preSurvey.options || preSurvey.options.length < 2 )) {
+        errors.tasks[i].preSurvey[j].type = 'add options please';
+      }
+    }
     if (task.survey) for (let j = 0; j < task.survey.length; j++){
       const survey = task.survey[j];
       errors.tasks[i].survey[j] = {};
@@ -449,7 +524,6 @@ const validate = (values, props) => {
       } else if (survey.type === 'select' && (!survey.options || survey.options.length < 2 )) {
         errors.tasks[i].survey[j].type = 'add options please';
       }
-
     }
 
   })

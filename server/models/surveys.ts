@@ -24,7 +24,8 @@ let SurveySchema = new Schema(
 			partners2: String
 		},
 		round: Number,
-		isPost: Boolean
+		isPost: Boolean,
+    surveyType: { type: String, enum: ['presurvey', 'midsurvey', 'final'], required: true },
 	},
 	options
 );

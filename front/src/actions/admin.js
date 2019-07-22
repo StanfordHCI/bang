@@ -11,6 +11,7 @@ export const CLEAR_TEMPLATES = 'CLEAR_TEMPLATES';
 export const USER_DELETED = 'USER_DELETED';
 export const USERS_FETCHED = 'USERS_FETCHED';
 export const USER_ADDED = 'USER_ADDED';
+export const SWITCH_EMPTY_BATCHES_VISIBILITY = 'SWITCH_EMPTY_BATCHES_VISIBILITY'
 
 export function updateBatch(batch) {
   return dispatch => {
@@ -135,6 +136,16 @@ export function clearBatches() {
     dispatch({
       type: BATCHES_FETCHED,
       data: []
+    });
+  };
+}
+
+export function switchBatchesVisibility(value) {
+  return (dispatch) => {
+    localStorage.setItem('hideEmptyBatches', value ? 'hide' : 'show')
+    dispatch({
+      type: SWITCH_EMPTY_BATCHES_VISIBILITY,
+      data: value
     });
   };
 }

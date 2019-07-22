@@ -18,7 +18,7 @@ let  BatchSchema = new Schema({
   rounds: [{
     startTime: Date,
     endTime: Date,
-    status: { type: String, enum: ['completed', 'active', 'waiting'], default: 'waiting' },
+    status: { type: String, enum: ['completed', 'active', 'presurvey', 'midsurvey'], default: 'presurvey' },
     teams: [{
       users: [{
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
@@ -39,6 +39,14 @@ let  BatchSchema = new Schema({
   experimentRound2: {type: Number, },
   numRounds: {type: Number, required: true},
   tasks: [{
+    hasPreSurvey: {type: Boolean, required: true, default: false},
+    hasMidSurvey: {type: Boolean, required: true, default: false},
+    preSurvey: [{
+      question: {type: String, required: true},
+      type: {type: String, required: true},
+      options: [{option: {type: String, required: true}}],
+      selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+    }],
     message: {type: String, required: true},
     steps: [{
       time: {type: Number, required: true},

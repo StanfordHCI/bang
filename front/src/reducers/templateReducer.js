@@ -19,9 +19,17 @@ export default function (state = initialState, action) {
         templateList: action.data
       };
     case TEMPLATE_FETCHED:
+      let newTemplate = action.data;
+      newTemplate.tasks.forEach(task => {
+        if (!task.hasMidSurvey && task.survey) {
+          task.hasMidSurvey = true;
+        }
+        return task;
+      })
+
       return {
         ...state,
-        template: action.data,
+        template: newTemplate,
       };
     case TEMPLATE_ADDED:
       return {

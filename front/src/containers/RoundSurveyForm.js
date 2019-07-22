@@ -56,7 +56,7 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, questions, re
   </div>)
 };
 
-class MidSurveyForm extends React.Component {
+class RoundSurveyForm extends React.Component {
 
   constructor() {
     super();
@@ -66,9 +66,9 @@ class MidSurveyForm extends React.Component {
   render() {
     const {invalid, questions, readOnly, currentUser, members} = this.props;
 
-    return (<div>
-             <p> IMPORTANT: Finishing the survey is <b>required</b> to participate in this experiment.</p>
-               <p> If you do not finish the survey, <b>you will NOT be paid for this task.</b> </p>
+    return (<div style={{width: '100%'}}>
+      <p> IMPORTANT: Finishing the survey is <b>required</b> to participate in this experiment.</p>
+      <p> If you do not finish the survey, <b>you will NOT be paid for this task.</b> </p>
         <form className='form' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
           <Container>
             <Row>
@@ -111,12 +111,12 @@ const validate = (values, props) => {
   return errors
 };
 
-MidSurveyForm = reduxForm({
+RoundSurveyForm = reduxForm({
   form: 'SurveyForm',
   enableReinitialize: true,
   destroyOnUnmount: true,
   validate,
-})(MidSurveyForm);
+})(RoundSurveyForm);
 
 const selector = formValueSelector('SurveyForm');
 
@@ -130,4 +130,4 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators({}, dispatch);
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(MidSurveyForm);
+export default connect(mapStateToProps, mapDispatchToProps)(RoundSurveyForm);

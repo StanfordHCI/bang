@@ -134,9 +134,13 @@ export const whoami = () => {
         dispatch(setSnackbar('You are afk'));
         window.location.reload();
       })
-      socket.on('stop-batch', (data) => {
+      socket.on('stop-batch', (batch) => {
         dispatch(setSnackbar('Batch was stopped'));
-        history.push('/batch-end')
+        if (batch.status === 'waiting') {
+          history.push('/waiting')
+        } else if (batch.status === 'active') {
+          history.push('/batch-end')
+        }
       })
       socket.emit('send-error', 'There is no right batch')
     }
