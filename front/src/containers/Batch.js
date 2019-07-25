@@ -33,6 +33,7 @@ import { Avatar } from '@material-ui/core';
 import { parseNick } from '../utils'
 import { animalMap, adjMap } from '../constants/nicknames';
 import Bot from '../img/Bot.svg';
+import ReactionBar from './ReactionBar';
 
 const MAX_LENGTH = 240;
 const botId = '100000000000000000000001'
@@ -445,12 +446,15 @@ class Batch extends React.Component {
                           /* </Avatar> */
                         }
                       </div>}
-                      <div className="chat__bubble-message-wrap">
-                        <p className="chat__bubble-contact-name">
-                          {isSelf ? user.realNick : message.nickname}
-                        </p>
-                        <p className="chat__bubble-message">{messageContent}</p>
-                        <p className="chat__bubble-date">{moment(message.time).format("LTS")}</p>
+                      <div className="message_and_reactions">
+                        <div className="chat__bubble-message-wrap">
+                          <p className="chat__bubble-contact-name">
+                            {isSelf ? user.realNick : message.nickname}
+                          </p>
+                          <p className="chat__bubble-date">{moment(message.time).format("LTS")}</p>
+                          <p className="chat__bubble-message">{messageContent}</p>
+                        </div>
+                        {(message.user.toString() !== botId) && <ReactionBar/> }
                       </div>
                     </div>
                   )

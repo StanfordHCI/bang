@@ -5,6 +5,7 @@ class ReactionBar extends React.Component{
     constructor(props) {
         super(props)
         this.state = {
+            //FAKE VALUES RN!!!
             smiles: 2,
             mehs: 0,
             frowns: 1,
