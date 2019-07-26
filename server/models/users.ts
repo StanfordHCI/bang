@@ -24,6 +24,7 @@ let UserSchema = new Schema({
   lastCheckTime: Date,
   lastDisconnect: Date,
   isTest: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: true },
   //status: { type: String, enum: ['waiting', 'active'], default: 'waiting',required: true },
   batch: {type: mongoose.Schema.Types.ObjectId, ref: 'Batch'},
 }, options);

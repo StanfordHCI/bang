@@ -54,22 +54,35 @@ export const addBatch = async function (req, res) {
     delete newBatch.updatedAt;
     newBatch.templateName = newBatch.name;
     newBatch.status = 'waiting';
-    newBatch.users = [];
-    let roundGen = createTeams(newBatch.teamSize, newBatch.numRounds - 1, letters.slice(0, newBatch.teamSize ** 2));
-    newBatch.experimentRound1 = Math.floor(Math.random() * (newBatch.numRounds - 2)) + 1;
-    newBatch.experimentRound2 = Math.floor(Math.random() * (newBatch.numRounds - newBatch.experimentRound1 - 1)) + newBatch.experimentRound1 + 2;
-    const tempTask1 = JSON.parse(JSON.stringify(newBatch.tasks[newBatch.experimentRound1 - 1]));
-    const tempTask2 = JSON.parse(JSON.stringify(newBatch.tasks[newBatch.experimentRound2 - 1]));
-    newBatch.tasks[newBatch.experimentRound1 - 1] = newBatch.tasks[0];
-    newBatch.tasks[newBatch.experimentRound2 - 1] = newBatch.tasks[1];
-    newBatch.tasks[0] = tempTask1;
-    newBatch.tasks[1] = tempTask2;
-
-    let part1 = JSON.parse(JSON.stringify(roundGen)), part2 = JSON.parse(JSON.stringify(roundGen));
-    part1.splice(newBatch.experimentRound2 - 1);
-    part2.splice(0, newBatch.experimentRound2 - 1);
-    part1.push(roundGen[newBatch.experimentRound1 - 1]);
-    newBatch.roundGen = part1.concat(part2);
+    newBatch.users = [], newBatch.expRounds = [], newBatch.roundGen = [];
+    let tasks = [], nonExpCounter = 0;
+    let roundGen = createTeams(newBatch.teamSize, newBatch.numRounds - newBatch.numExpRounds + 1, letters.slice(0, newBatch.teamSize ** 2));
+    for (let i = 0; i < newBatch.numExpRounds; i++) {
+      const min = newBatch.expRounds[i - 1] ? newBatch.expRounds[i - 1] + 1 : 0;
+      const max = newBatch.numRounds - (newBatch.numExpRounds - i - 1) * 2;
+      const roundNumber = Math.floor(Math.random() * (max - min)) + 1 + min;
+      newBatch.expRounds.push(roundNumber)
+    }
+    for (let i = 0; i < newBatch.numRounds; i++) {
+      const expIndex = newBatch.expRounds.findIndex(x => x === i + 1);
+      if (expIndex > -1) {//exp round
+        tasks[i] = newBatch.tasks[expIndex];
+        if (expIndex === 0) { //first exp round
+          newBatch.roundGen[i] = JSON.parse(JSON.stringify(roundGen[roundGen.length - 1]));
+          roundGen.length = roundGen.length - 1;
+        } else { //same team
+          newBatch.roundGen[i] = newBatch.roundGen[newBatch.expRounds[0] - 1]
+        }
+      } else { //non-exp round
+        tasks[i] = newBatch.tasks[newBatch.numExpRounds + nonExpCounter];
+        newBatch.roundGen[i] = JSON.parse(JSON.stringify(roundGen[roundGen.length - 1]));
+        roundGen.length = roundGen.length - 1;
+        nonExpCounter++;
+      }
+    }
+    newBatch.tasks = tasks;
+    console.log(newBatch.tasks);
+    console.log(newBatch.roundGen);
 
     const batch = await Batch.create(newBatch);
     const preChat = await Chat.create({batch: batch._id, messages: [

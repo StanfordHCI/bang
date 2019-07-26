@@ -113,7 +113,7 @@ class BatchResult extends React.Component {
                   <p className="row-p">Template: {batch.templateName}</p>
                   <p className="row-p">Team size: {batch.teamSize}</p>
                   <p className="row-p">Rounds: {batch.numRounds}</p>
-                  <p className="row-p">Experiment rounds: {batch.experimentRound1} and {batch.experimentRound2}</p>
+                  <p className="row-p">Experiment rounds: {batch.expRounds.map(x => x + ' ')}</p>
                 </Row>
                 <Row style={{marginBottom: '20px'}}>
                   <p className="row-p">Note: {batch.note}</p>

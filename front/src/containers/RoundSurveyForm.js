@@ -21,8 +21,8 @@ import {bindActionCreators} from "redux";
 import {renderField} from 'Components/form/Text'
 import renderRadioPanel from 'Components/form/RadioPanel'
 
-const replaceNicksInSurvey = (message, users, currentUser, readOnly, unmasked) => {
-  if (readOnly) return message;
+const replaceNicksInSurvey = (message, users, currentUser, readOnly, unmasked, surveyType) => {
+  if (readOnly || surveyType === 'pre') return message;
   users.filter(user => currentUser._id.toString() !== user._id.toString()).forEach((user, index) => {
     message = message.replace(new RegExp('team_partner_' + (index + 1), "ig"), unmasked ? user.realNick : user.fakeNick)
   })
@@ -31,20 +31,35 @@ const replaceNicksInSurvey = (message, users, currentUser, readOnly, unmasked) =
 }
 
 
-const renderQuestions = ({fields, meta: {touched, error, warning}, questions, readOnly, users, currentUser, unmasked}) => {
-  let tasks = [];
-
+const renderQuestions = ({fields, meta: {touched, error, warning}, questions, readOnly, users, currentUser, unmasked, surveyType, team}) => {
+  let items = [];
   for (let i = 0; i < questions.length; i++) {
-    tasks.push(
-      <div key={i} className='form__form-group'>
-        <label className='form__form-group-label'>{replaceNicksInSurvey(questions[i].question, users, currentUser, readOnly, unmasked)}</label>
+    let hasVarOfAfkUser = false, selectOptions = [];
+    if (questions[i].type ==='select') {
+      selectOptions = questions[i].selectOptions;
+    }
+    users.filter(user => currentUser._id.toString() !== user._id.toString()).forEach((user, index) => {
+      if (team.users.some(x => x.user === user._id && !x.isActive)) {
+        const customVar = 'team_partner_' + (index + 1);
+        hasVarOfAfkUser = questions[i].question.indexOf(customVar) > -1;
+        if (questions[i].type ==='select') {
+          selectOptions = selectOptions.filter(x => x.label.indexOf(customVar) === -1)
+        }
+      }
+    })
+
+    items.push(
+      <div key={i} className='form__form-group' style={{visibility: hasVarOfAfkUser ? 'hidden' : ''}}>
+        <label className='form__form-group-label'>
+            {replaceNicksInSurvey(questions[i].question, users, currentUser, readOnly, unmasked, surveyType)}
+          </label>
         <div className='form__form-group-field' style={{maxWidth: '700px'}}>
           <Field
             name={`questions[${i}].result`}
             component={questions[i].type ==='select' ? renderRadioPanel : renderField}
             type={questions[i].type}
             disabled={readOnly}
-            options={questions[i].type ==='select' ? questions[i].selectOptions.map(x => {return {label: replaceNicksInSurvey(x.label, users, currentUser, readOnly), value: x.value}}) : []}
+            options={questions[i].type ==='select' ? selectOptions.map(x => {return {label: replaceNicksInSurvey(x.label, users, currentUser, readOnly), value: x.value}}) : []}
           />
         </div>
       </div>
@@ -52,7 +67,7 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, questions, re
   }
 
   return (<div style={{marginTop: '20px'}}>
-    {tasks}
+    {items}
   </div>)
 };
 
@@ -64,7 +79,7 @@ class RoundSurveyForm extends React.Component {
   }
 
   render() {
-    const {invalid, questions, readOnly, currentUser, members, batch} = this.props;
+    const {invalid, questions, readOnly, currentUser, members, batch, surveyType, team} = this.props;
 
     return (<div style={{width: '100%'}}>
       <p> IMPORTANT: Finishing the survey is <b>required</b> to participate in this experiment.</p>
@@ -83,6 +98,8 @@ class RoundSurveyForm extends React.Component {
                     users={members}
                     currentUser={currentUser}
                     unmasked={batch.maskType === 'unmasked'}
+                    surveyType={surveyType}
+                    team={team}
                   />
               </div>
               </Col>

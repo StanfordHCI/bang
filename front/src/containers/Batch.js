@@ -506,7 +506,10 @@ class Batch extends React.Component {
   }
 
   renderMidSurvey() {
-    const task = this.props.batch.tasks[this.props.batch.currentRound - 1]
+    const batch = this.props.batch;
+    const task = batch.tasks[batch.currentRound - 1]
+    const round = batch.rounds[batch.currentRound - 1]
+    const team = round.teams.find((x) => x.users.some((y) => y.user.toString() === this.props.user._id));
 
     return (
       <div>
@@ -515,6 +518,8 @@ class Batch extends React.Component {
           questions={task.survey}
           onSubmit={this.submitSurvey}
           members={this.props.chat.members}
+          surveyType="mid"
+          team={team}
         />}
         {this.state.surveyDone && <div>
           <p>Thanks for completing the survey for this round!</p>
@@ -533,6 +538,7 @@ class Batch extends React.Component {
           questions={task.preSurvey}
           onSubmit={this.submitSurvey}
           members={this.props.chat.members}
+          surveyType="pre"
         />}
         {this.state.surveyDone && <div>
           <p>Thanks for completing pre-survey for this round!</p>

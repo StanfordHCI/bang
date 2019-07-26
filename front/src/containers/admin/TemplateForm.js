@@ -1,12 +1,12 @@
 /** TemplateForm.js
  *  front-end
- * 
+ *
  *  admin only layout for adding / editing (validating) a template
- * 
+ *
  *  called by:
- *    1. AddTemplate.js 
+ *    1. AddTemplate.js
  *    2. EditTemplate.js (empty, code scrap)
- *    3. TemplateInfo.js   
+ *    3. TemplateInfo.js
  */
 
 import React from 'react';
@@ -147,7 +147,8 @@ const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
   </div>)
 }
 
-const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneTask, surveyTemplatesOptions, taskArray, fillSurvey, deleteSurvey}) => {
+const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneTask, surveyTemplatesOptions,
+                       taskArray, fillSurvey, deleteSurvey, numExpRounds}) => {
   let tasks = [], options = [];
   for (let i = 0; i < numRounds; i++) {
     options.push({value: i, label: 'task ' + (i + 1)})
@@ -155,8 +156,11 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
   const taskNumber = taskArray && taskArray.length && taskArray.length > numRounds ? taskArray.length : numRounds
 
   for (let i = 0; i < taskNumber; i++) {
-    const taskLabel = i === 0 ? 'TASK FOR FIRST EXPERIMENT ROUND' : (i === 1 ? 'TASK FOR SECOND EXPERIMENT ROUND' : 'TASK FOR NON-EXPERIMENT ROUND')
-      tasks.push(
+    let taskLabel = 'TASK FOR NON-EXPERIMENT ROUND';
+    if (i < numExpRounds) {
+      taskLabel = 'TASK FOR EXPERIMENT ROUND ' + (i + 1);
+    }
+    tasks.push(
       <div key={'task' + i} className='form__form-group' style={{ borderBottom: '3px solid grey'}}>
         <Row style={{width: '80%'}}>
           <Col style={{width: '100%'}}>
@@ -298,7 +302,7 @@ class TemplateForm extends React.Component {
   }
 
   render() {
-    const {invalid, numRounds, surveyTemplatesOptions, pristine, isAdd, tasks} = this.props;
+    const {invalid, numRounds, surveyTemplatesOptions, pristine, isAdd, tasks, numExpRounds} = this.props;
 
     return (<div>
         <form className='form form--horizontal' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
@@ -361,29 +365,18 @@ class TemplateForm extends React.Component {
                   </div>
                 </Col>
               </Row>
-              {/*<Row>
+              <Row>
                 <Col className='form__form-group'>
-                  <label className='form__form-group-label'>Experiment round 1</label>
+                  <label className='form__form-group-label'>Experiment rounds:</label>
                   <div className='form__form-group-field'>
                     <Field
-                      name='experimentRound1'
+                      name='numExpRounds'
                       component={renderField}
                       type='number'
                     />
                   </div>
                 </Col>
                 <Col className='form__form-group'>
-                  <label className='form__form-group-label'>Experiment round 2</label>
-                  <div className='form__form-group-field'>
-                    <Field
-                      name='experimentRound2'
-                      component={renderField}
-                      type='number'
-                    />
-                  </div>
-                </Col>
-              </Row>*/}
-              <div className='form__form-group'>
                 <label className='form__form-group-label'>HIT Title:</label>
                 <div className='form__form-group-field'>
                   <Field
@@ -392,7 +385,8 @@ class TemplateForm extends React.Component {
                     type='text'
                   />
                 </div>
-              </div>
+              </Col>
+              </Row>
             </div>
             <FieldArray
               name="tasks"
@@ -403,6 +397,7 @@ class TemplateForm extends React.Component {
               fillSurvey={this.fillSurvey}
               deleteSurvey={this.deleteSurvey}
               taskArray={tasks}
+              numExpRounds={numExpRounds}
               surveyTemplatesOptions={surveyTemplatesOptions}
             />
           </div></Col>
@@ -430,7 +425,8 @@ const validate = (values, props) => {
   }
   if (!values.numRounds) {
     errors.numRounds = 'required'
-  } else if (parseInt(values.numRounds) < 4 || parseInt(values.teamSize) > 1 && (parseInt(values.numRounds) > parseInt(values.teamSize) + 2)) {
+  } else if (parseInt(values.numRounds) < 4 || parseInt(values.teamSize) > 1 &&
+    (parseInt(values.numRounds) > parseInt(values.teamSize) + parseInt(values.numExpRounds))) {
     errors.numRounds = 'invalid value'
   }
   if (!values.teamSize) {
@@ -438,17 +434,12 @@ const validate = (values, props) => {
   } else if (parseInt(values.teamSize) < 1 || parseInt(values.teamSize) > 10) {
     errors.teamSize = 'invalid value'
   }
-  /*if (!values.experimentRound1) {
-    errors.experimentRound1 = 'required'
-  } else if (parseInt(values.experimentRound1) < 1 || parseInt(values.experimentRound1) > parseInt(values.numRounds) - 2) {
-    errors.experimentRound1 = 'invalid value'
+  if (!values.numExpRounds) {
+    errors.numExpRounds = 'required'
+  } else if (parseInt(values.numExpRounds) < 2 || parseInt(values.numExpRounds) > 10) {
+    errors.numExpRounds = 'invalid value'
   }
-  if (!values.experimentRound2) {
-    errors.experimentRound2 = 'required'
-  } else if (parseInt(values.experimentRound2) < 1 || parseInt(values.experimentRound2) < parseInt(values.experimentRound1) + 2 ||
-    parseInt(values.experimentRound2) > parseInt(values.numRounds)) {
-    errors.experimentRound2 = 'invalid value'
-  }*/
+
   if (!values.maskType) {
     errors.maskType = 'required'
   }
@@ -544,6 +535,7 @@ function mapStateToProps(state) {
   return {
     numRounds: selector(state, 'numRounds'),
     teamSize: selector(state, 'teamSize'),
+    numExpRounds: selector(state, 'numExpRounds'),
     roundGen: selector(state, 'roundGen'),
     tasks: selector(state, 'tasks'),
     surveyList: state.survey.surveyList,

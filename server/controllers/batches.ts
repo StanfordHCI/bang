@@ -292,7 +292,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io) => {
   teams.forEach((team, index) => {
     team.chat = chats[index]._id;
     team.users.forEach(user => {
-      prsHelper.push(User.findByIdAndUpdate(user.user, {$set: {fakeNick: user.nickname, currentChat: team.chat}}));
+      prsHelper.push(User.findByIdAndUpdate(user.user, {$set: {fakeNick: user.nickname, currentChat: team.chat,}}));
       return user;
     })
     return team;
@@ -337,8 +337,17 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io) => {
   await timeout(batch.roundMinutes * (1 - task.steps[task.steps.length - 1].time) * 60000);
 
   if (task.hasMidSurvey) {
+    const filledChats = await Chat.find({_id: {$in: chats.map(x => x._id)}}).lean().exec();
     roundObject.status = 'midsurvey';
-    const midRoundInfo =  {rounds: rounds};
+    roundObject.teams.forEach((team, index) => {
+      team.users.forEach(user => {
+        const chat = filledChats.find(x => x._id.toString() === team.chat.toString());
+        user.isActive = chat.messages.some(x => x.user.toString() === user.user.toString());
+        return user;
+      })
+      return team;
+    })
+    const midRoundInfo = {rounds: rounds};
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: midRoundInfo}).lean().exec();
     logger.info(module, batch._id + ' : Begin survey for round ' + roundObject.number)
     io.to(batch._id.toString()).emit('mid-survey', midRoundInfo);

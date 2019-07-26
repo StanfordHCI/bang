@@ -14,8 +14,7 @@ let  TemplateSchema = new Schema({
   surveyMinutes: {type: Number, required: true},
   numRounds: {type: Number, required: true},
   HITTitle: String,
-  experimentRound1: {type: Number},
-  experimentRound2: {type: Number},
+  numExpRounds: {type: Number, required: true},
   tasks: [{
     hasPreSurvey: {type: Boolean, required: true, default: false},
     hasMidSurvey: {type: Boolean, required: true, default: false},
