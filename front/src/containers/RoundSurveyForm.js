@@ -34,7 +34,7 @@ const replaceNicksInSurvey = (message, users, currentUser, readOnly, unmasked, s
 const renderQuestions = ({fields, meta: {touched, error, warning}, questions, readOnly, users, currentUser, unmasked, surveyType, team}) => {
   let items = [];
   for (let i = 0; i < questions.length; i++) {
-    let hasVarOfAfkUser = false, selectOptions = [];
+    /*let hasVarOfAfkUser = false, selectOptions = [];
     if (questions[i].type ==='select') {
       selectOptions = questions[i].selectOptions;
     }
@@ -46,10 +46,10 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, questions, re
           selectOptions = selectOptions.filter(x => x.label.indexOf(customVar) === -1)
         }
       }
-    })
+    })*/
 
     items.push(
-      <div key={i} className='form__form-group' style={{visibility: hasVarOfAfkUser ? 'hidden' : ''}}>
+      <div key={i} className='form__form-group'>
         <label className='form__form-group-label'>
             {replaceNicksInSurvey(questions[i].question, users, currentUser, readOnly, unmasked, surveyType)}
           </label>
@@ -59,7 +59,7 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, questions, re
             component={questions[i].type ==='select' ? renderRadioPanel : renderField}
             type={questions[i].type}
             disabled={readOnly}
-            options={questions[i].type ==='select' ? selectOptions.map(x => {return {label: replaceNicksInSurvey(x.label, users, currentUser, readOnly), value: x.value}}) : []}
+            options={questions[i].type ==='select' ? questions[i].selectOptions.map(x => {return {label: replaceNicksInSurvey(x.label, users, currentUser, readOnly), value: x.value}}) : []}
           />
         </div>
       </div>
