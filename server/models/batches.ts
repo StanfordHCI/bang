@@ -18,11 +18,13 @@ let  BatchSchema = new Schema({
   rounds: [{
     startTime: Date,
     endTime: Date,
-    status: { type: String, enum: ['completed', 'active', 'waiting'], default: 'waiting' },
+    status: { type: String, enum: ['completed', 'active', 'presurvey', 'midsurvey'], default: 'presurvey' },
     teams: [{
       users: [{
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
         nickname: {type: String, required: true},
+        isActive: {type: Boolean, default: true, required: true
+        }
       }],
       chat: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat', required: true},
     }],
@@ -35,10 +37,17 @@ let  BatchSchema = new Schema({
   teamSize: {type: Number, required: true},
   roundMinutes: {type: Number, required: true},
   surveyMinutes: {type: Number, required: true},
-  experimentRound1: {type: Number, },
-  experimentRound2: {type: Number, },
+  expRounds: [],
   numRounds: {type: Number, required: true},
   tasks: [{
+    hasPreSurvey: {type: Boolean, required: true, default: false},
+    hasMidSurvey: {type: Boolean, required: true, default: false},
+    preSurvey: [{
+      question: {type: String, required: true},
+      type: {type: String, required: true},
+      options: [{option: {type: String, required: true}}],
+      selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+    }],
     message: {type: String, required: true},
     steps: [{
       time: {type: Number, required: true},
@@ -57,6 +66,7 @@ let  BatchSchema = new Schema({
   maskType: {type: String, required: true, $enum: ['masked', 'unmasked']},
   note: {type: String, },
   roundGen: [{teams: [{users: [Number]}]}],
-  withAvatar: {type: Boolean, default: false},
+  withAvatar: {type: Boolean, default: false, required: true},
+  withRoster: {type: Boolean, default: false, required: true},
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);

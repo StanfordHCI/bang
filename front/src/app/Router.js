@@ -36,8 +36,6 @@ import Notify from '../containers/admin/Notify'
 import BatchEnd from '../containers/BatchEnd'
 import Unsubscribe from '../containers/Unsubscribe'
 
-import constants from 'Constants'
-
 const MainRouter = (props) => {
   const {user, appReady} = props;
   const data = {

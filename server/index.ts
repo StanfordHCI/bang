@@ -73,7 +73,7 @@ let initialChecks = [
         token: (2001 + i).toString(),
         mturkId: (2001 + i).toString(),
         testAssignmentId: 'test',
-        systemStatus: 'willbang'
+        systemStatus: 'willbang',
         isTest: true
       }).then(() => {}).catch(err => errorHandler(err, 'Test users error'))
   }
@@ -142,7 +142,7 @@ cron.schedule('*/3 * * * *', async function(){
 if (process.env.MTURK_MODE !== 'off') {
   cron.schedule('*/4 * * * *', async function(){
     try {
-      const batches = await Batch.find({status: 'waiting'}).select('createdAt teamSize roundMinutes numRounds HITTitle surveyMinutes users')
+      const batches = await Batch.find({status: 'waiting'}).select('tasks createdAt teamSize roundMinutes numRounds HITTitle surveyMinutes users')
         .sort({'createdAt': 1}).populate('users.user').lean().exec();
       if (batches && batches.length) {
         const HIT = await addHIT(batches[0], false);
@@ -155,7 +155,7 @@ if (process.env.MTURK_MODE !== 'off') {
             prs.push(Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}));
             prs.push(User.updateMany({batch:  batch._id}, { $set: { batch: null, realNick: null, fakeNick: null, currentChat: null }}))
             batch.users.forEach(user => {
-              io.to(user.user.socketId).emit('stop-batch', true);
+              io.to(user.user.socketId).emit('stop-batch', {status: 'waiting'});
             })
             clearRoom(batch._id, io)
             logger.info(module, 'Batch stopped: ' + batch._id);
@@ -180,7 +180,10 @@ if (process.env.MTURK_MODE !== 'off') {
           if (!check) {//add user to db and give willbang qual
             const url = process.env.MTURK_FRAME === 'ON' ? ' https://workersandbox.mturk.com/requesters/A3QTK0H2SRN96W/projects' : //inside frame logic; should be changed if we wanna use it
               process.env.HIT_URL + '?assignmentId=' + assignment.AssignmentId + '&workerId=' + assignment.WorkerId;
-
+            const message = 'Hi, thanks for accepting our HIT! ' +
+            'Your FULL participation will earn you a bonus of $12/hour.' + '\n\n' +
+            'You can join the task here: ' + url + '\n\n' +
+            'The link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. ' + 'NOTE: You will be bonused $1 if enough users join the waiting room and the task starts.'; 
             let prs = [
               User.create({
                 token: assignment.WorkerId,
@@ -188,7 +191,7 @@ if (process.env.MTURK_MODE !== 'off') {
                 testAssignmentId: assignment.AssignmentId
               }),
               assignQual(assignment.WorkerId, runningLive ? process.env.PROD_WILL_BANG_QUAL : process.env.TEST_WILL_BANG_QUAL),
-              notifyWorkers([assignment.WorkerId], 'Thanks for accepting our HIT. You can join the task here: ' + url, 'Bang')
+              notifyWorkers([assignment.WorkerId], message, 'Bang')
             ];
             await Promise.all(prs);
             logger.info('module', 'User added to db, qual added, notify sent: ' + assignment.WorkerId)

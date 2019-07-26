@@ -88,9 +88,9 @@ export const addHIT = (batch, isMain) => {
   return new Promise((resolve, reject) => {
     let time = Date.now();
     const hourlyWage = 12;
-    const rewardPrice = 0.01;
+    const rewardPrice = 1.00;
     const duration = isMain ? 36000 : 250;
-    let bonusPrice = (hourlyWage * (((batch.roundMinutes + batch.surveyMinutes) * batch.numRounds) / 60)).toFixed(2);
+    let bonusPrice = (hourlyWage * getBatchTime(batch)).toFixed(2);
     let bg = process.env.MTURK_FRAME === 'ON' ? (isMain ? 'Main task. ' : 'Test task. ') : 'Recruit task. ';
     let HITTitle = batch.HITTitle ? batch.HITTitle : bg + "Write online ads - bonus up to $" + hourlyWage + " / hour (";
     const batchTime = Math.round((batch.roundMinutes + batch.surveyMinutes) * batch.numRounds );
@@ -374,3 +374,13 @@ export const createTeams = (teamSize: number, numRounds: number, people: string[
 
   return roundGen;
 };
+
+export const getBatchTime = (batch) => {
+  let result = 0;
+  batch.tasks.forEach(task => {
+    result = result + batch.roundMinutes;
+    if (task.hasPreSurvey) result = result + batch.surveyMinutes;
+    if (task.hasMidSurvey) result = result + batch.surveyMinutes;
+  })
+  return result / 60;
+}

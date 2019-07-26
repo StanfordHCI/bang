@@ -30,7 +30,7 @@ class TemplateInfo extends PureComponent {
       this.props.loadTemplate(this.props.match.params.id),
       this.props.loadSurveyList({full: true})
     ])
-      .then(()=>{
+      .then(()=> {
         this.setState({isReady: true})
       })
   };
@@ -39,7 +39,7 @@ class TemplateInfo extends PureComponent {
     const {template, updateTemplate} = this.props;
 
     return (
-      <Container>
+      <Container style={{maxWidth: '100%'}}>
         <Row>
           <Col md={12} lg={12} xl={12}>
             <Card>

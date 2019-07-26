@@ -21,30 +21,45 @@ import {bindActionCreators} from "redux";
 import {renderField} from 'Components/form/Text'
 import renderRadioPanel from 'Components/form/RadioPanel'
 
-const replaceNicksInSurvey = (message, users, currentUser, readOnly) => {
-  if (readOnly) return message;
+const replaceNicksInSurvey = (message, users, currentUser, readOnly, unmasked, surveyType) => {
+  if (readOnly || surveyType === 'pre') return message;
   users.filter(user => currentUser._id.toString() !== user._id.toString()).forEach((user, index) => {
-    message = message.replace(new RegExp('team_partner_' + (index + 1), "ig"), user.fakeNick)
+    message = message.replace(new RegExp('team_partner_' + (index + 1), "ig"), unmasked ? user.realNick : user.fakeNick)
   })
   message = message.replace(new RegExp('user_own_name', "ig"), currentUser.realNick)
   return message;
 }
 
 
-const renderQuestions = ({fields, meta: {touched, error, warning}, questions, readOnly, users, currentUser}) => {
-  let tasks = [];
-
+const renderQuestions = ({fields, meta: {touched, error, warning}, questions, readOnly, users, currentUser, unmasked, surveyType, team}) => {
+  let items = [];
   for (let i = 0; i < questions.length; i++) {
-    tasks.push(
+    /*let hasVarOfAfkUser = false, selectOptions = [];
+    if (questions[i].type ==='select') {
+      selectOptions = questions[i].selectOptions;
+    }
+    users.filter(user => currentUser._id.toString() !== user._id.toString()).forEach((user, index) => {
+      if (team.users.some(x => x.user === user._id && !x.isActive)) {
+        const customVar = 'team_partner_' + (index + 1);
+        hasVarOfAfkUser = questions[i].question.indexOf(customVar) > -1;
+        if (questions[i].type ==='select') {
+          selectOptions = selectOptions.filter(x => x.label.indexOf(customVar) === -1)
+        }
+      }
+    })*/
+
+    items.push(
       <div key={i} className='form__form-group'>
-        <label className='form__form-group-label'>{replaceNicksInSurvey(questions[i].question, users, currentUser, readOnly)}</label>
+        <label className='form__form-group-label'>
+            {replaceNicksInSurvey(questions[i].question, users, currentUser, readOnly, unmasked, surveyType)}
+          </label>
         <div className='form__form-group-field' style={{maxWidth: '700px'}}>
           <Field
             name={`questions[${i}].result`}
             component={questions[i].type ==='select' ? renderRadioPanel : renderField}
             type={questions[i].type}
             disabled={readOnly}
-            options={questions[i].type ==='select' ? questions[i].selectOptions.map(x => {return {label: replaceNicksInSurvey(x.label, users, currentUser, readOnly), value: x.value}}) : []}
+            options={questions[i].type ==='select' ? questions[i].selectOptions.map(x => {return {label: replaceNicksInSurvey(x.label, users, currentUser, readOnly, unmasked, surveyType), value: x.value}}) : []}
           />
         </div>
       </div>
@@ -52,11 +67,11 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, questions, re
   }
 
   return (<div style={{marginTop: '20px'}}>
-    {tasks}
+    {items}
   </div>)
 };
 
-class MidSurveyForm extends React.Component {
+class RoundSurveyForm extends React.Component {
 
   constructor() {
     super();
@@ -64,9 +79,11 @@ class MidSurveyForm extends React.Component {
   }
 
   render() {
-    const {invalid, questions, readOnly, currentUser, members} = this.props;
+    const {invalid, questions, readOnly, currentUser, members, batch, surveyType, team} = this.props;
 
-    return (<div>
+    return (<div style={{width: '100%'}}>
+      {!readOnly && <p> IMPORTANT: Finishing the survey is <b>required</b> to participate in this experiment.</p>}
+      {!readOnly && <p> If you do not finish the survey, <b>you will NOT be paid for this task.</b> </p>}
         <form className='form' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
           <Container>
             <Row>
@@ -80,6 +97,9 @@ class MidSurveyForm extends React.Component {
                     readOnly={readOnly}
                     users={members}
                     currentUser={currentUser}
+                    unmasked={batch ? batch.maskType === 'unmasked' : 'masked'}
+                    surveyType={surveyType}
+                    team={team}
                   />
               </div>
               </Col>
@@ -109,18 +129,19 @@ const validate = (values, props) => {
   return errors
 };
 
-MidSurveyForm = reduxForm({
+RoundSurveyForm = reduxForm({
   form: 'SurveyForm',
   enableReinitialize: true,
   destroyOnUnmount: true,
   validate,
-})(MidSurveyForm);
+})(RoundSurveyForm);
 
 const selector = formValueSelector('SurveyForm');
 
 function mapStateToProps(state) {
   return {
-    currentUser: state.app.user
+    currentUser: state.app.user,
+    batch: state.batch.batch
   }
 }
 
@@ -128,4 +149,4 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators({}, dispatch);
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(MidSurveyForm);
+export default connect(mapStateToProps, mapDispatchToProps)(RoundSurveyForm);

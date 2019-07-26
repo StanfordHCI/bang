@@ -35,7 +35,7 @@ class AddTemplate extends PureComponent {
 
   render() {
     return (
-      <Container>
+      <Container style={{maxWidth: '100%'}}>
             <Card>
               {this.state.isReady && <CardBody>
                 <div className='card__title'>
@@ -43,7 +43,7 @@ class AddTemplate extends PureComponent {
                 </div>
                 <TemplateForm
                   isAdd
-                  initialValues={{tasks: []}}
+                  initialValues={{numExpRounds: 2, tasks: []}}
                   onSubmit={this.props.addTemplate}
                 />
               </CardBody>}

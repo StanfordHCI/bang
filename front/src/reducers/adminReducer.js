@@ -6,14 +6,16 @@ import {
   BATCH_DELETED,
   USERS_FETCHED,
   USER_DELETED,
-  USER_ADDED
+  USER_ADDED,
+  SWITCH_EMPTY_BATCHES_VISIBILITY
 } from "../actions/admin";
 
 const initialState = {
   batch: null,
   batchList: [],
   userList: [],
-  willbangLength: 0
+  willbangLength: 0,
+  hideEmptyBatches: (localStorage.getItem('hideEmptyBatches') || 'show') === 'hide',
 };
 
 export default function (state = initialState, action) {
@@ -40,6 +42,11 @@ export default function (state = initialState, action) {
       return {
         ...state,
         userList: [...state.userList, action.data],
+      };
+    case SWITCH_EMPTY_BATCHES_VISIBILITY:
+      return {
+        ...state,
+        hideEmptyBatches: action.data,
       };
     case BATCHES_FETCHED:
       return {

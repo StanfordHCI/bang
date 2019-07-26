@@ -13,6 +13,7 @@ import {
   createTeams,
   expireHIT,
   assignQual,
+  getBatchTime,
   runningLive, payBonus, clearRoom, mturk
 } from "./utils";
 import {timeout} from './batches'
@@ -25,10 +26,10 @@ import {activeCheck} from "./users";
 
 export const addBatch = async function (req, res) {
   try {
-    const batches = await Batch.find({$or: [{status: 'waiting'}, {status: 'active'}]}).select('teamSize roundMinutes surveyMinutes numRounds').lean().exec();
+    const batches = await Batch.find({$or: [{status: 'waiting'}, {status: 'active'}]}).select('tasks teamSize roundMinutes surveyMinutes numRounds').lean().exec();
     let batchSumCost = 0;
     batches.forEach(batch => {
-      const moneyForBatch = (batch.teamSize ** 2) * 12 * (((batch.roundMinutes + batch.surveyMinutes)  * batch.numRounds) / 60);
+      const moneyForBatch = (batch.teamSize ** 2) * 12 * getBatchTime(batch);
       batchSumCost = batchSumCost + moneyForBatch;
     })
 
@@ -37,7 +38,7 @@ export const addBatch = async function (req, res) {
     if (process.env.MTURK_MODE !== 'off') {
       let balance = await getAccountBalance();
       balance = parseFloat(balance.AvailableBalance);
-      const moneyForBatch = (newBatch.teamSize ** 2) * 12 * (((newBatch.roundMinutes + newBatch.surveyMinutes)  * newBatch.numRounds) / 60);
+      const moneyForBatch = (newBatch.teamSize ** 2) * 12 * getBatchTime(newBatch);
       if (balance < moneyForBatch + batchSumCost) {
         const message = 'Account balance: $' + balance + '. Experiment cost: $' + moneyForBatch.toFixed(2) +
           ' . Waiting/active batches cost: ' + batchSumCost.toFixed(2)
@@ -53,22 +54,36 @@ export const addBatch = async function (req, res) {
     delete newBatch.updatedAt;
     newBatch.templateName = newBatch.name;
     newBatch.status = 'waiting';
-    newBatch.users = [];
-    let roundGen = createTeams(newBatch.teamSize, newBatch.numRounds - 1, letters.slice(0, newBatch.teamSize ** 2));
-    if (!newBatch.experimentRound1) {
-      newBatch.experimentRound1 = Math.floor(Math.random() * (newBatch.numRounds - 2)) + 1;
-      newBatch.experimentRound2 = Math.floor(Math.random() * (newBatch.numRounds - newBatch.experimentRound1 - 1)) + newBatch.experimentRound1 + 2;
+    newBatch.users = [], newBatch.expRounds = [], newBatch.roundGen = [];
+    let tasks = [], nonExpCounter = 0;
+    let roundGen = createTeams(newBatch.teamSize, newBatch.numRounds - newBatch.numExpRounds + 1, letters.slice(0, newBatch.teamSize ** 2));
+    for (let i = 0; i < newBatch.numExpRounds; i++) {
+      const min = newBatch.expRounds[i - 1] ? newBatch.expRounds[i - 1] + 1 : 0;
+      const max = newBatch.numRounds - (newBatch.numExpRounds - i - 1) * 2;
+      const roundNumber = Math.floor(Math.random() * (max - min)) + 1 + min;
+      newBatch.expRounds.push(roundNumber)
     }
-    let part1 = JSON.parse(JSON.stringify(roundGen)), part2 = JSON.parse(JSON.stringify(roundGen));
-    part1.splice(newBatch.experimentRound2 - 1);
-    part2.splice(0, newBatch.experimentRound2 - 1);
-    part1.push(roundGen[newBatch.experimentRound1 - 1]);
-    newBatch.roundGen = part1.concat(part2);
+    for (let i = 0; i < newBatch.numRounds; i++) {
+      const expIndex = newBatch.expRounds.findIndex(x => x === i + 1);
+      if (expIndex > -1) {//exp round
+        tasks[i] = newBatch.tasks[expIndex];
+        if (expIndex === 0) { //first exp round
+          newBatch.roundGen[i] = JSON.parse(JSON.stringify(roundGen[roundGen.length - 1]));
+          roundGen.length = roundGen.length - 1;
+        } else { //same team
+          newBatch.roundGen[i] = newBatch.roundGen[newBatch.expRounds[0] - 1]
+        }
+      } else { //non-exp round
+        tasks[i] = newBatch.tasks[newBatch.numExpRounds + nonExpCounter];
+        newBatch.roundGen[i] = JSON.parse(JSON.stringify(roundGen[roundGen.length - 1]));
+        roundGen.length = roundGen.length - 1;
+        nonExpCounter++;
+      }
+    }
+    newBatch.tasks = tasks;
+    console.log(newBatch.tasks);
+    console.log(newBatch.roundGen);
 
-    if (process.env.MTURK_FRAME === 'ON' && process.env.MTURK_MODE !== 'off') {
-      const HIT = await addHIT(newBatch, true);
-      newBatch.HITId = HIT.HITId;
-    }
     const batch = await Batch.create(newBatch);
     const preChat = await Chat.create({batch: batch._id, messages: [
         {
@@ -105,11 +120,14 @@ export const addBatch = async function (req, res) {
       for (let i = 0; i < users.length; i++) {
         const user = users[i];
         const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
-        const message = 'Hello, our HIT is now active. ' +
-          'Participation will earn a bonus of ~$12/hour. ' +
-          'Please join us here: ' + url +
-          ' Our records indicate that you were interested in joining this HIT previously. ' +
-          'If you are no longer interested in participating, please email us and we will remove you from this list.';
+        const unsubscribe_url = process.env.HIT_URL + 'unsubscribe/' + user.mturkId; 
+        const message = 'Hi! Our HIT is now active. We are starting a new experiment on Bang. ' + 
+          'Your FULL participation will earn you a bonus of ~$12/hour. ' + '\n\n' +
+          'Please join the HIT here: ' + url + '\n\n' +
+          'The link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. ' + 
+          'NOTE: You will be bonused $1 if enough users join the waiting room and the task starts.' + '\n\n' + 
+          'Our records indicate that you were interested in joining this HIT previously. ' +
+          'If you are no longer interested in participating, please UNSUBSCRIBE here: ' + unsubscribe_url;
         notifyWorkers([user.mturkId], message, 'Bang')
           .then(() => {
             counter++;
@@ -130,7 +148,8 @@ export const addBatch = async function (req, res) {
 
 export const loadBatchList = async function (req, res) {
   try {
-    const batchList = await Batch.find({ $or:[  {status: {$in: ['active', 'waiting']}}, {status: 'completed', startTime: {$exists: true}} ]})
+    //{ $or:[  {status: {$in: ['active', 'waiting']}}, {status: 'completed', startTime: {$exists: true}} ]}
+    const batchList = await Batch.find({})
       .sort({createdAt: -1}).select('createdAt startTime status currentRound teamSize templateName note maskType').lean().exec();
     res.json({batchList: batchList})
   } catch (e) {
@@ -182,7 +201,7 @@ export const addUser = async function (req, res) {
 
 export const stopBatch = async function (req, res) {
   try {
-    const batch = await Batch.findByIdAndUpdate(req.params.id, {$set: {status: 'completed'}}, {new: true}).populate('users.user').lean().exec()
+    let batch = await Batch.findByIdAndUpdate(req.params.id, {$set: {status: 'completed'}}).populate('users.user').lean().exec()
     let usersChangeQuery = { batch: null, realNick: null, fakeNick: null, currentChat: null }
     if (batch.status === 'active' && process.env.MTURK_MODE !== 'off') { //compensations
       usersChangeQuery.systemStatus = 'hasbanged';
@@ -211,10 +230,11 @@ export const stopBatch = async function (req, res) {
 
     await User.updateMany({batch:  batch._id}, { $set: usersChangeQuery})
     batch.users.forEach(user => {
-      io.to(user.user.socketId).emit('stop-batch', true);
+      io.to(user.user.socketId).emit('stop-batch', {status: batch.status});
     })
     clearRoom(batch._id, io)
     logger.info(module, 'Batch stopped: ' + batch._id);
+    batch.status = 'completed';
     res.json({batch: batch})
   } catch (e) {
     errorHandler(e, 'stop batch error')
@@ -230,7 +250,8 @@ export const loadBatchResult = async function (req, res) {
     batch.rounds.forEach((round, roundNumber) => {
       round.teams.forEach(team => {
         team.users.forEach(user => {
-          user.survey = surveys.find(x => x.user.toString() === user.user.toString() && roundNumber + 1 === x.round)
+          user.midSurvey = surveys.find(x => x.surveyType === 'midsurvey' && x.user.toString() === user.user.toString() && roundNumber + 1 === x.round)
+          user.preSurvey = surveys.find(x => x.surveyType === 'presurvey' && x.user.toString() === user.user.toString() && roundNumber + 1 === x.round)
           return user;
         })
         return team;
@@ -257,16 +278,19 @@ export const notifyUsers = async function (req, res) {
     if (req.body.start) {
       const users = await User.find({systemStatus: 'willbang', isTest: false}).sort({createdAt: 1}).limit(parseInt(req.body.pass) + parseInt(req.body.limit))
         .select('mturkId testAssignmentId').lean().exec();
-
+       
       for (let i = 0; i < users.length; i++) {
         if (i + 1 > parseInt(req.body.pass)) {
           const user = users[i];
           const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
-          const message = 'Hello, our HIT is now active. ' +
-            'Participation will earn a bonus of ~$12/hour. ' +
-            'Please join us here: ' + url +
-            ' Our records indicate that you were interested in joining this HIT previously. ' +
-            'If you are no longer interested in participating, please email us and we will remove you from this list.';
+          const unsubscribe_url = process.env.HIT_URL + 'unsubscribe/' + user.mturkId; 
+          const message = 'Hi! Our HIT is now active. We are starting a new experiment on Bang. ' + 
+          'Your FULL participation will earn you a bonus of ~$12/hour. ' + '\n\n' +
+          'Please join the HIT here: ' + url + '\n\n' +
+          'The link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. ' + 
+          'NOTE: You will be bonused $1 if enough users join the waiting room and the task starts.' + '\n\n' + 
+          'Our records indicate that you were interested in joining this HIT previously. ' +
+          'If you are no longer interested in participating, please UNSUBSCRIBE here: ' + unsubscribe_url;
           notifyWorkers([user.mturkId], message, 'Bang')
             .then(() => {
               counter++;
