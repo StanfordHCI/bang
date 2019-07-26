@@ -33,6 +33,7 @@ import { Avatar } from '@material-ui/core';
 import { parseNick } from '../utils'
 import { animalMap, adjMap } from '../constants/nicknames';
 import Bot from '../img/Bot.svg';
+import Notification from 'react-web-notification'
 
 const MAX_LENGTH = 240;
 const botId = '100000000000000000000001'
@@ -138,7 +139,7 @@ class Batch extends React.Component {
       this.setState({closeBlockReady: true})
     }
 
-    /*if (!this.state.isStartNotifySent && nextProps.batch.status === 'active') {
+    if (!this.state.isStartNotifySent && nextProps.batch && nextProps.batch.status === 'active') {
       console.log('start')
       this.setState({
         isStartNotifySent: true,
@@ -149,7 +150,7 @@ class Batch extends React.Component {
           dir: 'ltr',
         }
       });
-    }*/
+    }
     
     if (!this.state.isReady && nextProps.chat && nextProps.batch) { //init here because loadBatch is not promise
       if (nextProps.batch.finalSurveyDone) {
@@ -631,7 +632,7 @@ class Batch extends React.Component {
           <Col md={12} lg={12} xl={12}>
             <Card>
               {this.state.isReady && <CardBody>
-                {/*<Notification
+                <Notification
                   ignore={this.state.ignore && this.state.title !== ''}
                   notSupported={this.handleNotSupported.bind(this)}
                   onPermissionGranted={this.handlePermissionGranted.bind(this)}
@@ -639,7 +640,7 @@ class Batch extends React.Component {
                   timeout={5000}
                   title={this.state.notifyTitle}
                   options={this.state.notifyOptions}
-                />*/}
+                />
                 {batch.status === 'waiting' && this.renderWaitingStage()}
                 {batch.status === 'active' && this.renderActiveStage()}
                 {batch.status === 'completed' && this.renderCompletedStage()}
