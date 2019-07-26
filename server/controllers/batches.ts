@@ -193,7 +193,7 @@ export const receiveSurvey = async function (data, socket, io) {
     await Survey.create(newSurvey)
     if (process.env.MTURK_MODE !== 'off' && newSurvey.isPost) {
       const [batch, user] = await Promise.all([
-        Batch.findById(newSurvey.batch).select('roundMinutes numRounds surveyMinutes').lean().exec(),
+        Batch.findById(newSurvey.batch).select('roundMinutes numRounds surveyMinutes tasks').lean().exec(),
         User.findById(newSurvey.user).select('systemStatus mturkId').lean().exec()
       ])
       if (!batch) {
