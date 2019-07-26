@@ -59,7 +59,7 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, questions, re
             component={questions[i].type ==='select' ? renderRadioPanel : renderField}
             type={questions[i].type}
             disabled={readOnly}
-            options={questions[i].type ==='select' ? questions[i].selectOptions.map(x => {return {label: replaceNicksInSurvey(x.label, users, currentUser, readOnly), value: x.value}}) : []}
+            options={questions[i].type ==='select' ? questions[i].selectOptions.map(x => {return {label: replaceNicksInSurvey(x.label, users, currentUser, readOnly, unmasked, surveyType), value: x.value}}) : []}
           />
         </div>
       </div>
@@ -82,8 +82,8 @@ class RoundSurveyForm extends React.Component {
     const {invalid, questions, readOnly, currentUser, members, batch, surveyType, team} = this.props;
 
     return (<div style={{width: '100%'}}>
-      <p> IMPORTANT: Finishing the survey is <b>required</b> to participate in this experiment.</p>
-      <p> If you do not finish the survey, <b>you will NOT be paid for this task.</b> </p>
+      {!readOnly && <p> IMPORTANT: Finishing the survey is <b>required</b> to participate in this experiment.</p>}
+      {!readOnly && <p> If you do not finish the survey, <b>you will NOT be paid for this task.</b> </p>}
         <form className='form' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
           <Container>
             <Row>
@@ -97,7 +97,7 @@ class RoundSurveyForm extends React.Component {
                     readOnly={readOnly}
                     users={members}
                     currentUser={currentUser}
-                    unmasked={batch.maskType === 'unmasked'}
+                    unmasked={batch ? batch.maskType === 'unmasked' : 'masked'}
                     surveyType={surveyType}
                     team={team}
                   />
