@@ -84,9 +84,9 @@ class PostSurveyForm extends React.Component {
 											})}
 										</div>}
 										<label className="form__form-group-label">
-											<p>You worked with the same team in two of the previous four rounds.</p>
+											<p>You actually worked with the same team in some of the previous rounds, though their names may have appeared different.</p>
 											<p>
-												In which two rounds do you think that you worked with the same people?
+												In which rounds do you think that you worked with the same people?
 											</p>
 										</label>
 										<div className="form__form-group-field">
@@ -107,7 +107,7 @@ class PostSurveyForm extends React.Component {
 
 									<div className="form__form-group">
 										<label className="form__form-group-label">
-											<p>Why do you think it was these two rounds?</p>
+											<p>Why do you think it was these rounds?</p>
 										</label>
 										<div className="form__form-group-field">
 											<Field name="mainQuestion.expRound3" component={renderField} type="text" />
