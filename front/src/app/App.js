@@ -15,7 +15,7 @@ import React, {Component} from 'react';
 import { hot } from 'react-hot-loader'
 import '../scss/app.scss';
 import MainRouter from './Router';
-import 'bootstrap/dist/css/bootstrap.css'
+import 'bootstrap/scss/bootstrap.scss'
 
 class App extends Component {
   render() {
