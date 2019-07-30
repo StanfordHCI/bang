@@ -116,7 +116,11 @@ export const loadBatch = async function (data, socket, io) {
         chat.messages = [];
       }
     } else if (batch.status === 'completed') {
-      const finalSurveyCheck = await Survey.findOne({user: socket.userId, batch: data.batch, isPost: true}).select('_id').lean().exec();
+      const [finalSurveyCheck, surveyCounter] = await Promise.all([
+        Survey.findOne({user: socket.userId, batch: data.batch, surveyType: 'final'}).select('_id').lean().exec(),
+        Survey.count({user: socket.userId, batch: data.batch, surveyType: {$in: ['presurvey', 'midsurvey']}})
+      ])
+      batch.surveyCounter = surveyCounter;
       if (finalSurveyCheck) batch.finalSurveyDone = true;
     }
 
@@ -156,7 +160,8 @@ const startBatch = async function (batch, socket, io) {
     }
     const postBatchInfo = {status: 'completed'};
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: postBatchInfo}).lean().exec();
-    io.to(batch._id.toString()).emit('end-batch', postBatchInfo);
+    io.to(batch._id.toString()).emit('refresh-batch', true)
+    logger.info(module, batch._id + ' : end active stage')
     //last survey
     await timeout(240000);
 
@@ -183,15 +188,15 @@ export const receiveSurvey = async function (data, socket, io) {
       ...data,
       user: socket.userId,
     }
-    if (newSurvey.isPost) {
-      const check = await Survey.findOne({batch: newSurvey.batch, user: newSurvey.user, isPost: true})
+    if (newSurvey.surveyType === 'final') {
+      const check = await Survey.findOne({batch: newSurvey.batch, user: newSurvey.user, surveyType: 'final'})
       if (check) {
         logger.info(module, 'Blocked survey, survey exists');
         return;
       }
     }
     await Survey.create(newSurvey)
-    if (process.env.MTURK_MODE !== 'off' && newSurvey.isPost) {
+    if (process.env.MTURK_MODE !== 'off' && newSurvey.surveyType === 'final') {
       const [batch, user] = await Promise.all([
         Batch.findById(newSurvey.batch).select('roundMinutes numRounds surveyMinutes tasks').lean().exec(),
         User.findById(newSurvey.user).select('systemStatus mturkId').lean().exec()
