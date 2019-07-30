@@ -128,7 +128,7 @@ const validate = (values, props) => {
   if (values.withAvatar == null) {
     errors.withAvatar = 'required'
   }
-  if (!values.withRoster) {
+  if (values.withRoster == null) {
     errors.withRoster = 'required'
   }
 
@@ -141,7 +141,6 @@ AddBatch = reduxForm({
   touchOnChange: true,
   validate,
 })(AddBatch);
-
 function mapStateToProps(state) {
   return {
     templateList: state.template.templateList
