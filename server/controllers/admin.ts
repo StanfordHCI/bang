@@ -81,8 +81,6 @@ export const addBatch = async function (req, res) {
       }
     }
     newBatch.tasks = tasks;
-    console.log(newBatch.tasks);
-    console.log(newBatch.roundGen);
 
     const batch = await Batch.create(newBatch);
     const preChat = await Chat.create({batch: batch._id, messages: [
