@@ -125,7 +125,7 @@ const validate = (values, props) => {
   if (!values.maskType) {
     errors.maskType = 'required'
   }
-  if (!values.withAvatar) {
+  if (values.withAvatar == null) {
     errors.withAvatar = 'required'
   }
   if (!values.withRoster) {
