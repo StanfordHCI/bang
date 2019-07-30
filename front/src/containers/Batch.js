@@ -595,11 +595,8 @@ class Batch extends React.Component {
   }
 
   renderCompletedStage() {
-    let surveysTotal = 0;
-    this.props.batch.tasks.map(task => {surveysTotal += task.hasMidSurvey + task.hasPreSurvey});
     return (<div>
       <h5 className='bold-text'>Experiment completed. This is final survey.</h5>
-      <h5 className='bold-text'>Surveys completed: {this.props.batch.surveyCounter}/{surveysTotal}</h5>
       <h5 className='bold-text'>Time left: {formatTimer(this.state.timeLeft)}</h5>
       <div>
         <PostSurveyForm
