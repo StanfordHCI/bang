@@ -221,6 +221,10 @@
       transition: all 0.3s;
       background: transparent;
 
+      .Select-multi-value-wrapper {
+        display: flex;
+      }
+
       @include themify($themes) {
         border: 1px solid themed('colorFieldsBorder');
       }
