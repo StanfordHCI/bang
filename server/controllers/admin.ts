@@ -227,9 +227,7 @@ export const stopBatch = async function (req, res) {
     }
 
     await User.updateMany({batch:  batch._id}, { $set: usersChangeQuery})
-    batch.users.forEach(user => {
-      io.to(user.user.socketId).emit('stop-batch', {status: batch.status});
-    })
+    io.to(batch._id.toString()).emit('stop-batch', {status: batch.status})
     clearRoom(batch._id, io)
     logger.info(module, 'Batch stopped: ' + batch._id);
     batch.status = 'completed';

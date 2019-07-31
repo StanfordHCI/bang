@@ -4,6 +4,7 @@ import { axios } from "./axiosConfig";
 export const USER_UNSUBSCRIBED = "USER_UNSUBSCRIBED";
 export const USER_WAS_NOT_FOUND = "USER_WAS_NOT_FOUND";
 export const USER_HAS_BANGED = "USER_HAS_BANGED";
+export const USER_HAS_BATCH = 'USER_HAS_BATCH'
 
 export function unsubscribe(id) {
   return function (dispatch) {
@@ -22,12 +23,17 @@ export function unsubscribe(id) {
             data: resData.user
           });
         } else {
-          if (resData.error === 2) {
+          if (resData.error === 3) {
+            dispatch({
+              type: USER_HAS_BATCH,
+              data: {}
+            });
+          } else if (resData.error === 2) {
             dispatch({
               type: USER_WAS_NOT_FOUND,
               data: {}
             });
-          } else {
+          } else if (resData.error === 1){
             dispatch({
               type: USER_HAS_BANGED,
               data: {}

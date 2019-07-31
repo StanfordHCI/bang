@@ -53,7 +53,6 @@ export const whoami = () => {
       });
 
       let unsubLink = link.slice(link.indexOf("unsubscribe"))
-      localStorage.clear()
       history.push(`/${unsubLink}`)
     }
     else 
@@ -96,7 +95,6 @@ export const whoami = () => {
             type: APP_READY,
           });
           dispatch(setSnackbar('wrong credentials'));
-          //localStorage.clear()
           history.push('/not-logged')
           return;
         }
