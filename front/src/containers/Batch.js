@@ -33,7 +33,8 @@ import { Avatar } from '@material-ui/core';
 import { parseNick } from '../utils'
 import { animalMap, adjMap } from '../constants/nicknames';
 import Bot from '../img/Bot.svg';
-import Notification from 'react-web-notification'
+import Notification from 'react-web-notification';
+import getDerivedStateFromProps from 'react';
 
 const MAX_LENGTH = 240;
 const botId = '100000000000000000000001'
@@ -115,7 +116,8 @@ class Batch extends React.Component {
       autoNames: [],
       ignore: true,
       isStartNotifySent: false,
-      closeBlockReady: false
+      closeBlockReady: false,
+      currentRound: 0,
     };
   }
 
@@ -130,16 +132,9 @@ class Batch extends React.Component {
     });
   }
 
-  componentWillReceiveProps(nextProps, nextState) {
-    if (!this.state.closeBlockReady && nextProps.batch &&  nextProps.batch.status === 'active') {
-      window.addEventListener("beforeunload", (ev) =>
-      {
-        return ev.returnValue = `Are you sure you want to leave?`;
-      });
-      this.setState({closeBlockReady: true})
-    }
-
-    if (!this.state.isStartNotifySent && nextProps.batch && nextProps.batch.status === 'active') {
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    if (!prevState.isStartNotifySent && this.props.batch && this.props.batch.status === 'waiting'
+      && prevProps.batch === null) {
       console.log('start')
       this.setState({
         isStartNotifySent: true,
@@ -151,7 +146,31 @@ class Batch extends React.Component {
         }
       });
     }
-    
+    if (this.state.timeLeft === 0 && prevState.timeLeft === 1) {
+      console.log('new round')
+      this.setState({
+        isStartNotifySent: true,
+        notifyTitle: 'Bang!',
+        notifyOptions: {
+          body: 'Bang: new task is ready', // new round or survey is appearing on the screen
+          lang: 'en',
+          dir: 'ltr',
+        }
+      });
+    }
+  }
+
+  componentWillReceiveProps(nextProps, nextState) {
+    if (!this.state.closeBlockReady && nextProps.batch &&  nextProps.batch.status === 'active') {
+      window.addEventListener("beforeunload", (ev) =>
+      {
+        return ev.returnValue = `Are you sure you want to leave?`;
+      });
+      this.setState({closeBlockReady: true})
+    }
+
+
+
     if (!this.state.isReady && nextProps.chat && nextProps.batch) { //init here because loadBatch is not promise
       if (nextProps.batch.finalSurveyDone) {
         history.push('batch-end')
@@ -554,7 +573,6 @@ class Batch extends React.Component {
     data.batch = batch._id;
     if (batch.status === 'active') {
       data.round = batch.currentRound;
-      console.log(batch)
       data.surveyType = batch.rounds[batch.currentRound - 1].status;
     } else if (batch.status === 'completed') {
       data.isPost = true;
