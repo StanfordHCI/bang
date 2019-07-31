@@ -1,7 +1,8 @@
 import {
     USER_UNSUBSCRIBED,
     USER_WAS_NOT_FOUND,
-    USER_HAS_BANGED
+    USER_HAS_BANGED,
+    USER_HAS_BATCH
 } from '../actions/unsubscribe'
 
 const initialState = {
@@ -23,6 +24,12 @@ export default function (state = initialState, action) {
                 ...state,
                 mturkId: "",
                 status: "Your MTurkId was not found"
+            }
+        case USER_HAS_BATCH:
+            return {
+                ...state,
+                mturkId: "",
+                status: "You are inside experiment now. You cannot do it."
             }
         case USER_HAS_BANGED:
             return {

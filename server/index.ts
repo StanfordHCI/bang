@@ -56,7 +56,6 @@ app
 export const io = require('socket.io').listen(app.listen(PORT, function() {
   logger.info(module, 'App is running on port: ' + PORT);
   logger.info(module, 'NODE MODE: ' + process.env.NODE_ENV);
-  logger.info(module, 'MTURK MODE: ' + process.env.MTURK_MODE);
   logger.info(module, 'MTURK FRAME: ' + process.env.MTURK_FRAME);
 }));
 
@@ -154,9 +153,7 @@ if (process.env.MTURK_MODE !== 'off') {
           if (liveTime > 20) {
             prs.push(Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}));
             prs.push(User.updateMany({batch:  batch._id}, { $set: { batch: null, realNick: null, fakeNick: null, currentChat: null }}))
-            batch.users.forEach(user => {
-              io.to(user.user.socketId).emit('stop-batch', {status: 'waiting'});
-            })
+            io.to(batch._id.toString()).emit('stop-batch', {status: 'waiting'})
             clearRoom(batch._id, io)
             logger.info(module, 'Batch stopped: ' + batch._id);
           }
