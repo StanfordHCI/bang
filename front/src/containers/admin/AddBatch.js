@@ -142,6 +142,9 @@ const validate = (values, props) => {
   if (values.withRoster == null) {
     errors.withRoster = 'required'
   }
+  if (values.withAutoStop == null) {
+    errors.withAutoStop = 'required'
+  }
 
   return errors
 };
