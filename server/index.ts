@@ -8,17 +8,15 @@ const PORT = process.env.PORT || 3001;
 const APP_ROOT = path.resolve(__dirname, '..');
 const logger = require('./services/logger');
 import {init, sendMessage, disconnect, activeCheck, refreshActiveUsers} from './controllers/users'
-import {joinBatch, loadBatch, receiveSurvey} from './controllers/batches'
+import {joinBatch, loadBatch, receiveSurvey, timeout} from './controllers/batches'
 import {errorHandler} from './services/common'
 import {
   addHIT,
-  disassociateQualificationFromWorker,
   listAssignmentsForHIT,
   notifyWorkers,
   assignQual,
-  payBonus,
   runningLive,
-  clearRoom
+  clearRoom,
 } from "./controllers/utils";
 import {User} from './models/users'
 import {Batch} from './models/batches'
@@ -150,7 +148,7 @@ if (process.env.MTURK_MODE !== 'off') {
         let prs = []
         batches.forEach(batch => {
           const liveTime = (moment()).diff(moment(batch.createdAt), 'minutes')
-          if (liveTime > 20 && batch.withAutoStop) {
+          if (liveTime > 35 && batch.withAutoStop) {
             prs.push(Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}));
             prs.push(User.updateMany({batch:  batch._id}, { $set: { batch: null, realNick: null, fakeNick: null, currentChat: null }}))
             io.to(batch._id.toString()).emit('stop-batch', {status: 'waiting'})
@@ -200,3 +198,4 @@ if (process.env.MTURK_MODE !== 'off') {
     }
   });
 }
+
