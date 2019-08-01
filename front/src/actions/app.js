@@ -11,6 +11,7 @@
 import {history} from '../app/history';
 import constants from "../constants"
 import openSocket from 'socket.io-client';
+import {getUrlParams} from '../utils';
 const adr = process.env.API_HOST.substr(1, process.env.API_HOST.length - 2);
 export let socket = openSocket(adr);
 
@@ -20,7 +21,7 @@ export const APP_READY = 'APP_READY';
 export const CLEAR_REG_ERRORS = 'CLEAR_ERRORS';
 export const SET_LOADING = 'SET_LOADING';
 export const ACCOUNT_LOGOUT = 'ACCOUNT_LOGOUT';
-export const SET_CHAT_INFO = 'SET_CHAT_INFO'
+export const SET_CHAT_INFO = 'SET_CHAT_INFO';
 export const SET_SNACKBAR = 'SET_SNACKBAR';
 export const CLEAR_SNACKBAR = 'CLEAR_SNACKBAR';
 
@@ -43,8 +44,13 @@ const decodeURL = toDecode => {
 export const whoami = () => {
   return function (dispatch) {
     const token = localStorage.getItem('bang-token');
-    const adminToken = localStorage.getItem('bang-admin-token')
-    let link = window.location.href
+    // admintoken has to be in lower case
+    const adminToken = getUrlParams().admintoken || localStorage.getItem('bang-admin-token');
+    if (adminToken) {
+      // if there was an admin token in localstorage, it will be rewritten with admin token from url
+      localStorage.setItem('bang-admin-token', adminToken);
+    }
+    let link = window.location.href;
 
     if (link.indexOf("unsubscribe") !== -1) {
       
@@ -52,7 +58,7 @@ export const whoami = () => {
         type: APP_READY,
       });
 
-      let unsubLink = link.slice(link.indexOf("unsubscribe"))
+      let unsubLink = link.slice(link.indexOf("unsubscribe"));
       history.push(`/${unsubLink}`)
     }
     else 
@@ -64,7 +70,7 @@ export const whoami = () => {
         assignmentId: URLvars.assignmentId,
         hitId: URLvars.hitId,
         turkSubmitTo: decodeURL(URLvars.turkSubmitTo),
-      }
+      };
       if (adminToken) {
         initData.adminToken = adminToken;
       }
@@ -80,7 +86,7 @@ export const whoami = () => {
           });
   
           dispatch(setSnackbar('wrong credentials'));
-          localStorage.clear()
+          localStorage.clear();
           history.push('/not-logged')
         } else {
           dispatch(setLoading(true));
@@ -95,7 +101,7 @@ export const whoami = () => {
             type: APP_READY,
           });
           dispatch(setSnackbar('wrong credentials'));
-          history.push('/not-logged')
+          history.push('/not-logged');
           return;
         }
         //init goes right
@@ -123,7 +129,7 @@ export const whoami = () => {
       });
       socket.on('send-error', (data) => {
         dispatch(setSnackbar(data));
-      })
+      });
       socket.on('kick-afk', (data) => {
         window.removeEventListener("beforeunload", (ev) =>
         {
@@ -131,7 +137,7 @@ export const whoami = () => {
         });
         dispatch(setSnackbar('You are afk'));
         window.location.reload();
-      })
+      });
       socket.on('stop-batch', (batch) => {
         dispatch(setSnackbar('Batch was stopped'));
         if (batch.status === 'waiting') {
@@ -139,12 +145,12 @@ export const whoami = () => {
         } else if (batch.status === 'active') {
           history.push('/batch-end')
         }
-      })
+      });
       socket.emit('send-error', 'There is no right batch')
     }
 
   }
-}
+};
 
 export const setLoading = (value) => {
   return (dispatch, getState) => {
@@ -179,8 +185,8 @@ export const clearSnackbar = (message) => {
 
 export const joinBang = (id) => {
   return function (dispatch) {
-    dispatch(setLoading(true))
+    dispatch(setLoading(true));
     socket.emit('join-bang', {});
     window.location.href = 'https://bang-dev.deliveryweb.ru/accept?assignmentId=' + id
   }
-}
+};
