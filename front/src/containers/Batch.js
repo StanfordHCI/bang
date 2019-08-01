@@ -34,7 +34,6 @@ import { parseNick } from '../utils'
 import { animalMap, adjMap } from '../constants/nicknames';
 import Bot from '../img/Bot.svg';
 import Notification from 'react-web-notification';
-import getDerivedStateFromProps from 'react';
 
 const MAX_LENGTH = 240;
 const botId = '100000000000000000000001'
@@ -152,7 +151,7 @@ class Batch extends React.Component {
         isStartNotifySent: true,
         notifyTitle: 'Bang!',
         notifyOptions: {
-          body: 'Bang: new task is ready', // new round or survey is appearing on the screen
+          body: 'Bang: new step of experiment has started!', // new round or survey is appearing on the screen
           lang: 'en',
           dir: 'ltr',
         }

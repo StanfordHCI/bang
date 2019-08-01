@@ -32,8 +32,9 @@ export const addBatch = async function (req, res) {
       const moneyForBatch = (batch.teamSize ** 2) * 12 * getBatchTime(batch);
       batchSumCost = batchSumCost + moneyForBatch;
     })
-
     let newBatch = req.body;
+    console.log(req.body)
+    console.log(newBatch.withAutoStop);
 
     if (process.env.MTURK_MODE !== 'off') {
       let balance = await getAccountBalance();

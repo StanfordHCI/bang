@@ -141,7 +141,7 @@ cron.schedule('*/3 * * * *', async function(){
 if (process.env.MTURK_MODE !== 'off') {
   cron.schedule('*/4 * * * *', async function(){
     try {
-      const batches = await Batch.find({status: 'waiting'}).select('tasks createdAt teamSize roundMinutes numRounds HITTitle surveyMinutes users')
+      const batches = await Batch.find({status: 'waiting'}).select('tasks createdAt teamSize roundMinutes numRounds HITTitle surveyMinutes users withAutoStop')
         .sort({'createdAt': 1}).populate('users.user').lean().exec();
       if (batches && batches.length) {
         const HIT = await addHIT(batches[0], false);
@@ -150,7 +150,7 @@ if (process.env.MTURK_MODE !== 'off') {
         let prs = []
         batches.forEach(batch => {
           const liveTime = (moment()).diff(moment(batch.createdAt), 'minutes')
-          if (liveTime > 20) {
+          if (liveTime > 20 && batch.withAutoStop) {
             prs.push(Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}));
             prs.push(User.updateMany({batch:  batch._id}, { $set: { batch: null, realNick: null, fakeNick: null, currentChat: null }}))
             io.to(batch._id.toString()).emit('stop-batch', {status: 'waiting'})

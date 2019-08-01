@@ -7,7 +7,7 @@ import {
   USERS_FETCHED,
   USER_DELETED,
   USER_ADDED,
-  SWITCH_EMPTY_BATCHES_VISIBILITY
+  SWITCH_EMPTY_BATCHES_VISIBILITY,
 } from "../actions/admin";
 
 const initialState = {

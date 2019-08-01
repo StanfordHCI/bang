@@ -41,6 +41,7 @@ class AddBatch extends React.Component {
     batch.maskType = form.maskType;
     batch.withAvatar = form.withAvatar;
     batch.withRoster = form.withRoster;
+    batch.withAutoStop = form.withAutoStop;
     this.props.addBatch(batch)
   }
 
@@ -92,6 +93,16 @@ class AddBatch extends React.Component {
                     name='withRoster'
                     component={renderSelectField}
                     options={[{value: true, label: 'With roster'}, {value: false, label: 'Without roster'}]}
+                  />
+                </div>
+              </div>
+              <div className='form__form-group'>
+                <label className='form__form-group-label'>With auto-stop?</label>
+                <div className='form__form-group-field'>
+                  <Field
+                    name='withAutoStop'
+                    component={renderSelectField}
+                    options={[{value: true, label: 'With auto-stop'}, {value: false, label: 'Without auto-stop'}]}
                   />
                 </div>
               </div>

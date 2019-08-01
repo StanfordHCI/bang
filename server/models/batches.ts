@@ -68,5 +68,6 @@ let  BatchSchema = new Schema({
   roundGen: [{teams: [{users: [Number]}]}],
   withAvatar: {type: Boolean, default: false, required: true},
   withRoster: {type: Boolean, default: false, required: true},
+  withAutoStop: {type: Boolean, default: true, required: true},
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);

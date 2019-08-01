@@ -11,7 +11,8 @@ export const CLEAR_TEMPLATES = 'CLEAR_TEMPLATES';
 export const USER_DELETED = 'USER_DELETED';
 export const USERS_FETCHED = 'USERS_FETCHED';
 export const USER_ADDED = 'USER_ADDED';
-export const SWITCH_EMPTY_BATCHES_VISIBILITY = 'SWITCH_EMPTY_BATCHES_VISIBILITY'
+export const SWITCH_EMPTY_BATCHES_VISIBILITY = 'SWITCH_EMPTY_BATCHES_VISIBILITY';
+export const AUTO_STOP_TOGGLED = 'AUTO_STOP_TOGGLED';
 
 export function updateBatch(batch) {
   return dispatch => {
@@ -36,7 +37,6 @@ export function updateBatch(batch) {
 }
 
 export function addBatch(batch) {
-  console.log(batch)
   return dispatch => {
     dispatch(setLoading(true));
     return axios({
