@@ -129,7 +129,7 @@ export const addBatch = async function (req, res) {
             counter++;
           })
         if (i % 10 === 0) {
-          await timeout(500);
+          await timeout(1000);
           logger.info(module, 'Notification sent to ' + counter + ' users');
         }
       }
@@ -216,7 +216,7 @@ export const stopBatch = async function (req, res) {
           bangPrs.push(Bonus.create({
             batch: batch._id,
             user: user._id,
-            amount: bonus,
+            amount: bonus.toFixed(2),
             assignment: user.testAssignmentId
           }))
         }
@@ -290,7 +290,7 @@ export const notifyUsers = async function (req, res) {
               counter++;
             })
           if (i % 10 === 0) {
-            await timeout(500);
+            await timeout(1000);
             logger.info(module, 'Notification sent to ' + counter + ' users');
           }
         }
