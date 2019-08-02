@@ -46,10 +46,6 @@ export const whoami = () => {
     const token = localStorage.getItem('bang-token');
     // admintoken has to be in lower case
     const adminToken = getUrlParams().admintoken || localStorage.getItem('bang-admin-token');
-    if (adminToken) {
-      // if there was an admin token in localstorage, it will be rewritten with admin token from url
-      localStorage.setItem('bang-admin-token', adminToken);
-    }
     let link = window.location.href;
 
     if (link.indexOf("unsubscribe") !== -1) {
@@ -63,7 +59,6 @@ export const whoami = () => {
     }
     else 
     {
-      
       const URLvars = getUrlVars(link);
       let initData = {
         mturkId: URLvars.workerId,
@@ -125,6 +120,9 @@ export const whoami = () => {
           } else if (data.user.systemStatus ==='hasbanged') {
             history.push('/batch-end');
           }
+        }
+        else {
+          localStorage.setItem('bang-admin-token', data.adminToken)
         }
       });
       socket.on('send-error', (data) => {
