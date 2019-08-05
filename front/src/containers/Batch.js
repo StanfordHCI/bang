@@ -132,21 +132,10 @@ class Batch extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
-    if (!prevState.isStartNotifySent && this.props.batch && this.props.batch.status === 'waiting'
-      && prevProps.batch === null) {
-      console.log('start')
-      this.setState({
-        isStartNotifySent: true,
-        notifyTitle: 'Bang: started!',
-        notifyOptions: {
-          body: 'Bang: started!',
-          lang: 'en',
-          dir: 'ltr',
-        }
-      });
+    if (prevProps.batch && this.props.batch) {
+      console.log(prevProps.batch.status, this.props.batch.status)
     }
-    if (this.state.timeLeft === 0 && prevState.timeLeft === 1) {
-      console.log('new round')
+    if (this.state.timeLeft === 0 && prevState.timeLeft) {
       this.setState({
         isStartNotifySent: true,
         notifyTitle: 'Bang!',
@@ -168,7 +157,18 @@ class Batch extends React.Component {
       this.setState({closeBlockReady: true})
     }
 
-
+    if (!this.state.isStartNotifySent && nextProps.batch && nextProps.batch.status === 'active') {
+      console.log('start')
+      this.setState({
+        isStartNotifySent: true,
+        notifyTitle: 'Bang: started!',
+        notifyOptions: {
+          body: 'Bang: started!',
+          lang: 'en',
+          dir: 'ltr',
+        }
+      });
+    }
 
     if (!this.state.isReady && nextProps.chat && nextProps.batch) { //init here because loadBatch is not promise
       if (nextProps.batch.finalSurveyDone) {
