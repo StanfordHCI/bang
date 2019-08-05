@@ -185,20 +185,6 @@ export const payBonus = (mturkId, assignmentId, amount) => {
   })
 };
 
-export const listHITs = () => {
-  return new Promise((resolve, reject) => {
-    mturk.listHITs({MaxResults: 2},
-      function(err, data) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(data)
-        }
-      }
-    );
-  })
-};
-
 export const listAssignmentsForHIT = (id) => {
   return new Promise((resolve, reject) => {
     const params = {
@@ -384,3 +370,32 @@ export const getBatchTime = (batch) => {
   })
   return result / 60;
 }
+
+export const listHITs = (params) => {
+  return new Promise((resolve, reject) => {
+    mturk.listHITs(params,
+      function(err, data) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(data)
+        }
+      }
+    );
+  })
+};
+
+export const listWorkersWithQualificationType = (params) => {
+  return new Promise((resolve, reject) => {
+    mturk.listWorkersWithQualificationType(params,
+      function(err, data) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(data)
+        }
+      }
+    );
+  })
+};
+

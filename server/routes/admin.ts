@@ -4,6 +4,7 @@ const templateController = require('../controllers/templates');
 const surveyController = require('../controllers/surveys');
 
 
+
 module.exports = function (app) {
   let adminRoutes =  express.Router();
 
@@ -32,6 +33,7 @@ module.exports = function (app) {
     .delete('/surveys', surveyController.deleteSurvey)
 
     .post('/notify/', adminController.notifyUsers)
+    .post('/migrate-old-users/',  adminController.migrateUsers)
 
   return adminRoutes;
 };

@@ -126,7 +126,7 @@ function mapDispatchToProps(dispatch) {
     addBatch,
     stopBatch,
     clearBatches,
-    switchBatchesVisibility
+    switchBatchesVisibility,
   }, dispatch);
 }
 

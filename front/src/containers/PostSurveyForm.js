@@ -87,6 +87,7 @@ class PostSurveyForm extends React.Component {
 										</div>}
 										<label className="form__form-group-label">
 											<p>Surveys completed: {batch.surveyCounter}/{surveysTotal}</p>
+                      <br/>
 											<p>You actually worked with the same team in some of the previous rounds, though their names may have appeared different.</p>
 											<p>
 												In which rounds do you think that you worked with the same people?

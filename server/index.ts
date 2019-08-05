@@ -8,17 +8,15 @@ const PORT = process.env.PORT || 3001;
 const APP_ROOT = path.resolve(__dirname, '..');
 const logger = require('./services/logger');
 import {init, sendMessage, disconnect, activeCheck, refreshActiveUsers} from './controllers/users'
-import {joinBatch, loadBatch, receiveSurvey} from './controllers/batches'
+import {joinBatch, loadBatch, receiveSurvey, timeout} from './controllers/batches'
 import {errorHandler} from './services/common'
 import {
   addHIT,
-  disassociateQualificationFromWorker,
   listAssignmentsForHIT,
   notifyWorkers,
   assignQual,
-  payBonus,
   runningLive,
-  clearRoom
+  clearRoom,
 } from "./controllers/utils";
 import {User} from './models/users'
 import {Batch} from './models/batches'
@@ -56,7 +54,7 @@ app
 export const io = require('socket.io').listen(app.listen(PORT, function() {
   logger.info(module, 'App is running on port: ' + PORT);
   logger.info(module, 'NODE MODE: ' + process.env.NODE_ENV);
-  logger.info(module, 'MTURK FRAME: ' + process.env.MTURK_FRAME);
+  logger.info(module, 'MTURK MODE: ' + process.env.MTURK_MODE);
 }));
 
 let initialChecks = [
@@ -141,7 +139,7 @@ cron.schedule('*/3 * * * *', async function(){
 if (process.env.MTURK_MODE !== 'off') {
   cron.schedule('*/4 * * * *', async function(){
     try {
-      const batches = await Batch.find({status: 'waiting'}).select('tasks createdAt teamSize roundMinutes numRounds HITTitle surveyMinutes users')
+      const batches = await Batch.find({status: 'waiting'}).select('tasks createdAt teamSize roundMinutes numRounds HITTitle surveyMinutes users withAutoStop')
         .sort({'createdAt': 1}).populate('users.user').lean().exec();
       if (batches && batches.length) {
         const HIT = await addHIT(batches[0], false);
@@ -150,7 +148,7 @@ if (process.env.MTURK_MODE !== 'off') {
         let prs = []
         batches.forEach(batch => {
           const liveTime = (moment()).diff(moment(batch.createdAt), 'minutes')
-          if (liveTime > 20) {
+          if (liveTime > 35 && batch.withAutoStop) {
             prs.push(Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}));
             prs.push(User.updateMany({batch:  batch._id}, { $set: { batch: null, realNick: null, fakeNick: null, currentChat: null }}))
             io.to(batch._id.toString()).emit('stop-batch', {status: 'waiting'})
@@ -200,3 +198,4 @@ if (process.env.MTURK_MODE !== 'off') {
     }
   });
 }
+

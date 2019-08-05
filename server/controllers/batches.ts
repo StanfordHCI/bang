@@ -77,7 +77,7 @@ export const joinBatch = async function (data, socket, io) {
 }
 
 export const loadBatch = async function (data, socket, io) {
-  let chat, userInfo;
+  let chat, userInfo, teamUsers = [];
   try {
     const batch = await Batch.findById(data.batch).lean().exec();
     if (batch.status === 'waiting') {
@@ -97,6 +97,7 @@ export const loadBatch = async function (data, socket, io) {
           team.users.forEach(user => {
             if (user.user.toString() === socket.userId.toString()) {
               chatId = team.chat;
+              teamUsers = team.users;
             }
           })
         })
@@ -106,7 +107,14 @@ export const loadBatch = async function (data, socket, io) {
           Survey.findOne({user: socket.userId, batch: data.batch, round: batch.currentRound, surveyType: round.status}).select('_id').lean().exec()
         ])
         chat = prs[0];
-        chat.members = prs[1]
+        chat.members = prs[1];
+        /*chat.members.forEach(member => {
+          const teamUser = teamUsers.find(x => x.user.toString() === member._id.toString());
+          if (teamUser) {
+            member.isActive = teamUser.isActive;
+          }
+          return member;
+        })*/
         if (prs[2]) batch.surveyDone = true;
         userInfo = chat.members.find(x => x._id.toString() === socket.userId.toString())
         socket.join(chatId.toString())

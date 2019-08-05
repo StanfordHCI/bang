@@ -41,6 +41,7 @@ class AddBatch extends React.Component {
     batch.maskType = form.maskType;
     batch.withAvatar = form.withAvatar;
     batch.withRoster = form.withRoster;
+    batch.withAutoStop = form.withAutoStop;
     this.props.addBatch(batch)
   }
 
@@ -96,6 +97,16 @@ class AddBatch extends React.Component {
                 </div>
               </div>
               <div className='form__form-group'>
+                <label className='form__form-group-label'>With auto-stop?</label>
+                <div className='form__form-group-field'>
+                  <Field
+                    name='withAutoStop'
+                    component={renderSelectField}
+                    options={[{value: true, label: 'With auto-stop'}, {value: false, label: 'Without auto-stop'}]}
+                  />
+                </div>
+              </div>
+              <div className='form__form-group'>
                 <label className='form__form-group-label'>Note</label>
                 <div className='form__form-group-field'>
                   <Field
@@ -130,6 +141,9 @@ const validate = (values, props) => {
   }
   if (values.withRoster == null) {
     errors.withRoster = 'required'
+  }
+  if (values.withAutoStop == null) {
+    errors.withAutoStop = 'required'
   }
 
   return errors

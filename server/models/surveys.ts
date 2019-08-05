@@ -11,7 +11,7 @@ let SurveySchema = new Schema(
 	{
 		user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 		batch: { type: mongoose.Schema.Types.ObjectId, ref: 'Batch' },
-		questions: [ { result: { type: String, required: true } } ],
+		questions: [ { result: { type: String, required: true }, number: Number } ],
 		mainQuestion: {
 			//Picking Rounds
 			expRound1: Number,
