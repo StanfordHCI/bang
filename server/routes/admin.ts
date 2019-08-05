@@ -33,7 +33,7 @@ module.exports = function (app) {
     .delete('/surveys', surveyController.deleteSurvey)
 
     .post('/notify/', adminController.notifyUsers)
-    .post('/migrate-old-users/',  adminController.migrateUsers)
+    //.post('/migrate-old-users/',  adminController.migrateUsers)
 
   return adminRoutes;
 };
