@@ -371,7 +371,7 @@ export const getBatchTime = (batch) => {
   return result / 60;
 }
 
-const listHITs = (params) => {
+export const listHITs = (params) => {
   return new Promise((resolve, reject) => {
     mturk.listHITs(params,
       function(err, data) {
@@ -385,7 +385,7 @@ const listHITs = (params) => {
   })
 };
 
-const listWorkersWithQualificationType = (params) => {
+export const listWorkersWithQualificationType = (params) => {
   return new Promise((resolve, reject) => {
     mturk.listWorkersWithQualificationType(params,
       function(err, data) {
@@ -399,91 +399,3 @@ const listWorkersWithQualificationType = (params) => {
   })
 };
 
-const migrate = async () => {
-  let stop = false, NextToken = '', willbangUsers = [], hasbangedUsers = [], assignments = [], deleteCounter = 0;
-
-  while (!stop) {
-    let params = {
-      MaxResults: 100,
-      QualificationTypeId: '3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG'
-    };
-    if (NextToken){
-      params.NextToken = NextToken;
-    }
-    const data = await listWorkersWithQualificationType(params);
-    hasbangedUsers = hasbangedUsers.concat(data.Qualifications)
-    NextToken = data.NextToken;
-    if (!NextToken) stop = true;
-    console.log('hasbanged users loaded: ' + data.Qualifications.length)
-  }
-
-  console.log(hasbangedUsers.length + ' hasbanged users are here')
-
-  stop = false; NextToken = '';
-  while (!stop) {
-    let params = {
-      MaxResults: 100,
-      QualificationTypeId: '3H3KEN1OLSVM98I05ACTNWVOM3JBI9'
-    };
-    if (NextToken){
-      params.NextToken = NextToken;
-    }
-    const data = await listWorkersWithQualificationType(params);
-    willbangUsers = willbangUsers.concat(data.Qualifications)
-    NextToken = data.NextToken;
-    if (!NextToken) stop = true;
-    console.log('willbang users loaded: ' + data.Qualifications.length)
-  }
-
-  hasbangedUsers.forEach(user => {
-    const k = willbangUsers.findIndex(x => x.WorkerId === user.WorkerId);
-    if (k > -1) {
-      willbangUsers = willbangUsers.splice(k, 1);
-      deleteCounter++;
-    }
-  })
-
-  console.log(willbangUsers.length + ' willbang users are here')
-
-  stop = false; NextToken = '';
-  while (!stop) {
-    let params = {
-      MaxResults: 100
-    };
-    if (NextToken){
-      params.NextToken = NextToken;
-    }
-    const data = await listHITs(params);
-    for (let i = 0; i < data.HITs.length; i++) {
-      const HIT = data.HITs[i];
-      const as = (await listAssignmentsForHIT(HIT.HITId)).Assignments; //need slow work
-      assignments = assignments.concat(as);
-      console.log(as.length + ' added')
-    }
-    NextToken = data.NextToken;
-    if (!NextToken) stop = true;
-    const lastMemoryUsage = Math.ceil(process.memoryUsage().heapUsed / 1024 / 1024);
-    console.log('memory: ' + lastMemoryUsage)
-  }
-
-  console.log(assignments.length + ' assignments are here')
-
-  let insertUsers = [];
-
-  willbangUsers.forEach(async user => {
-    const as = assignments.find(x => {
-      return x.WorkerId == user.WorkerId;
-    });
-    if (as){
-      insertUsers.push({
-        testAssignmentId: as.AssignmentId,
-        mturkId: as.WorkerId,
-        token: as.WorkerId,
-      })
-      console.log(insertUsers.length)
-    }
-  })
-
-  //await User.insertMany(insertUsers)
-
-}

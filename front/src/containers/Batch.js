@@ -407,22 +407,23 @@ class Batch extends React.Component {
               </thead>
               <tbody>
                 {chat.members.map((member) => {
-                  return (member._id.toString() === user._id.toString()) ?
-                    <tr key={member._id}>
-                      <td>
-                        <div className='chat__bubble-contact-name'>
-                          {member.realNick + ' (you)'}
-                        </div>
-                      </td>
-                    </tr> :
-                    <tr key={member._id}
-                      onClick={() => this.setState({ message: this.state.message + ' ' + (batch.maskType === 'masked' ? member.fakeNick : member.realNick) })}>
-                      <td>
-                        <div className='chat__bubble-contact-name'>
-                          {batch.maskType === 'masked' ? member.fakeNick : member.realNick}
-                        </div>
-                      </td>
-                    </tr>
+                  let nick = '';
+                  if (member._id.toString() === user._id.toString()) {
+                    nick = member.realNick + ' (you)';
+                  } else {
+                    nick = batch.maskType === 'masked' ? member.fakeNick : member.realNick;
+                  }
+                  if (batch.roundMinutes * 60 - this.state.timeLeft > 60 && !chat.messages.some(x => x.user.toString() === member._id.toString())) {
+                    nick = nick + ' (afk)'
+                  }
+
+                  return (<tr key={member._id}>
+                    <td>
+                      <div className='chat__bubble-contact-name'>
+                        {nick}
+                      </div>
+                    </td>
+                  </tr>)
                 })}
               </tbody>
             </Table>

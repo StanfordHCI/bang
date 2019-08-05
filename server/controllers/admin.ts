@@ -1,4 +1,5 @@
 import {User} from "../models/users";
+
 const moment = require('moment')
 require('dotenv').config({path: './.env'});
 import {Chat} from '../models/chats'
@@ -7,6 +8,8 @@ import {Survey} from '../models/surveys'
 import {errorHandler} from '../services/common'
 import {
   addHIT,
+  listWorkersWithQualificationType,
+  listHITs,
   getAccountBalance,
   notifyWorkers,
   letters,
@@ -14,12 +17,13 @@ import {
   expireHIT,
   assignQual,
   getBatchTime,
-  runningLive, payBonus, clearRoom, mturk
+  runningLive, payBonus, clearRoom, mturk, listAssignmentsForHIT
 } from "./utils";
 import {timeout} from './batches'
+
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
-import { io} from '../index'
+import {io} from '../index'
 import {Bonus} from "../models/bonuses";
 import {activeCheck} from "./users";
 
@@ -81,7 +85,8 @@ export const addBatch = async function (req, res) {
     newBatch.tasks = tasks;
 
     const batch = await Batch.create(newBatch);
-    const preChat = await Chat.create({batch: batch._id, messages: [
+    const preChat = await Chat.create({
+      batch: batch._id, messages: [
         {
           nickname: 'helperBot',
           message: 'Hi, I am helperBot, welcome to our HIT!',
@@ -91,7 +96,7 @@ export const addBatch = async function (req, res) {
         {
           nickname: 'helperBot',
           message: 'You must be able to stay for the duration of this task, around 1 hour. If you cannot stay for the entire time, ' +
-          'please leave now. You will not be compensated if you leave preemptively.',
+            'please leave now. You will not be compensated if you leave preemptively.',
           user: botId,
           time: new Date
         },
@@ -102,7 +107,8 @@ export const addBatch = async function (req, res) {
           user: botId,
           time: new Date
         },
-    ]});
+      ]
+    });
     const batchWithChat = await Batch.findByIdAndUpdate(batch._id, {$set: {preChat: preChat._id}})
     res.json({batch: batchWithChat})
     logger.info(module, 'New batch added. Mturk mode: ' + process.env.MTURK_MODE + '; Mturk frame: ' + process.env.MTURK_FRAME);
@@ -110,31 +116,9 @@ export const addBatch = async function (req, res) {
     let prs = [], counter = 0;
     prs.push(activeCheck(io))
     if (process.env.MTURK_MODE !== 'off') {
-      const users = await User.find({systemStatus: 'willbang', isTest: false}).sort({createdAt: 1}).limit(200)
+      const users = await User.find({systemStatus: 'willbang', isTest: false}).sort({createdAt: -1}).limit(200)
         .select('mturkId testAssignmentId').lean().exec();
-
-      for (let i = 0; i < users.length; i++) {
-        const user = users[i];
-        const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
-        const unsubscribe_url = process.env.HIT_URL + 'unsubscribe/' + user.mturkId; 
-        const message = 'Hi! Our HIT is now active. We are starting a new experiment on Bang. ' + 
-          'Your FULL participation will earn you a bonus of ~$12/hour. ' + '\n\n' +
-          'Please join the HIT here: ' + url + '\n\n' +
-          'The link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. ' + 
-          'NOTE: You will be bonused $1 if enough users join the waiting room and the task starts.' + '\n\n' + 
-          'Our records indicate that you were interested in joining this HIT previously. ' +
-          'If you are no longer interested in participating, please UNSUBSCRIBE here: ' + unsubscribe_url;
-        notifyWorkers([user.mturkId], message, 'Bang')
-          .then(() => {
-            counter++;
-          })
-        if (i % 10 === 0) {
-          await timeout(1000);
-          logger.info(module, 'Notification sent to ' + counter + ' users');
-        }
-      }
-      logger.info(module, 'Notification sent to ' + users.length + ' users');
-
+      await startNotification(users);
     }
     await Promise.all(prs)
   } catch (e) {
@@ -144,9 +128,11 @@ export const addBatch = async function (req, res) {
 
 export const loadBatchList = async function (req, res) {
   try {
-    //{ $or:[  {status: {$in: ['active', 'waiting']}}, {status: 'completed', startTime: {$exists: true}} ]}
-    const batchList = await Batch.find({})
-      .sort({createdAt: -1}).select('createdAt startTime status currentRound teamSize templateName note maskType').lean().exec();
+    let select = '';
+    if (!req.query.full) {
+      select = 'createdAt startTime status currentRound teamSize templateName note maskType';
+    }
+    const batchList = await Batch.find({}).sort({createdAt: -1}).select(select).lean().exec();
     res.json({batchList: batchList})
   } catch (e) {
     errorHandler(e, 'load batches error')
@@ -198,7 +184,7 @@ export const addUser = async function (req, res) {
 export const stopBatch = async function (req, res) {
   try {
     let batch = await Batch.findByIdAndUpdate(req.params.id, {$set: {status: 'completed'}}).populate('users.user').lean().exec()
-    let usersChangeQuery = { batch: null, realNick: null, fakeNick: null, currentChat: null }
+    let usersChangeQuery = {batch: null, realNick: null, fakeNick: null, currentChat: null}
     if (batch.status === 'active' && process.env.MTURK_MODE !== 'off') { //compensations
       usersChangeQuery.systemStatus = 'hasbanged';
       if (process.env.MTURK_FRAME === 'ON') {
@@ -224,7 +210,7 @@ export const stopBatch = async function (req, res) {
       await Promise.all(bangPrs)
     }
 
-    await User.updateMany({batch:  batch._id}, { $set: usersChangeQuery})
+    await User.updateMany({batch: batch._id}, {$set: usersChangeQuery})
     io.to(batch._id.toString()).emit('stop-batch', {status: batch.status})
     clearRoom(batch._id, io)
     logger.info(module, 'Batch stopped: ' + batch._id);
@@ -268,35 +254,13 @@ export const loadBatchResult = async function (req, res) {
 
 export const notifyUsers = async function (req, res) {
   try {
-    let prs = [], counter = 0;
+    let prs = [];
     if (req.body.start) {
-      const users = await User.find({systemStatus: 'willbang', isTest: false}).sort({createdAt: 1}).limit(parseInt(req.body.pass) + parseInt(req.body.limit))
+      const users = await User.find({systemStatus: 'willbang', isTest: false})
+        .sort({createdAt: -1}).skip(parseInt(req.body.pass)).limit(parseInt(req.body.limit))
         .select('mturkId testAssignmentId').lean().exec();
-       
-      for (let i = 0; i < users.length; i++) {
-        if (i + 1 > parseInt(req.body.pass)) {
-          const user = users[i];
-          const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
-          const unsubscribe_url = process.env.HIT_URL + 'unsubscribe/' + user.mturkId; 
-          const message = 'Hi! Our HIT is now active. We are starting a new experiment on Bang. ' + 
-          'Your FULL participation will earn you a bonus of ~$12/hour. ' + '\n\n' +
-          'Please join the HIT here: ' + url + '\n\n' +
-          'The link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. ' + 
-          'NOTE: You will be bonused $1 if enough users join the waiting room and the task starts.' + '\n\n' + 
-          'Our records indicate that you were interested in joining this HIT previously. ' +
-          'If you are no longer interested in participating, please UNSUBSCRIBE here: ' + unsubscribe_url;
-          notifyWorkers([user.mturkId], message, 'Bang')
-            .then(() => {
-              counter++;
-            })
-          if (i % 10 === 0) {
-            await timeout(1000);
-            logger.info(module, 'Notification sent to ' + counter + ' users');
-          }
-        }
-      }
-      logger.info(module, 'Notification sent to ' + users.length + ' users');
-
+      console.log(users)
+      await startNotification(users);
     } else {
       const users = await User.find({systemStatus: 'willbang', isTest: false}).select('mturkId').lean().exec();
       let workers = [];
@@ -316,4 +280,131 @@ export const notifyUsers = async function (req, res) {
   } catch (e) {
     errorHandler(e, 'notify users error')
   }
+}
+
+const startNotification = async (users) => {
+  let bulkPrs = [], counter = 0;
+  for (let i = 0; i < users.length; i++) {
+      const user = users[i];
+      const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
+      const unsubscribe_url = process.env.HIT_URL + 'unsubscribe/' + user.mturkId;
+      const message = 'Hi! Our HIT is now active. We are starting a new experiment on Bang. ' +
+        'Your FULL participation will earn you a bonus of ~$12/hour. ' + '\n\n' +
+        'Please join the HIT here: ' + url + '\n\n' +
+        'The link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. ' +
+        'NOTE: You will be bonused $1 if enough users join the waiting room and the task starts.' + '\n\n' +
+        'Our records indicate that you were interested in joining this HIT previously. ' +
+        'If you are no longer interested in participating, please UNSUBSCRIBE here: ' + unsubscribe_url;
+      bulkPrs.push(notifyWorkers([user.mturkId], message, 'Bang'))
+
+      if (i % 10 === 0 && i > 0) {
+        await Promise.all(bulkPrs);
+        counter += 10;
+        logger.info(module, 'Notification sent to ' + counter + ' users');
+        bulkPrs = [];
+      }
+  }
+  await Promise.all(bulkPrs);
+  counter += bulkPrs.length;
+  logger.info(module, 'Notification sent to ' + counter + ' users');
+}
+
+export const migrateUsers = async (req, res) => {
+  try {
+    let stop = false, NextToken = '', willbangUsers = [], hasbangedUsers = [], assignments = [], deleteCounter = 0;
+
+    while (!stop) {
+      let params = {
+        MaxResults: 100,
+        QualificationTypeId: '3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG'
+      };
+      if (NextToken) {
+        params.NextToken = NextToken;
+      }
+      const data = await listWorkersWithQualificationType(params);
+      hasbangedUsers = hasbangedUsers.concat(data.Qualifications)
+      NextToken = data.NextToken;
+      if (!NextToken) stop = true;
+      console.log('hasbanged users loaded: ' + data.Qualifications.length)
+    }
+
+    console.log(hasbangedUsers.length + ' hasbanged users are here')
+
+    stop = false;
+    NextToken = '';
+    while (!stop) {
+      let params = {
+        MaxResults: 100,
+        QualificationTypeId: '3H3KEN1OLSVM98I05ACTNWVOM3JBI9'
+      };
+      if (NextToken) {
+        params.NextToken = NextToken;
+      }
+      const data = await listWorkersWithQualificationType(params);
+      willbangUsers = willbangUsers.concat(data.Qualifications)
+      NextToken = data.NextToken;
+      if (!NextToken) stop = true;
+      console.log('willbang users loaded: ' + data.Qualifications.length)
+    }
+
+    console.log(willbangUsers.length + ' willbang users are here')
+
+    /*for (let user of hasbangedUsers) {
+      const k = willbangUsers.findIndex(x => x.WorkerId === user.WorkerId);
+      if (k > -1) {
+        willbangUsers = willbangUsers.splice(k, 1);
+        deleteCounter++;
+      }
+    }
+
+    console.log(willbangUsers.length + ' willbang users are here, deleted: ' + deleteCounter)*/
+
+    stop = false;
+    NextToken = '';
+    while (!stop) {
+      let params = {
+        MaxResults: 100
+      };
+      if (NextToken) {
+        params.NextToken = NextToken;
+      }
+      const data = await listHITs(params);
+      for (let i = 0; i < data.HITs.length; i++) {
+        const HIT = data.HITs[i];
+        const as = (await listAssignmentsForHIT(HIT.HITId)).Assignments; //need slow work
+        assignments = assignments.concat(as);
+        console.log(as.length + ' added')
+      }
+      NextToken = data.NextToken;
+      if (!NextToken) stop = true;
+      const lastMemoryUsage = Math.ceil(process.memoryUsage().heapUsed / 1024 / 1024);
+      console.log('memory: ' + lastMemoryUsage)
+    }
+
+    console.log(assignments.length + ' assignments are here')
+
+    let insertUsers = [];
+
+    willbangUsers.forEach(async user => {
+      const as = assignments.find(x => {
+        return x.WorkerId == user.WorkerId;
+      });
+      const hasBanged = hasbangedUsers.some(x => x.WorkerId === user.WorkerId)
+      if (as && !hasBanged) {
+        insertUsers.push({
+          testAssignmentId: as.AssignmentId,
+          mturkId: as.WorkerId,
+          token: as.WorkerId,
+        })
+      }
+    })
+    console.log('insert: ' + insertUsers.length)
+
+    await User.insertMany(insertUsers)
+
+    res.json({})
+  } catch (e) {
+    errorHandler(e, 'migrate users error')
+  }
+
 }
