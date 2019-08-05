@@ -185,13 +185,8 @@ export const payBonus = (mturkId, assignmentId, amount) => {
   })
 };
 
-export const listAssignmentsForHIT = (id) => {
+export const listAssignmentsForHIT = (params) => {
   return new Promise((resolve, reject) => {
-    const params = {
-      HITId: id,
-      AssignmentStatuses: ['Submitted', 'Approved', 'Rejected',],
-      MaxResults: 100,
-    };
     mturk.listAssignmentsForHIT(params,
       function(err, data) {
         if (err) {
