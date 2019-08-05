@@ -168,7 +168,12 @@ if (process.env.MTURK_MODE !== 'off') {
   cron.schedule('*/10 * * * * *', async function(){
     try {
       if (currentHIT) {
-        const as = (await listAssignmentsForHIT(currentHIT)).Assignments;
+        const params = {
+          HITId: currentHIT,
+          AssignmentStatuses: ['Submitted', 'Approved', 'Rejected',],
+          MaxResults: 100,
+        };
+        const as = (await listAssignmentsForHIT(params)).Assignments;
         if (as && as.length) for (let i = 0; i < as.length; i++) {
           const assignment = as[i];
           const check = await User.findOne({mturkId: assignment.WorkerId});

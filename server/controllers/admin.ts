@@ -349,16 +349,6 @@ export const migrateUsers = async (req, res) => {
 
     console.log(willbangUsers.length + ' willbang users are here')
 
-    /*for (let user of hasbangedUsers) {
-      const k = willbangUsers.findIndex(x => x.WorkerId === user.WorkerId);
-      if (k > -1) {
-        willbangUsers = willbangUsers.splice(k, 1);
-        deleteCounter++;
-      }
-    }
-
-    console.log(willbangUsers.length + ' willbang users are here, deleted: ' + deleteCounter)*/
-
     stop = false;
     NextToken = '';
     while (!stop) {
@@ -370,10 +360,23 @@ export const migrateUsers = async (req, res) => {
       }
       const data = await listHITs(params);
       for (let i = 0; i < data.HITs.length; i++) {
-        const HIT = data.HITs[i];
-        const as = (await listAssignmentsForHIT(HIT.HITId)).Assignments; //need slow work
-        assignments = assignments.concat(as);
-        console.log(as.length + ' added')
+        let stopAs = false, asNextToken = '';
+        while (!stopAs) {
+          const HIT = data.HITs[i];
+          let asParams = {
+            HITId: HIT.HITId,
+            AssignmentStatuses: ['Submitted', 'Approved'],
+            MaxResults: 100,
+          };
+          if (asNextToken) {
+            asParams.NextToken = asNextToken;
+          }
+          const as = await listAssignmentsForHIT(asParams);
+          assignments = assignments.concat(as.Assignments);
+          console.log(as.Assignments.length + ' added')
+          asNextToken = as.NextToken;
+          if (as.Assignments.length < 100) stopAs = true;
+        }
       }
       NextToken = data.NextToken;
       if (!NextToken) stop = true;
@@ -391,16 +394,16 @@ export const migrateUsers = async (req, res) => {
       });
       const hasBanged = hasbangedUsers.some(x => x.WorkerId === user.WorkerId)
       if (as && !hasBanged) {
-        insertUsers.push({
+        insertUsers.push(User.create({
           testAssignmentId: as.AssignmentId,
           mturkId: as.WorkerId,
           token: as.WorkerId,
-        })
+        }))
       }
     })
     console.log('insert: ' + insertUsers.length)
 
-    await User.insertMany(insertUsers)
+    await Promise.all(insertUsers);
 
     res.json({})
   } catch (e) {
