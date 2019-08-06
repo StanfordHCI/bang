@@ -198,7 +198,7 @@ export const stopBatch = async function (req, res) {
         const user = userObject.user;
         bangPrs.push(assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL))
         if (bonus > 0) {
-          bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, bonus))
+          bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, bonus.toFixed(2)))
           bangPrs.push(Bonus.create({
             batch: batch._id,
             user: user._id,
