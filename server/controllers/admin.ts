@@ -198,7 +198,7 @@ export const stopBatch = async function (req, res) {
         const user = userObject.user;
         bangPrs.push(assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL))
         if (bonus > 0) {
-          bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, bonus))
+          bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, bonus.toFixed(2)))
           bangPrs.push(Bonus.create({
             batch: batch._id,
             user: user._id,
@@ -259,7 +259,6 @@ export const notifyUsers = async function (req, res) {
       const users = await User.find({systemStatus: 'willbang', isTest: false})
         .sort({createdAt: -1}).skip(parseInt(req.body.pass)).limit(parseInt(req.body.limit))
         .select('mturkId testAssignmentId').lean().exec();
-      console.log(users)
       await startNotification(users);
     } else {
       const users = await User.find({systemStatus: 'willbang', isTest: false}).select('mturkId').lean().exec();
@@ -297,9 +296,9 @@ const startNotification = async (users) => {
         'If you are no longer interested in participating, please UNSUBSCRIBE here: ' + unsubscribe_url;
       bulkPrs.push(notifyWorkers([user.mturkId], message, 'Bang'))
 
-      if (i % 10 === 0 && i > 0) {
+      if (i % 5 === 0 && i > 0) {
         await Promise.all(bulkPrs);
-        counter += 10;
+        counter += 5;
         logger.info(module, 'Notification sent to ' + counter + ' users');
         bulkPrs = [];
       }
