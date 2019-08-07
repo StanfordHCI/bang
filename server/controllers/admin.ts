@@ -282,30 +282,32 @@ export const notifyUsers = async function (req, res) {
 }
 
 const startNotification = async (users) => {
-  let bulkPrs = [], counter = 0;
+  let counter = 0;
   for (let i = 0; i < users.length; i++) {
-      const user = users[i];
-      const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
-      const unsubscribe_url = process.env.HIT_URL + 'unsubscribe/' + user.mturkId;
-      const message = 'Hi! Our HIT is now active. We are starting a new experiment on Bang. ' +
-        'Your FULL participation will earn you a bonus of ~$12/hour. ' + '\n\n' +
-        'Please join the HIT here: ' + url + '\n\n' +
-        'The link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. ' +
-        'NOTE: You will be bonused $1 if enough users join the waiting room and the task starts.' + '\n\n' +
-        'Our records indicate that you were interested in joining this HIT previously. ' +
-        'If you are no longer interested in participating, please UNSUBSCRIBE here: ' + unsubscribe_url;
-      bulkPrs.push(notifyWorkers([user.mturkId], message, 'Bang'))
+    const user = users[i];
+    const url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
+    const unsubscribe_url = process.env.HIT_URL + 'unsubscribe/' + user.mturkId;
+    const message = 'Hi! Our HIT is now active. We are starting a new experiment on Bang. ' +
+      'Your FULL participation will earn you a bonus of ~$12/hour. ' + '\n\n' +
+      'Please join the HIT here: ' + url + '\n\n' +
+      'The link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. ' +
+      'NOTE: You will be bonused $1 if enough users join the waiting room and the task starts.' + '\n\n' +
+      'Our records indicate that you were interested in joining this HIT previously. ' +
+      'If you are no longer interested in participating, please UNSUBSCRIBE here: ' + unsubscribe_url;
 
-      if (i % 5 === 0 && i > 0) {
-        await Promise.all(bulkPrs);
-        counter += 5;
-        logger.info(module, 'Notification sent to ' + counter + ' users');
-        bulkPrs = [];
-      }
+    notifyWorkers([user.mturkId], message, 'Bang')
+      .then(() => {
+        counter++;
+      })
+      .catch(e => {
+
+      })
+    if (i % 5 === 0 && i > 0) {
+      await timeout(400);
+    }
+
   }
-  await Promise.all(bulkPrs);
-  counter += bulkPrs.length;
-  logger.info(module, 'Notification sent to ' + counter + ' users');
+  logger.info(module, 'Start notification sent to ' + users.length + ' users');
 }
 
 export const migrateUsers = async (req, res) => {
