@@ -150,9 +150,9 @@ const startBatch = async function (batch, socket, io) {
       return;
     }
 
-    if (process.env.MTURK_MODE !== 'off') {
-      await payStartBonus(users, batch);
-    }
+    // if (process.env.MTURK_MODE !== 'off') {
+    //   await payStartBonus(users, batch);
+    // }
 
     const startBatchInfo = {status: 'active', startTime: new Date()};
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: startBatchInfo}).lean().exec()
@@ -206,19 +206,32 @@ export const receiveSurvey = async function (data, socket, io) {
     await Survey.create(newSurvey)
     if (process.env.MTURK_MODE !== 'off' && newSurvey.surveyType === 'final') {
       const [batch, user] = await Promise.all([
-        Batch.findById(newSurvey.batch).select('roundMinutes numRounds surveyMinutes tasks').lean().exec(),
-        User.findById(newSurvey.user).select('systemStatus mturkId').lean().exec()
+        Batch.findById(newSurvey.batch).select('_id roundMinutes numRounds surveyMinutes tasks').lean().exec(),
+        User.findById(newSurvey.user).select('_id systemStatus mturkId').lean().exec()
       ])
       if (!batch) {
         logger.info(module, 'Blocked survey, survey/user does not have batch');
         return;
       }
-      let bonusPrice = (12 * getBatchTime(batch) - 1.00);
+      const chats = await Chat.find({batch: batch._id});
+      let userWasActiveInChats = {};
+      for (const chat of chats) {
+        userWasActiveInChats[chat._id] = false
+        for (const message of chat.messages) {
+          if (JSON.stringify(user._id) == JSON.stringify(message.user)) {
+              userWasActiveInChats[chat._id] = true;
+              break;
+          }
+        }
+      }
+      const completedSurveys = await Survey.count({user: socket.userId, batch: data.batch, surveyType: {$in: ['presurvey', 'midsurvey']}});
+      let bonusPrice = (12 * getBatchTime(batch) - 1.00 + 1.00); // we pay extra 1$ instead of paying it on batchStart
       if (bonusPrice > 15) {
         logger.info(module, 'Bonus was changed for batch ' + newSurvey.batch)
         await notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Bonus was changed from ' + bonusPrice + '$ to 15$ for user ' + user.mturkId, 'Bang');
         bonusPrice = 15;
       }
+      console.log('bonusPrice: ', bonusPrice);
       const bonus = await payBonus(socket.mturkId, socket.assignmentId, bonusPrice.toFixed(2))
       if (bonus) {
         const newBonus = {
