@@ -254,7 +254,7 @@ export const timeout = (ms) => {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-const payStartBonus = async (users, batch) => {
+export const payStartBonus = async (users, batch) => {
   let bangPrs = [];
   users.forEach(user => {
     bangPrs.push(assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL))
