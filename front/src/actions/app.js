@@ -112,6 +112,10 @@ export const whoami = () => {
         });
         if (!data.user.isAdmin) {
           if (data.user.systemStatus ==='willbang') {
+            const [batchId, genNumber] = [getUrlParams().batchid, getUrlParams().gennumber];
+            if (batchId && genNumber) {
+              history.push('/waiting' + '?batchId=' + batchId + '&genNumber=', genNumber);
+            }
             if (data.user.batch) {
               history.push('/batch');
             } else {

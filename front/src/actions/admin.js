@@ -86,6 +86,7 @@ export function loadBatchList(params) {
     return axios({
       method: 'get',
       url: 'admin/batches/',
+      params: params,
     })
       .then((response) => {
         dispatch(setLoading(false));

@@ -69,5 +69,6 @@ let  BatchSchema = new Schema({
   withAvatar: {type: Boolean, default: false, required: true},
   withRoster: {type: Boolean, default: false, required: true},
   withAutoStop: {type: Boolean, default: true, required: true},
+  rememberTeamOrder: {type: Boolean, default: false, required: true},
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);

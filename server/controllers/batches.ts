@@ -14,7 +14,7 @@ const randomAnimal = "Squirrel Rhino Horse Pig Panda Monkey Lion Orangutan Goril
 const randomAdjective = "new small young little likely nice cultured snappy spry conventional".split(" ");
 
 
-export const joinBatch = async function (data, socket, io) {
+export const joinBatch = async function (data, socket, io, batch = None) {
   try {
     let batches = await Batch.find({status: 'waiting'}).sort({'createdAt': 1}).lean().exec();
     if (!batches || !batches.length) {

@@ -10,7 +10,7 @@
 import React, {PureComponent} from 'react';
 import {Card, CardBody, Col, Row, Container, Button, ButtonToolbar} from 'reactstrap';
 import {connect} from "react-redux";
-import {addBatch} from "Actions/admin";
+import {addBatch, loadBatchList} from "Actions/admin";
 import {loadTemplateList} from "Actions/templates";
 import {bindActionCreators} from "redux";
 import {Field, reduxForm} from "redux-form";
@@ -33,6 +33,13 @@ class AddBatch extends React.Component {
         let options = this.props.templateList.map(x => {return {value: x._id, label: x.name}})
         this.setState({isReady: true, options: options})
       })
+    this.props.loadBatchList({remembered: true}).then(() => {
+            let batchOptions = [{value: false, label: "Don't load"}];
+            batchOptions = batchOptions.concat(this.props.batchList.map(x => {return {value: x._id, label: `${x.templateName}(${x.note}) ${x.createdAt}`}}));
+            console.log('batchOptions: ', batchOptions)
+            this.setState({isReady: true, batchOptions: batchOptions})
+          })
+
   }
 
   handleSubmit(form) {
@@ -42,6 +49,9 @@ class AddBatch extends React.Component {
     batch.withAvatar = form.withAvatar;
     batch.withRoster = form.withRoster;
     batch.withAutoStop = form.withAutoStop;
+    // batch.teamFormat = form.teamFormat;
+    batch.rememberTeamOrder = form.rememberTeamOrder;
+    batch.loadTeamOrder = form.loadTeamOrder;
     this.props.addBatch(batch)
   }
 
@@ -56,6 +66,16 @@ class AddBatch extends React.Component {
               <h5 className='bold-text'>Add batch</h5>
             </div>
             <form className='form form--horizontal' style={{paddingBottom: '5vh'}} onSubmit={handleSubmit(this.handleSubmit.bind(this))}>
+              {/*<div className='form__form-group'>*/}
+              {/*  <label className='form__form-group-label'>Single-team or Multi-team?</label>*/}
+              {/*  <div className='form__form-group-field'>*/}
+              {/*    <Field*/}
+              {/*      name='teamFormat'*/}
+              {/*      component={renderSelectField}*/}
+              {/*      options={[{value: 'single', label: 'Single-team'}, {value: 'multi', label: 'Multi-team'}]}*/}
+              {/*    />*/}
+              {/*  </div>*/}
+              {/*</div>*/}
               <div className='form__form-group'>
                 <label className='form__form-group-label'>Select template:</label>
                 <div className='form__form-group-field'>
@@ -107,6 +127,26 @@ class AddBatch extends React.Component {
                 </div>
               </div>
               <div className='form__form-group'>
+                <label className='form__form-group-label'>Remember team order?</label>
+                <div className='form__form-group-field'>
+                  <Field
+                    name='rememberTeamOrder'
+                    component={renderSelectField}
+                    options={[{value: true, label: 'Remember'}, {value: false, label: "Don't remember"}]}
+                  />
+                </div>
+              </div>
+              <div className='form__form-group'>
+                <label className='form__form-group-label'>Load team order?</label>
+                <div className='form__form-group-field'>
+                  <Field
+                    name='loadTeamOrder'
+                    component={renderSelectField}
+                    options={this.state.batchOptions}
+                  />
+                </div>
+              </div>
+              <div className='form__form-group'>
                 <label className='form__form-group-label'>Note</label>
                 <div className='form__form-group-field'>
                   <Field
@@ -117,7 +157,7 @@ class AddBatch extends React.Component {
                   />
                 </div>
               </div>
-              <ButtonToolbar className='mx-auto form__button-toolbar'>
+            <ButtonToolbar className='mx-auto form__button-toolbar'>
                 <Button type="submit" disabled={invalid} color='primary' size='sm' >Add batch</Button>
               </ButtonToolbar>
             </form>
@@ -145,6 +185,15 @@ const validate = (values, props) => {
   if (values.withAutoStop == null) {
     errors.withAutoStop = 'required'
   }
+  if (values.rememberTeamOrder == null) {
+    errors.rememberTeamOrder = 'required'
+  }
+  if (values.loadTeamOrder == null) {
+    errors.loadTeamOrder = 'required'
+  }
+  // if (values.teamFormat == null) {
+  //   errors.teamFormat = 'required'
+  // }
 
   return errors
 };
@@ -158,14 +207,16 @@ AddBatch = reduxForm({
 
 function mapStateToProps(state) {
   return {
-    templateList: state.template.templateList
+    templateList: state.template.templateList,
+    batchList: state.admin.batchList,
   }
 }
 
 function mapDispatchToProps(dispatch) {
   return bindActionCreators({
     addBatch,
-    loadTemplateList
+    loadBatchList,
+    loadTemplateList,
   }, dispatch);
 }
 
