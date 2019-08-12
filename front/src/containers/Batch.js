@@ -688,9 +688,17 @@ function mapStateToProps(state) {
       return message;
     })
   }
-
+  let limit = 999;
+  if (batch) {
+    if (batch.teamFormat === 'single') {
+      limit = batch.teamSize;
+    }
+    else {
+      limit = batch.teamSize ** 2;
+    }
+  }
   return {
-    limit: batch ? batch.teamSize ** 2 : 999,
+    limit: limit,
     activeCounter: batch ? batch.users.length : 0,
     user: state.app.user,
     batch: batch,

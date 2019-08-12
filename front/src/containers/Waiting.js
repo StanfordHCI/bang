@@ -18,7 +18,7 @@ import {bindActionCreators} from "redux";
 import {socket} from 'Actions/app'
 import {joinBatch, refreshActiveUsers} from 'Actions/batches'
 import Modal from 'Components/Modal'
-import { getUrlParams } from "../utils";
+// import { getUrlParams } from "../utils";
 
 class Waiting extends React.Component {
 
@@ -55,8 +55,8 @@ class Waiting extends React.Component {
     const topPadding = {
       marginTop: '36px',
     };
-    const [batchId, genNumber] = [getUrlParams().batchid, getUrlParams().gennumber]
-    if (batchId && genNumber)
+    // const [batchId, genNumber] = [getUrlParams().batchid, getUrlParams().gennumber]
+    // if (batchId && genNumber)
 
     return (
       <Container style={topPadding}>

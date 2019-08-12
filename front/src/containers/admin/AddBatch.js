@@ -13,9 +13,10 @@ import {connect} from "react-redux";
 import {addBatch, loadBatchList} from "Actions/admin";
 import {loadTemplateList} from "Actions/templates";
 import {bindActionCreators} from "redux";
-import {Field, reduxForm} from "redux-form";
+import {Field, reduxForm, formValueSelector} from "redux-form";
 import {renderField, renderTextArea} from 'Components/form/Text'
 import renderSelectField from 'Components/form/Select'
+import SurveyForm from "./SurveyForm";
 
 
 class AddBatch extends React.Component {
@@ -26,20 +27,35 @@ class AddBatch extends React.Component {
       options: [],
     }
   }
-
   componentWillMount(){
-    this.props.loadTemplateList({full:true})
-      .then(() => {
-        let options = this.props.templateList.map(x => {return {value: x._id, label: x.name}})
-        this.setState({isReady: true, options: options})
+    // this.props.loadTemplateList({full:true})
+    //   .then(() => {
+    //     let options = this.props.templateList.map(x => {return {value: x._id, label: x.name}})
+    //     this.setState({isReady: true, options: options})
+    //   })
+
+    // instead of loading the full list, we load singleTeam templates
+    // and multiTeam templates and put the into state for further usage
+    this.props.loadTemplateList({teamFormat: 'single'})
+      .then(() => {this.setState({singleTeamTemplateOptions: this.props.templateList.map(x => {return {value: x._id, label: x.name}})});
+      });
+    this.props.loadTemplateList({teamFormat: 'multi'})
+      .then(() => {this.setState({multiTeamTemplateOptions : this.props.templateList.map(x => {return {value: x._id, label: x.name}})});
       })
+      .then(() => this.props.loadTemplateList({full:true}));
     this.props.loadBatchList({remembered: true}).then(() => {
             let batchOptions = [{value: false, label: "Don't load"}];
             batchOptions = batchOptions.concat(this.props.batchList.map(x => {return {value: x._id, label: `${x.templateName}(${x.note}) ${x.createdAt}`}}));
-            console.log('batchOptions: ', batchOptions)
             this.setState({isReady: true, batchOptions: batchOptions})
           })
+  }
 
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    if (this.props.teamFormat !== prevProps.teamFormat) {
+      this.props.teamFormat === 'single' ?
+        this.setState({options: this.state.singleTeamTemplateOptions}) :
+        this.setState({options: this.state.multiTeamTemplateOptions});
+    }
   }
 
   handleSubmit(form) {
@@ -49,7 +65,7 @@ class AddBatch extends React.Component {
     batch.withAvatar = form.withAvatar;
     batch.withRoster = form.withRoster;
     batch.withAutoStop = form.withAutoStop;
-    // batch.teamFormat = form.teamFormat;
+    batch.teamFormat = form.teamFormat;
     batch.rememberTeamOrder = form.rememberTeamOrder;
     batch.loadTeamOrder = form.loadTeamOrder;
     this.props.addBatch(batch)
@@ -66,16 +82,17 @@ class AddBatch extends React.Component {
               <h5 className='bold-text'>Add batch</h5>
             </div>
             <form className='form form--horizontal' style={{paddingBottom: '5vh'}} onSubmit={handleSubmit(this.handleSubmit.bind(this))}>
-              {/*<div className='form__form-group'>*/}
-              {/*  <label className='form__form-group-label'>Single-team or Multi-team?</label>*/}
-              {/*  <div className='form__form-group-field'>*/}
-              {/*    <Field*/}
-              {/*      name='teamFormat'*/}
-              {/*      component={renderSelectField}*/}
-              {/*      options={[{value: 'single', label: 'Single-team'}, {value: 'multi', label: 'Multi-team'}]}*/}
-              {/*    />*/}
-              {/*  </div>*/}
-              {/*</div>*/}
+              <div className='form__form-group'>
+                <label className='form__form-group-label'>Single-team or Multi-team?</label>
+                <div className='form__form-group-field'>
+                  <Field
+                    name='teamFormat'
+                    component={renderSelectField}
+                    options={[{value: 'single', label: 'Single-team'}, {value: 'multi', label: 'Multi-team'}]}
+                    onChange={this.loadFilteredTemplateList}
+                  />
+                </div>
+              </div>
               <div className='form__form-group'>
                 <label className='form__form-group-label'>Select template:</label>
                 <div className='form__form-group-field'>
@@ -191,9 +208,9 @@ const validate = (values, props) => {
   if (values.loadTeamOrder == null) {
     errors.loadTeamOrder = 'required'
   }
-  // if (values.teamFormat == null) {
-  //   errors.teamFormat = 'required'
-  // }
+  if (values.teamFormat == null) {
+    errors.teamFormat = 'required'
+  }
 
   return errors
 };
@@ -205,10 +222,14 @@ AddBatch = reduxForm({
   validate,
 })(AddBatch);
 
+const selector = formValueSelector('SurveyForm');
+
 function mapStateToProps(state) {
+  console.log('state: ', state)
   return {
     templateList: state.template.templateList,
     batchList: state.admin.batchList,
+    teamFormat: selector(state, 'teamFormat'),
   }
 }
 

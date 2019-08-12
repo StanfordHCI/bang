@@ -6,7 +6,17 @@ import {Chat} from '../models/chats'
 import {Batch} from '../models/batches'
 import {Bonus} from '../models/bonuses'
 import {Survey} from '../models/surveys'
-import {clearRoom, expireHIT, assignQual, payBonus, chooseOne, runningLive, notifyWorkers, getBatchTime} from './utils'
+import {
+  clearRoom,
+  expireHIT,
+  assignQual,
+  payBonus,
+  chooseOne,
+  runningLive,
+  notifyWorkers,
+  getBatchTime,
+  bestRound
+} from "./utils";
 import {errorHandler} from '../services/common'
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
@@ -14,7 +24,7 @@ const randomAnimal = "Squirrel Rhino Horse Pig Panda Monkey Lion Orangutan Goril
 const randomAdjective = "new small young little likely nice cultured snappy spry conventional".split(" ");
 
 
-export const joinBatch = async function (data, socket, io, batch = None) {
+export const joinBatch = async function (data, socket, io, batch) {
   try {
     let batches = await Batch.find({status: 'waiting'}).sort({'createdAt': 1}).lean().exec();
     if (!batches || !batches.length) {
@@ -66,7 +76,14 @@ export const joinBatch = async function (data, socket, io, batch = None) {
       socket.emit('send-error', 'You cannot join. Reason: ' + reason)
       return;
     }
-    if (batch.users.length >= batch.teamSize ** 2 && batch.status === 'waiting') { //start batch
+    let batchReady = false;
+    if (batch.teamFormat === 'single') {
+      batchReady = batch.users.length >= batch.teamSize && batch.status === 'waiting';
+    }
+    else {
+      batchReady = batch.users.length >= batch.teamSize ** 2 && batch.status === 'waiting'
+    }
+    if (batchReady) { //start batch
       clearRoom(batch.preChat, io);
       await startBatch(batch, socket, io)
     }
@@ -143,7 +160,8 @@ const startBatch = async function (batch, socket, io) {
   try {
     await timeout(3000);
     const users = await User.find({batch: batch._id}).lean().exec();
-    if (users.length !== parseInt(batch.teamSize) ** 2) {
+    const expectedUsersLength = batch.teamFormat === 'single' ? parseInt(batch.teamSize) : parseInt(batch.teamSize) ** 2;
+    if (users.length !== expectedUsersLength) {
       logger.error(module, 'wrong users length - ' + users.length + '; batch will be finished');
       await Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}).lean().exec()
       await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null}})
@@ -305,6 +323,7 @@ const generateTeams = (roundGen, users, roundNumber, oldNicks) => {
 }
 
 const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io) => {
+  console.log('best team: ', bestRound(batch));
   const task = batch.tasks[i];
   let roundObject = {startTime: new Date(), number: i + 1, teams: [], status: task.hasPreSurvey ? 'presurvey' : 'active', endTime: null};
   let emptyChats = [];

@@ -174,5 +174,6 @@ const generateSelectOptions = (template) => {
     })
     return task;
   })
+  console.log('template: ', JSON.stringify(template));
   return template
 }

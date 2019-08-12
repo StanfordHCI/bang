@@ -3,6 +3,7 @@ import {Template} from '../models/templates'
 import {errorHandler} from '../services/common'
 
 export const loadTemplateList = async function (req, res) {
+  console.log(req.query);
   try {
     let select = '';
     if (req.query.full) {
@@ -10,7 +11,12 @@ export const loadTemplateList = async function (req, res) {
     } else {
       select = 'name teamSize'
     }
-    const templateList = await Template.find({}).select(select).lean().exec();
+    let predicate = {}
+    if (req.query.teamFormat) {
+      if (req.query.teamFormat === 'single') predicate = {teamFormat: 'single'};
+      else predicate = {teamFormat: { $ne: 'single'}};
+    }
+    const templateList = await Template.find(predicate).select(select).lean().exec();
     res.json({templateList: templateList})
   } catch (e) {
     errorHandler(e, 'load templates error')
@@ -29,6 +35,7 @@ export const loadTemplate = async function (req, res) {
 export const addTemplate = async function (req, res) {
   try {
     const template = await Template.create(req.body);
+    console.log('template: ', template)
     res.json({template: template})
   } catch (e) {
     errorHandler(e, 'add template error')

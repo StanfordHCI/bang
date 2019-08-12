@@ -17,7 +17,7 @@ import {
   expireHIT,
   assignQual,
   getBatchTime,
-  runningLive, payBonus, clearRoom, mturk, listAssignmentsForHIT
+  runningLive, payBonus, clearRoom, mturk, listAssignmentsForHIT, createOneTeam
 } from "./utils";
 import {timeout} from './batches'
 
@@ -30,6 +30,7 @@ import {activeCheck} from "./users";
 
 export const addBatch = async function (req, res) {
   try {
+    const teamFormat = req.body.teamFormat;
     const batches = await Batch.find({$or: [{status: 'waiting'}, {status: 'active'}]}).select('tasks teamSize roundMinutes surveyMinutes numRounds').lean().exec();
     let batchSumCost = 0;
     batches.forEach(batch => {
@@ -37,6 +38,7 @@ export const addBatch = async function (req, res) {
       batchSumCost = batchSumCost + moneyForBatch;
     })
     let newBatch = req.body;
+    console.log('newBatch: ', newBatch);
     if (process.env.MTURK_MODE !== 'off') {
       let balance = await getAccountBalance();
       balance = parseFloat(balance.AvailableBalance);
@@ -58,7 +60,14 @@ export const addBatch = async function (req, res) {
     newBatch.status = 'waiting';
     newBatch.users = [], newBatch.expRounds = [], newBatch.roundGen = [];
     let tasks = [], nonExpCounter = 0;
-    let roundGen = createTeams(newBatch.teamSize, newBatch.numRounds - newBatch.numExpRounds + 1, letters.slice(0, newBatch.teamSize ** 2));
+    let roundGen;
+    if (teamFormat === 'single') {
+      console.log('single');
+      roundGen = createOneTeam(newBatch.teamSize, newBatch.numRounds - newBatch.numExpRounds + 1, letters.slice(0, newBatch.teamSize ** 2));
+    }
+    else {
+      roundGen = createTeams(newBatch.teamSize, newBatch.numRounds - newBatch.numExpRounds + 1, letters.slice(0, newBatch.teamSize ** 2));
+    }
     for (let i = 0; i < newBatch.numExpRounds; i++) {
       const min = newBatch.expRounds[i - 1] ? newBatch.expRounds[i - 1] + 1 : 0;
       const max = newBatch.numRounds - (newBatch.numExpRounds - i - 1) * 2;

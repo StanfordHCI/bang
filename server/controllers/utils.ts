@@ -1,3 +1,5 @@
+import { Survey } from "../models/surveys";
+
 require('dotenv').config({path: './.env'});
 export const runningLive = process.env.MTURK_MODE === "prod";
 import * as AWS from "aws-sdk";
@@ -356,6 +358,23 @@ export const createTeams = (teamSize: number, numRounds: number, people: string[
   return roundGen;
 };
 
+export let createOneTeam: (teamSize: number, numRounds: number, people: any[]) => void;
+createOneTeam = (teamSize: number, numRounds: number, people: any[]) => {
+  const rounds = [];
+  while (rounds.length < numRounds) {
+    const round = {
+      teams: undefined
+    }
+    const teams = [{
+      users: undefined
+    }]; // There will be only one team
+    teams[0].users = Array.from(Array(teamSize).keys());
+    round.teams = teams;
+    rounds.push(round)
+  }
+  return rounds;
+};
+
 export const getBatchTime = (batch) => {
   let result = 0;
   batch.tasks.forEach(task => {
@@ -393,4 +412,27 @@ export const listWorkersWithQualificationType = (params) => {
     );
   })
 };
+
+// Returns the index of round in which the team has the best results
+// Used only in single-team batches
+export const bestRound = async (batch) => {
+  const users = batch.users;
+  const numRounds = batch.numRounds;
+  const points = []
+  for (let i = 0; i < numRounds; ++i) {
+    const surveys = await Survey.find({ batch: batch._id, round: i + 1, surveyType: 'midsurvey' });
+    // user's score is a sum of all answers, where answer is the answer without letters (e.g 1: Strongly Agree => 1)
+    if (surveys) {
+      const score = surveys.map((surv) => surv.questions.map(q => parseInt(q.result) + 1)).reduce((a, b) => {
+        return parseInt(a) + parseInt(b);
+      });
+    }
+    else console.log('no surveys to calculate score!');
+
+
+    console.log('score: ', score);
+    points[i] = score;
+  }
+  console.log('points: ', points);
+}
 

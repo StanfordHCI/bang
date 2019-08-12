@@ -314,6 +314,18 @@ class TemplateForm extends React.Component {
               </Row>
               <Row>
                 <Col className='form__form-group'>
+                  <label className='form__form-group-label'>Single-Team or Multi-Team?:</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                      name='teamFormat'
+                      component={renderSelectField}
+                      options={[{value: 'single', label: 'Single-team'}, {value: 'multi', label: 'Multi-team'}]}
+                    />
+                  </div>
+                </Col>
+              </Row>
+              <Row>
+                <Col className='form__form-group'>
                   <label className='form__form-group-label'>Name:</label>
                   <div className='form__form-group-field'>
                     <Field
@@ -517,7 +529,10 @@ const validate = (values, props) => {
       }
     }
 
-  })
+  });
+  if (values.teamFormat == null) {
+    errors.teamFormat = 'required'
+  }
 
   return errors
 };
