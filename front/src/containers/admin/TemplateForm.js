@@ -437,8 +437,8 @@ const validate = (values, props) => {
   }
   if (!values.numRounds) {
     errors.numRounds = 'required'
-  } else if (parseInt(values.numRounds) < 4 || parseInt(values.teamSize) > 1 &&
-    (parseInt(values.numRounds) > parseInt(values.teamSize) + parseInt(values.numExpRounds))) {
+  } else if (values.teamFormat !== 'single' && (parseInt(values.numRounds) < 4 || parseInt(values.teamSize) > 1 &&
+    (parseInt(values.numRounds) > parseInt(values.teamSize) + parseInt(values.numExpRounds)))) {
     errors.numRounds = 'invalid value'
   }
   if (!values.teamSize) {

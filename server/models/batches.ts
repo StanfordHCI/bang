@@ -29,6 +29,7 @@ let  BatchSchema = new Schema({
       chat: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat', required: true},
     }],
     number: Number,
+    score: {type: Number, default: 0},
   }],
   templateName: {type: String, required: true},
   preChat: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat'},

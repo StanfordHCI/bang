@@ -3,6 +3,7 @@ import { Survey } from "../models/surveys";
 require('dotenv').config({path: './.env'});
 export const runningLive = process.env.MTURK_MODE === "prod";
 import * as AWS from "aws-sdk";
+import { Batch } from "../models/batches";
 AWS.config.accessKeyId = process.env.AWS_ID;
 AWS.config.secretAccessKey = process.env.AWS_KEY;
 AWS.config.region = "us-east-1";
@@ -415,24 +416,38 @@ export const listWorkersWithQualificationType = (params) => {
 
 // Returns the index of round in which the team has the best results
 // Used only in single-team batches
+// If an error occurs, returns undefined, but that should not happen
 export const bestRound = async (batch) => {
-  const users = batch.users;
   const numRounds = batch.numRounds;
-  const points = []
-  for (let i = 0; i < numRounds; ++i) {
+  const points = Array(numRounds - 1); // storage for round scores
+  for (let i = 0; i < numRounds - 1; ++i) {
     const surveys = await Survey.find({ batch: batch._id, round: i + 1, surveyType: 'midsurvey' });
-    // user's score is a sum of all answers, where answer is the answer without letters (e.g 1: Strongly Agree => 1)
-    if (surveys) {
-      const score = surveys.map((surv) => surv.questions.map(q => parseInt(q.result) + 1)).reduce((a, b) => {
+    // user's score is a sum of all select answer's values for example:
+    /*
+    * User1: 0 (strongly disagree)
+    * User2: 4 (strongly agree)
+    * score = (0 + 1) + (4 + 1) = 6
+    * */
+    let score = 0;
+    try {
+      score = surveys.map((surv) => surv.questions.map(q => parseInt(q.result) + 1)).reduce((a, b) => {
         return parseInt(a) + parseInt(b);
       });
     }
-    else console.log('no surveys to calculate score!');
-
-
-    console.log('score: ', score);
+    catch (e) {
+      console.log('no surveys to calculate score!');
+      score = 0;
+    }
     points[i] = score;
   }
-  console.log('points: ', points);
-}
+
+  // set score value for each round in round of batch
+  points.forEach((x, index) => {
+    const setObject = {};
+    setObject[`rounds.${index}.score`] = x ? x : 0;
+    console.log('setObject: ', setObject);
+    Batch.findByIdAndUpdate(batch._id, { $set: setObject})
+  });
+  return points.length ? points.indexOf(Math.max(...points)) : undefined;
+};
 
