@@ -225,7 +225,6 @@ AddBatch = reduxForm({
 const selector = formValueSelector('SurveyForm');
 
 function mapStateToProps(state) {
-  console.log('state: ', state)
   return {
     templateList: state.template.templateList,
     batchList: state.admin.batchList,

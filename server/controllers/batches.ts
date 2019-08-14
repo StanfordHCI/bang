@@ -249,7 +249,6 @@ export const receiveSurvey = async function (data, socket, io) {
         await notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Bonus was changed from ' + bonusPrice + '$ to 15$ for user ' + user.mturkId, 'Bang');
         bonusPrice = 15;
       }
-      console.log('bonusPrice: ', bonusPrice);
       const bonus = await payBonus(socket.mturkId, socket.assignmentId, bonusPrice.toFixed(2))
       if (bonus) {
         const newBonus = {
@@ -347,8 +346,11 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io) => {
         const bestRound = batchData.rounds[bestRoundIndex];
         teams = bestRound.teams; // only one team
         const chatId = bestRound.teams[0].chat;
-        chats = await Chat.findById(chatId);
-        chats = [chats];
+        const chat = await Chat.findById(chatId);
+        chat.messages.push({user: botId, nickname: 'helperBot', time: new Date(),
+            message: 'Task: ' + (task ? task.message : 'empty')});
+        await Chat.findByIdAndUpdate(chat._id, {$set: {messages: chat.messages}})
+        chats = [chat];
       }
       else {
         throw Error('Calculation of best round error');

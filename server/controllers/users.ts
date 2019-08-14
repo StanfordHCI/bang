@@ -35,7 +35,6 @@ export const activeCheck = async function (io) {
         limit = batch.teamSize ** 2 // multi-teamed batch
       }
     }
-    console.log('limit : ', limit);
     io.to('waitroom').emit('clients-active', {activeCounter: counter.waitchat, batchReady: !!batch, limit: limit});
     logger.info(module, 'connected: ' + counter.all + '; waitroom: ' + counter.waitroom + '; waitchat: ' + counter.waitchat + '; in active batches: ' + counter.active);
   } catch (e) {

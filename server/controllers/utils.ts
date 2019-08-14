@@ -414,15 +414,29 @@ export const listWorkersWithQualificationType = (params) => {
   })
 };
 
+// the standard one-liner doesn't work properly;
+const findMaxIndex = (points) => {
+  let maxPoints = -1;
+  let maxIndex = 0;
+  for (let i = 0; i < points.length; i++) {
+    if (points[i] && points[i] > maxPoints) {
+      maxPoints = points[i];
+      maxIndex = i;
+    }
+  }
+  return maxIndex;
+};
+
 // Returns the index of round in which the team has the best results
 // Used only in single-team batches
-// If an error occurs, returns undefined, but that should not happen
+// If an error occurs, returns 0, so the teams will be like in the round 1,
+// happens only if no one has completed any midSurveys at all
 export const bestRound = async (batch) => {
   const numRounds = batch.numRounds;
   const points = Array(numRounds - 1); // storage for round scores
   for (let i = 0; i < numRounds - 1; ++i) {
     const surveys = await Survey.find({ batch: batch._id, round: i + 1, surveyType: 'midsurvey' });
-    // user's score is a sum of all select answer's values for example:
+    // user's score is a sum of all select answer's values in ALL midSurveys of a round, for example:
     /*
     * User1: 0 (strongly disagree)
     * User2: 4 (strongly agree)
@@ -441,13 +455,15 @@ export const bestRound = async (batch) => {
     points[i] = score;
   }
 
+  // const prsHelper = []
   // set score value for each round in round of batch
-  points.forEach((x, index) => {
-    const setObject = {};
-    setObject[`rounds.${index}.score`] = x ? x : 0;
-    console.log('setObject: ', setObject);
-    Batch.findByIdAndUpdate(batch._id, { $set: setObject})
-  });
-  return points.length ? points.indexOf(Math.max(...points)) : undefined;
+  // points.forEach((score, index) => {
+  //   console.log('score: ', score, 'index: ', index, batch._id, `rounds.${index}.score`);
+  //   prsHelper.push(Batch.update({_id: batch._id, 'rounds.number': index + 1}, {$set: {'rounds.$.score': score}}));
+  //   console.log(Batch.update({_id: batch._id, 'rounds.number': index + 1}, {$set: {'rounds.$.score': score}}));
+  // });
+  // await Promise.all(prsHelper);
+  const maxIndex = findMaxIndex(points);
+  return points.length ? maxIndex : 0;
 };
 

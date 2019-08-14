@@ -440,6 +440,8 @@ const validate = (values, props) => {
   } else if (values.teamFormat !== 'single' && (parseInt(values.numRounds) < 4 || parseInt(values.teamSize) > 1 &&
     (parseInt(values.numRounds) > parseInt(values.teamSize) + parseInt(values.numExpRounds)))) {
     errors.numRounds = 'invalid value'
+  } else if (values.teamFormat === 'single' && values.tasks && !values.tasks.some(x => x.hasMidSurvey)) {
+    errors.numRounds = 'at least 1 midsurvey required';
   }
   if (!values.teamSize) {
     errors.teamSize = 'required'

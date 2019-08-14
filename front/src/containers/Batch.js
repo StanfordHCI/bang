@@ -133,7 +133,7 @@ class Batch extends React.Component {
 
   componentDidUpdate(prevProps, prevState, snapshot) {
     if (prevProps.batch && this.props.batch) {
-      console.log(prevProps.batch.status, this.props.batch.status)
+      // console.log(prevProps.batch.status, this.props.batch.status)
     }
     if (this.state.timeLeft === 0 && prevState.timeLeft) {
       this.setState({
@@ -158,7 +158,6 @@ class Batch extends React.Component {
     }
 
     if (!this.state.isStartNotifySent && nextProps.batch && nextProps.batch.status === 'active') {
-      console.log('start')
       this.setState({
         isStartNotifySent: true,
         notifyTitle: 'Bang: started!',

@@ -35,7 +35,6 @@ export const loadTemplate = async function (req, res) {
 export const addTemplate = async function (req, res) {
   try {
     const template = await Template.create(req.body);
-    console.log('template: ', template)
     res.json({template: template})
   } catch (e) {
     errorHandler(e, 'add template error')
