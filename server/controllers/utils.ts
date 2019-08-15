@@ -444,9 +444,6 @@ export const bestRound = async (batch) => {
     * */
     let score = 0;
     try {
-      score = surveys.map((surv) => surv.questions.map(q => {return parseInt(q.result) + 1 ? parseInt(q.result) + 1 : 0})).reduce((a, b) => {
-        return parseInt(a) + parseInt(b);
-      });
       const questions = surveys.map(surv => surv.questions);
       const questionResults = questions.map(x => x.map(q => {return parseInt(q.result) + 1 ? parseInt(q.result) + 1 : 0})).reduce((a, b) => a.concat(b));
       score = questionResults.reduce((a, b) => {
@@ -462,7 +459,6 @@ export const bestRound = async (batch) => {
   const prsHelper = []
   // set score value for each round in round of batch
   points.forEach((score, index) => {
-    console.log('points: ', points, 'score: ', score, 'index: ', index, batch._id, `rounds.${index}.score`);
     const setObject = {};
     setObject[`rounds.${index}.score`] = score;
     prsHelper.push(Batch.update({_id: batch._id}, {$set: setObject}));
