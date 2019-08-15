@@ -436,6 +436,7 @@ export const bestRound = async (batch) => {
   const points = Array(numRounds); // storage for round scores
   for (let i = 0; i < numRounds; ++i) {
     const surveys = await Survey.find({ batch: batch._id, round: i + 1, surveyType: 'midsurvey' });
+    const answerTypes = batch.tasks[i].survey.map(surv => surv.type);
     // user's score is a sum of all select answer's values in ALL midSurveys of a round, for example:
     /*
     * User1: 0 (strongly disagree)
@@ -445,7 +446,8 @@ export const bestRound = async (batch) => {
     let score = 0;
     try {
       const questions = surveys.map(surv => surv.questions);
-      const questionResults = questions.map(x => x.map(q => {return parseInt(q.result) + 1 ? parseInt(q.result) + 1 : 0})).reduce((a, b) => a.concat(b));
+      const questionResults = questions.map(x => x.map((q, index) => {return answerTypes[index] === 'select' &&
+      parseInt(q.result) + 1 ? parseInt(q.result) + 1 : 0})).reduce((a, b) => a.concat(b));
       score = questionResults.reduce((a, b) => {
         return parseInt(a) + parseInt(b);
       });
@@ -457,7 +459,7 @@ export const bestRound = async (batch) => {
   }
 
   const prsHelper = []
-  // set score value for each round in round of batch
+  // set score value for each round of batch
   points.forEach((score, index) => {
     const setObject = {};
     setObject[`rounds.${index}.score`] = score;
