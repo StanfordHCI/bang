@@ -28,14 +28,7 @@ class AddBatch extends React.Component {
     }
   }
   componentWillMount(){
-    // this.props.loadTemplateList({full:true})
-    //   .then(() => {
-    //     let options = this.props.templateList.map(x => {return {value: x._id, label: x.name}})
-    //     this.setState({isReady: true, options: options})
-    //   })
-
-    // instead of loading the full list, we load singleTeam templates
-    // and multiTeam templates and put the into state for further usage
+    // we load singleTeam templates and multiTeam templates and put the into state for further usage
     this.props.loadTemplateList({teamFormat: 'single'})
       .then(() => {this.setState({singleTeamTemplateOptions: this.props.templateList.map(x => {return {value: x._id, label: x.name}})});
       });

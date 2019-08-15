@@ -3,7 +3,6 @@ import {Template} from '../models/templates'
 import {errorHandler} from '../services/common'
 
 export const loadTemplateList = async function (req, res) {
-  console.log(req.query);
   try {
     let select = '';
     if (req.query.full) {
