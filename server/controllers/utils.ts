@@ -433,8 +433,8 @@ const findMaxIndex = (points) => {
 // happens only if no one has completed any midSurveys at all
 export const bestRound = async (batch) => {
   const numRounds = batch.numRounds;
-  const points = Array(numRounds - 1); // storage for round scores
-  for (let i = 0; i < numRounds - 1; ++i) {
+  const points = Array(numRounds); // storage for round scores
+  for (let i = 0; i < numRounds; ++i) {
     const surveys = await Survey.find({ batch: batch._id, round: i + 1, surveyType: 'midsurvey' });
     // user's score is a sum of all select answer's values in ALL midSurveys of a round, for example:
     /*
@@ -444,25 +444,30 @@ export const bestRound = async (batch) => {
     * */
     let score = 0;
     try {
-      score = surveys.map((surv) => surv.questions.map(q => parseInt(q.result) + 1)).reduce((a, b) => {
+      score = surveys.map((surv) => surv.questions.map(q => {return parseInt(q.result) + 1 ? parseInt(q.result) + 1 : 0})).reduce((a, b) => {
+        return parseInt(a) + parseInt(b);
+      });
+      const questions = surveys.map(surv => surv.questions);
+      const questionResults = questions.map(x => x.map(q => {return parseInt(q.result) + 1 ? parseInt(q.result) + 1 : 0})).reduce((a, b) => a.concat(b));
+      score = questionResults.reduce((a, b) => {
         return parseInt(a) + parseInt(b);
       });
     }
     catch (e) {
-      console.log('no surveys to calculate score!');
       score = 0;
     }
     points[i] = score;
   }
 
-  // const prsHelper = []
+  const prsHelper = []
   // set score value for each round in round of batch
-  // points.forEach((score, index) => {
-  //   console.log('score: ', score, 'index: ', index, batch._id, `rounds.${index}.score`);
-  //   prsHelper.push(Batch.update({_id: batch._id, 'rounds.number': index + 1}, {$set: {'rounds.$.score': score}}));
-  //   console.log(Batch.update({_id: batch._id, 'rounds.number': index + 1}, {$set: {'rounds.$.score': score}}));
-  // });
-  // await Promise.all(prsHelper);
+  points.forEach((score, index) => {
+    console.log('points: ', points, 'score: ', score, 'index: ', index, batch._id, `rounds.${index}.score`);
+    const setObject = {};
+    setObject[`rounds.${index}.score`] = score;
+    prsHelper.push(Batch.update({_id: batch._id}, {$set: setObject}));
+  });
+  await Promise.all(prsHelper);
   const maxIndex = findMaxIndex(points);
   return points.length ? maxIndex : 0;
 };

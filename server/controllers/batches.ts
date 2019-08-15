@@ -224,12 +224,15 @@ export const receiveSurvey = async function (data, socket, io) {
     await Survey.create(newSurvey)
     if (process.env.MTURK_MODE !== 'off' && newSurvey.surveyType === 'final') {
       const [batch, user] = await Promise.all([
-        Batch.findById(newSurvey.batch).select('_id roundMinutes numRounds surveyMinutes tasks').lean().exec(),
+        Batch.findById(newSurvey.batch).select('_id roundMinutes numRounds surveyMinutes tasks teamFormat').lean().exec(),
         User.findById(newSurvey.user).select('_id systemStatus mturkId').lean().exec()
       ])
       if (!batch) {
         logger.info(module, 'Blocked survey, survey/user does not have batch');
         return;
+      }
+      if (batch.teamFormat === 'single') {
+        await bestRound(batch); // set the field 'score' for every round with a midSurvey
       }
       const chats = await Chat.find({batch: batch._id});
       let userWasActiveInChats = {};
