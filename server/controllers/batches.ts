@@ -24,7 +24,7 @@ const randomAnimal = "Squirrel Rhino Horse Pig Panda Monkey Lion Orangutan Goril
 const randomAdjective = "new small young little likely nice cultured snappy spry conventional".split(" ");
 
 
-export const joinBatch = async function (data, socket, io, batch) {
+export const joinBatch = async function (data, socket, io) {
   try {
     let batches = await Batch.find({status: 'waiting'}).sort({'createdAt': 1}).lean().exec();
     if (!batches || !batches.length) {
@@ -168,9 +168,11 @@ const startBatch = async function (batch, socket, io) {
       return;
     }
 
-    // if (process.env.MTURK_MODE !== 'off') {
-    //   await payStartBonus(users, batch);
-    // }
+    if (process.env.MTURK_MODE !== 'off') {
+      for (const user of users) {
+        await assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL);
+      }
+    }
 
     const startBatchInfo = {status: 'active', startTime: new Date()};
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: startBatchInfo}).lean().exec()
@@ -234,19 +236,7 @@ export const receiveSurvey = async function (data, socket, io) {
       if (batch.teamFormat === 'single') {
         await bestRound(batch); // set the field 'score' for every round with a midSurvey
       }
-      const chats = await Chat.find({batch: batch._id});
-      let userWasActiveInChats = {};
-      for (const chat of chats) {
-        userWasActiveInChats[chat._id] = false
-        for (const message of chat.messages) {
-          if (JSON.stringify(user._id) == JSON.stringify(message.user)) {
-              userWasActiveInChats[chat._id] = true;
-              break;
-          }
-        }
-      }
-      const completedSurveys = await Survey.count({user: socket.userId, batch: data.batch, surveyType: {$in: ['presurvey', 'midsurvey']}});
-      let bonusPrice = (12 * getBatchTime(batch) - 1.00 + 1.00); // we pay extra 1$ instead of paying it on batchStart
+      let bonusPrice = (12 * getBatchTime(batch));
       if (bonusPrice > 15) {
         logger.info(module, 'Bonus was changed for batch ' + newSurvey.batch)
         await notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Bonus was changed from ' + bonusPrice + '$ to 15$ for user ' + user.mturkId, 'Bang');
@@ -277,7 +267,6 @@ export const timeout = (ms) => {
 export const payStartBonus = async (users, batch) => {
   let bangPrs = [];
   users.forEach(user => {
-    bangPrs.push(assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL))
     bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, 1.00))
     bangPrs.push(Bonus.create({
       batch: batch._id,
@@ -349,10 +338,13 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io) => {
         const bestRound = batchData.rounds[bestRoundIndex];
         teams = bestRound.teams; // only one team
         const chatId = bestRound.teams[0].chat;
-        const chat = await Chat.findById(chatId);
-        chat.messages.push({user: botId, nickname: 'helperBot', time: new Date(),
-            message: 'Task: ' + (task ? task.message : 'empty')});
-        await Chat.findByIdAndUpdate(chat._id, {$set: {messages: chat.messages}})
+        const newMessage = {
+          user: botId,
+          nickname: 'helperBot',
+          message: 'Task: ' + (task ? task.message : 'empty'),
+          time: new Date()
+        };
+        const chat = await Chat.findByIdAndUpdate(chatId, { $addToSet: { messages: newMessage} }, {new: true}).populate('batch').lean().exec();
         chats = [chat];
       }
       else {

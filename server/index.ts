@@ -150,7 +150,7 @@ if (process.env.MTURK_MODE !== 'off') {
           const liveTime = (moment()).diff(moment(batch.createdAt), 'minutes')
           if (liveTime > 35 && batch.withAutoStop) {
             const users = await User.find({batch: batch._id}).lean().exec();
-            await payStartBonus(users, batch);
+            prs.push(payStartBonus(users, batch));
             prs.push(Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}));
             prs.push(User.updateMany({batch:  batch._id}, { $set: { batch: null, realNick: null, fakeNick: null, currentChat: null }}))
             io.to(batch._id.toString()).emit('stop-batch', {status: 'waiting'})
