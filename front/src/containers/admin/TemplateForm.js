@@ -314,6 +314,18 @@ class TemplateForm extends React.Component {
               </Row>
               <Row>
                 <Col className='form__form-group'>
+                  <label className='form__form-group-label'>Single-Team or Multi-Team?:</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                      name='teamFormat'
+                      component={renderSelectField}
+                      options={[{value: 'single', label: 'Single-team'}, {value: 'multi', label: 'Multi-team'}]}
+                    />
+                  </div>
+                </Col>
+              </Row>
+              <Row>
+                <Col className='form__form-group'>
                   <label className='form__form-group-label'>Name:</label>
                   <div className='form__form-group-field'>
                     <Field
@@ -416,7 +428,7 @@ class TemplateForm extends React.Component {
 }
 
 const validate = (values, props) => {
-  console.log(values, props)
+  console.log(values, props);
   const errors = {};
   if (!values.name) {
     errors.name = 'required'
@@ -425,9 +437,12 @@ const validate = (values, props) => {
   }
   if (!values.numRounds) {
     errors.numRounds = 'required'
-  } else if (parseInt(values.numRounds) < 4 || parseInt(values.teamSize) > 1 &&
-    (parseInt(values.numRounds) > parseInt(values.teamSize) + parseInt(values.numExpRounds))) {
+  } else if (values.numRounds < 2 || values.teamFormat !== 'single' && (parseInt(values.numRounds) < 4 || parseInt(values.teamSize) > 1 &&
+    (parseInt(values.numRounds) > parseInt(values.teamSize) + parseInt(values.numExpRounds)))) {
     errors.numRounds = 'invalid value'
+  } else if (values.teamFormat === 'single' && values.tasks && !values.tasks.some(x => x.survey &&
+    x.survey.some(x => x.type === 'select'))) {
+    errors.numRounds = 'at least 1 midsurvey with select-options question required';
   }
   if (!values.teamSize) {
     errors.teamSize = 'required'
@@ -517,7 +532,10 @@ const validate = (values, props) => {
       }
     }
 
-  })
+  });
+  if (values.teamFormat == null) {
+    errors.teamFormat = 'required'
+  }
 
   return errors
 };

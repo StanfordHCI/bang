@@ -11,7 +11,7 @@ export const activeCheck = async function (io) {
   try {
     const [users, batch] = await Promise.all([
       User.find({connected: true}).populate({path: 'batch', select: 'status'}).select('mturkId').lean().exec(),
-      Batch.findOne({status: 'waiting'}).select('teamSize').lean().exec()
+      Batch.findOne({status: 'waiting'}).select('teamSize teamFormat').lean().exec()
     ])
     let counter = {all: 0, waitchat: 0, waitroom: 0, active: 0}
     if (users && users.length) {
@@ -26,8 +26,16 @@ export const activeCheck = async function (io) {
         }
       })
     }
-
-    io.to('waitroom').emit('clients-active', {activeCounter: counter.waitchat, batchReady: !!batch, limit: batch ? batch.teamSize ** 2 : 999});
+    let limit = 999;
+    if (batch) {
+      if (batch.teamFormat === 'single') {
+        limit = batch.teamSize // single-teamed batch
+      }
+      else {
+        limit = batch.teamSize ** 2 // multi-teamed batch
+      }
+    }
+    io.to('waitroom').emit('clients-active', {activeCounter: counter.waitchat, batchReady: !!batch, limit: limit});
     logger.info(module, 'connected: ' + counter.all + '; waitroom: ' + counter.waitroom + '; waitchat: ' + counter.waitchat + '; in active batches: ' + counter.active);
   } catch (e) {
     errorHandler(e, 'active check error')

@@ -17,7 +17,7 @@ import {
   expireHIT,
   assignQual,
   getBatchTime,
-  runningLive, payBonus, clearRoom, mturk, listAssignmentsForHIT
+  runningLive, payBonus, clearRoom, mturk, listAssignmentsForHIT, createOneTeam
 } from "./utils";
 import {timeout} from './batches'
 
@@ -30,6 +30,7 @@ import {activeCheck} from "./users";
 
 export const addBatch = async function (req, res) {
   try {
+    const teamFormat = req.body.teamFormat;
     const batches = await Batch.find({$or: [{status: 'waiting'}, {status: 'active'}]}).select('tasks teamSize roundMinutes surveyMinutes numRounds').lean().exec();
     let batchSumCost = 0;
     batches.forEach(batch => {
@@ -58,31 +59,43 @@ export const addBatch = async function (req, res) {
     newBatch.status = 'waiting';
     newBatch.users = [], newBatch.expRounds = [], newBatch.roundGen = [];
     let tasks = [], nonExpCounter = 0;
-    let roundGen = createTeams(newBatch.teamSize, newBatch.numRounds - newBatch.numExpRounds + 1, letters.slice(0, newBatch.teamSize ** 2));
+    let roundGen;
+    if (teamFormat === 'single') {
+      roundGen = createOneTeam(newBatch.teamSize, newBatch.numRounds - 1, letters.slice(0, newBatch.teamSize ** 2));
+    }
+    else {
+      roundGen = createTeams(newBatch.teamSize, newBatch.numRounds - newBatch.numExpRounds + 1, letters.slice(0, newBatch.teamSize ** 2));
+    }
     for (let i = 0; i < newBatch.numExpRounds; i++) {
       const min = newBatch.expRounds[i - 1] ? newBatch.expRounds[i - 1] + 1 : 0;
       const max = newBatch.numRounds - (newBatch.numExpRounds - i - 1) * 2;
       const roundNumber = Math.floor(Math.random() * (max - min)) + 1 + min;
       newBatch.expRounds.push(roundNumber)
     }
-    for (let i = 0; i < newBatch.numRounds; i++) {
-      const expIndex = newBatch.expRounds.findIndex(x => x === i + 1);
-      if (expIndex > -1) {//exp round
-        tasks[i] = newBatch.tasks[expIndex];
-        if (expIndex === 0) { //first exp round
+    if (teamFormat !== 'single') {
+      for (let i = 0; i < newBatch.numRounds; i++) {
+        const expIndex = newBatch.expRounds.findIndex(x => x === i + 1);
+        if (expIndex > -1) {//exp round
+          tasks[i] = newBatch.tasks[expIndex];
+          if (expIndex === 0) { //first exp round
+            newBatch.roundGen[i] = JSON.parse(JSON.stringify(roundGen[roundGen.length - 1]));
+            roundGen.length = roundGen.length - 1;
+          } else { //same team
+            newBatch.roundGen[i] = newBatch.roundGen[newBatch.expRounds[0] - 1]
+          }
+        } else { //non-exp round
+          tasks[i] = newBatch.tasks[newBatch.numExpRounds + nonExpCounter];
           newBatch.roundGen[i] = JSON.parse(JSON.stringify(roundGen[roundGen.length - 1]));
           roundGen.length = roundGen.length - 1;
-        } else { //same team
-          newBatch.roundGen[i] = newBatch.roundGen[newBatch.expRounds[0] - 1]
+          nonExpCounter++;
         }
-      } else { //non-exp round
-        tasks[i] = newBatch.tasks[newBatch.numExpRounds + nonExpCounter];
-        newBatch.roundGen[i] = JSON.parse(JSON.stringify(roundGen[roundGen.length - 1]));
-        roundGen.length = roundGen.length - 1;
-        nonExpCounter++;
       }
+      newBatch.tasks = tasks;
     }
-    newBatch.tasks = tasks;
+    else {
+      newBatch.roundGen = roundGen;
+    }
+
 
     const batch = await Batch.create(newBatch);
     const preChat = await Chat.create({
@@ -125,7 +138,6 @@ export const addBatch = async function (req, res) {
         const loadingBatch = await Batch.findOne({_id: batchId});
         const roundGen = loadingBatch.roundGen;
         const rounds = loadingBatch.rounds;
-        console.log('rounds: ', rounds, 'loadingBatch: ', loadingBatch);
         const teams = rounds[0].teams;
         const genTeams = roundGen[0].teams;
         const batchUsers = [];
@@ -327,7 +339,6 @@ const startNotification = async (users) => {
     if (user.batchId) {
       url += '&batchId=' + user.batchId;
     }
-    console.log('url: ', url);
     const unsubscribe_url = process.env.HIT_URL + 'unsubscribe/' + user.mturkId;
     const message = 'Hi! Our HIT is now active. We are starting a new experiment on Bang. ' +
       'Your FULL participation will earn you a bonus of ~$12/hour. ' + '\n\n' +

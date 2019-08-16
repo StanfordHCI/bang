@@ -29,6 +29,7 @@ let  BatchSchema = new Schema({
       chat: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat', required: true},
     }],
     number: Number,
+    score: {type: Number, default: 0},
   }],
   templateName: {type: String, required: true},
   preChat: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat'},
@@ -70,5 +71,6 @@ let  BatchSchema = new Schema({
   withRoster: {type: Boolean, default: false, required: true},
   withAutoStop: {type: Boolean, default: true, required: true},
   rememberTeamOrder: {type: Boolean, default: false, required: true},
+  teamFormat: {type: String, required: true},
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);

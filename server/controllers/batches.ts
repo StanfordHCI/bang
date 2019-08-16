@@ -6,7 +6,17 @@ import {Chat} from '../models/chats'
 import {Batch} from '../models/batches'
 import {Bonus} from '../models/bonuses'
 import {Survey} from '../models/surveys'
-import {clearRoom, expireHIT, assignQual, payBonus, chooseOne, runningLive, notifyWorkers, getBatchTime} from './utils'
+import {
+  clearRoom,
+  expireHIT,
+  assignQual,
+  payBonus,
+  chooseOne,
+  runningLive,
+  notifyWorkers,
+  getBatchTime,
+  bestRound
+} from "./utils";
 import {errorHandler} from '../services/common'
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
@@ -14,7 +24,7 @@ const randomAnimal = "Squirrel Rhino Horse Pig Panda Monkey Lion Orangutan Goril
 const randomAdjective = "new small young little likely nice cultured snappy spry conventional".split(" ");
 
 
-export const joinBatch = async function (data, socket, io, batch = None) {
+export const joinBatch = async function (data, socket, io) {
   try {
     let batches = await Batch.find({status: 'waiting'}).sort({'createdAt': 1}).lean().exec();
     if (!batches || !batches.length) {
@@ -66,7 +76,14 @@ export const joinBatch = async function (data, socket, io, batch = None) {
       socket.emit('send-error', 'You cannot join. Reason: ' + reason)
       return;
     }
-    if (batch.users.length >= batch.teamSize ** 2 && batch.status === 'waiting') { //start batch
+    let batchReady = false;
+    if (batch.teamFormat === 'single') {
+      batchReady = batch.users.length >= batch.teamSize && batch.status === 'waiting';
+    }
+    else {
+      batchReady = batch.users.length >= batch.teamSize ** 2 && batch.status === 'waiting'
+    }
+    if (batchReady) { //start batch
       clearRoom(batch.preChat, io);
       await startBatch(batch, socket, io)
     }
@@ -143,16 +160,19 @@ const startBatch = async function (batch, socket, io) {
   try {
     await timeout(3000);
     const users = await User.find({batch: batch._id}).lean().exec();
-    if (users.length !== parseInt(batch.teamSize) ** 2) {
+    const expectedUsersLength = batch.teamFormat === 'single' ? parseInt(batch.teamSize) : parseInt(batch.teamSize) ** 2;
+    if (users.length !== expectedUsersLength) {
       logger.error(module, 'wrong users length - ' + users.length + '; batch will be finished');
       await Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}).lean().exec()
       await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null}})
       return;
     }
 
-    // if (process.env.MTURK_MODE !== 'off') {
-    //   await payStartBonus(users, batch);
-    // }
+    if (process.env.MTURK_MODE !== 'off') {
+      for (const user of users) {
+        await assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL);
+      }
+    }
 
     const startBatchInfo = {status: 'active', startTime: new Date()};
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: startBatchInfo}).lean().exec()
@@ -206,32 +226,22 @@ export const receiveSurvey = async function (data, socket, io) {
     await Survey.create(newSurvey)
     if (process.env.MTURK_MODE !== 'off' && newSurvey.surveyType === 'final') {
       const [batch, user] = await Promise.all([
-        Batch.findById(newSurvey.batch).select('_id roundMinutes numRounds surveyMinutes tasks').lean().exec(),
+        Batch.findById(newSurvey.batch).select('_id roundMinutes numRounds surveyMinutes tasks teamFormat').lean().exec(),
         User.findById(newSurvey.user).select('_id systemStatus mturkId').lean().exec()
       ])
       if (!batch) {
         logger.info(module, 'Blocked survey, survey/user does not have batch');
         return;
       }
-      const chats = await Chat.find({batch: batch._id});
-      let userWasActiveInChats = {};
-      for (const chat of chats) {
-        userWasActiveInChats[chat._id] = false
-        for (const message of chat.messages) {
-          if (JSON.stringify(user._id) == JSON.stringify(message.user)) {
-              userWasActiveInChats[chat._id] = true;
-              break;
-          }
-        }
+      if (batch.teamFormat === 'single') {
+        await bestRound(batch); // set the field 'score' for every round with a midSurvey
       }
-      const completedSurveys = await Survey.count({user: socket.userId, batch: data.batch, surveyType: {$in: ['presurvey', 'midsurvey']}});
-      let bonusPrice = (12 * getBatchTime(batch) - 1.00 + 1.00); // we pay extra 1$ instead of paying it on batchStart
+      let bonusPrice = (12 * getBatchTime(batch));
       if (bonusPrice > 15) {
         logger.info(module, 'Bonus was changed for batch ' + newSurvey.batch)
         await notifyWorkers([process.env.MTURK_NOTIFY_ID], 'Bonus was changed from ' + bonusPrice + '$ to 15$ for user ' + user.mturkId, 'Bang');
         bonusPrice = 15;
       }
-      console.log('bonusPrice: ', bonusPrice);
       const bonus = await payBonus(socket.mturkId, socket.assignmentId, bonusPrice.toFixed(2))
       if (bonus) {
         const newBonus = {
@@ -257,7 +267,6 @@ export const timeout = (ms) => {
 export const payStartBonus = async (users, batch) => {
   let bangPrs = [];
   users.forEach(user => {
-    bangPrs.push(assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL))
     bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, 1.00))
     bangPrs.push(Bonus.create({
       batch: batch._id,
@@ -308,12 +317,40 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io) => {
   const task = batch.tasks[i];
   let roundObject = {startTime: new Date(), number: i + 1, teams: [], status: task.hasPreSurvey ? 'presurvey' : 'active', endTime: null};
   let emptyChats = [];
-  let teams = generateTeams(batch.roundGen, users, i + 1, oldNicks)
-  for (let j = 0; j < teamSize; j++) {
-    emptyChats.push({batch: batch._id, messages: [{user: botId, nickname: 'helperBot', time: new Date(),
-        message: 'Task: ' + (task ? task.message : 'empty')}]})
+  let chats;
+  let teams;
+  const teamFormat = batch.teamFormat;
+  if (batch.numRounds !== i + 1 || teamFormat !== 'single') {
+    // if it is not the last round of single-teamed batch
+    // standard flow
+    teams = generateTeams(batch.roundGen, users, i + 1, oldNicks);
+    for (let j = 0; j < teamSize; j++) {
+      emptyChats.push({batch: batch._id, messages: [{user: botId, nickname: 'helperBot', time: new Date(),
+          message: 'Task: ' + (task ? task.message : 'empty')}]})
+    }
+    chats = await Chat.insertMany(emptyChats);
+    } else {
+      // if batch is single-teamed and the round is final, we do not generate teams, but get them from the best round
+      // also we do not generate chats and fake nicks
+      const bestRoundIndex = await bestRound(batch);
+      if (bestRoundIndex !== undefined) {
+        const batchData = await Batch.findById(batch._id);
+        const bestRound = batchData.rounds[bestRoundIndex];
+        teams = bestRound.teams; // only one team
+        const chatId = bestRound.teams[0].chat;
+        const newMessage = {
+          user: botId,
+          nickname: 'helperBot',
+          message: 'Task: ' + (task ? task.message : 'empty'),
+          time: new Date()
+        };
+        const chat = await Chat.findByIdAndUpdate(chatId, { $addToSet: { messages: newMessage} }, {new: true}).populate('batch').lean().exec();
+        chats = [chat];
+      }
+      else {
+        throw Error('Calculation of best round error');
+      }
   }
-  const chats = await Chat.insertMany(emptyChats);
   let prsHelper = [];
   teams.forEach((team, index) => {
     team.chat = chats[index]._id;
@@ -323,9 +360,10 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io) => {
     })
     return team;
   })
+  await Promise.all(prsHelper);
   roundObject.teams = teams;
   rounds.push(roundObject);
-  await Promise.all(prsHelper);
+
   batch = await Batch.findByIdAndUpdate(batch._id, {$set: {rounds: rounds, currentRound: roundObject.number}}).lean().exec();
   logger.info(module, batch._id + ' : Begin round ' + roundObject.number)
   io.to(batch._id.toString()).emit('refresh-batch', true)
