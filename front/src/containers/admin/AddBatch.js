@@ -29,6 +29,7 @@ class AddBatch extends React.Component {
   }
   componentWillMount(){
     // we load singleTeam templates and multiTeam templates and put the into state for further usage
+    console.log('teamFormat: ', this.props.teamFormat);
     this.props.loadTemplateList({teamFormat: 'single'})
       .then(() => {this.setState({singleTeamTemplateOptions: this.props.templateList.map(x => {return {value: x._id, label: x.name}})});
       });
@@ -36,18 +37,32 @@ class AddBatch extends React.Component {
       .then(() => {this.setState({multiTeamTemplateOptions : this.props.templateList.map(x => {return {value: x._id, label: x.name}})});
       })
       .then(() => this.props.loadTemplateList({full:true}));
-    this.props.loadBatchList({remembered: true}).then(() => {
-            let batchOptions = [{value: false, label: "Don't load"}];
-            batchOptions = batchOptions.concat(this.props.batchList.map(x => {return {value: x._id, label: `${x.templateName}(${x.note}) ${x.createdAt}`}}));
-            this.setState({isReady: true, batchOptions: batchOptions})
-          })
+
+    // we do the same thing with batches
+    this.props.loadBatchList({rememberTeamOrder: true, teamFormat: 'single'})
+      .then(() => {this.setState({singleTeamBatchOptions: this.props.batchList.map(x => {return {value: x._id, label: `${x.templateName}(${x.note}) ${x.createdAt}`}})});
+      });
+    this.props.loadBatchList({rememberTeamOrder: true, teamFormat: 'multi'})
+      .then(() => {this.setState({isReady: true,
+        multiTeamBatchOptions : this.props.batchList.map(x => {return {value: x._id, label: `${x.templateName}(${x.note}) ${x.createdAt}`}})});
+      })
+    // this.props.loadBatchList({remembered: true}).then(() => {
+    //         let batchOptions = [{value: false, label: "Don't load"}];
+    //         batchOptions = batchOptions.concat(this.props.batchList.map(x => {return {value: x._id, label: `${x.templateName}(${x.note}) ${x.createdAt}`}}));
+    //         this.setState({isReady: true, batchOptions: batchOptions})
+    //       })
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
+    console.log(this.state.singleTeamBatchOptions, this.state.multiTeamBatchOptions)
     if (this.props.teamFormat !== prevProps.teamFormat) {
-      this.props.teamFormat === 'single' ?
-        this.setState({options: this.state.singleTeamTemplateOptions}) :
-        this.setState({options: this.state.multiTeamTemplateOptions});
+      if (this.props.teamFormat === "single") {
+        this.setState({ options: this.state.singleTeamTemplateOptions,
+          batchOptions: [{value: false, label: "Don't load"}].concat(this.state.singleTeamBatchOptions) });
+      } else {
+        this.setState({ options: this.state.multiTeamTemplateOptions,
+          batchOptions: [{value: false, label: "Don't load"}].concat(this.state.multiTeamBatchOptions)});
+      }
     }
   }
 

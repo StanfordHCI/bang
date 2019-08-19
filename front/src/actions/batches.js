@@ -6,9 +6,10 @@ export const CHAT_FETCHED = 'CHAT_FETCHED';
 export const REFRESH_BATCH = 'REFRESH_BATCH';
 export const ADD_MESSAGE = 'ADD_MESSAGE'
 
-export const joinBatch = () => {
+export const joinBatch = (params) => {
   return function (dispatch) {
-    socket.emit('join-batch', {});
+    console.log('params: ', params);
+    socket.emit('join-batch', params);
     socket.once('joined-batch', (data) =>{
       dispatch({
         type: SET_USER,

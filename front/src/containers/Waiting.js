@@ -18,10 +18,9 @@ import {bindActionCreators} from "redux";
 import {socket} from 'Actions/app'
 import {joinBatch, refreshActiveUsers} from 'Actions/batches'
 import Modal from 'Components/Modal'
-// import { getUrlParams } from "../utils";
+import { getUrlParams } from "../utils";
 
 class Waiting extends React.Component {
-
   constructor(props) {
     super(props);
     this.state = {
@@ -30,14 +29,20 @@ class Waiting extends React.Component {
       batchReady: false,
       isReady: false,
       ignore: true,
-      title: ''
+      title: '',
+      joinParams: {},
     };
+    // console.log(this.state.batchId, this.state.genNumber)
     this.refresher = this.refresher.bind(this)
     socket.on('clients-active', this.refresher)
   }
 
 
   componentDidMount() {
+    const batchId = getUrlParams().batchid;
+    const genNumber = getUrlParams().gennumber;
+    const joinParams = batchId && genNumber ? {batchId: batchId, genNumber: genNumber} : {};
+    this.setState({joinParams: joinParams});
     refreshActiveUsers()
   }
 
@@ -49,15 +54,13 @@ class Waiting extends React.Component {
 
   }
 
+
   render() {
     const {user, joinBatch} = this.props;
     const limit = this.state.limit;
     const topPadding = {
       marginTop: '36px',
     };
-    // const [batchId, genNumber] = [getUrlParams().batchid, getUrlParams().gennumber]
-    // if (batchId && genNumber)
-
     return (
       <Container style={topPadding}>
         <Row>
@@ -78,7 +81,7 @@ class Waiting extends React.Component {
                   <p> <b>IMPORTANT:</b> If you intend to complete the task, please do not leave because it will mean other MTurkers will have to wait longer for the task. If enough people arrive, you'll be bonused $1 for waiting. Provided you stay for the <b>whole task,</b> we will bonus to a rate of approximately <b>$12 per hour</b>. If there are never enough people, we will automatically submit and accept for the base rate.</p>
                   
                   
-                  <Button className="btn btn-primary" onClick={() => joinBatch()}>Join Batch</Button>
+                  <Button className="btn btn-primary" onClick={() => joinBatch({batchId: this.state.batchId, genNumber: this.state.genNumber})}>Join Batch</Button>
                   <Modal color='primary' btn='FAQ'
                          content={(<Container className="faq" >
                            <h4>Frequently Asked Questions</h4>

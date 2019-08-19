@@ -73,6 +73,5 @@ export const getUrlParams = (url) => {
       }
     }
   }
-
   return obj;
 }

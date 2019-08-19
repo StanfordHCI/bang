@@ -171,13 +171,17 @@ export const addBatch = async function (req, res) {
 }
 
 export const loadBatchList = async function (req, res) {
-  const remembered = req.query.remembered ? req.query.remembered : undefined; // option to load only remembered batches
+  console.log(req.query);
+  // const remembered = req.query.remembered ? req.query.remembered : undefined; // option to load only remembered batches
   try {
     let select = '';
     if (!req.query.full) {
       select = 'createdAt startTime status currentRound teamSize templateName note maskType';
     }
-    const predicate = remembered ? {rememberTeamOrder: true, rounds: { $ne: [ ]}} : {}; // if remembered loads only batches with remembered == true
+    const predicate = req.query;
+    if (Object.keys(predicate).length) {
+      Object.assign(predicate, {rounds: { $ne: [ ]}});
+    }
     const batchList = await Batch.find(predicate).sort({createdAt: -1}).select(select).lean().exec();
     res.json({batchList: batchList})
   } catch (e) {
@@ -339,6 +343,7 @@ const startNotification = async (users) => {
     if (user.batchId) {
       url += '&batchId=' + user.batchId;
     }
+    console.log(url);
     const unsubscribe_url = process.env.HIT_URL + 'unsubscribe/' + user.mturkId;
     const message = 'Hi! Our HIT is now active. We are starting a new experiment on Bang. ' +
       'Your FULL participation will earn you a bonus of ~$12/hour. ' + '\n\n' +
