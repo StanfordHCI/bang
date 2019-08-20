@@ -309,7 +309,6 @@ class TemplateForm extends React.Component {
 
   render() {
     const {invalid, numRounds, surveyTemplatesOptions, pristine, isAdd, tasks, numExpRounds, teamFormat} = this.props;
-    console.log('format: ', teamFormat)
     return (<div>
         <form className='form form--horizontal' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
           <Row>

@@ -169,9 +169,11 @@ const startBatch = async function (batch, socket, io) {
     }
 
     if (process.env.MTURK_MODE !== 'off') {
+      const prsHelper = [];
       for (const user of users) {
-        await assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL);
+        prsHelper.push(assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL));
       }
+      await Promise.all(prsHelper);
     }
 
     const startBatchInfo = {status: 'active', startTime: new Date()};
