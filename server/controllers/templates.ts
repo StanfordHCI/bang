@@ -8,9 +8,14 @@ export const loadTemplateList = async function (req, res) {
     if (req.query.full) {
       select = ''
     } else {
-      select = 'name teamSize'
+      select = 'name teamSize teamFormat'
     }
-    const templateList = await Template.find({}).select(select).lean().exec();
+    let predicate = {}
+    if (req.query.teamFormat) {
+      if (req.query.teamFormat === 'single') predicate = {teamFormat: 'single'};
+      else predicate = {teamFormat: { $ne: 'single'}};
+    }
+    const templateList = await Template.find(predicate).select(select).lean().exec();
     res.json({templateList: templateList})
   } catch (e) {
     errorHandler(e, 'load templates error')

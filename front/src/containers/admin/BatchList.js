@@ -34,7 +34,7 @@ class BatchList extends React.Component {
     this.props.loadBatchList()
       .then(() => {
         this.setState({isReady: true, })
-      })
+      }).then(() => console.log('props: ', this.props))
   }
 
   componentWillUnmount() {
@@ -73,6 +73,7 @@ class BatchList extends React.Component {
                     <th>#</th>
                     <th>created</th>
                     <th>start time</th>
+                    <th>team format</th>
                     <th>status</th>
                     <th>template</th>
                     <th>note</th>
@@ -86,6 +87,7 @@ class BatchList extends React.Component {
                       <td onClick={() => history.push('/batches/' + batch._id)}>{(this.state.page - 1) * pageSize + index + 1}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{moment(batch.createdAt).format('YYYY.DD.MM-HH:mm:ss')}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{!!batch.startTime ? moment(batch.startTime).format('YYYY.DD.MM-HH:mm:ss') : 'not started'}</td>
+                      <td onClick={() => history.push('/batches/' + batch._id)}>{batch.teamFormat ? batch.teamFormat : 'multi'}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{batch.status}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{batch.templateName}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{batch.note}</td>

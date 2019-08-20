@@ -44,6 +44,7 @@ class TemplateList extends React.Component {
                     <th>#</th>
                     <th>name</th>
                     <th>team size</th>
+                    <th>team format</th>
                     <th>clone</th>
                     <th>delete</th>
                   </tr>
@@ -54,6 +55,7 @@ class TemplateList extends React.Component {
                       <td onClick={() => history.push('/templates/' + template._id)}>{index + 1}</td>
                       <td onClick={() => history.push('/templates/' + template._id)}>{template.name}</td>
                       <td onClick={() => history.push('/templates/' + template._id)}> {template.teamSize}</td>
+                      <td onClick={() => history.push('/templates/' + template._id)}>{template.teamFormat ? template.teamFormat : 'multi'}</td>
                       <td>
                         <Button className="btn btn-primary"
                                 style={{padding: '2px 10px', marginBottom: '0px'}}

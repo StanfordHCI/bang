@@ -133,7 +133,7 @@ class Batch extends React.Component {
 
   componentDidUpdate(prevProps, prevState, snapshot) {
     if (prevProps.batch && this.props.batch) {
-      console.log(prevProps.batch.status, this.props.batch.status)
+      // console.log(prevProps.batch.status, this.props.batch.status)
     }
     if (this.state.timeLeft === 0 && prevState.timeLeft) {
       this.setState({
@@ -158,7 +158,6 @@ class Batch extends React.Component {
     }
 
     if (!this.state.isStartNotifySent && nextProps.batch && nextProps.batch.status === 'active') {
-      console.log('start')
       this.setState({
         isStartNotifySent: true,
         notifyTitle: 'Bang: started!',
@@ -688,9 +687,17 @@ function mapStateToProps(state) {
       return message;
     })
   }
-
+  let limit = 999;
+  if (batch) {
+    if (batch.teamFormat === 'single') {
+      limit = batch.teamSize;
+    }
+    else {
+      limit = batch.teamSize ** 2;
+    }
+  }
   return {
-    limit: batch ? batch.teamSize ** 2 : 999,
+    limit: limit,
     activeCounter: batch ? batch.users.length : 0,
     user: state.app.user,
     batch: batch,

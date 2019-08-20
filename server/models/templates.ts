@@ -36,5 +36,6 @@ let  TemplateSchema = new Schema({
       selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
     }]
   }],
+  teamFormat: {type: String, required: true},
 }, options);
 export const Template = mongoose.model('Template', TemplateSchema);

@@ -1,6 +1,9 @@
+import { Survey } from "../models/surveys";
+
 require('dotenv').config({path: './.env'});
 export const runningLive = process.env.MTURK_MODE === "prod";
 import * as AWS from "aws-sdk";
+import { Batch } from "../models/batches";
 AWS.config.accessKeyId = process.env.AWS_ID;
 AWS.config.secretAccessKey = process.env.AWS_KEY;
 AWS.config.region = "us-east-1";
@@ -356,6 +359,23 @@ export const createTeams = (teamSize: number, numRounds: number, people: string[
   return roundGen;
 };
 
+export let createOneTeam: (teamSize: number, numRounds: number, people: any[]) => void;
+createOneTeam = (teamSize: number, numRounds: number, people: any[]) => {
+  const rounds = [];
+  while (rounds.length < numRounds) {
+    const round = {
+      teams: undefined
+    }
+    const teams = [{
+      users: undefined
+    }]; // There will be only one team
+    teams[0].users = Array.from(Array(teamSize).keys());
+    round.teams = teams;
+    rounds.push(round)
+  }
+  return rounds;
+};
+
 export const getBatchTime = (batch) => {
   let result = 0;
   batch.tasks.forEach(task => {
@@ -392,5 +412,63 @@ export const listWorkersWithQualificationType = (params) => {
       }
     );
   })
+};
+
+// the standard one-liner doesn't work properly;
+const findMaxIndex = (points) => {
+  let maxPoints = -1;
+  let maxIndex = 0;
+  for (let i = 0; i < points.length; i++) {
+    if (points[i] && points[i] > maxPoints) {
+      maxPoints = points[i];
+      maxIndex = i;
+    }
+  }
+  return maxIndex;
+};
+
+// Returns the index of round in which the team has the best results
+// Used only in single-team batches
+// If an error occurs, returns 0, so the teams will be like in the round 1,
+// happens only if no one has completed any midSurveys at all
+export const bestRound = async (batch) => {
+  const numRounds = batch.numRounds;
+  const points = Array(numRounds); // storage for round scores
+  for (let i = 0; i < numRounds; ++i) {
+    const surveys = await Survey.find({ batch: batch._id, round: i + 1, surveyType: 'midsurvey' });
+    const answerTypes = batch.tasks[i].survey ? batch.tasks[i].survey.map(surv => surv.type) : [];
+    // user's score is a sum of all select answer's values in ALL midSurveys of a round, for example:
+    /*
+    * User1: 0 (strongly disagree)
+    * User2: 4 (strongly agree)
+    * score = (0 + 1) + (4 + 1) = 6
+    * */
+    let score = 0;
+    try {
+      if (surveys) {
+        const questions = surveys.map(surv => surv.questions);
+        const questionResults = questions.map(x => x.map((q, index) => {return answerTypes[index] === 'select' &&
+        parseInt(q.result) + 1 ? parseInt(q.result) + 1 : 0})).reduce((a, b) => a.concat(b));
+        score = questionResults.reduce((a, b) => {
+          return parseInt(a) + parseInt(b);
+        });
+      }
+    }
+    catch (e) {
+      score = 0;
+    }
+    points[i] = score;
+  }
+
+  const prsHelper = []
+  // set score value for each round of batch
+  points.forEach((score, index) => {
+    const setObject = {};
+    setObject[`rounds.${index}.score`] = score;
+    prsHelper.push(Batch.update({_id: batch._id}, {$set: setObject}));
+  });
+  await Promise.all(prsHelper);
+  const maxIndex = findMaxIndex(points);
+  return points.length ? maxIndex : 0;
 };
 

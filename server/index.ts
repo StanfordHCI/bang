@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3001;
 const APP_ROOT = path.resolve(__dirname, '..');
 const logger = require('./services/logger');
 import {init, sendMessage, disconnect, activeCheck, refreshActiveUsers} from './controllers/users'
-import {joinBatch, loadBatch, receiveSurvey, timeout} from './controllers/batches'
+import { joinBatch, loadBatch, payStartBonus, receiveSurvey, timeout } from "./controllers/batches";
 import {errorHandler} from './services/common'
 import {
   addHIT,
@@ -146,16 +146,18 @@ if (process.env.MTURK_MODE !== 'off') {
         currentHIT = HIT.HITId;
         logger.info(module, 'Recruit HIT created: ' + currentHIT)
         let prs = []
-        batches.forEach(batch => {
+        for (const batch of batches) {
           const liveTime = (moment()).diff(moment(batch.createdAt), 'minutes')
           if (liveTime > 35 && batch.withAutoStop) {
+            const users = await User.find({batch: batch._id}).lean().exec();
+            prs.push(payStartBonus(users, batch));
             prs.push(Batch.findByIdAndUpdate(batch._id, {$set: {status: 'completed'}}));
             prs.push(User.updateMany({batch:  batch._id}, { $set: { batch: null, realNick: null, fakeNick: null, currentChat: null }}))
             io.to(batch._id.toString()).emit('stop-batch', {status: 'waiting'})
             clearRoom(batch._id, io)
             logger.info(module, 'Batch stopped: ' + batch._id);
           }
-        })
+        }
         await Promise.all(prs)
       } else {
         currentHIT = '';

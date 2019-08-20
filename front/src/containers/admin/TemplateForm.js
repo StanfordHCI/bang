@@ -19,7 +19,7 @@ import renderSelectField from 'Components/form/Select'
 import renderCheckBoxField from 'Components/form/CheckBox'
 import Select from "react-select";
 
-const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType}) => {
+const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType, teamFormat}) => {
   return (<div style={{width: '100%', marginTop: '20px', borderBottom: '1px solid grey'}}>
     {
       fields.map((question, index) => {
@@ -56,6 +56,7 @@ const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType
                 name={`${question}.options`}
                 component={renderQuestionOptions}
                 rerenderOnEveryChange
+                withPoints={teamFormat === 'single'}
               />
               }
             </Col>
@@ -75,7 +76,7 @@ const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType
   </div>)
 }
 
-const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRounds}) => {
+const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRounds, withPoints}) => {
   return (<div style={{width: '100%'}}>
     {
       fields.map((step, index) => {
@@ -95,6 +96,10 @@ const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRoun
               <Button type="button" size="sm"
                       onClick={() => fields.splice(index, 1)}>delete option</Button>
             </div>
+            {withPoints &&
+            <div>
+              <h6>{index + 1} {index === 0 ? 'point' : 'points'}</h6>
+            </div>}
           </Row>)
       })}
     <Row className="centered-and-flexed" noGutters>
@@ -148,7 +153,7 @@ const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
 }
 
 const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneTask, surveyTemplatesOptions,
-                       taskArray, fillSurvey, deleteSurvey, numExpRounds}) => {
+                       taskArray, fillSurvey, deleteSurvey, numExpRounds, teamFormat}) => {
   let tasks = [], options = [];
   for (let i = 0; i < numRounds; i++) {
     options.push({value: i, label: 'task ' + (i + 1)})
@@ -243,6 +248,7 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
             surveyType="mid"
             rerenderOnEveryChange
             task={taskArray && taskArray[i]}
+            teamFormat={teamFormat}
           />
         </div>}
       </div>
@@ -302,8 +308,7 @@ class TemplateForm extends React.Component {
   }
 
   render() {
-    const {invalid, numRounds, surveyTemplatesOptions, pristine, isAdd, tasks, numExpRounds} = this.props;
-
+    const {invalid, numRounds, surveyTemplatesOptions, pristine, isAdd, tasks, numExpRounds, teamFormat} = this.props;
     return (<div>
         <form className='form form--horizontal' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
           <Row>
@@ -311,6 +316,18 @@ class TemplateForm extends React.Component {
             <div className='form__panel-body' style={{borderBottom: '3px solid grey'}}>
               <Row style={{paddingBottom: '10px'}}>
                 <input type="file" name="json" id="json" onChange={this.handleFileUpload} />
+              </Row>
+              <Row>
+                <Col className='form__form-group'>
+                  <label className='form__form-group-label'>Single-Team or Multi-Team?:</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                      name='teamFormat'
+                      component={renderSelectField}
+                      options={[{value: 'single', label: 'Single-team'}, {value: 'multi', label: 'Multi-team'}]}
+                    />
+                  </div>
+                </Col>
               </Row>
               <Row>
                 <Col className='form__form-group'>
@@ -373,6 +390,7 @@ class TemplateForm extends React.Component {
                       name='numExpRounds'
                       component={renderField}
                       type='number'
+                      disabled={this.props.teamFormat === 'single'}
                     />
                   </div>
                 </Col>
@@ -399,6 +417,7 @@ class TemplateForm extends React.Component {
               taskArray={tasks}
               numExpRounds={numExpRounds}
               surveyTemplatesOptions={surveyTemplatesOptions}
+              teamFormat={teamFormat}
             />
           </div></Col>
           </Row>
@@ -416,7 +435,7 @@ class TemplateForm extends React.Component {
 }
 
 const validate = (values, props) => {
-  console.log(values, props)
+  console.log(values, props);
   const errors = {};
   if (!values.name) {
     errors.name = 'required'
@@ -425,9 +444,12 @@ const validate = (values, props) => {
   }
   if (!values.numRounds) {
     errors.numRounds = 'required'
-  } else if (parseInt(values.numRounds) < 4 || parseInt(values.teamSize) > 1 &&
-    (parseInt(values.numRounds) > parseInt(values.teamSize) + parseInt(values.numExpRounds))) {
+  } else if (values.numRounds < 2 || values.teamFormat !== 'single' && (parseInt(values.numRounds) < 4 || parseInt(values.teamSize) > 1 &&
+    (parseInt(values.numRounds) > parseInt(values.teamSize) + parseInt(values.numExpRounds)))) {
     errors.numRounds = 'invalid value'
+  } else if (values.teamFormat === 'single' && values.tasks && !values.tasks.some(x => x.survey &&
+    x.survey.some(x => x.type === 'select'))) {
+    errors.numRounds = 'at least 1 midsurvey with select-options question required';
   }
   if (!values.teamSize) {
     errors.teamSize = 'required'
@@ -517,7 +539,10 @@ const validate = (values, props) => {
       }
     }
 
-  })
+  });
+  if (values.teamFormat == null) {
+    errors.teamFormat = 'required'
+  }
 
   return errors
 };
@@ -539,7 +564,8 @@ function mapStateToProps(state) {
     roundGen: selector(state, 'roundGen'),
     tasks: selector(state, 'tasks'),
     surveyList: state.survey.surveyList,
-    surveyTemplatesOptions: state.survey.surveyList.map((x, index) => {return {value: index, label: x.name}})
+    surveyTemplatesOptions: state.survey.surveyList.map((x, index) => {return {value: index, label: x.name}}),
+    teamFormat: selector(state, 'teamFormat'),
   }
 }
 
