@@ -176,7 +176,7 @@ export const loadBatchList = async function (req, res) {
   try {
     let select = '';
     if (!req.query.full) {
-      select = 'createdAt startTime status currentRound teamSize templateName note maskType';
+      select = 'createdAt startTime status currentRound teamSize templateName note maskType teamFormat';
     }
     const predicate = req.query;
     if (Object.keys(predicate).length) {

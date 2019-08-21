@@ -33,8 +33,8 @@ export const joinBatch = async function (data, socket, io) {
       return;
     }
     let batch = batches[0];
-
-    if (socket.systemStatus === 'willbang' && batch.users.length < batch.teamSize ** 2 &&
+    const totalBatchUsers = batch.teamFormat === 'single' ? batch.teamSize : batch.teamSize ** 2;
+    if (socket.systemStatus === 'willbang' && batch.users.length < totalBatchUsers &&
       !batch.users.some(x => x.user.toString() === socket.userId.toString())) { //join to batch
       let nickname;
       let adjective;
@@ -67,7 +67,7 @@ export const joinBatch = async function (data, socket, io) {
       let reason;
       if (socket.systemStatus !== 'willbang') {
         reason = 'wrong system status';
-      } else if (batch.users.length >= batch.teamSize ** 2) {
+      } else if (batch.users.length >= totalBatchUsers) {
         reason = 'experiment is full';
       } else {
         reason = 'already joined'
@@ -169,9 +169,11 @@ const startBatch = async function (batch, socket, io) {
     }
 
     if (process.env.MTURK_MODE !== 'off') {
+      const prsHelper = [];
       for (const user of users) {
-        await assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL);
+        prsHelper.push(assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL));
       }
+      await Promise.all(prsHelper);
     }
 
     const startBatchInfo = {status: 'active', startTime: new Date()};
