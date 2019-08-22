@@ -480,3 +480,9 @@ export const bestRound = async (batch) => {
   return points.length ? maxIndex : 0;
 };
 
+export const calculateMoneyForBatch = batch => {
+  const teamFormat = batch.teamFormat;
+  const batchCapacity = teamFormat === 'single' ? batch.teamSize : batch.teamSize ** 2;
+  return batchCapacity * 12 * getBatchTime(batch);
+}
+
