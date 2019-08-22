@@ -26,22 +26,23 @@ const botId = '100000000000000000000001'
 import {io} from '../index'
 import {Bonus} from "../models/bonuses";
 import {activeCheck} from "./users";
+import {calculateMoneyForBatch} from "./utils";
 
 
 export const addBatch = async function (req, res) {
   try {
     const teamFormat = req.body.teamFormat;
-    const batches = await Batch.find({$or: [{status: 'waiting'}, {status: 'active'}]}).select('tasks teamSize roundMinutes surveyMinutes numRounds').lean().exec();
+    const batches = await Batch.find({$or: [{status: 'waiting'}, {status: 'active'}]}).select('tasks teamSize roundMinutes surveyMinutes numRounds teamFormat').lean().exec();
     let batchSumCost = 0;
     batches.forEach(batch => {
-      const moneyForBatch = (batch.teamSize ** 2) * 12 * getBatchTime(batch);
+      const moneyForBatch = calculateMoneyForBatch(batch);
       batchSumCost = batchSumCost + moneyForBatch;
     })
     let newBatch = req.body;
     if (process.env.MTURK_MODE !== 'off') {
       let balance = await getAccountBalance();
       balance = parseFloat(balance.AvailableBalance);
-      const moneyForBatch = (newBatch.teamSize ** 2) * 12 * getBatchTime(newBatch);
+      const moneyForBatch = calculateMoneyForBatch(newBatch);
       if (balance < moneyForBatch + batchSumCost) {
         const message = 'Account balance: $' + balance + '. Experiment cost: $' + moneyForBatch.toFixed(2) +
           ' . Waiting/active batches cost: ' + batchSumCost.toFixed(2)
@@ -61,7 +62,7 @@ export const addBatch = async function (req, res) {
     let tasks = [], nonExpCounter = 0;
     let roundGen;
     if (teamFormat === 'single') {
-      roundGen = createOneTeam(newBatch.teamSize, newBatch.numRounds - 1, letters.slice(0, newBatch.teamSize ** 2));
+      roundGen = createOneTeam(newBatch.teamSize, newBatch.numRounds - 1, letters.slice(0, newBatch.teamSize));
     }
     else {
       roundGen = createTeams(newBatch.teamSize, newBatch.numRounds - newBatch.numExpRounds + 1, letters.slice(0, newBatch.teamSize ** 2));
