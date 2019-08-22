@@ -60,19 +60,28 @@ export const addBatch = async function (req, res) {
     newBatch.users = [], newBatch.expRounds = [], newBatch.roundGen = [];
     let tasks = [], nonExpCounter = 0;
     let roundGen;
-    if (teamFormat === 'single') {
-      roundGen = createOneTeam(newBatch.teamSize, newBatch.numRounds - 1, letters.slice(0, newBatch.teamSize ** 2));
+    console.log('newBatch.loadTeamOrder', newBatch.loadTeamOrder);
+    if (newBatch.loadTeamOrder) {
+      const loadedBatch = await Batch.findOne({_id: newBatch.loadTeamOrder});
+      console.log('loadedBatch: ', loadedBatch ? 'true' : 'false');
+      roundGen = loadedBatch.roundGen;
+      console.log('roundGen: ', roundGen);
+    } else {
+      if (teamFormat === 'single') {
+        roundGen = createOneTeam(newBatch.teamSize, newBatch.numRounds - 1, letters.slice(0, newBatch.teamSize ** 2));
+      }
+      else {
+        roundGen = createTeams(newBatch.teamSize, newBatch.numRounds - newBatch.numExpRounds + 1, letters.slice(0, newBatch.teamSize ** 2));
+      }
     }
-    else {
-      roundGen = createTeams(newBatch.teamSize, newBatch.numRounds - newBatch.numExpRounds + 1, letters.slice(0, newBatch.teamSize ** 2));
-    }
+
     for (let i = 0; i < newBatch.numExpRounds; i++) {
       const min = newBatch.expRounds[i - 1] ? newBatch.expRounds[i - 1] + 1 : 0;
       const max = newBatch.numRounds - (newBatch.numExpRounds - i - 1) * 2;
       const roundNumber = Math.floor(Math.random() * (max - min)) + 1 + min;
       newBatch.expRounds.push(roundNumber)
     }
-    if (teamFormat !== 'single') {
+    if (teamFormat !== 'single' && !newBatch.loadTeamOrder) {
       for (let i = 0; i < newBatch.numRounds; i++) {
         const expIndex = newBatch.expRounds.findIndex(x => x === i + 1);
         if (expIndex > -1) {//exp round
@@ -128,14 +137,15 @@ export const addBatch = async function (req, res) {
 
     let prs = [], counter = 0;
     prs.push(activeCheck(io))
-    if (process.env.MTURK_MODE !== 'off') {
+    // if (process.env.MTURK_MODE !== 'off') {
+    if (true) {
       let users;
       if (!newBatch.loadTeamOrder) {
         users = await User.find({systemStatus: 'willbang', isTest: false}).sort({createdAt: -1}).limit(200)
           .select('mturkId testAssignmentId').lean().exec();
       } else {
-        const batchId = newBatch.loadTeamOrder;
-        const loadingBatch = await Batch.findOne({_id: batchId});
+        const loadingBatchId = newBatch.loadTeamOrder;
+        const loadingBatch = await Batch.findOne({_id: loadingBatchId});
         const roundGen = loadingBatch.roundGen;
         const rounds = loadingBatch.rounds;
         const teams = rounds[0].teams;
@@ -154,14 +164,18 @@ export const addBatch = async function (req, res) {
           }
         }
         batchUsers.forEach((user, i) => {numberedUsers[genUsers[i]] = user}) // makes a dict with format {genNumber: user, ...}
+        const prsHelper = [];
+        Object.keys(numberedUsers).forEach((key) => {
+          prsHelper.push(User.updateOne({_id: numberedUsers[key].user}, {$set: {genNumber: key}}))
+        });
+        await Promise.all(prsHelper);
         users = [];
         for (const i in batchUsers) {
           const user = await User.findOne({_id: batchUsers[i].user})
-          Object.assign(user, {genNumber : i, batchId: batchId});
+          Object.assign(user, {batchId: batch._id});
           users.push(user);
         }
       }
-
       await startNotification(users);
     }
     await Promise.all(prs)
@@ -171,7 +185,6 @@ export const addBatch = async function (req, res) {
 }
 
 export const loadBatchList = async function (req, res) {
-  console.log(req.query);
   // const remembered = req.query.remembered ? req.query.remembered : undefined; // option to load only remembered batches
   try {
     let select = '';
@@ -335,15 +348,16 @@ const startNotification = async (users) => {
   let counter = 0;
   for (let i = 0; i < users.length; i++) {
     const user = users[i];
+
     let url = process.env.HIT_URL + '?assignmentId=' + user.testAssignmentId + '&workerId=' + user.mturkId;
-    if (user.genNumber) {
+    if (user.genNumber !== undefined) {
       url += '&genNumber=' + user.genNumber;
     }
     console.log('batchId: ', user.batchId);
     if (user.batchId) {
       url += '&batchId=' + user.batchId;
     }
-    console.log(url);
+    console.log('url: ', url);
     const unsubscribe_url = process.env.HIT_URL + 'unsubscribe/' + user.mturkId;
     const message = 'Hi! Our HIT is now active. We are starting a new experiment on Bang. ' +
       'Your FULL participation will earn you a bonus of ~$12/hour. ' + '\n\n' +

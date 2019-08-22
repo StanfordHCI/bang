@@ -26,7 +26,16 @@ const randomAdjective = "new small young little likely nice cultured snappy spry
 
 export const joinBatch = async function (data, socket, io) {
   try {
-    let batches = await Batch.find({status: 'waiting'}).sort({'createdAt': 1}).lean().exec();
+    console.log('data: ', data);
+    const batchId = data.batchId;
+    const genNumber = data.genNumber;
+    let batches;
+    if (!batchId) {
+      batches = await Batch.find({status: 'waiting'}).sort({'createdAt': 1}).lean().exec();
+    } else {
+      batches = await Batch.find({_id: batchId, status: 'waiting'}).lean().exec();
+      console.log('batches2: ', batches);
+    }
     if (!batches || !batches.length) {
       logger.error(module, 'There is no waiting batch');
       socket.emit('send-error', 'We are full now, sorry. Join us later please.')
@@ -54,9 +63,10 @@ export const joinBatch = async function (data, socket, io) {
       const prs = await Promise.all([
         Batch.findByIdAndUpdate(batch._id, { $addToSet: { users: {user: socket.userId, nickname: nickname, joinDate: new Date()}},  }, {new: true}),
         User.findByIdAndUpdate(socket.userId,
-          { $set: { batch: batch._id, realNick: nickname, currentChat: batch.preChat} }, {new: true}).lean().exec()
+          { $set: { batch: batch._id, realNick: nickname, currentChat: batch.preChat, genNumber: genNumber} }, {new: true}).lean().exec()
       ])
-      user = prs[1]
+      user = prs[1];
+      console.log('genNumber: ', user.genNumber)
       batch = prs[0]
       socket.join(user.currentChat.toString()) //chat room
       socket.join(batch._id.toString()) //common room, not chat
@@ -325,6 +335,16 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io) => {
   if (batch.numRounds !== i + 1 || teamFormat !== 'single') {
     // if it is not the last round of single-teamed batch
     // standard flow
+    console.log('batch.loadTeamOrder: ', batch.loadTeamOrder);
+    console.log(users.some((user) => user.genNumber));
+    if (batch.loadTeamOrder) {
+      console.log('sorting!');
+      users.sort((a, b) => { // sorting by genNumber
+        const aInt = parseInt(a.genNumber);
+        const bInt = parseInt(b.genNumber);
+        return aInt > bInt ? 1 : (aInt === bInt ? 0 : -1)
+      });
+    }
     teams = generateTeams(batch.roundGen, users, i + 1, oldNicks);
     for (let j = 0; j < teamSize; j++) {
       emptyChats.push({batch: batch._id, messages: [{user: botId, nickname: 'helperBot', time: new Date(),

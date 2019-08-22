@@ -81,7 +81,7 @@ class Waiting extends React.Component {
                   <p> <b>IMPORTANT:</b> If you intend to complete the task, please do not leave because it will mean other MTurkers will have to wait longer for the task. If enough people arrive, you'll be bonused $1 for waiting. Provided you stay for the <b>whole task,</b> we will bonus to a rate of approximately <b>$12 per hour</b>. If there are never enough people, we will automatically submit and accept for the base rate.</p>
                   
                   
-                  <Button className="btn btn-primary" onClick={() => joinBatch({batchId: this.state.batchId, genNumber: this.state.genNumber})}>Join Batch</Button>
+                  <Button className="btn btn-primary" onClick={() => joinBatch(this.state.joinParams)}>Join Batch</Button>
                   <Modal color='primary' btn='FAQ'
                          content={(<Container className="faq" >
                            <h4>Frequently Asked Questions</h4>

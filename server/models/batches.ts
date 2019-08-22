@@ -72,5 +72,6 @@ let  BatchSchema = new Schema({
   withAutoStop: {type: Boolean, default: true, required: true},
   rememberTeamOrder: {type: Boolean, default: false, required: true},
   teamFormat: {type: String, required: true},
+  loadTeamOrder: {type: mongoose.Schema.Types.ObjectId, ref: 'Batch', default: null},
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);
