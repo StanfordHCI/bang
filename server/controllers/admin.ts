@@ -137,8 +137,8 @@ export const addBatch = async function (req, res) {
 
     let prs = [], counter = 0;
     prs.push(activeCheck(io))
-    // if (process.env.MTURK_MODE !== 'off') {
-    if (true) {
+    if (process.env.MTURK_MODE !== 'off') {
+    // if (true) {
       let users;
       if (!newBatch.loadTeamOrder) {
         users = await User.find({systemStatus: 'willbang', isTest: false}).sort({createdAt: -1}).limit(200)
