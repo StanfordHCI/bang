@@ -29,22 +29,21 @@ class AddBatch extends React.Component {
   }
   componentWillMount(){
     // we load singleTeam templates and multiTeam templates and put the into state for further usage
-    console.log('teamFormat: ', this.props.teamFormat);
     this.props.loadTemplateList({teamFormat: 'single'})
-      .then(() => {this.setState({singleTeamTemplateOptions: this.props.templateList.map(x => {return {value: x._id, label: x.name}})});
+      .then(() => {this.setState({singleTeamTemplateOptions: this.props.templateList.map(x => {return {value: x._id, label: x.name, template: x}})});
       });
     this.props.loadTemplateList({teamFormat: 'multi'})
-      .then(() => {this.setState({multiTeamTemplateOptions : this.props.templateList.map(x => {return {value: x._id, label: x.name}})});
+      .then(() => {this.setState({multiTeamTemplateOptions : this.props.templateList.map(x => {return {value: x._id, label: x.name, template: x}})});
       })
       .then(() => this.props.loadTemplateList({full:true}));
 
     // we do the same thing with batches
     this.props.loadBatchList({rememberTeamOrder: true, teamFormat: 'single'})
-      .then(() => {this.setState({singleTeamBatchOptions: this.props.batchList.map(x => {return {value: x._id, label: `${x.templateName}(${x.note}) ${x.createdAt}`}})});
+      .then(() => {this.setState({singleTeamBatchOptions: this.props.batchList.map(x => {return {value: x._id, label: `${x.templateName}(${x.note}) ${x.createdAt}`, batch: x}})});
       });
     this.props.loadBatchList({rememberTeamOrder: true, teamFormat: 'multi'})
       .then(() => {this.setState({isReady: true,
-        multiTeamBatchOptions : this.props.batchList.map(x => {return {value: x._id, label: `${x.templateName}(${x.note}) ${x.createdAt}`}})});
+        multiTeamBatchOptions : this.props.batchList.map(x => {return {value: x._id, label: `${x.templateName}(${x.note}) ${x.createdAt}`, batch: x}})});
       })
     // this.props.loadBatchList({remembered: true}).then(() => {
     //         let batchOptions = [{value: false, label: "Don't load"}];
@@ -54,7 +53,6 @@ class AddBatch extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
-    console.log(this.state.singleTeamBatchOptions, this.state.multiTeamBatchOptions)
     if (this.props.teamFormat !== prevProps.teamFormat) {
       if (this.props.teamFormat === "single") {
         this.setState({ options: this.state.singleTeamTemplateOptions,
@@ -63,6 +61,31 @@ class AddBatch extends React.Component {
         this.setState({ options: this.state.multiTeamTemplateOptions,
           batchOptions: [{value: false, label: "Don't load"}].concat(this.state.multiTeamBatchOptions)});
       }
+    }
+
+    if (this.props.loadTeamOrder !== prevProps.loadTeamOrder) {
+      if (this.props.loadTeamOrder === false) {
+        this.setState({options: this.state.singleTeamTemplateOptions});
+      } else {
+        const batchId = this.props.loadTeamOrder;
+        const batch = this.state.batchOptions.filter(x => x.batch && x.batch._id === batchId)[0].batch;
+        let newTemplateOptions = this.props.teamFormat === 'single' ? this.state.singleTeamTemplateOptions : this.state.multiTeamTemplateOptions;
+        newTemplateOptions = newTemplateOptions.filter(x => {
+          return x.template && x.template.numRounds === batch.numRounds && x.template.teamSize === batch.teamSize});
+        newTemplateOptions = [{value: false, label: "Don't load"}].concat(newTemplateOptions)
+        this.setState({options: newTemplateOptions});
+      }
+    }
+
+    if (this.props.template !== prevProps.template) {
+      // on template change, filters loadTeamOrder options(numRounds and teamSize of selected template and batch should be equal)
+      const templateId = this.props.template;
+      const templateList = this.props.templateList;
+      const template = templateList.filter(x => x._id === templateId)[0];
+      let newBatchOptions = this.props.teamFormat === 'single' ? this.state.singleTeamBatchOptions : this.state.multiTeamBatchOptions;
+      newBatchOptions = newBatchOptions.filter(x => x.batch && x.batch.numRounds === template.numRounds && x.batch.teamSize === template.teamSize);
+      newBatchOptions = [{value: false, label: "Don't load"}].concat(newBatchOptions);
+      this.setState({batchOptions: newBatchOptions});
     }
   }
 
@@ -97,7 +120,6 @@ class AddBatch extends React.Component {
                     name='teamFormat'
                     component={renderSelectField}
                     options={[{value: 'single', label: 'Single-team'}, {value: 'multi', label: 'Multi-team'}]}
-                    onChange={this.loadFilteredTemplateList}
                   />
                 </div>
               </div>
@@ -237,6 +259,8 @@ function mapStateToProps(state) {
     templateList: state.template.templateList,
     batchList: state.admin.batchList,
     teamFormat: selector(state, 'teamFormat'),
+    loadTeamOrder: selector(state, 'loadTeamOrder'),
+    template: selector(state, 'template')
   }
 }
 

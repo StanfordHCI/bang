@@ -18,7 +18,7 @@ import {bindActionCreators} from "redux";
 import {socket} from 'Actions/app'
 import {joinBatch, refreshActiveUsers} from 'Actions/batches'
 import Modal from 'Components/Modal'
-import { getUrlParams } from "../utils";
+import { getUrlParams, objIsEmpty } from "../utils";
 
 class Waiting extends React.Component {
   constructor(props) {
@@ -47,14 +47,19 @@ class Waiting extends React.Component {
   }
 
   refresher(data) {
-    this.setState({activeCounter: data.activeCounter, batchReady: data.batchReady, limit: data.limit, isReady: true});
+    const privateBatchIds = data.privateBatchIds.map(x => x._id);
+    this.setState({activeCounter: data.activeCounter, batchReady: data.batchReady, limit: data.limit, isReady: true,
+    privateBatchIds: privateBatchIds, publicBatchReady: data.publicBatchReady});
   }
 
   showFAQ = () => {
 
   }
 
-
+  batchReady = () => {
+    return !!((objIsEmpty(this.state.joinParams) && this.state.publicBatchReady) ||
+      (this.state.joinParams.batchId && this.state.privateBatchIds.includes(this.state.joinParams.batchId)));
+  }
   render() {
     const {user, joinBatch} = this.props;
     const limit = this.state.limit;
@@ -70,7 +75,7 @@ class Waiting extends React.Component {
                 <div className='card__title'>
                   <h5 className='bold-text'>Waiting Room</h5>
                 </div>
-                {this.state.batchReady && <div>
+                {this.batchReady() && <div>
                   <p>Hey there! Thanks for accepting our task.</p>
                   <p> The task has not started yet. After <b>everyone</b> joins the batch, the task will initiate! </p> 
                   
@@ -107,7 +112,7 @@ class Waiting extends React.Component {
                          </Container>)}
                   />
                 </div>}
-                {!this.state.batchReady && <div>
+                {!this.batchReady() && <div>
                   <p>Hey! Thanks for accepting our task. 
 
                   We send out an email immediately after our experiments launch. We don't have an experiment right now, which means that the task filled up with other users before you got here. 

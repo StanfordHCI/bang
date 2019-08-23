@@ -8,7 +8,7 @@ export const loadTemplateList = async function (req, res) {
     if (req.query.full) {
       select = ''
     } else {
-      select = 'name teamSize teamFormat'
+      select = 'name teamSize numRounds teamFormat'
     }
     let predicate = {}
     if (req.query.teamFormat) {

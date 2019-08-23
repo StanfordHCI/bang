@@ -38,6 +38,9 @@ export const addBatch = async function (req, res) {
       batchSumCost = batchSumCost + moneyForBatch;
     })
     let newBatch = req.body;
+    if (newBatch.loadTeamOrder === false) {
+      newBatch.loadTeamOrder = null;
+    }
     if (process.env.MTURK_MODE !== 'off') {
       let balance = await getAccountBalance();
       balance = parseFloat(balance.AvailableBalance);
@@ -172,7 +175,7 @@ export const addBatch = async function (req, res) {
         users = [];
         for (const i in batchUsers) {
           const user = await User.findOne({_id: batchUsers[i].user})
-          Object.assign(user, {batchId: batch._id});
+          Object.assign(user, {genNumber : i, batchId: batch._id});
           users.push(user);
         }
       }
@@ -185,11 +188,19 @@ export const addBatch = async function (req, res) {
 }
 
 export const loadBatchList = async function (req, res) {
+<<<<<<< Updated upstream
   // const remembered = req.query.remembered ? req.query.remembered : undefined; // option to load only remembered batches
   try {
     let select = '';
     if (!req.query.full) {
       select = 'createdAt startTime status currentRound teamSize templateName note maskType teamFormat';
+=======
+  console.log(req.query);
+  try {
+    let select = '';
+    if (!req.query.full) {
+      select = 'createdAt startTime status currentRound teamSize templateName note maskType numRounds teamSize';
+>>>>>>> Stashed changes
     }
     const predicate = req.query;
     if (Object.keys(predicate).length) {

@@ -9,9 +9,11 @@ import {timeout} from './batches'
 
 export const activeCheck = async function (io) {
   try {
-    const [users, batch] = await Promise.all([
+    const [users, batch, privateBatchIds, publicBatch] = await Promise.all([
       User.find({connected: true}).populate({path: 'batch', select: 'status'}).select('mturkId').lean().exec(),
-      Batch.findOne({status: 'waiting'}).select('teamSize teamFormat').lean().exec()
+      Batch.findOne({status: 'waiting'}).select('teamSize teamFormat').lean().exec(),
+      Batch.find({status: 'waiting', loadTeamOrder: {$exists: true, $ne: null}}).select('_id').lean().exec(),
+      Batch.findOne({status: 'waiting', loadTeamOrder: null}).lean().exec(),
     ])
     let counter = {all: 0, waitchat: 0, waitroom: 0, active: 0}
     if (users && users.length) {
@@ -35,7 +37,7 @@ export const activeCheck = async function (io) {
         limit = batch.teamSize ** 2 // multi-teamed batch
       }
     }
-    io.to('waitroom').emit('clients-active', {activeCounter: counter.waitchat, batchReady: !!batch, limit: limit});
+    io.to('waitroom').emit('clients-active', {activeCounter: counter.waitchat, batchReady: !!batch, limit: limit, privateBatchIds: privateBatchIds, publicBatchReady: !!publicBatch});
     logger.info(module, 'connected: ' + counter.all + '; waitroom: ' + counter.waitroom + '; waitchat: ' + counter.waitchat + '; in active batches: ' + counter.active);
   } catch (e) {
     errorHandler(e, 'active check error')
