@@ -65,14 +65,15 @@ class AddBatch extends React.Component {
 
     if (this.props.loadTeamOrder !== prevProps.loadTeamOrder) {
       if (this.props.loadTeamOrder === false) {
-        this.setState({options: this.state.singleTeamTemplateOptions});
+        this.props.teamFormat === 'single' ?
+        this.setState({options: this.state.singleTeamTemplateOptions}) :
+        this.setState({options: this.state.multiTeamTemplateOptions});
       } else {
         const batchId = this.props.loadTeamOrder;
         const batch = this.state.batchOptions.filter(x => x.batch && x.batch._id === batchId)[0].batch;
         let newTemplateOptions = this.props.teamFormat === 'single' ? this.state.singleTeamTemplateOptions : this.state.multiTeamTemplateOptions;
         newTemplateOptions = newTemplateOptions.filter(x => {
           return x.template && x.template.numRounds === batch.numRounds && x.template.teamSize === batch.teamSize});
-        newTemplateOptions = [{value: false, label: "Don't load"}].concat(newTemplateOptions)
         this.setState({options: newTemplateOptions});
       }
     }

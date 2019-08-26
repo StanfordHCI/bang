@@ -141,7 +141,6 @@ export const addBatch = async function (req, res) {
     let prs = [], counter = 0;
     prs.push(activeCheck(io))
     if (process.env.MTURK_MODE !== 'off') {
-    // if (true) {
       let users;
       if (!newBatch.loadTeamOrder) {
         users = await User.find({systemStatus: 'willbang', isTest: false}).sort({createdAt: -1}).limit(200)
@@ -188,19 +187,10 @@ export const addBatch = async function (req, res) {
 }
 
 export const loadBatchList = async function (req, res) {
-<<<<<<< Updated upstream
-  // const remembered = req.query.remembered ? req.query.remembered : undefined; // option to load only remembered batches
   try {
     let select = '';
     if (!req.query.full) {
-      select = 'createdAt startTime status currentRound teamSize templateName note maskType teamFormat';
-=======
-  console.log(req.query);
-  try {
-    let select = '';
-    if (!req.query.full) {
-      select = 'createdAt startTime status currentRound teamSize templateName note maskType numRounds teamSize';
->>>>>>> Stashed changes
+      select = 'createdAt startTime status currentRound teamSize templateName note maskType numRounds teamSize teamFormat';
     }
     const predicate = req.query;
     if (Object.keys(predicate).length) {
@@ -364,11 +354,9 @@ const startNotification = async (users) => {
     if (user.genNumber !== undefined) {
       url += '&genNumber=' + user.genNumber;
     }
-    console.log('batchId: ', user.batchId);
     if (user.batchId) {
       url += '&batchId=' + user.batchId;
     }
-    console.log('url: ', url);
     const unsubscribe_url = process.env.HIT_URL + 'unsubscribe/' + user.mturkId;
     const message = 'Hi! Our HIT is now active. We are starting a new experiment on Bang. ' +
       'Your FULL participation will earn you a bonus of ~$12/hour. ' + '\n\n' +
