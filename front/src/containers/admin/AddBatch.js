@@ -27,6 +27,9 @@ class AddBatch extends React.Component {
       options: [],
     }
   }
+  emptyOptions() {
+    return [{value: false, label: "Don't load"}]
+  }
   componentWillMount(){
     // we load singleTeam templates and multiTeam templates and put the into state for further usage
     this.props.loadTemplateList({teamFormat: 'single'})
@@ -45,21 +48,16 @@ class AddBatch extends React.Component {
       .then(() => {this.setState({isReady: true,
         multiTeamBatchOptions : this.props.batchList.map(x => {return {value: x._id, label: `${x.templateName}(${x.note}) ${x.createdAt}`, batch: x}})});
       })
-    // this.props.loadBatchList({remembered: true}).then(() => {
-    //         let batchOptions = [{value: false, label: "Don't load"}];
-    //         batchOptions = batchOptions.concat(this.props.batchList.map(x => {return {value: x._id, label: `${x.templateName}(${x.note}) ${x.createdAt}`}}));
-    //         this.setState({isReady: true, batchOptions: batchOptions})
-    //       })
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
     if (this.props.teamFormat !== prevProps.teamFormat) {
       if (this.props.teamFormat === "single") {
         this.setState({ options: this.state.singleTeamTemplateOptions,
-          batchOptions: [{value: false, label: "Don't load"}].concat(this.state.singleTeamBatchOptions) });
+          batchOptions: this.emptyOptions().concat(this.state.singleTeamBatchOptions) });
       } else {
         this.setState({ options: this.state.multiTeamTemplateOptions,
-          batchOptions: [{value: false, label: "Don't load"}].concat(this.state.multiTeamBatchOptions)});
+          batchOptions: this.emptyOptions().concat(this.state.multiTeamBatchOptions)});
       }
     }
 
@@ -85,7 +83,7 @@ class AddBatch extends React.Component {
       const template = templateList.filter(x => x._id === templateId)[0];
       let newBatchOptions = this.props.teamFormat === 'single' ? this.state.singleTeamBatchOptions : this.state.multiTeamBatchOptions;
       newBatchOptions = newBatchOptions.filter(x => x.batch && x.batch.numRounds === template.numRounds && x.batch.teamSize === template.teamSize);
-      newBatchOptions = [{value: false, label: "Don't load"}].concat(newBatchOptions);
+      newBatchOptions = this.emptyOptions().concat(newBatchOptions);
       this.setState({batchOptions: newBatchOptions});
     }
   }
