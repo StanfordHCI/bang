@@ -63,12 +63,9 @@ export const addBatch = async function (req, res) {
     newBatch.users = [], newBatch.expRounds = [], newBatch.roundGen = [];
     let tasks = [], nonExpCounter = 0;
     let roundGen;
-    console.log('newBatch.loadTeamOrder', newBatch.loadTeamOrder);
     if (newBatch.loadTeamOrder) {
       const loadedBatch = await Batch.findOne({_id: newBatch.loadTeamOrder});
-      console.log('loadedBatch: ', loadedBatch ? 'true' : 'false');
       roundGen = loadedBatch.roundGen;
-      console.log('roundGen: ', roundGen);
     } else {
       if (teamFormat === 'single') {
         roundGen = createOneTeam(newBatch.teamSize, newBatch.numRounds - 1, letters.slice(0, newBatch.teamSize ** 2));

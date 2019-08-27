@@ -27,9 +27,8 @@ class AddBatch extends React.Component {
       options: [],
     }
   }
-  emptyOptions() {
-    return [{value: false, label: "Don't load"}]
-  }
+
+  static emptyOptions = () => [{value: false, label: "Don't load"}];
   componentWillMount(){
     // we load singleTeam templates and multiTeam templates and put the into state for further usage
     this.props.loadTemplateList({teamFormat: 'single'})
@@ -54,14 +53,15 @@ class AddBatch extends React.Component {
     if (this.props.teamFormat !== prevProps.teamFormat) {
       if (this.props.teamFormat === "single") {
         this.setState({ options: this.state.singleTeamTemplateOptions,
-          batchOptions: this.emptyOptions().concat(this.state.singleTeamBatchOptions) });
+          batchOptions: AddBatch.emptyOptions().concat(this.state.singleTeamBatchOptions) });
       } else {
         this.setState({ options: this.state.multiTeamTemplateOptions,
-          batchOptions: this.emptyOptions().concat(this.state.multiTeamBatchOptions)});
+          batchOptions: AddBatch.emptyOptions().concat(this.state.multiTeamBatchOptions)});
       }
     }
 
     if (this.props.loadTeamOrder !== prevProps.loadTeamOrder) {
+      // on loadTeamOrder change, load only templates with the same numRounds and teamSize
       if (this.props.loadTeamOrder === false) {
         this.props.teamFormat === 'single' ?
         this.setState({options: this.state.singleTeamTemplateOptions}) :
@@ -83,7 +83,7 @@ class AddBatch extends React.Component {
       const template = templateList.filter(x => x._id === templateId)[0];
       let newBatchOptions = this.props.teamFormat === 'single' ? this.state.singleTeamBatchOptions : this.state.multiTeamBatchOptions;
       newBatchOptions = newBatchOptions.filter(x => x.batch && x.batch.numRounds === template.numRounds && x.batch.teamSize === template.teamSize);
-      newBatchOptions = this.emptyOptions().concat(newBatchOptions);
+      newBatchOptions = AddBatch.emptyOptions().concat(newBatchOptions);
       this.setState({batchOptions: newBatchOptions});
     }
   }
