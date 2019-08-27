@@ -34,7 +34,6 @@ export const joinBatch = async function (data, socket, io) {
       batches = await Batch.find({status: 'waiting'}).sort({'createdAt': 1}).lean().exec();
     } else {
       batches = await Batch.find({_id: batchId, status: 'waiting'}).lean().exec();
-      console.log('batches2: ', batches);
     }
     if (!batches || !batches.length) {
       logger.error(module, 'There is no waiting batch');
@@ -66,7 +65,6 @@ export const joinBatch = async function (data, socket, io) {
           { $set: { batch: batch._id, realNick: nickname, currentChat: batch.preChat, genNumber: genNumber} }, {new: true}).lean().exec()
       ])
       user = prs[1];
-      console.log('genNumber: ', user.genNumber)
       batch = prs[0]
       socket.join(user.currentChat.toString()) //chat room
       socket.join(batch._id.toString()) //common room, not chat
