@@ -49,12 +49,12 @@ class PostSurveyForm extends React.Component {
 			const userId = this.props.user._id.toString();
 			const team = round.teams.find((x) => x.users.some((y) => y.user.toString() === userId));
 			team.users.forEach((user) => {
-				if (user.user.toString() !== userId) {
+				const batchUser = batch.users.find(x => x.user.toString() === user.user.toString())
+				if (user.user.toString() !== userId && batchUser.isActive) {
 					uOptions.push({
 						value: roundPrefix + user.user,
 						label: user.nickname + ' (round ' + (index + 1) + ')'
 					});
-					console.log(batch.users, team.users, user)
           roundRoster = roundRoster + (batch.maskType === 'unmasked' ? batch.users.find(x => x.user === user.user).nickname : user.nickname) + ' '
 				}
 			});
