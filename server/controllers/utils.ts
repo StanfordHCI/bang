@@ -94,7 +94,7 @@ export const addHIT = (batch, isMain) => {
     const rewardPrice = 0.01;
     const duration = isMain ? 36000 : 250;
     let bonusPrice = (hourlyWage * getBatchTime(batch)).toFixed(2);
-    let bg = process.env.MTURK_FRAME === 'ON' ? (isMain ? 'Main task. ' : 'Test task. ') : 'Recruit task. ';
+    let bg = 'Recruit task. ';
     let HITTitle = batch.HITTitle ? batch.HITTitle : bg + "Write online ads - bonus up to $" + hourlyWage + " / hour (";
     const batchTime = Math.round((batch.roundMinutes + batch.surveyMinutes) * batch.numRounds );
     let description =
