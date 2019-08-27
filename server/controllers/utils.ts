@@ -453,7 +453,6 @@ const findClosestIndex = (points, medianArray) => {
     points.forEach((val, ind, arr) => {
       if (arr.length - 1 !== ind) {
         results = results.concat(Math.abs(val - medianArray[ind]).toFixed(2));
-        console.log(points, medianArray, results)
       }
     });
     return findMinIndex(results)
@@ -486,7 +485,6 @@ function getRandomInt(min, max) {
 // happens only if no one has completed any midSurveys at all
 export const bestRound = async (batch) => {
   const bestRoundFunction = batch.bestRoundFunction;
-  console.log('bRF: ', bestRoundFunction);
   const numRounds = batch.numRounds;
   const points = Array(numRounds); // storage for round scores
   let medianScores = [];
@@ -501,7 +499,6 @@ export const bestRound = async (batch) => {
           medianScore += surv.selectOptions.map(option => parseInt(option.value) + 1).reduce((a, b) => a + b) / 2;
         }
       });
-      console.log('medianScore: ', medianScore);
     }
     medianScores = medianScores.concat(medianScore);
     // user's score is a sum of all select answer's values in ALL midSurveys of a round, for example:
@@ -555,7 +552,6 @@ export const bestRound = async (batch) => {
   }
   if (bestRoundFunction === 'random') {
     const randomRound = getRandomInt(0, numRounds - 1);
-    console.log('randomRound: ', randomRound);
     return randomRound;
   }
   return points.length ? maxIndex : 0;
