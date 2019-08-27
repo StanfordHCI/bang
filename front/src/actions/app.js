@@ -14,7 +14,9 @@ import openSocket from 'socket.io-client';
 import {getUrlParams} from '../utils';
 const adr = process.env.API_HOST.substr(1, process.env.API_HOST.length - 2);
 export let socket = openSocket(adr);
-
+export const listener = function(ev) {
+  return ev.returnValue = `Are you sure you want to leave?`;
+};
 export const INIT_SUCCESS = 'INIT_SUCCESS';
 export const SET_USER = 'SET_USER';
 export const APP_READY = 'APP_READY';
@@ -133,11 +135,7 @@ export const whoami = () => {
         dispatch(setSnackbar(data));
       });
       socket.on('kick-afk', (data) => {
-        window.removeEventListener("beforeunload", (ev) =>
-        {
-          return ev.returnValue = `Are you sure you want to leave?`;
-        });
-        dispatch(setSnackbar('You are afk'));
+        window.removeEventListener("beforeunload", listener);
         window.location.reload();
       });
       socket.on('stop-batch', (batch) => {
