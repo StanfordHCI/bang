@@ -125,7 +125,7 @@ export const addBatch = async function (req, res) {
     });
     const batchWithChat = await Batch.findByIdAndUpdate(batch._id, {$set: {preChat: preChat._id}})
     res.json({batch: batchWithChat})
-    logger.info(module, 'New batch added. Mturk mode: ' + process.env.MTURK_MODE + '; Mturk frame: ' + process.env.MTURK_FRAME);
+    logger.info(module, 'New batch added. Mturk mode: ' + process.env.MTURK_MODE);
 
     let prs = [], counter = 0;
     prs.push(activeCheck(io))
@@ -234,9 +234,6 @@ export const stopBatch = async function (req, res) {
     let usersChangeQuery = {batch: null, realNick: null, fakeNick: null, currentChat: null}
     if (batch.status === 'active' && process.env.MTURK_MODE !== 'off') { //compensations
       usersChangeQuery.systemStatus = 'hasbanged';
-      if (process.env.MTURK_FRAME === 'ON') {
-        await expireHIT(batch.HITId) //close main task
-      }
       const batchLiveTime = moment().diff(moment(batch.startTime), 'seconds') / 3600;
       let bonus = 12 * batchLiveTime - 1;
       if (bonus > 15) bonus = 15;

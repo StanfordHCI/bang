@@ -180,8 +180,7 @@ if (process.env.MTURK_MODE !== 'off') {
           const assignment = as[i];
           const check = await User.findOne({mturkId: assignment.WorkerId});
           if (!check) {//add user to db and give willbang qual
-            const url = process.env.MTURK_FRAME === 'ON' ? ' https://workersandbox.mturk.com/requesters/A3QTK0H2SRN96W/projects' : //inside frame logic; should be changed if we wanna use it
-              process.env.HIT_URL + '?assignmentId=' + assignment.AssignmentId + '&workerId=' + assignment.WorkerId;
+            const url = process.env.HIT_URL + '?assignmentId=' + assignment.AssignmentId + '&workerId=' + assignment.WorkerId;
             const message = 'Hi, thanks for accepting our HIT! ' +
             'Your FULL participation will earn you a bonus of $12/hour.' + '\n\n' +
             'You can join the task here: ' + url + '\n\n' +
