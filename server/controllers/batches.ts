@@ -205,9 +205,6 @@ const startBatch = async function (batch, socket, io) {
     //last survey
     await timeout(240000);
 
-    if (process.env.MTURK_FRAME === 'ON' && process.env.MTURK_MODE !== 'off') {
-      await expireHIT(batch.HITId)
-    }
     await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
     logger.info(module, 'Main experiment end: ' + batch._id)
     clearRoom(batch._id, io)

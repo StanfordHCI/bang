@@ -94,7 +94,7 @@ export const addHIT = (batch, isMain) => {
     const rewardPrice = 0.01;
     const duration = isMain ? 36000 : 250;
     let bonusPrice = (hourlyWage * getBatchTime(batch)).toFixed(2);
-    let bg = process.env.MTURK_FRAME === 'ON' ? (isMain ? 'Main task. ' : 'Test task. ') : 'Recruit task. ';
+    let bg = 'Recruit task. ';
     let HITTitle = batch.HITTitle ? batch.HITTitle : bg + "Write online ads - bonus up to $" + hourlyWage + " / hour (";
     const batchTime = Math.round((batch.roundMinutes + batch.surveyMinutes) * batch.numRounds );
     let description =
@@ -436,6 +436,7 @@ export const bestRound = async (batch) => {
   const points = Array(numRounds); // storage for round scores
   for (let i = 0; i < numRounds; ++i) {
     const surveys = await Survey.find({ batch: batch._id, round: i + 1, surveyType: 'midsurvey' });
+    const surveysCount = surveys.length;
     const answerTypes = batch.tasks[i].survey ? batch.tasks[i].survey.map(surv => surv.type) : [];
     // user's score is a sum of all select answer's values in ALL midSurveys of a round, for example:
     /*
@@ -444,6 +445,7 @@ export const bestRound = async (batch) => {
     * score = (0 + 1) + (4 + 1) = 6
     * */
     let score = 0;
+    let averageScore = 0
     try {
       if (surveys) {
         const questions = surveys.map(surv => surv.questions);
@@ -452,12 +454,18 @@ export const bestRound = async (batch) => {
         score = questionResults.reduce((a, b) => {
           return parseInt(a) + parseInt(b);
         });
+        averageScore = parseFloat((score / surveysCount).toFixed(2));
       }
     }
     catch (e) {
       score = 0;
+      averageScore = 0;
     }
-    points[i] = score;
+    if (!averageScore) {
+        averageScore = 0;
+    }
+    // points[i] = score;
+      points[i] = averageScore;
   }
 
   const prsHelper = []
@@ -471,4 +479,10 @@ export const bestRound = async (batch) => {
   const maxIndex = findMaxIndex(points);
   return points.length ? maxIndex : 0;
 };
+
+export const calculateMoneyForBatch = batch => {
+  const teamFormat = batch.teamFormat;
+  const batchCapacity = teamFormat === 'single' ? batch.teamSize : batch.teamSize ** 2;
+  return batchCapacity * 12 * getBatchTime(batch);
+}
 

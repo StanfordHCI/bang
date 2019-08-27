@@ -53,8 +53,7 @@ export const init = async function (data, socket, io) {
     let user;
     let token = data.token || '';
     //it looks irrational to check url vars before token, but user can return with another assignmentId and with the same token
-    if ((process.env.MTURK_FRAME === 'ON' && data.mturkId && data.assignmentId && data.hitId && data.turkSubmitTo) ||
-      (process.env.MTURK_FRAME === 'OFF' && data.mturkId && data.assignmentId)) {
+    if (data.mturkId && data.assignmentId) {
       user = await User.findOneAndUpdate({mturkId: data.mturkId}, {$set: {mainAssignmentId: data.assignmentId}}, {new: true}).lean().exec();
     } else {
       user = await User.findOne({token: token}).lean().exec();

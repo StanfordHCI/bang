@@ -26,15 +26,16 @@ const botId = '100000000000000000000001'
 import {io} from '../index'
 import {Bonus} from "../models/bonuses";
 import {activeCheck} from "./users";
+import {calculateMoneyForBatch} from "./utils";
 
 
 export const addBatch = async function (req, res) {
   try {
     const teamFormat = req.body.teamFormat;
-    const batches = await Batch.find({$or: [{status: 'waiting'}, {status: 'active'}]}).select('tasks teamSize roundMinutes surveyMinutes numRounds').lean().exec();
+    const batches = await Batch.find({$or: [{status: 'waiting'}, {status: 'active'}]}).select('tasks teamSize roundMinutes surveyMinutes numRounds teamFormat').lean().exec();
     let batchSumCost = 0;
     batches.forEach(batch => {
-      const moneyForBatch = (batch.teamSize ** 2) * 12 * getBatchTime(batch);
+      const moneyForBatch = calculateMoneyForBatch(batch);
       batchSumCost = batchSumCost + moneyForBatch;
     })
     let newBatch = req.body;
@@ -44,7 +45,7 @@ export const addBatch = async function (req, res) {
     if (process.env.MTURK_MODE !== 'off') {
       let balance = await getAccountBalance();
       balance = parseFloat(balance.AvailableBalance);
-      const moneyForBatch = (newBatch.teamSize ** 2) * 12 * getBatchTime(newBatch);
+      const moneyForBatch = calculateMoneyForBatch(newBatch);
       if (balance < moneyForBatch + batchSumCost) {
         const message = 'Account balance: $' + balance + '. Experiment cost: $' + moneyForBatch.toFixed(2) +
           ' . Waiting/active batches cost: ' + batchSumCost.toFixed(2)
@@ -133,7 +134,7 @@ export const addBatch = async function (req, res) {
     });
     const batchWithChat = await Batch.findByIdAndUpdate(batch._id, {$set: {preChat: preChat._id}})
     res.json({batch: batchWithChat})
-    logger.info(module, 'New batch added. Mturk mode: ' + process.env.MTURK_MODE + '; Mturk frame: ' + process.env.MTURK_FRAME);
+    logger.info(module, 'New batch added. Mturk mode: ' + process.env.MTURK_MODE);
 
     let prs = [], counter = 0;
     prs.push(activeCheck(io))
@@ -248,9 +249,6 @@ export const stopBatch = async function (req, res) {
     let usersChangeQuery = {batch: null, realNick: null, fakeNick: null, currentChat: null}
     if (batch.status === 'active' && process.env.MTURK_MODE !== 'off') { //compensations
       usersChangeQuery.systemStatus = 'hasbanged';
-      if (process.env.MTURK_FRAME === 'ON') {
-        await expireHIT(batch.HITId) //close main task
-      }
       const batchLiveTime = moment().diff(moment(batch.startTime), 'seconds') / 3600;
       let bonus = 12 * batchLiveTime - 1;
       if (bonus > 15) bonus = 15;
