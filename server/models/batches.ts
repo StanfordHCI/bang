@@ -71,5 +71,6 @@ let  BatchSchema = new Schema({
   withAutoStop: {type: Boolean, default: true, required: true},
   rememberTeamOrder: {type: Boolean, default: false, required: true},
   teamFormat: {type: String, required: true},
+  bestRoundFunction: {type: String, required: true, $enum: ['highest', 'lowest', 'average', 'random', null]},
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);

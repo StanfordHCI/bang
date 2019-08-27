@@ -55,6 +55,7 @@ class AddBatch extends React.Component {
     batch.teamFormat = form.teamFormat;
     batch.rememberTeamOrder = form.rememberTeamOrder;
     batch.loadTeamOrder = form.loadTeamOrder;
+    batch.bestRoundFunction = form.bestRoundFunction;
     this.props.addBatch(batch)
   }
 
@@ -76,7 +77,18 @@ class AddBatch extends React.Component {
                     name='teamFormat'
                     component={renderSelectField}
                     options={[{value: 'single', label: 'Single-team'}, {value: 'multi', label: 'Multi-team'}]}
-                    onChange={this.loadFilteredTemplateList}
+                  />
+                </div>
+              </div>
+              <div className='form__form-group'>
+                <label className='form__form-group-label'>Best Team Function</label>
+                <div className='form__form-group-field'>
+                  <Field
+                      name='bestRoundFunction'
+                      component={renderSelectField}
+                      options={[{value: 'highest', label: 'Highest score'}, {value: 'lowest', label: 'Lowest score'},
+                        {value: 'average', label: 'Closest to average'}, {value: 'random', label: 'Random'}]}
+                      disabled={this.props.teamFormat !== 'single'}
                   />
                 </div>
               </div>
@@ -196,6 +208,9 @@ const validate = (values, props) => {
   }
   if (values.teamFormat == null) {
     errors.teamFormat = 'required'
+  }
+  if (props.teamFormat === 'single' && values.bestRoundFunction == null) {
+    errors.bestRoundFunction = 'required'
   }
 
   return errors
