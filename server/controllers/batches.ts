@@ -127,7 +127,6 @@ export const loadBatch = async function (data, socket, io) {
         chat.members = prs[1];
         chat.members.forEach(member => {
           const batchUser = batch.users.find(x => x.user.toString() === member._id.toString());
-          console.log(batchUser)
           if (batchUser) {
             member.isActive = batchUser.isActive;
           }
