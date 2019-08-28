@@ -546,8 +546,6 @@ export const bestRound = async (batch) => {
     return findMinIndex(points);
   }
   if (bestRoundFunction === 'average') {
-    console.log('median: ', medianScores);
-    console.log('points: ', points);
     return findClosestIndex(points, medianScores)
   }
   if (bestRoundFunction === 'random') {
