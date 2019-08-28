@@ -28,12 +28,9 @@ export const activeCheck = async function (io) {
     }
     let limit = 999;
     if (batch) {
-      if (batch.teamFormat === 'single') {
-        limit = batch.teamSize // single-teamed batch
-      }
-      else {
-        limit = batch.teamSize ** 2 // multi-teamed batch
-      }
+      // for both, make it look like the batch will start at size**2 users
+      // = limit is different than when batch is actually ready
+      limit = batch.teamSize ** 2;
     }
     io.to('waitroom').emit('clients-active', {activeCounter: counter.waitchat, batchReady: !!batch, limit: limit});
     logger.info(module, 'connected: ' + counter.all + '; waitroom: ' + counter.waitroom + '; waitchat: ' + counter.waitchat + '; in active batches: ' + counter.active);

@@ -679,16 +679,18 @@ function mapStateToProps(state) {
   }
   let limit = 999;
   if (batch) {
-    if (batch.teamFormat === 'single') {
-      limit = batch.teamSize;
-    }
-    else {
-      limit = batch.teamSize ** 2;
-    }
+    // for both, make it look like the batch will start at size**2 users
+    // = limit is different than when batch is actually ready
+    limit = batch.teamSize ** 2;
   }
+  // for single teams, make it seem like we're accumultaing more people for every person that joins
+  let disp_activecounter = 0;
+  if (batch) {
+    disp_activecounter = (batch.teamFormat === 'single') ? batch.users.length * 2 : batch.users.length;
+  } 
   return {
     limit: limit,
-    activeCounter: batch ? batch.users.length : 0,
+    activeCounter: batch ? disp_activecounter : 0, 
     user: state.app.user,
     batch: batch,
     chat: chat,
