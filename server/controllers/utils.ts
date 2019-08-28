@@ -554,7 +554,7 @@ export const bestRound = async (batch) => {
     const randomRound = getRandomInt(0, numRounds - 1);
     return randomRound;
   }
-  return points.length ? maxIndex : 0;
+  return 0;
 };
 
 export const calculateMoneyForBatch = batch => {
