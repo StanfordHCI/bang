@@ -1,9 +1,9 @@
-import { Survey } from "../models/surveys";
+import {Survey} from "../models/surveys";
+import * as AWS from "aws-sdk";
+import {Batch} from "../models/batches";
 
 require('dotenv').config({path: './.env'});
 export const runningLive = process.env.MTURK_MODE === "prod";
-import * as AWS from "aws-sdk";
-import { Batch } from "../models/batches";
 AWS.config.accessKeyId = process.env.AWS_ID;
 AWS.config.secretAccessKey = process.env.AWS_KEY;
 AWS.config.region = "us-east-1";
@@ -496,7 +496,7 @@ export const bestRound = async (batch) => {
     if (batch.tasks[i].survey) {
       batch.tasks[i].survey.forEach((surv) => {
         if (surv.type === 'select') {
-          medianScore += surv.selectOptions.map(option => parseInt(option.value) + 1).reduce((a, b) => a + b) / 2;
+          medianScore += surv.selectOptions.map(option => parseInt(option.value) + 1).reduce((a, b) => a + b) / surv.selectOptions.length;
         }
       });
     }
@@ -539,8 +539,6 @@ export const bestRound = async (batch) => {
     prsHelper.push(Batch.update({_id: batch._id}, {$set: setObject}));
   });
   await Promise.all(prsHelper);
-  const maxIndex = findMaxIndex(points);
-  let result;
   if (bestRoundFunction === 'highest') {
     return findMaxIndex(points)
   }
@@ -548,11 +546,11 @@ export const bestRound = async (batch) => {
     return findMinIndex(points);
   }
   if (bestRoundFunction === 'average') {
+    console.log('median: ', medianScores);
     return findClosestIndex(points, medianScores)
   }
   if (bestRoundFunction === 'random') {
-    const randomRound = getRandomInt(0, numRounds - 1);
-    return randomRound;
+    return getRandomInt(0, numRounds - 1);
   }
   return 0;
 };
