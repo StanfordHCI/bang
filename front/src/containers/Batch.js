@@ -24,6 +24,7 @@ import { findDOMNode } from 'react-dom'
 import { bindActionCreators } from "redux";
 import moment from 'moment'
 import { loadBatch, sendMessage, submitSurvey } from 'Actions/batches'
+import { listener } from 'Actions/app'
 import RoundSurveyForm from './RoundSurveyForm'
 import PostSurveyForm from './PostSurveyForm'
 import { history } from "../app/history";
@@ -126,15 +127,10 @@ class Batch extends React.Component {
 
   componentWillUnmount() {
     clearInterval(this.roundTimer);
-    window.removeEventListener("beforeunload", (ev) => {
-      return ev.returnValue = `Are you sure you want to leave?`;
-    });
+    window.removeEventListener("beforeunload", listener);
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
-    if (prevProps.batch && this.props.batch) {
-      // console.log(prevProps.batch.status, this.props.batch.status)
-    }
     if (this.state.timeLeft === 0 && prevState.timeLeft) {
       this.setState({
         isStartNotifySent: true,
@@ -150,10 +146,7 @@ class Batch extends React.Component {
 
   componentWillReceiveProps(nextProps, nextState) {
     if (!this.state.closeBlockReady && nextProps.batch &&  nextProps.batch.status === 'active') {
-      window.addEventListener("beforeunload", (ev) =>
-      {
-        return ev.returnValue = `Are you sure you want to leave?`;
-      });
+      window.addEventListener("beforeunload", listener);
       this.setState({closeBlockReady: true})
     }
 
@@ -412,14 +405,11 @@ class Batch extends React.Component {
                   } else {
                     nick = batch.maskType === 'masked' ? member.fakeNick : member.realNick;
                   }
-                  if (batch.roundMinutes * 60 - this.state.timeLeft > 60 && !chat.messages.some(x => x.user.toString() === member._id.toString())) {
-                    nick = nick + ' (afk)'
-                  }
 
                   return (<tr key={member._id}>
                     <td>
                       <div className='chat__bubble-contact-name'>
-                        {nick}
+                        {member.isActive ? nick : ''}
                       </div>
                     </td>
                   </tr>)

@@ -27,28 +27,22 @@ class AddBatch extends React.Component {
       options: [],
     }
   }
-  componentWillMount(){
-    // we load singleTeam templates and multiTeam templates and put the into state for further usage
-    this.props.loadTemplateList({teamFormat: 'single'})
-      .then(() => {this.setState({singleTeamTemplateOptions: this.props.templateList.map(x => {return {value: x._id, label: x.name}})});
-      });
-    this.props.loadTemplateList({teamFormat: 'multi'})
-      .then(() => {this.setState({multiTeamTemplateOptions : this.props.templateList.map(x => {return {value: x._id, label: x.name}})});
-      })
-      .then(() => this.props.loadTemplateList({full:true}));
-    this.props.loadBatchList({remembered: true}).then(() => {
-            let batchOptions = [{value: false, label: "Don't load"}];
-            batchOptions = batchOptions.concat(this.props.batchList.map(x => {return {value: x._id, label: `${x.templateName}(${x.note}) ${x.createdAt}`}}));
-            this.setState({isReady: true, batchOptions: batchOptions})
-          })
-  }
 
-  componentDidUpdate(prevProps, prevState, snapshot) {
-    if (this.props.teamFormat !== prevProps.teamFormat) {
-      this.props.teamFormat === 'single' ?
-        this.setState({options: this.state.singleTeamTemplateOptions}) :
-        this.setState({options: this.state.multiTeamTemplateOptions});
-    }
+  async componentWillMount(){
+    await Promise.all([
+      this.props.loadTemplateList({full:true}),
+      this.props.loadBatchList({remembered: true})
+    ])
+    let batchOptions = this.props.batchList.map(x => {return {value: x._id, label: `${x.templateName}(${x.note}) ${x.createdAt}`}});
+    batchOptions.unshift({value: false, label: "Don't load"})
+    this.setState({
+      singleTeamTemplateOptions: this.props.templateList.filter(x => x.teamFormat === 'single')
+        .map(x => {return {value: x._id, label: x.name}}),
+      multiTeamTemplateOptions: this.props.templateList.filter(x => x.teamFormat !== 'single')
+        .map(x => {return {value: x._id, label: x.name}}),
+      batchOptions: batchOptions,
+      isReady: true
+    })
   }
 
   handleSubmit(form) {
@@ -61,6 +55,7 @@ class AddBatch extends React.Component {
     batch.teamFormat = form.teamFormat;
     batch.rememberTeamOrder = form.rememberTeamOrder;
     batch.loadTeamOrder = form.loadTeamOrder;
+    batch.bestRoundFunction = form.bestRoundFunction;
     this.props.addBatch(batch)
   }
 
@@ -82,7 +77,18 @@ class AddBatch extends React.Component {
                     name='teamFormat'
                     component={renderSelectField}
                     options={[{value: 'single', label: 'Single-team'}, {value: 'multi', label: 'Multi-team'}]}
-                    onChange={this.loadFilteredTemplateList}
+                  />
+                </div>
+              </div>
+              <div className='form__form-group'>
+                <label className='form__form-group-label'>Best Team Function</label>
+                <div className='form__form-group-field'>
+                  <Field
+                      name='bestRoundFunction'
+                      component={renderSelectField}
+                      options={[{value: 'highest', label: 'Highest score'}, {value: 'lowest', label: 'Lowest score'},
+                        {value: 'average', label: 'Closest to average'}, {value: 'random', label: 'Random'}]}
+                      disabled={this.props.teamFormat !== 'single'}
                   />
                 </div>
               </div>
@@ -92,7 +98,7 @@ class AddBatch extends React.Component {
                   <Field
                     name='template'
                     component={renderSelectField}
-                    options={this.state.options}
+                    options={this.props.teamFormat === 'single' ? this.state.singleTeamTemplateOptions : this.state.multiTeamTemplateOptions}
                   />
                 </div>
               </div>
@@ -163,7 +169,6 @@ class AddBatch extends React.Component {
                     name='note'
                     component={renderTextArea}
                     type='text'
-                    options={[{value: true, label: 'With roster'}, {value: false, label: 'Without roster'}]}
                   />
                 </div>
               </div>
@@ -204,6 +209,9 @@ const validate = (values, props) => {
   if (values.teamFormat == null) {
     errors.teamFormat = 'required'
   }
+  if (props.teamFormat === 'single' && values.bestRoundFunction == null) {
+    errors.bestRoundFunction = 'required'
+  }
 
   return errors
 };
@@ -222,6 +230,15 @@ function mapStateToProps(state) {
     templateList: state.template.templateList,
     batchList: state.admin.batchList,
     teamFormat: selector(state, 'teamFormat'),
+    initialValues: {
+      teamFormat: 'multi',
+      maskType: 'masked',
+      withAvatar: true,
+      withRoster: false,
+      withAutoStop: true,
+      rememberTeamOrder: false,
+      loadTeamOrder: false
+    }
   }
 }
 

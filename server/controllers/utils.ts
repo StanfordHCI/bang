@@ -1,9 +1,9 @@
-import { Survey } from "../models/surveys";
+import {Survey} from "../models/surveys";
+import * as AWS from "aws-sdk";
+import {Batch} from "../models/batches";
 
 require('dotenv').config({path: './.env'});
 export const runningLive = process.env.MTURK_MODE === "prod";
-import * as AWS from "aws-sdk";
-import { Batch } from "../models/batches";
 AWS.config.accessKeyId = process.env.AWS_ID;
 AWS.config.secretAccessKey = process.env.AWS_KEY;
 AWS.config.region = "us-east-1";
@@ -427,17 +427,80 @@ const findMaxIndex = (points) => {
   return maxIndex;
 };
 
+const findMinIndex = points => {
+  if (!points.length) {
+    return 0;
+  }
+  let minPoints = 0;
+  let i = 0;
+  while (!minPoints && i < points.length) {
+    minPoints = points[i++];
+  }
+  let minIndex = 0;
+  for (let i = 0; i < points.length; i++) {
+    if (points[i] && points[i] <= minPoints) {
+      minPoints = points[i];
+      minIndex = i;
+    }
+  }
+  return minIndex;
+};
+
+const findClosestIndex = (points, medianArray) => {
+  // finding i which gives minimal abs(points[i] - medianArray[i])
+  if (points.length && medianArray.length) {
+    let results = [];
+    points.forEach((val, ind, arr) => {
+      if (arr.length - 1 !== ind) {
+        results = results.concat(Math.abs(val - medianArray[ind]).toFixed(2));
+      }
+    });
+    return findMinIndex(results)
+  }
+};
+
+/**
+ * Returns a random number between min (inclusive) and max (exclusive)
+ */
+function getRandomArbitrary(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+/**
+ * Returns a random integer between min (inclusive) and max (inclusive).
+ * The value is no lower than min (or the next integer greater than min
+ * if min isn't an integer) and no greater than max (or the next integer
+ * lower than max if max isn't an integer).
+ * Using Math.round() will give you a non-uniform distribution!
+ */
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 // Returns the index of round in which the team has the best results
 // Used only in single-team batches
 // If an error occurs, returns 0, so the teams will be like in the round 1,
 // happens only if no one has completed any midSurveys at all
 export const bestRound = async (batch) => {
+  const bestRoundFunction = batch.bestRoundFunction;
   const numRounds = batch.numRounds;
   const points = Array(numRounds); // storage for round scores
+  let medianScores = [];
   for (let i = 0; i < numRounds; ++i) {
     const surveys = await Survey.find({ batch: batch._id, round: i + 1, surveyType: 'midsurvey' });
     const surveysCount = surveys.length;
     const answerTypes = batch.tasks[i].survey ? batch.tasks[i].survey.map(surv => surv.type) : [];
+    let medianScore = 0;
+    if (batch.tasks[i].survey) {
+      batch.tasks[i].survey.forEach((surv) => {
+        if (surv.type === 'select') {
+          medianScore += surv.selectOptions.map(option => parseInt(option.value) + 1).reduce((a, b) => a + b) / surv.selectOptions.length;
+        }
+      });
+    }
+    medianScores = medianScores.concat(medianScore);
     // user's score is a sum of all select answer's values in ALL midSurveys of a round, for example:
     /*
     * User1: 0 (strongly disagree)
@@ -445,7 +508,7 @@ export const bestRound = async (batch) => {
     * score = (0 + 1) + (4 + 1) = 6
     * */
     let score = 0;
-    let averageScore = 0
+    let averageScore = 0;
     try {
       if (surveys) {
         const questions = surveys.map(surv => surv.questions);
@@ -476,8 +539,19 @@ export const bestRound = async (batch) => {
     prsHelper.push(Batch.update({_id: batch._id}, {$set: setObject}));
   });
   await Promise.all(prsHelper);
-  const maxIndex = findMaxIndex(points);
-  return points.length ? maxIndex : 0;
+  if (bestRoundFunction === 'highest') {
+    return findMaxIndex(points)
+  }
+  if (bestRoundFunction === 'lowest') {
+    return findMinIndex(points);
+  }
+  if (bestRoundFunction === 'average') {
+    return findClosestIndex(points, medianScores)
+  }
+  if (bestRoundFunction === 'random') {
+    return getRandomInt(0, numRounds - 2);
+  }
+  return 0;
 };
 
 export const calculateMoneyForBatch = batch => {

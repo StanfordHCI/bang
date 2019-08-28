@@ -83,12 +83,13 @@ class BatchList extends React.Component {
                   </thead>
                   <tbody>
                   {this.state.pageOfItems.map((batch, index) => {
+                    console.log(batch.currentRound, batch.numRounds)
                     return <tr key={batch._id}>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{(this.state.page - 1) * pageSize + index + 1}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{moment(batch.createdAt).format('YYYY.DD.MM-HH:mm:ss')}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{!!batch.startTime ? moment(batch.startTime).format('YYYY.DD.MM-HH:mm:ss') : 'not started'}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{batch.teamFormat ? batch.teamFormat : 'multi'}</td>
-                      <td onClick={() => history.push('/batches/' + batch._id)}>{batch.status}</td>
+                      <td onClick={() => history.push('/batches/' + batch._id)}>{batch.status + (batch.status === 'completed' && batch.currentRound < batch.numRounds ? ' (stopped)' : '')}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{batch.templateName}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{batch.note}</td>
                       <td onClick={() => history.push('/batches/' + batch._id)}>{batch.maskType}</td>

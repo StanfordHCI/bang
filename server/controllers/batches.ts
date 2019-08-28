@@ -18,6 +18,7 @@ import {
   bestRound
 } from "./utils";
 import {errorHandler} from '../services/common'
+import {io} from "../index";
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
 const randomAnimal = "Squirrel Rhino Horse Pig Panda Monkey Lion Orangutan Gorilla Hippo Rabbit Wolf Goat Giraffe Donkey Cow Bear Bison".split(" ");
@@ -94,7 +95,7 @@ export const joinBatch = async function (data, socket, io) {
 }
 
 export const loadBatch = async function (data, socket, io) {
-  let chat, userInfo, teamUsers = [];
+  let chat, userInfo;
   try {
     const batch = await Batch.findById(data.batch).lean().exec();
     if (batch.status === 'waiting') {
@@ -114,7 +115,6 @@ export const loadBatch = async function (data, socket, io) {
           team.users.forEach(user => {
             if (user.user.toString() === socket.userId.toString()) {
               chatId = team.chat;
-              teamUsers = team.users;
             }
           })
         })
@@ -125,13 +125,13 @@ export const loadBatch = async function (data, socket, io) {
         ])
         chat = prs[0];
         chat.members = prs[1];
-        /*chat.members.forEach(member => {
-          const teamUser = teamUsers.find(x => x.user.toString() === member._id.toString());
-          if (teamUser) {
-            member.isActive = teamUser.isActive;
+        chat.members.forEach(member => {
+          const batchUser = batch.users.find(x => x.user.toString() === member._id.toString());
+          if (batchUser) {
+            member.isActive = batchUser.isActive;
           }
           return member;
-        })*/
+        })
         if (prs[2]) batch.surveyDone = true;
         userInfo = chat.members.find(x => x._id.toString() === socket.userId.toString())
         socket.join(chatId.toString())
@@ -152,7 +152,6 @@ export const loadBatch = async function (data, socket, io) {
     socket.emit('loaded-batch', {batch: batch, chat: chat, userInfo: userInfo})
   } catch (e) {
     errorHandler(e, 'load batch error, user: ' + socket.userId)
-    console.log(chat)
   }
 }
 
@@ -185,8 +184,9 @@ const startBatch = async function (batch, socket, io) {
     let rounds = [];
     let oldNicks = users.map(user => user.realNick)
 
+    let kickedUsers = [];
     for (let i = 0; i < numRounds; i++) {
-      await roundRun(batch, users, rounds, i, oldNicks, teamSize, io);
+      await roundRun(batch, users, rounds, i, oldNicks, teamSize, io, kickedUsers);
     }
     const postBatchInfo = {status: 'completed'};
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: postBatchInfo}).lean().exec();
@@ -196,6 +196,9 @@ const startBatch = async function (batch, socket, io) {
     await timeout(240000);
 
     await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
+    if (batch.teamFormat === 'single') {
+      await bestRound(batch); // set the field 'score' for every round with a midSurvey
+    }
     logger.info(module, 'Main experiment end: ' + batch._id)
     clearRoom(batch._id, io)
   } catch (e) {
@@ -231,9 +234,6 @@ export const receiveSurvey = async function (data, socket, io) {
       if (!batch) {
         logger.info(module, 'Blocked survey, survey/user does not have batch');
         return;
-      }
-      if (batch.teamFormat === 'single') {
-        await bestRound(batch); // set the field 'score' for every round with a midSurvey
       }
       let bonusPrice = (12 * getBatchTime(batch));
       if (bonusPrice > 15) {
@@ -312,7 +312,7 @@ const generateTeams = (roundGen, users, roundNumber, oldNicks) => {
   return teams;
 }
 
-const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io) => {
+const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedUsers) => {
   const task = batch.tasks[i];
   let roundObject = {startTime: new Date(), number: i + 1, teams: [], status: task.hasPreSurvey ? 'presurvey' : 'active', endTime: null};
   let emptyChats = [];
@@ -343,7 +343,11 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io) => {
           message: 'Task: ' + (task ? task.message : 'empty'),
           time: new Date()
         };
-        const chat = await Chat.findByIdAndUpdate(chatId, { $addToSet: { messages: newMessage} }, {new: true}).populate('batch').lean().exec();
+        const oldChat = await Chat.findById(chatId).lean().exec();
+        const messages = oldChat.messages;
+        const newChat = {batch: batch._id, messages: messages.concat({user: botId, nickname: 'helperBot', time: new Date(),
+            message: 'Task: ' + (task ? task.message : 'empty')})}
+        const chat = await Chat.create(newChat);
         chats = [chat];
       }
       else {
@@ -400,16 +404,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io) => {
   await timeout(batch.roundMinutes * (1 - task.steps[task.steps.length - 1].time) * 60000);
 
   if (task.hasMidSurvey) {
-    const filledChats = await Chat.find({_id: {$in: chats.map(x => x._id)}}).lean().exec();
     roundObject.status = 'midsurvey';
-    roundObject.teams.forEach((team, index) => {
-      team.users.forEach(user => {
-        const chat = filledChats.find(x => x._id.toString() === team.chat.toString());
-        user.isActive = chat.messages.some(x => x.user.toString() === user.user.toString());
-        return user;
-      })
-      return team;
-    })
     const midRoundInfo = {rounds: rounds};
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: midRoundInfo}).lean().exec();
     logger.info(module, batch._id + ' : Begin survey for round ' + roundObject.number)
@@ -420,10 +415,34 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io) => {
     await timeout(batch.surveyMinutes * 60000);
   }
 
+  const [filledChats, roundSurveys] = await Promise.all([
+    Chat.find({_id: {$in: chats.map(x => x._id)}}).lean().exec(),
+    Survey.find({batch: batch._id, round: i + 1, surveyType: {$in: ['presurvey', 'midsurvey']}}).select('user').lean().exec()
+  ])
+  roundObject.teams.forEach((team, index) => {
+    team.users.forEach(user => {
+      const chat = filledChats.find(x => x._id.toString() === team.chat.toString());
+      const userSurveys = roundSurveys.filter(x => x.user.toString() === user.user.toString());
+      user.isActive = chat.messages.some(x => x.user.toString() === user.user.toString())
+      if (!user.isActive && !kickedUsers.some(id => id === user.user.toString())) {
+        kickUser(user.user, batch._id, i + 1);
+        kickedUsers.push(user.user.toString())
+      }
+    })
+  })
+
   roundObject.endTime = new Date();
   roundObject.status = 'completed';
   const endRoundInfo = {rounds: rounds};
   batch = await Batch.findByIdAndUpdate(batch._id, {$set: endRoundInfo}).lean().exec();
   logger.info(module, batch._id + ' : End round ' + roundObject.number)
   io.to(batch._id.toString()).emit('end-round', endRoundInfo);
+}
+
+const kickUser = async (userId, batchId, kickedAfterRound) => {
+  await Batch.findOneAndUpdate({_id: batchId, 'users.user': userId}, {$set: {'users.$.isActive': false, 'users.$.kickedAfterRound': kickedAfterRound}})
+  const user = await User.findByIdAndUpdate(userId, { $set:
+      { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}}, {new: true}).lean().exec()
+  io.to(user.socketId).emit('kick-afk', true);
+  logger.info(module, batchId + ' : user kicked for being AFK. Mturk ID: ' + user.mturkId);
 }

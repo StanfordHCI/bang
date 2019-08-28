@@ -12,7 +12,9 @@ let  BatchSchema = new Schema({
   users: [{
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
     nickname: {type: String, required: true},
-    joinDate: {type: Date, required: true}
+    joinDate: {type: Date, required: true},
+    isActive: {type: Boolean, default: true, required: true},
+    kickedAfterRound: Number
   }],
   roundSurvey: [{type: String, required: true}],
   rounds: [{
@@ -23,8 +25,6 @@ let  BatchSchema = new Schema({
       users: [{
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
         nickname: {type: String, required: true},
-        isActive: {type: Boolean, default: true, required: true
-        }
       }],
       chat: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat', required: true},
     }],
@@ -72,5 +72,6 @@ let  BatchSchema = new Schema({
   withAutoStop: {type: Boolean, default: true, required: true},
   rememberTeamOrder: {type: Boolean, default: false, required: true},
   teamFormat: {type: String, required: true},
+  bestRoundFunction: {type: String, $enum: ['highest', 'lowest', 'average', 'random']},
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);
