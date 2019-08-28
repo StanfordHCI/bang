@@ -549,7 +549,7 @@ export const bestRound = async (batch) => {
     return findClosestIndex(points, medianScores)
   }
   if (bestRoundFunction === 'random') {
-    return getRandomInt(0, numRounds - 1);
+    return getRandomInt(0, numRounds - 2);
   }
   return 0;
 };

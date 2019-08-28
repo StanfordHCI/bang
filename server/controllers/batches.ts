@@ -196,6 +196,9 @@ const startBatch = async function (batch, socket, io) {
     await timeout(240000);
 
     await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
+    if (batch.teamFormat === 'single') {
+      await bestRound(batch); // set the field 'score' for every round with a midSurvey
+    }
     logger.info(module, 'Main experiment end: ' + batch._id)
     clearRoom(batch._id, io)
   } catch (e) {
@@ -231,9 +234,6 @@ export const receiveSurvey = async function (data, socket, io) {
       if (!batch) {
         logger.info(module, 'Blocked survey, survey/user does not have batch');
         return;
-      }
-      if (batch.teamFormat === 'single') {
-        await bestRound(batch); // set the field 'score' for every round with a midSurvey
       }
       let bonusPrice = (12 * getBatchTime(batch));
       if (bonusPrice > 15) {
@@ -343,7 +343,11 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
           message: 'Task: ' + (task ? task.message : 'empty'),
           time: new Date()
         };
-        const chat = await Chat.findByIdAndUpdate(chatId, { $addToSet: { messages: newMessage} }, {new: true}).populate('batch').lean().exec();
+        const oldChat = await Chat.findById(chatId).lean().exec();
+        const messages = oldChat.messages;
+        const newChat = {batch: batch._id, messages: messages.concat({user: botId, nickname: 'helperBot', time: new Date(),
+            message: 'Task: ' + (task ? task.message : 'empty')})}
+        const chat = await Chat.create(newChat);
         chats = [chat];
       }
       else {
