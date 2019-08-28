@@ -409,7 +409,7 @@ class Batch extends React.Component {
                   return (<tr key={member._id}>
                     <td>
                       <div className='chat__bubble-contact-name'>
-                        {member.isActive ? nick : 'kicked user'}
+                        {member.isActive ? nick : ''}
                       </div>
                     </td>
                   </tr>)
