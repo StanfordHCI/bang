@@ -399,21 +399,17 @@ class Batch extends React.Component {
               </thead>
               <tbody>
                 {chat.members.map((member) => {
-                  if (!member.isActive) return;
                   let nick = '';
                   if (member._id.toString() === user._id.toString()) {
                     nick = member.realNick + ' (you)';
                   } else {
                     nick = batch.maskType === 'masked' ? member.fakeNick : member.realNick;
                   }
-                  /*if (batch.roundMinutes * 60 - this.state.timeLeft > 60 && !chat.messages.some(x => x.user.toString() === member._id.toString())) {
-                    nick = nick + ' (afk)'
-                  }*/
 
-                  return (<tr key={member._id} style={{visibility: !member.isActive ? 'hidden' : ''}}>
+                  return (<tr key={member._id}>
                     <td>
                       <div className='chat__bubble-contact-name'>
-                        {nick}
+                        {member.isActive ? nick : 'kicked user'}
                       </div>
                     </td>
                   </tr>)

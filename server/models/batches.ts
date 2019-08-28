@@ -13,7 +13,8 @@ let  BatchSchema = new Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
     nickname: {type: String, required: true},
     joinDate: {type: Date, required: true},
-    isActive: {type: Boolean, default: true, required: true}
+    isActive: {type: Boolean, default: true, required: true},
+    kickedAfterRound: Number
   }],
   roundSurvey: [{type: String, required: true}],
   rounds: [{

@@ -176,7 +176,7 @@ export const loadBatchList = async function (req, res) {
   try {
     let select = '';
     if (!req.query.full) {
-      select = 'createdAt startTime status currentRound teamSize templateName note maskType teamFormat';
+      select = 'createdAt startTime status currentRound teamSize templateName note maskType teamFormat numRounds';
     }
     const predicate = remembered ? {rememberTeamOrder: true, rounds: { $ne: [ ]}} : {}; // if remembered loads only batches with remembered == true
     const batchList = await Batch.find(predicate).sort({createdAt: -1}).select(select).lean().exec();
@@ -240,8 +240,8 @@ export const stopBatch = async function (req, res) {
       let bangPrs = [];
       batch.users.forEach(userObject => {
         const user = userObject.user;
-        bangPrs.push(assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL))
-        if (bonus > 0) {
+        //bangPrs.push(assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL))
+        if (bonus > 0 && userObject.isActive) {
           bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, bonus.toFixed(2)))
           bangPrs.push(Bonus.create({
             batch: batch._id,

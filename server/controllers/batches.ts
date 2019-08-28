@@ -421,7 +421,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
       const userSurveys = roundSurveys.filter(x => x.user.toString() === user.user.toString());
       user.isActive = chat.messages.some(x => x.user.toString() === user.user.toString())
       if (!user.isActive && !kickedUsers.some(id => id === user.user.toString())) {
-        kickUser(user.user, batch._id);
+        kickUser(user.user, batch._id, i + 1);
         kickedUsers.push(user.user.toString())
       }
     })
@@ -435,8 +435,8 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   io.to(batch._id.toString()).emit('end-round', endRoundInfo);
 }
 
-const kickUser = async (userId, batchId) => {
-  await Batch.findOneAndUpdate({_id: batchId, 'users.user': userId}, {$set: {'users.$.isActive': false}})
+const kickUser = async (userId, batchId, kickedAfterRound) => {
+  await Batch.findOneAndUpdate({_id: batchId, 'users.user': userId}, {$set: {'users.$.isActive': false, 'users.$.kickedAfterRound': kickedAfterRound}})
   const user = await User.findByIdAndUpdate(userId, { $set:
       { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}}, {new: true}).lean().exec()
   io.to(user.socketId).emit('kick-afk', true);

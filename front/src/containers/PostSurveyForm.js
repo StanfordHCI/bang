@@ -50,7 +50,7 @@ class PostSurveyForm extends React.Component {
 			const team = round.teams.find((x) => x.users.some((y) => y.user.toString() === userId));
 			team.users.forEach((user) => {
 				const batchUser = batch.users.find(x => x.user.toString() === user.user.toString())
-				if (user.user.toString() !== userId && batchUser.isActive) {
+				if (user.user.toString() !== userId && !(!batchUser.isActive && batchUser.kickedAfterRound >= index + 1)) {
 					uOptions.push({
 						value: roundPrefix + user.user,
 						label: user.nickname + ' (round ' + (index + 1) + ')'
