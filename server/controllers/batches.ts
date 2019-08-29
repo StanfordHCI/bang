@@ -334,7 +334,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     if (bestRoundIndex !== undefined) {
       // for setting scores field in DB
       const scores = bestRoundResult.scores;
-      rounds.forEach((round, ind) => {rounds[ind].score = scores[ind]});
+      rounds.forEach((round, ind) => {rounds[ind].score = scores[ind] !== undefined ? scores[ind]: 0});
       // setting expRounds = [bestRoundIndex, lastRoundIndex]
       prsHelper.push(Batch.updateOne({_id: batch._id}, {$set: {expRounds: bestRoundResult.expRounds}}));
       const batchData = await Batch.findById(batch._id);
