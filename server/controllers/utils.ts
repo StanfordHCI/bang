@@ -544,15 +544,6 @@ export const bestRound = async (batch) => {
   if (bestRoundFunction === 'random') {
     result = getRandomInt(0, numRounds - 2);
   }
-  const prsHelper = [];
-  // set score value for each round of batch
-  points.forEach((score, index) => {
-    const setObject = {};
-    setObject[`rounds.${index}.score`] = score;
-    prsHelper.push(Batch.update({_id: batch._id}, {$set: setObject}));
-  });
-  prsHelper.push(Batch.update({_id: batch._id}, {$set: {expRounds: [result + 1, numRounds]}}));
-  await Promise.all(prsHelper);
   return {bestRoundIndex: result, scores: points, expRounds: [result + 1, numRounds]};
 };
 
