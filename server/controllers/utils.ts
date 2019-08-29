@@ -531,27 +531,29 @@ export const bestRound = async (batch) => {
       points[i] = averageScore;
   }
 
-  const prsHelper = []
+  let result = 0;
+  if (bestRoundFunction === 'highest') {
+    result = findMaxIndex(points)
+  }
+  if (bestRoundFunction === 'lowest') {
+    result = findMinIndex(points);
+  }
+  if (bestRoundFunction === 'average') {
+    result = findClosestIndex(points, medianScores)
+  }
+  if (bestRoundFunction === 'random') {
+    result = getRandomInt(0, numRounds - 2);
+  }
+  const prsHelper = [];
   // set score value for each round of batch
   points.forEach((score, index) => {
     const setObject = {};
     setObject[`rounds.${index}.score`] = score;
     prsHelper.push(Batch.update({_id: batch._id}, {$set: setObject}));
   });
+  prsHelper.push(Batch.update({_id: batch._id}, {$set: {expRounds: [result + 1, numRounds]}}));
   await Promise.all(prsHelper);
-  if (bestRoundFunction === 'highest') {
-    return findMaxIndex(points)
-  }
-  if (bestRoundFunction === 'lowest') {
-    return findMinIndex(points);
-  }
-  if (bestRoundFunction === 'average') {
-    return findClosestIndex(points, medianScores)
-  }
-  if (bestRoundFunction === 'random') {
-    return getRandomInt(0, numRounds - 2);
-  }
-  return 0;
+  return {bestRoundIndex: result, scores: points, expRounds: [result + 1, numRounds]};
 };
 
 export const calculateMoneyForBatch = batch => {

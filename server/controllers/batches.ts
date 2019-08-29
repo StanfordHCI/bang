@@ -196,9 +196,6 @@ const startBatch = async function (batch, socket, io) {
     await timeout(240000);
 
     await User.updateMany({batch: batch._id}, { $set: { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}})
-    if (batch.teamFormat === 'single') {
-      await bestRound(batch); // set the field 'score' for every round with a midSurvey
-    }
     logger.info(module, 'Main experiment end: ' + batch._id)
     clearRoom(batch._id, io)
   } catch (e) {
@@ -319,6 +316,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   let chats;
   let teams;
   const teamFormat = batch.teamFormat;
+  let prsHelper = [];
   if (batch.numRounds !== i + 1 || teamFormat !== 'single') {
     // if it is not the last round of single-teamed batch
     // standard flow
@@ -329,32 +327,31 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     }
     chats = await Chat.insertMany(emptyChats);
     } else {
-      // if batch is single-teamed and the round is final, we do not generate teams, but get them from the best round
-      // also we do not generate chats and fake nicks
-      const bestRoundIndex = await bestRound(batch);
-      if (bestRoundIndex !== undefined) {
-        const batchData = await Batch.findById(batch._id);
-        const bestRound = batchData.rounds[bestRoundIndex];
-        teams = bestRound.teams; // only one team
-        const chatId = bestRound.teams[0].chat;
-        const newMessage = {
-          user: botId,
-          nickname: 'helperBot',
-          message: 'Task: ' + (task ? task.message : 'empty'),
-          time: new Date()
-        };
-        const oldChat = await Chat.findById(chatId).lean().exec();
-        const messages = oldChat.messages;
-        const newChat = {batch: batch._id, messages: messages.concat({user: botId, nickname: 'helperBot', time: new Date(),
-            message: 'Task: ' + (task ? task.message : 'empty')})}
-        const chat = await Chat.create(newChat);
-        chats = [chat];
+    // if batch is single-teamed and the round is final, we do not generate teams, but get them from the best round
+    // also we do not generate chats and fake nicks
+    const bestRoundResult = await bestRound(batch);
+    const bestRoundIndex = bestRoundResult.bestRoundIndex;
+    if (bestRoundIndex !== undefined) {
+      // for setting scores field in DB
+      const scores = bestRoundResult.scores;
+      rounds.forEach((round, ind) => {rounds[ind].score = scores[ind]});
+      // setting expRounds = [bestRoundIndex, lastRoundIndex]
+      prsHelper.push(Batch.updateOne({_id: batch._id}, {$set: {expRounds: bestRoundResult.expRounds}}));
+      const batchData = await Batch.findById(batch._id);
+      const bestRound = batchData.rounds[bestRoundIndex];
+      teams = bestRound.teams; // only one team
+      const chatId = bestRound.teams[0].chat;
+      const oldChat = await Chat.findById(chatId).lean().exec();
+      const messages = oldChat.messages;
+      const newChat = {batch: batch._id, messages: messages.concat({user: botId, nickname: 'helperBot', time: new Date(),
+          message: 'Task: ' + (task ? task.message : 'empty')})}
+      const chat = await Chat.create(newChat);
+      chats = [chat];
       }
       else {
         throw Error('Calculation of best round error');
       }
   }
-  let prsHelper = [];
   teams.forEach((team, index) => {
     team.chat = chats[index]._id;
     team.users.forEach(user => {
@@ -366,7 +363,6 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   await Promise.all(prsHelper);
   roundObject.teams = teams;
   rounds.push(roundObject);
-
   batch = await Batch.findByIdAndUpdate(batch._id, {$set: {rounds: rounds, currentRound: roundObject.number}}).lean().exec();
   logger.info(module, batch._id + ' : Begin round ' + roundObject.number)
   io.to(batch._id.toString()).emit('refresh-batch', true)
