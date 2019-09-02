@@ -74,7 +74,6 @@ class BatchResult extends React.Component {
     }
     this.setState({user: user, chat: chat, members: members, midSurvey: midSurvey, preSurvey: preSurvey,
       finalSurvey: this.props.batch.users.find(x => x.user._id === user).survey})
-    console.log(this.state.finalSurvey)
 
   }
 

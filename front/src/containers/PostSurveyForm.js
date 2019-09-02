@@ -89,7 +89,14 @@ class PostSurveyForm extends React.Component {
 		let roundsForSurvey = [];
 		roundsForSurvey.push(shuffledNonExpRounds[0], shuffledNonExpRounds[1]);
 		const expPersonRound1 = batch.rounds[roundsForSurvey[0]].teams[0].users.find(x => x.user.toString() !== userId);
-		const actualPartnerName = batch.rounds[roundsForSurvey[1]].teams[0].users.find(x => x.user === expPersonRound1.user).nickname;
+		let actualPartnerName
+		try {
+			actualPartnerName = batch.rounds[roundsForSurvey[1]].teams[0].users.find(x => x.user === expPersonRound1.user).nickname;
+		}
+		catch (e) {
+			console.log(e);
+			return {};
+		}
 		const allPersonsRound2 = shuffle(batch.rounds[roundsForSurvey[1]].teams[0].users.filter(x => x.user.toString() !== userId));
 		const sOptions = allPersonsRound2.map(x => {return {value: x.nickname + ' ' + actualPartnerName, label: x.nickname}});
 		return {expPersonRound1Nick: expPersonRound1.nickname, sOptions: sOptions, roundsForSurvey: roundsForSurvey}
@@ -238,7 +245,6 @@ class PostSurveyForm extends React.Component {
 
 const validate = (values, props) => {
 	const errors = { mainQuestion: {}, singleTeamQuestion: {} };
-	console.log('values: ', values)
 	if (!values.mainQuestion) {
 		errors.mainQuestion.expRound1 = 'required';
 		errors.mainQuestion.expRound2 = 'required';
