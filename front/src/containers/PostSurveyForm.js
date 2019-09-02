@@ -237,7 +237,8 @@ class PostSurveyForm extends React.Component {
 }
 
 const validate = (values, props) => {
-	const errors = { mainQuestion: {} };
+	const errors = { mainQuestion: {}, singleTeamQuestion: {} };
+	console.log('values: ', values)
 	if (!values.mainQuestion) {
 		errors.mainQuestion.expRound1 = 'required';
 		errors.mainQuestion.expRound2 = 'required';
@@ -264,6 +265,9 @@ const validate = (values, props) => {
 		if (values.mainQuestion.expRound2 === values.mainQuestion.expRound1) {
 			errors.mainQuestion.expRound2 = 'invalid';
 		}
+	}
+	if (!values.singleTeamQuestion) {
+		errors.singleTeamQuestion.result = 'required'
 	}
 
 	return errors;
