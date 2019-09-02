@@ -566,9 +566,18 @@ class Batch extends React.Component {
     } else if (batch.status === 'completed') {
       data.isPost = true;
       data.surveyType = 'final';
-      data.mainQuestion.partners = data.mainQuestion.partners.map(x => {
-        return x.value.substring(2) //cut prefix
-      })
+      if (batch.teamFormat !== 'single') {
+        data.mainQuestion.partners = data.mainQuestion.partners.map(x => {
+          return x.value.substring(2) //cut prefix
+        });
+        data.singleTeamQuestion = null;
+      } else {
+        data.mainQuestion = null;
+        const processedResult = data.singleTeamQuestion.result.split(' ');
+        [data.singleTeamQuestion.actualPartnerName, data.singleTeamQuestion.chosenPartnerName] =
+            [processedResult[1], processedResult[0]];
+      }
+
     }
     this.props.submitSurvey(data)
     this.setState({ surveyDone: true })

@@ -50,7 +50,7 @@ class AddBatch extends React.Component {
     batch.note = form.note;
     batch.maskType = form.maskType;
     batch.withAvatar = form.withAvatar;
-    batch.withRoster = form.withRoster;
+    batch.withRoster = form.teamFormat === 'single' ? true : form.withRoster;
     batch.withAutoStop = form.withAutoStop;
     batch.teamFormat = form.teamFormat;
     batch.rememberTeamOrder = form.rememberTeamOrder;
@@ -129,6 +129,7 @@ class AddBatch extends React.Component {
                     name='withRoster'
                     component={renderSelectField}
                     options={[{value: true, label: 'With roster'}, {value: false, label: 'Without roster'}]}
+                    disabled={this.props.teamFormat === 'single'}
                   />
                 </div>
               </div>
@@ -234,7 +235,7 @@ function mapStateToProps(state) {
       teamFormat: 'multi',
       maskType: 'masked',
       withAvatar: true,
-      withRoster: false,
+      withRoster: true,
       withAutoStop: true,
       rememberTeamOrder: false,
       loadTeamOrder: false
