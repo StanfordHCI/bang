@@ -74,6 +74,7 @@ class BatchResult extends React.Component {
     }
     this.setState({user: user, chat: chat, members: members, midSurvey: midSurvey, preSurvey: preSurvey,
       finalSurvey: this.props.batch.users.find(x => x.user._id === user).survey})
+
   }
 
   handleChangeRound = (e) => {
@@ -164,13 +165,24 @@ class BatchResult extends React.Component {
                     />
                   </Row>}
                   {this.state.user && this.state.finalSurvey &&
-                  <Row>
-                    <p>Final survey:</p>
-                    <p>Experiment rounds (USER'S RESPONSE): {this.state.finalSurvey.mainQuestion.expRound1} and {this.state.finalSurvey.mainQuestion.expRound2} </p>
-                    <p>Choosen partners:</p>
-                    {this.state.finalSurvey.mainQuestion.partners.map(user => {
-                      return (<p className="row-p">{this.state.userOptions.find(x => x.value === user).label}</p>)
-                    })}
+                  <Row> {this.state.finalSurvey.mainQuestion.partners.length &&
+                    <div>
+                      <p>Final survey:</p>
+                      <p>Experiment rounds (USER RESPONSE): {this.state.finalSurvey.mainQuestion.expRound1} and {this.state.finalSurvey.mainQuestion.expRound2} </p>
+                      <p>Choosen partners:</p>
+                      {this.state.finalSurvey.mainQuestion.partners.map(user => {
+                        return (<p className="row-p">{this.state.userOptions.find(x => x.value === user).label}</p>)
+                      })}
+                    </div>}
+                    {this.state.finalSurvey.singleTeamQuestion &&
+                      <div>
+                        <p>Actual Partner Name(single team question): </p>
+                        <p>{this.state.finalSurvey.singleTeamQuestion.actualPartnerName}</p>
+                        <p>Chosen Partner Name(single team question): </p>
+                        <p>{this.state.finalSurvey.singleTeamQuestion.chosenPartnerName}</p>
+                      </div>
+                    }
+
                   </Row>}
                 </Col>
               </CardBody>}

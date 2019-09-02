@@ -21,6 +21,7 @@ import { bindActionCreators } from 'redux';
 import { renderField } from 'Components/form/Text';
 import renderSelectField from 'Components/form/Select';
 import renderMultiSelectField from 'Components/form/MultiSelect';
+import {shuffle} from "../utils";
 
 class PostSurveyForm extends React.Component {
 	constructor() {
@@ -33,13 +34,17 @@ class PostSurveyForm extends React.Component {
 				{ value: 4, label: '4' }
 			],
 			uOptions: [],
-			roster: []
+			roster: [],
+			sOptions: [],
+			firstNick: 'test',
+			roundsForSurvey: [0, 1],
 		};
 	}
 
 	componentDidMount() {
 		const batch = this.props.batch;
-		let qOptions = [], uOptions = [];
+		const singleTeamInfo = this.generateSingleTeamInfo();
+		let qOptions = [], uOptions = [], sOptions = singleTeamInfo.sOptions;
 		for (let i = 0; i < batch.numRounds; i++) {
 			qOptions[i] = { value: i + 1, label: (i + 1).toString() };
 		}
@@ -55,17 +60,47 @@ class PostSurveyForm extends React.Component {
 						value: roundPrefix + user.user,
 						label: user.nickname + ' (round ' + (index + 1) + ')'
 					});
-          roundRoster = roundRoster + (batch.maskType === 'unmasked' ? batch.users.find(x => x.user === user.user).nickname : user.nickname) + ' '
+          roundRoster = roundRoster + (batch.maskType === 'unmasked' ? batch.users.find(x => x.user === user.user).nickname : user.nickname) + ' ';
 				}
 			});
-			let roster = this.state.roster;
+			for (let i = 0; i <= index; ++i) { // in order to make the order of different rounds different from each other
+                roundRoster = shuffle(roundRoster.split(' ')).join(' ');
+            }
+            let roster = this.state.roster;
 			roster[index] = roundRoster;
 			this.setState({roster: roster})
 		});
-
-		this.setState({ qOptions: qOptions, uOptions: uOptions });
+		this.setState({ qOptions: qOptions, uOptions: uOptions, sOptions: sOptions, firstNick: singleTeamInfo.expPersonRound1Nick, roundsForSurvey: singleTeamInfo.roundsForSurvey });
 	}
 
+	// picks 2 random non-experimental rounds.
+	// takes 1 person from first round
+	// takes all persons from second round
+	// generates options from the second one
+	// returns {expPersonRound1: ... , sOptions: ... , actualPartnerName: ...}
+	generateSingleTeamInfo() {
+		const batch = this.props.batch;
+		const userId = this.props.user._id.toString();
+		const expRounds = batch.expRounds.map(x => x - 1);
+		const numRounds = batch.numRounds;
+		const allRounds = Array.from(Array(numRounds).keys());
+		const nonExpRounds = allRounds.filter(x => expRounds.indexOf(x) < 0);
+		const shuffledNonExpRounds = shuffle(nonExpRounds);
+		let roundsForSurvey = [];
+		roundsForSurvey.push(shuffledNonExpRounds[0], shuffledNonExpRounds[1]);
+		const expPersonRound1 = batch.rounds[roundsForSurvey[0]].teams[0].users.find(x => x.user.toString() !== userId);
+		let actualPartnerName
+		try {
+			actualPartnerName = batch.rounds[roundsForSurvey[1]].teams[0].users.find(x => x.user === expPersonRound1.user).nickname;
+		}
+		catch (e) {
+			console.log(e);
+			return {};
+		}
+		const allPersonsRound2 = shuffle(batch.rounds[roundsForSurvey[1]].teams[0].users.filter(x => x.user.toString() !== userId));
+		const sOptions = allPersonsRound2.map(x => {return {value: x.nickname + ' ' + actualPartnerName, label: x.nickname}});
+		return {expPersonRound1Nick: expPersonRound1.nickname, sOptions: sOptions, roundsForSurvey: roundsForSurvey}
+	}
 	render() {
 		const { invalid, batch, user } = this.props;
 		let surveysTotal = 0;
@@ -87,58 +122,108 @@ class PostSurveyForm extends React.Component {
 										</div>}
 										<label className="form__form-group-label">
 											<p>Surveys completed: {batch.surveyCounter}/{surveysTotal}</p>
-                      <br/>
-											<p>You actually worked with the same team in some of the previous rounds, though their names may have appeared different.</p>
-											<p>
-												In which rounds do you think that you worked with the same people?
-											</p>
+											<br/>
 										</label>
-										<div className="form__form-group-field">
-											<Field
-												name="mainQuestion.expRound1"
-												component={renderSelectField}
-												type="text"
-												options={this.state.qOptions}
-											/>
-											<Field
-												name="mainQuestion.expRound2"
-												component={renderSelectField}
-												type="text"
-												options={this.state.qOptions}
-											/>
-										</div>
+										{batch.teamFormat !== 'single' &&
+										<div>
+											<label className="form__form-group-label">
+												<p>You actually worked with the same team in some of the previous rounds, though their names may have appeared different.</p>
+												<p>
+													In which rounds do you think that you worked with the same people?
+												</p>
+											</label>
+											<div className="form__form-group-field">
+												<Field
+													name="mainQuestion.expRound1"
+													component={renderSelectField}
+													type="text"
+													options={this.state.qOptions}
+												/>
+												<Field
+													name="mainQuestion.expRound2"
+													component={renderSelectField}
+													type="text"
+													options={this.state.qOptions}
+												/>
+											</div>
+										</div>}
 									</div>
+									{batch.teamFormat !== 'single' &&
+										<div>
+											<div className="form__form-group">
+												<label className="form__form-group-label">
+													<p>Why do you think it was these rounds?</p>
+												</label>
+												<div className="form__form-group-field">
+													<Field name="mainQuestion.expRound3" component={renderField} type="text" />
+												</div>
+											</div>
 
+											<div className="form__form-group" style={{marginBottom: '50px'}}>
+												<label className="form__form-group-label">
+													What partners do you prefer to work with in the future?
+												</label>
+												<div className="form__form-group-field">
+													<Field
+														name={'mainQuestion.partners'}
+														component={renderMultiSelectField}
+														options={this.state.uOptions}
+													/>
+												</div>
+											</div>
+
+											<div className="form__form-group">
+												<label className="form__form-group-label">
+													Why do you prefer these partners?
+												</label>
+												<div className="form__form-group-field">
+													<Field name={'mainQuestion.partners2'} component={renderField} />
+												</div>
+											</div>
+										</div>}
+									{batch.teamFormat === 'single' &&
 									<div className="form__form-group">
 										<label className="form__form-group-label">
-											<p>Why do you think it was these rounds?</p>
+											We didn't tell you this, but in rounds {this.state.roundsForSurvey[0] + 1} and {this.state.roundsForSurvey[1] + 1} you worked with the same people.
+											Their names appeared differently between these two rounds.
+											In team {this.state.roundsForSurvey[0] + 1}, one partner's name was {this.state.firstNick}. What was their name in round {this.state.roundsForSurvey[1] + 1}?
 										</label>
-										<div className="form__form-group-field">
-											<Field name="mainQuestion.expRound3" component={renderField} type="text" />
+										<div className="form__form-group">
+											<Row>
+												<Col>
+													<label className="form__form-group-label">
+														Name in round {this.state.roundsForSurvey[0] + 1}:
+													</label>
+												</Col>
+												<Col>
+													<label className="form__form-group-label">
+														Name in round {this.state.roundsForSurvey[1] + 1}:
+													</label>
+												</Col>
+											</Row>
+											<Row>
+												<Col>
+													<div>
+														<label className="form__form-group-label">
+															{this.state.firstNick}
+														</label>
+													</div>
+												</Col>
+												<Col>
+													<div className="form__form-group-field">
+														<Field
+															name={'singleTeamQuestion.result'}
+															component={renderSelectField}
+															options={this.state.sOptions}
+														/>
+													</div>
+												</Col>
+											</Row>
 										</div>
 									</div>
+									}
 
-									<div className="form__form-group" style={{marginBottom: '50px'}}>
-										<label className="form__form-group-label">
-											What partners do you prefer to work with in the future?
-										</label>
-										<div className="form__form-group-field">
-											<Field
-												name={'mainQuestion.partners'}
-												component={renderMultiSelectField}
-												options={this.state.uOptions}
-											/>
-										</div>
-									</div>
 
-									<div className="form__form-group">
-										<label className="form__form-group-label">
-											Why do you prefer these partners?
-										</label>
-										<div className="form__form-group-field">
-											<Field name={'mainQuestion.partners2'} component={renderField} />
-										</div>
-									</div>
 								</div>
 							</Col>
 						</Row>
@@ -159,7 +244,7 @@ class PostSurveyForm extends React.Component {
 }
 
 const validate = (values, props) => {
-	const errors = { mainQuestion: {} };
+	const errors = { mainQuestion: {}, singleTeamQuestion: {} };
 	if (!values.mainQuestion) {
 		errors.mainQuestion.expRound1 = 'required';
 		errors.mainQuestion.expRound2 = 'required';
@@ -186,6 +271,9 @@ const validate = (values, props) => {
 		if (values.mainQuestion.expRound2 === values.mainQuestion.expRound1) {
 			errors.mainQuestion.expRound2 = 'invalid';
 		}
+	}
+	if (!values.singleTeamQuestion) {
+		errors.singleTeamQuestion.result = 'required'
 	}
 
 	return errors;

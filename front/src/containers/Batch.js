@@ -409,7 +409,7 @@ class Batch extends React.Component {
                   return (<tr key={member._id}>
                     <td>
                       <div className='chat__bubble-contact-name'>
-                        {member.isActive ? nick : ''}
+                        {batch.status ==='active' && !member.isActive ? '' : nick}
                       </div>
                     </td>
                   </tr>)
@@ -566,9 +566,18 @@ class Batch extends React.Component {
     } else if (batch.status === 'completed') {
       data.isPost = true;
       data.surveyType = 'final';
-      data.mainQuestion.partners = data.mainQuestion.partners.map(x => {
-        return x.value.substring(2) //cut prefix
-      })
+      if (batch.teamFormat !== 'single') {
+        data.mainQuestion.partners = data.mainQuestion.partners.map(x => {
+          return x.value.substring(2) //cut prefix
+        });
+        data.singleTeamQuestion = null;
+      } else {
+        data.mainQuestion = null;
+        const processedResult = data.singleTeamQuestion.result.split(' ');
+        [data.singleTeamQuestion.actualPartnerName, data.singleTeamQuestion.chosenPartnerName] =
+            [processedResult[1], processedResult[0]];
+      }
+
     }
     this.props.submitSurvey(data)
     this.setState({ surveyDone: true })
@@ -679,16 +688,18 @@ function mapStateToProps(state) {
   }
   let limit = 999;
   if (batch) {
-    if (batch.teamFormat === 'single') {
-      limit = batch.teamSize;
-    }
-    else {
-      limit = batch.teamSize ** 2;
-    }
+    // for both, make it look like the batch will start at size**2 users
+    // = limit is different than when batch is actually ready
+    limit = batch.teamSize ** 2;
   }
+  // for single teams, make it seem like we're accumultaing more people for every person that joins
+  let disp_activecounter = 0;
+  if (batch) {
+    disp_activecounter = (batch.teamFormat === 'single') ? batch.users.length * 2 : batch.users.length;
+  } 
   return {
     limit: limit,
-    activeCounter: batch ? batch.users.length : 0,
+    activeCounter: batch ? disp_activecounter : 0, 
     user: state.app.user,
     batch: batch,
     chat: chat,
