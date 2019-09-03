@@ -416,17 +416,18 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     Chat.find({_id: {$in: chats.map(x => x._id)}}).lean().exec(),
     Survey.find({batch: batch._id, round: i + 1, surveyType: {$in: ['presurvey', 'midsurvey']}}).select('user').lean().exec()
   ])
-  roundObject.teams.forEach((team, index) => {
-    team.users.forEach(user => {
+  for (const team of roundObject.teams) {
+    for (const user of team.users) {
       const chat = filledChats.find(x => x._id.toString() === team.chat.toString());
       const userSurveys = roundSurveys.filter(x => x.user.toString() === user.user.toString());
-      user.isActive = chat.messages.some(x => x.user.toString() === user.user.toString())
-      if (!user.isActive && !kickedUsers.some(id => id === user.user.toString())) {
-        kickUser(user.user, batch._id, i + 1);
+      user.isActive = chat.messages.some(x => x.user.toString() === user.user.toString());
+      const userInDB = await User.findById(user.user);
+      if (batch && user.isActive && !kickedUsers.some(id => id === user.user.toString()) && userInDB.batch.toString() === batch._id.toString()) {
+        await kickUser(user.user, batch._id, i + 1);
         kickedUsers.push(user.user.toString())
       }
-    })
-  })
+    }
+  }
 
   roundObject.endTime = new Date();
   roundObject.status = 'completed';
