@@ -52,6 +52,9 @@ export const deleteTemplate = async function (req, res) {
 export const cloneTemplate = async function (req, res) {
   try {
     let original = await Template.findById(req.body._id).lean().exec();
+    if (!original.teamFormat) {
+      original.teamFormat = 'multi';
+    }
     delete original._id;
     original.name = original.name + ' (copy)';
     const template = await Template.create(original);
