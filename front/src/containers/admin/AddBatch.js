@@ -238,7 +238,8 @@ function mapStateToProps(state) {
       withRoster: true,
       withAutoStop: true,
       rememberTeamOrder: false,
-      loadTeamOrder: false
+      loadTeamOrder: false,
+      bestRoundFunction: 'highest',
     }
   }
 }

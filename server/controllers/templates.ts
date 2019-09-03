@@ -58,7 +58,7 @@ export const cloneTemplate = async function (req, res) {
     delete original._id;
     original.name = original.name + ' (copy)';
     const template = await Template.create(original);
-    res.json({template: {_id: template._id, name: template.name, teamSize: template.teamSize}})
+    res.json({template: {_id: template._id, name: template.name, teamSize: template.teamSize, teamFormat: template.teamFormat}})
   } catch (e) {
     errorHandler(e, 'clone template error')
   }

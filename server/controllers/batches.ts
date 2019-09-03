@@ -317,7 +317,8 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   let teams;
   const teamFormat = batch.teamFormat;
   let prsHelper = [];
-  if (batch.numRounds !== i + 1 || teamFormat !== 'single') {
+  // if (batch.numRounds !== i + 1 || teamFormat !== 'single') {
+  if (teamFormat !== 'single' || batch.expRounds[0] !== i + 1) {
     // if it is not the last round of single-teamed batch
     // standard flow
     teams = generateTeams(batch.roundGen, users, i + 1, oldNicks);
@@ -344,7 +345,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
       const oldChat = await Chat.findById(chatId).lean().exec();
       const messages = oldChat.messages;
       const newChat = {batch: batch._id, messages: messages.concat({user: botId, nickname: 'helperBot', time: new Date(),
-          message: 'Task: ' + (task ? task.message : 'empty')})}
+          message: 'Task: ' + (task ? task.message : 'empty')})};
       const chat = await Chat.create(newChat);
       chats = [chat];
       }

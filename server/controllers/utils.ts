@@ -485,10 +485,11 @@ function getRandomInt(min, max) {
 // happens only if no one has completed any midSurveys at all
 export const bestRound = async (batch) => {
   const bestRoundFunction = batch.bestRoundFunction;
-  const numRounds = batch.numRounds;
-  const points = Array(numRounds); // storage for round scores
+  const currentRound = (batch.expRounds.length ? Math.max(batch.expRounds) : batch.numRounds);
+  const points = Array(currentRound); // storage for round scores
   let medianScores = [];
-  for (let i = 0; i < numRounds; ++i) {
+  // for (let i = 0; i < numRounds; ++i) {
+  for (let i = 0; i < currentRound - 1; ++i) {
     const surveys = await Survey.find({ batch: batch._id, round: i + 1, surveyType: 'midsurvey' });
     const surveysCount = surveys.length;
     const answerTypes = batch.tasks[i].survey ? batch.tasks[i].survey.map(surv => surv.type) : [];
@@ -542,9 +543,10 @@ export const bestRound = async (batch) => {
     result = findClosestIndex(points, medianScores)
   }
   if (bestRoundFunction === 'random') {
-    result = getRandomInt(0, numRounds - 2);
+    result = getRandomInt(0, currentRound - 2);
   }
-  return {bestRoundIndex: result, scores: points, expRounds: [result + 1, numRounds]};
+  console.log([currentRound, result + 1])
+  return {bestRoundIndex: result, scores: points, expRounds: [currentRound, result + 1]};
 };
 
 export const calculateMoneyForBatch = batch => {

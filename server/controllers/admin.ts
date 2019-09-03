@@ -62,16 +62,25 @@ export const addBatch = async function (req, res) {
     let tasks = [], nonExpCounter = 0;
     let roundGen;
     if (teamFormat === 'single') {
-      roundGen = createOneTeam(newBatch.teamSize, newBatch.numRounds - 1, letters.slice(0, newBatch.teamSize));
+      roundGen = createOneTeam(newBatch.teamSize, newBatch.numRounds, letters.slice(0, newBatch.teamSize));
     }
     else {
       roundGen = createTeams(newBatch.teamSize, newBatch.numRounds - newBatch.numExpRounds + 1, letters.slice(0, newBatch.teamSize ** 2));
     }
-    for (let i = 0; i < newBatch.numExpRounds; i++) {
-      const min = newBatch.expRounds[i - 1] ? newBatch.expRounds[i - 1] + 1 : 0;
-      const max = newBatch.numRounds - (newBatch.numExpRounds - i - 1) * 2;
-      const roundNumber = Math.floor(Math.random() * (max - min)) + 1 + min;
+    if (teamFormat !== 'single') {
+      for (let i = 0; i < newBatch.numExpRounds; i++) {
+        const min = newBatch.expRounds[i - 1] ? newBatch.expRounds[i - 1] + 1 : 0;
+        const max = newBatch.numRounds - (newBatch.numExpRounds - i - 1) * 2;
+        const roundNumber = Math.floor(Math.random() * (max - min)) + 1 + min;
+        newBatch.expRounds.push(roundNumber)
+      }
+    }
+    else {
+      const min = newBatch.numRounds - 1;
+      const max = newBatch.numRounds;
+      const roundNumber = Math.floor(Math.random() * (max - min) + 0.5) + min; //random int from min to max
       newBatch.expRounds.push(roundNumber)
+      console.log(newBatch.expRounds);
     }
     if (teamFormat !== 'single') {
       for (let i = 0; i < newBatch.numRounds; i++) {
