@@ -55,7 +55,7 @@ class PostSurveyForm extends React.Component {
 			const team = round.teams.find((x) => x.users.some((y) => y.user.toString() === userId));
 			team.users.forEach((user) => {
 				const batchUser = batch.users.find(x => x.user.toString() === user.user.toString())
-				if (user.user.toString() !== userId && !(!batchUser.isActive && batchUser.kickedAfterRound >= index + 1)) {
+				if (user.user.toString() !== userId && !(!batchUser.isActive && batchUser.kickedAfterRound < index + 1)) {
 					uOptions.push({
 						value: roundPrefix + user.user,
 						label: user.nickname + ' (round ' + (index + 1) + ')'
@@ -64,9 +64,9 @@ class PostSurveyForm extends React.Component {
 				}
 			});
 			for (let i = 0; i <= index; ++i) { // in order to make the order of different rounds different from each other
-                roundRoster = shuffle(roundRoster.split(' ')).join(' ');
-            }
-            let roster = this.state.roster;
+				roundRoster = shuffle(roundRoster.split(' ')).join(' ');
+			}
+			let roster = this.state.roster;
 			roster[index] = roundRoster;
 			this.setState({roster: roster})
 		});
@@ -88,8 +88,9 @@ class PostSurveyForm extends React.Component {
 		const shuffledNonExpRounds = shuffle(nonExpRounds);
 		let roundsForSurvey = [];
 		roundsForSurvey.push(shuffledNonExpRounds[0], shuffledNonExpRounds[1]);
-		const expPersonRound1 = batch.rounds[roundsForSurvey[0]].teams[0].users.find(x => x.user.toString() !== userId);
-		let actualPartnerName
+		const expPersonRound1 = batch.rounds[roundsForSurvey[0]].teams[0].users.find(x => x.user.toString() !== userId &&
+			!batch.users.find(y => y.user.toString() === x.user.toString()).kickedAfterRound); // finds a person in round N which wasn't kicked at all
+		let actualPartnerName;
 		try {
 			actualPartnerName = batch.rounds[roundsForSurvey[1]].teams[0].users.find(x => x.user === expPersonRound1.user).nickname;
 		}

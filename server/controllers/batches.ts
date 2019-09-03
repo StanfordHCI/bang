@@ -422,7 +422,10 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
       const userSurveys = roundSurveys.filter(x => x.user.toString() === user.user.toString());
       user.isActive = chat.messages.some(x => x.user.toString() === user.user.toString());
       const userInDB = await User.findById(user.user);
-      if (batch && user.isActive && !kickedUsers.some(id => id === user.user.toString()) && userInDB.batch.toString() === batch._id.toString()) {
+      if (userInDB.batch === null) {
+        continue;
+      }
+      if (batch && !user.isActive && !kickedUsers.some(id => id === user.user.toString()) && userInDB.batch.toString() === batch._id.toString()) {
         await kickUser(user.user, batch._id, i + 1);
         kickedUsers.push(user.user.toString())
       }
