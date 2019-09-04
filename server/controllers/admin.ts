@@ -76,11 +76,14 @@ export const addBatch = async function (req, res) {
       }
     }
     else {
-      const min = newBatch.numRounds - 1;
-      const max = newBatch.numRounds;
-      const roundNumber = Math.floor(Math.random() * (max - min) + 0.5) + min; //random int from min to max
-      newBatch.expRounds.push(roundNumber)
-      console.log(newBatch.expRounds);
+      if (newBatch.randomizeExpRound) { // expRound is randomized. It's [numRounds] or [numRounds - 1]
+        const min = newBatch.numRounds - 1;
+        const max = newBatch.numRounds;
+        const roundNumber = Math.floor(Math.random() * (max - min) + 0.5) + min; //random int from min to max
+        newBatch.expRounds.push(roundNumber)
+      } else { // expRound is [numRounds]
+        newBatch.expRounds.push(newBatch.numRounds)
+      }
     }
     if (teamFormat !== 'single') {
       for (let i = 0; i < newBatch.numRounds; i++) {

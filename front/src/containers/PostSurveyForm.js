@@ -44,7 +44,10 @@ class PostSurveyForm extends React.Component {
 	componentDidMount() {
 		const batch = this.props.batch;
 		const singleTeamInfo = this.generateSingleTeamInfo();
-		let qOptions = [], uOptions = [], sOptions = singleTeamInfo.sOptions;
+		const surveyRounds = singleTeamInfo.roundsForSurvey.map(x => x).sort((a, b) => a - b);
+		console.log('surveyRounds: ', surveyRounds);
+		let expRound1ActiveUsers = [];
+		let qOptions = [], uOptions = [];
 		for (let i = 0; i < batch.numRounds; i++) {
 			qOptions[i] = { value: i + 1, label: (i + 1).toString() };
 		}
@@ -54,12 +57,18 @@ class PostSurveyForm extends React.Component {
 			const userId = this.props.user._id.toString();
 			const team = round.teams.find((x) => x.users.some((y) => y.user.toString() === userId));
 			team.users.forEach((user) => {
-				const batchUser = batch.users.find(x => x.user.toString() === user.user.toString())
-				if (user.user.toString() !== userId && !(!batchUser.isActive && batchUser.kickedAfterRound < index + 1)) {
+				const batchUser = batch.users.find(x => x.user.toString() === user.user.toString());
+				if ((user.user.toString() !== userId && !(!batchUser.isActive && batchUser.kickedAfterRound <= index + 1)) ||
+					(index === surveyRounds[1] && expRound1ActiveUsers.indexOf(batchUser) > -1)) { // for correct rosters of surveyRounds
 					uOptions.push({
 						value: roundPrefix + user.user,
 						label: user.nickname + ' (round ' + (index + 1) + ')'
 					});
+					if (index === surveyRounds[0]) {
+						// There are two surveyRounds(rounds on which the singleTeamQuestion is based)
+						// we add all users who haven't been kicked after min(SurveyRound[0], surveyRound[1]) to max(SurveyRound[0], surveyRound[1])
+						expRound1ActiveUsers.push(batchUser)
+					}
           roundRoster = roundRoster + (batch.maskType === 'unmasked' ? batch.users.find(x => x.user === user.user).nickname : user.nickname) + ' ';
 				}
 			});
@@ -70,6 +79,8 @@ class PostSurveyForm extends React.Component {
 			roster[index] = roundRoster;
 			this.setState({roster: roster})
 		});
+		const actualPartnerName = singleTeamInfo.actualPartnerName;
+		const sOptions = this.nicksFromRoster(this.state.roster, singleTeamInfo.roundsForSurvey[1]).map(x => {return {value: `${x} ${actualPartnerName}`, label: x}});
 		this.setState({ qOptions: qOptions, uOptions: uOptions, sOptions: sOptions, firstNick: singleTeamInfo.expPersonRound1Nick, roundsForSurvey: singleTeamInfo.roundsForSurvey });
 	}
 
@@ -98,10 +109,13 @@ class PostSurveyForm extends React.Component {
 			console.log(e);
 			return {};
 		}
-		const allPersonsRound2 = shuffle(batch.rounds[roundsForSurvey[1]].teams[0].users.filter(x => x.user.toString() !== userId));
-		const sOptions = allPersonsRound2.map(x => {return {value: x.nickname + ' ' + actualPartnerName, label: x.nickname}});
-		return {expPersonRound1Nick: expPersonRound1.nickname, sOptions: sOptions, roundsForSurvey: roundsForSurvey}
+		return {expPersonRound1Nick: expPersonRound1.nickname, roundsForSurvey: roundsForSurvey, actualPartnerName: actualPartnerName}
 	}
+
+	nicksFromRoster = (roster, num) => {
+		const roundRoster = roster[num];
+		return roundRoster.split(' ').filter(x => x !== '');
+	};
 	render() {
 		const { invalid, batch, user } = this.props;
 		let surveysTotal = 0;
@@ -221,10 +235,16 @@ class PostSurveyForm extends React.Component {
 												</Col>
 											</Row>
 										</div>
+										<div className="form__form-group">
+											<label className="form__form-group-label">
+												Why did you choose that?
+											</label>
+											<div className="form__form-group-field">
+												<Field name="singleTeamQuestion.result1" component={renderField} type="text" />
+											</div>
+										</div>
 									</div>
 									}
-
-
 								</div>
 							</Col>
 						</Row>
@@ -276,7 +296,6 @@ const validate = (values, props) => {
 	if (!values.singleTeamQuestion) {
 		errors.singleTeamQuestion.result = 'required'
 	}
-
 	return errors;
 };
 

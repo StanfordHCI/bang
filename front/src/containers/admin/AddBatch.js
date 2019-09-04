@@ -56,6 +56,7 @@ class AddBatch extends React.Component {
     batch.rememberTeamOrder = form.rememberTeamOrder;
     batch.loadTeamOrder = form.loadTeamOrder;
     batch.bestRoundFunction = form.bestRoundFunction;
+    batch.randomizeExpRound = form.randomizeExpRound;
     this.props.addBatch(batch)
   }
 
@@ -89,6 +90,17 @@ class AddBatch extends React.Component {
                       options={[{value: 'highest', label: 'Highest score'}, {value: 'lowest', label: 'Lowest score'},
                         {value: 'average', label: 'Closest to average'}, {value: 'random', label: 'Random'}]}
                       disabled={this.props.teamFormat !== 'single'}
+                  />
+                </div>
+              </div>
+              <div className='form__form-group'>
+                <label className='form__form-group-label'>Randomize Experimental Round? </label>
+                <div className='form__form-group-field'>
+                  <Field
+                    name='randomizeExpRound'
+                    component={renderSelectField}
+                    options={[{value: true, label: 'Randomize'}, {value: false, label: 'Don\'t Randomize'}]}
+                    disabled={this.props.teamFormat !== 'single'}
                   />
                 </div>
               </div>
@@ -213,7 +225,9 @@ const validate = (values, props) => {
   if (props.teamFormat === 'single' && values.bestRoundFunction == null) {
     errors.bestRoundFunction = 'required'
   }
-
+  if (props.teamFormat === 'single' && values.randomizeExpRound == null) {
+    errors.randomizeExpRound = 'required'
+  }
   return errors
 };
 

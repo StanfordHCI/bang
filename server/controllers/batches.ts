@@ -317,8 +317,9 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   let teams;
   const teamFormat = batch.teamFormat;
   let prsHelper = [];
-  // if (batch.numRounds !== i + 1 || teamFormat !== 'single') {
-  if (teamFormat !== 'single' || batch.expRounds[0] !== i + 1) {
+  const nonExpRoundCondition = batch.randomizeExpRound ? teamFormat !== 'single' || batch.expRounds[0] !== i + 1 :
+      batch.numRounds !== i + 1 || teamFormat !== 'single';
+  if (nonExpRoundCondition) {
     // if it is not the last round of single-teamed batch
     // standard flow
     teams = generateTeams(batch.roundGen, users, i + 1, oldNicks);
@@ -328,7 +329,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     }
     chats = await Chat.insertMany(emptyChats);
     } else {
-    // if batch is single-teamed and the round is final, we do not generate teams, but get them from the best round
+    // if batch is single-teamed and this is unmasked exp round, we do not generate teams, but get them from the best round
     // also we do not generate chats and fake nicks
     const bestRoundResult = await bestRound(batch);
     const bestRoundIndex = bestRoundResult.bestRoundIndex;

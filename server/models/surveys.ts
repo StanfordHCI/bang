@@ -26,6 +26,7 @@ let SurveySchema = new Schema(
 		singleTeamQuestion: {
 			chosenPartnerName: String,
 			actualPartnerName: String,
+			result1: String,
 		},
 		round: Number,
 		isPost: Boolean, //deprecated, used only to show old results
