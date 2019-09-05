@@ -43,10 +43,13 @@ class PostSurveyForm extends React.Component {
 
 	componentDidMount() {
 		const batch = this.props.batch;
-		const singleTeamInfo = this.generateSingleTeamInfo();
-		const surveyRounds = singleTeamInfo.roundsForSurvey.map(x => x).sort((a, b) => a - b);
-		console.log('surveyRounds: ', surveyRounds);
-		let expRound1ActiveUsers = [];
+		const singleTeam = batch.teamFormat === 'single';
+		let singleTeamInfo, surveyRounds, expRound1ActiveUsers;
+		if(singleTeam) {
+      singleTeamInfo = this.generateSingleTeamInfo();
+      surveyRounds = singleTeamInfo.roundsForSurvey.map(x => x).sort((a, b) => a - b);
+      expRound1ActiveUsers = [];
+    }
 		let qOptions = [], uOptions = [];
 		for (let i = 0; i < batch.numRounds; i++) {
 			qOptions[i] = { value: i + 1, label: (i + 1).toString() };
@@ -59,12 +62,12 @@ class PostSurveyForm extends React.Component {
 			team.users.forEach((user) => {
 				const batchUser = batch.users.find(x => x.user.toString() === user.user.toString());
 				if ((user.user.toString() !== userId && !(!batchUser.isActive && batchUser.kickedAfterRound <= index + 1)) ||
-					(index === surveyRounds[1] && expRound1ActiveUsers.indexOf(batchUser) > -1)) { // for correct rosters of surveyRounds
+					(singleTeam && index === surveyRounds[1] && expRound1ActiveUsers.indexOf(batchUser) > -1)) { // for correct rosters of surveyRounds
 					uOptions.push({
 						value: roundPrefix + user.user,
 						label: user.nickname + ' (round ' + (index + 1) + ')'
 					});
-					if (index === surveyRounds[0]) {
+					if (singleTeam && index === surveyRounds[0]) {
 						// There are two surveyRounds(rounds on which the singleTeamQuestion is based)
 						// we add all users who haven't been kicked after min(SurveyRound[0], surveyRound[1]) to max(SurveyRound[0], surveyRound[1])
 						expRound1ActiveUsers.push(batchUser)
@@ -72,16 +75,22 @@ class PostSurveyForm extends React.Component {
           roundRoster = roundRoster + (batch.maskType === 'unmasked' ? batch.users.find(x => x.user === user.user).nickname : user.nickname) + ' ';
 				}
 			});
-			for (let i = 0; i <= index; ++i) { // in order to make the order of different rounds different from each other
-				roundRoster = shuffle(roundRoster.split(' ')).join(' ');
-			}
+			if (singleTeam) {
+        for (let i = 0; i <= index; ++i) { // in order to make the order of different rounds different from each other
+          roundRoster = shuffle(roundRoster.split(' ')).join(' ');
+        }
+      }
 			let roster = this.state.roster;
 			roster[index] = roundRoster;
 			this.setState({roster: roster})
 		});
-		const actualPartnerName = singleTeamInfo.actualPartnerName;
-		const sOptions = this.nicksFromRoster(this.state.roster, singleTeamInfo.roundsForSurvey[1]).map(x => {return {value: `${x} ${actualPartnerName}`, label: x}});
-		this.setState({ qOptions: qOptions, uOptions: uOptions, sOptions: sOptions, firstNick: singleTeamInfo.expPersonRound1Nick, roundsForSurvey: singleTeamInfo.roundsForSurvey });
+		const actualPartnerName = singleTeam ? singleTeamInfo.actualPartnerName : 'test';
+		const sOptions = singleTeam ? this.nicksFromRoster(this.state.roster, singleTeamInfo.roundsForSurvey[1]).map(x =>
+    {return {value: `${x} ${actualPartnerName}`, label: x}}) : [{value: 'test', label: 'test'}];
+		this.setState({ qOptions: qOptions, uOptions: uOptions, sOptions: sOptions, });
+		if (singleTeam) {
+		  this.setState({firstNick: singleTeamInfo.expPersonRound1Nick, roundsForSurvey: singleTeamInfo.roundsForSurvey })
+    }
 	}
 
 	// picks 2 random non-experimental rounds.
@@ -91,6 +100,9 @@ class PostSurveyForm extends React.Component {
 	// returns {expPersonRound1: ... , sOptions: ... , actualPartnerName: ...}
 	generateSingleTeamInfo() {
 		const batch = this.props.batch;
+		if (batch.teamFormat !== 'single') {
+		  return null;
+    }
 		const userId = this.props.user._id.toString();
 		const expRounds = batch.expRounds.map(x => x - 1);
 		const numRounds = batch.numRounds;
