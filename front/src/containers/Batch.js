@@ -695,7 +695,7 @@ function mapStateToProps(state) {
   // for single teams, make it seem like we're accumultaing more people for every person that joins
   let disp_activecounter = 0;
   if (batch) {
-    disp_activecounter = (batch.teamFormat === 'single') ? batch.users.length * 2 : batch.users.length;
+    disp_activecounter = (batch.teamFormat === 'single') ? batch.teamSize * batch.users.length : batch.users.length;
   } 
   return {
     limit: limit,
