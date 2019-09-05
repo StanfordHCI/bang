@@ -45,7 +45,7 @@ class PostSurveyForm extends React.Component {
 		const batch = this.props.batch;
 		const singleTeam = batch.teamFormat === 'single';
 		let singleTeamInfo, surveyRounds, expRound1ActiveUsers;
-		if(singleTeam) {
+		if (singleTeam) {
       singleTeamInfo = this.generateSingleTeamInfo();
       surveyRounds = singleTeamInfo.roundsForSurvey.map(x => x).sort((a, b) => a - b);
       expRound1ActiveUsers = [];
