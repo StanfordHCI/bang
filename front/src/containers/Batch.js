@@ -532,7 +532,7 @@ class Batch extends React.Component {
         />}
         {this.state.surveyDone && <div>
           <p>Thanks for completing the survey for this round!</p>
-          <p style={{ marginBottom: '0px' }}>There are {this.props.batch.numRounds - this.props.batch.currentRound} more round(s) remaining, but we are waiting for your teammates to complete the surveys. Hang tight!</p>
+          <p style={{ marginBottom: '0px' }}>There are {this.props.batch.numRounds - this.props.batch.currentRound} more round(s) and one final-survey (after the last round) remaining, but we are waiting for your teammates to complete the surveys. Remember, if you leave early, you will not be paid. Please hang tight!</p>
         </div>}
       </div>)
   }
@@ -695,7 +695,7 @@ function mapStateToProps(state) {
   // for single teams, make it seem like we're accumultaing more people for every person that joins
   let disp_activecounter = 0;
   if (batch) {
-    disp_activecounter = (batch.teamFormat === 'single') ? batch.users.length * 2 : batch.users.length;
+    disp_activecounter = (batch.teamFormat === 'single') ? batch.teamSize * batch.users.length : batch.users.length;
   } 
   return {
     limit: limit,

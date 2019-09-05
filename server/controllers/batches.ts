@@ -317,7 +317,9 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   let teams;
   const teamFormat = batch.teamFormat;
   let prsHelper = [];
-  if (batch.numRounds !== i + 1 || teamFormat !== 'single') {
+  const nonExpRoundCondition = batch.randomizeExpRound ? teamFormat !== 'single' || batch.expRounds[0] !== i + 1 :
+      batch.numRounds !== i + 1 || teamFormat !== 'single';
+  if (nonExpRoundCondition) {
     // if it is not the last round of single-teamed batch
     // standard flow
     teams = generateTeams(batch.roundGen, users, i + 1, oldNicks);
@@ -327,7 +329,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     }
     chats = await Chat.insertMany(emptyChats);
     } else {
-    // if batch is single-teamed and the round is final, we do not generate teams, but get them from the best round
+    // if batch is single-teamed and this is unmasked exp round, we do not generate teams, but get them from the best round
     // also we do not generate chats and fake nicks
     const bestRoundResult = await bestRound(batch);
     const bestRoundIndex = bestRoundResult.bestRoundIndex;
@@ -344,7 +346,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
       const oldChat = await Chat.findById(chatId).lean().exec();
       const messages = oldChat.messages;
       const newChat = {batch: batch._id, messages: messages.concat({user: botId, nickname: 'helperBot', time: new Date(),
-          message: 'Task: ' + (task ? task.message : 'empty')})}
+          message: 'Task: ' + (task ? task.message : 'empty')})};
       const chat = await Chat.create(newChat);
       chats = [chat];
       }
@@ -415,17 +417,21 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     Chat.find({_id: {$in: chats.map(x => x._id)}}).lean().exec(),
     Survey.find({batch: batch._id, round: i + 1, surveyType: {$in: ['presurvey', 'midsurvey']}}).select('user').lean().exec()
   ])
-  roundObject.teams.forEach((team, index) => {
-    team.users.forEach(user => {
+  for (const team of roundObject.teams) {
+    for (const user of team.users) {
       const chat = filledChats.find(x => x._id.toString() === team.chat.toString());
       const userSurveys = roundSurveys.filter(x => x.user.toString() === user.user.toString());
-      user.isActive = chat.messages.some(x => x.user.toString() === user.user.toString())
-      if (!user.isActive && !kickedUsers.some(id => id === user.user.toString())) {
-        kickUser(user.user, batch._id, i + 1);
+      user.isActive = chat.messages.some(x => x.user.toString() === user.user.toString());
+      const userInDB = await User.findById(user.user);
+      if (userInDB.batch === null) {
+        continue;
+      }
+      if (batch && !user.isActive && !kickedUsers.some(id => id === user.user.toString()) && userInDB.batch.toString() === batch._id.toString()) {
+        await kickUser(user.user, batch._id, i + 1);
         kickedUsers.push(user.user.toString())
       }
-    })
-  })
+    }
+  }
 
   roundObject.endTime = new Date();
   roundObject.status = 'completed';

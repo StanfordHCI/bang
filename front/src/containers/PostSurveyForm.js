@@ -43,8 +43,14 @@ class PostSurveyForm extends React.Component {
 
 	componentDidMount() {
 		const batch = this.props.batch;
-		const singleTeamInfo = this.generateSingleTeamInfo();
-		let qOptions = [], uOptions = [], sOptions = singleTeamInfo.sOptions;
+		const singleTeam = batch.teamFormat === 'single';
+		let singleTeamInfo, surveyRounds, expRound1ActiveUsers;
+		if (singleTeam) {
+      singleTeamInfo = this.generateSingleTeamInfo();
+      surveyRounds = singleTeamInfo.roundsForSurvey.map(x => x).sort((a, b) => a - b);
+      expRound1ActiveUsers = [];
+    }
+		let qOptions = [], uOptions = [];
 		for (let i = 0; i < batch.numRounds; i++) {
 			qOptions[i] = { value: i + 1, label: (i + 1).toString() };
 		}
@@ -54,23 +60,37 @@ class PostSurveyForm extends React.Component {
 			const userId = this.props.user._id.toString();
 			const team = round.teams.find((x) => x.users.some((y) => y.user.toString() === userId));
 			team.users.forEach((user) => {
-				const batchUser = batch.users.find(x => x.user.toString() === user.user.toString())
-				if (user.user.toString() !== userId && !(!batchUser.isActive && batchUser.kickedAfterRound >= index + 1)) {
+				const batchUser = batch.users.find(x => x.user.toString() === user.user.toString());
+				if ((user.user.toString() !== userId && !(!batchUser.isActive && batchUser.kickedAfterRound <= index + 1)) ||
+					(singleTeam && index === surveyRounds[1] && expRound1ActiveUsers.indexOf(batchUser) > -1)) { // for correct rosters of surveyRounds
 					uOptions.push({
 						value: roundPrefix + user.user,
 						label: user.nickname + ' (round ' + (index + 1) + ')'
 					});
+					if (singleTeam && index === surveyRounds[0]) {
+						// There are two surveyRounds(rounds on which the singleTeamQuestion is based)
+						// we add all users who haven't been kicked after min(SurveyRound[0], surveyRound[1]) to max(SurveyRound[0], surveyRound[1])
+						expRound1ActiveUsers.push(batchUser)
+					}
           roundRoster = roundRoster + (batch.maskType === 'unmasked' ? batch.users.find(x => x.user === user.user).nickname : user.nickname) + ' ';
 				}
 			});
-			for (let i = 0; i <= index; ++i) { // in order to make the order of different rounds different from each other
-                roundRoster = shuffle(roundRoster.split(' ')).join(' ');
-            }
-            let roster = this.state.roster;
+			if (singleTeam) {
+        for (let i = 0; i <= index; ++i) { // in order to make the order of different rounds different from each other
+          roundRoster = shuffle(roundRoster.split(' ')).join(' ');
+        }
+      }
+			let roster = this.state.roster;
 			roster[index] = roundRoster;
 			this.setState({roster: roster})
 		});
-		this.setState({ qOptions: qOptions, uOptions: uOptions, sOptions: sOptions, firstNick: singleTeamInfo.expPersonRound1Nick, roundsForSurvey: singleTeamInfo.roundsForSurvey });
+		const actualPartnerName = singleTeam ? singleTeamInfo.actualPartnerName : 'test';
+		const sOptions = singleTeam ? this.nicksFromRoster(this.state.roster, singleTeamInfo.roundsForSurvey[1]).map(x =>
+    {return {value: `${x} ${actualPartnerName}`, label: x}}) : [{value: 'test', label: 'test'}];
+		this.setState({ qOptions: qOptions, uOptions: uOptions, sOptions: sOptions, });
+		if (singleTeam) {
+		  this.setState({firstNick: singleTeamInfo.expPersonRound1Nick, roundsForSurvey: singleTeamInfo.roundsForSurvey })
+    }
 	}
 
 	// picks 2 random non-experimental rounds.
@@ -80,6 +100,9 @@ class PostSurveyForm extends React.Component {
 	// returns {expPersonRound1: ... , sOptions: ... , actualPartnerName: ...}
 	generateSingleTeamInfo() {
 		const batch = this.props.batch;
+		if (batch.teamFormat !== 'single') {
+		  return null;
+    }
 		const userId = this.props.user._id.toString();
 		const expRounds = batch.expRounds.map(x => x - 1);
 		const numRounds = batch.numRounds;
@@ -88,8 +111,9 @@ class PostSurveyForm extends React.Component {
 		const shuffledNonExpRounds = shuffle(nonExpRounds);
 		let roundsForSurvey = [];
 		roundsForSurvey.push(shuffledNonExpRounds[0], shuffledNonExpRounds[1]);
-		const expPersonRound1 = batch.rounds[roundsForSurvey[0]].teams[0].users.find(x => x.user.toString() !== userId);
-		let actualPartnerName
+		const expPersonRound1 = batch.rounds[roundsForSurvey[0]].teams[0].users.find(x => x.user.toString() !== userId &&
+			!batch.users.find(y => y.user.toString() === x.user.toString()).kickedAfterRound); // finds a person in round N which wasn't kicked at all
+		let actualPartnerName;
 		try {
 			actualPartnerName = batch.rounds[roundsForSurvey[1]].teams[0].users.find(x => x.user === expPersonRound1.user).nickname;
 		}
@@ -97,10 +121,13 @@ class PostSurveyForm extends React.Component {
 			console.log(e);
 			return {};
 		}
-		const allPersonsRound2 = shuffle(batch.rounds[roundsForSurvey[1]].teams[0].users.filter(x => x.user.toString() !== userId));
-		const sOptions = allPersonsRound2.map(x => {return {value: x.nickname + ' ' + actualPartnerName, label: x.nickname}});
-		return {expPersonRound1Nick: expPersonRound1.nickname, sOptions: sOptions, roundsForSurvey: roundsForSurvey}
+		return {expPersonRound1Nick: expPersonRound1.nickname, roundsForSurvey: roundsForSurvey, actualPartnerName: actualPartnerName}
 	}
+
+	nicksFromRoster = (roster, num) => {
+		const roundRoster = roster[num];
+		return roundRoster.split(' ').filter(x => x !== '');
+	};
 	render() {
 		const { invalid, batch, user } = this.props;
 		let surveysTotal = 0;
@@ -220,10 +247,16 @@ class PostSurveyForm extends React.Component {
 												</Col>
 											</Row>
 										</div>
+										<div className="form__form-group">
+											<label className="form__form-group-label">
+												Why did you choose that?
+											</label>
+											<div className="form__form-group-field">
+												<Field name="singleTeamQuestion.result1" component={renderField} type="text" />
+											</div>
+										</div>
 									</div>
 									}
-
-
 								</div>
 							</Col>
 						</Row>
@@ -275,7 +308,6 @@ const validate = (values, props) => {
 	if (!values.singleTeamQuestion) {
 		errors.singleTeamQuestion.result = 'required'
 	}
-
 	return errors;
 };
 
