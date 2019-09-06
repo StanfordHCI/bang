@@ -574,8 +574,9 @@ class Batch extends React.Component {
       } else {
         data.mainQuestion = null;
         const processedResult = data.singleTeamQuestion.result.split(' ');
-        [data.singleTeamQuestion.actualPartnerName, data.singleTeamQuestion.chosenPartnerName] =
-            [processedResult[1], processedResult[0]];
+        // console.log(processedResult)
+        [data.singleTeamQuestion.actualPartnerName, data.singleTeamQuestion.chosenPartnerName, data.singleTeamQuestion.numOptions] =
+            [processedResult[1], processedResult[0], processedResult[2]];
       }
 
     }

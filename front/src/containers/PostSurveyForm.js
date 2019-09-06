@@ -85,8 +85,8 @@ class PostSurveyForm extends React.Component {
 			this.setState({roster: roster})
 		});
 		const actualPartnerName = singleTeam ? singleTeamInfo.actualPartnerName : 'test';
-		const sOptions = singleTeam ? this.nicksFromRoster(this.state.roster, singleTeamInfo.roundsForSurvey[1]).map(x =>
-    {return {value: `${x} ${actualPartnerName}`, label: x}}) : [{value: 'test', label: 'test'}];
+		const sOptions = singleTeam ? this.nicksFromRoster(this.state.roster, singleTeamInfo.roundsForSurvey[1]).map((x, ind, arr) =>
+    {return {value: `${x} ${actualPartnerName} ${arr.length}`, label: x}}) : [{value: 'test', label: 'test'}];
 		this.setState({ qOptions: qOptions, uOptions: uOptions, sOptions: sOptions, });
 		if (singleTeam) {
 		  this.setState({firstNick: singleTeamInfo.expPersonRound1Nick, roundsForSurvey: singleTeamInfo.roundsForSurvey })
