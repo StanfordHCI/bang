@@ -15,7 +15,8 @@ import {
   runningLive,
   notifyWorkers,
   getBatchTime,
-  bestRound
+  bestRound,
+  worstRound,
 } from "./utils";
 import {errorHandler} from '../services/common'
 import {io} from "../index";
@@ -317,43 +318,74 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   let teams;
   const teamFormat = batch.teamFormat;
   let prsHelper = [];
-  const nonExpRoundCondition = batch.randomizeExpRound ? teamFormat !== 'single' || batch.expRounds[0] !== i + 1 :
-      batch.numRounds !== i + 1 || teamFormat !== 'single';
-  if (nonExpRoundCondition) {
-    // if it is not the last round of single-teamed batch
-    // standard flow
-    teams = generateTeams(batch.roundGen, users, i + 1, oldNicks);
-    for (let j = 0; j < teamSize; j++) {
-      emptyChats.push({batch: batch._id, messages: [{user: botId, nickname: 'helperBot', time: new Date(),
-          message: 'Task: ' + (task ? task.message : 'empty')}]})
-    }
-    chats = await Chat.insertMany(emptyChats);
-    } else {
-    // if batch is single-teamed and this is unmasked exp round, we do not generate teams, but get them from the best round
-    // also we do not generate chats and fake nicks
-    const bestRoundResult = await bestRound(batch);
-    const bestRoundIndex = bestRoundResult.bestRoundIndex;
-    if (bestRoundIndex !== undefined) {
-      // for setting scores field in DB
-      const scores = bestRoundResult.scores;
-      rounds.forEach((round, ind) => {rounds[ind].score = scores[ind] !== undefined ? scores[ind]: 0});
-      // setting expRounds = [bestRoundIndex, lastRoundIndex]
-      prsHelper.push(Batch.updateOne({_id: batch._id}, {$set: {expRounds: bestRoundResult.expRounds}}));
-      const batchData = await Batch.findById(batch._id);
-      const bestRound = batchData.rounds[bestRoundIndex];
-      teams = bestRound.teams; // only one team
-      const chatId = bestRound.teams[0].chat;
-      const oldChat = await Chat.findById(chatId).lean().exec();
-      const messages = oldChat.messages;
-      const newChat = {batch: batch._id, messages: messages.concat({user: botId, nickname: 'helperBot', time: new Date(),
-          message: 'Task: ' + (task ? task.message : 'empty')})};
-      const chat = await Chat.create(newChat);
-      chats = [chat];
+  const reconveneBestCondition = batch.randomizeExpRound ? teamFormat === 'single' && batch.expRounds[0] === i + 1 :
+      batch.numRounds === i + 1 && teamFormat === 'single';
+  const reconveneWorstCondition = teamFormat === 'single' &&  batch.worstRounds.length ?
+      batch.worstRounds[0] === i + 1 : false;
+  if (reconveneBestCondition && reconveneWorstCondition) {
+    console.log('reconvene logic error!!');
+  }
+  const roundType = !reconveneWorstCondition && !reconveneBestCondition ? 'standard' :
+      reconveneWorstCondition ? 'worst' : 'best';
+  console.log(roundType);
+  switch (roundType) {
+    case "standard":
+      // if it is not the last round of single-teamed batch
+      // standard flow
+      teams = generateTeams(batch.roundGen, users, i + 1, oldNicks);
+      for (let j = 0; j < teamSize; j++) {
+        emptyChats.push({batch: batch._id, messages: [{user: botId, nickname: 'helperBot', time: new Date(),
+            message: 'Task: ' + (task ? task.message : 'empty')}]})
+      }
+      chats = await Chat.insertMany(emptyChats);
+      break;
+    case "best":
+      // if batch is single-teamed and this is unmasked exp round, we do not generate teams, but get them from the best round
+      // also we do not generate chats and fake nicks
+      const bestRoundResult = await bestRound(batch);
+      const bestRoundIndex = bestRoundResult.bestRoundIndex;
+      if (bestRoundIndex !== undefined) {
+        // for setting scores field in DB
+        const scores = bestRoundResult.scores;
+        rounds.forEach((round, ind) => {rounds[ind].score = scores[ind] !== undefined ? scores[ind]: 0});
+        // setting expRounds = [bestRoundIndex, lastRoundIndex]
+        prsHelper.push(Batch.updateOne({_id: batch._id}, {$set: {expRounds: bestRoundResult.expRounds}}));
+        const batchData = await Batch.findById(batch._id);
+        const bestRound = batchData.rounds[bestRoundIndex];
+        teams = bestRound.teams; // only one team
+        const chatId = bestRound.teams[0].chat;
+        const oldChat = await Chat.findById(chatId).lean().exec();
+        const messages = oldChat.messages;
+        const newChat = {batch: batch._id, messages: messages.concat({user: botId, nickname: 'helperBot', time: new Date(),
+            message: 'Task: ' + (task ? task.message : 'empty')})};
+        const chat = await Chat.create(newChat);
+        chats = [chat];
       }
       else {
         throw Error('Calculation of best round error');
       }
+      break;
+
+    case "worst":
+      const worstRoundResult = await worstRound(batch);
+      const worstRoundIndex = worstRoundResult.worstRoundIndex;
+      console.log('wRI: ', worstRoundIndex)
+      if (worstRoundIndex !== undefined) {
+        prsHelper.push(Batch.updateOne({_id: batch._id}, {$set: {worstRounds: worstRoundResult.worstRounds}}));
+        const batchData = await Batch.findById(batch._id);
+        const worstRound = batchData.rounds[worstRoundIndex];
+        teams = worstRound.teams;
+        const chatId = worstRound.teams[0].chat;
+        const oldChat = await Chat.findById(chatId).lean().exec();
+        const messages = oldChat.messages;
+        const newChat = {batch: batch._id, messages: messages.concat({user: botId, nickname: 'helperBot', time: new Date(),
+            message: 'Task: ' + (task ? task.message : 'empty')})};
+        const chat = await Chat.create(newChat);
+        chats = [chat];
+      }
+      break;
   }
+
   teams.forEach((team, index) => {
     team.chat = chats[index]._id;
     team.users.forEach(user => {

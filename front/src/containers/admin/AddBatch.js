@@ -57,6 +57,7 @@ class AddBatch extends React.Component {
     batch.loadTeamOrder = form.loadTeamOrder;
     batch.bestRoundFunction = form.bestRoundFunction;
     batch.randomizeExpRound = form.randomizeExpRound;
+    batch.reconveneWorstRound = form.reconveneWorstRound;
     this.props.addBatch(batch)
   }
 
@@ -94,7 +95,18 @@ class AddBatch extends React.Component {
                 </div>
               </div>
               <div className='form__form-group'>
-                <label className='form__form-group-label'>Randomize Experimental Round? </label>
+                <label className='form__form-group-label'>Reconvene worst? </label>
+                <div className='form__form-group-field'>
+                  <Field
+                    name='reconveneWorstRound'
+                    component={renderSelectField}
+                    options={[{value: true, label: 'Reconvene'}, {value: false, label: 'Don\'t Reconvene'}]}
+                    disabled={this.props.teamFormat !== 'single'}
+                  />
+                </div>
+              </div>
+              <div className='form__form-group'>
+                <label className='form__form-group-label'>Randomize last 2 rounds? </label>
                 <div className='form__form-group-field'>
                   <Field
                     name='randomizeExpRound'
@@ -222,11 +234,19 @@ const validate = (values, props) => {
   if (values.teamFormat == null) {
     errors.teamFormat = 'required'
   }
-  if (props.teamFormat === 'single' && values.bestRoundFunction == null) {
+  if (values.teamFormat === 'single' && values.bestRoundFunction == null) {
     errors.bestRoundFunction = 'required'
   }
-  if (props.teamFormat === 'single' && values.randomizeExpRound == null) {
+  if (values.teamFormat === 'single' && values.randomizeExpRound == null) {
     errors.randomizeExpRound = 'required'
+  }
+  if (values.teamFormat === 'single' && values.reconveneWorstRound == null) {
+    errors.reconveneWorstRound = 'required'
+  }
+  if (values.teamFormat === 'single' && values.reconveneWorstRound && values.template &&
+    props.templateList.filter(x => x._id === values.template) &&
+    props.templateList.filter(x => x._id === values.template)[0].numRounds < 6) {
+    errors.template = 'numRounds must be >= 6'
   }
   return errors
 };
@@ -254,6 +274,8 @@ function mapStateToProps(state) {
       rememberTeamOrder: false,
       loadTeamOrder: false,
       bestRoundFunction: 'highest',
+      reconveneWorstRound: true,
+      randomizeExpRound: true,
     }
   }
 }

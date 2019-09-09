@@ -104,10 +104,10 @@ class PostSurveyForm extends React.Component {
 		  return null;
     }
 		const userId = this.props.user._id.toString();
-		const expRounds = batch.expRounds.map(x => x - 1);
+		const [expRounds, worstRounds] = [batch.expRounds.map(x => x - 1), batch.worstRounds.map(x => x - 1)];
 		const numRounds = batch.numRounds;
 		const allRounds = Array.from(Array(numRounds).keys());
-		const nonExpRounds = allRounds.filter(x => expRounds.indexOf(x) < 0);
+		const nonExpRounds = allRounds.filter(x => expRounds.indexOf(x) < 0 && worstRounds.indexOf(x) < 0);
 		const shuffledNonExpRounds = shuffle(nonExpRounds);
 		let roundsForSurvey = [];
 		roundsForSurvey.push(shuffledNonExpRounds[0], shuffledNonExpRounds[1]);
