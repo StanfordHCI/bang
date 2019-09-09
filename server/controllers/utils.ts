@@ -481,12 +481,15 @@ const findFarthestIndex = (points, medianArray) => {
  * Using Math.round() will give you a non-uniform distribution!
  */
 function getRandomInt(min, max, excluded) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  const result = Math.floor(Math.random() * (max - min + 1)) + min;
-  console.log(excluded);
-  console.log('getting random int!');
-  return excluded.indexOf(result) === -1 ? result : getRandomInt(min, max, excluded);
+  try {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    const result = Math.floor(Math.random() * (max - min + 1)) + min;
+    return excluded.indexOf(result) === -1 ? result : getRandomInt(min, max, excluded);
+  }
+  catch (e) {
+    return min;
+  }
 }
 
 // Returns the index of round in which the team has the best results
@@ -498,19 +501,16 @@ export const bestRound = async (batch) => {
   const bestRoundFunction = batch.bestRoundFunction;
   // const currentRound = (batch.expRounds.length ? Math.max(batch.expRounds) : batch.numRounds);
   const currentRound = updBatch.currentRound + 1;
-  console.log('currentRound: ', currentRound);
   const points = Array(currentRound); // storage for round scores
   let medianScores = [];
   // for (let i = 0; i < numRounds; ++i) {
   for (let i = 0; i < currentRound - 1; ++i) {
     if (updBatch.worstRounds.indexOf(i + 1) > -1) {
       points[i] = 0;
-      console.log('not counting worst round', i);
       continue;
     }
     if (updBatch.expRounds.indexOf(i + 1) > -1) {
       points[i] = 0;
-      console.log('not counting best round', i);
       continue;
     }
     const surveys = await Survey.find({ batch: batch._id, round: i + 1, surveyType: 'midsurvey' });
@@ -557,7 +557,6 @@ export const bestRound = async (batch) => {
   const excludedRounds = updBatch.expRounds.concat(updBatch.worstRounds);
   const result = roundFromFunction(bestRoundFunction, {points: points, medianScores: medianScores,
     currentRound: currentRound, excludedRounds: excludedRounds});
-  console.log(`bestRound() returns expRounds: [${currentRound}, ${result + 1}]`);
   return {bestRoundIndex: result, scores: points, expRounds: [currentRound, result + 1], medianScores: medianScores,
     currentRound: currentRound, excludedRounds: excludedRounds};
 };
