@@ -74,5 +74,7 @@ let  BatchSchema = new Schema({
   teamFormat: {type: String, required: true},
   bestRoundFunction: {type: String, $enum: ['highest', 'lowest', 'average', 'random']},
   randomizeExpRound: {type: Boolean, default: false},
+  worstRounds: [], // [worst round, reconvening of worst round]
+  reconveneWorstRound: {type: Boolean, default: false},
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);

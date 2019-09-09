@@ -58,7 +58,7 @@ export const addBatch = async function (req, res) {
     delete newBatch.updatedAt;
     newBatch.templateName = newBatch.name;
     newBatch.status = 'waiting';
-    newBatch.users = [], newBatch.expRounds = [], newBatch.roundGen = [];
+    newBatch.users = [], newBatch.expRounds = [], newBatch.roundGen = [], newBatch.worstRounds = [];
     let tasks = [], nonExpCounter = 0;
     let roundGen;
     if (teamFormat === 'single') {
@@ -75,14 +75,19 @@ export const addBatch = async function (req, res) {
         newBatch.expRounds.push(roundNumber)
       }
     }
-    else {
+    else { // single-teamed
       if (newBatch.randomizeExpRound) { // expRound is randomized. It's [numRounds] or [numRounds - 1]
         const min = newBatch.numRounds - 1;
         const max = newBatch.numRounds;
         const roundNumber = Math.floor(Math.random() * (max - min) + 0.5) + min; //random int from min to max
         newBatch.expRounds.push(roundNumber)
+        if (newBatch.reconveneWorstRound) { // round, reconvening worst
+          const roundNumber = [newBatch.numRounds, newBatch.numRounds - 1].filter(x => x !== newBatch.expRounds[0]);
+          newBatch.worstRounds.push(roundNumber[0]);
+        }
       } else { // expRound is [numRounds]
-        newBatch.expRounds.push(newBatch.numRounds)
+        newBatch.expRounds.push(newBatch.numRounds);
+        newBatch.worstRounds.push(newBatch.numRounds - 1);
       }
     }
     if (teamFormat !== 'single') {

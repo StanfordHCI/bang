@@ -459,12 +459,19 @@ const findClosestIndex = (points, medianArray) => {
   }
 };
 
-/**
- * Returns a random number between min (inclusive) and max (exclusive)
- */
-function getRandomArbitrary(min, max) {
-  return Math.random() * (max - min) + min;
-}
+const findFarthestIndex = (points, medianArray) => {
+  // finding i which gives minimal abs(points[i] - medianArray[i])
+  if (points.length && medianArray.length) {
+    let results = [];
+    points.forEach((val, ind, arr) => {
+      if (arr.length - 1 !== ind) {
+        results = results.concat(Math.abs(val - medianArray[ind]).toFixed(2));
+      }
+    });
+    return findMaxIndex(results)
+  }
+};
+
 
 /**
  * Returns a random integer between min (inclusive) and max (inclusive).
@@ -473,10 +480,16 @@ function getRandomArbitrary(min, max) {
  * lower than max if max isn't an integer).
  * Using Math.round() will give you a non-uniform distribution!
  */
-function getRandomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+function getRandomInt(min, max, excluded) {
+  try {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    const result = Math.floor(Math.random() * (max - min + 1)) + min;
+    return excluded.indexOf(result) === -1 ? result : getRandomInt(min, max, excluded);
+  }
+  catch (e) {
+    return min;
+  }
 }
 
 // Returns the index of round in which the team has the best results
@@ -484,12 +497,22 @@ function getRandomInt(min, max) {
 // If an error occurs, returns 0, so the teams will be like in the round 1,
 // happens only if no one has completed any midSurveys at all
 export const bestRound = async (batch) => {
+  const updBatch = await Batch.findById(batch._id);
   const bestRoundFunction = batch.bestRoundFunction;
-  const currentRound = (batch.expRounds.length ? Math.max(batch.expRounds) : batch.numRounds);
+  // const currentRound = (batch.expRounds.length ? Math.max(batch.expRounds) : batch.numRounds);
+  const currentRound = updBatch.currentRound + 1;
   const points = Array(currentRound); // storage for round scores
   let medianScores = [];
   // for (let i = 0; i < numRounds; ++i) {
   for (let i = 0; i < currentRound - 1; ++i) {
+    if (updBatch.worstRounds.indexOf(i + 1) > -1) {
+      points[i] = 0;
+      continue;
+    }
+    if (updBatch.expRounds.indexOf(i + 1) > -1) {
+      points[i] = 0;
+      continue;
+    }
     const surveys = await Survey.find({ batch: batch._id, round: i + 1, surveyType: 'midsurvey' });
     const surveysCount = surveys.length;
     const answerTypes = batch.tasks[i].survey ? batch.tasks[i].survey.map(surv => surv.type) : [];
@@ -531,27 +554,67 @@ export const bestRound = async (batch) => {
     // points[i] = score;
       points[i] = averageScore;
   }
-
-  let result = 0;
-  if (bestRoundFunction === 'highest') {
-    result = findMaxIndex(points)
-  }
-  if (bestRoundFunction === 'lowest') {
-    result = findMinIndex(points);
-  }
-  if (bestRoundFunction === 'average') {
-    result = findClosestIndex(points, medianScores)
-  }
-  if (bestRoundFunction === 'random') {
-    result = getRandomInt(0, currentRound - 2);
-  }
-  console.log([currentRound, result + 1])
-  return {bestRoundIndex: result, scores: points, expRounds: [currentRound, result + 1]};
+  const excludedRounds = updBatch.expRounds.concat(updBatch.worstRounds);
+  const result = roundFromFunction(bestRoundFunction, {points: points, medianScores: medianScores,
+    currentRound: currentRound, excludedRounds: excludedRounds});
+  return {bestRoundIndex: result, scores: points, expRounds: [currentRound, result + 1], medianScores: medianScores,
+    currentRound: currentRound, excludedRounds: excludedRounds};
 };
 
+export const worstRound = async batch => {
+  const bestRoundFunction = batch.bestRoundFunction;
+  const bestRoundResults = await bestRound(batch);
+  const currentRound = bestRoundResults.currentRound;
+  let func = '';
+  switch (bestRoundFunction) {
+    case 'highest':
+      func = 'lowest';
+      break;
+    case 'lowest':
+      func = 'highest';
+      break;
+    case 'average':
+      func = 'anti-average';
+      break;
+    case 'random':
+      func = 'anti-random';
+      break;
+    default:
+      func = 'lowest';
+  }
+  const result = roundFromFunction(func, {points: bestRoundResults.scores, medianScores: bestRoundResults.medianScores,
+  currentRound: currentRound, excludedRounds: bestRoundResults.excludedRounds});
+  return {worstRoundIndex: result, worstRounds: [currentRound, result + 1]};
+}
 export const calculateMoneyForBatch = batch => {
   const teamFormat = batch.teamFormat;
   const batchCapacity = teamFormat === 'single' ? batch.teamSize : batch.teamSize ** 2;
   return batchCapacity * 12 * getBatchTime(batch);
+}
+
+const roundFromFunction = (func, data) => {
+  let result = 0;
+  const points = data.points;
+  const medianScores = data.medianScores;
+  const currentRound = data.currentRound;
+  if (func === 'highest') {
+    result = findMaxIndex(points)
+  }
+  if (func === 'lowest') {
+    result = findMinIndex(points);
+  }
+  if (func === 'average') {
+    result = findClosestIndex(points, medianScores)
+  }
+  if (func === 'random') {
+    result = getRandomInt(0, currentRound - 2, data.excludedRounds ? data.excludedRounds : []);
+  }
+  if (func === 'anti-average') {
+    result = findFarthestIndex(points, medianScores);
+  }
+  if (func === 'anti-random') {
+    result = getRandomInt(0, currentRound - 2, data.excludedRounds ? data.excludedRounds : []);
+  }
+  return result;
 }
 
