@@ -43,6 +43,7 @@ let  BatchSchema = new Schema({
   tasks: [{
     hasPreSurvey: {type: Boolean, required: true, default: false},
     hasMidSurvey: {type: Boolean, required: true, default: false},
+    hasPostSurvey: {type: Boolean, default: false},
     preSurvey: [{
       question: {type: String, required: true},
       type: {type: String, required: true},
@@ -55,6 +56,12 @@ let  BatchSchema = new Schema({
       message: {type: String, required: true}
     }],
     survey: [{
+      question: {type: String, required: true},
+      type: {type: String, required: true},
+      options: [{option: {type: String, required: true}}],
+      selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+    }],
+    postSurvey: [{
       question: {type: String, required: true},
       type: {type: String, required: true},
       options: [{option: {type: String, required: true}}],
