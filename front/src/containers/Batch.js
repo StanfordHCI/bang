@@ -514,9 +514,26 @@ class Batch extends React.Component {
     </div>)
   }
 
+  getNumTask(batch) {
+    let numTask = batch.currentRound - 1; // standard flow
+    if (batch.teamFormat === 'single') {
+      if (batch.worstRounds && batch.worstRounds.length && Math.max.apply(null, batch.worstRounds) === batch.currentRound) {
+        // if it is the reconvene of worst round, we take survey from task[numRounds - 2]
+        numTask = batch.numRounds - 2;
+      } else {
+        if (batch.expRounds && batch.expRounds.length && Math.max.apply(null, batch.expRounds) === batch.currentRound) {
+          // if it is the reconvene of best round, we take survey from task[numRounds - 1]
+          numTask = batch.numRounds - 1;
+        }
+      }
+    }
+    return numTask;
+  }
+
   renderMidSurvey() {
     const batch = this.props.batch;
-    const task = batch.tasks[batch.currentRound - 1]
+    const numTask = this.getNumTask(batch);
+    const task = batch.tasks[numTask];
     const round = batch.rounds[batch.currentRound - 1]
     const team = round.teams.find((x) => x.users.some((y) => y.user.toString() === this.props.user._id));
 
@@ -538,7 +555,9 @@ class Batch extends React.Component {
   }
 
   renderPreSurvey() {
-    const task = this.props.batch.tasks[this.props.batch.currentRound - 1]
+    const batch = this.props.batch;
+    const numTask = this.getNumTask(batch);
+    const task = batch.tasks[numTask];
 
     return (
       <div>
