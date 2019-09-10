@@ -81,15 +81,16 @@ export const addBatch = async function (req, res) {
         const max = newBatch.numRounds;
         const roundNumber = Math.floor(Math.random() * (max - min) + 0.5) + min; //random int from min to max
         newBatch.expRounds.push(roundNumber)
-        if (newBatch.reconveneWorstRound) { // round, reconvening worst
+        if (newBatch.reconveneWorstRound) {
           const roundNumber = [newBatch.numRounds, newBatch.numRounds - 1].filter(x => x !== newBatch.expRounds[0]);
-          newBatch.worstRounds.push(roundNumber[0]);
+          newBatch.worstRounds.push(roundNumber[0]); // round which reconvenes worst round
         }
       } else { // expRound is [numRounds]
         newBatch.expRounds.push(newBatch.numRounds);
         newBatch.worstRounds.push(newBatch.numRounds - 1);
       }
     }
+    console.log('expRounds: ', newBatch.expRounds, 'worst: ', newBatch.worstRounds);
     if (teamFormat !== 'single') {
       for (let i = 0; i < newBatch.numRounds; i++) {
         const expIndex = newBatch.expRounds.findIndex(x => x === i + 1);
