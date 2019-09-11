@@ -549,7 +549,7 @@ class Batch extends React.Component {
         />}
         {this.state.surveyDone && <div>
           <p>Thanks for completing the survey for this round!</p>
-          <p style={{ marginBottom: '0px' }}>There are {this.props.batch.numRounds - this.props.batch.currentRound} more round(s) and one final-survey (after the last round) remaining, but we are waiting for your teammates to complete the surveys. Remember, if you leave early, you will not be paid. Please hang tight!</p>
+          <p style={{ marginBottom: '0px' }}>There are {this.props.batch.numRounds - this.props.batch.currentRound} more round(s) <b>and one final-survey</b> (after the last round) remaining, but we are waiting for your teammates to complete the surveys. Remember, if you leave early, you will not be paid. Please hang tight!</p>
         </div>}
       </div>)
   }
