@@ -75,7 +75,7 @@ class Waiting extends React.Component {
                   Our task requires {limit} users to participate simultaneously and <b>cannot start until all {limit} users have clicked “Join Batch” and are active at once.</b> Once there are {limit}  users in the waiting chat, they are moved into the actual task.</p>
                   <p>The waiting chat last up to <b>35 minutes</b>. If there are never {limit} users within this time, the waiting period will terminate. </p>
 
-                  <p> <b>IMPORTANT:</b> If you intend to complete the task, please do not leave because it will mean other MTurkers will have to wait longer for the task. If enough people arrive, you'll be bonused $1 for waiting. Provided you stay for the <b>whole task,</b> we will bonus to a rate of approximately <b>$12 per hour</b>. If there are never enough people, we will automatically submit and accept for the base rate.</p>
+                  <p><b>IMPORTANT: This task will take around 75 minutes to complete. You will not be paid if you do not complete the entire task.</b> If you intend to complete the task, please do not leave because it will mean other MTurkers will have to wait longer for the task. If enough people arrive, you'll be bonused $1 for waiting. Provided you stay for the <b>whole task,</b> we will bonus to a rate of approximately <b>$12 per hour</b>. If there are never enough people, we will automatically submit and accept for the base rate.</p>
                   
                   
                   <Button className="btn btn-primary" onClick={() => joinBatch()}>Join Batch</Button>
