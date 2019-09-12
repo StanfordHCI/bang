@@ -113,6 +113,13 @@ export const loadBatch = () => {
         data: data
       });
     })
+    socket.on('post-survey', (data) => {
+      dispatch(setSnackbar('Post Survey'));
+      dispatch({
+        type: REFRESH_BATCH,
+        data: data
+      });
+    })
     socket.on('end-round', (data) =>{
       dispatch(setSnackbar('Round end'));
       dispatch({

@@ -353,7 +353,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   let prsHelper = [];
   switch (roundType) {
     case STANDARD:
-      // if it is not the last round of single-teamed batch
+      // if it is not the best or worst reconvening round of single-teamed batch
       // standard flow
       teams = generateTeams(batch.roundGen, users, i + 1, oldNicks);
       for (let j = 0; j < teamSize; j++) {
@@ -467,6 +467,15 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     await timeout(batch.surveyMinutes * 60000);
   }
 
+  console.log(batch.hasPostSurvey, batch.numRounds - 1 === i);
+  if (batch.hasPostSurvey && i === batch.numRounds - 1) {
+    roundObject.status = 'postsurvey';
+    const postRoundInfo = {rounds: rounds}
+    batch = await Batch.findByIdAndUpdate(batch._id, {$set: postRoundInfo}).lean().exec();
+    logger.info(module, batch._id + ' : Begin post-survey for round ' + roundObject.number);
+    io.to(batch._id.toString()).emit('post-survey', postRoundInfo);
+    await timeout(batch.surveyMinutes * 60000);
+  }
   const [filledChats, roundSurveys] = await Promise.all([
     Chat.find({_id: {$in: chats.map(x => x._id)}}).lean().exec(),
     Survey.find({batch: batch._id, round: i + 1, surveyType: {$in: ['presurvey', 'midsurvey']}}).select('user').lean().exec()

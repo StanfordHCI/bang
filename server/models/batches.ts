@@ -76,5 +76,12 @@ let  BatchSchema = new Schema({
   randomizeExpRound: {type: Boolean, default: false},
   worstRounds: [], // [worst round, reconvening of worst round]; (Math.max.apply(null, worstRounds) === number of reconvening round) MUST BE TRUE
   reconveneWorstRound: {type: Boolean, default: false},
+  hasPostSurvey: {type: Boolean, default: false},
+  postSurvey: [{
+    question: {type: String, required: true},
+    type: {type: String, required: true},
+    options: [{option: {type: String, required: true}}],
+    selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+  }],
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);

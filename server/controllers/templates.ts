@@ -33,7 +33,8 @@ export const loadTemplate = async function (req, res) {
 
 export const addTemplate = async function (req, res) {
   try {
-    const template = await Template.create(req.body);
+    const newTemplate = processPostSurvey(req.body);
+    const template = await Template.create(newTemplate);
     res.json({template: template})
   } catch (e) {
     errorHandler(e, 'add template error')
@@ -69,9 +70,21 @@ export const cloneTemplate = async function (req, res) {
 
 export const updateTemplate = async function (req, res) {
   try {
-    const template = await Template.findByIdAndUpdate(req.body._id, {$set: req.body}, {new: true}).lean().exec();
+    const updatedTemplate = processPostSurvey(req.body);
+    const template = await Template.findByIdAndUpdate(updatedTemplate._id, {$set: updatedTemplate}, {new: true}).lean().exec();
     res.json({template: template})
   } catch (e) {
     errorHandler(e, 'add template error')
   }
+}
+
+const processPostSurvey = (reqBody) => {
+  let template = reqBody;
+  const lastTask = template.tasks[template.tasks.length - 1];
+  console.log(lastTask, lastTask.hasPostSurvey)
+  if (lastTask.hasPostSurvey) {
+    template.hasPostSurvey = true;
+    template.postSurvey = lastTask.postSurvey
+  }
+  return template
 }

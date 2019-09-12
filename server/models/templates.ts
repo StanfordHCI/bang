@@ -37,5 +37,12 @@ let  TemplateSchema = new Schema({
     }]
   }],
   teamFormat: {type: String, required: true},
+  hasPostSurvey: {type: Boolean, required: true, default: false},
+  postSurvey: [{
+    question: {type: String, required: true},
+    type: {type: String, required: true},
+    options: [{option: {type: String, required: true}}],
+    selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+  }],
 }, options);
 export const Template = mongoose.model('Template', TemplateSchema);
