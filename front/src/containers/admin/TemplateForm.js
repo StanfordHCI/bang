@@ -346,21 +346,22 @@ class TemplateForm extends React.Component {
               </Row>
               <Row>
                 <Col className='form__form-group'>
-                  <label className='form__form-group-label'>Single-Team or Multi-Team?:</label>
-                  <div className='form__form-group-field'>
+                  <label className='form__form-group-label'>Team Format:</label>
                     <Field
                       name='teamFormat'
                       component={renderSelectField}
                       options={[{value: 'single', label: 'Single-team'}, {value: 'multi', label: 'Multi-team'}]}
                     />
-                  </div>
                 </Col>
-                <Col>
+                <Col className='form__form-group'>
+                  <label className='form__form-group-label'>Post Survey:</label>
+                  <div className='form__form-group-select'>
                   <Field
                       name={`hasPostSurvey`}
                       component={renderCheckBoxField}
                       onChange={(e) => {this.deleteSurvey(e, numRounds - 1, 'postSurvey')}}
                   />
+                  </div>
                 </Col>
               </Row>
               <Row>
