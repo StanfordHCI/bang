@@ -580,7 +580,6 @@ const validate = (values, props) => {
   if (values.teamFormat == null) {
     errors.teamFormat = 'required'
   }
-  console.log(values.hasPostSurvey, values.postSurvey)
   if (values.hasPostSurvey && !values.postSurvey && values.tasks.length && values.tasks[values.numRounds - 1]) {
     errors.tasks[values.numRounds - 1].message = 'add questions to post-survey please';
   }
