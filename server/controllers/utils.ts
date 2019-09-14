@@ -576,7 +576,7 @@ export const worstRound = async batch => {
       func = 'anti-average';
       break;
     case 'random':
-      func = 'anti-random';
+      func = 'random';
       break;
     default:
       func = 'lowest';
@@ -612,9 +612,6 @@ const roundFromFunction = (func, data) => { // if data.points[i] === 0 or undefi
   }
   if (func === 'anti-average') {
     result = findFarthestIndex(points, medianScores);
-  }
-  if (func === 'anti-random') {
-    result = getRandomInt(0, currentRound - 2, excluded);
   }
   return result;
 }
