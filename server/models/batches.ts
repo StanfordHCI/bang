@@ -59,6 +59,10 @@ let  BatchSchema = new Schema({
       type: {type: String, required: true},
       options: [{option: {type: String, required: true}}],
       selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+    }],
+    pinnedContent: [{
+      text: {type: String, required: true},
+      link: {type: String},
     }]
   }],
   midQuestions: [String],

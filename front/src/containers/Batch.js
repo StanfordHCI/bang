@@ -31,7 +31,7 @@ import { history } from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
 import ReactHtmlParser from "react-html-parser";
 import { Avatar } from '@material-ui/core';
-import { parseNick } from '../utils'
+import {newWindow, parseNick} from '../utils'
 import { animalMap, adjMap } from '../constants/nicknames';
 import Bot from '../img/Bot.svg';
 import Notification from 'react-web-notification';
@@ -118,6 +118,7 @@ class Batch extends React.Component {
       isStartNotifySent: false,
       closeBlockReady: false,
       currentRound: 0,
+      pinnedMessage: {},
     };
   }
 
@@ -379,7 +380,7 @@ class Batch extends React.Component {
   }
 
   renderChat() {
-    const {sendMessage, user, chat, batch, currentRound} = this.props;
+    const {sendMessage, user, chat, batch, currentRound, pinnedContent} = this.props;
     const inputProps = {
       placeholder: 'type here...',
       value: this.state.message,
@@ -387,8 +388,6 @@ class Batch extends React.Component {
       onKeyDown: this.handleSubmit,
       className: 'chat__field-input'
     };
-
-
 
     return (
       <div className='chat'>
@@ -422,6 +421,18 @@ class Batch extends React.Component {
           </div>
         </div>
         <div className='chat__dialog' style={{ marginLeft: 10 }}>
+          <div className='chat__dialog-pinned-message'>
+            <div className='chat__dialog-pinned-resources'>
+              <p>Pinned resources</p>
+            </div>
+            {pinnedContent && pinnedContent.length && pinnedContent.map((message, index) => {
+              return (
+              <div>
+                <button onClick={() => {newWindow(message.link)}}>{message.text}</button>
+                <br/>
+              </div>)
+            })}
+          </div>
           <div className="chat__scroll" ref="chatScroll">
             <div className='chat__dialog-messages-wrap'>
               <div className='chat__dialog-messages'>
@@ -758,7 +769,8 @@ function mapStateToProps(state) {
     chat: chat,
     currentRound: round,
     currentTeam: state.batch.currentTeam,
-    teamAnimals: state.batch.teamAnimals
+    teamAnimals: state.batch.teamAnimals,
+    pinnedContent: chat.pinnedContent || [],
   }
 }
 

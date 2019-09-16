@@ -16,6 +16,10 @@ let ChatSchema = new Schema({
     message: { type: String, required: true},
     time: { type: Date, required: true},
   }],
-  status: String
+  status: String,
+  pinnedContent: [{
+    text: {type: String},
+    link: {type: String},
+  }]
 }, options);
 export const Chat = mongoose.model('Chat', ChatSchema);

@@ -357,8 +357,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
       // standard flow
       teams = generateTeams(batch.roundGen, users, i + 1, oldNicks);
       for (let j = 0; j < teamSize; j++) {
-        emptyChats.push({batch: batch._id, messages: [{user: botId, nickname: 'helperBot', time: new Date(),
-            message: 'Task: ' + (task ? task.message : 'empty')}]})
+        emptyChats.push(makeNewChat([], batch, i, task))
       }
       chats = await Chat.insertMany(emptyChats);
       break;
@@ -379,8 +378,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
         const chatId = bestRound.teams[0].chat;
         const oldChat = await Chat.findById(chatId).lean().exec();
         const messages = oldChat.messages;
-        const newChat = {batch: batch._id, messages: messages.concat({user: botId, nickname: 'helperBot', time: new Date(),
-            message: 'Task: ' + (task ? task.message : 'empty')})};
+        const newChat = makeNewChat(messages, batch, i, task);
         const chat = await Chat.create(newChat);
         chats = [chat];
       }
@@ -400,8 +398,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
         const chatId = worstRound.teams[0].chat;
         const oldChat = await Chat.findById(chatId).lean().exec();
         const messages = oldChat.messages;
-        const newChat = {batch: batch._id, messages: messages.concat({user: botId, nickname: 'helperBot', time: new Date(),
-            message: 'Task: ' + (task ? task.message : 'empty')})};
+        const newChat = makeNewChat(messages, batch, i ,task);
         const chat = await Chat.create(newChat);
         chats = [chat];
       }
@@ -510,4 +507,9 @@ const kickUser = async (userId, batchId, kickedAfterRound) => {
       { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}}, {new: true}).lean().exec()
   io.to(user.socketId).emit('kick-afk', true);
   logger.info(module, batchId + ' : user kicked for being AFK. Mturk ID: ' + user.mturkId);
+}
+
+const makeNewChat = (messages, batch, i, task) => {
+  return {batch: batch._id, messages: messages.concat({user: botId, nickname: 'helperBot', time: new Date(),
+    message: 'Task: ' + (task ? task.message : 'empty')}), pinnedContent: batch.tasks[i].pinnedContent || []};
 }

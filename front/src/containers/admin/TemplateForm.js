@@ -20,13 +20,15 @@ import renderCheckBoxField from 'Components/form/CheckBox'
 import Select from "react-select";
 
 const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType, teamFormat, postSurvey}) => {
+  console.log(fields.map(x => x));
   return (<div style={{width: '100%', marginTop: '20px', borderBottom: '1px solid grey'}}>
     {
       fields.map((question, index) => {
+        console.log('bbb')
         let isSelect = false;
         if (surveyType === 'mid' && task && task.survey[index] && task.survey[index].type === 'select' ||
           surveyType === 'pre' && task && task.preSurvey[index] && task.preSurvey[index].type === 'select' ||
-            surveyType === 'post' && postSurvey && postSurvey[index].type === 'select') {
+          surveyType === 'post' && postSurvey && postSurvey[index].type === 'select') {
           isSelect = true;
         }
 
@@ -112,6 +114,7 @@ const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRoun
 }
 
 const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
+  console.log('renderSteps: fields: ', fields)
   return (<div style={{width: '100%', borderBottom: '1px solid grey'}}>
     {
       fields.map((step, index) => {
@@ -148,6 +151,48 @@ const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
     <Row className="centered-and-flexed" noGutters>
       <Button type="button" size="sm" onClick={() => fields.push({})}>
         <i className="fa fa-plus"/>add step
+      </Button>
+    </Row>
+  </div>)
+}
+
+const renderPinnedContent = ({fields, meta: {touched, error, warning}, numRounds}) => {
+  return (<div style={{width: '100%', borderBottom: '1px solid grey'}}>
+    {
+      fields.map((field, index) => {
+        return (
+            <Row key={index}>
+              <Col>
+                <div className='form__form-group'>
+                  <label className='form__form-group-label'>Label text:</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                        name={`${field}.text`}
+                        component={renderField}
+                        type='text'
+                    />
+                  </div>
+                  <label className='form__form-group-label'>HTML content:</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                        name={`${field}.link`}
+                        type="text"
+                        component={renderTextArea}
+                    />
+                  </div>
+                </div>
+              </Col>
+              <Col>
+                <div className='centered-and-flexed'>
+                  <Button type="button" size="sm"
+                          onClick={() => fields.splice(index, 1)}>delete content</Button>
+                </div>
+              </Col>
+            </Row>)
+      })}
+    <Row className="centered-and-flexed" noGutters>
+      <Button type="button" size="sm" onClick={() => fields.push({})}>
+        <i className="fa fa-plus"/>add content
       </Button>
     </Row>
   </div>)
@@ -207,6 +252,16 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
               onChange={(e) => {deleteSurvey(e, i, 'survey')}}
             />
           </Col>
+          <Col>
+            <p>Has pinned content?</p>
+          </Col>
+          <Col>
+            <Field
+              name={`tasks[${i}].hasPinnedContent`}
+              component={renderCheckBoxField}
+              onChange={(e) => {deleteSurvey(e, i, 'pinnedContent')}}
+            />
+          </Col>
         </Row>
         <div className='form__form-group-field' style={{marginBottom: '25px'}}>
           <Field
@@ -220,6 +275,14 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
           component={renderSteps}
           rerenderOnEveryChange
         />
+        {taskArray && taskArray[i] && taskArray[i].hasPinnedContent && <div style={{width: '100%'}}>
+          <p>Pinned content</p>
+          <FieldArray
+          name={`tasks[${i}].pinnedContent`}
+          component={renderPinnedContent}
+          rerenderOnEveryChange
+          />
+        </div>}
         {taskArray && taskArray[i] && taskArray[i].hasPreSurvey && <div style={{width: '100%'}}>
           <p>pre - survey</p>
           <Select

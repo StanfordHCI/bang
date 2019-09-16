@@ -95,3 +95,8 @@ export const shuffle = array => {
 
   return array;
 }
+
+export const newWindow = content => {
+  const wind = window.open();
+  wind.document.open().write(content)
+}
