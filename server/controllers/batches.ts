@@ -24,6 +24,9 @@ const logger = require('../services/logger');
 const botId = '100000000000000000000001'
 const randomAnimal = "Squirrel Rhino Horse Pig Panda Monkey Lion Orangutan Gorilla Hippo Rabbit Wolf Goat Giraffe Donkey Cow Bear Bison".split(" ");
 const randomAdjective = "new small young little likely nice cultured snappy spry conventional".split(" ");
+const BEST = 'best';
+const WORST = 'worst';
+const STANDARD = 'standard';
 
 
 export const joinBatch = async function (data, socket, io) {
@@ -311,25 +314,45 @@ const generateTeams = (roundGen, users, roundNumber, oldNicks) => {
 }
 
 const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedUsers) => {
-  const task = batch.tasks[i];
-  let roundObject = {startTime: new Date(), number: i + 1, teams: [], status: task.hasPreSurvey ? 'presurvey' : 'active', endTime: null};
-  let emptyChats = [];
-  let chats;
-  let teams;
   const teamFormat = batch.teamFormat;
-  let prsHelper = [];
+  // for singleTeamed batches
   const reconveneBestCondition = batch.randomizeExpRound ? teamFormat === 'single' && batch.expRounds[0] === i + 1 :
       batch.numRounds === i + 1 && teamFormat === 'single';
   const reconveneWorstCondition = teamFormat === 'single' &&  batch.worstRounds.length ?
       batch.worstRounds[0] === i + 1 : false;
   if (reconveneBestCondition && reconveneWorstCondition) {
-    console.log('reconvene logic error!!');
+    console.log('reconvene logic error: running worst round');
   }
-  const roundType = !reconveneWorstCondition && !reconveneBestCondition ? 'standard' :
-      reconveneWorstCondition ? 'worst' : 'best';
-  console.log(roundType);
+  let roundType;
+  if (!reconveneWorstCondition && !reconveneBestCondition) {
+    roundType = STANDARD;
+  } else {
+    if (reconveneWorstCondition) {
+      roundType = WORST;
+    } else {
+      if (reconveneBestCondition) {
+        roundType = BEST;
+      }
+    }
+  }
+  let task;
+  if (teamFormat !== 'single' || roundType === STANDARD) { // standard flow
+    task = batch.tasks[i];
+  } else { // best round: we take last task
+    if (roundType === BEST) {
+      task = batch.tasks[batch.tasks.length - 1];
+    }
+    if (roundType === WORST) { // worst round: we take one-before-last task
+      task = batch.tasks[batch.tasks.length - 2];
+    }
+  }
+  let roundObject = {startTime: new Date(), number: i + 1, teams: [], status: task.hasPreSurvey ? 'presurvey' : 'active', endTime: null};
+  let emptyChats = [];
+  let chats;
+  let teams;
+  let prsHelper = [];
   switch (roundType) {
-    case "standard":
+    case STANDARD:
       // if it is not the last round of single-teamed batch
       // standard flow
       teams = generateTeams(batch.roundGen, users, i + 1, oldNicks);
@@ -339,8 +362,8 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
       }
       chats = await Chat.insertMany(emptyChats);
       break;
-    case "best":
-      // if batch is single-teamed and this is unmasked exp round, we do not generate teams, but get them from the best round
+    case BEST:
+      // if batch is single-teamed and this is unmasked best exp round, we do not generate teams, but get them from the best round
       // also we do not generate chats and fake nicks
       const bestRoundResult = await bestRound(batch);
       const bestRoundIndex = bestRoundResult.bestRoundIndex;
@@ -366,10 +389,9 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
       }
       break;
 
-    case "worst":
+    case WORST:
       const worstRoundResult = await worstRound(batch);
       const worstRoundIndex = worstRoundResult.worstRoundIndex;
-      console.log('wRI: ', worstRoundIndex)
       if (worstRoundIndex !== undefined) {
         prsHelper.push(Batch.updateOne({_id: batch._id}, {$set: {worstRounds: worstRoundResult.worstRounds}}));
         const batchData = await Batch.findById(batch._id);

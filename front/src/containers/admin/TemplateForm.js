@@ -161,9 +161,14 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
   const taskNumber = taskArray && taskArray.length && taskArray.length > numRounds ? taskArray.length : numRounds
 
   for (let i = 0; i < taskNumber; i++) {
-    let taskLabel = 'TASK FOR NON-EXPERIMENT ROUND';
-    if (i < numExpRounds) {
-      taskLabel = 'TASK FOR EXPERIMENT ROUND ' + (i + 1);
+    let taskLabel = '';
+    if (teamFormat !== 'single') {
+      taskLabel = 'TASK FOR NON-EXPERIMENT ROUND';
+      if (i < numExpRounds) {
+        taskLabel = 'TASK FOR EXPERIMENT ROUND ' + (i + 1);
+      }
+    } else {
+      taskLabel = `TASK FOR ROUND ${i + 1} ${i === numRounds - 1 ? '(BEST)' : ''}${i === numRounds - 2 ? '(WORST)' : ''}`
     }
     tasks.push(
       <div key={'task' + i} className='form__form-group' style={{ borderBottom: '3px solid grey'}}>

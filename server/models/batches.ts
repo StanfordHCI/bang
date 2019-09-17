@@ -43,6 +43,7 @@ let  BatchSchema = new Schema({
   tasks: [{
     hasPreSurvey: {type: Boolean, required: true, default: false},
     hasMidSurvey: {type: Boolean, required: true, default: false},
+    hasPostSurvey: {type: Boolean, default: false},
     preSurvey: [{
       question: {type: String, required: true},
       type: {type: String, required: true},
@@ -55,6 +56,12 @@ let  BatchSchema = new Schema({
       message: {type: String, required: true}
     }],
     survey: [{
+      question: {type: String, required: true},
+      type: {type: String, required: true},
+      options: [{option: {type: String, required: true}}],
+      selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+    }],
+    postSurvey: [{
       question: {type: String, required: true},
       type: {type: String, required: true},
       options: [{option: {type: String, required: true}}],
@@ -74,7 +81,7 @@ let  BatchSchema = new Schema({
   teamFormat: {type: String, required: true},
   bestRoundFunction: {type: String, $enum: ['highest', 'lowest', 'average', 'random']},
   randomizeExpRound: {type: Boolean, default: false},
-  worstRounds: [], // [worst round, reconvening of worst round]
+  worstRounds: [], // [worst round, reconvening of worst round]; (Math.max.apply(null, worstRounds) === number of reconvening round) MUST BE TRUE
   reconveneWorstRound: {type: Boolean, default: false},
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);
