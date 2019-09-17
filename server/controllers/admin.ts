@@ -92,7 +92,6 @@ export const addBatch = async function (req, res) {
         }
       }
     }
-    console.log('expRounds: ', newBatch.expRounds, 'worst: ', newBatch.worstRounds);
     if (teamFormat !== 'single') {
       for (let i = 0; i < newBatch.numRounds; i++) {
         const expIndex = newBatch.expRounds.findIndex(x => x === i + 1);
