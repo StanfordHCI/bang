@@ -422,7 +422,7 @@ class Batch extends React.Component {
         <div className='chat__dialog' style={{ marginLeft: 10 }}>
           {pinnedContent && !!pinnedContent.length && <div className='chat__dialog-pinned-message'>
             <div className='chat__dialog-pinned-resources'>
-              <p>Pinned resources</p>
+              <p style={{color: 'black'}}>Pinned resources</p>
             </div>
             {pinnedContent && !!pinnedContent.length && pinnedContent.map((message, index) => {
               return (
