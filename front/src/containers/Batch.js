@@ -769,7 +769,7 @@ function mapStateToProps(state) {
     currentRound: round,
     currentTeam: state.batch.currentTeam,
     teamAnimals: state.batch.teamAnimals,
-    pinnedContent: chat.pinnedContent || [],
+    pinnedContent: chat ? chat.pinnedContent || [] : [],
   }
 }
 
