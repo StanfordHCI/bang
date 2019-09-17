@@ -118,7 +118,6 @@ class Batch extends React.Component {
       isStartNotifySent: false,
       closeBlockReady: false,
       currentRound: 0,
-      pinnedMessage: {},
     };
   }
 
@@ -421,18 +420,18 @@ class Batch extends React.Component {
           </div>
         </div>
         <div className='chat__dialog' style={{ marginLeft: 10 }}>
-          <div className='chat__dialog-pinned-message'>
+          {pinnedContent && !!pinnedContent.length && <div className='chat__dialog-pinned-message'>
             <div className='chat__dialog-pinned-resources'>
               <p>Pinned resources</p>
             </div>
-            {pinnedContent && pinnedContent.length && pinnedContent.map((message, index) => {
+            {pinnedContent && !!pinnedContent.length && pinnedContent.map((message, index) => {
               return (
               <div>
-                <button onClick={() => {newWindow(message.link)}}>{message.text}</button>
+                <button className='chat__dialog-pinned-resource' onClick={() => {newWindow(message.link)}}>{message.text}</button>
                 <br/>
               </div>)
             })}
-          </div>
+          </div>}
           <div className="chat__scroll" ref="chatScroll">
             <div className='chat__dialog-messages-wrap'>
               <div className='chat__dialog-messages'>
