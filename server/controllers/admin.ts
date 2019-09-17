@@ -87,7 +87,9 @@ export const addBatch = async function (req, res) {
         }
       } else { // expRound is [numRounds]
         newBatch.expRounds.push(newBatch.numRounds);
-        newBatch.worstRounds.push(newBatch.numRounds - 1);
+        if (newBatch.reconveneWorstRound) {
+          newBatch.worstRounds.push(newBatch.numRounds - 1);
+        }
       }
     }
     if (teamFormat !== 'single') {
