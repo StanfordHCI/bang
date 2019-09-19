@@ -63,7 +63,11 @@ let  BatchSchema = new Schema({
     pinnedContent: [{
       text: {type: String, required: true},
       link: {type: String},
-    }]
+    }],
+    readingPeriods: [{
+      time: {type: Number, required: true},
+      message: {type: String, required: true},
+    }],
   }],
   midQuestions: [String],
   HITId: {type: String, },

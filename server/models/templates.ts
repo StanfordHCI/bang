@@ -39,7 +39,11 @@ let  TemplateSchema = new Schema({
     pinnedContent: [{
       text: {type: String, required: true},
       link: {type: String},
-    }]
+    }],
+    readingPeriods: [{
+      time: {type: Number, required: true},
+      message: {type: String, required: true},
+    }],
   }],
   teamFormat: {type: String, required: true},
   hasPostSurvey: {type: Boolean, required: true, default: false},

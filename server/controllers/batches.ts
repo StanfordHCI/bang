@@ -419,17 +419,36 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   batch = await Batch.findByIdAndUpdate(batch._id, {$set: {rounds: rounds, currentRound: roundObject.number}}).lean().exec();
   logger.info(module, batch._id + ' : Begin round ' + roundObject.number)
   io.to(batch._id.toString()).emit('refresh-batch', true)
+  if (task.readingPeriods && task.readingPeriods.length) {
+    for (let i = 0; i < task.readingPeriods.length; ++i) {
+      const period = task.readingPeriods[i];
+      const ind = i;
+      logger.info(module, batch._id + ` : Begin reading period ${ind + 1} for round ${roundObject.number}`);
+      roundObject.status = `readingPeriod${ind}`;
+      const info = {rounds: rounds}
+      batch = await Batch.findByIdAndUpdate(batch._id, {$set: info}).lean().exec();
+      io.to(batch._id.toString()).emit('reading-period', info);
+      await timeout(period.time * 60000)
+    }
+    roundObject.status = 'active';
+    batch = await Batch.findByIdAndUpdate(batch._id, {$set: {rounds: rounds}});
+    io.to(batch._id.toString()).emit('refresh-batch', true);
+  }
 
   if (task.hasPreSurvey) {
-    logger.info(module, batch._id + ' : Begin pre-survey for round ' + roundObject.number)
+    logger.info(module, batch._id + ' : Begin pre-survey for round ' + roundObject.number);
+    roundObject.status = 'presurvey';
+    batch = await Batch.findByIdAndUpdate(batch._id, {$set: {rounds: rounds}});
+    io.to(batch._id.toString()).emit('pre-survey', {rounds: rounds});
     await timeout(batch.surveyMinutes * 60000);
+    console.log('unpresurvey')
     roundObject.status = 'active';
     const startTaskInfo =  {rounds: rounds};
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: startTaskInfo}).lean().exec();
-    logger.info(module, batch._id + ' : Begin task for round ' + roundObject.number)
     io.to(batch._id.toString()).emit('start-task', startTaskInfo);
   }
 
+  logger.info(module, batch._id + ' : Begin task for round ' + roundObject.number)
   let stepsSumTime = 0;
   for (let j = 0; j < task.steps.length; j++) {
     const step = task.steps[j];

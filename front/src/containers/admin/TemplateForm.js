@@ -24,7 +24,6 @@ const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType
   return (<div style={{width: '100%', marginTop: '20px', borderBottom: '1px solid grey'}}>
     {
       fields.map((question, index) => {
-        console.log('bbb')
         let isSelect = false;
         if (surveyType === 'mid' && task && task.survey[index] && task.survey[index].type === 'select' ||
           surveyType === 'pre' && task && task.preSurvey[index] && task.preSurvey[index].type === 'select' ||
@@ -114,7 +113,6 @@ const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRoun
 }
 
 const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
-  console.log('renderSteps: fields: ', fields)
   return (<div style={{width: '100%', borderBottom: '1px solid grey'}}>
     {
       fields.map((step, index) => {
@@ -198,8 +196,50 @@ const renderPinnedContent = ({fields, meta: {touched, error, warning}, numRounds
   </div>)
 }
 
-const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneTask, surveyTemplatesOptions,
-                       taskArray, fillSurvey, deleteSurvey, numExpRounds, teamFormat, hasPostSurvey, postSurvey}) => {
+const renderReadingPeriods = ({fields, meta: {touched, error, warning}, numRounds}) => {
+  return (<div style={{width: '100%', borderBottom: '1px solid grey', marginTop: '20px'}}>
+    {
+      fields.map((period, index) => {
+        return (
+            <Row key={index}>
+              <Col>
+                <div className='form__form-group'>
+                  <label className='form__form-group-label'>period time:</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                        name={`${period}.time`}
+                        component={renderField}
+                        type='number'
+                    />
+                  </div>
+                  <label className='form__form-group-label'>period HTML:</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                        name={`${period}.message`}
+                        type="text"
+                        component={renderTextArea}
+                    />
+                  </div>
+                </div>
+              </Col>
+              <Col>
+                <div className='centered-and-flexed'>
+                  <Button type="button" size="sm"
+                          onClick={() => fields.splice(index, 1)}>delete period</Button>
+                </div>
+              </Col>
+            </Row>)
+      })}
+    <Row className="centered-and-flexed" noGutters>
+      <Button type="button" size="sm" onClick={() => fields.push({})}>
+        <i className="fa fa-plus"/>add reading period
+      </Button>
+    </Row>
+  </div>)
+}
+
+const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneTask, surveyTemplatesOptions, taskArray,
+                       fillSurvey, deleteSurvey, numExpRounds, teamFormat, hasPostSurvey, postSurvey}) => {
   let tasks = [], options = [];
   for (let i = 0; i < numRounds; i++) {
     options.push({value: i, label: 'task ' + (i + 1)})
@@ -275,6 +315,11 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
           component={renderSteps}
           rerenderOnEveryChange
         />
+        <FieldArray
+            name={`tasks[${i}].readingPeriods`}
+            component={renderReadingPeriods}
+            rerenderonEveryChange
+        />
         {taskArray && taskArray[i] && taskArray[i].hasPinnedContent && <div style={{width: '100%'}}>
           <p>Pinned content</p>
           <FieldArray
@@ -343,7 +388,6 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
       </div>
     )
   }
-
   return (<div style={{marginTop: '20px'}}>
     {tasks}
   </div>)
@@ -533,7 +577,6 @@ class TemplateForm extends React.Component {
     )
   }
 }
-
 const validate = (values, props) => {
   console.log(values, props);
   const errors = {};
@@ -670,7 +713,7 @@ function mapStateToProps(state) {
     surveyTemplatesOptions: state.survey.surveyList.map((x, index) => {return {value: index, label: x.name}}),
     teamFormat: selector(state, 'teamFormat'),
     hasPostSurvey: selector(state, 'hasPostSurvey'),
-    postSurvey: selector(state, 'postSurvey')
+    postSurvey: selector(state, 'postSurvey'),
   }
 }
 

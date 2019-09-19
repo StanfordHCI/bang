@@ -131,7 +131,9 @@ class Batch extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
+    console.log(this.state.timeLeft);
     if (this.state.timeLeft === 0 && prevState.timeLeft) {
+      console.log('alert!')
       this.setState({
         isStartNotifySent: true,
         notifyTitle: 'Bang!',
@@ -184,19 +186,29 @@ class Batch extends React.Component {
     if (batch && currentRound) {
       if (batch.status === 'active') {
         const task = batch.tasks[batch.currentRound - 1];
-        let endMoment;
+        let endMoment = 0;
+        if (currentRound.status.toLowerCase().includes('readingperiod')) {
+          const num = parseInt(currentRound.status.replace(/^\D+/g, ""));
+          endMoment += task.readingPeriods.slice(0, num + 1).map(x => x.time).reduce((a, b) => parseFloat(a) + parseFloat(b));
+        } else {
+          if (task.readingPeriods && task.readingPeriods.length) {
+            console.log('yoyoyo');
+            endMoment += task.readingPeriods.map(x => x.time).reduce((a, b) => parseFloat(a) + parseFloat(b));
+          }
+        }
+        console.log(currentRound.status)
         switch (currentRound.status) {
           case 'presurvey':
-            endMoment = batch.surveyMinutes;
+            endMoment += batch.surveyMinutes;
             break;
           case 'active':
-            endMoment = task.hasPreSurvey ? batch.roundMinutes + batch.surveyMinutes : batch.roundMinutes;
+            endMoment += task.hasPreSurvey ? batch.roundMinutes + batch.surveyMinutes : batch.roundMinutes;
             break;
           case 'midsurvey':
-            endMoment = task.hasPreSurvey ? batch.roundMinutes + batch.surveyMinutes * 2 : batch.roundMinutes + batch.surveyMinutes;
+            endMoment += task.hasPreSurvey ? batch.roundMinutes + batch.surveyMinutes * 2 : batch.roundMinutes + batch.surveyMinutes;
             break;
           case 'postsurvey':
-            endMoment = batch.roundMinutes + batch.surveyMinutes + batch.surveyMinutes * (task.hasPreSurvey + task.hasMidSurvey);
+            endMoment += batch.roundMinutes + batch.surveyMinutes + batch.surveyMinutes * (task.hasPreSurvey + task.hasMidSurvey);
             break;
         }
         let timeLeft = moment(currentRound.startTime).add(endMoment, 'minute');
@@ -658,10 +670,13 @@ class Batch extends React.Component {
       if (round.status === 'presurvey') surveyLabel += '(before-task survey';
       if (round.status === 'midsurvey') surveyLabel += '(after-task survey)';
       if (round.status === 'postsurvey') surveyLabel += '(post-batch survey)';
+      if (round.status.toLowerCase().includes('readingperiod')) surveyLabel += `(reading period 
+      ${parseInt(round.status.replace(/^\D+/g, "")) + 1})`
     }
     return round ? (<div>
       <h5 className='bold-text'>{surveyLabel}</h5>
       <h5 className='bold-text'>Time left: {formatTimer(this.state.timeLeft)}</h5>
+      {round.status.toLowerCase().includes('readingperiod') && this.renderReadingPeriod(round.status.replace(/^\D+/g, ""))}
       {round.status === 'presurvey' && this.renderPreSurvey()}
       {round.status === 'active' && this.renderRound()}
       {round.status === 'midsurvey' && this.renderMidSurvey()}
@@ -729,6 +744,60 @@ class Batch extends React.Component {
         </Row>
       </Container>
     ) : null
+  }
+
+  renderReadingPeriod(ind) {
+    const {sendMessage, user, chat, batch, currentRound, pinnedContent} = this.props;
+    const task = batch.tasks[ind];
+    const inputProps = {
+      placeholder: 'type here...',
+      value: this.state.message,
+      onChange: this.handleType,
+      onKeyDown: this.handleSubmit,
+      className: 'chat__field-input'
+    };
+
+    return (
+        <div className='chat'>
+          <div className='chat__contact-list'>
+            <div className='chat__contacts'>
+              <Table className='table table--bordered table--head-accent'>
+                <thead>
+                <tr>
+                  <th>members</th>
+                </tr>
+                </thead>
+                <tbody>
+                {chat.members.map((member) => {
+                  let nick = '';
+                  if (member._id.toString() === user._id.toString()) {
+                    nick = member.realNick + ' (you)';
+                  } else {
+                    nick = batch.maskType === 'masked' ? member.fakeNick : member.realNick;
+                  }
+
+                  return (<tr key={member._id}>
+                    <td>
+                      <div className='chat__bubble-contact-name'>
+                        {batch.status ==='active' && !member.isActive ? '' : nick}
+                      </div>
+                    </td>
+                  </tr>)
+                })}
+                </tbody>
+              </Table>
+            </div>
+          </div>
+          <div className='chat__dialog' style={{ marginLeft: 10 }}>
+            {task.readingPeriods && task.readingPeriods.length && <div className='chat__dialog-pinned-message'>
+              <div className='chat__dialog-pinned-resources'>
+                <p style={{color: 'black'}}>helperBot</p>
+              </div>
+              {task.readingPeriods && task.readingPeriods.length && <td dangerouslySetInnerHTML={{__html: task.readingPeriods[ind].message}}/>}
+            </div>}
+          </div>
+        </div>
+    )
   }
 }
 

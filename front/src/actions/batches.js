@@ -135,6 +135,21 @@ export const loadBatch = () => {
     })
     socket.on('refresh-batch', (data) =>{
       socket.emit('load-batch', {batch: user.batch})
+    });
+    socket.on('reading-period', data => {
+      dispatch(setSnackbar('Reading Period'));
+      dispatch({
+        type: REFRESH_BATCH,
+        data: data,
+      })
+    });
+    socket.on('pre-survey', data => {
+      console.log('PRESURVEY SOCKET')
+      dispatch(setSnackbar('Pre-Survey'));
+      dispatch({
+        type: REFRESH_BATCH,
+        data: data,
+      })
     })
   }
 }
