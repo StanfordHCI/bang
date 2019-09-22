@@ -144,7 +144,6 @@ export const loadBatch = () => {
       })
     });
     socket.on('pre-survey', data => {
-      console.log('PRESURVEY SOCKET')
       dispatch(setSnackbar('Pre-Survey'));
       dispatch({
         type: REFRESH_BATCH,

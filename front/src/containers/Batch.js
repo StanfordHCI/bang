@@ -131,7 +131,6 @@ class Batch extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
-    console.log(this.state.timeLeft);
     if (this.state.timeLeft === 0 && prevState.timeLeft) {
       console.log('alert!')
       this.setState({
@@ -139,6 +138,18 @@ class Batch extends React.Component {
         notifyTitle: 'Bang!',
         notifyOptions: {
           body: 'Bang: new step of experiment has started!', // new round or survey is appearing on the screen
+          lang: 'en',
+          dir: 'ltr',
+        }
+      });
+    }
+    if (this.state.timeLeft === 30 && prevState.timeLeft === 31) {
+      console.log('30 sec alert');
+      this.setState({
+        isStartNotifySent: true,
+        notifyTitle: 'Bang!',
+        notifyOptions: {
+          body: 'Bang: new step is starting soon!', // new round or survey will appear in 30 secs on the screen
           lang: 'en',
           dir: 'ltr',
         }
@@ -192,11 +203,9 @@ class Batch extends React.Component {
           endMoment += task.readingPeriods.slice(0, num + 1).map(x => x.time).reduce((a, b) => parseFloat(a) + parseFloat(b));
         } else {
           if (task.readingPeriods && task.readingPeriods.length) {
-            console.log('yoyoyo');
             endMoment += task.readingPeriods.map(x => x.time).reduce((a, b) => parseFloat(a) + parseFloat(b));
           }
         }
-        console.log(currentRound.status)
         switch (currentRound.status) {
           case 'presurvey':
             endMoment += batch.surveyMinutes;
@@ -670,8 +679,7 @@ class Batch extends React.Component {
       if (round.status === 'presurvey') surveyLabel += '(before-task survey';
       if (round.status === 'midsurvey') surveyLabel += '(after-task survey)';
       if (round.status === 'postsurvey') surveyLabel += '(post-batch survey)';
-      if (round.status.toLowerCase().includes('readingperiod')) surveyLabel += `(reading period 
-      ${parseInt(round.status.replace(/^\D+/g, "")) + 1})`
+      if (round.status.toLowerCase().includes('readingperiod')) surveyLabel += `(reading period) ${parseInt(round.status.replace(/^\D+/g, "")) + 1})`
     }
     return round ? (<div>
       <h5 className='bold-text'>{surveyLabel}</h5>

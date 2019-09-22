@@ -578,7 +578,6 @@ class TemplateForm extends React.Component {
   }
 }
 const validate = (values, props) => {
-  console.log(values, props);
   const errors = {};
   if (!values.name) {
     errors.name = 'required'

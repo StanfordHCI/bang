@@ -441,7 +441,6 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: {rounds: rounds}});
     io.to(batch._id.toString()).emit('pre-survey', {rounds: rounds});
     await timeout(batch.surveyMinutes * 60000);
-    console.log('unpresurvey')
     roundObject.status = 'active';
     const startTaskInfo =  {rounds: rounds};
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: startTaskInfo}).lean().exec();
@@ -483,7 +482,6 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     await timeout(batch.surveyMinutes * 60000);
   }
 
-  console.log(batch.hasPostSurvey, batch.numRounds - 1 === i);
   if (batch.hasPostSurvey && i === batch.numRounds - 1) {
     roundObject.status = 'postsurvey';
     const postRoundInfo = {rounds: rounds}
