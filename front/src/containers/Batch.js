@@ -679,7 +679,7 @@ class Batch extends React.Component {
       if (round.status === 'presurvey') surveyLabel += '(before-task survey';
       if (round.status === 'midsurvey') surveyLabel += '(after-task survey)';
       if (round.status === 'postsurvey') surveyLabel += '(post-batch survey)';
-      if (round.status.toLowerCase().includes('readingperiod')) surveyLabel += `(reading period) ${parseInt(round.status.replace(/^\D+/g, "")) + 1})`
+      if (round.status.toLowerCase().includes('readingperiod')) surveyLabel += `(reading period ${parseInt(round.status.replace(/^\D+/g, "")) + 1})`
     }
     return round ? (<div>
       <h5 className='bold-text'>{surveyLabel}</h5>

@@ -198,6 +198,8 @@ const renderPinnedContent = ({fields, meta: {touched, error, warning}, numRounds
 
 const renderReadingPeriods = ({fields, meta: {touched, error, warning}, numRounds}) => {
   return (<div style={{width: '100%', borderBottom: '1px solid grey', marginTop: '20px'}}>
+    <p>Reading periods</p>
+    <br/>
     {
       fields.map((period, index) => {
         return (
