@@ -32,12 +32,12 @@ import escapeStringRegexp from 'escape-string-regexp'
 import ReactHtmlParser from "react-html-parser";
 import { Avatar } from '@material-ui/core';
 import {newWindow, parseNick} from '../utils'
-import { animalMap, adjMap } from '../constants/nicknames';
+import { animalMap, adjMap, genderMap } from '../constants/nicknames';
 import Bot from '../img/Bot.svg';
 import Notification from 'react-web-notification';
 
 const MAX_LENGTH = 240;
-const botId = '100000000000000000000001'
+const botId = '100000000000000000000001';
 
 const fuzzyMatched = (comparer, comparitor, matchCount) => {
   let isMatched = false;
@@ -465,7 +465,13 @@ class Batch extends React.Component {
                   let parsedRealnickname = parseNick(user.realNick);
                   let realAdjective = parsedRealnickname[0];
                   let realAnimal = parsedRealnickname[1];
-
+                  let userGender;
+                  console.log(batch.users, message.user)
+                  try {
+                    userGender = batch.users.find(x => x.user.toString() === message.user.toString()).gender;
+                  } catch (err) {
+                    console.log('gender not specified');
+                  }
                   // specially format bot messages
                   if (message.user.toString() === botId) {
                     messageClass = 'chat__bubble chat_bot'
@@ -490,7 +496,7 @@ class Batch extends React.Component {
                             }}
                             imgProps={{ style: { padding: "5px", background: "white" } }}
                             size={{ width: "auto" }}
-                            src={animalMap.get(isSelf ? realAnimal : messageAnimal)}
+                            src={userGender ? genderMap.get(userGender) : animalMap.get(isSelf ? realAnimal : messageAnimal)}
                           />
                             /* <span className="small">
                               {isSelf ? user.realNick : message.nickname + ".jpg"}

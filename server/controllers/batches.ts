@@ -215,6 +215,7 @@ const startBatch = async function (batch, socket, io) {
 
 export const receiveSurvey = async function (data, socket, io) {
   try {
+    console.log('receiveSurvey');
     let newSurvey = {
       ...data,
       user: socket.userId,
@@ -227,11 +228,11 @@ export const receiveSurvey = async function (data, socket, io) {
       }
     }
     await Survey.create(newSurvey)
+    const [batch, user] = await Promise.all([
+      Batch.findById(newSurvey.batch).select('_id roundMinutes numRounds surveyMinutes tasks teamFormat').lean().exec(),
+      User.findById(newSurvey.user).select('_id systemStatus mturkId').lean().exec()
+    ])
     if (process.env.MTURK_MODE !== 'off' && newSurvey.surveyType === 'final') {
-      const [batch, user] = await Promise.all([
-        Batch.findById(newSurvey.batch).select('_id roundMinutes numRounds surveyMinutes tasks teamFormat').lean().exec(),
-        User.findById(newSurvey.user).select('_id systemStatus mturkId').lean().exec()
-      ])
       if (!batch) {
         logger.info(module, 'Blocked survey, survey/user does not have batch');
         return;
@@ -254,8 +255,38 @@ export const receiveSurvey = async function (data, socket, io) {
         logger.info('module', 'Bonus sent to ' + socket.mturkId)
       }
     }
+    const genderQuestion = x => x.question.toLowerCase() === 'what is your gender?';
+    console.log('gender Qs: ', newSurvey.surveyType === 'presurvey' && newSurvey.round === 1 && batch.tasks[0].preSurvey
+      .some(x => genderQuestion(x)));
+    if (newSurvey.surveyType === 'presurvey' && newSurvey.round === 1 && batch.tasks[0].preSurvey
+      .some(x => genderQuestion(x))) {
+      let gender;
+      const ind = batch.tasks[0].preSurvey.findIndex(x => genderQuestion(x))
+      if (ind !== -1) {
+        switch (newSurvey.questions[ind].result) {
+          case '0':
+            gender = 'male';
+            break;
+          case '1':
+            gender = 'female';
+            break;
+          case '2':
+            gender = 'prefer not to say';
+            break;
+          default:
+            gender = 'prefer not to say';
+            break;
+        }
+      }
+      console.log('gender = : ', gender, newSurvey.questions[ind].result);
+      if (gender) {
+        await User.findByIdAndUpdate(newSurvey.user, {gender: gender});
+        await Batch.updateOne({_id: batch._id, 'users.user': newSurvey.user}, {$set: {'users.$.gender': gender}});
+      }
+    }
 
   } catch (e) {
+    console.log('receive survey error');
     errorHandler(e, 'receive survey error')
   }
 }

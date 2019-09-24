@@ -14,7 +14,8 @@ let  BatchSchema = new Schema({
     nickname: {type: String, required: true},
     joinDate: {type: Date, required: true},
     isActive: {type: Boolean, default: true, required: true},
-    kickedAfterRound: Number
+    kickedAfterRound: Number,
+    gender: {type: String, required: false, $enum: ['male', 'female', 'prefer not to say']}
   }],
   roundSurvey: [{type: String, required: true}],
   rounds: [{

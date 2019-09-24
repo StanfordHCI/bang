@@ -17,6 +17,10 @@ import CowSrc from '../img/Cow.svg';
 import BearSrc from '../img/Bear.svg';
 import BisonSrc from '../img/Bison.svg';
 
+import MaleSrc from '../img/male.png'
+import FemaleSrc from '../img/female.png'
+import UndefinedGenderSrc from '../img/undefinedGender.png'
+
 export const animalMap = new Map();
 animalMap.set("Squirrel", SquirrelSrc);
 animalMap.set("Rhino", RhinoSrc);
@@ -48,3 +52,8 @@ adjMap.set("cultured", "#601848");
 adjMap.set("snappy", "#F6E7F7");
 adjMap.set("spry", "#D1D0D7");
 adjMap.set("conventional", "#FC284F");
+
+export const genderMap = new Map();
+genderMap.set("male", MaleSrc);
+genderMap.set("female", FemaleSrc);
+genderMap.set("prefer not to say", UndefinedGenderSrc);

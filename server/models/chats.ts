@@ -17,9 +17,5 @@ let ChatSchema = new Schema({
     time: { type: Date, required: true},
   }],
   status: String,
-  pinnedContent: [{
-    text: {type: String},
-    link: {type: String},
-  }]
 }, options);
 export const Chat = mongoose.model('Chat', ChatSchema);
