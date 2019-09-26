@@ -687,10 +687,9 @@ const validate = (values, props) => {
   if (values.teamFormat == null) {
     errors.teamFormat = 'required'
   }
-  if (values.hasPostSurvey && !values.postSurvey && values.tasks.length && values.tasks[values.numRounds - 1]) {
+  if (values.hasPostSurvey && (!values.postSurvey || !values.postSurvey.length) && values.tasks.length && values.tasks[values.numRounds - 1]) {
     errors.tasks[values.numRounds - 1].message = 'add questions to post-survey please';
   }
-
   return errors
 };
 
