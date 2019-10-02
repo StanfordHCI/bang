@@ -49,7 +49,7 @@ const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType
                     name={`${question}.type`}
                     component={renderSelectField}
                     type='text'
-                    options={[{value: 'text', label: 'text'}, {value: 'select', label: 'select'}]}
+                    options={[{value: 'text', label: 'text'}, {value: 'select', label: 'select'}, {value: 'instruction', label: 'instruction'}]}
                   />
                 </div>
               </div>

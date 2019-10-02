@@ -20,6 +20,7 @@ import {Field, FieldArray, reduxForm, formValueSelector, change} from 'redux-for
 import {bindActionCreators} from "redux";
 import {renderField} from 'Components/form/Text'
 import renderRadioPanel from 'Components/form/RadioPanel'
+import {renderTextArea} from "../components/form/Text";
 
 const replaceNicksInSurvey = (message, users, currentUser, readOnly, unmasked, surveyType) => {
   if (readOnly || surveyType === 'pre') return message;
@@ -47,20 +48,23 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, questions, re
         }
       }
     })*/
-
+    const component = questions[i].type === 'select' ? renderRadioPanel : (questions[i].type === 'text' ? renderField : renderTextArea);
     items.push(
       <div key={i} className='form__form-group'>
         <label className='form__form-group-label'>
             {replaceNicksInSurvey(questions[i].question, users, currentUser, readOnly, unmasked, surveyType)}
           </label>
         <div className='form__form-group-field' style={{maxWidth: '700px'}}>
-          <Field
+          {questions[i].type !== 'instruction' && <Field
             name={`questions[${i}].result`}
-            component={questions[i].type ==='select' ? renderRadioPanel : renderField}
+            component={component}
             type={questions[i].type}
             disabled={readOnly}
             options={questions[i].type ==='select' ? questions[i].selectOptions.map(x => {return {label: replaceNicksInSurvey(x.label, users, currentUser, readOnly, unmasked, surveyType), value: x.value}}) : []}
-          />
+          />}
+          {questions[i].type === 'instruction' && <label>
+            {questions[i].question}
+          </label>}
         </div>
       </div>
     )
