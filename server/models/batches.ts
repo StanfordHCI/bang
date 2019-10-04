@@ -74,7 +74,7 @@ let  BatchSchema = new Schema({
   midQuestions: [String],
   HITId: {type: String, },
   HITTitle: String,
-  maskType: {type: String, required: true, $enum: ['masked', 'unmasked', "partial"]},
+  maskType: {type: String, required: true, $enum: ['masked', 'unmasked']},
   note: {type: String, },
   roundGen: [{teams: [{users: [Number]}]}],
   withAvatar: {type: Boolean, default: false, required: true},
