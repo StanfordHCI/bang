@@ -304,6 +304,15 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
               onChange={(e) => {deleteSurvey(e, i, 'pinnedContent')}}
             />
           </Col>
+          <Col>
+            <p>Selective-masking?</p>
+          </Col>
+          <Col>
+            <Field
+              name={`tasks[${i}].selectiveMasking`}
+              component={renderCheckBoxField}
+            />
+          </Col>
         </Row>
         <div className='form__form-group-field' style={{marginBottom: '25px'}}>
           <Field

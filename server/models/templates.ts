@@ -44,6 +44,7 @@ let  TemplateSchema = new Schema({
       time: {type: Number, required: true},
       message: {type: String, required: true},
     }],
+    selectiveMasking: {type: Boolean, default: false}
   }],
   teamFormat: {type: String, required: true},
   hasPostSurvey: {type: Boolean, required: true, default: false},

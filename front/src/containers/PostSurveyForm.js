@@ -47,7 +47,11 @@ class PostSurveyForm extends React.Component {
 		let singleTeamInfo, surveyRounds, expRound1ActiveUsers;
 		if (singleTeam) {
       singleTeamInfo = this.generateSingleTeamInfo();
-      surveyRounds = singleTeamInfo.roundsForSurvey.map(x => x).sort((a, b) => a - b);
+      try {
+		  surveyRounds = singleTeamInfo.roundsForSurvey.sort((a, b) => a - b);
+	  } catch (e) {
+		  surveyRounds = [1, 2];
+	  }
       expRound1ActiveUsers = [];
     }
 		let qOptions = [], uOptions = [];
@@ -121,6 +125,9 @@ class PostSurveyForm extends React.Component {
 			console.log(e);
 			return {};
 		}
+		if (!expPersonRound1.nickname) expPersonRound1.nickname = 'test';
+		if (!roundsForSurvey) roundsForSurvey = [1, 2];
+		if (!actualPartnerName) actualPartnerName = 'test';
 		return {expPersonRound1Nick: expPersonRound1.nickname, roundsForSurvey: roundsForSurvey, actualPartnerName: actualPartnerName}
 	}
 

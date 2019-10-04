@@ -1,6 +1,8 @@
 import {Survey} from "../models/surveys";
 import * as AWS from "aws-sdk";
 import {Batch} from "../models/batches";
+import {User} from "../models/users";
+import {Chat} from "../models/chats";
 
 require('dotenv').config({path: './.env'});
 export const runningLive = process.env.MTURK_MODE === "prod";
@@ -614,5 +616,28 @@ const roundFromFunction = (func, data) => { // if data.points[i] === 0 or undefi
     result = findFarthestIndex(points, medianScores);
   }
   return result;
+}
+
+// Returns the pairs of IDs of the users in batch that should be unmasked in the numRound
+export const addUnmaskedPairs = async (batch, numRound) => {
+  // takes the chat of prev round and makes pairs of people who were talking
+  let chats = new Set()
+  for (const chatId of batch.rounds[numRound - 1].teams.map(team => team.chat)) {
+    const chat = await Chat.findById(chatId);
+    chats.add(chat);
+  }
+  let unmaskedPairs = new Set();
+  chats.forEach(chat => {
+    if (chat.messages) {
+      for (let i = 1; i < chat.messages.length; i += 1) {
+        const msg = chat.messages[i];
+        const prevMsg = chat.messages[i - 1]
+        if (msg.nickname === 'helperBot' || prevMsg.nickname === 'helperBot' || msg.user.toString() === prevMsg.user.toString()) continue;
+        unmaskedPairs.add([msg.user, prevMsg.user])
+      }
+    }
+  })
+  // const unmaskedPairs = [batch.users[0], batch.users[1]].map(x => x.user);
+  await Batch.findByIdAndUpdate(batch._id, { $addToSet: { unmaskedPairs: { $each: Array.from(unmaskedPairs) } } });
 }
 

@@ -16,7 +16,7 @@ import {
   notifyWorkers,
   getBatchTime,
   bestRound,
-  worstRound,
+  worstRound, addUnmaskedPairs,
 } from "./utils";
 import {errorHandler} from '../services/common'
 import {io} from "../index";
@@ -256,8 +256,6 @@ export const receiveSurvey = async function (data, socket, io) {
       }
     }
     const genderQuestion = x => x.question.toLowerCase() === 'what is your gender?';
-    console.log('gender Qs: ', newSurvey.surveyType === 'presurvey' && newSurvey.round === 1 && batch.tasks[0].preSurvey
-      .some(x => genderQuestion(x)));
     if (newSurvey.surveyType === 'presurvey' && newSurvey.round === 1 && batch.tasks[0].preSurvey
       .some(x => genderQuestion(x))) {
       let gender;
@@ -278,7 +276,6 @@ export const receiveSurvey = async function (data, socket, io) {
             break;
         }
       }
-      console.log('gender = : ', gender, newSurvey.questions[ind].result);
       if (gender) {
         await User.findByIdAndUpdate(newSurvey.user, {gender: gender});
         await Batch.updateOne({_id: batch._id, 'users.user': newSurvey.user}, {$set: {'users.$.gender': gender}});
@@ -377,7 +374,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
       task = batch.tasks[batch.tasks.length - 2];
     }
   }
-  let roundObject = {startTime: new Date(), number: i + 1, teams: [], status: task.hasPreSurvey ? 'presurvey' : 'active', endTime: null};
+  let roundObject = {startTime: new Date(), number: i + 1, teams: [], status: task.hasPreSurvey ? 'presurvey' : 'active', endTime: null, unmaskedUsers: []};
   let emptyChats = [];
   let chats;
   let teams;
@@ -512,6 +509,8 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     })
     await timeout(batch.surveyMinutes * 60000);
   }
+
+  await addUnmaskedPairs(batch, roundObject.number);
 
   if (batch.hasPostSurvey && i === batch.numRounds - 1) {
     roundObject.status = 'postsurvey';

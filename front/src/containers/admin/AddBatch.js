@@ -132,7 +132,7 @@ class AddBatch extends React.Component {
                   <Field
                     name='maskType'
                     component={renderSelectField}
-                    options={[{value: 'masked', label: 'Masked'}, {value: 'unmasked', label: 'Unmasked'}]}
+                    options={[{value: 'masked', label: 'Masked'}, {value: 'unmasked', label: 'Unmasked'}, {value: 'partial', label: 'Partial'}]}
                   />
                 </div>
               </div>

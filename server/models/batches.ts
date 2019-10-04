@@ -69,11 +69,12 @@ let  BatchSchema = new Schema({
       time: {type: Number, required: true},
       message: {type: String, required: true},
     }],
+    selectiveMasking: {type: Boolean, default: false}
   }],
   midQuestions: [String],
   HITId: {type: String, },
   HITTitle: String,
-  maskType: {type: String, required: true, $enum: ['masked', 'unmasked']},
+  maskType: {type: String, required: true, $enum: ['masked', 'unmasked', "partial"]},
   note: {type: String, },
   roundGen: [{teams: [{users: [Number]}]}],
   withAvatar: {type: Boolean, default: false, required: true},
@@ -92,5 +93,6 @@ let  BatchSchema = new Schema({
     options: [{option: {type: String, required: true}}],
     selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
   }],
+  unmaskedPairs: [[{type: mongoose.Schema.Types.ObjectId, ref: 'User'}, {type: mongoose.Schema.Types.ObjectId, ref: 'User'}]],
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);

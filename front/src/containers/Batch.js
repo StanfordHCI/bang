@@ -31,7 +31,7 @@ import { history } from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
 import ReactHtmlParser from "react-html-parser";
 import { Avatar } from '@material-ui/core';
-import {newWindow, parseNick} from '../utils'
+import {pairInArray, newWindow, parseNick} from '../utils'
 import { animalMap, adjMap, genderMap } from '../constants/nicknames';
 import Bot from '../img/Bot.svg';
 import Notification from 'react-web-notification';
@@ -326,6 +326,7 @@ class Batch extends React.Component {
       sendMessage({
         message: newMessage,
         nickname: batch.status === 'active' && batch.maskType === 'masked' ? user.fakeNick : user.realNick,
+        realNickname: user.realNick,
         chat: chat._id
       })
     }
@@ -461,12 +462,20 @@ class Batch extends React.Component {
                   let messageContent = message.message;
                   let parsedMessageNickname = parseNick(message.nickname);
                   let messageAdjective = parsedMessageNickname[0];
-                  let messageAnimal = parsedMessageNickname[1];
                   let parsedRealnickname = parseNick(user.realNick);
                   let realAdjective = parsedRealnickname[0];
                   let realAnimal = parsedRealnickname[1];
                   let userGender;
-                  console.log(batch.users, message.user)
+                  const unmaskedPairs = batch.unmaskedPairs;
+                  const currentPair = [user._id.toString(), message.user.toString()];
+                  let unmasked
+                  try {
+                    const roundNumber = currentRound.number;
+                    unmasked = batch.tasks[roundNumber - 1].selectiveMasking && pairInArray(unmaskedPairs, currentPair);
+                  } catch (e) {
+                    unmasked = false
+                  }
+                  let messageAnimal = !unmasked ? parsedMessageNickname[1] : parseNick(message.realNickname)[1];
                   try {
                     userGender = batch.users.find(x => x.user.toString() === message.user.toString()).gender;
                   } catch (err) {
@@ -506,7 +515,7 @@ class Batch extends React.Component {
                       </div>}
                       <div className="chat__bubble-message-wrap">
                         <p className="chat__bubble-contact-name">
-                          {isSelf ? user.realNick : message.nickname}
+                          {isSelf ? user.realNick : (!unmasked ? message.nickname : message.realNickname)}
                         </p>
                         <p className="chat__bubble-message">{messageContent}</p>
                         <p className="chat__bubble-date">{moment(message.time).format("LTS")}</p>
