@@ -509,8 +509,11 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     })
     await timeout(batch.surveyMinutes * 60000);
   }
-
-  await addUnmaskedPairs(batch, roundObject.number);
+  try {
+    await addUnmaskedPairs(batch, roundObject.number);
+  } catch (e) {
+    console.log('unmasked pairs not added')
+  }
 
   if (batch.hasPostSurvey && i === batch.numRounds - 1) {
     roundObject.status = 'postsurvey';

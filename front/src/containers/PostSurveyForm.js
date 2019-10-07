@@ -89,13 +89,18 @@ class PostSurveyForm extends React.Component {
 			this.setState({roster: roster})
 		});
 		const actualPartnerName = singleTeam ? singleTeamInfo.actualPartnerName : 'test';
-		const sOptions = singleTeam ? this.nicksFromRoster(this.state.roster, singleTeamInfo.roundsForSurvey[1]).map((x, ind, arr) =>
-    {return {value: `${x} ${actualPartnerName} ${arr.length}`, label: x}}) : [{value: 'test', label: 'test'}];
+		let sOptions;
+		try {
+			sOptions = singleTeam ? this.nicksFromRoster(this.state.roster, singleTeamInfo.roundsForSurvey[1]).map((x, ind, arr) =>
+			{return {value: `${x} ${actualPartnerName} ${arr.length}`, label: x}}) : [{value: 'test', label: 'test'}];
+		} catch (e) {
+			sOptions = [{value: 'test', label: 'test'}];
+		}
 		this.setState({ qOptions: qOptions, uOptions: uOptions, sOptions: sOptions, });
 		if (singleTeam) {
 		  this.setState({firstNick: singleTeamInfo.expPersonRound1Nick, roundsForSurvey: singleTeamInfo.roundsForSurvey })
     }
-	}
+}
 
 	// picks 2 random non-experimental rounds.
 	// takes 1 person from first round

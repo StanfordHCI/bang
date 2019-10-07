@@ -35,6 +35,7 @@ import HasBanged from '../containers/HasBanged'
 import Notify from '../containers/admin/Notify'
 import BatchEnd from '../containers/BatchEnd'
 import Unsubscribe from '../containers/Unsubscribe'
+import Kicked from "../containers/Kicked";
 
 const MainRouter = (props) => {
   const {user, appReady} = props;
@@ -64,6 +65,7 @@ const MainRouter = (props) => {
           <Route exact path='/not-logged' component={NotLogged}/>
           <Route exact path='/unsubscribe/' component={Unsubscribe} />
           <Route path='/unsubscribe/:id' component={Unsubscribe} />
+          <Route path={'/kicked/'} component={Kicked} />
         </Switch>
       </main>
     </MainWrapper>
