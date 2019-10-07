@@ -401,7 +401,13 @@ class Batch extends React.Component {
   }
 
   renderChat() {
-    const {sendMessage, user, chat, batch, currentRound, pinnedContent} = this.props;
+    const {sendMessage, user, chat, batch, currentRound} = this.props;
+    let pinnedContent = []
+    try {
+      pinnedContent = batch.tasks[currentRound.number - 1].pinnedContent;
+    } catch (e) {
+      pinnedContent = [];
+    }
     const inputProps = {
       placeholder: 'type here...',
       value: this.state.message,
@@ -691,7 +697,7 @@ class Batch extends React.Component {
     let surveyLabel = '';
     if (round) {
       surveyLabel += `Round ${batch.currentRound} `;
-      if (round.status === 'presurvey') surveyLabel += '(before-task survey';
+      if (round.status === 'presurvey') surveyLabel += '(before-task survey)';
       if (round.status === 'midsurvey') surveyLabel += '(after-task survey)';
       if (round.status === 'postsurvey') surveyLabel += '(post-batch survey)';
       if (round.status.toLowerCase().includes('readingperiod')) surveyLabel += `(reading period ${parseInt(round.status.replace(/^\D+/g, "")) + 1})`
@@ -770,7 +776,7 @@ class Batch extends React.Component {
   }
 
   renderReadingPeriod(ind) {
-    const {sendMessage, user, chat, batch, currentRound, pinnedContent} = this.props;
+    const {sendMessage, user, chat, batch, currentRound} = this.props;
     const task = batch.tasks[ind];
     const inputProps = {
       placeholder: 'type here...',
@@ -861,7 +867,6 @@ function mapStateToProps(state) {
     currentRound: round,
     currentTeam: state.batch.currentTeam,
     teamAnimals: state.batch.teamAnimals,
-    pinnedContent: chat ? chat.pinnedContent || [] : [],
   }
 }
 
