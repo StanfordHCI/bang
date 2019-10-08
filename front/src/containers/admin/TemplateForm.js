@@ -424,7 +424,8 @@ class TemplateForm extends React.Component {
   }
 
   numRoundsChange = (e) => {
-    const num = parseInt(e.target.value)
+    const num = parseInt(e.target.value);
+    if (isNaN(num)) return;
     let tasks = this.props.tasks.filter((x, index) => index < num);
     this.props.dispatch(change('TemplateForm', 'tasks', tasks))
   }
