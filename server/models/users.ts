@@ -27,6 +27,7 @@ let UserSchema = new Schema({
   isActive: { type: Boolean, default: true },
   //status: { type: String, enum: ['waiting', 'active'], default: 'waiting',required: true },
   batch: {type: mongoose.Schema.Types.ObjectId, ref: 'Batch'},
+  gender: {type: String, required: false, $enum: ['male', 'female', 'prefer not to say']}
 }, options);
 
 export const User = mongoose.model('User', UserSchema);

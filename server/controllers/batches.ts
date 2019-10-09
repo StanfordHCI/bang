@@ -16,7 +16,7 @@ import {
   notifyWorkers,
   getBatchTime,
   bestRound,
-  worstRound,
+  worstRound, addUnmaskedPairs,
 } from "./utils";
 import {errorHandler} from '../services/common'
 import {io} from "../index";
@@ -215,6 +215,7 @@ const startBatch = async function (batch, socket, io) {
 
 export const receiveSurvey = async function (data, socket, io) {
   try {
+    console.log('receiveSurvey');
     let newSurvey = {
       ...data,
       user: socket.userId,
@@ -227,11 +228,11 @@ export const receiveSurvey = async function (data, socket, io) {
       }
     }
     await Survey.create(newSurvey)
+    const [batch, user] = await Promise.all([
+      Batch.findById(newSurvey.batch).select('_id roundMinutes numRounds surveyMinutes tasks teamFormat').lean().exec(),
+      User.findById(newSurvey.user).select('_id systemStatus mturkId').lean().exec()
+    ])
     if (process.env.MTURK_MODE !== 'off' && newSurvey.surveyType === 'final') {
-      const [batch, user] = await Promise.all([
-        Batch.findById(newSurvey.batch).select('_id roundMinutes numRounds surveyMinutes tasks teamFormat').lean().exec(),
-        User.findById(newSurvey.user).select('_id systemStatus mturkId').lean().exec()
-      ])
       if (!batch) {
         logger.info(module, 'Blocked survey, survey/user does not have batch');
         return;
@@ -254,8 +255,35 @@ export const receiveSurvey = async function (data, socket, io) {
         logger.info('module', 'Bonus sent to ' + socket.mturkId)
       }
     }
+    const genderQuestion = x => x.question.toLowerCase() === 'what is your gender?';
+    if (newSurvey.surveyType === 'presurvey' && newSurvey.round === 1 && batch.tasks[0].preSurvey
+      .some(x => genderQuestion(x))) {
+      let gender;
+      const ind = batch.tasks[0].preSurvey.findIndex(x => genderQuestion(x))
+      if (ind !== -1) {
+        switch (newSurvey.questions[ind].result) {
+          case '0':
+            gender = 'male';
+            break;
+          case '1':
+            gender = 'female';
+            break;
+          case '2':
+            gender = 'prefer not to say';
+            break;
+          default:
+            gender = 'prefer not to say';
+            break;
+        }
+      }
+      if (gender) {
+        await User.findByIdAndUpdate(newSurvey.user, {gender: gender});
+        await Batch.updateOne({_id: batch._id, 'users.user': newSurvey.user}, {$set: {'users.$.gender': gender}});
+      }
+    }
 
   } catch (e) {
+    console.log('receive survey error');
     errorHandler(e, 'receive survey error')
   }
 }
@@ -346,19 +374,18 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
       task = batch.tasks[batch.tasks.length - 2];
     }
   }
-  let roundObject = {startTime: new Date(), number: i + 1, teams: [], status: task.hasPreSurvey ? 'presurvey' : 'active', endTime: null};
+  let roundObject = {startTime: new Date(), number: i + 1, teams: [], status: task.hasPreSurvey ? 'presurvey' : 'active', endTime: null, unmaskedUsers: []};
   let emptyChats = [];
   let chats;
   let teams;
   let prsHelper = [];
   switch (roundType) {
     case STANDARD:
-      // if it is not the last round of single-teamed batch
+      // if it is not the best or worst reconvening round of single-teamed batch
       // standard flow
       teams = generateTeams(batch.roundGen, users, i + 1, oldNicks);
       for (let j = 0; j < teamSize; j++) {
-        emptyChats.push({batch: batch._id, messages: [{user: botId, nickname: 'helperBot', time: new Date(),
-            message: 'Task: ' + (task ? task.message : 'empty')}]})
+        emptyChats.push(makeNewChat([], batch, i, task))
       }
       chats = await Chat.insertMany(emptyChats);
       break;
@@ -379,8 +406,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
         const chatId = bestRound.teams[0].chat;
         const oldChat = await Chat.findById(chatId).lean().exec();
         const messages = oldChat.messages;
-        const newChat = {batch: batch._id, messages: messages.concat({user: botId, nickname: 'helperBot', time: new Date(),
-            message: 'Task: ' + (task ? task.message : 'empty')})};
+        const newChat = makeNewChat(messages, batch, i, task);
         const chat = await Chat.create(newChat);
         chats = [chat];
       }
@@ -400,8 +426,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
         const chatId = worstRound.teams[0].chat;
         const oldChat = await Chat.findById(chatId).lean().exec();
         const messages = oldChat.messages;
-        const newChat = {batch: batch._id, messages: messages.concat({user: botId, nickname: 'helperBot', time: new Date(),
-            message: 'Task: ' + (task ? task.message : 'empty')})};
+        const newChat = makeNewChat(messages, batch, i ,task);
         const chat = await Chat.create(newChat);
         chats = [chat];
       }
@@ -422,17 +447,35 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   batch = await Batch.findByIdAndUpdate(batch._id, {$set: {rounds: rounds, currentRound: roundObject.number}}).lean().exec();
   logger.info(module, batch._id + ' : Begin round ' + roundObject.number)
   io.to(batch._id.toString()).emit('refresh-batch', true)
+  if (task.readingPeriods && task.readingPeriods.length) {
+    for (let i = 0; i < task.readingPeriods.length; ++i) {
+      const period = task.readingPeriods[i];
+      const ind = i;
+      logger.info(module, batch._id + ` : Begin reading period ${ind + 1} for round ${roundObject.number}`);
+      roundObject.status = `readingPeriod${ind}`;
+      const info = {rounds: rounds}
+      batch = await Batch.findByIdAndUpdate(batch._id, {$set: info}).lean().exec();
+      io.to(batch._id.toString()).emit('reading-period', info);
+      await timeout(period.time * 60000)
+    }
+    roundObject.status = 'active';
+    batch = await Batch.findByIdAndUpdate(batch._id, {$set: {rounds: rounds}});
+    io.to(batch._id.toString()).emit('refresh-batch', true);
+  }
 
   if (task.hasPreSurvey) {
-    logger.info(module, batch._id + ' : Begin pre-survey for round ' + roundObject.number)
+    logger.info(module, batch._id + ' : Begin pre-survey for round ' + roundObject.number);
+    roundObject.status = 'presurvey';
+    batch = await Batch.findByIdAndUpdate(batch._id, {$set: {rounds: rounds}});
+    io.to(batch._id.toString()).emit('pre-survey', {rounds: rounds});
     await timeout(batch.surveyMinutes * 60000);
     roundObject.status = 'active';
     const startTaskInfo =  {rounds: rounds};
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: startTaskInfo}).lean().exec();
-    logger.info(module, batch._id + ' : Begin task for round ' + roundObject.number)
     io.to(batch._id.toString()).emit('start-task', startTaskInfo);
   }
 
+  logger.info(module, batch._id + ' : Begin task for round ' + roundObject.number)
   let stepsSumTime = 0;
   for (let j = 0; j < task.steps.length; j++) {
     const step = task.steps[j];
@@ -466,7 +509,20 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     })
     await timeout(batch.surveyMinutes * 60000);
   }
+  try {
+    await addUnmaskedPairs(batch, roundObject.number);
+  } catch (e) {
+    console.log('unmasked pairs not added')
+  }
 
+  if (batch.hasPostSurvey && i === batch.numRounds - 1) {
+    roundObject.status = 'postsurvey';
+    const postRoundInfo = {rounds: rounds}
+    batch = await Batch.findByIdAndUpdate(batch._id, {$set: postRoundInfo}).lean().exec();
+    logger.info(module, batch._id + ' : Begin post-survey for round ' + roundObject.number);
+    io.to(batch._id.toString()).emit('post-survey', postRoundInfo);
+    await timeout(batch.surveyMinutes * 60000);
+  }
   const [filledChats, roundSurveys] = await Promise.all([
     Chat.find({_id: {$in: chats.map(x => x._id)}}).lean().exec(),
     Survey.find({batch: batch._id, round: i + 1, surveyType: {$in: ['presurvey', 'midsurvey']}}).select('user').lean().exec()
@@ -501,4 +557,9 @@ const kickUser = async (userId, batchId, kickedAfterRound) => {
       { batch: null, realNick: null, currentChat: null, fakeNick: null, systemStatus: 'hasbanged'}}, {new: true}).lean().exec()
   io.to(user.socketId).emit('kick-afk', true);
   logger.info(module, batchId + ' : user kicked for being AFK. Mturk ID: ' + user.mturkId);
+}
+
+const makeNewChat = (messages, batch, i, task) => {
+  return {batch: batch._id, messages: messages.concat({user: botId, nickname: 'helperBot', time: new Date(),
+    message: 'Task: ' + (task ? task.message : 'empty')}), pinnedContent: batch.tasks[i].pinnedContent || []};
 }

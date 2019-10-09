@@ -1,6 +1,8 @@
 import {Survey} from "../models/surveys";
 import * as AWS from "aws-sdk";
 import {Batch} from "../models/batches";
+import {User} from "../models/users";
+import {Chat} from "../models/chats";
 
 require('dotenv').config({path: './.env'});
 export const runningLive = process.env.MTURK_MODE === "prod";
@@ -427,7 +429,7 @@ const findMaxIndex = (points) => {
   return maxIndex;
 };
 
-const findMinIndex = points => {
+const findMinIndex = points => { // not counting zeros
   if (!points.length) {
     return 0;
   }
@@ -455,6 +457,7 @@ const findClosestIndex = (points, medianArray) => {
         results = results.concat(Math.abs(val - medianArray[ind]).toFixed(2));
       }
     });
+    results = results.map(x => x !== 0 ? x : 0.001); // findMinIndex doesn't count zeros
     return findMinIndex(results)
   }
 };
@@ -525,12 +528,7 @@ export const bestRound = async (batch) => {
       });
     }
     medianScores = medianScores.concat(medianScore);
-    // user's score is a sum of all select answer's values in ALL midSurveys of a round, for example:
-    /*
-    * User1: 0 (strongly disagree)
-    * User2: 4 (strongly agree)
-    * score = (0 + 1) + (4 + 1) = 6
-    * */
+    // user's score is a sum of all select answer's values in ALL midSurveys of a round
     let score = 0;
     let averageScore = 0;
     try {
@@ -555,6 +553,9 @@ export const bestRound = async (batch) => {
       points[i] = averageScore;
   }
   const excludedRounds = updBatch.expRounds.concat(updBatch.worstRounds);
+  if (updBatch.randomizeExpRound) {
+    excludedRounds.push(updBatch.numRounds - 1);
+  }
   const result = roundFromFunction(bestRoundFunction, {points: points, medianScores: medianScores,
     currentRound: currentRound, excludedRounds: excludedRounds});
   return {bestRoundIndex: result, scores: points, expRounds: [currentRound, result + 1], medianScores: medianScores,
@@ -577,7 +578,7 @@ export const worstRound = async batch => {
       func = 'anti-average';
       break;
     case 'random':
-      func = 'anti-random';
+      func = 'random';
       break;
     default:
       func = 'lowest';
@@ -592,11 +593,13 @@ export const calculateMoneyForBatch = batch => {
   return batchCapacity * 12 * getBatchTime(batch);
 }
 
-const roundFromFunction = (func, data) => {
+const roundFromFunction = (func, data) => { // if data.points[i] === 0 or undefined, it can't win
   let result = 0;
-  const points = data.points;
+  let points = data.points;
   const medianScores = data.medianScores;
   const currentRound = data.currentRound;
+  const excluded = data.excludedRounds || [];
+  excluded.forEach(x => points[x - 1] = 0);
   if (func === 'highest') {
     result = findMaxIndex(points)
   }
@@ -607,14 +610,34 @@ const roundFromFunction = (func, data) => {
     result = findClosestIndex(points, medianScores)
   }
   if (func === 'random') {
-    result = getRandomInt(0, currentRound - 2, data.excludedRounds ? data.excludedRounds : []);
+    result = getRandomInt(0, currentRound - 2, excluded);
   }
   if (func === 'anti-average') {
     result = findFarthestIndex(points, medianScores);
   }
-  if (func === 'anti-random') {
-    result = getRandomInt(0, currentRound - 2, data.excludedRounds ? data.excludedRounds : []);
-  }
   return result;
+}
+
+// Returns the pairs of IDs of the users in batch that should be unmasked in the numRound
+export const addUnmaskedPairs = async (batch, numRound) => {
+  // takes the chat of prev round and makes pairs of people who were talking
+  let chats = new Set()
+  for (const chatId of batch.rounds[numRound - 1].teams.map(team => team.chat)) {
+    const chat = await Chat.findById(chatId);
+    chats.add(chat);
+  }
+  let unmaskedPairs = new Set();
+  chats.forEach(chat => {
+    if (chat.messages) {
+      for (let i = 1; i < chat.messages.length; i += 1) {
+        const msg = chat.messages[i];
+        const prevMsg = chat.messages[i - 1]
+        if (msg.nickname === 'helperBot' || prevMsg.nickname === 'helperBot' || msg.user.toString() === prevMsg.user.toString()) continue;
+        unmaskedPairs.add([msg.user, prevMsg.user])
+      }
+    }
+  })
+  // const unmaskedPairs = [batch.users[0], batch.users[1]].map(x => x.user);
+  await Batch.findByIdAndUpdate(batch._id, { $addToSet: { unmaskedPairs: { $each: Array.from(unmaskedPairs) } } });
 }
 

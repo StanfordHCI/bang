@@ -37,7 +37,6 @@ class TemplateInfo extends PureComponent {
 
   render() {
     const {template, updateTemplate} = this.props;
-
     return (
       <Container style={{maxWidth: '100%'}}>
         <Row>

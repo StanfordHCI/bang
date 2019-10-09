@@ -19,13 +19,15 @@ import renderSelectField from 'Components/form/Select'
 import renderCheckBoxField from 'Components/form/CheckBox'
 import Select from "react-select";
 
-const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType, teamFormat}) => {
+const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType, teamFormat, postSurvey}) => {
+  console.log(fields.map(x => x));
   return (<div style={{width: '100%', marginTop: '20px', borderBottom: '1px solid grey'}}>
     {
       fields.map((question, index) => {
         let isSelect = false;
         if (surveyType === 'mid' && task && task.survey[index] && task.survey[index].type === 'select' ||
-          surveyType === 'pre' && task && task.preSurvey[index] && task.preSurvey[index].type === 'select') {
+          surveyType === 'pre' && task && task.preSurvey[index] && task.preSurvey[index].type === 'select' ||
+          surveyType === 'post' && postSurvey && postSurvey[index].type === 'select') {
           isSelect = true;
         }
 
@@ -47,7 +49,7 @@ const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType
                     name={`${question}.type`}
                     component={renderSelectField}
                     type='text'
-                    options={[{value: 'text', label: 'text'}, {value: 'select', label: 'select'}]}
+                    options={[{value: 'text', label: 'text'}, {value: 'select', label: 'select'}, {value: 'instruction', label: 'instruction'}]}
                   />
                 </div>
               </div>
@@ -56,7 +58,7 @@ const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType
                 name={`${question}.options`}
                 component={renderQuestionOptions}
                 rerenderOnEveryChange
-                withPoints={teamFormat === 'single'}
+                withPoints={teamFormat === 'single' && surveyType === 'mid'}
               />
               }
             </Col>
@@ -152,8 +154,94 @@ const renderSteps = ({fields, meta: {touched, error, warning}, numRounds}) => {
   </div>)
 }
 
-const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneTask, surveyTemplatesOptions,
-                       taskArray, fillSurvey, deleteSurvey, numExpRounds, teamFormat}) => {
+const renderPinnedContent = ({fields, meta: {touched, error, warning}, numRounds}) => {
+  return (<div style={{width: '100%', borderBottom: '1px solid grey'}}>
+    {
+      fields.map((field, index) => {
+        return (
+            <Row key={index}>
+              <Col>
+                <div className='form__form-group'>
+                  <label className='form__form-group-label'>Label text:</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                        name={`${field}.text`}
+                        component={renderField}
+                        type='text'
+                    />
+                  </div>
+                  <label className='form__form-group-label'>HTML content:</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                        name={`${field}.link`}
+                        type="text"
+                        component={renderTextArea}
+                    />
+                  </div>
+                </div>
+              </Col>
+              <Col>
+                <div className='centered-and-flexed'>
+                  <Button type="button" size="sm"
+                          onClick={() => fields.splice(index, 1)}>delete content</Button>
+                </div>
+              </Col>
+            </Row>)
+      })}
+    <Row className="centered-and-flexed" noGutters>
+      <Button type="button" size="sm" onClick={() => fields.push({})}>
+        <i className="fa fa-plus"/>add content
+      </Button>
+    </Row>
+  </div>)
+}
+
+const renderReadingPeriods = ({fields, meta: {touched, error, warning}, numRounds}) => {
+  return (<div style={{width: '100%', borderBottom: '1px solid grey', marginTop: '20px'}}>
+    <p>Reading periods</p>
+    <br/>
+    {
+      fields.map((period, index) => {
+        return (
+            <Row key={index}>
+              <Col>
+                <div className='form__form-group'>
+                  <label className='form__form-group-label'>period time:</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                        name={`${period}.time`}
+                        component={renderField}
+                        type='number'
+                    />
+                  </div>
+                  <label className='form__form-group-label'>period HTML:</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                        name={`${period}.message`}
+                        type="text"
+                        component={renderTextArea}
+                    />
+                  </div>
+                </div>
+              </Col>
+              <Col>
+                <div className='centered-and-flexed'>
+                  <Button type="button" size="sm"
+                          onClick={() => fields.splice(index, 1)}>delete period</Button>
+                </div>
+              </Col>
+            </Row>)
+      })}
+    <Row className="centered-and-flexed" noGutters>
+      <Button type="button" size="sm" onClick={() => fields.push({})}>
+        <i className="fa fa-plus"/>add reading period
+      </Button>
+    </Row>
+  </div>)
+}
+
+const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneTask, surveyTemplatesOptions, taskArray,
+                       fillSurvey, deleteSurvey, numExpRounds, teamFormat, hasPostSurvey, postSurvey}) => {
   let tasks = [], options = [];
   for (let i = 0; i < numRounds; i++) {
     options.push({value: i, label: 'task ' + (i + 1)})
@@ -206,6 +294,25 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
               onChange={(e) => {deleteSurvey(e, i, 'survey')}}
             />
           </Col>
+          <Col>
+            <p>Has pinned content?</p>
+          </Col>
+          <Col>
+            <Field
+              name={`tasks[${i}].hasPinnedContent`}
+              component={renderCheckBoxField}
+              onChange={(e) => {deleteSurvey(e, i, 'pinnedContent')}}
+            />
+          </Col>
+          <Col>
+            <p>Selective-masking?</p>
+          </Col>
+          <Col>
+            <Field
+              name={`tasks[${i}].selectiveMasking`}
+              component={renderCheckBoxField}
+            />
+          </Col>
         </Row>
         <div className='form__form-group-field' style={{marginBottom: '25px'}}>
           <Field
@@ -219,6 +326,19 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
           component={renderSteps}
           rerenderOnEveryChange
         />
+        <FieldArray
+            name={`tasks[${i}].readingPeriods`}
+            component={renderReadingPeriods}
+            rerenderonEveryChange
+        />
+        {taskArray && taskArray[i] && taskArray[i].hasPinnedContent && <div style={{width: '100%'}}>
+          <p>Pinned content</p>
+          <FieldArray
+          name={`tasks[${i}].pinnedContent`}
+          component={renderPinnedContent}
+          rerenderOnEveryChange
+          />
+        </div>}
         {taskArray && taskArray[i] && taskArray[i].hasPreSurvey && <div style={{width: '100%'}}>
           <p>pre - survey</p>
           <Select
@@ -256,10 +376,29 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
             teamFormat={teamFormat}
           />
         </div>}
+        {i === numRounds - 1 && hasPostSurvey && <div style={{width: '100%'}}>
+          <p>post - survey</p>
+          <Select
+              onChange={(e) => fillSurvey(numRounds - 1, e.value, 'post')}
+              options={surveyTemplatesOptions}
+              clearable={true}
+              multi={false}
+              className='form__form-group-select'
+              placeholder="select post-survey"
+          />
+          <FieldArray
+              name={`postSurvey`}
+              component={renderSurvey}
+              surveyType="post"
+              rerenderOnEveryChange
+              task={taskArray && taskArray[i]}
+              teamFormat={teamFormat}
+              postSurvey={postSurvey}
+          />
+        </div>}
       </div>
     )
   }
-
   return (<div style={{marginTop: '20px'}}>
     {tasks}
   </div>)
@@ -280,11 +419,13 @@ class TemplateForm extends React.Component {
   }
 
   fillSurvey = (taskNumber, surveyIndex, fieldName) => {
-    this.props.dispatch(change('TemplateForm', 'tasks[' + taskNumber + '].' + fieldName, this.props.surveyList[surveyIndex].questions))
+    let field = fieldName === 'post' ? 'postSurvey' :  'tasks[' + taskNumber + '].' + fieldName;
+    this.props.dispatch(change('TemplateForm', field, this.props.surveyList[surveyIndex].questions))
   }
 
   numRoundsChange = (e) => {
-    const num = parseInt(e.target.value)
+    const num = parseInt(e.target.value);
+    if (isNaN(num)) return;
     let tasks = this.props.tasks.filter((x, index) => index < num);
     this.props.dispatch(change('TemplateForm', 'tasks', tasks))
   }
@@ -313,7 +454,7 @@ class TemplateForm extends React.Component {
   }
 
   render() {
-    const {invalid, numRounds, surveyTemplatesOptions, pristine, isAdd, tasks, numExpRounds, teamFormat} = this.props;
+    const {invalid, numRounds, surveyTemplatesOptions, pristine, isAdd, tasks, numExpRounds, teamFormat, hasPostSurvey, postSurvey} = this.props;
     return (<div>
         <form className='form form--horizontal' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
           <Row>
@@ -324,13 +465,21 @@ class TemplateForm extends React.Component {
               </Row>
               <Row>
                 <Col className='form__form-group'>
-                  <label className='form__form-group-label'>Single-Team or Multi-Team?:</label>
-                  <div className='form__form-group-field'>
+                  <label className='form__form-group-label'>Team Format:</label>
                     <Field
                       name='teamFormat'
                       component={renderSelectField}
                       options={[{value: 'single', label: 'Single-team'}, {value: 'multi', label: 'Multi-team'}]}
                     />
+                </Col>
+                <Col className='form__form-group'>
+                  <label className='form__form-group-label'>Post Survey:</label>
+                  <div className='form__form-group-select'>
+                  <Field
+                      name={`hasPostSurvey`}
+                      component={renderCheckBoxField}
+                      onChange={(e) => {this.deleteSurvey(e, numRounds - 1, 'postSurvey')}}
+                  />
                   </div>
                 </Col>
               </Row>
@@ -423,6 +572,8 @@ class TemplateForm extends React.Component {
               numExpRounds={numExpRounds}
               surveyTemplatesOptions={surveyTemplatesOptions}
               teamFormat={teamFormat}
+              hasPostSurvey={hasPostSurvey}
+              postSurvey={postSurvey}
             />
           </div></Col>
           </Row>
@@ -438,9 +589,7 @@ class TemplateForm extends React.Component {
     )
   }
 }
-
 const validate = (values, props) => {
-  console.log(values, props);
   const errors = {};
   if (!values.name) {
     errors.name = 'required'
@@ -548,7 +697,9 @@ const validate = (values, props) => {
   if (values.teamFormat == null) {
     errors.teamFormat = 'required'
   }
-
+  if (values.hasPostSurvey && (!values.postSurvey || !values.postSurvey.length) && values.tasks.length && values.tasks[values.numRounds - 1]) {
+    errors.tasks[values.numRounds - 1].message = 'add questions to post-survey please';
+  }
   return errors
 };
 
@@ -571,6 +722,8 @@ function mapStateToProps(state) {
     surveyList: state.survey.surveyList,
     surveyTemplatesOptions: state.survey.surveyList.map((x, index) => {return {value: index, label: x.name}}),
     teamFormat: selector(state, 'teamFormat'),
+    hasPostSurvey: selector(state, 'hasPostSurvey'),
+    postSurvey: selector(state, 'postSurvey'),
   }
 }
 

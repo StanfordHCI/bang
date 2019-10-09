@@ -113,6 +113,13 @@ export const loadBatch = () => {
         data: data
       });
     })
+    socket.on('post-survey', (data) => {
+      dispatch(setSnackbar('Post Survey'));
+      dispatch({
+        type: REFRESH_BATCH,
+        data: data
+      });
+    })
     socket.on('end-round', (data) =>{
       dispatch(setSnackbar('Round end'));
       dispatch({
@@ -128,6 +135,20 @@ export const loadBatch = () => {
     })
     socket.on('refresh-batch', (data) =>{
       socket.emit('load-batch', {batch: user.batch})
+    });
+    socket.on('reading-period', data => {
+      dispatch(setSnackbar('Reading Period'));
+      dispatch({
+        type: REFRESH_BATCH,
+        data: data,
+      })
+    });
+    socket.on('pre-survey', data => {
+      dispatch(setSnackbar('Pre-Survey'));
+      dispatch({
+        type: REFRESH_BATCH,
+        data: data,
+      })
     })
   }
 }

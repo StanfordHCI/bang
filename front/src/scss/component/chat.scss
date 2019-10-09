@@ -220,6 +220,25 @@
     width: 100%;
   }
 
+  .chat__dialog-pinned-message {
+    padding: 5px;
+    margin-bottom: auto;
+    width: 100%;
+    text-align: center;
+    background-color: #a0a0a0;
+  }
+
+  .chat__dialog-pinned-resources {
+    vertical-align: top;
+    text-align: left;
+  }
+
+  .chat__dialog-pinned-resource {
+    background: none;
+    border: none;
+    color: blue;
+  }
+
   .chat__bubble-message-wrap {
     max-width: 570px;
     padding: 10px 40px 10px 20px;

@@ -174,5 +174,12 @@ const generateSelectOptions = (template) => {
     })
     return task;
   })
+  if (template.hasPostSurvey) {
+    template.postSurvey.forEach(postSurvey => {
+      if (postSurvey.type === 'select') {
+        postSurvey.selectOptions = postSurvey.options.map((x, index) => {return {value: index, label: x.option}})
+      }
+    })
+  }
   return template
 }

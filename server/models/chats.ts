@@ -13,9 +13,10 @@ let ChatSchema = new Schema({
   messages: [{
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
     nickname: { type: String, required: true},
+    realNickname: { type: String, required: false}, // being shown only on partial-masked rounds
     message: { type: String, required: true},
     time: { type: Date, required: true},
   }],
-  status: String
+  status: String,
 }, options);
 export const Chat = mongoose.model('Chat', ChatSchema);

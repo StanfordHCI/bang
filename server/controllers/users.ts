@@ -106,6 +106,7 @@ export const sendMessage = async function (data, socket, io) {
     const newMessage = {
       user: socket.userId,
       nickname: data.nickname,
+      realNickname: data.realNickname,
       message: data.message,
       time: new Date()
     }

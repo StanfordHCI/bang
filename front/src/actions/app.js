@@ -136,7 +136,7 @@ export const whoami = () => {
       });
       socket.on('kick-afk', (data) => {
         window.removeEventListener("beforeunload", listener);
-        window.location.reload();
+        history.push('/kicked');
       });
       socket.on('stop-batch', (batch) => {
         dispatch(setSnackbar('Batch was stopped'));

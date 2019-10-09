@@ -47,7 +47,11 @@ class PostSurveyForm extends React.Component {
 		let singleTeamInfo, surveyRounds, expRound1ActiveUsers;
 		if (singleTeam) {
       singleTeamInfo = this.generateSingleTeamInfo();
-      surveyRounds = singleTeamInfo.roundsForSurvey.map(x => x).sort((a, b) => a - b);
+      try {
+		  surveyRounds = singleTeamInfo.roundsForSurvey.sort((a, b) => a - b);
+	  } catch (e) {
+		  surveyRounds = [1, 2];
+	  }
       expRound1ActiveUsers = [];
     }
 		let qOptions = [], uOptions = [];
@@ -85,13 +89,18 @@ class PostSurveyForm extends React.Component {
 			this.setState({roster: roster})
 		});
 		const actualPartnerName = singleTeam ? singleTeamInfo.actualPartnerName : 'test';
-		const sOptions = singleTeam ? this.nicksFromRoster(this.state.roster, singleTeamInfo.roundsForSurvey[1]).map((x, ind, arr) =>
-    {return {value: `${x} ${actualPartnerName} ${arr.length}`, label: x}}) : [{value: 'test', label: 'test'}];
+		let sOptions;
+		try {
+			sOptions = singleTeam ? this.nicksFromRoster(this.state.roster, singleTeamInfo.roundsForSurvey[1]).map((x, ind, arr) =>
+			{return {value: `${x} ${actualPartnerName} ${arr.length}`, label: x}}) : [{value: 'test', label: 'test'}];
+		} catch (e) {
+			sOptions = [{value: 'test', label: 'test'}];
+		}
 		this.setState({ qOptions: qOptions, uOptions: uOptions, sOptions: sOptions, });
 		if (singleTeam) {
 		  this.setState({firstNick: singleTeamInfo.expPersonRound1Nick, roundsForSurvey: singleTeamInfo.roundsForSurvey })
     }
-	}
+}
 
 	// picks 2 random non-experimental rounds.
 	// takes 1 person from first round
@@ -121,6 +130,9 @@ class PostSurveyForm extends React.Component {
 			console.log(e);
 			return {};
 		}
+		if (!expPersonRound1.nickname) expPersonRound1.nickname = 'test';
+		if (!roundsForSurvey) roundsForSurvey = [1, 2];
+		if (!actualPartnerName) actualPartnerName = 'test';
 		return {expPersonRound1Nick: expPersonRound1.nickname, roundsForSurvey: roundsForSurvey, actualPartnerName: actualPartnerName}
 	}
 

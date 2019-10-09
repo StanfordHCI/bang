@@ -14,7 +14,8 @@ let  BatchSchema = new Schema({
     nickname: {type: String, required: true},
     joinDate: {type: Date, required: true},
     isActive: {type: Boolean, default: true, required: true},
-    kickedAfterRound: Number
+    kickedAfterRound: Number,
+    gender: {type: String, required: false, $enum: ['male', 'female', 'prefer not to say']}
   }],
   roundSurvey: [{type: String, required: true}],
   rounds: [{
@@ -61,12 +62,15 @@ let  BatchSchema = new Schema({
       options: [{option: {type: String, required: true}}],
       selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
     }],
-    postSurvey: [{
-      question: {type: String, required: true},
-      type: {type: String, required: true},
-      options: [{option: {type: String, required: true}}],
-      selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
-    }]
+    pinnedContent: [{
+      text: {type: String, required: true},
+      link: {type: String},
+    }],
+    readingPeriods: [{
+      time: {type: Number, required: true},
+      message: {type: String, required: true},
+    }],
+    selectiveMasking: {type: Boolean, default: false}
   }],
   midQuestions: [String],
   HITId: {type: String, },
@@ -83,5 +87,13 @@ let  BatchSchema = new Schema({
   randomizeExpRound: {type: Boolean, default: false},
   worstRounds: [], // [worst round, reconvening of worst round]; (Math.max.apply(null, worstRounds) === number of reconvening round) MUST BE TRUE
   reconveneWorstRound: {type: Boolean, default: false},
+  hasPostSurvey: {type: Boolean, default: false},
+  postSurvey: [{
+    question: {type: String, required: true},
+    type: {type: String, required: true},
+    options: [{option: {type: String, required: true}}],
+    selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+  }],
+  unmaskedPairs: [[{type: mongoose.Schema.Types.ObjectId, ref: 'User'}, {type: mongoose.Schema.Types.ObjectId, ref: 'User'}]],
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);

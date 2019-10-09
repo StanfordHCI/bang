@@ -63,18 +63,18 @@ let initialChecks = [
   Batch.updateMany({$or: [{status:'active'}, {status:'waiting'}]}, { $set: { status : 'completed'}}),
 ]
 
-/**if (process.env.MTURK_MODE === 'off') {
-  logger.info(module, 'created fake users');
-  for (let i = 0; i < 16; i++ ) {
-    User.create({
-        token: (2001 + i).toString(),
-        mturkId: (2001 + i).toString(),
-        testAssignmentId: 'test',
-        systemStatus: 'willbang',
-        isTest: true
-      }).then(() => {}).catch(err => errorHandler(err, 'Test users error'))
-  }
-}**/
+// if (process.env.MTURK_MODE === 'off') {
+//   logger.info(module, 'created fake users');
+//   for (let i = 0; i < 16; i++ ) {
+//     User.create({
+//         token: (2001 + i).toString(),
+//         mturkId: (2001 + i).toString(),
+//         testAssignmentId: 'test',
+//         systemStatus: 'willbang',
+//         isTest: true
+//       }).then(() => {}).catch(err => errorHandler(err, 'Test users error'))
+//   }
+// }
 
 
 Promise.all(initialChecks)
