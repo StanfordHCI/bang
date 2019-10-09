@@ -55,7 +55,7 @@ class Waiting extends React.Component {
   async testBatch() {
     this.props.joinBatch();
     for (let i = 2001; i < 2017; i++) {
-      const url = `http://localhost:3000/?workerId=${i}&assignmentId=test`;
+      const url = `${process.env.HIT_URL}?workerId=${i}&assignmentId=test`;
       const windowObject = window.open(url);
       await this.sleep(5);
       try {
@@ -72,7 +72,8 @@ class Waiting extends React.Component {
     const topPadding = {
       marginTop: '36px',
     };
-    const mode = process.env.NODE_ENV;
+    const mode = process.env.MTURK_MODE;
+    console.log(mode)
     return (
       <Container style={topPadding}>
         <Row>
@@ -94,7 +95,7 @@ class Waiting extends React.Component {
                   
                   
                   <Button className="btn btn-primary" onClick={() => joinBatch()} id={'joinButton'}>Join Batch</Button>
-                  {mode === 'development' && <Button className="btn btn-primary" onClick={async () => this.testBatch()} id={'testButton'}>Test Batch</Button>}
+                  {(mode === 'off' || mode === 'test') && <Button className="btn btn-primary" onClick={async () => this.testBatch()} id={'testButton'}>Test Batch</Button>}
                   <Modal color='primary' btn='FAQ'
                          content={(<Container className="faq" >
                            <h4>Frequently Asked Questions</h4>
