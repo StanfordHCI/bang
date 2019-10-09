@@ -48,6 +48,23 @@ class Waiting extends React.Component {
   showFAQ = () => {
 
   }
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async testBatch() {
+    this.props.joinBatch();
+    for (let i = 2001; i < 2017; i++) {
+      const url = `http://localhost:3000/?workerId=${i}&assignmentId=test`;
+      const windowObject = window.open(url);
+      await this.sleep(5);
+      try {
+        windowObject.document.getElementById('joinButton').click();
+      } catch (e) {
+        console.log('a')
+      }
+    }
+  }
 
   render() {
     const {user, joinBatch} = this.props;
@@ -55,9 +72,7 @@ class Waiting extends React.Component {
     const topPadding = {
       marginTop: '36px',
     };
-    // const [batchId, genNumber] = [getUrlParams().batchid, getUrlParams().gennumber]
-    // if (batchId && genNumber)
-
+    const mode = process.env.NODE_ENV;
     return (
       <Container style={topPadding}>
         <Row>
@@ -78,7 +93,8 @@ class Waiting extends React.Component {
                   <p><b>IMPORTANT: This task will take around 75 minutes to complete. You will not be paid if you do not complete the entire task.</b> If you intend to complete the task, please do not leave because it will mean other MTurkers will have to wait longer for the task. If enough people arrive, you'll be bonused $1 for waiting. Provided you stay for the <b>whole task,</b> we will bonus to a rate of approximately <b>$12 per hour</b>. If there are never enough people, we will automatically submit and accept for the base rate.</p>
                   
                   
-                  <Button className="btn btn-primary" onClick={() => joinBatch()}>Join Batch</Button>
+                  <Button className="btn btn-primary" onClick={() => joinBatch()} id={'joinButton'}>Join Batch</Button>
+                  {mode === 'development' && <Button className="btn btn-primary" onClick={async () => this.testBatch()} id={'testButton'}>Test Batch</Button>}
                   <Modal color='primary' btn='FAQ'
                          content={(<Container className="faq" >
                            <h4>Frequently Asked Questions</h4>
