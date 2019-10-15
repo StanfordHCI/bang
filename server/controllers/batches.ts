@@ -279,6 +279,7 @@ export const receiveSurvey = async function (data, socket, io) {
       if (gender) {
         await User.findByIdAndUpdate(newSurvey.user, {gender: gender});
         await Batch.updateOne({_id: batch._id, 'users.user': newSurvey.user}, {$set: {'users.$.gender': gender}});
+        io.to(batch._id.toString()).emit('refresh-batch', true)
       }
     }
 
