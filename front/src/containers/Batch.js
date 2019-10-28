@@ -18,23 +18,24 @@
  */
 
 import React from 'react';
-import { Card, CardBody, Col, Row, Container, Table } from 'reactstrap';
-import { connect } from "react-redux";
-import { findDOMNode } from 'react-dom'
-import { bindActionCreators } from "redux";
+import {Card, CardBody, Col, Container, Row, Table} from 'reactstrap';
+import {connect} from "react-redux";
+import {findDOMNode} from 'react-dom'
+import {bindActionCreators} from "redux";
 import moment from 'moment'
-import { loadBatch, sendMessage, submitSurvey } from 'Actions/batches'
-import { listener } from 'Actions/app'
+import {loadBatch, sendMessage, submitSurvey, vote} from 'Actions/batches'
+import {listener} from 'Actions/app'
 import RoundSurveyForm from './RoundSurveyForm'
 import PostSurveyForm from './PostSurveyForm'
-import { history } from "../app/history";
+import {history} from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
 import ReactHtmlParser from "react-html-parser";
-import { Avatar } from '@material-ui/core';
-import {pairInArray, newWindow, parseNick} from '../utils'
-import { animalMap, adjMap, genderMap } from '../constants/nicknames';
+import {Avatar} from '@material-ui/core';
+import {newWindow, pairInArray, parseNick} from '../utils'
+import {adjMap, animalMap, genderMap} from '../constants/nicknames';
 import Bot from '../img/Bot.svg';
 import Notification from 'react-web-notification';
+import Vote from '../components/Vote';
 
 const MAX_LENGTH = 240;
 const botId = '100000000000000000000001';
@@ -131,6 +132,7 @@ class Batch extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
+    // Notifications
     if (this.state.timeLeft === 0 && prevState.timeLeft) {
       console.log('alert!')
       this.setState({
@@ -155,7 +157,55 @@ class Batch extends React.Component {
         }
       });
     }
+    let currentTask;
+    let roundHasForepersonPoll;
+    if (this.props.batch) {
+      currentTask = this.props.batch.tasks[this.props.batch.currentRound - 1];
+      if (currentTask) {
+        roundHasForepersonPoll = currentTask.hasPoll && currentTask.poll.type === 'foreperson';
+      }
+    }
+
+    // Foreperson poll notifications
+    if (this.state.timeLeft === 300 && prevState.timeLeft === 301 && roundHasForepersonPoll) {
+      console.log('poll 1st alert')
+      this.setState({
+        isStartNotifySent: true,
+        notifyTitle: 'Bang!',
+        notifyOptions: {
+          body: 'remember, you must all agree, or else your jury will be hung!  ' +
+              'You should do your best to achieve consensus and avoid a hung jury.' +
+              ' What are ways that you could compromise?',
+          lang: 'en',
+          dir: 'ltr',
+        }
+      });
+    }
+    if (this.state.timeLeft === 150 && prevState.timeLeft === 151 && roundHasForepersonPoll) {
+    console.log('poll 2nd alert')
+    this.setState({
+      isStartNotifySent: true,
+      notifyTitle: 'Bang!',
+      notifyOptions: {
+        body: 'Time is running out! Remember that you must all be in agreement, or else you will have a hung jury!',
+        lang: 'en',
+        dir: 'ltr',
+      }
+    });
   }
+    if (this.state.timeLeft === 10 && prevState.timeLeft === 11 && roundHasForepersonPoll) {
+      console.log('poll last alert');
+      this.setState({
+        isStartNotifySent: true,
+        notifyTitle: 'Bang!',
+        notifyOptions: {
+          body: 'Hung jury! You were not able to agree in time, so your jury was hung.\n',
+          lang: 'en',
+          dir: 'ltr',
+        }
+      });
+    }
+}
 
   componentWillReceiveProps(nextProps, nextState) {
     if (!this.state.closeBlockReady && nextProps.batch &&  nextProps.batch.status === 'active') {
@@ -401,12 +451,21 @@ class Batch extends React.Component {
   }
 
   renderChat() {
-    const {sendMessage, user, chat, batch, currentRound} = this.props;
-    let pinnedContent = []
+    const {sendMessage, user, chat, batch, currentRound, vote} = this.props;
+    let pinnedContent = [];
     try {
       pinnedContent = batch.tasks[currentRound.number - 1].pinnedContent;
     } catch (e) {
       pinnedContent = [];
+    }
+    let poll;
+    try {
+      poll = batch.tasks[currentRound.number - 1].poll;
+      if (!poll.options.length) {
+        poll = null;
+      }
+    } catch (e) {
+      poll = null;
     }
     const inputProps = {
       placeholder: 'type here...',
@@ -415,6 +474,26 @@ class Batch extends React.Component {
       onKeyDown: this.handleSubmit,
       className: 'chat__field-input'
     };
+
+    const nicks = chat.members.map((member) => {
+      let nick = '';
+      if (member._id.toString() === user._id.toString()) {
+        nick = member.realNick + ' (you)';
+      } else {
+        nick = batch.maskType === 'masked' ? member.fakeNick : member.realNick;
+      }
+      return batch.status ==='active' && !member.isActive ? '' : nick;
+    });
+
+    const nicksOptions = nicks.map(x => {return {value: x, label: x}});
+    let options = [];
+    try {
+      options = poll.type === 'foreperson' ? nicksOptions : poll.selectOptions;
+      console.log(`Options set to`, options)
+    } catch (e) {
+      options = [];
+      console.log('!poll')
+    }
 
     return (
       <div className='chat'>
@@ -427,18 +506,11 @@ class Batch extends React.Component {
                 </tr>
               </thead>
               <tbody>
-                {chat.members.map((member) => {
-                  let nick = '';
-                  if (member._id.toString() === user._id.toString()) {
-                    nick = member.realNick + ' (you)';
-                  } else {
-                    nick = batch.maskType === 'masked' ? member.fakeNick : member.realNick;
-                  }
-
-                  return (<tr key={member._id}>
+                {nicks.map((nick) => {
+                  return (<tr>
                     <td>
                       <div className='chat__bubble-contact-name'>
-                        {batch.status ==='active' && !member.isActive ? '' : nick}
+                        {nick}
                       </div>
                     </td>
                   </tr>)
@@ -452,13 +524,31 @@ class Batch extends React.Component {
             <div className='chat__dialog-pinned-resources'>
               <p style={{color: 'black'}}>Pinned resources</p>
             </div>
-            {pinnedContent && !!pinnedContent.length && pinnedContent.map((message, index) => {
+            {pinnedContent.map(message => {
               return (
               <div>
                 <button className='chat__dialog-pinned-resource' onClick={() => {newWindow(message.link)}}>{message.text}</button>
                 <br/>
               </div>)
             })}
+          </div>}
+
+          {poll &&
+          <div className='chat__dialog-pinned-message'>
+            <div className='chat__dialog-pinned-resources'>
+              <p style={{color: 'black'}}>helperBot</p>
+            </div>
+            <Vote
+                options={options}
+                vote={vote}
+                user={user}
+                batch={batch}
+                lockCap={batch.teamSize - 1} // Vote is disabled if one of options has >=lockCap votes
+                poll={poll}
+            />
+            <div>
+              <p style={{color: 'black', textAlign: 'left', lineHeight: '180%'}}>{poll.text}</p>
+            </div>
           </div>}
           <div className="chat__scroll" ref="chatScroll">
             <div className='chat__dialog-messages-wrap'>
@@ -485,7 +575,6 @@ class Batch extends React.Component {
                   try {
                     userGender = batch.users.find(x => x.user.toString() === message.user.toString()).gender;
                   } catch (err) {
-                    console.log('gender not specified');
                   }
                   // specially format bot messages
                   if (message.user.toString() === botId) {
@@ -874,7 +963,8 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators({
     loadBatch,
     sendMessage,
-    submitSurvey
+    submitSurvey,
+    vote,
   }, dispatch);
 }
 

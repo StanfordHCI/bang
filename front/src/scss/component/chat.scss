@@ -183,7 +183,7 @@
   }
 
   .chat__scroll {
-    height: calc(100% - 214px);
+    height: calc(100% - 313px);
     overflow: scroll;
     overflow-x: hidden;
 
@@ -226,17 +226,22 @@
     width: 100%;
     text-align: center;
     background-color: #a0a0a0;
+    max-height: 30%;
+    overflow: hidden;
+    font-size: 15px;
   }
 
   .chat__dialog-pinned-resources {
     vertical-align: top;
     text-align: left;
+    max-height: 30%;
   }
 
   .chat__dialog-pinned-resource {
     background: none;
     border: none;
     color: blue;
+    max-height: 30%;
   }
 
   .chat__bubble-message-wrap {
@@ -464,6 +469,8 @@
     display: flex;
     justify-content: flex-start;
     margin-top: 15px;
+    //position: absolute;
+    //bottom: 0px;
 
     @include themify($themes) {
       border-top: 1px solid themed('colorFieldsBorder');
@@ -639,5 +646,18 @@
       cursor: pointer;
       background-color: rgba(255, 255, 255, 0.05);
     }
+  }
+}
+
+.languages {
+  height: 100%; width:100%; font-size: 0;
+
+  button {
+    display: inline-block;
+    *display: inline;
+    zoom: 1;
+    vertical-align: top;
+    font-size: 12px;
+    width: 25%;
   }
 }

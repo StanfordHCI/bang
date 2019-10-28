@@ -171,7 +171,12 @@ const generateSelectOptions = (template) => {
         survey.selectOptions = survey.options.map((x, index) => {return {value: index, label: x.option}})
       }
       return survey;
-    })
+    });
+    if (task.hasPoll) {
+      if (task.poll.options && task.poll.options.length) {
+        task.poll.selectOptions = task.poll.options.map((x, index) => {return {value: index, label: x.option}})
+      }
+    }
     return task;
   })
   if (template.hasPostSurvey) {

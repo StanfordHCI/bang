@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 const PORT = process.env.PORT || 3001;
 const APP_ROOT = path.resolve(__dirname, '..');
 const logger = require('./services/logger');
-import {init, sendMessage, disconnect, activeCheck, refreshActiveUsers} from './controllers/users'
+import {init, sendMessage, disconnect, activeCheck, refreshActiveUsers, vote} from './controllers/users'
 import { joinBatch, loadBatch, payStartBonus, receiveSurvey, timeout } from "./controllers/batches";
 import {errorHandler} from './services/common'
 import {
@@ -88,6 +88,7 @@ Promise.all(initialChecks)
       socket.on('join-batch', data => socketMiddleware('join-batch', joinBatch, data, socket));
       socket.on('load-batch', data => socketMiddleware('load-batch', loadBatch, data, socket));
       socket.on('send-survey', data => socketMiddleware('send-survey', receiveSurvey, data, socket));
+      socket.on('vote', data => socketMiddleware('vote', vote, data, socket))
     });
   })
   .catch(err => {

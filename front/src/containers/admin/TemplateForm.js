@@ -20,7 +20,6 @@ import renderCheckBoxField from 'Components/form/CheckBox'
 import Select from "react-select";
 
 const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType, teamFormat, postSurvey}) => {
-  console.log(fields.map(x => x));
   return (<div style={{width: '100%', marginTop: '20px', borderBottom: '1px solid grey'}}>
     {
       fields.map((question, index) => {
@@ -78,10 +77,45 @@ const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType
   </div>)
 }
 
+const renderPoll = ({fields, meta: {touched, error, warning}, task, path}) => {
+  const pollType = task.poll ? task.poll.type : undefined;
+  const withOptions = pollType !== 'foreperson';
+  return (
+      <div className='form__form-group'>
+        <label className='form__form-group-label'>text: </label>
+        <div className='form__form-group-field'>
+          <Field
+              name={`${path}.text`}
+              component={renderTextArea}
+              type='text'
+          />
+        </div>
+        <label className='form__form-group-label'>poll type: </label>
+        <div className='form__form-group-field'>
+          <Field
+              name={`${path}.type`}
+              component={renderSelectField}
+              type='text'
+              options={[{value: 'foreperson', label: 'foreperson'}, {value: 'casual', label: 'casual'}]}
+          />
+        </div>
+        {withOptions && <div style={{width: '100%', marginTop: '20px'}}>
+          <FieldArray
+            name={`${path}.options`}
+            component={renderQuestionOptions}
+            rerenderOnEveryChange
+            withPoints={false}
+        />
+        </div>}
+      </div>
+        )
+}
+
 const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRounds, withPoints}) => {
   return (<div style={{width: '100%'}}>
     {
       fields.map((step, index) => {
+        console.log('step: ', step);
         return (
           <Row key={index}>
             <div className='form__form-group' style={{maxWidth: '300px', marginLeft: '50px'}}>
@@ -313,6 +347,15 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
               component={renderCheckBoxField}
             />
           </Col>
+          <Col>
+            <p>In-round Poll?</p>
+          </Col>
+          <Col>
+            <Field
+                name={`tasks[${i}].hasPoll`}
+                component={renderCheckBoxField}
+            />
+          </Col>
         </Row>
         <div className='form__form-group-field' style={{marginBottom: '25px'}}>
           <Field
@@ -374,6 +417,17 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
             rerenderOnEveryChange
             task={taskArray && taskArray[i]}
             teamFormat={teamFormat}
+          />
+        </div>}
+        {taskArray && taskArray[i] && taskArray[i].hasPoll && <div style={{width: '100%'}}>
+          <p>Poll</p>
+          <Field
+              name={`tasks[${i}].poll`}
+              path = {`tasks[${i}].poll`}
+              component={renderPoll}
+              rerenderOnEveryChange
+              task={taskArray && taskArray[i]}
+              teamFormat={teamFormat}
           />
         </div>}
         {i === numRounds - 1 && hasPostSurvey && <div style={{width: '100%'}}>
