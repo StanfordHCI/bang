@@ -165,45 +165,48 @@ class Batch extends React.Component {
         roundHasForepersonPoll = currentTask.hasPoll && currentTask.poll.type === 'foreperson';
       }
     }
-
+    const {currentRound} = this.props;
     // Foreperson poll notifications
-    if (this.state.timeLeft === 300 && prevState.timeLeft === 301 && roundHasForepersonPoll) {
-      console.log('poll 1st alert')
-      this.setState({
-        isStartNotifySent: true,
-        notifyTitle: 'Bang!',
-        notifyOptions: {
-          body: 'remember, you must all agree, or else your jury will be hung!  ' +
-              'You should do your best to achieve consensus and avoid a hung jury.' +
-              ' What are ways that you could compromise?',
-          lang: 'en',
-          dir: 'ltr',
-        }
-      });
-    }
-    if (this.state.timeLeft === 150 && prevState.timeLeft === 151 && roundHasForepersonPoll) {
-    console.log('poll 2nd alert')
-    this.setState({
-      isStartNotifySent: true,
-      notifyTitle: 'Bang!',
-      notifyOptions: {
-        body: 'Time is running out! Remember that you must all be in agreement, or else you will have a hung jury!',
-        lang: 'en',
-        dir: 'ltr',
+
+    if (currentRound && currentRound.status === 'active') {
+      if (this.state.timeLeft === 300 && prevState.timeLeft === 301 && roundHasForepersonPoll) {
+        console.log('poll 1st alert')
+        this.setState({
+          isStartNotifySent: true,
+          notifyTitle: 'Bang!',
+          notifyOptions: {
+            body: 'remember, you must all agree, or else your jury will be hung!  ' +
+                'You should do your best to achieve consensus and avoid a hung jury.' +
+                ' What are ways that you could compromise?',
+            lang: 'en',
+            dir: 'ltr',
+          }
+        });
       }
-    });
-  }
-    if (this.state.timeLeft === 10 && prevState.timeLeft === 11 && roundHasForepersonPoll) {
-      console.log('poll last alert');
-      this.setState({
-        isStartNotifySent: true,
-        notifyTitle: 'Bang!',
-        notifyOptions: {
-          body: 'Hung jury! You were not able to agree in time, so your jury was hung.\n',
-          lang: 'en',
-          dir: 'ltr',
-        }
-      });
+      if (this.state.timeLeft === 150 && prevState.timeLeft === 151 && roundHasForepersonPoll) {
+        console.log('poll 2nd alert')
+        this.setState({
+          isStartNotifySent: true,
+          notifyTitle: 'Bang!',
+          notifyOptions: {
+            body: 'Time is running out! Remember that you must all be in agreement, or else you will have a hung jury!',
+            lang: 'en',
+            dir: 'ltr',
+          }
+        });
+      }
+      if (this.state.timeLeft === 10 && prevState.timeLeft === 11 && roundHasForepersonPoll) {
+        console.log('poll last alert');
+        this.setState({
+          isStartNotifySent: true,
+          notifyTitle: 'Bang!',
+          notifyOptions: {
+            body: 'Hung jury! You were not able to agree in time, so your jury was hung.\n',
+            lang: 'en',
+            dir: 'ltr',
+          }
+        });
+      }
     }
 }
 
@@ -461,7 +464,7 @@ class Batch extends React.Component {
     let poll;
     try {
       poll = batch.tasks[currentRound.number - 1].poll;
-      if (!poll.options.length) {
+      if (!poll.options.length && poll.type !== 'foreperson') {
         poll = null;
       }
     } catch (e) {
@@ -485,14 +488,12 @@ class Batch extends React.Component {
       return batch.status ==='active' && !member.isActive ? '' : nick;
     });
 
-    const nicksOptions = nicks.map(x => {return {value: x, label: x}});
+    const nicksOptions = nicks.filter(x => x !== '').map(x => {return {value: x, label: x}});
     let options = [];
     try {
       options = poll.type === 'foreperson' ? nicksOptions : poll.selectOptions;
-      console.log(`Options set to`, options)
     } catch (e) {
       options = [];
-      console.log('!poll')
     }
 
     return (

@@ -26,7 +26,7 @@ class Vote extends Component{
         const {vote, batch, user, lockCap, poll} = this.props;
         console.log(lockCap)
         const votes = batch.rounds[batch.currentRound - 1].teams.find(x => x.users.some(y => y.user.toString() === user._id)).currentPollVotes || [];
-        const disabled = Object.values(votes).some(x => x >= lockCap);
+        const disabled = Object.values(votes).some(x => x >= lockCap) && poll.type === 'foreperson';
         let foreperson;
         if (disabled && poll.type === 'foreperson') {
             const obj = votes;
