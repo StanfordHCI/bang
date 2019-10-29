@@ -52,7 +52,6 @@ class Vote extends Component{
                     {
                         this.state.options.map((option, i) =>
                             <button
-                                key={`${option.label} ${votes[option.value.toString()]  ? votes[option.value.toString()] : 0}`}
                                 disabled={disabled}
                                 onClick={() => {vote(Object.assign(option, {batch: batch}))}}>
                                     {option.label}({votes[option.value.toString()]  ? votes[option.value.toString()] : 0})
