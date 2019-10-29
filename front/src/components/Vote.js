@@ -22,6 +22,12 @@ class Vote extends Component{
         this.setOptions(nextProps.options)
     }
 
+    componentDidMount() {
+        console.log('aaa')
+        this.props.vote(Object.assign({value: null}, {batch: this.props.batch})); // just getting the votes not actually voting
+        this.setOptions(this.props.options)
+    }
+
     render(){
         const {vote, batch, user, lockCap, poll} = this.props;
         console.log(lockCap)
@@ -39,9 +45,10 @@ class Vote extends Component{
                     {
                         this.state.options.map((option, i) =>
                             <button
-                            disabled={disabled}
-                            onClick={() => {vote(Object.assign(option, {batch: batch}))}}>
-                                {option.label}({votes[option.value.toString()]  ? votes[option.value.toString()] : 0})
+                                key={`${option.label} ${votes[option.value.toString()]  ? votes[option.value.toString()] : 0}`}
+                                disabled={disabled}
+                                onClick={() => {vote(Object.assign(option, {batch: batch}))}}>
+                                    {option.label}({votes[option.value.toString()]  ? votes[option.value.toString()] : 0})
                             </button>
 
                         )

@@ -125,45 +125,45 @@ export const vote = async function (data, socket, io) {
   const userId = socket.userId;
   const round = batch.currentRound;
   const batchId = batch._id
-  console.log(round, batchId)
   const oldPoll = await Survey.findOne({user: userId, round: round, batch: batchId, surveyType: 'poll'});
-  console.log(oldPoll)
-  console.log(data.value);
-  if (!oldPoll) {
-    const newPoll = {
-      user: userId,
-      batch: batchId,
-      questions: [{result: data.value}],
-      round: round,
-      surveyType: 'poll'
+  if (data.value !== null) { // if data.value === null, we are just getting the information, not changing anything
+    if (!oldPoll) {
+      const newPoll = {
+        user: userId,
+        batch: batchId,
+        questions: [{result: data.value}],
+        round: round,
+        surveyType: 'poll'
+      }
+      try {
+        await Survey.create(newPoll);
+      } catch (e) {
+        errorHandler(e, 'poll creating error')
+      }
+    } else { // poll was already created, we edit the result value
+      await Survey.findByIdAndUpdate(oldPoll._id, {'questions.0.result': data.value})
     }
-    try {
-      await Survey.create(newPoll);
-      console.log('newPoll created')
-    } catch (e) {
-      errorHandler(e, 'poll creating error')
-    }
-  } else { // poll was already created, we edit the result value
-    await Survey.findByIdAndUpdate(oldPoll._id, {'questions.0.result': data.value})
-    console.log('survey edited')
   }
-  console.log('batch: ', batch.rounds[0].teams);
+
   const teammatesIds = batch.rounds[round - 1].teams.find(x => {
-    console.log('x.users: ', x.users);
     return x.users.some(y => {
-      console.log('y.user', y.user, y.user.toString() === userId.toString());
       return y.user.toString() === userId.toString()
     })
   }).users.map(z => z.user);
-  console.log('teammateIds: ', teammatesIds);
+  const teammatesSockets = Object.values(io.sockets.sockets).filter((x, ind) => {
+    const userId = x.userId ? x.userId.toString() : null;
+    return teammatesIds.indexOf(userId) > -1;
+  });
   const polls = await Survey.find({round: round, batch: batchId, surveyType: 'poll', user: {$in: teammatesIds}})
   let resultData = {user: userId};
   polls.forEach(x => {
     const index = x.questions[0].result;
     resultData[index] ? resultData[index] += 1 : resultData[index] = 1
   })
-  console.log('votes:', resultData)
-  socket.emit('voted', resultData);
+  teammatesSockets.forEach(x => {
+    return x.emit('voted', resultData);
+  });
+  // socket.emit('voted', resultData);
 }
 
 /*
