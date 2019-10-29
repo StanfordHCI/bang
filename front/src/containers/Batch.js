@@ -103,7 +103,6 @@ const componentDecorator = (href, text, key) => (
 );
 
 class Batch extends React.Component {
-
   constructor(props) {
     super(props);
     this.state = {
@@ -119,8 +118,15 @@ class Batch extends React.Component {
       isStartNotifySent: false,
       closeBlockReady: false,
       currentRound: 0,
+      voteDisabled: false,
     };
+    this.onVoteDisable = this.onVoteDisable.bind(this)
   }
+
+  onVoteDisable = () => {
+    this.setState({voteDisabled: true});
+  };
+
 
   componentWillMount() {
     this.props.loadBatch();
@@ -168,7 +174,7 @@ class Batch extends React.Component {
     const {currentRound} = this.props;
     // Foreperson poll notifications
 
-    if (currentRound && currentRound.status === 'active') {
+    if (currentRound && currentRound.status === 'active' && !this.state.voteDisabled) {
       if (this.state.timeLeft === 300 && prevState.timeLeft === 301 && roundHasForepersonPoll) {
         console.log('poll 1st alert')
         this.setState({
@@ -546,6 +552,7 @@ class Batch extends React.Component {
                 batch={batch}
                 lockCap={batch.teamSize - 1} // Vote is disabled if one of options has >=lockCap votes
                 poll={poll}
+                onDisable={this.onVoteDisable}
             />
             <div>
               <p style={{color: 'black', textAlign: 'left', lineHeight: '180%'}}>{poll.text}</p>

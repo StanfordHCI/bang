@@ -8,6 +8,7 @@ class Vote extends Component{
         this.state = {
             options: [],
             isStartNotifySent: false,
+            disabled: false,
         }
         this.setOptions(options)
     }
@@ -19,23 +20,29 @@ class Vote extends Component{
     }
 
     componentWillReceiveProps(nextProps, nextContext) {
+        const {vote, batch, user, lockCap, poll} = this.props;
         this.setOptions(nextProps.options)
+        const votes = batch.rounds[batch.currentRound - 1].teams.find(x => x.users.some(y => y.user.toString() === user._id)).currentPollVotes || [];
+        this.setState({votes: votes})
+        const disabled = Object.values(votes).some(x => x >= lockCap) && poll.type === 'foreperson';
+        if (disabled !== this.state.disabled) {
+            this.props.onDisable()
+            this.setState({disabled: true})
+        }
     }
 
     componentDidMount() {
-        console.log('aaa')
         this.props.vote(Object.assign({value: null}, {batch: this.props.batch})); // just getting the votes not actually voting
         this.setOptions(this.props.options)
     }
 
     render(){
         const {vote, batch, user, lockCap, poll} = this.props;
-        console.log(lockCap)
-        const votes = batch.rounds[batch.currentRound - 1].teams.find(x => x.users.some(y => y.user.toString() === user._id)).currentPollVotes || [];
-        const disabled = Object.values(votes).some(x => x >= lockCap) && poll.type === 'foreperson';
+
         let foreperson;
+        const {votes, disabled} = this.state;
         if (disabled && poll.type === 'foreperson') {
-            const obj = votes;
+            const obj = this.state.votes;
             foreperson = Object.keys(obj).reduce((a, b) => obj[a] > obj[b] ? a : b);
         }
 
