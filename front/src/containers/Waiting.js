@@ -54,7 +54,7 @@ class Waiting extends React.Component {
 
   async testBatch() {
     this.props.joinBatch();
-    for (let i = 2001; i < 2017; i++) {
+    for (let i = 2001; i < 2007; i++) {
       const url = `${process.env.HIT_URL}?workerId=${i}&assignmentId=test`;
       const windowObject = window.open(url);
       await this.sleep(5);

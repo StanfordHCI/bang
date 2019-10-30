@@ -461,6 +461,7 @@ class Batch extends React.Component {
 
   renderChat() {
     const {sendMessage, user, chat, batch, currentRound, vote} = this.props;
+    console.log('chatt', chat)
     let pinnedContent = [];
     try {
       pinnedContent = batch.tasks[currentRound.number - 1].pinnedContent;
@@ -493,6 +494,7 @@ class Batch extends React.Component {
       }
       return batch.status ==='active' && !member.isActive ? '' : nick;
     });
+    console.log('dsada: ', chat.members);
 
     const nicksOptions = nicks.filter(x => x !== '').map(x => {return {value: x, label: x}});
     let options = [];

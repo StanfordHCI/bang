@@ -23,7 +23,6 @@ class Vote extends Component{
         const {vote, batch, user, lockCap, poll} = this.props;
         this.setOptions(nextProps.options)
         const votes = batch.rounds[batch.currentRound - 1].teams.find(x => x.users.some(y => y.user.toString() === user._id)).currentPollVotes || [];
-        this.setState({votes: votes})
         const disabled = Object.values(votes).some(x => x >= lockCap) && poll.type === 'foreperson';
         if (disabled !== this.state.disabled) {
             this.props.onDisable()
@@ -38,9 +37,10 @@ class Vote extends Component{
 
     render(){
         const {vote, batch, user, lockCap, poll} = this.props;
+        const votes = batch.rounds[batch.currentRound - 1].teams.find(x => x.users.some(y => y.user.toString() === user._id)).currentPollVotes || [];
 
         let foreperson;
-        const {votes, disabled} = this.state;
+        const disabled = this.state.disabled;
         if (disabled && poll.type === 'foreperson') {
             const obj = this.state.votes;
             foreperson = Object.keys(obj).reduce((a, b) => obj[a] > obj[b] ? a : b);
