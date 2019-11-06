@@ -258,7 +258,7 @@ export const receiveSurvey = async function (data, socket, io) {
     const genderQuestion = x => x.question.toLowerCase() === 'what is your gender?';
     if ((newSurvey.surveyType === 'presurvey' || newSurvey.surveyType === 'prepresurvey')) {
       let gender;
-      const ind = batch.tasks[0].preSurvey.findIndex(x => genderQuestion(x))
+      const index = batch.tasks[0].preSurvey.findIndex(x => genderQuestion(x))
       const genderFromInd = (ind, survey) => {
         let gender;
         if (ind !== -1) {
@@ -279,8 +279,8 @@ export const receiveSurvey = async function (data, socket, io) {
           return gender;
         }
       }
-      if (ind !== -1) { // Looking for gender survey in task presurveys
-        gender = genderFromInd(ind, newSurvey);
+      if (index !== -1) { // Looking for gender survey in task presurveys
+        gender = genderFromInd(index, newSurvey);
       } else {
         if (newSurvey.surveyType === 'prepresurvey') { // looking for gender survey in batch presurvey
           console.log('preSurvey:', batch.preSurvey)
