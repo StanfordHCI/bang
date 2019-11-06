@@ -120,6 +120,52 @@ export const sendMessage = async function (data, socket, io) {
   }
 }
 
+export const vote = async function (data, socket, io) {
+  const batch = data.batch;
+  const userId = socket.userId;
+  const round = batch.currentRound;
+  const batchId = batch._id
+  const oldPoll = await Survey.findOne({user: userId, round: round, batch: batchId, surveyType: 'poll'});
+  if (data.value !== null) { // if data.value === null, we are just getting the information, not changing anything
+    if (!oldPoll) {
+      const newPoll = {
+        user: userId,
+        batch: batchId,
+        questions: [{result: data.value}],
+        round: round,
+        surveyType: 'poll'
+      }
+      try {
+        await Survey.create(newPoll);
+      } catch (e) {
+        errorHandler(e, 'poll creating error')
+      }
+    } else { // poll was already created, we edit the result value
+      await Survey.findByIdAndUpdate(oldPoll._id, {'questions.0.result': data.value})
+    }
+  }
+
+  const teammatesIds = batch.rounds[round - 1].teams.find(x => {
+    return x.users.some(y => {
+      return y.user.toString() === userId.toString()
+    })
+  }).users.map(z => z.user);
+  const teammatesSockets = Object.values(io.sockets.sockets).filter((x, ind) => {
+    const userId = x.userId ? x.userId.toString() : null;
+    return teammatesIds.indexOf(userId) > -1;
+  });
+  const polls = await Survey.find({round: round, batch: batchId, surveyType: 'poll', user: {$in: teammatesIds}})
+  let resultData = {user: userId};
+  polls.forEach(x => {
+    const index = x.questions[0].result;
+    resultData[index] ? resultData[index] += 1 : resultData[index] = 1
+  })
+  teammatesSockets.forEach(x => {
+    return x.emit('voted', resultData);
+  });
+  // socket.emit('voted', resultData);
+}
+
 /*
 export const joinBang = async function (data, socket, io) {
   try {

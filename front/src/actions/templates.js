@@ -171,13 +171,25 @@ const generateSelectOptions = (template) => {
         survey.selectOptions = survey.options.map((x, index) => {return {value: index, label: x.option}})
       }
       return survey;
-    })
+    });
+    if (task.hasPoll) {
+      if (task.poll.options && task.poll.options.length) {
+        task.poll.selectOptions = task.poll.options.map((x, index) => {return {value: index, label: x.option}})
+      }
+    }
     return task;
   })
   if (template.hasPostSurvey) {
     template.postSurvey.forEach(postSurvey => {
       if (postSurvey.type === 'select') {
         postSurvey.selectOptions = postSurvey.options.map((x, index) => {return {value: index, label: x.option}})
+      }
+    })
+  }
+  if (template.hasPreSurvey) {
+    template.preSurvey.forEach(preSurvey => {
+      if (preSurvey.type === 'select') {
+        preSurvey.selectOptions = preSurvey.options.map((x, index) => {return {value: index, label: x.option}})
       }
     })
   }

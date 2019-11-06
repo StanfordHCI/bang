@@ -19,15 +19,15 @@ import renderSelectField from 'Components/form/Select'
 import renderCheckBoxField from 'Components/form/CheckBox'
 import Select from "react-select";
 
-const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType, teamFormat, postSurvey}) => {
-  console.log(fields.map(x => x));
+const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType, teamFormat, postSurvey, preSurvey}) => {
   return (<div style={{width: '100%', marginTop: '20px', borderBottom: '1px solid grey'}}>
     {
       fields.map((question, index) => {
         let isSelect = false;
         if (surveyType === 'mid' && task && task.survey[index] && task.survey[index].type === 'select' ||
           surveyType === 'pre' && task && task.preSurvey[index] && task.preSurvey[index].type === 'select' ||
-          surveyType === 'post' && postSurvey && postSurvey[index].type === 'select') {
+          surveyType === 'post' && postSurvey && postSurvey[index].type === 'select' ||
+          surveyType === 'prepre' && preSurvey && preSurvey[index].type === 'select') {
           isSelect = true;
         }
 
@@ -78,10 +78,45 @@ const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType
   </div>)
 }
 
+const renderPoll = ({fields, meta: {touched, error, warning}, task, path}) => {
+  const pollType = task.poll ? task.poll.type : undefined;
+  const withOptions = pollType !== 'foreperson';
+  return (
+      <div className='form__form-group'>
+        <label className='form__form-group-label'>text: </label>
+        <div className='form__form-group-field'>
+          <Field
+              name={`${path}.text`}
+              component={renderTextArea}
+              type='text'
+          />
+        </div>
+        <label className='form__form-group-label'>poll type: </label>
+        <div className='form__form-group-field'>
+          <Field
+              name={`${path}.type`}
+              component={renderSelectField}
+              type='text'
+              options={[{value: 'foreperson', label: 'foreperson'}, {value: 'casual', label: 'casual'}]}
+          />
+        </div>
+        {withOptions && <div style={{width: '100%', marginTop: '20px'}}>
+          <FieldArray
+            name={`${path}.options`}
+            component={renderQuestionOptions}
+            rerenderOnEveryChange
+            withPoints={false}
+        />
+        </div>}
+      </div>
+        )
+}
+
 const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRounds, withPoints}) => {
   return (<div style={{width: '100%'}}>
     {
       fields.map((step, index) => {
+        console.log('step: ', step);
         return (
           <Row key={index}>
             <div className='form__form-group' style={{maxWidth: '300px', marginLeft: '50px'}}>
@@ -241,7 +276,7 @@ const renderReadingPeriods = ({fields, meta: {touched, error, warning}, numRound
 }
 
 const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneTask, surveyTemplatesOptions, taskArray,
-                       fillSurvey, deleteSurvey, numExpRounds, teamFormat, hasPostSurvey, postSurvey}) => {
+                       fillSurvey, deleteSurvey, numExpRounds, teamFormat, hasPostSurvey, postSurvey, hasPreSurvey, preSurvey}) => {
   let tasks = [], options = [];
   for (let i = 0; i < numRounds; i++) {
     options.push({value: i, label: 'task ' + (i + 1)})
@@ -313,6 +348,16 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
               component={renderCheckBoxField}
             />
           </Col>
+          <Col>
+            <p>In-round Poll?</p>
+          </Col>
+          <Col>
+            <Field
+                name={`tasks[${i}].hasPoll`}
+                component={renderCheckBoxField}
+                onChange={(e) => deleteSurvey(e, i, 'poll')}
+            />
+          </Col>
         </Row>
         <div className='form__form-group-field' style={{marginBottom: '25px'}}>
           <Field
@@ -376,6 +421,17 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
             teamFormat={teamFormat}
           />
         </div>}
+        {taskArray && taskArray[i] && taskArray[i].hasPoll && <div style={{width: '100%'}}>
+          <p>Poll</p>
+          <Field
+              name={`tasks[${i}].poll`}
+              path = {`tasks[${i}].poll`}
+              component={renderPoll}
+              rerenderOnEveryChange
+              task={taskArray && taskArray[i]}
+              teamFormat={teamFormat}
+          />
+        </div>}
         {i === numRounds - 1 && hasPostSurvey && <div style={{width: '100%'}}>
           <p>post - survey</p>
           <Select
@@ -394,6 +450,26 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
               task={taskArray && taskArray[i]}
               teamFormat={teamFormat}
               postSurvey={postSurvey}
+          />
+        </div>}
+        {i === 0 && hasPreSurvey && <div style={{width: '100%'}}>
+          <p>pre-pre - survey</p>
+          <Select
+              onChange={(e) => fillSurvey(numRounds - 1, e.value, 'prepre')}
+              options={surveyTemplatesOptions}
+              clearable={true}
+              multi={false}
+              className='form__form-group-select'
+              placeholder="select pre-pre-survey"
+          />
+          <FieldArray
+              name={`preSurvey`}
+              component={renderSurvey}
+              surveyType="prepre"
+              rerenderOnEveryChange
+              task={taskArray && taskArray[i]}
+              teamFormat={teamFormat}
+              preSurvey={preSurvey}
           />
         </div>}
       </div>
@@ -419,7 +495,12 @@ class TemplateForm extends React.Component {
   }
 
   fillSurvey = (taskNumber, surveyIndex, fieldName) => {
-    let field = fieldName === 'post' ? 'postSurvey' :  'tasks[' + taskNumber + '].' + fieldName;
+    let field;
+    if (fieldName === 'prepre') {
+      field = 'preSurvey';
+    } else {
+      field = fieldName === 'post' ? 'postSurvey' :  'tasks[' + taskNumber + '].' + fieldName;
+    }
     this.props.dispatch(change('TemplateForm', field, this.props.surveyList[surveyIndex].questions))
   }
 
@@ -433,7 +514,7 @@ class TemplateForm extends React.Component {
   deleteSurvey = (newValue, taskNumber, fieldName) => {
     if (newValue.target) {
       if (!newValue.target.checked) {
-        console.log(taskNumber, fieldName)
+        console.log('dS', taskNumber, fieldName)
         this.props.dispatch(change('TemplateForm', 'tasks[' + taskNumber + '].' + fieldName, null))
       }
     }
@@ -454,7 +535,8 @@ class TemplateForm extends React.Component {
   }
 
   render() {
-    const {invalid, numRounds, surveyTemplatesOptions, pristine, isAdd, tasks, numExpRounds, teamFormat, hasPostSurvey, postSurvey} = this.props;
+    const {invalid, numRounds, surveyTemplatesOptions, pristine, isAdd, tasks, numExpRounds, teamFormat, hasPostSurvey, postSurvey,
+    hasPreSurvey, preSurvey} = this.props;
     return (<div>
         <form className='form form--horizontal' style={{paddingBottom: '5vh'}} onSubmit={this.props.handleSubmit}>
           <Row>
@@ -480,6 +562,16 @@ class TemplateForm extends React.Component {
                       component={renderCheckBoxField}
                       onChange={(e) => {this.deleteSurvey(e, numRounds - 1, 'postSurvey')}}
                   />
+                  </div>
+                </Col>
+                <Col className='form__form-group'>
+                  <label className='form__form-group-label'>Pre Survey:</label>
+                  <div className='form__form-group-select'>
+                    <Field
+                        name={`hasPreSurvey`}
+                        component={renderCheckBoxField}
+                        onChange={(e) => {this.deleteSurvey(e, numRounds - 1, 'preSurvey')}}
+                    />
                   </div>
                 </Col>
               </Row>
@@ -574,6 +666,8 @@ class TemplateForm extends React.Component {
               teamFormat={teamFormat}
               hasPostSurvey={hasPostSurvey}
               postSurvey={postSurvey}
+              hasPreSurvey={hasPreSurvey}
+              preSurvey={preSurvey}
             />
           </div></Col>
           </Row>
@@ -700,6 +794,9 @@ const validate = (values, props) => {
   if (values.hasPostSurvey && (!values.postSurvey || !values.postSurvey.length) && values.tasks.length && values.tasks[values.numRounds - 1]) {
     errors.tasks[values.numRounds - 1].message = 'add questions to post-survey please';
   }
+  if (values.hasPreSurvey && (!values.preSurvey || !values.preSurvey.length) && values.tasks.length && values.tasks[values.numRounds - 1]) {
+    errors.tasks[values.numRounds - 1].message = 'add questions to pre-survey please';
+  }
   return errors
 };
 
@@ -724,6 +821,8 @@ function mapStateToProps(state) {
     teamFormat: selector(state, 'teamFormat'),
     hasPostSurvey: selector(state, 'hasPostSurvey'),
     postSurvey: selector(state, 'postSurvey'),
+    hasPreSurvey: selector(state, 'hasPreSurvey'),
+    preSurvey: selector(state, 'preSurvey')
   }
 }
 

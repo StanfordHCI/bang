@@ -266,7 +266,7 @@ function mapStateToProps(state) {
     batchList: state.admin.batchList,
     teamFormat: selector(state, 'teamFormat'),
     initialValues: {
-      teamFormat: 'multi',
+      teamFormat: 'single',
       maskType: 'masked',
       withAvatar: true,
       withRoster: true,
@@ -274,7 +274,7 @@ function mapStateToProps(state) {
       rememberTeamOrder: false,
       loadTeamOrder: false,
       bestRoundFunction: 'highest',
-      reconveneWorstRound: true,
+      reconveneWorstRound: false,
       randomizeExpRound: true,
     }
   }

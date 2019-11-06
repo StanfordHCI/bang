@@ -4,7 +4,8 @@ import {history} from "../app/history";
 export const BATCH_FETCHED = 'BATCH_FETCHED';
 export const CHAT_FETCHED = 'CHAT_FETCHED';
 export const REFRESH_BATCH = 'REFRESH_BATCH';
-export const ADD_MESSAGE = 'ADD_MESSAGE'
+export const ADD_MESSAGE = 'ADD_MESSAGE';
+export const VOTED = 'VOTED'
 
 export const joinBatch = () => {
   return function (dispatch) {
@@ -35,6 +36,13 @@ export const submitSurvey = (data) => {
 
 export const refreshActiveUsers = () => {
   socket.emit('refresh-active-users', {});
+}
+
+export const vote = (data) => {
+  return function (dispatch) {
+    console.log('voted')
+    socket.emit('vote', data);
+  }
 }
 
 export const loadBatch = () => {
@@ -147,6 +155,20 @@ export const loadBatch = () => {
       dispatch(setSnackbar('Pre-Survey'));
       dispatch({
         type: REFRESH_BATCH,
+        data: data,
+      })
+    });
+    socket.on('prepre-survey', data => {
+      dispatch(setSnackbar('Pre-Survey'));
+      dispatch({
+        type: REFRESH_BATCH,
+        data: data,
+      })
+    });
+    socket.on('voted', data => {
+      dispatch(setSnackbar('Successfully voted!'));
+      dispatch({
+        type: VOTED,
         data: data,
       })
     })

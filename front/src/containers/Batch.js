@@ -18,23 +18,24 @@
  */
 
 import React from 'react';
-import { Card, CardBody, Col, Row, Container, Table } from 'reactstrap';
-import { connect } from "react-redux";
-import { findDOMNode } from 'react-dom'
-import { bindActionCreators } from "redux";
+import {Card, CardBody, Col, Container, Row, Table} from 'reactstrap';
+import {connect} from "react-redux";
+import {findDOMNode} from 'react-dom'
+import {bindActionCreators} from "redux";
 import moment from 'moment'
-import { loadBatch, sendMessage, submitSurvey } from 'Actions/batches'
-import { listener } from 'Actions/app'
+import {loadBatch, sendMessage, submitSurvey, vote} from 'Actions/batches'
+import {listener} from 'Actions/app'
 import RoundSurveyForm from './RoundSurveyForm'
 import PostSurveyForm from './PostSurveyForm'
-import { history } from "../app/history";
+import {history} from "../app/history";
 import escapeStringRegexp from 'escape-string-regexp'
 import ReactHtmlParser from "react-html-parser";
-import { Avatar } from '@material-ui/core';
-import {pairInArray, newWindow, parseNick} from '../utils'
-import { animalMap, adjMap, genderMap } from '../constants/nicknames';
+import {Avatar} from '@material-ui/core';
+import {newWindow, pairInArray, parseNick} from '../utils'
+import {adjMap, animalMap, genderMap} from '../constants/nicknames';
 import Bot from '../img/Bot.svg';
 import Notification from 'react-web-notification';
+import Vote from '../components/Vote';
 
 const MAX_LENGTH = 240;
 const botId = '100000000000000000000001';
@@ -102,7 +103,6 @@ const componentDecorator = (href, text, key) => (
 );
 
 class Batch extends React.Component {
-
   constructor(props) {
     super(props);
     this.state = {
@@ -118,8 +118,15 @@ class Batch extends React.Component {
       isStartNotifySent: false,
       closeBlockReady: false,
       currentRound: 0,
+      voteDisabled: false,
     };
+    this.onVoteDisable = this.onVoteDisable.bind(this)
   }
+
+  onVoteDisable = () => {
+    this.setState({voteDisabled: true});
+  };
+
 
   componentWillMount() {
     this.props.loadBatch();
@@ -131,6 +138,7 @@ class Batch extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
+    // Notifications
     if (this.state.timeLeft === 0 && prevState.timeLeft) {
       console.log('alert!')
       this.setState({
@@ -155,7 +163,58 @@ class Batch extends React.Component {
         }
       });
     }
-  }
+    let currentTask;
+    let roundHasForepersonPoll;
+    if (this.props.batch) {
+      currentTask = this.props.batch.tasks[this.props.batch.currentRound - 1];
+      if (currentTask) {
+        roundHasForepersonPoll = currentTask.hasPoll && currentTask.poll.type === 'foreperson';
+      }
+    }
+    const {currentRound} = this.props;
+    // Foreperson poll notifications
+
+    if (currentRound && currentRound.status === 'active' && !this.state.voteDisabled) {
+      if (this.state.timeLeft === 300 && prevState.timeLeft === 301 && roundHasForepersonPoll) {
+        console.log('poll 1st alert')
+        this.setState({
+          isStartNotifySent: true,
+          notifyTitle: 'Bang!',
+          notifyOptions: {
+            body: 'remember, you must all agree, or else your jury will be hung!  ' +
+                'You should do your best to achieve consensus and avoid a hung jury.' +
+                ' What are ways that you could compromise?',
+            lang: 'en',
+            dir: 'ltr',
+          }
+        });
+      }
+      if (this.state.timeLeft === 150 && prevState.timeLeft === 151 && roundHasForepersonPoll) {
+        console.log('poll 2nd alert')
+        this.setState({
+          isStartNotifySent: true,
+          notifyTitle: 'Bang!',
+          notifyOptions: {
+            body: 'Time is running out! Remember that you must all be in agreement, or else you will have a hung jury!',
+            lang: 'en',
+            dir: 'ltr',
+          }
+        });
+      }
+      if (this.state.timeLeft === 10 && prevState.timeLeft === 11 && roundHasForepersonPoll) {
+        console.log('poll last alert');
+        this.setState({
+          isStartNotifySent: true,
+          notifyTitle: 'Bang!',
+          notifyOptions: {
+            body: 'Hung jury! You were not able to agree in time, so your jury was hung.\n',
+            lang: 'en',
+            dir: 'ltr',
+          }
+        });
+      }
+    }
+}
 
   componentWillReceiveProps(nextProps, nextState) {
     if (!this.state.closeBlockReady && nextProps.batch &&  nextProps.batch.status === 'active') {
@@ -198,11 +257,14 @@ class Batch extends React.Component {
       if (batch.status === 'active') {
         const task = batch.tasks[batch.currentRound - 1];
         let endMoment = 0;
+        if (batch.currentRound - 1 === 0 && batch.hasPreSurvey) { // prepreSurvey
+          endMoment += batch.surveyMinutes
+        }
         if (currentRound.status.toLowerCase().includes('readingperiod')) {
           const num = parseInt(currentRound.status.replace(/^\D+/g, ""));
           endMoment += task.readingPeriods.slice(0, num + 1).map(x => x.time).reduce((a, b) => parseFloat(a) + parseFloat(b));
         } else {
-          if (task.readingPeriods && task.readingPeriods.length) {
+          if (task.readingPeriods && task.readingPeriods.length && currentRound.status !== 'prepresurvey') {
             endMoment += task.readingPeriods.map(x => x.time).reduce((a, b) => parseFloat(a) + parseFloat(b));
           }
         }
@@ -401,12 +463,21 @@ class Batch extends React.Component {
   }
 
   renderChat() {
-    const {sendMessage, user, chat, batch, currentRound} = this.props;
-    let pinnedContent = []
+    const {sendMessage, user, chat, batch, currentRound, vote} = this.props;
+    let pinnedContent = [];
     try {
       pinnedContent = batch.tasks[currentRound.number - 1].pinnedContent;
     } catch (e) {
       pinnedContent = [];
+    }
+    let poll;
+    try {
+      poll = batch.tasks[currentRound.number - 1].poll;
+      if (!poll.options.length && poll.type !== 'foreperson') {
+        poll = null;
+      }
+    } catch (e) {
+      poll = null;
     }
     const inputProps = {
       placeholder: 'type here...',
@@ -415,6 +486,24 @@ class Batch extends React.Component {
       onKeyDown: this.handleSubmit,
       className: 'chat__field-input'
     };
+
+    const nicks = chat.members.map((member) => {
+      let nick = '';
+      if (member._id.toString() === user._id.toString()) {
+        nick = member.realNick + ' (you)';
+      } else {
+        nick = batch.maskType === 'masked' ? member.fakeNick : member.realNick;
+      }
+      return batch.status ==='active' && !member.isActive ? '' : nick;
+    });
+
+    const nicksOptions = nicks.filter(x => x !== '').map(x => {return {value: x, label: x}});
+    let options = [];
+    try {
+      options = poll.type === 'foreperson' ? nicksOptions : poll.selectOptions;
+    } catch (e) {
+      options = [];
+    }
 
     return (
       <div className='chat'>
@@ -427,18 +516,11 @@ class Batch extends React.Component {
                 </tr>
               </thead>
               <tbody>
-                {chat.members.map((member) => {
-                  let nick = '';
-                  if (member._id.toString() === user._id.toString()) {
-                    nick = member.realNick + ' (you)';
-                  } else {
-                    nick = batch.maskType === 'masked' ? member.fakeNick : member.realNick;
-                  }
-
-                  return (<tr key={member._id}>
+                {nicks.map((nick) => {
+                  return (<tr>
                     <td>
                       <div className='chat__bubble-contact-name'>
-                        {batch.status ==='active' && !member.isActive ? '' : nick}
+                        {nick}
                       </div>
                     </td>
                   </tr>)
@@ -452,13 +534,32 @@ class Batch extends React.Component {
             <div className='chat__dialog-pinned-resources'>
               <p style={{color: 'black'}}>Pinned resources</p>
             </div>
-            {pinnedContent && !!pinnedContent.length && pinnedContent.map((message, index) => {
+            {pinnedContent.map(message => {
               return (
               <div>
                 <button className='chat__dialog-pinned-resource' onClick={() => {newWindow(message.link)}}>{message.text}</button>
                 <br/>
               </div>)
             })}
+          </div>}
+
+          {poll &&
+          <div className='chat__dialog-pinned-message'>
+            <div className='chat__dialog-pinned-resources'>
+              <p style={{color: 'black'}}>helperBot</p>
+            </div>
+            <Vote
+                options={options}
+                vote={vote}
+                user={user}
+                batch={batch}
+                lockCap={batch.teamSize - 1} // Vote is disabled if one of options has >=lockCap votes
+                poll={poll}
+                onDisable={this.onVoteDisable}
+            />
+            <div>
+              <p style={{color: 'black', textAlign: 'left', lineHeight: '180%'}}>{poll.text}</p>
+            </div>
           </div>}
           <div className="chat__scroll" ref="chatScroll">
             <div className='chat__dialog-messages-wrap'>
@@ -485,7 +586,6 @@ class Batch extends React.Component {
                   try {
                     userGender = batch.users.find(x => x.user.toString() === message.user.toString()).gender;
                   } catch (err) {
-                    console.log('gender not specified');
                   }
                   // specially format bot messages
                   if (message.user.toString() === botId) {
@@ -633,6 +733,30 @@ class Batch extends React.Component {
         </div>)
   }
 
+  renderPrePreSurvey() {
+    const batch = this.props.batch;
+    const numTask = this.getNumTask(batch);
+    const task = batch.tasks[numTask];
+    const round = batch.rounds[batch.currentRound - 1];
+    const team = round.teams.find((x) => x.users.some((y) => y.user.toString() === this.props.user._id));
+
+    return (
+        <div>
+          {!this.state.surveyDone && <RoundSurveyForm
+              initialValues={{ questions: batch.preSurvey.map(x => { return { result: '' } }) }}
+              questions={batch.preSurvey}
+              onSubmit={this.submitSurvey}
+              members={this.props.chat.members}
+              surveyType="prepre"
+              team={team}
+          />}
+          {this.state.surveyDone && <div>
+            <p>Thanks for completing the survey for this round!</p>
+            <p style={{ marginBottom: '0px' }}>There are {this.props.batch.numRounds - this.props.batch.currentRound} more round(s) and one final-survey (after the last round) remaining, but we are waiting for your teammates to complete the surveys. Remember, if you leave early, you will not be paid. Please hang tight!</p>
+          </div>}
+        </div>)
+  }
+
   renderPreSurvey() {
     const batch = this.props.batch;
     const numTask = this.getNumTask(batch);
@@ -698,6 +822,7 @@ class Batch extends React.Component {
     if (round) {
       surveyLabel += `Round ${batch.currentRound} `;
       if (round.status === 'presurvey') surveyLabel += '(before-task survey)';
+      if (round.status === 'prepresurvey') surveyLabel += '(before-batch survey)';
       if (round.status === 'midsurvey') surveyLabel += '(after-task survey)';
       if (round.status === 'postsurvey') surveyLabel += '(post-batch survey)';
       if (round.status.toLowerCase().includes('readingperiod')) surveyLabel += `(reading period ${parseInt(round.status.replace(/^\D+/g, "")) + 1})`
@@ -705,6 +830,7 @@ class Batch extends React.Component {
     return round ? (<div>
       <h5 className='bold-text'>{surveyLabel}</h5>
       <h5 className='bold-text'>Time left: {formatTimer(this.state.timeLeft)}</h5>
+      {round.status === 'prepresurvey' && this.renderPrePreSurvey()}
       {round.status.toLowerCase().includes('readingperiod') && this.renderReadingPeriod(round.status.replace(/^\D+/g, ""))}
       {round.status === 'presurvey' && this.renderPreSurvey()}
       {round.status === 'active' && this.renderRound()}
@@ -777,7 +903,8 @@ class Batch extends React.Component {
 
   renderReadingPeriod(ind) {
     const {sendMessage, user, chat, batch, currentRound} = this.props;
-    const task = batch.tasks[ind];
+    const task = batch.tasks[batch.currentRound - 1];
+
     const inputProps = {
       placeholder: 'type here...',
       value: this.state.message,
@@ -874,7 +1001,8 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators({
     loadBatch,
     sendMessage,
-    submitSurvey
+    submitSurvey,
+    vote,
   }, dispatch);
 }
 
