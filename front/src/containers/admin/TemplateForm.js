@@ -355,6 +355,7 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
             <Field
                 name={`tasks[${i}].hasPoll`}
                 component={renderCheckBoxField}
+                onChange={(e) => deleteSurvey(e, i, 'poll')}
             />
           </Col>
         </Row>
@@ -513,7 +514,7 @@ class TemplateForm extends React.Component {
   deleteSurvey = (newValue, taskNumber, fieldName) => {
     if (newValue.target) {
       if (!newValue.target.checked) {
-        console.log(taskNumber, fieldName)
+        console.log('dS', taskNumber, fieldName)
         this.props.dispatch(change('TemplateForm', 'tasks[' + taskNumber + '].' + fieldName, null))
       }
     }
