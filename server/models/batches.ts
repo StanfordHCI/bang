@@ -21,7 +21,7 @@ let  BatchSchema = new Schema({
   rounds: [{
     startTime: Date,
     endTime: Date,
-    status: { type: String, enum: ['completed', 'active', 'presurvey', 'midsurvey'], default: 'presurvey' },
+    status: { type: String, enum: ['completed', 'active', 'presurvey', 'midsurvey', 'prepresurvey'], default: 'presurvey' },
     teams: [{
       users: [{
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
@@ -94,7 +94,14 @@ let  BatchSchema = new Schema({
   worstRounds: [], // [worst round, reconvening of worst round]; (Math.max.apply(null, worstRounds) === number of reconvening round) MUST BE TRUE
   reconveneWorstRound: {type: Boolean, default: false},
   hasPostSurvey: {type: Boolean, default: false},
+  hasPreSurvey: {type: Boolean, default: false},
   postSurvey: [{
+    question: {type: String, required: true},
+    type: {type: String, required: true},
+    options: [{option: {type: String, required: true}}],
+    selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+  }],
+  preSurvey: [{
     question: {type: String, required: true},
     type: {type: String, required: true},
     options: [{option: {type: String, required: true}}],

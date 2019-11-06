@@ -257,17 +257,20 @@ class Batch extends React.Component {
       if (batch.status === 'active') {
         const task = batch.tasks[batch.currentRound - 1];
         let endMoment = 0;
+        if (batch.currentRound - 1 === 0 && batch.hasPreSurvey) { // prepreSurvey
+          endMoment += batch.surveyMinutes
+        }
         if (currentRound.status.toLowerCase().includes('readingperiod')) {
           const num = parseInt(currentRound.status.replace(/^\D+/g, ""));
           endMoment += task.readingPeriods.slice(0, num + 1).map(x => x.time).reduce((a, b) => parseFloat(a) + parseFloat(b));
         } else {
-          if (task.readingPeriods && task.readingPeriods.length) {
+          if (task.readingPeriods && task.readingPeriods.length && currentRound.status !== 'prepresurvey') {
             endMoment += task.readingPeriods.map(x => x.time).reduce((a, b) => parseFloat(a) + parseFloat(b));
           }
         }
         switch (currentRound.status) {
           case 'presurvey':
-            endMoment += batch.surveyMinutes;
+            endMoment += batch.surveyMinutes + batch.hasPreSurvey * batch.surveyMinutes;
             break;
           case 'active':
             endMoment += task.hasPreSurvey ? batch.roundMinutes + batch.surveyMinutes : batch.roundMinutes;
@@ -461,7 +464,6 @@ class Batch extends React.Component {
 
   renderChat() {
     const {sendMessage, user, chat, batch, currentRound, vote} = this.props;
-    console.log('chatt', chat)
     let pinnedContent = [];
     try {
       pinnedContent = batch.tasks[currentRound.number - 1].pinnedContent;
@@ -494,7 +496,6 @@ class Batch extends React.Component {
       }
       return batch.status ==='active' && !member.isActive ? '' : nick;
     });
-    console.log('dsada: ', chat.members);
 
     const nicksOptions = nicks.filter(x => x !== '').map(x => {return {value: x, label: x}});
     let options = [];
@@ -732,6 +733,30 @@ class Batch extends React.Component {
         </div>)
   }
 
+  renderPrePreSurvey() {
+    const batch = this.props.batch;
+    const numTask = this.getNumTask(batch);
+    const task = batch.tasks[numTask];
+    const round = batch.rounds[batch.currentRound - 1];
+    const team = round.teams.find((x) => x.users.some((y) => y.user.toString() === this.props.user._id));
+
+    return (
+        <div>
+          {!this.state.surveyDone && <RoundSurveyForm
+              initialValues={{ questions: batch.preSurvey.map(x => { return { result: '' } }) }}
+              questions={batch.preSurvey}
+              onSubmit={this.submitSurvey}
+              members={this.props.chat.members}
+              surveyType="prepre"
+              team={team}
+          />}
+          {this.state.surveyDone && <div>
+            <p>Thanks for completing the survey for this round!</p>
+            <p style={{ marginBottom: '0px' }}>There are {this.props.batch.numRounds - this.props.batch.currentRound} more round(s) and one final-survey (after the last round) remaining, but we are waiting for your teammates to complete the surveys. Remember, if you leave early, you will not be paid. Please hang tight!</p>
+          </div>}
+        </div>)
+  }
+
   renderPreSurvey() {
     const batch = this.props.batch;
     const numTask = this.getNumTask(batch);
@@ -797,6 +822,7 @@ class Batch extends React.Component {
     if (round) {
       surveyLabel += `Round ${batch.currentRound} `;
       if (round.status === 'presurvey') surveyLabel += '(before-task survey)';
+      if (round.status === 'prepresurvey') surveyLabel += '(before-batch survey)';
       if (round.status === 'midsurvey') surveyLabel += '(after-task survey)';
       if (round.status === 'postsurvey') surveyLabel += '(post-batch survey)';
       if (round.status.toLowerCase().includes('readingperiod')) surveyLabel += `(reading period ${parseInt(round.status.replace(/^\D+/g, "")) + 1})`
@@ -804,6 +830,7 @@ class Batch extends React.Component {
     return round ? (<div>
       <h5 className='bold-text'>{surveyLabel}</h5>
       <h5 className='bold-text'>Time left: {formatTimer(this.state.timeLeft)}</h5>
+      {round.status === 'prepresurvey' && this.renderPrePreSurvey()}
       {round.status.toLowerCase().includes('readingperiod') && this.renderReadingPeriod(round.status.replace(/^\D+/g, ""))}
       {round.status === 'presurvey' && this.renderPreSurvey()}
       {round.status === 'active' && this.renderRound()}
@@ -876,7 +903,8 @@ class Batch extends React.Component {
 
   renderReadingPeriod(ind) {
     const {sendMessage, user, chat, batch, currentRound} = this.props;
-    const task = batch.tasks[ind];
+    const task = batch.tasks[batch.currentRound - 1];
+
     const inputProps = {
       placeholder: 'type here...',
       value: this.state.message,

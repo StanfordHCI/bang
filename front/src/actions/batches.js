@@ -158,6 +158,13 @@ export const loadBatch = () => {
         data: data,
       })
     });
+    socket.on('prepre-survey', data => {
+      dispatch(setSnackbar('Pre-Survey'));
+      dispatch({
+        type: REFRESH_BATCH,
+        data: data,
+      })
+    });
     socket.on('voted', data => {
       dispatch(setSnackbar('Successfully voted!'));
       dispatch({

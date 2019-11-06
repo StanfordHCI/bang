@@ -186,5 +186,12 @@ const generateSelectOptions = (template) => {
       }
     })
   }
+  if (template.hasPreSurvey) {
+    template.preSurvey.forEach(preSurvey => {
+      if (preSurvey.type === 'select') {
+        preSurvey.selectOptions = preSurvey.options.map((x, index) => {return {value: index, label: x.option}})
+      }
+    })
+  }
   return template
 }

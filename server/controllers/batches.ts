@@ -229,7 +229,7 @@ export const receiveSurvey = async function (data, socket, io) {
     }
     await Survey.create(newSurvey)
     const [batch, user] = await Promise.all([
-      Batch.findById(newSurvey.batch).select('_id roundMinutes numRounds surveyMinutes tasks teamFormat').lean().exec(),
+      Batch.findById(newSurvey.batch).select('_id roundMinutes numRounds surveyMinutes tasks teamFormat preSurvey').lean().exec(),
       User.findById(newSurvey.user).select('_id systemStatus mturkId').lean().exec()
     ])
     if (process.env.MTURK_MODE !== 'off' && newSurvey.surveyType === 'final') {
@@ -256,27 +256,42 @@ export const receiveSurvey = async function (data, socket, io) {
       }
     }
     const genderQuestion = x => x.question.toLowerCase() === 'what is your gender?';
-    if (newSurvey.surveyType === 'presurvey' && newSurvey.round === 1 && batch.tasks[0].preSurvey
-      .some(x => genderQuestion(x))) {
+    console.log('surveyStats:', newSurvey.surveyType, newSurvey.surveyType === 'prepresurvey', newSurvey.round, )
+    if ((newSurvey.surveyType === 'presurvey' || newSurvey.surveyType === 'prepresurvey')) {
       let gender;
       const ind = batch.tasks[0].preSurvey.findIndex(x => genderQuestion(x))
-      if (ind !== -1) {
-        switch (newSurvey.questions[ind].result) {
-          case '0':
-            gender = 'male';
-            break;
-          case '1':
-            gender = 'female';
-            break;
-          case '2':
-            gender = 'prefer not to say';
-            break;
-          default:
-            gender = 'prefer not to say';
-            break;
+      const genderFromInd = (ind, survey) => {
+        let gender;
+        if (ind !== -1) {
+          switch (survey.questions[ind].result) {
+            case '0':
+              gender = 'male';
+              break;
+            case '1':
+              gender = 'female';
+              break;
+            case '2':
+              gender = 'prefer not to say';
+              break;
+            default:
+              gender = 'prefer not to say';
+              break;
+          }
+          return gender;
         }
       }
+      if (ind !== -1) { // Looking for gender survey in task presurveys
+        gender = genderFromInd(ind, newSurvey);
+      } else {
+        if (newSurvey.surveyType === 'prepresurvey') { // looking for gender survey in batch presurvey
+          console.log('preSurvey:', batch.preSurvey)
+          const ind = batch.preSurvey.findIndex(x => genderQuestion(x))
+          gender = genderFromInd(ind, newSurvey)
+        }
+      }
+      console.log('gender: ', gender);
       if (gender) {
+        console.log('gender set!')
         await User.findByIdAndUpdate(newSurvey.user, {gender: gender});
         await Batch.updateOne({_id: batch._id, 'users.user': newSurvey.user}, {$set: {'users.$.gender': gender}});
         io.to(batch._id.toString()).emit('refresh-batch', true)
@@ -447,7 +462,21 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   rounds.push(roundObject);
   batch = await Batch.findByIdAndUpdate(batch._id, {$set: {rounds: rounds, currentRound: roundObject.number}}).lean().exec();
   logger.info(module, batch._id + ' : Begin round ' + roundObject.number)
-  io.to(batch._id.toString()).emit('refresh-batch', true)
+  io.to(batch._id.toString()).emit('refresh-batch', true);
+
+  console.log(batch.hasPreSurvey, i)
+  if (batch.hasPreSurvey && i === 0) {
+    logger.info(module, batch._id + ' : Begin pre-pre-survey');
+    roundObject.status = 'prepresurvey';
+    batch = await Batch.findByIdAndUpdate(batch._id, {$set: {rounds: rounds}});
+    io.to(batch._id.toString()).emit('prepre-survey', {rounds: rounds});
+    await timeout(batch.surveyMinutes * 60000);
+    roundObject.status = 'active';
+    const startTaskInfo =  {rounds: rounds};
+    batch = await Batch.findByIdAndUpdate(batch._id, {$set: startTaskInfo}).lean().exec();
+    io.to(batch._id.toString()).emit('start-task', startTaskInfo);
+  }
+
   if (task.readingPeriods && task.readingPeriods.length) {
     for (let i = 0; i < task.readingPeriods.length; ++i) {
       const period = task.readingPeriods[i];
