@@ -258,7 +258,12 @@ export const receiveSurvey = async function (data, socket, io) {
     const genderQuestion = x => x.question.toLowerCase() === 'what is your gender?';
     if ((newSurvey.surveyType === 'presurvey' || newSurvey.surveyType === 'prepresurvey')) {
       let gender;
-      const index = batch.tasks[0].preSurvey.findIndex(x => genderQuestion(x))
+      let index;
+      try {
+        index = batch.tasks[0].preSurvey.findIndex(x => genderQuestion(x))
+      } catch (e) {
+        index = -1
+      }
       const genderFromInd = (ind, survey) => {
         let gender;
         if (ind !== -1) {
