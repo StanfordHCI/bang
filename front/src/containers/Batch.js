@@ -270,7 +270,7 @@ class Batch extends React.Component {
         }
         switch (currentRound.status) {
           case 'presurvey':
-            endMoment += batch.surveyMinutes + batch.hasPreSurvey * batch.surveyMinutes;
+            endMoment += batch.surveyMinutes;
             break;
           case 'active':
             endMoment += task.hasPreSurvey ? batch.roundMinutes + batch.surveyMinutes : batch.roundMinutes;

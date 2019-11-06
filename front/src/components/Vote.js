@@ -42,7 +42,7 @@ class Vote extends Component{
         let foreperson;
         const disabled = this.state.disabled;
         if (disabled && poll.type === 'foreperson') {
-            const obj = this.state.votes;
+            const obj = votes;
             foreperson = Object.keys(obj).reduce((a, b) => obj[a] > obj[b] ? a : b);
         }
 
