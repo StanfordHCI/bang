@@ -46,7 +46,7 @@
   }
 
   .chat__contact-list {
-    width: 250px;
+    width: 300px;
     overflow: auto;
     transition: transform 0.3s;
 
@@ -651,6 +651,7 @@
 
 .languages {
   height: 100%; width:100%; font-size: 0;
+  text-align: center;
 
   button {
     display: inline-block;

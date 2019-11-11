@@ -527,6 +527,24 @@ class Batch extends React.Component {
                 })}
               </tbody>
             </Table>
+            {poll &&
+            <div className='chat__dialog-pinned-message'>
+              <div className='chat__dialog-pinned-resources'>
+                <p style={{color: 'black', textAlign: 'center'}}>helperBot</p>
+              </div>
+              <div>
+                <p style={{color: 'black', textAlign: 'center', lineHeight: '180%'}}>{poll.text}</p>
+              </div>
+              <Vote
+                  options={options}
+                  vote={vote}
+                  user={user}
+                  batch={batch}
+                  lockCap={batch.teamSize - 1} // Vote is disabled if one of options has >=lockCap votes
+                  poll={poll}
+                  onDisable={this.onVoteDisable}
+              />
+            </div>}
           </div>
         </div>
         <div className='chat__dialog' style={{ marginLeft: 10 }}>
@@ -541,25 +559,6 @@ class Batch extends React.Component {
                 <br/>
               </div>)
             })}
-          </div>}
-
-          {poll &&
-          <div className='chat__dialog-pinned-message'>
-            <div className='chat__dialog-pinned-resources'>
-              <p style={{color: 'black'}}>helperBot</p>
-            </div>
-            <Vote
-                options={options}
-                vote={vote}
-                user={user}
-                batch={batch}
-                lockCap={batch.teamSize - 1} // Vote is disabled if one of options has >=lockCap votes
-                poll={poll}
-                onDisable={this.onVoteDisable}
-            />
-            <div>
-              <p style={{color: 'black', textAlign: 'left', lineHeight: '180%'}}>{poll.text}</p>
-            </div>
           </div>}
           <div className="chat__scroll" ref="chatScroll">
             <div className='chat__dialog-messages-wrap'>
