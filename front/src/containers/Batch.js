@@ -168,7 +168,7 @@ class Batch extends React.Component {
     if (this.props.batch) {
       currentTask = this.props.batch.tasks[this.props.batch.currentRound - 1];
       if (currentTask) {
-        roundHasForepersonPoll = currentTask.hasPoll && currentTask.poll.type === 'foreperson';
+        roundHasForepersonPoll = currentTask.polls && currentTask.polls.length && currentTask.polls.some(x => x.type === 'foreperson')
       }
     }
     const {currentRound} = this.props;
@@ -470,14 +470,14 @@ class Batch extends React.Component {
     } catch (e) {
       pinnedContent = [];
     }
-    let poll;
+    let polls;
     try {
-      poll = batch.tasks[currentRound.number - 1].poll;
-      if (!poll.options.length && poll.type !== 'foreperson') {
-        poll = null;
+      polls = batch.tasks[currentRound.number - 1].polls;
+      if (!polls.length) {
+        polls = null;
       }
     } catch (e) {
-      poll = null;
+      polls = null;
     }
     const inputProps = {
       placeholder: 'type here...',
@@ -498,13 +498,6 @@ class Batch extends React.Component {
     });
 
     const nicksOptions = nicks.filter(x => x !== '').map(x => {return {value: x, label: x}});
-    let options = [];
-    try {
-      options = poll.type === 'foreperson' ? nicksOptions : poll.selectOptions;
-    } catch (e) {
-      options = [];
-    }
-
     return (
       <div className='chat'>
         <div className='chat__contact-list'>
@@ -527,24 +520,32 @@ class Batch extends React.Component {
                 })}
               </tbody>
             </Table>
-            {poll &&
-            <div className='chat__dialog-pinned-message'>
-              <div className='chat__dialog-pinned-resources'>
-                <p style={{color: 'black', textAlign: 'center'}}>helperBot</p>
-              </div>
-              <div>
-                <p style={{color: 'black', textAlign: 'center', lineHeight: '180%'}}>{poll.text}</p>
-              </div>
-              <Vote
-                  options={options}
-                  vote={vote}
-                  user={user}
-                  batch={batch}
-                  lockCap={batch.teamSize - 1} // Vote is disabled if one of options has >=lockCap votes
-                  poll={poll}
-                  onDisable={this.onVoteDisable}
-              />
-            </div>}
+            {polls && polls.map((poll, ind) => {
+              let options = [];
+              const lockCap = parseInt(batch.teamSize * poll.threshold);
+              try {
+                options = poll.type === 'foreperson' ? nicksOptions : poll.selectOptions;
+              } catch (e) {
+                options = [];
+              }
+              return <div className='chat__dialog-pinned-message'>
+                <div className='chat__dialog-pinned-resources'>
+                  <p style={{color: 'black', textAlign: 'center'}}>helperBot</p>
+                </div>
+                <div>
+                  <p style={{color: 'black', textAlign: 'center', lineHeight: '180%'}}>{poll.text}</p>
+                </div>
+                <Vote
+                    options={options}
+                    vote={vote}
+                    user={user}
+                    batch={batch}
+                    lockCap={lockCap} // Vote is disabled if one of options has >=lockCap votes
+                    poll={poll}
+                    onDisable={this.onVoteDisable}
+                    pollInd={ind}
+                />
+              </div>})}
           </div>
         </div>
         <div className='chat__dialog' style={{ marginLeft: 10 }}>

@@ -20,32 +20,52 @@ class Vote extends Component{
     }
 
     componentWillReceiveProps(nextProps, nextContext) {
-        const {vote, batch, user, lockCap, poll} = this.props;
-        this.setOptions(nextProps.options)
-        const votes = batch.rounds[batch.currentRound - 1].teams.find(x => x.users.some(y => y.user.toString() === user._id)).currentPollVotes || [];
-        const disabled = Object.values(votes).some(x => x >= lockCap) && poll.type === 'foreperson';
+        const {vote, batch, user, lockCap, poll, pollInd} = this.props;
+        console.log('batch:', batch)
+        this.setOptions(nextProps.options);
+        let votes;
+        try {
+            votes = batch.rounds[batch.currentRound - 1].teams.find(x => x.users.some(y => y.user.toString() === user._id)).currentPollVotes[pollInd] || [];
+        } catch (e) {
+            votes = []
+        }
+        const disabled = Object.values(votes).some(x => +x >= lockCap);
         if (disabled !== this.state.disabled) {
+            console.log('votes:', votes);
             this.props.onDisable()
             this.setState({disabled: true})
         }
     }
 
     componentDidMount() {
-        this.props.vote(Object.assign({value: null}, {batch: this.props.batch})); // just getting the votes not actually voting
+        // just getting the votes not actually voting
+        this.props.vote(Object.assign({value: null, pollInd: this.props.pollInd}, {batch: this.props.batch, pollInd: this.props.pollInd}));
         this.setOptions(this.props.options)
     }
 
     render(){
-        const {vote, batch, user, lockCap, poll} = this.props;
-        const votes = batch.rounds[batch.currentRound - 1].teams.find(x => x.users.some(y => y.user.toString() === user._id)).currentPollVotes || [];
+        const {vote, batch, user, lockCap, poll, pollInd} = this.props;
+        let votes;
+        try {
+            votes = batch.rounds[batch.currentRound - 1].teams.find(x => x.users
+                .some(y => y.user.toString() === user._id)).currentPollVotes[pollInd];
+        } catch (e) {
+            votes = [];
+        }
+        if (!votes) {
+            votes = []
+        }
+
 
         let foreperson;
         const disabled = this.state.disabled;
         if (disabled && poll.type === 'foreperson') {
             const obj = votes;
-            foreperson = Object.keys(obj).reduce((a, b) => obj[a] > obj[b] ? a : b);
+            foreperson = Object.keys(obj).reduce((a, b) => obj[a] > obj[b] ? a : b); // foreperson - user with max votes
+            if (foreperson === user.fakeNick) {
+                foreperson = user.realNick;
+            }
         }
-
         return(
             <div>
                 <div className="languages">
@@ -53,7 +73,7 @@ class Vote extends Component{
                         this.state.options.map((option, i) =>
                             <button
                                 disabled={disabled}
-                                onClick={() => {vote(Object.assign(option, {batch: batch}))}}>
+                                onClick={() => {vote(Object.assign(option, {batch: batch, pollInd: pollInd}))}}>
                                     {option.label}({votes[option.value.toString()]  ? votes[option.value.toString()] : 0})
                             </button>
 

@@ -79,44 +79,64 @@ const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType
 }
 
 const renderPoll = ({fields, meta: {touched, error, warning}, task, path}) => {
-  const pollType = task.poll ? task.poll.type : undefined;
-  const withOptions = pollType !== 'foreperson';
-  return (
-      <div className='form__form-group'>
-        <label className='form__form-group-label'>text: </label>
-        <div className='form__form-group-field'>
-          <Field
-              name={`${path}.text`}
-              component={renderTextArea}
-              type='text'
-          />
-        </div>
-        <label className='form__form-group-label'>poll type: </label>
-        <div className='form__form-group-field'>
-          <Field
-              name={`${path}.type`}
-              component={renderSelectField}
-              type='text'
-              options={[{value: 'foreperson', label: 'foreperson'}, {value: 'casual', label: 'casual'}]}
-          />
-        </div>
-        {withOptions && <div style={{width: '100%', marginTop: '20px'}}>
-          <FieldArray
-            name={`${path}.options`}
-            component={renderQuestionOptions}
-            rerenderOnEveryChange
-            withPoints={false}
-        />
-        </div>}
-      </div>
-        )
+  return (<div style={{width: '100%', borderBottom: '1px solid grey'}}>
+    {
+      fields.map((step, index) => {
+        console.log(`${step}.type`)
+        const withOptions = task.polls[index] && task.polls[index].type === 'casual';
+        return (
+            <Row key={index}>
+              <Col>
+                <label className='form__form-group-label'>poll type:</label>
+                  <Field
+                      name={`${step}.type`}
+                      component={renderSelectField}
+                      type='text'
+                      options={[{value: 'foreperson', label: 'foreperson'}, {value: 'casual', label: 'casual'}]}
+                  />
+                <div className='form__form-group'>
+                  <label className='form__form-group-label'>poll text:</label>
+                    <Field
+                        name={`${step}.text`}
+                        component={renderTextArea}
+                        type='text'
+                    />
+                  <label className='form__form-group-label'>Threshold:</label>
+                  <Field
+                      name={`${step}.threshold`}
+                      component={renderField}
+                      type='number'
+                  />
+                  {withOptions && <div style={{width: '100%', marginTop: '20px'}}>
+                    <FieldArray
+                        name={`${step}.options`}
+                        component={renderQuestionOptions}
+                        rerenderOnEveryChange
+                        withPoints={false}
+                    />
+                  </div>}
+                </div>
+              </Col>
+              <Col>
+                <div className='centered-and-flexed'>
+                  <Button type="button" size="sm"
+                          onClick={() => fields.splice(index, 1)}>delete poll</Button>
+                </div>
+              </Col>
+            </Row>)
+      })}
+    <Row className="centered-and-flexed" noGutters>
+      <Button type="button" size="sm" onClick={() => fields.push({})}>
+        <i className="fa fa-plus"/>add poll
+      </Button>
+    </Row>
+  </div>)
 }
 
 const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRounds, withPoints}) => {
   return (<div style={{width: '100%'}}>
     {
       fields.map((step, index) => {
-        console.log('step: ', step);
         return (
           <Row key={index}>
             <div className='form__form-group' style={{maxWidth: '300px', marginLeft: '50px'}}>
@@ -348,16 +368,6 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
               component={renderCheckBoxField}
             />
           </Col>
-          <Col>
-            <p>In-round Poll?</p>
-          </Col>
-          <Col>
-            <Field
-                name={`tasks[${i}].hasPoll`}
-                component={renderCheckBoxField}
-                onChange={(e) => deleteSurvey(e, i, 'poll')}
-            />
-          </Col>
         </Row>
         <div className='form__form-group-field' style={{marginBottom: '25px'}}>
           <Field
@@ -374,6 +384,12 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
         <FieldArray
             name={`tasks[${i}].readingPeriods`}
             component={renderReadingPeriods}
+            rerenderonEveryChange
+        />
+        <FieldArray
+            name={`tasks[${i}].polls`}
+            component={renderPoll}
+            task={taskArray[i]}
             rerenderonEveryChange
         />
         {taskArray && taskArray[i] && taskArray[i].hasPinnedContent && <div style={{width: '100%'}}>
@@ -419,17 +435,6 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
             rerenderOnEveryChange
             task={taskArray && taskArray[i]}
             teamFormat={teamFormat}
-          />
-        </div>}
-        {taskArray && taskArray[i] && taskArray[i].hasPoll && <div style={{width: '100%'}}>
-          <p>Poll</p>
-          <Field
-              name={`tasks[${i}].poll`}
-              path = {`tasks[${i}].poll`}
-              component={renderPoll}
-              rerenderOnEveryChange
-              task={taskArray && taskArray[i]}
-              teamFormat={teamFormat}
           />
         </div>}
         {i === numRounds - 1 && hasPostSurvey && <div style={{width: '100%'}}>
@@ -732,7 +737,7 @@ const validate = (values, props) => {
   }
 
   values.tasks && values.tasks.forEach((task, i) => {
-    errors.tasks[i] = {steps: [], survey: [], preSurvey: []};
+    errors.tasks[i] = {steps: [], survey: [], preSurvey: [], polls: []};
     if (!task.message) {
       errors.tasks[i].message = 'required';
     } else  if (!task.steps || !task.steps.length) {
@@ -760,6 +765,13 @@ const validate = (values, props) => {
             errors.tasks[i].steps[j].time = 'must be > previous step';
           }
         }
+      }
+    }
+    if (task.polls) for (let j = 0; j < task.polls.length; j++) {
+      const poll = task.polls[j];
+      errors.tasks[i].polls[j] = {};
+      if (!poll.type) {
+        errors.tasks[i].polls[j].type = 'required';
       }
     }
     if (task.preSurvey) for (let j = 0; j < task.preSurvey.length; j++){

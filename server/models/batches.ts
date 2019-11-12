@@ -44,7 +44,6 @@ let  BatchSchema = new Schema({
   tasks: [{
     hasPreSurvey: {type: Boolean, required: true, default: false},
     hasMidSurvey: {type: Boolean, required: true, default: false},
-    hasPoll: {type: Boolean, required: true, default: false},
     preSurvey: [{
       question: {type: String, required: true},
       type: {type: String, required: true},
@@ -71,12 +70,14 @@ let  BatchSchema = new Schema({
       message: {type: String, required: true},
     }],
     selectiveMasking: {type: Boolean, default: false},
-    poll: {
+    polls: [{
       text: {type: String},
-      type: {type: String, $enum: ['foreperson', 'casual']},
+      type: {type: String, $enum: ['foreperson', 'casual'], required: true},
       options: [{option: {type: String,}}],
-      selectOptions: [{value: {type: String}, label: {type: String,}}]
-    },
+      selectOptions: [{value: {type: String}, label: {type: String,}}],
+      threshold: {type: Number, required: false},
+      questionType: {type: String, $enum: ['single', 'multiple']}, // foreperson polls are always counted as single
+    }],
   }],
   midQuestions: [String],
   HITId: {type: String, },

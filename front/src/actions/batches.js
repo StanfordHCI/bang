@@ -40,7 +40,6 @@ export const refreshActiveUsers = () => {
 
 export const vote = (data) => {
   return function (dispatch) {
-    console.log('voted')
     socket.emit('vote', data);
   }
 }
@@ -166,7 +165,8 @@ export const loadBatch = () => {
       })
     });
     socket.on('voted', data => {
-      dispatch(setSnackbar('Successfully voted!'));
+      console.log(`dispatching voted ${data}`);
+      // dispatch(setSnackbar('Successfully voted!'));
       dispatch({
         type: VOTED,
         data: data,

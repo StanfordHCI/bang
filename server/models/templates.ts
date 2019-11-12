@@ -19,7 +19,6 @@ let  TemplateSchema = new Schema({
     hasPreSurvey: {type: Boolean, required: true, default: false},
     hasMidSurvey: {type: Boolean, required: true, default: false},
     hasPinnedContent: {type: Boolean, required: true, default: false},
-    hasPoll: {type: Boolean, required: true, default: false},
     preSurvey: [{
       question: {type: String, required: true},
       type: {type: String, required: true},
@@ -46,12 +45,13 @@ let  TemplateSchema = new Schema({
       message: {type: String, required: true},
     }],
     selectiveMasking: {type: Boolean, default: false},
-    poll: {
+    polls: [{
       text: {type: String},
       type: {type: String, $enum: ['foreperson', 'casual']},
       options: [{option: {type: String,}}],
-      selectOptions: [{value: {type: String}, label: {type: String,}}]
-    },
+      selectOptions: [{value: {type: String}, label: {type: String,}}],
+      threshold: {type: Number, required: false},
+    }],
   }],
   teamFormat: {type: String, required: true},
   hasPostSurvey: {type: Boolean, required: true, default: false},

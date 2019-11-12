@@ -42,6 +42,7 @@ export function addTemplate(template) {
       data: generateSelectOptions(template),
     })
       .then((response) => {
+        console.log(template)
         dispatch(setLoading(false));
         dispatch({
           type: TEMPLATE_ADDED,
@@ -172,10 +173,12 @@ const generateSelectOptions = (template) => {
       }
       return survey;
     });
-    if (task.hasPoll) {
-      if (task.poll.options && task.poll.options.length) {
-        task.poll.selectOptions = task.poll.options.map((x, index) => {return {value: index, label: x.option}})
-      }
+    if (task.polls && task.polls.length) {
+      task.polls.forEach(x => {
+        if (x.options && x.options.length) {
+          x.selectOptions = x.options.map((y, index) => {return {value: index, label: y.option}})
+        }
+      })
     }
     return task;
   })

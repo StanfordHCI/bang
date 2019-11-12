@@ -227,7 +227,7 @@
     text-align: center;
     background-color: #a0a0a0;
     max-height: 30%;
-    overflow: hidden;
+    overflow: scroll;
     font-size: 15px;
   }
 
@@ -652,6 +652,7 @@
 .languages {
   height: 100%; width:100%; font-size: 0;
   text-align: center;
+  overflow: visible;
 
   button {
     display: inline-block;

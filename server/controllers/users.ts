@@ -121,11 +121,13 @@ export const sendMessage = async function (data, socket, io) {
 }
 
 export const vote = async function (data, socket, io) {
+  console.log(data);
   const batch = data.batch;
   const userId = socket.userId;
   const round = batch.currentRound;
-  const batchId = batch._id
-  const oldPoll = await Survey.findOne({user: userId, round: round, batch: batchId, surveyType: 'poll'});
+  const batchId = batch._id;
+  const pollInd = data.pollInd || 0;
+  const oldPoll = await Survey.findOne({user: userId, round: round, batch: batchId, surveyType: 'poll', pollInd: pollInd});
   if (data.value !== null) { // if data.value === null, we are just getting the information, not changing anything
     if (!oldPoll) {
       const newPoll = {
@@ -133,7 +135,8 @@ export const vote = async function (data, socket, io) {
         batch: batchId,
         questions: [{result: data.value}],
         round: round,
-        surveyType: 'poll'
+        surveyType: 'poll',
+        pollInd: pollInd,
       }
       try {
         await Survey.create(newPoll);
@@ -154,13 +157,13 @@ export const vote = async function (data, socket, io) {
     const userId = x.userId ? x.userId.toString() : null;
     return teammatesIds.indexOf(userId) > -1;
   });
-  const polls = await Survey.find({round: round, batch: batchId, surveyType: 'poll', user: {$in: teammatesIds}})
-  let resultData = {user: userId};
-  polls.forEach(x => {
+  const polls = await Survey.find({pollInd: pollInd, round: round, batch: batchId, surveyType: 'poll', user: {$in: teammatesIds}})
+  let resultData = {user: userId, pollInd: pollInd}; // data which is returned to front
+  polls.forEach(x => { // count votes for every option
     const index = x.questions[0].result;
     resultData[index] ? resultData[index] += 1 : resultData[index] = 1
   })
-  teammatesSockets.forEach(x => {
+  teammatesSockets.forEach(x => { // send signal to every user
     return x.emit('voted', resultData);
   });
   // socket.emit('voted', resultData);
