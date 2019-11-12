@@ -118,13 +118,15 @@ class Batch extends React.Component {
       isStartNotifySent: false,
       closeBlockReady: false,
       currentRound: 0,
-      voteDisabled: false,
+      voteDisabled: [],
     };
     this.onVoteDisable = this.onVoteDisable.bind(this)
   }
 
-  onVoteDisable = () => {
-    this.setState({voteDisabled: true});
+  onVoteDisable = (ind) => {
+    const { voteDisabled } = this.state;
+    voteDisabled[ind] = true;
+    this.setState({ voteDisabled });
   };
 
 
@@ -164,18 +166,19 @@ class Batch extends React.Component {
       });
     }
     let currentTask;
-    let roundHasForepersonPoll;
+    let roundHasCasualPoll;
     if (this.props.batch) {
       currentTask = this.props.batch.tasks[this.props.batch.currentRound - 1];
       if (currentTask) {
-        roundHasForepersonPoll = currentTask.polls && currentTask.polls.length && currentTask.polls.some(x => x.type === 'foreperson')
+        roundHasCasualPoll = currentTask.polls && currentTask.polls.length && currentTask.polls.some(x => x.type === 'casual')
       }
     }
     const {currentRound} = this.props;
     // Foreperson poll notifications
 
-    if (currentRound && currentRound.status === 'active' && !this.state.voteDisabled) {
-      if (this.state.timeLeft === 300 && prevState.timeLeft === 301 && roundHasForepersonPoll) {
+    if (currentRound && currentRound.status === 'active' && roundHasCasualPoll && currentTask.polls
+        .some((x, ind) => this.state.voteDisabled[ind] !== true && x.type === 'casual')) {
+      if (this.state.timeLeft === 300 && prevState.timeLeft === 301 && roundHasCasualPoll) {
         console.log('poll 1st alert')
         this.setState({
           isStartNotifySent: true,
@@ -189,7 +192,7 @@ class Batch extends React.Component {
           }
         });
       }
-      if (this.state.timeLeft === 150 && prevState.timeLeft === 151 && roundHasForepersonPoll) {
+      if (this.state.timeLeft === 150 && prevState.timeLeft === 151 && roundHasCasualPoll) {
         console.log('poll 2nd alert')
         this.setState({
           isStartNotifySent: true,
@@ -201,7 +204,7 @@ class Batch extends React.Component {
           }
         });
       }
-      if (this.state.timeLeft === 10 && prevState.timeLeft === 11 && roundHasForepersonPoll) {
+      if (this.state.timeLeft === 10 && prevState.timeLeft === 11 && roundHasCasualPoll) {
         console.log('poll last alert');
         this.setState({
           isStartNotifySent: true,

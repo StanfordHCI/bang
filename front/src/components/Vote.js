@@ -32,7 +32,7 @@ class Vote extends Component{
         const disabled = Object.values(votes).some(x => +x >= lockCap);
         if (disabled !== this.state.disabled) {
             console.log('votes:', votes);
-            this.props.onDisable()
+            this.props.onDisable(pollInd);
             this.setState({disabled: true})
         }
     }

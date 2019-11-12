@@ -773,6 +773,10 @@ const validate = (values, props) => {
       if (!poll.type) {
         errors.tasks[i].polls[j].type = 'required';
       }
+      console.log(poll.text, poll.type === 'casual', poll.options, !poll.options, (poll.options && !poll.options.length), (!poll.options || (poll.options && !poll.options.length)))
+      if (poll.type === 'casual' && (!poll.options || (poll.options && !poll.options.length))) {
+        errors.tasks[i].message = 'casual polls require options';
+      }
     }
     if (task.preSurvey) for (let j = 0; j < task.preSurvey.length; j++){
       const preSurvey = task.preSurvey[j];
