@@ -576,13 +576,38 @@ class Batch extends React.Component {
                   let realAdjective = parsedRealnickname[0];
                   let realAnimal = parsedRealnickname[1];
                   let userGender;
-                  const unmaskedPairs = batch.unmaskedPairs;
-                  const currentPair = [user._id.toString(), message.user.toString()];
-                  let unmasked
+                  let roundNumber;
                   try {
-                    const roundNumber = currentRound.number;
-                    unmasked = batch.tasks[roundNumber - 1].selectiveMasking && pairInArray(unmaskedPairs, currentPair);
+                    roundNumber = currentRound.number;
                   } catch (e) {
+
+                  }
+                  let unmaskingType;
+                  try {
+                    unmaskingType = batch.tasks[roundNumber - 2].selectiveMasking ? 'likes' :
+                        (batch.tasks[roundNumber - 3].selectiveMasking ? 'dislikes' : false);
+                  } catch (e) {
+                    unmaskingType = false
+                  }
+                  console.log('unmaskingType', unmaskingType)
+                  let unmaskedPairs;
+                  if (unmaskingType === 'likes') {
+                    unmaskedPairs = batch.unmaskedPairs.likes;
+                  }
+                  if (unmaskingType === 'dislikes') {
+                    unmaskedPairs = batch.unmaskedPairs.dislikes
+                  }
+                  if (!unmaskingType) {
+                    unmaskedPairs = [];
+                  }
+                  const currentPair = [user._id.toString(), message.user.toString()];
+                  let unmasked;
+                  try {
+                    console.log('aaa', unmaskedPairs, currentPair);
+                    unmasked = pairInArray(unmaskedPairs, currentPair);
+                    console.log('unmasked: ', unmasked)
+                  } catch (e) {
+
                     unmasked = false
                   }
                   let messageAnimal = !unmasked ? parsedMessageNickname[1] : parseNick(message.realNickname)[1];
@@ -689,12 +714,14 @@ class Batch extends React.Component {
   }
 
   renderMidSurvey() {
+    const user = this.props.user;
     const batch = this.props.batch;
     const numTask = this.getNumTask(batch);
     const task = batch.tasks[numTask];
     const round = batch.rounds[batch.currentRound - 1]
     const team = round.teams.find((x) => x.users.some((y) => y.user.toString() === this.props.user._id));
-
+    const selectiveMasking = task.selectiveMasking; // bool
+    console.log('questions: ', task.survey);
     return (
       <div>
         {!this.state.surveyDone && <RoundSurveyForm
@@ -704,6 +731,8 @@ class Batch extends React.Component {
           members={this.props.chat.members}
           surveyType="mid"
           team={team}
+          selectiveMasking={selectiveMasking}
+          user={user}
         />}
         {this.state.surveyDone && <div>
           <p>Thanks for completing the survey for this round!</p>
@@ -783,6 +812,7 @@ class Batch extends React.Component {
 
   submitSurvey = (form) => {
     const batch = this.props.batch;
+    console.log('form.data: ', form.data);
     let data = form;
     data.batch = batch._id;
     if (batch.status === 'active') {

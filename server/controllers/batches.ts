@@ -215,7 +215,6 @@ const startBatch = async function (batch, socket, io) {
 
 export const receiveSurvey = async function (data, socket, io) {
   try {
-    console.log('receiveSurvey');
     let newSurvey = {
       ...data,
       user: socket.userId,
@@ -288,7 +287,6 @@ export const receiveSurvey = async function (data, socket, io) {
         gender = genderFromInd(index, newSurvey);
       } else {
         if (newSurvey.surveyType === 'prepresurvey') { // looking for gender survey in batch presurvey
-          console.log('preSurvey:', batch.preSurvey)
           const ind = batch.preSurvey.findIndex(x => genderQuestion(x))
           gender = genderFromInd(ind, newSurvey)
         }
@@ -466,7 +464,6 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   logger.info(module, batch._id + ' : Begin round ' + roundObject.number)
   io.to(batch._id.toString()).emit('refresh-batch', true);
 
-  console.log(batch.hasPreSurvey, i)
   if (batch.hasPreSurvey && i === 0) {
     logger.info(module, batch._id + ' : Begin pre-pre-survey');
     roundObject.status = 'prepresurvey';
@@ -541,10 +538,13 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     })
     await timeout(batch.surveyMinutes * 60000);
   }
-  try {
-    await addUnmaskedPairs(batch, roundObject.number);
-  } catch (e) {
-    console.log('unmasked pairs not added')
+  if (batch.tasks[roundObject.number - 1].selectiveMasking) {
+    try {
+      console.log('adding pairs')
+      await addUnmaskedPairs(batch, roundObject.number, batch.tasks.findIndex((x, ind) => x.selectiveMasking && ind >= roundObject.number - 1));
+    } catch (e) {
+      console.log('unmasked pairs not added', e);
+    }
   }
 
   if (batch.hasPostSurvey && i === batch.numRounds - 1) {

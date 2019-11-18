@@ -83,8 +83,34 @@ class RoundSurveyForm extends React.Component {
   }
 
   render() {
-    const {invalid, questions, readOnly, currentUser, members, batch, surveyType, team} = this.props;
-
+    const {invalid, questions, readOnly, currentUser, members, batch, surveyType, team, selectiveMasking, user} = this.props;
+    let newQuestions = [...questions];
+    if (selectiveMasking) {
+      console.log(team.users);
+      team.users.forEach(x => {
+        if (x.user !== user._id) {
+          newQuestions.push({
+            question: `${x.nickname} is someone I would like to work with again.`,
+            type: 'select',
+            options: [
+                {option: 'Strongly Disagree'},
+                {option: 'Disagree', },
+                {option: 'Neutral', },
+                {option: 'Agree', },
+                {option: 'Strongly Agree'},
+              ],
+            selectOptions: [
+                {label: 'Strongly Disagree', value: `0 ${x.user}`},
+                {label: 'Disagree', value: `1 ${x.user}`},
+                {label: 'Neutral', value: `2 ${x.user}`},
+                {label: 'Agree', value: `3 ${x.user}`},
+                {label: 'Strongly Agree', value: `4 ${x.user}`},
+            ],
+          })
+          console.log(`pushed to newQuestions. ${newQuestions}`)
+        }
+      })
+    }
     return (<div style={{width: '100%'}}>
       {!readOnly && <p> IMPORTANT: Finishing the survey is <b>required</b> to participate in this experiment.</p>}
       {!readOnly && <p> If you do not finish the survey, <b>you will NOT be paid for this task.</b> </p>}
@@ -97,7 +123,7 @@ class RoundSurveyForm extends React.Component {
                     name="questions"
                     component={renderQuestions}
                     rerenderOnEveryChange
-                    questions={questions}
+                    questions={newQuestions}
                     readOnly={readOnly}
                     users={members}
                     currentUser={currentUser}
@@ -125,9 +151,14 @@ class RoundSurveyForm extends React.Component {
 const validate = (values, props) => {
   const errors = {questions: []};
   if (values.questions) for (let i = 0; i < values.questions.length; i++) {
-    if (!values.questions[i].result && values.questions[i].result !== 0) {
+    if (!values.questions[i]) {
       errors.questions[i] = {result: 'required'}
+    } else {
+      if (!values.questions[i].result && values.questions[i].result !== 0) {
+        errors.questions[i] = {result: 'required'}
+      }
     }
+
   }
 
   return errors

@@ -618,26 +618,76 @@ const roundFromFunction = (func, data) => { // if data.points[i] === 0 or undefi
   return result;
 }
 
-// Returns the pairs of IDs of the users in batch that should be unmasked in the numRound
-export const addUnmaskedPairs = async (batch, numRound) => {
-  // takes the chat of prev round and makes pairs of people who were talking
-  let chats = new Set()
-  for (const chatId of batch.rounds[numRound - 1].teams.map(team => team.chat)) {
-    const chat = await Chat.findById(chatId);
-    chats.add(chat);
-  }
-  let unmaskedPairs = new Set();
-  chats.forEach(chat => {
-    if (chat.messages) {
-      for (let i = 1; i < chat.messages.length; i += 1) {
-        const msg = chat.messages[i];
-        const prevMsg = chat.messages[i - 1]
-        if (msg.nickname === 'helperBot' || prevMsg.nickname === 'helperBot' || msg.user.toString() === prevMsg.user.toString()) continue;
-        unmaskedPairs.add([msg.user, prevMsg.user])
-      }
+// Returns the pairs of IDs of the users in batch that should be unmasked in the numRound and sets them in batch
+// numRound: currentRound
+// surveyRound: round in which selective masking questions were asked
+
+function itemInArray(array, item) {
+  for (var i = 0; i < array.length; i++) {
+    // This if statement depends on the format of your array
+    if (array[i][0] == item[0] && array[i][1] == item[1]) {
+      return true;   // Found it
     }
+  }
+  return false;   // Not found
+}
+
+export const addUnmaskedPairs = async (batch, numRound, surveyRound) => {
+  const isLike = x => Number(x) === 4;
+  const isDislike = x => Number(x) === 0;
+  const onlyMutual = (x) => {
+    // Returns array of pairs of (z, y), for every z and y that are (z, y) in x && (y, z) in x
+    let result = []
+    x.forEach((y, ind) => {
+      for (let i = ind + 1; i < x.length; ++i) { // check every element for every element, if they are (x, y) and (y, x)
+        if (i === ind) continue;
+        console.log(y[0].toString(), x[i][1].toString(), y[1].toString(), x[i][0].toString(), y[0].toString() === x[i][1].toString(), y[1].toString() === x[i][0].toString());
+        if (y[0].toString() === x[i][1].toString() && y[1].toString() === x[i][0].toString()) {
+          if (!itemInArray(result, y)) {
+            result.push(y);
+          }
+        }
+      }
+    })
+    return result
+  }
+  if(!surveyRound) {
+    console.log('no surveyRound')
+  }
+  console.log(1, batch._id, surveyRound);
+  const surveys = await Survey.find({batch: batch._id, round: surveyRound + 1, surveyType: 'midsurvey'});
+  console.log('surveys:', surveys);
+  let likes = [];
+  let dislikes = [];
+  surveys.forEach(x => {
+    const fromUser = x.user;
+    x.questions.forEach(y => {
+      console.log('question', y);
+      const result = y.result.split(' ');
+      if (result[1]) { // true if result has format "int userId". True only for attractiveness questions
+        const toUser = result[1];
+        const attraction = result[0];
+        console.log('attraction', attraction, Number(attraction), isLike(attraction))
+        if (isLike(attraction)) {
+          likes.push([fromUser, toUser]);
+        }
+        if (isDislike(attraction)) {
+          dislikes.push([fromUser, toUser]);
+        }
+        console.log('likes: ', likes, 'dislikes: ', dislikes);
+      }
+    })
   })
+  likes = onlyMutual(likes)
+  dislikes = onlyMutual(dislikes)
+  console.log('final likes: ', likes, 'dislikes: ', dislikes);
+  console.log(2)
   // const unmaskedPairs = [batch.users[0], batch.users[1]].map(x => x.user);
-  await Batch.findByIdAndUpdate(batch._id, { $addToSet: { unmaskedPairs: { $each: Array.from(unmaskedPairs) } } });
+  const bla = await Batch.findByIdAndUpdate(batch._id, { unmaskedPairs: {
+      likes: likes,
+      dislikes: dislikes
+    }});
+  console.log(3)
+  console.log('updatedBatch: ', bla);
 }
 

@@ -59,7 +59,8 @@ let  BatchSchema = new Schema({
       question: {type: String, required: true},
       type: {type: String, required: true},
       options: [{option: {type: String, required: true}}],
-      selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+      selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
+      teammate: {type: mongoose.Schema.Types.ObjectId, ref: 'User'} // appears only on questions for selective-masking
     }],
     pinnedContent: [{
       text: {type: String, required: true},
@@ -108,6 +109,9 @@ let  BatchSchema = new Schema({
     options: [{option: {type: String, required: true}}],
     selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
   }],
-  unmaskedPairs: [[{type: mongoose.Schema.Types.ObjectId, ref: 'User'}, {type: mongoose.Schema.Types.ObjectId, ref: 'User'}]],
+  unmaskedPairs: {
+    likes: [[{type: mongoose.Schema.Types.ObjectId, ref: 'User'}, {type: mongoose.Schema.Types.ObjectId, ref: 'User'}]],
+    dislikes: [[{type: mongoose.Schema.Types.ObjectId, ref: 'User'}, {type: mongoose.Schema.Types.ObjectId, ref: 'User'}]]
+  },
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);
