@@ -77,7 +77,7 @@ let  BatchSchema = new Schema({
       options: [{option: {type: String,}}],
       selectOptions: [{value: {type: String}, label: {type: String,}}],
       threshold: {type: Number, required: false},
-      questionType: {type: String, $enum: ['single', 'multiple']}, // foreperson polls are always counted as single
+      step: {type: Number, required: true}, // nubmer of step on which the poll appears
     }],
   }],
   midQuestions: [String],
@@ -113,5 +113,6 @@ let  BatchSchema = new Schema({
     likes: [[{type: mongoose.Schema.Types.ObjectId, ref: 'User'}, {type: mongoose.Schema.Types.ObjectId, ref: 'User'}]],
     dislikes: [[{type: mongoose.Schema.Types.ObjectId, ref: 'User'}, {type: mongoose.Schema.Types.ObjectId, ref: 'User'}]]
   },
+  activePoll: { type: Number, required: false },
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);

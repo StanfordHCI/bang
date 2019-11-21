@@ -78,11 +78,11 @@ const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType
   </div>)
 }
 
-const renderPoll = ({fields, meta: {touched, error, warning}, task, path}) => {
+const renderPoll = ({fields, meta: {touched, error, warning}, task, steps}) => {
+  const stepOptions = steps.map((x, ind) => {return {label: ind, value: ind}});
   return (<div style={{width: '100%', borderBottom: '1px solid grey'}}>
     {
       fields.map((step, index) => {
-        console.log(`${step}.type`)
         const withOptions = task.polls[index] && task.polls[index].type === 'casual';
         return (
             <Row key={index}>
@@ -106,6 +106,12 @@ const renderPoll = ({fields, meta: {touched, error, warning}, task, path}) => {
                       name={`${step}.threshold`}
                       component={renderField}
                       type='number'
+                  />
+                  <label className='form__form-group-label'>Poll step:</label>
+                  <Field
+                    name={`${step}.step`}
+                    component={renderSelectField}
+                    options={stepOptions}
                   />
                   {withOptions && <div style={{width: '100%', marginTop: '20px'}}>
                     <FieldArray
@@ -313,6 +319,7 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
     } else {
       taskLabel = `TASK FOR ROUND ${i + 1} ${i === numRounds - 1 ? '(BEST)' : ''}${i === numRounds - 2 ? '(WORST)' : ''}`
     }
+    const steps = taskArray[i].steps;
     tasks.push(
       <div key={'task' + i} className='form__form-group' style={{ borderBottom: '3px solid grey'}}>
         <Row style={{width: '80%'}}>
@@ -391,6 +398,7 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
             component={renderPoll}
             task={taskArray[i]}
             rerenderonEveryChange
+            steps={steps}
         />
         {taskArray && taskArray[i] && taskArray[i].hasPinnedContent && <div style={{width: '100%'}}>
           <p>Pinned content</p>
@@ -519,7 +527,6 @@ class TemplateForm extends React.Component {
   deleteSurvey = (newValue, taskNumber, fieldName) => {
     if (newValue.target) {
       if (!newValue.target.checked) {
-        console.log('dS', taskNumber, fieldName)
         this.props.dispatch(change('TemplateForm', 'tasks[' + taskNumber + '].' + fieldName, null))
       }
     }
@@ -773,7 +780,6 @@ const validate = (values, props) => {
       if (!poll.type) {
         errors.tasks[i].polls[j].type = 'required';
       }
-      console.log(poll.text, poll.type === 'casual', poll.options, !poll.options, (poll.options && !poll.options.length), (!poll.options || (poll.options && !poll.options.length)))
       if (poll.type === 'casual' && (!poll.options || (poll.options && !poll.options.length))) {
         errors.tasks[i].message = 'casual polls require options';
       }
@@ -838,7 +844,7 @@ function mapStateToProps(state) {
     hasPostSurvey: selector(state, 'hasPostSurvey'),
     postSurvey: selector(state, 'postSurvey'),
     hasPreSurvey: selector(state, 'hasPreSurvey'),
-    preSurvey: selector(state, 'preSurvey')
+    preSurvey: selector(state, 'preSurvey'),
   }
 }
 

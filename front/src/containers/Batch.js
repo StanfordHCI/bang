@@ -478,6 +478,13 @@ class Batch extends React.Component {
       polls = batch.tasks[currentRound.number - 1].polls;
       if (!polls.length) {
         polls = null;
+      } else {
+        const poll = polls[batch.activePoll];
+        if (poll) {
+          polls = [poll]; // we display only the active poll, others will be displayed some other time
+        } else {
+          polls = [];
+        }
       }
     } catch (e) {
       polls = null;
@@ -523,32 +530,6 @@ class Batch extends React.Component {
                 })}
               </tbody>
             </Table>
-            {polls && polls.map((poll, ind) => {
-              let options = [];
-              const lockCap = parseInt(batch.teamSize * poll.threshold);
-              try {
-                options = poll.type === 'foreperson' ? nicksOptions : poll.selectOptions;
-              } catch (e) {
-                options = [];
-              }
-              return <div className='chat__dialog-pinned-message'>
-                <div className='chat__dialog-pinned-resources'>
-                  <p style={{color: 'black', textAlign: 'center'}}>helperBot</p>
-                </div>
-                <div>
-                  <p style={{color: 'black', textAlign: 'center', lineHeight: '180%'}}>{poll.text}</p>
-                </div>
-                <Vote
-                    options={options}
-                    vote={vote}
-                    user={user}
-                    batch={batch}
-                    lockCap={lockCap} // Vote is disabled if one of options has >=lockCap votes
-                    poll={poll}
-                    onDisable={this.onVoteDisable}
-                    pollInd={ind}
-                />
-              </div>})}
           </div>
         </div>
         <div className='chat__dialog' style={{ marginLeft: 10 }}>
@@ -564,6 +545,32 @@ class Batch extends React.Component {
               </div>)
             })}
           </div>}
+          {polls && polls.map((poll, ind) => {
+            let options = [];
+            const lockCap = batch.teamSize * poll.threshold;
+            try {
+              options = poll.type === 'foreperson' ? nicksOptions : poll.selectOptions;
+            } catch (e) {
+              options = [];
+            }
+            let warning = null;
+            const timeLeft = this.state.timeLeft;
+            if (timeLeft < 120 && poll.type === 'casual') {
+              warning = 'casual';
+            }
+            return <div className='chat__dialog-pinned-message'>
+              <Vote
+                  options={options}
+                  vote={vote}
+                  user={user}
+                  batch={batch}
+                  lockCap={lockCap} // Vote is disabled if one of options has >=lockCap votes
+                  poll={poll}
+                  onDisable={this.onVoteDisable}
+                  pollInd={batch.activePoll}
+                  warning={warning}
+              />
+            </div>})}
           <div className="chat__scroll" ref="chatScroll">
             <div className='chat__dialog-messages-wrap'>
               <div className='chat__dialog-messages'>
@@ -589,7 +596,6 @@ class Batch extends React.Component {
                   } catch (e) {
                     unmaskingType = false
                   }
-                  console.log('unmaskingType', unmaskingType)
                   let unmaskedPairs;
                   if (unmaskingType === 'likes') {
                     unmaskedPairs = batch.unmaskedPairs.likes;
@@ -603,9 +609,7 @@ class Batch extends React.Component {
                   const currentPair = [user._id.toString(), message.user.toString()];
                   let unmasked;
                   try {
-                    console.log('aaa', unmaskedPairs, currentPair);
                     unmasked = pairInArray(unmaskedPairs, currentPair);
-                    console.log('unmasked: ', unmasked)
                   } catch (e) {
 
                     unmasked = false
@@ -721,7 +725,6 @@ class Batch extends React.Component {
     const round = batch.rounds[batch.currentRound - 1]
     const team = round.teams.find((x) => x.users.some((y) => y.user.toString() === this.props.user._id));
     const selectiveMasking = task.selectiveMasking; // bool
-    console.log('questions: ', task.survey);
     return (
       <div>
         {!this.state.surveyDone && <RoundSurveyForm
@@ -812,7 +815,6 @@ class Batch extends React.Component {
 
   submitSurvey = (form) => {
     const batch = this.props.batch;
-    console.log('form.data: ', form.data);
     let data = form;
     data.batch = batch._id;
     if (batch.status === 'active') {

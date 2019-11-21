@@ -225,9 +225,9 @@
     margin-bottom: auto;
     width: 100%;
     text-align: center;
-    background-color: #a0a0a0;
+    background-color: #ADFFCB;
     max-height: 30%;
-    overflow: scroll;
+    overflow: auto;
     font-size: 15px;
   }
 
@@ -653,7 +653,7 @@
   height: 100%; width:100%; font-size: 0;
   text-align: center;
   overflow: visible;
-
+  // buttons for polls
   button {
     display: inline-block;
     *display: inline;
@@ -661,5 +661,19 @@
     vertical-align: top;
     font-size: 12px;
     width: 25%;
+    font-weight: 700;
+    color: white;
+    text-decoration: none;
+    padding: .8em 1em calc(.8em + 3px);
+    border-radius: 3px;
+    background: rgb(64,199,129);
+    box-shadow: 0 -3px rgb(53,167,110) inset;
+    transition: 0.2s;
   }
+}
+
+.button:hover { background: rgb(53, 167, 110); }
+.button:active {
+  background: rgb(33,147,90);
+  box-shadow: 0 3px rgb(33,147,90) inset;
 }

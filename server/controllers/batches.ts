@@ -506,9 +506,16 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
 
   logger.info(module, batch._id + ' : Begin task for round ' + roundObject.number)
   let stepsSumTime = 0;
+  const polls = task.polls;
   for (let j = 0; j < task.steps.length; j++) {
     const step = task.steps[j];
     let time = j === 0 ? step.time : step.time - task.steps[j - 1].time;
+    const pollInd = polls.findIndex(x => Number(x.step) === j);
+    if (pollInd || parseInt(pollInd) === 0) {
+      const pollData = {activePoll: pollInd}
+      await Batch.updateOne({_id: batch._id}, { $set: { activePoll: pollInd } });
+      io.to(batch._id.toString()).emit('refresh-batch', true);
+    }
     await timeout(batch.roundMinutes * time * 60000);
     const stepMessage = {
       user: botId,
@@ -525,6 +532,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     stepsSumTime = stepsSumTime + step.time;
   }
 
+  // timeout for the time that is not in stepsTime
   await timeout(batch.roundMinutes * (1 - task.steps[task.steps.length - 1].time) * 60000);
 
   if (task.hasMidSurvey) {
@@ -540,10 +548,8 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   }
   if (batch.tasks[roundObject.number - 1].selectiveMasking) {
     try {
-      console.log('adding pairs')
       await addUnmaskedPairs(batch, roundObject.number, batch.tasks.findIndex((x, ind) => x.selectiveMasking && ind >= roundObject.number - 1));
     } catch (e) {
-      console.log('unmasked pairs not added', e);
     }
   }
 

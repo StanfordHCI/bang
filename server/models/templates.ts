@@ -51,6 +51,7 @@ let  TemplateSchema = new Schema({
       options: [{option: {type: String,}}],
       selectOptions: [{value: {type: String}, label: {type: String,}}],
       threshold: {type: Number, required: false},
+      step: { type: Number, required: true },
     }],
   }],
   teamFormat: {type: String, required: true},
