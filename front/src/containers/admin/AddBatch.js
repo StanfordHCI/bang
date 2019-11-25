@@ -58,6 +58,7 @@ class AddBatch extends React.Component {
     batch.bestRoundFunction = form.bestRoundFunction;
     batch.randomizeExpRound = form.randomizeExpRound;
     batch.reconveneWorstRound = form.reconveneWorstRound;
+    batch.dynamicTeamSize = form.dynamicTeamSize;
     this.props.addBatch(batch)
   }
 
@@ -83,7 +84,7 @@ class AddBatch extends React.Component {
                 </div>
               </div>
               <div className='form__form-group'>
-                <label className='form__form-group-label'>Best Team Function</label>
+                <label className='form__form-group-label'>Best Team Function (only for ST)</label>
                 <div className='form__form-group-field'>
                   <Field
                       name='bestRoundFunction'
@@ -95,7 +96,7 @@ class AddBatch extends React.Component {
                 </div>
               </div>
               <div className='form__form-group'>
-                <label className='form__form-group-label'>Reconvene worst? </label>
+                <label className='form__form-group-label'>Reconvene worst? (only for ST) </label>
                 <div className='form__form-group-field'>
                   <Field
                     name='reconveneWorstRound'
@@ -106,7 +107,7 @@ class AddBatch extends React.Component {
                 </div>
               </div>
               <div className='form__form-group'>
-                <label className='form__form-group-label'>Randomize last 2 rounds? </label>
+                <label className='form__form-group-label'>Randomize last 2 rounds? (only for ST) </label>
                 <div className='form__form-group-field'>
                   <Field
                     name='randomizeExpRound'
@@ -147,7 +148,7 @@ class AddBatch extends React.Component {
                 </div>
               </div>
               <div className='form__form-group'>
-                <label className='form__form-group-label'>With team roster in final survey?</label>
+                <label className='form__form-group-label'>Team roster in final survey (only for MT)?</label>
                 <div className='form__form-group-field'>
                   <Field
                     name='withRoster'
@@ -178,12 +179,13 @@ class AddBatch extends React.Component {
                 </div>
               </div>
               <div className='form__form-group'>
-                <label className='form__form-group-label'>Load team order?</label>
+                <label className='form__form-group-label'>Dynamic team size (only for ST)?</label>
                 <div className='form__form-group-field'>
                   <Field
-                    name='loadTeamOrder'
+                    name='dynamicTeamSize'
                     component={renderSelectField}
-                    options={this.state.batchOptions}
+                    options={[{label: 'Regular (n for all rounds)', value: false}, {label: 'Dynamic (50% - 1 50% - n)', value: true},]}
+                    disabled={this.props.teamFormat !== 'single'}
                   />
                 </div>
               </div>
@@ -243,6 +245,9 @@ const validate = (values, props) => {
   if (values.teamFormat === 'single' && values.reconveneWorstRound == null) {
     errors.reconveneWorstRound = 'required'
   }
+  if (values.teamFormat === 'single' && values.dynamicTeamSize == null) {
+    errors.dynamicTeamSize = 'required'
+  }
   if (values.teamFormat === 'single' && values.reconveneWorstRound && values.template &&
     props.templateList.filter(x => x._id === values.template) &&
     props.templateList.filter(x => x._id === values.template)[0].numRounds < 6) {
@@ -276,6 +281,7 @@ function mapStateToProps(state) {
       bestRoundFunction: 'highest',
       reconveneWorstRound: false,
       randomizeExpRound: true,
+      dynamicTeamSize: false,
     }
   }
 }

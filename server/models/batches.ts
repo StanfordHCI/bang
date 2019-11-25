@@ -114,5 +114,7 @@ let  BatchSchema = new Schema({
     dislikes: [[{type: mongoose.Schema.Types.ObjectId, ref: 'User'}, {type: mongoose.Schema.Types.ObjectId, ref: 'User'}]]
   },
   activePoll: { type: Number, required: false },
+  dynamicTeamSize: { type: Boolean, required: true },
+  roundPairs: [[{ type: Number }, { type: Number }]],
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);

@@ -17,7 +17,7 @@ import {
   expireHIT,
   assignQual,
   getBatchTime,
-  runningLive, payBonus, clearRoom, mturk, listAssignmentsForHIT, createOneTeam
+  runningLive, payBonus, clearRoom, mturk, listAssignmentsForHIT, createOneTeam, createDynamicTeams
 } from "./utils";
 import {timeout} from './batches'
 
@@ -32,6 +32,7 @@ import {calculateMoneyForBatch} from "./utils";
 export const addBatch = async function (req, res) {
   try {
     const teamFormat = req.body.teamFormat;
+    const dynamicTeamSize = req.body.dynamicTeamSize;
     const batches = await Batch.find({$or: [{status: 'waiting'}, {status: 'active'}]}).select('tasks teamSize roundMinutes surveyMinutes numRounds teamFormat').lean().exec();
     let batchSumCost = 0;
     batches.forEach(batch => {
@@ -61,10 +62,20 @@ export const addBatch = async function (req, res) {
     newBatch.users = [], newBatch.expRounds = [], newBatch.roundGen = [], newBatch.worstRounds = [];
     let tasks = [], nonExpCounter = 0;
     let roundGen;
+    let roundPairs = [];
     if (teamFormat === 'single') {
-      roundGen = createOneTeam(newBatch.teamSize, newBatch.numRounds, letters.slice(0, newBatch.teamSize));
+      if (dynamicTeamSize) { // round generation for 50% n 50% 1 person teams
+        const dynamicTeamsResult = createDynamicTeams(newBatch.teamSize, newBatch.numRounds);
+        roundGen = dynamicTeamsResult.roundGen;
+        roundPairs = dynamicTeamsResult.roundPairs;
+        if (roundPairs) {
+          newBatch.roundPairs = roundPairs
+        }
+      } else { // ordinary single-team round generation
+        roundGen = createOneTeam(newBatch.teamSize, newBatch.numRounds, letters.slice(0, newBatch.teamSize));
+      }
     }
-    else {
+    else { // ordinary multi-team round generation
       roundGen = createTeams(newBatch.teamSize, newBatch.numRounds - newBatch.numExpRounds + 1, letters.slice(0, newBatch.teamSize ** 2));
     }
     if (teamFormat !== 'single') {
@@ -114,7 +125,6 @@ export const addBatch = async function (req, res) {
     else {
       newBatch.roundGen = roundGen;
     }
-
 
     const batch = await Batch.create(newBatch);
     const preChat = await Chat.create({

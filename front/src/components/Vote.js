@@ -1,5 +1,4 @@
 import React,{Component} from 'react';
-import Notification from 'react-web-notification';
 
 class Vote extends Component{
     constructor(props){
@@ -24,7 +23,7 @@ class Vote extends Component{
     }
 
     componentWillReceiveProps(nextProps, nextContext) {
-        const {vote, batch, user, lockCap, poll, pollInd} = this.props;
+        const {batch, user, lockCap, pollInd} = this.props;
         if (JSON.stringify(nextProps.options) !== JSON.stringify(this.props.options)) {
             this.setState({
                 disabled: false,
@@ -47,20 +46,18 @@ class Vote extends Component{
     }
 
     componentDidMount() {
-        // just getting the votes not actually voting
+        // just getting the votes on page reload, not actually voting
         this.props.vote(Object.assign({value: null, pollInd: this.props.pollInd}, {batch: this.props.batch, pollInd: this.props.pollInd}));
         this.setOptions(this.props.options)
     }
 
-    render(){
+    handleVote(option) {
+        const {vote, batch, pollInd} = this.props;
+        vote(Object.assign(option, {batch: batch, pollInd: pollInd}))
+    }
+    render() {
         const {vote, batch, user, lockCap, poll, pollInd} = this.props;
         let votes = this.state.votes;
-        // try {
-        //     votes = batch.rounds[batch.currentRound - 1].teams.find(x => x.users
-        //         .some(y => y.user.toString() === user._id)).currentPollVotes[pollInd];
-        // } catch (e) {
-        //     votes = [];
-        // }
         if (!votes) {
             votes = []
         }
@@ -104,8 +101,9 @@ class Vote extends Component{
                         this.state.options.map((option, i) =>
                             <button
                                 disabled={disabled}
-                                onClick={() => {vote(Object.assign(option, {batch: batch, pollInd: pollInd}))}}>
-                                    {option.label}({this.state.votes && this.state.votes[option.value.toString()]  ? (this.state.votes[option.value.toString()] / batch.teamSize * 100).toFixed(2) : 0}%)
+                                onClick={() => {this.handleVote(option)}}>
+                                    {option.label + ' '}({this.state.votes && this.state.votes[option.value.toString()] ?
+                                (this.state.votes[option.value.toString()] / batch.teamSize * 100).toFixed(2) : 0}%)
                             </button>
 
                         )

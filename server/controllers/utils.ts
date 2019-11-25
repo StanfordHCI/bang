@@ -366,10 +366,10 @@ createOneTeam = (teamSize: number, numRounds: number, people: any[]) => {
   const rounds = [];
   while (rounds.length < numRounds) {
     const round = {
-      teams: undefined
+      teams: null
     }
     const teams = [{
-      users: undefined
+      users: null
     }]; // There will be only one team
     teams[0].users = Array.from(Array(teamSize).keys());
     round.teams = teams;
@@ -377,6 +377,40 @@ createOneTeam = (teamSize: number, numRounds: number, people: any[]) => {
   }
   return rounds;
 };
+
+export const createDynamicTeams = (teamSize: number, numRounds: number) => {
+  /*
+  * Returns array of {roundPairs, roundGen}
+  * e.g.:
+  * {roundPairs: [[1,6], [2,3], [4,5]], roundGen: {<some roundGen with 50% - n, 50% - 1 teamSize structure>}}
+  * first round in pair is always with 1 user in a team*/
+  const availableNumbers = Array.from(Array(numRounds).keys());
+  const roundPairs = randomPairs(availableNumbers);
+  let roundGen = Array(numRounds);
+  roundPairs.forEach(pair => {
+    pair.forEach((roundNum, indInPair) => {
+      const round = {
+        teams: [],
+      }
+      if (indInPair === 0) { // first round in pair -- 1 user in n teams
+        let teams = [];
+        // make n teams with 1 user in each
+        Array.from(Array(teamSize).keys()).forEach(user => teams.push({users: [user]}));
+        round.teams = teams
+      }
+      if (indInPair === 1) { // second round in pair -- n users in one team
+        let teams = [{users: []}];
+        // make 1 team with n users in it
+        teams[0].users = Array.from(Array(teamSize).keys());
+        round.teams = teams;
+      }
+
+      roundGen[roundNum] = round
+    })
+  })
+  console.log('generated rounds: ', JSON.stringify(roundGen))
+  return {roundGen: roundGen, roundPairs: roundPairs};
+}
 
 export const getBatchTime = (batch) => {
   let result = 0;
@@ -641,7 +675,6 @@ export const addUnmaskedPairs = async (batch, numRound, surveyRound) => {
     x.forEach((y, ind) => {
       for (let i = ind + 1; i < x.length; ++i) { // check every element for every element, if they are (x, y) and (y, x)
         if (i === ind) continue;
-        console.log(y[0].toString(), x[i][1].toString(), y[1].toString(), x[i][0].toString(), y[0].toString() === x[i][1].toString(), y[1].toString() === x[i][0].toString());
         if (y[0].toString() === x[i][1].toString() && y[1].toString() === x[i][0].toString()) {
           if (!itemInArray(result, y)) {
             result.push(y);
@@ -654,40 +687,52 @@ export const addUnmaskedPairs = async (batch, numRound, surveyRound) => {
   if(!surveyRound) {
     console.log('no surveyRound')
   }
-  console.log(1, batch._id, surveyRound);
   const surveys = await Survey.find({batch: batch._id, round: surveyRound + 1, surveyType: 'midsurvey'});
-  console.log('surveys:', surveys);
   let likes = [];
   let dislikes = [];
   surveys.forEach(x => {
     const fromUser = x.user;
     x.questions.forEach(y => {
-      console.log('question', y);
       const result = y.result.split(' ');
       if (result[1]) { // true if result has format "int userId". True only for attractiveness questions
         const toUser = result[1];
         const attraction = result[0];
-        console.log('attraction', attraction, Number(attraction), isLike(attraction))
         if (isLike(attraction)) {
           likes.push([fromUser, toUser]);
         }
         if (isDislike(attraction)) {
           dislikes.push([fromUser, toUser]);
         }
-        console.log('likes: ', likes, 'dislikes: ', dislikes);
       }
     })
   })
   likes = onlyMutual(likes)
   dislikes = onlyMutual(dislikes)
-  console.log('final likes: ', likes, 'dislikes: ', dislikes);
-  console.log(2)
-  // const unmaskedPairs = [batch.users[0], batch.users[1]].map(x => x.user);
-  const bla = await Batch.findByIdAndUpdate(batch._id, { unmaskedPairs: {
+  await Batch.findByIdAndUpdate(batch._id, { unmaskedPairs: {
       likes: likes,
       dislikes: dislikes
     }});
-  console.log(3)
-  console.log('updatedBatch: ', bla);
 }
 
+// Given an array of available numbers, return an array of random pairs
+function randomPairs( availableNumbers: Number[] ) {
+  let pairs = [];
+  while( availableNumbers.length ) {
+    pairs.push([
+      pluckRandomElement( availableNumbers ),
+      pluckRandomElement( availableNumbers )
+    ]);
+  }
+  return pairs;
+}
+
+// Return a random element and remove it from the array
+function pluckRandomElement( array ) {
+  var i = randomInt( array.length );
+  return array.splice( i, 1 )[0];
+}
+
+// Return a random integer 0 <= n < limit
+function randomInt( limit ) {
+  return Math.floor( Math.random() * limit );
+}
