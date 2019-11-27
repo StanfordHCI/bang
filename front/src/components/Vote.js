@@ -10,8 +10,9 @@ class Vote extends Component{
             disabled: false,
             warnings: {'casual' : <div>
                     <p style={{color:'red'}}>Warning: not everyone is in agreement.</p>
-                    <p style={{color: 'grey'}}>You should all be in agreement before the round end!</p>
-                </div>}
+                    <p style={{color: 'grey'}}>You should all be in agreement before the round ends!</p>
+                </div>},
+            selectedOption: [],
         }
         this.setOptions(options)
     }
@@ -54,9 +55,10 @@ class Vote extends Component{
     handleVote(option) {
         const {vote, batch, pollInd} = this.props;
         vote(Object.assign(option, {batch: batch, pollInd: pollInd}))
+        this.setState({ selectedOption: option })
     }
     render() {
-        const {vote, batch, user, lockCap, poll, pollInd} = this.props;
+        const {user, poll, actualTeamSize} = this.props;
         let votes = this.state.votes;
         if (!votes) {
             votes = []
@@ -78,8 +80,7 @@ class Vote extends Component{
             result = Object.keys(obj).reduce((a, b) => obj[a] > obj[b] ? a : b); // foreperson - user with max votes
             result = this.state.options[Number(result)].label
         }
-            return(
-            <div>
+            return<div>
                 {/*HEADER*/}
                 <h5 style={{color: 'black', textAlign: 'left'}}>
                     {poll.type === 'foreperson' && !this.state.disabled && 'It\'s time to choose a Foreperson!'}
@@ -89,31 +90,41 @@ class Vote extends Component{
                 </h5>
                 {/*POLL TEXT OR FOREPERSON TEXT*/}
                 <div>
-                    {(!disabled || poll.type === 'casual') && <p style={{color: 'grey', textAlign: 'center', lineHeight: '180%'}}>{poll.text}</p>}
-                    {(disabled && poll.type === 'foreperson') && <p style={{color: 'grey', textAlign: 'center', lineHeight: '180%'}}>
+                    {(!disabled || poll.type === 'casual') &&
+                    <p style={{color: 'grey', textAlign: 'center', lineHeight: '180%'}}>{poll.text}</p>}
+                    {(disabled && poll.type === 'foreperson') &&
+                    <p style={{color: 'grey', textAlign: 'center', lineHeight: '180%'}}>
                         Based on a vote in this team, <b>{foreperson}</b> will be the foreperson.{'\n'}
-                        At the end of the deliberation, <b>{foreperson}</b> should make sure that everyone is in the agreement
-                </p>}
+                        At the end of the deliberation, <b>{foreperson}</b> should make sure that everyone is in the
+                        agreement
+                    </p>}
                 </div>
                 {/*BUTTONS*/}
                 <div className="languages">
-                    {   (!this.state.disabled || poll.type === 'casual') &&
-                        this.state.options.map((option, i) =>
-                            <button
-                                disabled={disabled}
-                                onClick={() => {this.handleVote(option)}}>
-                                    {option.label + ' '}({this.state.votes && this.state.votes[option.value.toString()] ?
-                                (this.state.votes[option.value.toString()] / batch.teamSize * 100).toFixed(2) : 0}%)
-                            </button>
-
-                        )
+                    {(!this.state.disabled || poll.type === 'casual') &&
+                    this.state.options.map((option, i) => {
+                        let style;
+                        if (this.state.selectedOption && this.state.selectedOption.value === option.value) {
+                            style = {backgroundColor: 'grey'}
+                        } else {
+                            style = {}
+                        }
+                        return <button
+                            style={style}
+                            disabled={disabled}
+                            onClick={() => {
+                                this.handleVote(option)
+                            }}>
+                            {option.label + ' '}({this.state.votes && this.state.votes[option.value.toString()] ?
+                            (this.state.votes[option.value.toString()] / actualTeamSize * 100).toFixed(2) : 0}%)
+                        </button>
+                    })
                     }
                 </div>
                 {/*WARNING FOR CASUAL POLLS*/}
                 {(this.props.warning && !disabled) && this.state.warnings[this.props.warning]}
 
-            </div>
-        );
+            </div>;
     }
 }
 export default Vote;

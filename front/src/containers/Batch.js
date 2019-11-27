@@ -506,6 +506,7 @@ class Batch extends React.Component {
       }
       return batch.status ==='active' && !member.isActive ? '' : nick;
     });
+    const actualTeamSize = chat.members.length;
 
     const nicksOptions = nicks.filter(x => x !== '').map(x => {return {value: x, label: x}});
     return (
@@ -547,7 +548,7 @@ class Batch extends React.Component {
           </div>}
           {polls && polls.map((poll, ind) => {
             let options = [];
-            const lockCap = batch.teamSize * poll.threshold;
+            const lockCap = actualTeamSize * poll.threshold;
             try {
               options = poll.type === 'foreperson' ? nicksOptions : poll.selectOptions;
             } catch (e) {
@@ -569,6 +570,7 @@ class Batch extends React.Component {
                   onDisable={this.onVoteDisable}
                   pollInd={batch.activePoll}
                   warning={warning}
+                  actualTeamSize={actualTeamSize}
               />
             </div>})}
           <div className="chat__scroll" ref="chatScroll">

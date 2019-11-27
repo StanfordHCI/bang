@@ -510,13 +510,13 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   for (let j = 0; j < task.steps.length; j++) {
     const step = task.steps[j];
     let time = j === 0 ? step.time : step.time - task.steps[j - 1].time;
+    await timeout(batch.roundMinutes * time * 60000);
     const pollInd = polls.findIndex(x => Number(x.step) === j);
-    if (pollInd || parseInt(pollInd) === 0) {
-      const pollData = {activePoll: pollInd}
+    if (pollInd > -1) {
+      console.log('pollInd', pollInd);
       await Batch.updateOne({_id: batch._id}, { $set: { activePoll: pollInd } });
       io.to(batch._id.toString()).emit('refresh-batch', true);
     }
-    await timeout(batch.roundMinutes * time * 60000);
     const stepMessage = {
       user: botId,
       nickname: 'helperBot',
