@@ -16,7 +16,7 @@ import {
   notifyWorkers,
   getBatchTime,
   bestRound,
-  worstRound, addUnmaskedPairs,
+  worstRound, addUnmaskedPairs, SpecificQuestionHandler,
 } from "./utils";
 import {errorHandler} from '../services/common'
 import {io} from "../index";
@@ -254,7 +254,35 @@ export const receiveSurvey = async function (data, socket, io) {
         logger.info('module', 'Bonus sent to ' + socket.mturkId)
       }
     }
-    const genderQuestion = x => x.question.toLowerCase() === 'what is your gender?';
+    const questionHandler = new SpecificQuestionHandler();
+    questionHandler.addQuestion('What is the highest degree or level of school you have completed?', ['Less than High School', 'High school or equivalent', 'Some college',
+      'Undergraduate degree', 'Graduate degree', 'Doctorate'], 'degree')
+      .addQuestion('What is your gender?', ['male', 'female', 'prefer not to say'], 'gender')
+      .addQuestion('Which year were you born?', [], 'yearBorn')
+      .addQuestion('How much total combined money did all members of your household earn last year?', ['Less than $20,000', '$20,000 to $34,999',
+        '$35,000 to $49,999', '$50,000 to $74,999', '$75,000 to $99,999', 'Over $100,000'], 'houseHoldEarnings')
+      .addQuestion('Are you of Hispanic, Latino, or of Spanish origin?', ['Yes', 'No'], 'hispanicLatinoSpanish')
+      .addQuestion('How would you describe yourself?', ['American Indian or Alaska Native', 'Asian', 'Black or African American',
+        'Native Hawaiian or Other Pacific Islander', 'White', 'Other'], 'race')
+      .addQuestion('What is your marital status?', ['Single', 'Married', 'Live with Partner', 'Separated',
+        'Divorced', 'Widowed'], 'maritalStatus')
+      .addQuestion('What is your occupation? If you are retired, please describe your main occupation when you were ' +
+        'working.', [], 'occupation')
+      .addQuestion('How long have you worked in this occupation? (If you are retired, how long did you work in this' +
+        ' occupation?)', [], 'occupationTime')
+      .addQuestion('Have you ever served on a jury before?', ['Yes', 'No'], 'juryExperience')
+      .addQuestion('If yes, how many times?', [], 'juryHowManyTimes')
+      .addQuestion('Was it a civil or criminal case?', ['Civil', 'Criminal'], 'civilCriminal')
+      .addQuestion('Did the jur(ies) reach a verdict?', ['Yes', 'No'], 'verdictReached')
+      .addQuestion('Would you say religion provides no guidance in your day-to-day living, some guidance, quite a' +
+        ' bit of guidance, or a great deal of guidance in your day-to-day life?', ['No guidance', 'Some guidance', 'Quite a bit of guidance',
+        'A great deal of guidance'], 'religionGuidance')
+      .addQuestion('We hear a lot of talk these days about liberals and conservatives. Here is a seven-point scale ' +
+        'on which the political views that people might hold are arranged from extremely liberal to extremely conservative. ' +
+        'Where would you place YOURSELF on this scale?', ['Extremely Liberal', 'Liberal', 'Slightly Liberal',
+        'Moderate; Middle of the Road', 'Slightly Conservative', 'Conservative', 'Extremely Conservative'], 'politicalView')
+    const specificQuestion = (x, questionText) => x.question.toLowerCase() === questionText.toLowerCase();
+    const genderQuestion = x => specificQuestion(x, 'what is your gender?');
     if ((newSurvey.surveyType === 'presurvey' || newSurvey.surveyType === 'prepresurvey')) {
       let gender;
       let index;
@@ -295,6 +323,16 @@ export const receiveSurvey = async function (data, socket, io) {
         await User.findByIdAndUpdate(newSurvey.user, {gender: gender});
         await Batch.updateOne({_id: batch._id, 'users.user': newSurvey.user}, {$set: {'users.$.gender': gender}});
         io.to(batch._id.toString()).emit('refresh-batch', true)
+      }
+      // resolving other specific questions with handler:
+      if (newSurvey.surveyType === 'prepresurvey') { // looking for gender survey in batch presurvey
+        batch.preSurvey.forEach(q => {
+          const qIndex =questionHandler.questionIndex(q.question)
+          if (qIndex > -1) {
+            const question = questionHandler.getQuestions()[qIndex]
+          }
+        })
+
       }
     }
 
@@ -513,7 +551,6 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     await timeout(batch.roundMinutes * time * 60000);
     const pollInd = polls.findIndex(x => Number(x.step) === j);
     if (pollInd > -1) {
-      console.log('pollInd', pollInd);
       await Batch.updateOne({_id: batch._id}, { $set: { activePoll: pollInd } });
       io.to(batch._id.toString()).emit('refresh-batch', true);
     }

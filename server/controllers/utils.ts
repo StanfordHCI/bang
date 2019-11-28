@@ -736,3 +736,37 @@ function pluckRandomElement( array ) {
 function randomInt( limit ) {
   return Math.floor( Math.random() * limit );
 }
+export class SpecificQuestionHandler {
+  private questions: any[];
+  constructor() {
+    // this.questions = [{text: '', options: [], dbField: ''}]
+    this.questions = [];
+  }
+  addQuestion(text, options, dbField) {
+    this.questions.push({text: text.toLowerCase(), options: options, dbField: dbField});
+    return this;
+  }
+  resolveQuestion(text, selectedOption) {
+    const question = this.questions.find(x => x.text.toLowerCase() === text.toLowerCase())
+    if (!question) {
+      return
+    }
+    const options = question.options;
+    let selectedOptionNum;
+    if (!question.options || !question.options.length) {
+      selectedOptionNum = selectedOption; // for questions without enum choices
+    } else {
+      selectedOptionNum = question.options[selectedOption]
+    }
+    if (!selectedOptionNum) {
+      selectedOptionNum =  question.options.slice(-1)[0]
+    }
+    return {selectedOptionNum: selectedOptionNum, dbField: question.dbField};
+  }
+  questionIndex(question) {
+    return this.questions.map(x => x.text.toLowerCase()).indexOf(question.toLowerCase());
+  }
+  getQuestions() {
+    return this.questions;
+  }
+}
