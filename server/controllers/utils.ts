@@ -751,14 +751,14 @@ export class SpecificQuestionHandler {
     if (!question) {
       return
     }
-    const options = question.options;
     let selectedOptionNum;
     if (!question.options || !question.options.length) {
       selectedOptionNum = selectedOption; // for questions without enum choices
     } else {
-      selectedOptionNum = question.options[selectedOption]
+      selectedOptionNum = question.options[Number(selectedOption)]
     }
-    if (!selectedOptionNum) {
+    console.log('resolve results: ', selectedOptionNum)
+    if (!selectedOptionNum) { // if there is not such number of chosen options we select the last possible option
       selectedOptionNum =  question.options.slice(-1)[0]
     }
     return {selectedOptionNum: selectedOptionNum, dbField: question.dbField};

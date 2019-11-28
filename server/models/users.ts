@@ -31,7 +31,7 @@ let UserSchema = new Schema({
   degree: {type: String, required: false, $enum: ['Less than High School', 'High school or equivalent', 'Some college',
       'Undergraduate degree', 'Graduate degree', 'Doctorate']},
   gender: {type: String, required: false, $enum: ['male', 'female', 'prefer not to say']},
-  yearBorn: {type: Number, required: false},
+  yearBorn: {type: String, required: false},
   householdEarnings: {type: String, required: false, $enum: ['Less than $20,000', '$20,000 to $34,999',
       '$35,000 to $49,999', '$50,000 to $74,999', '$75,000 to $99,999', 'Over $100,000']},
   hispanicLatinoSpanish: {type: String, required: false, $enum: ['Yes', 'No']},

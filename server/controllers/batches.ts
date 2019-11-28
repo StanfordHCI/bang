@@ -325,14 +325,19 @@ export const receiveSurvey = async function (data, socket, io) {
         io.to(batch._id.toString()).emit('refresh-batch', true)
       }
       // resolving other specific questions with handler:
+      const psHelper = [];
       if (newSurvey.surveyType === 'prepresurvey') { // looking for gender survey in batch presurvey
-        batch.preSurvey.forEach(q => {
-          const qIndex =questionHandler.questionIndex(q.question)
+        batch.preSurvey.forEach((q, ind) => {
+          const qIndex = questionHandler.questionIndex(q.question);
+          console.log('qIndex: ', qIndex, 'q.question: ', q.question);
           if (qIndex > -1) {
-            const question = questionHandler.getQuestions()[qIndex]
+            const question = questionHandler.getQuestions()[qIndex].text;
+            const resolved = questionHandler.resolveQuestion(question, newSurvey.questions[ind].result);
+            console.log('resolved: ', resolved)
+            psHelper.push(User.findByIdAndUpdate(newSurvey.user, {[resolved.dbField]: resolved.selectedOptionNum}));
           }
         })
-
+        await Promise.all(psHelper);
       }
     }
 
