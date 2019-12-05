@@ -36,7 +36,7 @@ import {adjMap, animalMap, genderMap} from '../constants/nicknames';
 import Bot from '../img/Bot.svg';
 import Notification from 'react-web-notification';
 import Vote from '../components/Vote';
-
+import showdown from 'showdown';
 const MAX_LENGTH = 240;
 const botId = '100000000000000000000001';
 
@@ -949,7 +949,20 @@ class Batch extends React.Component {
       onKeyDown: this.handleSubmit,
       className: 'chat__field-input'
     };
-
+    let html;
+    if (batch.cases && batch.cases.length && batch.roundPairs && batch.roundPairs.length) {
+      const currentPair = batch.roundPairs.find(x => x.pair.some(y => Number(y.roundNumber) === batch.currentRound - 1))
+      const currentCaseNumber = currentPair.caseNumber;
+      const currentVersionNumber = currentPair.pair.find(x => Number(x.roundNumber) === batch.currentRound - 1).versionNumber;
+      const currentPartNumber = ind;
+      const converter = new showdown.Converter();
+      const md = batch.cases[currentCaseNumber].versions[currentVersionNumber].parts[currentPartNumber];
+      console.log(currentCaseNumber, currentVersionNumber, currentPartNumber, md)
+      html = converter.makeHtml(md.text);
+    } else {
+      console.log('else')
+      html = task.readingPeriods[ind].message;
+    }
     return (
         <div className='chat'>
           <div className='chat__contact-list'>
@@ -968,7 +981,6 @@ class Batch extends React.Component {
                   } else {
                     nick = batch.maskType === 'masked' ? member.fakeNick : member.realNick;
                   }
-
                   return (<tr key={member._id}>
                     <td>
                       <div className='chat__bubble-contact-name'>
@@ -987,7 +999,9 @@ class Batch extends React.Component {
               <div className='chat__dialog-pinned-resources'>
                 <p style={{color: 'black'}}>helperBot</p>
               </div>
-              {task.readingPeriods && task.readingPeriods.length && <div dangerouslySetInnerHTML={{__html: task.readingPeriods[ind].message}}/>}
+              {task.readingPeriods && task.readingPeriods.length && <div
+                  style={{color: 'black'}}
+                  dangerouslySetInnerHTML={{__html: html}}/>}
             </div>}
           </div>
         </div>

@@ -69,5 +69,12 @@ let  TemplateSchema = new Schema({
     options: [{option: {type: String, required: true}}],
     selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
   }],
+  cases: [{
+    versions: [{
+      parts: [{
+        text: { type: String, required: true }
+      }]
+    }]
+  }]
 }, options);
 export const Template = mongoose.model('Template', TemplateSchema);

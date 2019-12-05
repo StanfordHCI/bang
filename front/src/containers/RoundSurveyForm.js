@@ -149,16 +149,29 @@ class RoundSurveyForm extends React.Component {
 }
 
 const validate = (values, props) => {
+  const surveyType = props.surveyType;
+  const questions = props.questions;
   const errors = {questions: []};
   if (values.questions) for (let i = 0; i < values.questions.length; i++) {
-    if (!values.questions[i]) {
-      errors.questions[i] = {result: 'required'}
-    } else {
-      if (!values.questions[i].result && values.questions[i].result !== 0) {
+    if (surveyType !== 'prepre') { // standard validation
+      if (!values.questions[i]) {
         errors.questions[i] = {result: 'required'}
+      } else {
+        if (!values.questions[i].result && values.questions[i].result !== 0) {
+          errors.questions[i] = {result: 'required'}
+        }
+      }
+    } else { // we do not validate text questions in prepre surveys for the sake of demographics survey
+      if (questions[i].type !== 'text') {
+        if (!values.questions[i]) {
+          errors.questions[i] = {result: 'required'}
+        } else {
+          if (!values.questions[i].result && values.questions[i].result !== 0) {
+            errors.questions[i] = {result: 'required'}
+          }
+        }
       }
     }
-
   }
 
   return errors

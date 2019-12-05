@@ -301,6 +301,67 @@ const renderReadingPeriods = ({fields, meta: {touched, error, warning}, numRound
   </div>)
 }
 
+const renderCases = ({fields, meta: {touched, error, warning}, numRounds}) => {
+  return (<div style={{width: '100%', borderBottom: '1px solid grey', marginTop: '20px'}}>
+    <p>Cases</p>
+    <br/>
+    {
+      fields.map((case_, index) => {
+        return (
+            <Row key={index}>
+              <h3>Case {index + 1}</h3>
+              <Col>
+                <div className='form__form-group'>
+                  <p>Version 1, Part 1</p>
+                  <div className='form__form-group-field'>
+                    <Field
+                        name={`cases[${index}].versions[0].parts[0].text`}
+                        type="text"
+                        component={renderTextArea}
+                    />
+                  </div>
+                  <p>Version 1, Part 2</p>
+                  <div className='form__form-group-field'>
+                    <Field
+                        name={`cases[${index}].versions[0].parts[1].text`}
+                        type="text"
+                        component={renderTextArea}
+                    />
+                  </div>
+                  <p>Version 2, Part 1</p>
+                  <div className='form__form-group-field'>
+                    <Field
+                        name={`cases[${index}].versions[1].parts[0].text`}
+                        type="text"
+                        component={renderTextArea}
+                    />
+                  </div>
+                  <p>Version 2, Part 2</p>
+                  <div className='form__form-group-field'>
+                    <Field
+                        name={`cases[${index}].versions[1].parts[1].text`}
+                        type="text"
+                        component={renderTextArea}
+                    />
+                  </div>
+                </div>
+              </Col>
+              <Col>
+                <div className='centered-and-flexed'>
+                  <Button type="button" size="sm"
+                          onClick={() => fields.splice(index, 1)}>delete case</Button>
+                </div>
+              </Col>
+            </Row>)
+      })}
+    <Row className="centered-and-flexed" noGutters>
+      <Button type="button" size="sm" onClick={() => fields.push({})}>
+        <i className="fa fa-plus"/>add case
+      </Button>
+    </Row>
+  </div>)
+}
+
 const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneTask, surveyTemplatesOptions, taskArray,
                        fillSurvey, deleteSurvey, numExpRounds, teamFormat, hasPostSurvey, postSurvey, hasPreSurvey, preSurvey}) => {
   let tasks = [], options = [];
@@ -663,6 +724,23 @@ class TemplateForm extends React.Component {
                 </div>
               </Col>
               </Row>
+              <FieldArray
+                  name="cases"
+                  component={renderCases}
+                  rerenderOnEveryChange
+                  numRounds={numRounds}
+                  cloneTask={this.cloneTask}
+                  fillSurvey={this.fillSurvey}
+                  deleteSurvey={this.deleteSurvey}
+                  taskArray={tasks}
+                  numExpRounds={numExpRounds}
+                  surveyTemplatesOptions={surveyTemplatesOptions}
+                  teamFormat={teamFormat}
+                  hasPostSurvey={hasPostSurvey}
+                  postSurvey={postSurvey}
+                  hasPreSurvey={hasPreSurvey}
+                  preSurvey={preSurvey}
+              />
             </div>
             <FieldArray
               name="tasks"
