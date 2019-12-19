@@ -1,5 +1,5 @@
 .chat {
-  height: calc(100vh - 185px);
+  height: calc(100vh - 140px);
   min-height: 400px;
   display: flex;
   overflow: hidden;
@@ -676,8 +676,4 @@
 .button:active {
   background: rgb(33,147,90);
   box-shadow: 0 3px rgb(33,147,90) inset;
-}
-
-p {
-  color: black;
 }
