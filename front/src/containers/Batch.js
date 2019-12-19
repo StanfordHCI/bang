@@ -958,9 +958,13 @@ class Batch extends React.Component {
       const converter = new showdown.Converter();
       const md = batch.cases[currentCaseNumber].versions[currentVersionNumber].parts[currentPartNumber];
       console.log(currentCaseNumber, currentVersionNumber, currentPartNumber, md)
-      html = converter.makeHtml(md.text);
+      if (md && md !== '') {
+        html = converter.makeHtml(md.text);
+        html = html.split('>').join(' style=\'color:black\'>') // changes all the colors in html to black
+      } else {
+        html = task.readingPeriods[ind].message;
+      }
     } else {
-      console.log('else')
       html = task.readingPeriods[ind].message;
     }
     return (
@@ -999,9 +1003,9 @@ class Batch extends React.Component {
               <div className='chat__dialog-pinned-resources'>
                 <p style={{color: 'black'}}>helperBot</p>
               </div>
-              {task.readingPeriods && task.readingPeriods.length && <div
-                  style={{color: 'black'}}
-                  dangerouslySetInnerHTML={{__html: html}}/>}
+              {task.readingPeriods && task.readingPeriods.length &&
+              <div
+                  dangerouslySetInnerHTML={{__html: html }}></div>}
             </div>}
           </div>
         </div>

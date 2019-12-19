@@ -582,6 +582,10 @@ class TemplateForm extends React.Component {
     const num = parseInt(e.target.value);
     if (isNaN(num)) return;
     let tasks = this.props.tasks.filter((x, index) => index < num);
+    while (tasks.length < num) {
+      tasks.push({steps: []})
+    }
+    console.log('tasks:', tasks)
     this.props.dispatch(change('TemplateForm', 'tasks', tasks))
   }
 
@@ -886,6 +890,16 @@ const validate = (values, props) => {
         errors.tasks[i].survey[j].type = 'add options please';
       }
     }
+    if (task.readingPeriods && task.readingPeriods.length) {
+      task.readingPeriods.forEach((x, index) => {
+        if (!x.time) {
+          errors.tasks[i].message = 'add time to reading periods'
+        }
+        if (!x.message) {
+          errors.tasks[i].message = 'add messages to reading periods'
+        }
+      })
+    }
 
   });
   if (values.teamFormat == null) {
@@ -896,6 +910,24 @@ const validate = (values, props) => {
   }
   if (values.hasPreSurvey && (!values.preSurvey || !values.preSurvey.length) && values.tasks.length && values.tasks[values.numRounds - 1]) {
     errors.tasks[values.numRounds - 1].message = 'add questions to pre-survey please';
+  }
+  if (values.cases && values.cases.length) {
+    const caseCount = values.cases.length;
+    if (caseCount * 2 < values.numRounds) {
+      errors.numRounds = 'Add more cases please';
+    }
+    if (values.numRounds % 2 !== 0) {
+      errors.numRounds = 'Number of rounds is not even';
+    }
+    if (values.tasks && values.tasks.length) {
+      console.log('all errors; ', errors);
+      values.tasks.forEach((x, ind) => {
+        if (!x.readingPeriods || (x.readingPeriods && x.readingPeriods.length < 2)) {
+          console.log(`${ind}, ${x.readingPeriods && x.readingPeriods.length}`)
+          errors.tasks[ind].message = 'add reading periods'
+        }
+      })
+    }
   }
   return errors
 };
