@@ -559,7 +559,9 @@ class Batch extends React.Component {
             if (timeLeft < 120 && poll.type === 'casual') {
               warning = 'casual';
             }
-            return <div className='chat__dialog-pinned-message'>
+            return ((actualTeamSize > 1 || // do not show foreperson polls if person is alone in chat
+                batch.teamSize === 1 || // unless we are testing
+                poll.type !== 'foreperson') && <div className='chat__dialog-pinned-message'>
               <Vote
                   options={options}
                   vote={vote}
@@ -572,7 +574,7 @@ class Batch extends React.Component {
                   warning={warning}
                   actualTeamSize={actualTeamSize}
               />
-            </div>})}
+            </div>)})}
           <div className="chat__scroll" ref="chatScroll">
             <div className='chat__dialog-messages-wrap'>
               <div className='chat__dialog-messages'>
