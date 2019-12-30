@@ -951,24 +951,24 @@ class Batch extends React.Component {
       onKeyDown: this.handleSubmit,
       className: 'chat__field-input'
     };
-    let html;
+    let md;
     if (batch.cases && batch.cases.length && batch.roundPairs && batch.roundPairs.length) {
       const currentPair = batch.roundPairs.find(x => x.pair.some(y => Number(y.roundNumber) === batch.currentRound - 1))
       const currentCaseNumber = currentPair.caseNumber;
       const currentVersionNumber = currentPair.pair.find(x => Number(x.roundNumber) === batch.currentRound - 1).versionNumber;
       const currentPartNumber = ind;
-      const converter = new showdown.Converter();
-      const md = batch.cases[currentCaseNumber].versions[currentVersionNumber].parts[currentPartNumber];
+      md = batch.cases[currentCaseNumber].versions[currentVersionNumber].parts[currentPartNumber];
       console.log(currentCaseNumber, currentVersionNumber, currentPartNumber, md)
-      if (md && md !== '') {
-        html = converter.makeHtml(md.text);
-        html = html.split('>').join(' style=\'color:black\'>') // changes all the colors in html to black
-      } else {
-        html = task.readingPeriods[ind].message;
-      }
-    } else {
-      html = task.readingPeriods[ind].message;
     }
+    if (!md || md.text === '') {
+      md = {};
+      md.text = task.readingPeriods[ind].message;
+    }
+    console.log('md', md);
+    const converter = new showdown.Converter();
+    let html = converter.makeHtml(md.text);
+    console.log('html', html)
+    html = html.split('>').join(' style=\'color:black\'>') // changes all the colors in html to black, color in showdown lib is bugged probably
     return (
         <div className='chat'>
           <div className='chat__contact-list'>
@@ -1007,6 +1007,7 @@ class Batch extends React.Component {
               </div>
               {task.readingPeriods && task.readingPeriods.length &&
               <div
+                  // style={{overflow: 'auto'}}
                   dangerouslySetInnerHTML={{__html: html }}></div>}
             </div>}
           </div>
