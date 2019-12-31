@@ -47,6 +47,7 @@ class AddBatch extends React.Component {
 
   handleSubmit(form) {
     let batch = Object.assign(this.props.templateList.find(x => x._id === form.template));
+    // batch parameters
     batch.note = form.note;
     batch.maskType = form.maskType;
     batch.withAvatar = form.withAvatar;
@@ -59,6 +60,12 @@ class AddBatch extends React.Component {
     batch.randomizeExpRound = form.randomizeExpRound;
     batch.reconveneWorstRound = form.reconveneWorstRound;
     batch.dynamicTeamSize = form.dynamicTeamSize;
+    // filter parameters
+    batch.gender = form.gender;
+    batch.salary = form.salary;
+    batch.userRace = form.userRace;
+    batch.bornAfterYear = form.bornAfterYear;
+    batch.bornBeforeYear = form.bornBeforeYear;
     this.props.addBatch(batch)
   }
 
@@ -73,6 +80,60 @@ class AddBatch extends React.Component {
               <h5 className='bold-text'>Add batch</h5>
             </div>
             <form className='form form--horizontal' style={{paddingBottom: '5vh'}} onSubmit={handleSubmit(this.handleSubmit.bind(this))}>
+              <h5>Filter users by:</h5>
+              <div className='form__form-group'>
+                <label className='form__form-group-label'>Gender</label>
+                <div className='form__form-group-field'>
+                  <Field
+                      name='gender'
+                      component={renderSelectField}
+                      options={[{value: false, label: 'do not filter'}].concat([{value: 'male', label: 'male'}, {value: 'female', label: 'female'}])}
+                  />
+                </div>
+              </div>
+              <div className='form__form-group'>
+                <label className='form__form-group-label'>Born after year:</label>
+                <div className='form__form-group-field'>
+                  <Field
+                      name='bornAfterYear'
+                      component={renderField}
+                      type='number'
+                  />
+                </div>
+              </div>
+              <div className='form__form-group'>
+                <label className='form__form-group-label'>Born before year:</label>
+                <div className='form__form-group-field'>
+                  <Field
+                      name='bornBeforeYear'
+                      component={renderField}
+                      type='number'
+                  />
+                </div>
+              </div>
+              <div className='form__form-group'>
+                <label className='form__form-group-label'>Race</label>
+                <div className='form__form-group-field'>
+                  <Field
+                      name='userRace'
+                      component={renderSelectField}
+                      options={[{value: false, label: 'do not filter'}].concat(['American Indian or Alaska Native', 'Asian', 'Black or African American',
+                        'Native Hawaiian or Other Pacific Islander', 'White', 'Other'].map(x => {return {value: x, label: x}}))}
+                  />
+                </div>
+              </div>
+              <div className='form__form-group'>
+                <label className='form__form-group-label'>Salary</label>
+                <div className='form__form-group-field'>
+                  <Field
+                      name='salary'
+                      component={renderSelectField}
+                      options={[{value: false, label: 'do not filter'}].concat(['Less than $20,000', '$20,000 to $34,999', '$35,000 to $49,999', '$50,000 to $74,999',
+                        '$75,000 to $99,999', 'Over $100,000'].map(x => {return {value: x, label: x}}))}
+                  />
+                </div>
+              </div>
+              <h5>Batch parameters</h5>
               <div className='form__form-group'>
                 <label className='form__form-group-label'>Single-team or Multi-team?</label>
                 <div className='form__form-group-field'>
@@ -282,6 +343,9 @@ function mapStateToProps(state) {
       reconveneWorstRound: false,
       randomizeExpRound: true,
       dynamicTeamSize: false,
+      gender: false,
+      salary: false,
+      userRace: false,
     }
   }
 }

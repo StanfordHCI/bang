@@ -164,10 +164,43 @@ export const addBatch = async function (req, res) {
     prs.push(activeCheck(io))
     if (process.env.MTURK_MODE !== 'off') {
       let users;
-      if (!newBatch.loadTeamOrder) {
-        users = await User.find({systemStatus: 'willbang', isTest: false}).sort({createdAt: -1}).limit(200)
+      const notifyFilter = {};
+      if (req.body.userRace) {
+        notifyFilter.race = req.body.userRace;
+      }
+      if (req.body.salary) {
+        notifyFilter.householdEarnings = req.body.salary;
+      }
+      if (req.body.gender) {
+        notifyFilter.gender = req.body.gender;
+      }
+      console.log(notifyFilter, req.body.bornBeforeYear, req.body.bornAfterYear)
+      if (true) { // single-day batches
+        users = await User.find(Object.assign({
+          systemStatus: 'willbang', isTest: false
+        }, notifyFilter)).sort({createdAt: -1}).limit(200)
           .select('mturkId testAssignmentId').lean().exec();
-      } else {
+        console.log('users1', users)
+        if (req.body.bornAfterYear) {
+          users = users.filter(x => {
+            if (!x.yearBorn) {
+              return true;
+            } else {
+              return parseInt(x.yearBorn) > parseInt(req.body.bornAfterYear);
+            }
+          })
+        }
+        if (req.body.bornBeforeYear) {
+          users = users.filter(x => {
+            if (!x.yearBorn) {
+              return true;
+            } else {
+              return parseInt(x.yearBorn) < parseInt(req.body.bornBeforeYear);
+            }
+          })
+        }
+        console.log('filtered users: ', users);
+      } else { // stuff for multi-day batches (in development)
         const batchId = newBatch.loadTeamOrder;
         const loadingBatch = await Batch.findOne({_id: batchId});
         const roundGen = loadingBatch.roundGen;
@@ -188,12 +221,6 @@ export const addBatch = async function (req, res) {
           }
         }
         batchUsers.forEach((user, i) => {numberedUsers[genUsers[i]] = user}) // makes a dict with format {genNumber: user, ...}
-        users = [];
-        for (const i in batchUsers) {
-          const user = await User.findOne({_id: batchUsers[i].user})
-          Object.assign(user, {genNumber : i, batchId: batchId});
-          users.push(user);
-        }
       }
 
       await startNotification(users);
