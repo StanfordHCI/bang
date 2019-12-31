@@ -489,6 +489,7 @@ class Batch extends React.Component {
     } catch (e) {
       polls = null;
     }
+    console.log('polls', polls)
     const inputProps = {
       placeholder: 'type here...',
       value: this.state.message,

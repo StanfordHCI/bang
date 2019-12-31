@@ -520,9 +520,9 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   }
 
   if (task.readingPeriods && task.readingPeriods.length) {
-    for (let i = 0; i < task.readingPeriods.length; ++i) {
-      const period = task.readingPeriods[i];
-      const ind = i;
+    for (let j = 0; j < task.readingPeriods.length; ++j) {
+      const period = task.readingPeriods[j];
+      const ind = j;
       logger.info(module, batch._id + ` : Begin reading period ${ind + 1} for round ${roundObject.number}`);
       roundObject.status = `readingPeriod${ind}`;
       const info = {rounds: rounds}
@@ -546,8 +546,9 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: startTaskInfo}).lean().exec();
     io.to(batch._id.toString()).emit('start-task', startTaskInfo);
   }
-
+  await Batch.updateOne({_id: batch._id}, { $set: { activePoll: null } });
   logger.info(module, batch._id + ' : Begin task for round ' + roundObject.number)
+  io.to(batch._id.toString()).emit('refresh-batch', true);
   let stepsSumTime = 0;
   const polls = task.polls;
   for (let j = 0; j < task.steps.length; j++) {
