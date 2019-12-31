@@ -94,7 +94,7 @@ class Waiting extends React.Component {
                   <p><b>IMPORTANT: This task will take around 75 minutes to complete. You will not be paid if you do not complete the entire task.</b> If you intend to complete the task, please do not leave because it will mean other MTurkers will have to wait longer for the task. If enough people arrive, you'll be bonused $1 for waiting. Provided you stay for the <b>whole task,</b> we will bonus to a rate of approximately <b>$12 per hour</b>. If there are never enough people, we will automatically submit and accept for the base rate.</p>
                   
                   
-                  <Button className="btn btn-primary" onClick={() => joinBatch()} id={'joinButton'}>Join Batch</Button>
+                  <Button className="btn btn-primary" size='lg' block onClick={() => joinBatch()} id={'joinButton'}>I understand, proceed to waitroom</Button>
                   {(mode === 'off' || mode === 'test') && <Button className="btn btn-primary" onClick={async () => this.testBatch()} id={'testButton'}>Test Batch</Button>}
                   <Modal color='primary' btn='FAQ'
                          content={(<Container className="faq" >
