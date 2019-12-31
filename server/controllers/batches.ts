@@ -554,7 +554,10 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   logger.info(module, batch._id + ' : Begin task for round ' + roundObject.number)
   io.to(batch._id.toString()).emit('refresh-batch', true);
   let stepsSumTime = 0;
-  const polls = task.polls;
+  let polls = task.polls;
+  if (!polls) {
+    polls = [];
+  }
   for (let j = 0; j < task.steps.length; j++) {
     const step = task.steps[j];
     let time = j === 0 ? step.time : step.time - task.steps[j - 1].time;
