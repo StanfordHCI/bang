@@ -57,19 +57,26 @@ export default function (state = initialState, action) {
         chat: chat
       };
     case VOTED:
-      batch = state.batch;
-      const team = batch.rounds[batch.currentRound - 1].teams.find(x => x.users.some(y => y.user === action.data.user.toString()));
-      const teamIndex = batch.rounds[batch.currentRound - 1].teams.indexOf(team);
-      if (!batch.rounds[batch.currentRound - 1]['teams'][teamIndex]['currentPollVotes']) {
-        batch.rounds[batch.currentRound - 1]['teams'][teamIndex]['currentPollVotes'] = [];
+      try {
+        batch = state.batch;
+        const team = batch.rounds[batch.currentRound - 1].teams.find(x => x.users.some(y => y.user === action.data.user.toString()));
+        const teamIndex = batch.rounds[batch.currentRound - 1].teams.indexOf(team);
+        if (!batch.rounds[batch.currentRound - 1]['teams'][teamIndex]['currentPollVotes']) {
+          batch.rounds[batch.currentRound - 1]['teams'][teamIndex]['currentPollVotes'] = [];
+        }
+        const pollInd = action.data.pollInd;
+        delete action.data.pollInd;
+        batch.rounds[batch.currentRound - 1]['teams'][teamIndex]['currentPollVotes'][pollInd] = action.data;
+        return {
+          ...state,
+          batch: batch
+        };
       }
-      const pollInd = action.data.pollInd;
-      delete action.data.pollInd;
-      batch.rounds[batch.currentRound - 1]['teams'][teamIndex]['currentPollVotes'][pollInd] = action.data;
-      return {
-        ...state,
-        batch: batch
-      };
+      catch (e) { // sometimes batch comes here uninitialized, and this error occurs
+        return {
+          ...state,
+        }
+      }
 
     default:
       return state;

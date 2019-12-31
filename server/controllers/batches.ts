@@ -520,15 +520,19 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   }
 
   if (task.readingPeriods && task.readingPeriods.length) {
-    for (let j = 0; j < task.readingPeriods.length; ++j) {
-      const period = task.readingPeriods[j];
-      const ind = j;
-      logger.info(module, batch._id + ` : Begin reading period ${ind + 1} for round ${roundObject.number}`);
-      roundObject.status = `readingPeriod${ind}`;
-      const info = {rounds: rounds}
-      batch = await Batch.findByIdAndUpdate(batch._id, {$set: info}).lean().exec();
-      io.to(batch._id.toString()).emit('reading-period', info);
-      await timeout(period.time * 60000)
+    try {
+      for (let j = 0; j < task.readingPeriods.length; ++j) {
+        const period = task.readingPeriods[j];
+        const ind = j;
+        logger.info(module, batch._id + ` : Begin reading period ${ind + 1} for round ${roundObject.number}`);
+        roundObject.status = `readingPeriod${ind}`;
+        const info = {rounds: rounds}
+        batch = await Batch.findByIdAndUpdate(batch._id, {$set: info}).lean().exec();
+        io.to(batch._id.toString()).emit('reading-period', info);
+        await timeout(period.time * 60000)
+      }
+    } catch (e) {
+      console.log('RP error', e)
     }
     roundObject.status = 'active';
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: {rounds: rounds}});
