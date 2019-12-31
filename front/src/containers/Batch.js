@@ -971,35 +971,7 @@ class Batch extends React.Component {
     html = html.split('>').join(' style=\'color:black\'>') // changes all the colors in html to black, color in showdown lib is bugged probably
     return (
         <div className='chat'>
-          <div className='chat__contact-list'>
-            <div className='chat__contacts'>
-              <Table className='table table--bordered table--head-accent'>
-                <thead>
-                <tr>
-                  <th>members</th>
-                </tr>
-                </thead>
-                <tbody>
-                {chat.members.map((member) => {
-                  let nick = '';
-                  if (member._id.toString() === user._id.toString()) {
-                    nick = member.realNick + ' (you)';
-                  } else {
-                    nick = batch.maskType === 'masked' ? member.fakeNick : member.realNick;
-                  }
-                  return (<tr key={member._id}>
-                    <td>
-                      <div className='chat__bubble-contact-name'>
-                        {batch.status ==='active' && !member.isActive ? '' : nick}
-                      </div>
-                    </td>
-                  </tr>)
-                })}
-                </tbody>
-              </Table>
-            </div>
-          </div>
-          <div className='chat__dialog' style={{ marginLeft: 10 }}>
+          <div className='chat__readingPeriod' style={{ marginLeft: 10 }}>
             {task.readingPeriods && task.readingPeriods.length &&
             <div className='chat__dialog-pinned-message' style={{maxHeight: '90%', color: 'black'}}>
               <div className='chat__dialog-pinned-resources'>
@@ -1008,7 +980,7 @@ class Batch extends React.Component {
               {task.readingPeriods && task.readingPeriods.length &&
               <div
                   // style={{overflow: 'auto'}}
-                  dangerouslySetInnerHTML={{__html: html }}></div>}
+                  dangerouslySetInnerHTML={{__html: html }}/>}
             </div>}
           </div>
         </div>

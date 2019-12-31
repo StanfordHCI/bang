@@ -158,6 +158,16 @@
     }
   }
 
+  .chat__readingPeriod {
+    width: calc(100%);
+    overflow: auto;
+    position: relative;
+
+    @media screen and (max-width: 1023px) {
+      width: 100%;
+    }
+  }
+
   .chat__contacts-scroll {
     height: 100%;
 
