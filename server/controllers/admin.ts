@@ -69,11 +69,24 @@ export const addBatch = async function (req, res) {
         roundGen = dynamicTeamsResult.roundGen;
         roundPairs = dynamicTeamsResult.roundPairs;
         if (roundPairs) { // giving roundPairs versions and case numbers
-          console.log('roundPairs:', roundPairs)
           let precededRoundPairs = [];
           roundPairs.forEach((pair, ind) => {
-            precededRoundPairs[ind] = {pair: [{roundNumber: pair[0], versionNumber: 0}, {roundNumber: pair[1], versionNumber: 1}], caseNumber: ind}
-          })
+            precededRoundPairs[ind] = {pair: [{roundNumber: pair[0], versionNumber: 0}, {roundNumber: pair[1], versionNumber: 1}], caseNumber: ind};
+            newBatch.tasks.forEach((task, index)=>{
+              if (index===pair[0] || index===pair[1]){
+                newBatch.cases.forEach((_case, index)=>{
+                  if (index === ind){
+                    _case.versions.forEach((version, index)=>{
+                      task.pinnedContent = version.parts.map((part, index)=>(
+                              {text: part.text, link: part.text}
+                    ))
+                    });
+                  }
+                });
+              }
+            }
+            );
+          });
           newBatch.roundPairs = precededRoundPairs
         }
       } else { // ordinary single-team round generation
