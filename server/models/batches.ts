@@ -119,9 +119,10 @@ let  BatchSchema = new Schema({
   cases: [{
     versions: [{
       parts: [{
-        text: { type: String, required: true }
+        text: { type: String, required: true },
+        time: { type: Number, required: true },
       }]
     }]
-  }]
+  }],
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);

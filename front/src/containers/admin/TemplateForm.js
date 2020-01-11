@@ -311,40 +311,86 @@ const renderCases = ({fields, meta: {touched, error, warning}, numRounds}) => {
             <Row key={index}>
               <h3>Case {index + 1}</h3>
               <Col>
-                <div className='form__form-group'>
-                  <p>Version 1, Part 1</p>
-                  <div className='form__form-group-field'>
+                  <Row>
+                    <Col>
+                        <p>Version 1, Part 1</p>
+                      <Row>
+                          <Field
+                              name={`cases[${index}].versions[0].parts[0].text`}
+                              type="text"
+                              component={renderTextArea}
+                          />
+                      </Row>
+                    </Col>
+                    <Col>
+                      <p>Reading time</p>
+                      <Field
+                          name={`cases[${index}].versions[0].parts[0].time`}
+                          type="text"
+                          component={renderField}
+                      />
+                    </Col>
+                  </Row>
+                <Row>
+                  <Col>
+                    <p>Version 1, Part 2</p>
+                    <Row>
+                      <Field
+                          name={`cases[${index}].versions[0].parts[1].text`}
+                          type="text"
+                          component={renderTextArea}
+                      />
+                    </Row>
+                  </Col>
+                  <Col>
+                    <p>Reading time</p>
                     <Field
-                        name={`cases[${index}].versions[0].parts[0].text`}
-                        type="text"
-                        component={renderTextArea}
+                        name={`cases[${index}].versions[0].parts[1].time`}
+                        type="number"
+                        component={renderField}
                     />
-                  </div>
-                  <p>Version 1, Part 2</p>
-                  <div className='form__form-group-field'>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col>
+                    <p>Version 2, Part 1</p>
+                    <Row>
+                      <Field
+                          name={`cases[${index}].versions[1].parts[0].text`}
+                          type="text"
+                          component={renderTextArea}
+                      />
+                    </Row>
+                  </Col>
+                  <Col>
+                    <p>Reading time</p>
                     <Field
-                        name={`cases[${index}].versions[0].parts[1].text`}
-                        type="text"
-                        component={renderTextArea}
+                        name={`cases[${index}].versions[1].parts[0].time`}
+                        type="number"
+                        component={renderField}
                     />
-                  </div>
-                  <p>Version 2, Part 1</p>
-                  <div className='form__form-group-field'>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col>
+                    <p>Version 2, Part 2</p>
+                    <Row>
+                      <Field
+                          name={`cases[${index}].versions[1].parts[1].text`}
+                          type="text"
+                          component={renderTextArea}
+                      />
+                    </Row>
+                  </Col>
+                  <Col>
+                    <p>Reading time</p>
                     <Field
-                        name={`cases[${index}].versions[1].parts[0].text`}
+                        name={`cases[${index}].versions[1].parts[1].time`}
                         type="text"
-                        component={renderTextArea}
+                        component={renderField}
                     />
-                  </div>
-                  <p>Version 2, Part 2</p>
-                  <div className='form__form-group-field'>
-                    <Field
-                        name={`cases[${index}].versions[1].parts[1].text`}
-                        type="text"
-                        component={renderTextArea}
-                    />
-                  </div>
-                </div>
+                  </Col>
+                </Row>
               </Col>
               <Col>
                 <div className='centered-and-flexed'>
@@ -918,15 +964,6 @@ const validate = (values, props) => {
     }
     if (values.numRounds % 2 !== 0) {
       errors.numRounds = 'Number of rounds is not even';
-    }
-    if (values.tasks && values.tasks.length) {
-      console.log('all errors; ', errors);
-      values.tasks.forEach((x, ind) => {
-        if (!x.readingPeriods || (x.readingPeriods && x.readingPeriods.length < 2)) {
-          console.log(`${ind}, ${x.readingPeriods && x.readingPeriods.length}`)
-          errors.tasks[ind].message = 'add reading periods'
-        }
-      })
     }
   }
   return errors

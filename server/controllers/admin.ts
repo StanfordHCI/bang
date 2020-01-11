@@ -69,12 +69,29 @@ export const addBatch = async function (req, res) {
         roundGen = dynamicTeamsResult.roundGen;
         roundPairs = dynamicTeamsResult.roundPairs;
         if (roundPairs) { // giving roundPairs versions and case numbers
-          console.log('roundPairs:', roundPairs)
           let precededRoundPairs = [];
           roundPairs.forEach((pair, ind) => {
             precededRoundPairs[ind] = {pair: [{roundNumber: pair[0], versionNumber: 0}, {roundNumber: pair[1], versionNumber: 1}], caseNumber: ind}
           })
-          newBatch.roundPairs = precededRoundPairs
+          newBatch.roundPairs = precededRoundPairs;
+          // if there are cases, we make readingPeriods out of them
+          if (newBatch.cases && newBatch.cases.length) {
+            newBatch.tasks.forEach(x => {
+              if (!Array.isArray(x.readingPeriods)) { // if reading periods are not defined we define them
+                x.readingPeriods = [];
+              }
+            })
+            newBatch.roundPairs.forEach(x => {
+              const caseNumber = x.caseNumber;
+              // for each round we find out its version number and take data from the case
+              x.pair.forEach(y => { // rp message === part.text
+                const generatedRPs = newBatch.cases[caseNumber].versions[y.versionNumber].parts.map(part =>
+                  Object.assign(part, {message: part.text})
+                );
+                newBatch.tasks[y.roundNumber].readingPeriods.push(...generatedRPs);
+              })
+            })
+          }
         }
       } else { // ordinary single-team round generation
         roundGen = createOneTeam(newBatch.teamSize, newBatch.numRounds, letters.slice(0, newBatch.teamSize));
