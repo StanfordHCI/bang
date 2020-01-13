@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {User} from "../models/users";
 
 const moment = require('moment')
@@ -72,14 +73,16 @@ export const addBatch = async function (req, res) {
           let precededRoundPairs = [];
           roundPairs.forEach((pair, ind) => {
             precededRoundPairs[ind] = {pair: [{roundNumber: pair[0], versionNumber: 0}, {roundNumber: pair[1], versionNumber: 1}], caseNumber: ind};
-            newBatch.tasks.forEach((task, index)=>{
-              if (index===pair[0] || index===pair[1]){
+            newBatch.tasks.forEach((task, taskIndex)=>{
+              if (taskIndex===pair[0] || taskIndex===pair[1]){
                 newBatch.cases.forEach((_case, index)=>{
                   if (index === ind){
-                    _case.versions.forEach((version, index)=>{
-                      task.pinnedContent = version.parts.map((part, index)=>(
-                              {text: part.text, link: part.text}
-                    ))
+                    _case.versions.forEach((version, caseIndex)=>{
+                      if (caseIndex === taskIndex) {
+                        task.pinnedContent = version.parts.map((part, index)=>(
+                            {text: part.text, link: part.text}
+                        ))
+                      }
                     });
                   }
                 });
