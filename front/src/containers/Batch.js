@@ -952,14 +952,14 @@ class Batch extends React.Component {
       className: 'chat__field-input'
     };
     let md;
-    if (batch.cases && batch.cases.length && batch.roundPairs && batch.roundPairs.length) {
-      const currentPair = batch.roundPairs.find(x => x.pair.some(y => Number(y.roundNumber) === batch.currentRound - 1))
-      const currentCaseNumber = currentPair.caseNumber;
-      const currentVersionNumber = currentPair.pair.find(x => Number(x.roundNumber) === batch.currentRound - 1).versionNumber;
-      const currentPartNumber = ind;
-      md = batch.cases[currentCaseNumber].versions[currentVersionNumber].parts[currentPartNumber];
-      console.log(currentCaseNumber, currentVersionNumber, currentPartNumber, md)
-    }
+    // if (batch.cases && batch.cases.length && batch.roundPairs && batch.roundPairs.length) {
+    //   const currentPair = batch.roundPairs.find(x => x.pair.some(y => Number(y.roundNumber) === batch.currentRound - 1))
+    //   const currentCaseNumber = currentPair.caseNumber;
+    //   const currentVersionNumber = currentPair.pair.find(x => Number(x.roundNumber) === batch.currentRound - 1).versionNumber;
+    //   const currentPartNumber = ind;
+    //   md = batch.cases[currentCaseNumber].versions[currentVersionNumber].parts[currentPartNumber];
+    //   console.log(currentCaseNumber, currentVersionNumber, currentPartNumber, md)
+    // }
     if (!md || md.text === '') {
       md = {};
       md.text = task.readingPeriods[ind].message;
