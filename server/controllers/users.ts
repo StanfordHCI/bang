@@ -1,3 +1,4 @@
+// @ts-nocheck 
 import {User} from '../models/users'
 import {Batch} from '../models/batches'
 import {Chat} from '../models/chats'

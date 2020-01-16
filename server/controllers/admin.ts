@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {User} from "../models/users";
 
 const moment = require('moment')
@@ -71,9 +72,26 @@ export const addBatch = async function (req, res) {
         if (roundPairs) { // giving roundPairs versions and case numbers
           let precededRoundPairs = [];
           roundPairs.forEach((pair, ind) => {
-            precededRoundPairs[ind] = {pair: [{roundNumber: pair[0], versionNumber: 0}, {roundNumber: pair[1], versionNumber: 1}], caseNumber: ind}
-          })
+            precededRoundPairs[ind] = {pair: [{roundNumber: pair[0], versionNumber: 0}, {roundNumber: pair[1], versionNumber: 1}], caseNumber: ind};
+          });
           newBatch.roundPairs = precededRoundPairs;
+          newBatch.tasks.forEach((task, taskIndex)=>{
+            const pair = precededRoundPairs.find(p=>(
+                p.pair.some((_pair=>_pair.roundNumber===taskIndex))
+            ));
+            const versionNumber = pair.pair.find(x=>x.roundNumber===taskIndex).versionNumber
+            newBatch.cases.forEach((_case, index)=>{
+              if (index === pair.caseNumber) {
+                _case.versions.forEach((version, versionIndex) => {
+                  if (versionIndex === versionNumber) {
+                    task.pinnedContent = version.parts.map((part, index) => (
+                        {text: part.text, link: part.text}
+                    ))
+                  }
+                });
+              }
+            })
+          });
           // if there are cases, we make readingPeriods out of them
           if (newBatch.cases && newBatch.cases.length) {
             newBatch.tasks.forEach(x => {
