@@ -48,8 +48,10 @@ let  TemplateSchema = new Schema({
     polls: [{
       text: {type: String},
       type: {type: String, $enum: ['foreperson', 'casual']},
-      options: [{option: {type: String,}}],
-      selectOptions: [{value: {type: String}, label: {type: String,}}],
+      // options: [{option: {type: String,}}],
+      // selectOptions: [{value: {type: String}, label: {type: String,}}],
+      questions: [{text:{type: String}, type: {type: Number}, options:[{option: {type: String}}],
+        selectOptions: [{value: {type: String}, label: {type: String,}}]}],
       threshold: {type: Number, required: false},
       step: { type: Number, required: true },
     }],
