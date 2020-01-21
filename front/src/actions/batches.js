@@ -44,6 +44,12 @@ export const vote = (data) => {
   }
 }
 
+export const voteCasualForm = (data) => {
+  return function (dispatch) {
+    socket.emit('save-polls', data);
+  }
+};
+
 export const loadBatch = () => {
   return function (dispatch, getState) {
     const user = getState().app.user;
