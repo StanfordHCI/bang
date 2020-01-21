@@ -124,6 +124,7 @@ const renderPoll = ({fields, meta: {touched, error, warning}, task, steps}) => {
                         component={renderQuestions}
                         rerenderOnEveryChange
                         withPoints={false}
+                        poll ={task.polls[index]}
                     />
                   </div>}
                 </div>
@@ -144,10 +145,14 @@ const renderPoll = ({fields, meta: {touched, error, warning}, task, steps}) => {
   </div>)
 }
 
-const renderQuestions = ({fields, meta: {touched, error, warning}, numRounds, task, step, withPoints}) => {
+const renderQuestions = ({fields, meta: {touched, error, warning}, poll}) => {
   return (<div style={{width: '100%'}}>
     {
       fields.map((step, index) => {
+        let type = null;
+        if (poll.questions[index]) {
+          type = poll.questions[index].type ? poll.questions[index].type : 3;
+        }
         return (
             <Row key={index}>
               <div className='form__form-group' style={{maxWidth: '300px', marginLeft: '50px'}}>
@@ -157,14 +162,26 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, numRounds, ta
                       component={renderTextArea}
                       type='text'
                   />
-                <div style={{width: '100%', marginTop: '20px'}}>
-                  <FieldArray
-                      name={`${step}.options`}
-                      component={renderQuestionOptions}
-                      rerenderOnEveryChange
-                      withPoints={false}
-                  />
-                </div>
+                <label className='form__form-group-label'>Type</label>
+                <Field
+                    name={`${step}.type`}
+                    component={renderSelectField}
+                    type='text'
+                    options={[{value: 1, label: 'primary'}, {value: 2, label: 'single answer'}, {value: 3, label: 'text'},
+                      {value: 4, label: 'checkbox'}]}
+                    value = {type}
+                />
+                {
+                  type === 1 | type === 2 | type === 4 &&
+                  <div style={{width: '100%', marginTop: '20px'}}>
+                    <FieldArray
+                        name={`${step}.options`}
+                        component={renderQuestionOptions}
+                        rerenderOnEveryChange
+                        withPoints={false}
+                    />
+                  </div>
+                }
               </div>
               <div className='centered-and-flexed'>
                 <Button type="button" size="sm"

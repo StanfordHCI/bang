@@ -23,7 +23,7 @@ import {connect} from "react-redux";
 import {findDOMNode} from 'react-dom'
 import {bindActionCreators} from "redux";
 import moment from 'moment'
-import {loadBatch, sendMessage, submitSurvey, vote} from 'Actions/batches'
+import {loadBatch, sendMessage, submitSurvey, vote, voteCasualForm} from 'Actions/batches'
 import {listener} from 'Actions/app'
 import RoundSurveyForm from './RoundSurveyForm'
 import PostSurveyForm from './PostSurveyForm'
@@ -547,10 +547,30 @@ class Batch extends React.Component {
             })}
           </div>}
           {polls && polls.map((poll, ind) => {
+            // if (poll.type === 'casual'){
+            //   poll.questions.map((question)=>{
+            //     return ((actualTeamSize > 1 || // do not show foreperson polls if person is alone in chat
+            //         batch.teamSize === 1 || // unless we are testing
+            //         poll.type !== 'foreperson') && <div className='chat__dialog-pinned-message'>
+            //       <Vote
+            //           quetion={question}
+            //           vote={vote}
+            //           user={user}
+            //           batch={batch}
+            //           lockCap={lockCap} // Vote is disabled if one of options has >=lockCap votes
+            //           poll={poll}
+            //           onDisable={this.onVoteDisable}
+            //           pollInd={batch.activePoll}
+            //           warning={warning}
+            //           actualTeamSize={actualTeamSize}
+            //       />
+            //     </div>)
+            //   });
+            // }
             let options = [];
             const lockCap = actualTeamSize * poll.threshold;
             try {
-              options = poll.type === 'foreperson' ? nicksOptions : poll.selectOptions;
+              options = poll.type === 'foreperson' ? nicksOptions : poll.questions;
             } catch (e) {
               options = [];
             }
@@ -1034,6 +1054,7 @@ function mapDispatchToProps(dispatch) {
     sendMessage,
     submitSurvey,
     vote,
+    voteCasualForm,
   }, dispatch);
 }
 
