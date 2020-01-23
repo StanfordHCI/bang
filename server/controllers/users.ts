@@ -153,7 +153,7 @@ export const vote = async function (data, socket, io) {
             const newPoll = {
                 user: userId,
                 batch: batchId,
-                questions: [{result: data.value}],
+                questions: [{result: data.value, type: data.type}],
                 round: round,
                 surveyType: 'poll',
                 pollInd: pollInd,
@@ -164,7 +164,9 @@ export const vote = async function (data, socket, io) {
                 errorHandler(e, 'poll creating error')
             }
         } else { // poll was already created, we edit the result value
-            await Survey.findByIdAndUpdate(oldPoll._id, {'questions.0.result': data.value})
+            await Survey.findByIdAndUpdate(oldPoll._id, {
+                questions: [...oldPoll.questions, {result: data.value, type: data.type} ],
+            })
         }
     }
 
@@ -186,8 +188,12 @@ export const vote = async function (data, socket, io) {
     })
     let resultData = {user: userId, pollInd: pollInd}; // data which is returned to front
     polls.forEach(x => { // count votes for every option
-        const index = x.questions[0].result;
-        resultData[index] ? resultData[index] += 1 : resultData[index] = 1
+        x.questions.forEach(question => {
+            if (question.type && question.type === 1) {
+                const index = question.result;
+                resultData[index] ? resultData[index] += 1 : resultData[index] = 1
+            }
+        })
     })
     teammatesSockets.forEach(x => { // send signal to every user
         return x.emit('voted', resultData);
@@ -230,7 +236,16 @@ export const savePolls = async function (data, socket, io) {
                 errorHandler(e, 'poll creating error')
             }
         } else { // poll was already created, we edit the result value
-            await Survey.findByIdAndUpdate(oldPoll._id, {'questions.0.result': data.value})
+            const questions = data.questions.map(question => {
+                if (question.result_array) {
+                    return {result_array: question.result_array}
+                } else {
+                    return {result: question.result}
+                }
+            });
+            await Survey.findByIdAndUpdate(oldPoll._id, {
+                questions: [...oldPoll.questions, ...questions],
+            })
         }
     }
 };
