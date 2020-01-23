@@ -1,16 +1,16 @@
 import React from "react";
-import {change, Field, formValueSelector, reduxForm} from "redux-form";
+import {change, Field, formValueSelector, SubmissionError, reduxForm} from "redux-form";
 import {Button, ButtonToolbar, Col, Container, Row} from "reactstrap";
 import renderRadioPanel from "Components/form/RadioPanel";
 import renderRadioButton from "Components/form/RadioButton";
+import {renderField} from "Components/form/Text";
 import {bindActionCreators} from "redux";
 import {connect} from "react-redux";
 import {Form, FormGroup, Label, Input, FormText} from 'reactstrap';
-import {renderTextArea} from 'Components/form/Text';
 
 const renderRadioButtonField = (props) => {
     return (
-        <FormGroup check>
+        <FormGroup check inline>
             <Label check>
                 <Input {...props.input} name={props.input.name} type="radio"/>{' '}
                 {props.option.label}
@@ -21,7 +21,7 @@ const renderRadioButtonField = (props) => {
 
 const renderCheckBoxField = (props) => {
     return (
-        <FormGroup check>
+        <FormGroup check inline>
             <Label check>
                 <Input {...props.input} type="checkbox"/>{' '}
                 {props.option.label}
@@ -30,17 +30,75 @@ const renderCheckBoxField = (props) => {
     )
 }
 
+const renderTextField = (props) => {
+    return (
+        <Row form>
+            <Col ms={2}>
+            </Col>
+            <Col md={4}>
+                <FormGroup>
+                    <Input {...props.input} type="text"/>
+                    {props.meta.touched && props.meta.error && <span style={{color: 'red'}}>{props.meta.error}</span>}
+                </FormGroup>
+            </Col>
+            <Col ms={2}>
+            </Col>
+        </Row>
+    )
+}
+
+const required = value => value ? undefined : 'Required'
+
 class CasualForm extends React.Component {
 
     constructor() {
         super();
-        this.state = {};
+        this.state = {
+            disabled: false,
+        };
+        this.submit = this.submit.bind(this);
+    }
+
+    submit(data) {
+        const {onSubmit, questions} = this.props;
+        const _questions = questions.filter(q => q.type === 4);
+        const __questions = data.questions.filter(q => Array.isArray(q.result));
+        if (_questions.length !== __questions.length) {
+            throw new SubmissionError({
+                _error: 'At least one checkbox must be selected'
+            })
+        }
+        if (questions.length !== data.questions.length) {
+            throw new SubmissionError({
+                _error: 'All questions is required'
+            })
+        }
+        data.questions.map(question => {
+            if (Array.isArray(question.result)) {
+                let result = [];
+                question.result.forEach((x, index) => {
+                    if (x) {
+                        result.push(index);
+                    }
+                });
+                if (result.length === 0) {
+                    throw new SubmissionError({
+                        _error: 'At least one checkbox must be selected'
+                    })
+                }
+                delete question.result;
+                question.result_array = result;
+            }
+        });
+        onSubmit(data);
+        this.setState({disabled: true});
     }
 
     render() {
-        const {questions} = this.props;
+        const {questions, error} = this.props;
+        const { disabled } = this.state;
         return (
-            <form onSubmit={this.props.handleSubmit}>
+            <Form onSubmit={this.props.handleSubmit(this.submit)}>
                 <FormGroup>
                     <p style={{color: 'black'}}>Questions</p>
                     {
@@ -48,7 +106,7 @@ class CasualForm extends React.Component {
                             if (question.type === 2) {
                                 return <FormGroup tag="fieldset">
                                     <Label>{question.text}</Label>
-                                    <FormGroup check>
+                                        <FormGroup check>
                                         {
                                             question.selectOptions.map(option => (
                                                 <Field
@@ -60,21 +118,19 @@ class CasualForm extends React.Component {
                                                 />
                                             ))
                                         }
-                                    </FormGroup>
+                                            </FormGroup>
                                 </FormGroup>
                             }
                             if (question.type === 3) {
-                                return <FormGroup tag="fieldset">
+                                return <FormGroup>
                                     <Label>{question.text}</Label>
-                                    <FormGroup check>
                                         {
                                             <Field
                                                 name={`questions.${index}.result`}
-                                                component="input"
-                                                type="text"
+                                                component={renderTextField}
+                                                validate={[required]}
                                             />
                                         }
-                                    </FormGroup>
                                 </FormGroup>
                             }
                             if (question.type === 4) {
@@ -91,33 +147,26 @@ class CasualForm extends React.Component {
                                                 />
                                             ))
                                         }
+
                                     </FormGroup>
                                 </FormGroup>
                             }
                         })
                     }
                 </FormGroup>
-                <Button color='primary' size='sm' type='submit'
+                <FormGroup>
+                    {error && <strong style={{color: 'red'}}>{error}</strong>}
+                </FormGroup>
+                <Button color='primary' size='sm' type='submit' disabled={disabled}
                 >Submit</Button>
-            </form>
+            </Form>
         )
     }
 }
 
-const validate = (values, props) => {
-    const errors = {};
-    if (!values.name) {
-        errors.name = 'required'
-    } else if (values.name.length > 25) {
-        errors.name = 'must be 25 characters or less'
-    }
-
-    return errors
-};
 
 CasualForm = reduxForm({
     form: 'CasualForm',
-    validate,
 })(CasualForm);
 
 
