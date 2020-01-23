@@ -152,7 +152,7 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, poll}) => {
         let type = null;
         if (poll.questions[index]) {
           type = poll.questions[index].type ? poll.questions[index].type : 3;
-        }
+      }
         return (
             <Row key={index}>
               <div className='form__form-group' style={{maxWidth: '300px', marginLeft: '50px'}}>
