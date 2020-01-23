@@ -466,7 +466,7 @@ class Batch extends React.Component {
   }
 
   renderChat() {
-    const {sendMessage, user, chat, batch, currentRound, vote} = this.props;
+    const {sendMessage, user, voteCasualForm, chat, batch, currentRound, vote} = this.props;
     let pinnedContent = [];
     try {
       pinnedContent = batch.tasks[currentRound.number - 1].pinnedContent;
@@ -569,11 +569,6 @@ class Batch extends React.Component {
             // }
             let options = [];
             const lockCap = actualTeamSize * poll.threshold;
-            try {
-              options = poll.type === 'foreperson' ? nicksOptions : poll.questions;
-            } catch (e) {
-              options = [];
-            }
             let warning = null;
             const timeLeft = this.state.timeLeft;
             if (timeLeft < 120 && poll.type === 'casual') {
@@ -583,7 +578,6 @@ class Batch extends React.Component {
                 batch.teamSize === 1 || // unless we are testing
                 poll.type !== 'foreperson') && <div className='chat__dialog-pinned-message'>
               <Vote
-                  options={options}
                   vote={vote}
                   user={user}
                   batch={batch}
@@ -593,6 +587,7 @@ class Batch extends React.Component {
                   pollInd={batch.activePoll}
                   warning={warning}
                   actualTeamSize={actualTeamSize}
+                  voteCasualForm = {voteCasualForm}
               />
             </div>)})}
           <div className="chat__scroll" ref="chatScroll">
