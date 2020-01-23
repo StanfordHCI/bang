@@ -70,7 +70,7 @@ class Vote extends Component {
     handleVote(option, question) {
         const {questionsResult} = this.state;
         const {vote, batch, pollInd} = this.props;
-        const obj = Object.assign(option, {
+        const obj = Object.assign(option, {type: 1} ,{
             batch: {
                 _id: batch._id,
                 rounds: batch.rounds,
@@ -83,16 +83,6 @@ class Vote extends Component {
 
     casualFormSave(data){
         const {voteCasualForm, batch, pollInd} = this.props;
-        data.questions.map(question=>{
-           if (Array.isArray(question.result)){
-               let result = [];
-               question.result.forEach((x,index)=> {
-                    result.push(index);
-               });
-               delete question.result;
-               question.result_array = result;
-           }
-        });
         voteCasualForm(Object.assign(data, {
             batch: {
                 _id: batch._id,
@@ -183,7 +173,8 @@ class Vote extends Component {
                             </React.Fragment>
                         }
                     })}
-                    {poll.type === 'casual' && <CasualForm onSubmit={this.casualFormSave} questions={poll.questions}/>}
+                    {poll.type === 'casual' && <CasualForm onSubmit={this.casualFormSave} questions={poll.questions
+                        .filter(q=>q.type !== 1)}/>}
                 </React.Fragment>
             }
             {(this.props.warning && !disabled) && this.state.warnings[this.props.warning]}
@@ -195,10 +186,11 @@ class Vote extends Component {
 }
 
 
-function mapDispatchToProps(dispatch) {
-    return bindActionCreators({
-        voteCasualForm,
-    }, dispatch);
-}
-
-export default connect(null, mapDispatchToProps)(Vote);
+// function mapDispatchToProps(dispatch) {
+//     return bindActionCreators({
+//         voteCasualForm,
+//     }, dispatch);
+// }
+//
+// export default connect(null, mapDispatchToProps)(Vote);
+export default Vote
