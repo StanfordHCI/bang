@@ -185,27 +185,28 @@ const generateSelectOptions = (template) => {
                         return {value: index, label: y.option}
                     })
                 } else {
-                    poll.questions = poll.questions
-                        .map((question, index) => {
-                            if (question.type !==3) {
-                                return {
-                                    value: index,
-                                    text: question.text,
-                                    type: question.type,
-                                    selectOptions: question.options
-                                        .map((option, index) => ({value: index, label: option.option})),
-                                    options: question.options
-                                        .map((option, index) => ({option: option.option}))
+                    if (poll.type === "casual") {
+                        poll.questions = poll.questions
+                            .map((question, index) => {
+                                if (question.type !== 3) {
+                                    return {
+                                        value: index,
+                                        text: question.text,
+                                        type: question.type,
+                                        selectOptions: question.options
+                                            .map((option, index) => ({value: index, label: option.option})),
+                                        options: question.options
+                                            .map((option, index) => ({option: option.option}))
+                                    }
+                                } else {
+                                    return {
+                                        value: index,
+                                        text: question.text,
+                                        type: question.type,
+                                    }
                                 }
-                            }
-                            else {
-                                return {
-                                    value: index,
-                                    text: question.text,
-                                    type: question.type,
-                                }
-                            }
-                        })
+                            })
+                    }
                 }
             })
         }
