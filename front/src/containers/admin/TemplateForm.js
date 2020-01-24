@@ -153,6 +153,15 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, poll}) => {
         if (poll.questions[index]) {
           type = poll.questions[index].type ? poll.questions[index].type : 3;
       }
+        let questionOptions = [{value: 1, label: 'primary'}, {value: 2, label: 'single answer'}, {value: 3, label: 'text'},
+          {value: 4, label: 'checkbox'}];
+        poll.questions.forEach((q, _index)=>{
+            if (q.type === 1){
+                if (index !== _index) {
+                    questionOptions = questionOptions.filter(x=>x.value!==1);
+                }
+            }
+        });
         return (
             <Row key={index}>
               <div className='form__form-group' style={{maxWidth: '300px', marginLeft: '50px'}}>
@@ -167,8 +176,7 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, poll}) => {
                     name={`${step}.type`}
                     component={renderSelectField}
                     type='text'
-                    options={[{value: 1, label: 'primary'}, {value: 2, label: 'single answer'}, {value: 3, label: 'text'},
-                      {value: 4, label: 'checkbox'}]}
+                    options={questionOptions}
                     value = {type}
                 />
                 {
