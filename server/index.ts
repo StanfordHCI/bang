@@ -1,3 +1,4 @@
+// @ts-nocheck
 require('dotenv').config({path: './.env'});
 const path = require('path');
 const express = require('express');
