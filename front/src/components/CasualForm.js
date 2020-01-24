@@ -96,69 +96,73 @@ class CasualForm extends React.Component {
 
     render() {
         const {questions, error} = this.props;
-        const { disabled } = this.state;
+        const {disabled} = this.state;
         return (
             <Form onSubmit={this.props.handleSubmit(this.submit)}>
-                <FormGroup>
-                    <p style={{color: 'black'}}>Questions</p>
-                    {
-                        questions.map((question, index) => {
-                            if (question.type === 2) {
-                                return <FormGroup tag="fieldset">
-                                    <Label>{question.text}</Label>
-                                        <FormGroup check>
-                                        {
-                                            question.selectOptions.map(option => (
+                {!disabled ?
+                    <React.Fragment>
+                        <FormGroup>
+                            <p style={{color: 'black'}}>Questions</p>
+                            {
+                                questions.map((question, index) => {
+                                    if (question.type === 2) {
+                                        return <FormGroup tag="fieldset">
+                                            <Label>{question.text}</Label>
+                                            <FormGroup check>
+                                                {
+                                                    question.selectOptions.map(option => (
+                                                        <Field
+                                                            name={`questions.${index}.result`}
+                                                            component={renderRadioButtonField}
+                                                            type="radio"
+                                                            option={option}
+                                                            value={option.value}
+                                                        />
+                                                    ))
+                                                }
+                                            </FormGroup>
+                                        </FormGroup>
+                                    }
+                                    if (question.type === 3) {
+                                        return <FormGroup>
+                                            <Label>{question.text}</Label>
+                                            {
                                                 <Field
                                                     name={`questions.${index}.result`}
-                                                    component={renderRadioButtonField}
-                                                    type="radio"
-                                                    option={option}
-                                                    value={option.value}
+                                                    component={renderTextField}
+                                                    validate={[required]}
                                                 />
-                                            ))
-                                        }
-                                            </FormGroup>
-                                </FormGroup>
-                            }
-                            if (question.type === 3) {
-                                return <FormGroup>
-                                    <Label>{question.text}</Label>
-                                        {
-                                            <Field
-                                                name={`questions.${index}.result`}
-                                                component={renderTextField}
-                                                validate={[required]}
-                                            />
-                                        }
-                                </FormGroup>
-                            }
-                            if (question.type === 4) {
-                                return <FormGroup tag="fieldset">
-                                    <Label>{question.text}</Label>
-                                    <FormGroup check>
-                                        {
-                                            question.selectOptions.map((option, optionIndex) => (
-                                                <Field
-                                                    name={`questions.${index}.result.${optionIndex}`}
-                                                    component={renderCheckBoxField}
-                                                    option={option}
-                                                    value={option.value}
-                                                />
-                                            ))
-                                        }
+                                            }
+                                        </FormGroup>
+                                    }
+                                    if (question.type === 4) {
+                                        return <FormGroup tag="fieldset">
+                                            <Label>{question.text}</Label>
+                                            <FormGroup check>
+                                                {
+                                                    question.selectOptions.map((option, optionIndex) => (
+                                                        <Field
+                                                            name={`questions.${index}.result.${optionIndex}`}
+                                                            component={renderCheckBoxField}
+                                                            option={option}
+                                                            value={option.value}
+                                                        />
+                                                    ))
+                                                }
 
-                                    </FormGroup>
-                                </FormGroup>
+                                            </FormGroup>
+                                        </FormGroup>
+                                    }
+                                })
                             }
-                        })
-                    }
-                </FormGroup>
-                <FormGroup>
-                    {error && <strong style={{color: 'red'}}>{error}</strong>}
-                </FormGroup>
-                <Button color='primary' size='sm' type='submit' disabled={disabled}
-                >Submit</Button>
+                        </FormGroup>
+                        <FormGroup>
+                            {error && <strong style={{color: 'red'}}>{error}</strong>}
+                        </FormGroup>
+                        <Button color='primary' size='sm' type='submit' disabled={disabled}
+                        >Submit</Button>
+                    </React.Fragment> : <Label>Thank you</Label>
+                }
             </Form>
         )
     }
@@ -168,6 +172,5 @@ class CasualForm extends React.Component {
 CasualForm = reduxForm({
     form: 'CasualForm',
 })(CasualForm);
-
 
 export default CasualForm;
