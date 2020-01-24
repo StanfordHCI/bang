@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import CasualForm from '../components/CasualForm';
-import {Collapse, Button, FormGroup} from "reactstrap";
+import {Collapse, Button} from "reactstrap";
 
 class Vote extends Component {
     constructor(props) {
