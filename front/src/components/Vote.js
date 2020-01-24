@@ -1,14 +1,13 @@
 import React, {Component} from 'react';
 import CasualForm from '../components/CasualForm';
-import {bindActionCreators} from "redux";
-import {voteCasualForm} from "Actions/batches";
-import {connect} from "react-redux";
+import {Collapse, Button, FormGroup} from "reactstrap";
 
 class Vote extends Component {
     constructor(props) {
         super(props);
         const {options} = this.props;
         this.state = {
+            open: false,
             options: [],
             isStartNotifySent: false,
             disabled: false,
@@ -24,7 +23,20 @@ class Vote extends Component {
 
         };
         this.casualFormSave = this.casualFormSave.bind(this);
-        // this.setOptions(options)
+        this.openPoll = this.openPoll.bind(this);
+        if (options) {
+            this.setOptions(options)
+        }
+    }
+
+    openPoll() {
+        const {open} = this.state;
+        if (open) {
+            this.setState({open: false});
+        } else {
+            this.setState({open: true});
+        }
+
     }
 
     setOptions(options) {
@@ -36,13 +48,15 @@ class Vote extends Component {
     }
 
     componentWillReceiveProps(nextProps, nextContext) {
-        const {batch, user, lockCap, pollInd} = this.props;
+        const {batch, user, lockCap, pollInd, options} = this.props;
         if (JSON.stringify(nextProps.options) !== JSON.stringify(this.props.options)) {
             this.setState({
                 disabled: false,
             })
         }
-        //this.setOptions(nextProps.options);
+        if (options) {
+            this.setOptions(nextProps.options);
+        }
         let votes;
         try {
             votes = batch.rounds[batch.currentRound - 1].teams.find(x => x.users.some(y => y.user.toString() === user._id)).currentPollVotes[pollInd] || [];
@@ -52,25 +66,28 @@ class Vote extends Component {
         delete votes.user;
         this.setState({votes: votes});
         const disabled = Object.values(votes).some(x => +x >= lockCap);
-        // if (disabled !== this.state.disabled) {
-        //     this.props.onDisable(pollInd);
-        //     this.setState({disabled: true})
-        // }
+        if (disabled !== this.state.disabled) {
+            this.props.onDisable(pollInd);
+            this.setState({disabled: true})
+        }
     }
 
     componentDidMount() {
+        const {poll} = this.props;
         // just getting the votes on page reload, not actually voting
         this.props.vote(Object.assign({value: null, pollInd: this.props.pollInd}, {
             batch: this.props.batch,
             pollInd: this.props.pollInd
         }));
-        // this.setOptions(this.props.options)
+        if (poll.type === "foreperson") {
+            this.setOptions(this.props.options)
+        }
     }
 
     handleVote(option, question) {
         const {questionsResult} = this.state;
         const {vote, batch, pollInd} = this.props;
-        const obj = Object.assign(option, {type: 1} ,{
+        const obj = Object.assign(option, {type: 1}, {
             batch: {
                 _id: batch._id,
                 rounds: batch.rounds,
@@ -81,7 +98,7 @@ class Vote extends Component {
         this.setState({questionResult: question, selectedOption: option});
     }
 
-    casualFormSave(data){
+    casualFormSave(data) {
         const {voteCasualForm, batch, pollInd} = this.props;
         voteCasualForm(Object.assign(data, {
             batch: {
@@ -94,7 +111,6 @@ class Vote extends Component {
 
     render() {
         const {user, poll, actualTeamSize} = this.props;
-        const {questionsResult} = this.state;
         let votes = this.state.votes;
         if (!votes) {
             votes = []
@@ -114,7 +130,8 @@ class Vote extends Component {
         if (disabled && poll.type !== 'foreperson') {
             const obj = votes;
             result = Object.keys(obj).reduce((a, b) => obj[a] > obj[b] ? a : b); // foreperson - user with max votes
-            result = this.state.selectedOption.label
+            const primary_question = this.props.poll.questions.find(question => question.type === 1);
+            result = primary_question.selectOptions[Number(result)].label;
         }
         return <div>
             {/*HEADER*/}
@@ -133,64 +150,85 @@ class Vote extends Component {
                 </p>}
             </div>
             {/*POLL TEXT OR FOREPERSON TEXT*/}
-            {
-                (poll.type === 'casual') &&
-                <React.Fragment>
-                    {poll.questions.map(question => {
-                        if (question.type === 1) {
-                            return <React.Fragment>
-                                <div>
+            <Button color="primary" onClick={this.openPoll} size="sm">
+                Collapse {this.state.open ? '-' : '+'}
+            </Button>
+            <Collapse isOpen={this.state.open}>
+                {
+                    (poll.type === 'casual') &&
+                    <React.Fragment>
+                        {poll.questions.map(question => {
+                            if (question.type === 1) {
+                                return <React.Fragment>
                                     <p style={{
                                         color: 'grey',
                                         textAlign: 'center',
                                         lineHeight: '180%'
                                     }}>{question.text}</p>
-                                </div>
-                                {/*BUTTONS*/}
-                                <div className="languages">
-                                    {(poll.type === 'casual') &&
-                                    question.selectOptions.map((option, i) => {
-                                        let style;
-                                        if (this.state.questionResult && this.state.selectedOption.value === option.value) {
-                                            style = {backgroundColor: 'grey'};
-                                        } else {
-                                            style = {}
+                                    {/*BUTTONS*/}
+                                    <div className="languages">
+                                        {(poll.type === 'casual') &&
+                                        question.selectOptions.map((option, i) => {
+                                            let style;
+                                            if (this.state.questionResult && this.state.selectedOption.value === option.value) {
+                                                style = {backgroundColor: 'grey'};
+                                            } else {
+                                                style = {}
+                                            }
+                                            return <button
+                                                style={style}
+                                                disabled={disabled}
+                                                onClick={() => {
+                                                    this.handleVote(option, question)
+                                                }}>
+                                                {option.label + ' '}
+                                                ({this.state.votes && this.state.votes[option.value.toString()] ?
+                                                (this.state.votes[option.value.toString()] / actualTeamSize * 100).toFixed(2) : 0}%)
+                                            </button>
+                                        })
                                         }
-                                        return <button
-                                            style={style}
-                                            disabled={disabled}
-                                            onClick={() => {
-                                                this.handleVote(option, question)
-                                            }}>
-                                            {option.label + ' '}
-                                            ({this.state.votes && this.state.votes[option.value.toString()] ?
-                                            (this.state.votes[option.value.toString()] / actualTeamSize * 100).toFixed(2) : 0}%)
-                                        </button>
-                                    })
-                                    }
-                                </div>
+                                    </div>
 
-                            </React.Fragment>
-                        }
-                    })}
-                    {poll.type === 'casual' && <CasualForm onSubmit={this.casualFormSave} questions={poll.questions
-                        .filter(q=>q.type !== 1)}/>}
-                </React.Fragment>
-            }
-            {(this.props.warning && !disabled) && this.state.warnings[this.props.warning]}
-
+                                </React.Fragment>
+                            }
+                        })}
+                        {poll.type === 'casual' &&
+                        <CasualForm onSubmit={this.casualFormSave} questions={poll.questions
+                            .filter(q => q.type !== 1)}/>}
+                    </React.Fragment>
+                }
+                {
+                    (poll.type === "foreperson") &&
+                    <React.Fragment>
+                        <div className="languages">
+                            {(!this.state.disabled || poll.type === 'casual') &&
+                            this.state.options.map((option, i) => {
+                                let style;
+                                if (this.state.selectedOption && this.state.selectedOption.value === option.value) {
+                                    style = {backgroundColor: 'grey'}
+                                } else {
+                                    style = {}
+                                }
+                                return <button
+                                    style={style}
+                                    disabled={disabled}
+                                    onClick={() => {
+                                        this.handleVote(option)
+                                    }}>
+                                    {option.label + ' '}({this.state.votes && this.state.votes[option.value.toString()] ?
+                                    (this.state.votes[option.value.toString()] / actualTeamSize * 100).toFixed(2) : 0}%)
+                                </button>
+                            })
+                            }
+                        </div>
+                    </React.Fragment>
+                }
+                {(this.props.warning && !disabled) && this.state.warnings[this.props.warning]}
+            </Collapse>
         </div>;
         {/*WARNING FOR CASUAL POLLS*/
         }
     }
 }
 
-
-// function mapDispatchToProps(dispatch) {
-//     return bindActionCreators({
-//         voteCasualForm,
-//     }, dispatch);
-// }
-//
-// export default connect(null, mapDispatchToProps)(Vote);
 export default Vote
