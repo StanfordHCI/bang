@@ -189,7 +189,7 @@ export const vote = async function (data, socket, io) {
     let resultData = {user: userId, pollInd: pollInd}; // data which is returned to front
     polls.forEach(x => { // count votes for every option
         x.questions.forEach(question => {
-            if (question.type && question.type === 1) {
+            if (question && question.type && question.type === "primary") {
                 const index = question.result;
                 resultData[index] ? resultData[index] += 1 : resultData[index] = 1
             }
@@ -220,10 +220,12 @@ export const savePolls = async function (data, socket, io) {
                 user: userId,
                 batch: batchId,
                 questions: data.questions.map(question => {
-                    if (question.result_array) {
-                        return {result_array: question.result_array}
-                    } else {
-                        return {result: question.result}
+                    if (question) {
+                        if (question.result_array) {
+                            return {result_array: question.result_array}
+                        } else {
+                            return {result: question.result}
+                        }
                     }
                 }),
                 round: round,
@@ -237,10 +239,12 @@ export const savePolls = async function (data, socket, io) {
             }
         } else { // poll was already created, we edit the result value
             const questions = data.questions.map(question => {
-                if (question.result_array) {
-                    return {result_array: question.result_array}
-                } else {
-                    return {result: question.result}
+                if (question) {
+                    if (question.result_array) {
+                        return {result_array: question.result_array}
+                    } else {
+                        return {result: question.result}
+                    }
                 }
             });
             await Survey.findByIdAndUpdate(oldPoll._id, {
