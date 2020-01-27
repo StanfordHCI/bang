@@ -76,7 +76,7 @@ let  BatchSchema = new Schema({
       type: {type: String, $enum: ['foreperson', 'casual'], required: true},
       // options: [{option: {type: String,}}],
       // selectOptions: [{value: {type: String}, label: {type: String,}}],
-      questions: [{text:{type: String}, type: {type: Number} , options:[{option: {type: String}}],
+      questions: [{text:{type: String}, type: {type: String, enum: ['primary', 'text', 'single', 'checkbox']}, options:[{option: {type: String}}],
         selectOptions: [{value: {type: String}, label: {type: String,}}]}],
       threshold: {type: Number, required: false},
       step: {type: Number, required: true}, // nubmer of step on which the poll appears
