@@ -160,23 +160,6 @@ export function clearTemplates(template) {
     };
 }
 
-const getTypeInStringFormat = (type) =>{
-    switch (type){
-        case 1:{
-            return "primary";
-        }
-        case 2:{
-            return "single";
-        }
-        case 3:{
-            return "text";
-        }
-        case 4:{
-            return "checkbox";
-        }
-    }
-};
-
 const generateSelectOptions = (template) => {
     template.tasks.forEach(task => {
         if (task.hasPreSurvey) task.preSurvey.forEach(preSurvey => {
@@ -209,7 +192,7 @@ const generateSelectOptions = (template) => {
                                     return {
                                         value: index,
                                         text: question.text,
-                                        type: getTypeInStringFormat(question.type),
+                                        type: question.type,
                                         selectOptions: question.options
                                             .map((option, index) => ({value: index, label: option.option})),
                                         options: question.options
@@ -219,7 +202,7 @@ const generateSelectOptions = (template) => {
                                     return {
                                         value: index,
                                         text: question.text,
-                                        type: getTypeInStringFormat(question.type),
+                                        type: question.type,
                                     }
                                 }
                             })

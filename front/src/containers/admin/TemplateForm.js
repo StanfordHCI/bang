@@ -151,12 +151,12 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, poll}) => {
       fields.map((step, index) => {
         let type = null;
         if (poll.questions[index]) {
-          type = poll.questions[index].type ? poll.questions[index].type : 3;
+          type = poll.questions[index].type ? poll.questions[index].type : 'text';
       }
-        let questionOptions = [{value: 1, label: 'primary'}, {value: 2, label: 'single answer'}, {value: 3, label: 'text'},
-          {value: 4, label: 'checkbox'}];
+        let questionOptions = [{value: 'primary', label: 'primary'}, {value: 'single', label: 'single answer'}, {value: 'text', label: 'text'},
+          {value: 'checkbox', label: 'checkbox'}];
         poll.questions.forEach((q, _index)=>{
-            if (q.type === 1){
+            if (q.type === 'primary'){
                 if (index !== _index) {
                     questionOptions = questionOptions.filter(x=>x.value!==1);
                 }
@@ -180,7 +180,7 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, poll}) => {
                     value = {type}
                 />
                 {
-                  type === 1 | type === 2 | type === 4 &&
+                  type === 'primary' | type === 'single' | type === 'checkbox' &&
                   <div style={{width: '100%', marginTop: '20px'}}>
                     <FieldArray
                         name={`${step}.options`}
