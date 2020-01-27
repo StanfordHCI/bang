@@ -95,12 +95,17 @@ const renderPoll = ({fields, meta: {touched, error, warning}, task, steps}) => {
                       options={[{value: 'foreperson', label: 'foreperson'}, {value: 'casual', label: 'casual'}]}
                   />
                 <div className='form__form-group'>
-                  <label className='form__form-group-label'>poll text:</label>
-                    <Field
+                  {withOptions === false ?
+                    <React.Fragment>
+                    <label className='form__form-group-label'>poll text:</label>
+                      <Field
                         name={`${step}.text`}
                         component={renderTextArea}
                         type='text'
-                    />
+                        />
+                        </React.Fragment> : <div />
+                  }}
+
                   <label className='form__form-group-label'>Threshold:</label>
                   <Field
                       name={`${step}.threshold`}
@@ -115,10 +120,11 @@ const renderPoll = ({fields, meta: {touched, error, warning}, task, steps}) => {
                   />
                   {withOptions && <div style={{width: '100%', marginTop: '20px'}}>
                     <FieldArray
-                        name={`${step}.options`}
-                        component={renderQuestionOptions}
+                        name={`${step}.questions`}
+                        component={renderQuestions}
                         rerenderOnEveryChange
                         withPoints={false}
+                        poll ={task.polls[index]}
                     />
                   </div>}
                 </div>
@@ -138,6 +144,69 @@ const renderPoll = ({fields, meta: {touched, error, warning}, task, steps}) => {
     </Row>
   </div>)
 }
+
+const renderQuestions = ({fields, meta: {touched, error, warning}, poll}) => {
+  return (<div style={{width: '100%'}}>
+    {
+      fields.map((step, index) => {
+        let type = null;
+        if (poll.questions[index]) {
+          type = poll.questions[index].type ? poll.questions[index].type : 3;
+      }
+        let questionOptions = [{value: 1, label: 'primary'}, {value: 2, label: 'single answer'}, {value: 3, label: 'text'},
+          {value: 4, label: 'checkbox'}];
+        poll.questions.forEach((q, _index)=>{
+            if (q.type === 1){
+                if (index !== _index) {
+                    questionOptions = questionOptions.filter(x=>x.value!==1);
+                }
+            }
+        });
+        return (
+            <Row key={index}>
+              <div className='form__form-group' style={{maxWidth: '300px', marginLeft: '50px'}}>
+                <label className='form__form-group-label'>Question text:</label>
+                  <Field
+                      name={`${step}.text`}
+                      component={renderTextArea}
+                      type='text'
+                  />
+                <label className='form__form-group-label'>Type</label>
+                <Field
+                    name={`${step}.type`}
+                    component={renderSelectField}
+                    type='text'
+                    options={questionOptions}
+                    value = {type}
+                />
+                {
+                  type === 1 | type === 2 | type === 4 &&
+                  <div style={{width: '100%', marginTop: '20px'}}>
+                    <FieldArray
+                        name={`${step}.options`}
+                        component={renderQuestionOptions}
+                        rerenderOnEveryChange
+                        withPoints={false}
+                    />
+                  </div>
+                }
+              </div>
+              <div className='centered-and-flexed'>
+                <Button type="button" size="sm"
+                        onClick={() => fields.splice(index, 1)}>delete question</Button>
+              </div>
+            </Row>
+        )
+      })
+    }
+    <Row className="centered-and-flexed" noGutters>
+      <Button type="button" size="sm" onClick={() => fields.push({})}>
+        <i className="fa fa-plus"/>add question
+      </Button>
+    </Row>
+  </div>)
+
+};
 
 const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRounds, withPoints}) => {
   return (<div style={{width: '100%'}}>
@@ -902,16 +971,16 @@ const validate = (values, props) => {
         }
       }
     }
-    if (task.polls) for (let j = 0; j < task.polls.length; j++) {
-      const poll = task.polls[j];
-      errors.tasks[i].polls[j] = {};
-      if (!poll.type) {
-        errors.tasks[i].polls[j].type = 'required';
-      }
-      if (poll.type === 'casual' && (!poll.options || (poll.options && !poll.options.length))) {
-        errors.tasks[i].message = 'casual polls require options';
-      }
-    }
+    // if (task.polls) for (let j = 0; j < task.polls.length; j++) {
+    //   const poll = task.polls[j];
+    //   errors.tasks[i].polls[j] = {};
+    //   if (!poll.type) {
+    //     errors.tasks[i].polls[j].type = 'required';
+    //   }
+    //   if (poll.type === 'casual' && (!poll.options || (poll.options && !poll.options.length))) {
+    //     errors.tasks[i].message = 'casual polls require options';
+    //   }
+    // }
     if (task.preSurvey) for (let j = 0; j < task.preSurvey.length; j++){
       const preSurvey = task.preSurvey[j];
       errors.tasks[i].preSurvey[j] = {};
