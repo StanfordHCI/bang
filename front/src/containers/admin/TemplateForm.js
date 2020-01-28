@@ -158,7 +158,7 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, poll}) => {
         poll.questions.forEach((q, _index)=>{
             if (q.type === 'primary'){
                 if (index !== _index) {
-                    questionOptions = questionOptions.filter(x=>x.value!==1);
+                    questionOptions = questionOptions.filter(x=>x.value!=="primary");
                 }
             }
         });
@@ -195,6 +195,7 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, poll}) => {
                 <Button type="button" size="sm"
                         onClick={() => fields.splice(index, 1)}>delete question</Button>
               </div>
+              {touched && error && <span className='form__form-group-error'>{error}</span>}
             </Row>
         )
       })
@@ -1017,6 +1018,20 @@ const validate = (values, props) => {
     }
 
   });
+
+  values.tasks.forEach((task, taskIndex)=>{
+    task.polls.forEach((poll, pollIndex)=>{
+      poll.questions.forEach((question, questionIndex)=>{
+        if (question.type === "primary" || question.type === "single" || question.type === "checkbox"){
+          if (!question.options || question.options.length < 2 ) {
+            errors.tasks[taskIndex].polls[pollIndex] = { questions: poll.questions.map(q=> ({type:null}))};
+            errors.tasks[taskIndex].polls[pollIndex].questions[questionIndex].type = 'add options please';
+          }
+        }
+      })
+    })
+  });
+
   if (values.teamFormat == null) {
     errors.teamFormat = 'required'
   }
