@@ -61,7 +61,7 @@ class CasualForm extends React.Component {
 
     submit(data) {
         const {onSubmit, questions} = this.props;
-        const _questions = questions.filter(q => q.type === 4);
+        const _questions = questions.filter(q => q.type === "checkbox");
         const __questions = data.questions.filter(q => Array.isArray(q.result));
         if (_questions.length !== __questions.length) {
             throw new SubmissionError({
@@ -105,7 +105,7 @@ class CasualForm extends React.Component {
                             <p style={{color: 'black'}}>Questions</p>
                             {
                                 questions.map((question, index) => {
-                                    if (question.type === 2) {
+                                    if (question.type === "single") {
                                         return <FormGroup tag="fieldset">
                                             <Label>{question.text}</Label>
                                             <FormGroup check>
@@ -123,7 +123,7 @@ class CasualForm extends React.Component {
                                             </FormGroup>
                                         </FormGroup>
                                     }
-                                    if (question.type === 3) {
+                                    if (question.type === "text") {
                                         return <FormGroup>
                                             <Label>{question.text}</Label>
                                             {
@@ -135,7 +135,7 @@ class CasualForm extends React.Component {
                                             }
                                         </FormGroup>
                                     }
-                                    if (question.type === 4) {
+                                    if (question.type === "checkbox") {
                                         return <FormGroup tag="fieldset">
                                             <Label>{question.text}</Label>
                                             <FormGroup check>

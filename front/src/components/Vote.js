@@ -85,9 +85,8 @@ class Vote extends Component {
     }
 
     handleVote(option, question) {
-        const {questionsResult} = this.state;
         const {vote, batch, pollInd} = this.props;
-        const obj = Object.assign(option, {type: 1}, {
+        const obj = Object.assign(option, {type: "primary"}, {
             batch: {
                 _id: batch._id,
                 rounds: batch.rounds,
@@ -130,7 +129,7 @@ class Vote extends Component {
         if (disabled && poll.type !== 'foreperson') {
             const obj = votes;
             result = Object.keys(obj).reduce((a, b) => obj[a] > obj[b] ? a : b); // foreperson - user with max votes
-            const primary_question = this.props.poll.questions.find(question => question.type === 1);
+            const primary_question = this.props.poll.questions.find(question => question.type === "primary");
             result = primary_question.selectOptions[Number(result)].label;
         }
         return <div>
@@ -158,7 +157,7 @@ class Vote extends Component {
                     (poll.type === 'casual') &&
                     <React.Fragment>
                         {poll.questions.map(question => {
-                            if (question.type === 1) {
+                            if (question.type === "primary") {
                                 return <React.Fragment>
                                     <p style={{
                                         color: 'grey',
