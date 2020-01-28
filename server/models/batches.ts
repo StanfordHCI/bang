@@ -44,8 +44,6 @@ let  BatchSchema = new Schema({
   tasks: [{
     hasPreSurvey: {type: Boolean, required: true, default: false},
     hasMidSurvey: {type: Boolean, required: true, default: false},
-    hasPostSurvey: {type: Boolean, default: false},
-    hasPoll: {type: Boolean, required: true, default: false},
     preSurvey: [{
       question: {type: String, required: true},
       type: {type: String, required: true},
@@ -61,7 +59,8 @@ let  BatchSchema = new Schema({
       question: {type: String, required: true},
       type: {type: String, required: true},
       options: [{option: {type: String, required: true}}],
-      selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+      selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
+      teammate: {type: mongoose.Schema.Types.ObjectId, ref: 'User'} // appears only on questions for selective-masking
     }],
     pinnedContent: [{
       text: {type: String, required: true},
@@ -72,12 +71,16 @@ let  BatchSchema = new Schema({
       message: {type: String, required: true},
     }],
     selectiveMasking: {type: Boolean, default: false},
-    poll: {
+    polls: [{
       text: {type: String},
-      type: {type: String, $enum: ['foreperson', 'casual']},
-      options: [{option: {type: String,}}],
-      selectOptions: [{value: {type: String}, label: {type: String,}}]
-    },
+      type: {type: String, $enum: ['foreperson', 'casual'], required: true},
+      // options: [{option: {type: String,}}],
+      // selectOptions: [{value: {type: String}, label: {type: String,}}],
+      questions: [{text:{type: String}, type: {type: String, enum: ['primary', 'text', 'single', 'checkbox']}, options:[{option: {type: String}}],
+        selectOptions: [{value: {type: String}, label: {type: String,}}]}],
+      threshold: {type: Number, required: false},
+      step: {type: Number, required: true}, // nubmer of step on which the poll appears
+    }],
   }],
   midQuestions: [String],
   HITId: {type: String, },
@@ -108,6 +111,20 @@ let  BatchSchema = new Schema({
     options: [{option: {type: String, required: true}}],
     selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
   }],
-  unmaskedPairs: [[{type: mongoose.Schema.Types.ObjectId, ref: 'User'}, {type: mongoose.Schema.Types.ObjectId, ref: 'User'}]],
+  unmaskedPairs: {
+    likes: [[{type: mongoose.Schema.Types.ObjectId, ref: 'User'}, {type: mongoose.Schema.Types.ObjectId, ref: 'User'}]],
+    dislikes: [[{type: mongoose.Schema.Types.ObjectId, ref: 'User'}, {type: mongoose.Schema.Types.ObjectId, ref: 'User'}]]
+  },
+  activePoll: { type: Number, required: false },
+  dynamicTeamSize: { type: Boolean, required: true },
+  roundPairs: [{pair: [{roundNumber: {type: Number}, versionNumber: {type: Number}}, {roundNumber: {type: Number}, versionNumber: {type: Number}}], caseNumber: { type: Number } }],
+  cases: [{
+    versions: [{
+      parts: [{
+        text: { type: String, required: true },
+        time: { type: Number, required: true },
+      }]
+    }]
+  }],
 }, options);
 export const Batch = mongoose.model('Batch', BatchSchema);

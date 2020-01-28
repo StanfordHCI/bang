@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {User} from "../models/users";
 
 const moment = require('moment')
@@ -17,7 +18,7 @@ import {
   expireHIT,
   assignQual,
   getBatchTime,
-  runningLive, payBonus, clearRoom, mturk, listAssignmentsForHIT, createOneTeam
+  runningLive, payBonus, clearRoom, mturk, listAssignmentsForHIT, createOneTeam, createDynamicTeams
 } from "./utils";
 import {timeout} from './batches'
 
@@ -32,6 +33,7 @@ import {calculateMoneyForBatch} from "./utils";
 export const addBatch = async function (req, res) {
   try {
     const teamFormat = req.body.teamFormat;
+    const dynamicTeamSize = req.body.dynamicTeamSize;
     const batches = await Batch.find({$or: [{status: 'waiting'}, {status: 'active'}]}).select('tasks teamSize roundMinutes surveyMinutes numRounds teamFormat').lean().exec();
     let batchSumCost = 0;
     batches.forEach(batch => {
@@ -61,10 +63,59 @@ export const addBatch = async function (req, res) {
     newBatch.users = [], newBatch.expRounds = [], newBatch.roundGen = [], newBatch.worstRounds = [];
     let tasks = [], nonExpCounter = 0;
     let roundGen;
+    let roundPairs = [];
     if (teamFormat === 'single') {
-      roundGen = createOneTeam(newBatch.teamSize, newBatch.numRounds, letters.slice(0, newBatch.teamSize));
+      if (dynamicTeamSize) { // round generation for 50% n 50% 1 person teams
+        const dynamicTeamsResult = createDynamicTeams(newBatch.teamSize, newBatch.numRounds);
+        roundGen = dynamicTeamsResult.roundGen;
+        roundPairs = dynamicTeamsResult.roundPairs;
+        if (roundPairs) { // giving roundPairs versions and case numbers
+          let precededRoundPairs = [];
+          roundPairs.forEach((pair, ind) => {
+            precededRoundPairs[ind] = {pair: [{roundNumber: pair[0], versionNumber: 0}, {roundNumber: pair[1], versionNumber: 1}], caseNumber: ind};
+          });
+          newBatch.roundPairs = precededRoundPairs;
+          newBatch.tasks.forEach((task, taskIndex)=>{
+            const pair = precededRoundPairs.find(p=>(
+                p.pair.some((_pair=>_pair.roundNumber===taskIndex))
+            ));
+            const versionNumber = pair.pair.find(x=>x.roundNumber===taskIndex).versionNumber
+            newBatch.cases.forEach((_case, index)=>{
+              if (index === pair.caseNumber) {
+                _case.versions.forEach((version, versionIndex) => {
+                  if (versionIndex === versionNumber) {
+                    task.pinnedContent = version.parts.map((part, index) => (
+                        {text: part.text, link: part.text}
+                    ))
+                  }
+                });
+              }
+            })
+          });
+          // if there are cases, we make readingPeriods out of them
+          if (newBatch.cases && newBatch.cases.length) {
+            newBatch.tasks.forEach(x => {
+              if (!Array.isArray(x.readingPeriods)) { // if reading periods are not defined we define them
+                x.readingPeriods = [];
+              }
+            })
+            newBatch.roundPairs.forEach(x => {
+              const caseNumber = x.caseNumber;
+              // for each round we find out its version number and take data from the case
+              x.pair.forEach(y => { // rp message === part.text
+                const generatedRPs = newBatch.cases[caseNumber].versions[y.versionNumber].parts.map(part =>
+                  Object.assign(part, {message: part.text})
+                );
+                newBatch.tasks[y.roundNumber].readingPeriods.push(...generatedRPs);
+              })
+            })
+          }
+        }
+      } else { // ordinary single-team round generation
+        roundGen = createOneTeam(newBatch.teamSize, newBatch.numRounds, letters.slice(0, newBatch.teamSize));
+      }
     }
-    else {
+    else { // ordinary multi-team round generation
       roundGen = createTeams(newBatch.teamSize, newBatch.numRounds - newBatch.numExpRounds + 1, letters.slice(0, newBatch.teamSize ** 2));
     }
     if (teamFormat !== 'single') {
@@ -116,7 +167,6 @@ export const addBatch = async function (req, res) {
       newBatch.roundGen = roundGen;
     }
 
-
     const batch = await Batch.create(newBatch);
     const preChat = await Chat.create({
       batch: batch._id, messages: [
@@ -150,10 +200,43 @@ export const addBatch = async function (req, res) {
     prs.push(activeCheck(io))
     if (process.env.MTURK_MODE !== 'off') {
       let users;
-      if (!newBatch.loadTeamOrder) {
-        users = await User.find({systemStatus: 'willbang', isTest: false}).sort({createdAt: -1}).limit(200)
+      const notifyFilter = {};
+      if (req.body.userRace) {
+        notifyFilter.race = req.body.userRace;
+      }
+      if (req.body.salary) {
+        notifyFilter.householdEarnings = req.body.salary;
+      }
+      if (req.body.gender) {
+        notifyFilter.gender = req.body.gender;
+      }
+      console.log(notifyFilter, req.body.bornBeforeYear, req.body.bornAfterYear)
+      if (true) { // single-day batches
+        users = await User.find(Object.assign({
+          systemStatus: 'willbang', isTest: false
+        }, notifyFilter)).sort({createdAt: -1}).limit(200)
           .select('mturkId testAssignmentId').lean().exec();
-      } else {
+        console.log('users1', users)
+        if (req.body.bornAfterYear) {
+          users = users.filter(x => {
+            if (!x.yearBorn) {
+              return true;
+            } else {
+              return parseInt(x.yearBorn) > parseInt(req.body.bornAfterYear);
+            }
+          })
+        }
+        if (req.body.bornBeforeYear) {
+          users = users.filter(x => {
+            if (!x.yearBorn) {
+              return true;
+            } else {
+              return parseInt(x.yearBorn) < parseInt(req.body.bornBeforeYear);
+            }
+          })
+        }
+        console.log('filtered users: ', users);
+      } else { // stuff for multi-day batches (in development)
         const batchId = newBatch.loadTeamOrder;
         const loadingBatch = await Batch.findOne({_id: batchId});
         const roundGen = loadingBatch.roundGen;
@@ -174,12 +257,6 @@ export const addBatch = async function (req, res) {
           }
         }
         batchUsers.forEach((user, i) => {numberedUsers[genUsers[i]] = user}) // makes a dict with format {genNumber: user, ...}
-        users = [];
-        for (const i in batchUsers) {
-          const user = await User.findOne({_id: batchUsers[i].user})
-          Object.assign(user, {genNumber : i, batchId: batchId});
-          users.push(user);
-        }
       }
 
       await startNotification(users);

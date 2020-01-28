@@ -78,45 +78,140 @@ const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType
   </div>)
 }
 
-const renderPoll = ({fields, meta: {touched, error, warning}, task, path}) => {
-  const pollType = task.poll ? task.poll.type : undefined;
-  const withOptions = pollType !== 'foreperson';
-  return (
-      <div className='form__form-group'>
-        <label className='form__form-group-label'>text: </label>
-        <div className='form__form-group-field'>
-          <Field
-              name={`${path}.text`}
-              component={renderTextArea}
-              type='text'
-          />
-        </div>
-        <label className='form__form-group-label'>poll type: </label>
-        <div className='form__form-group-field'>
-          <Field
-              name={`${path}.type`}
-              component={renderSelectField}
-              type='text'
-              options={[{value: 'foreperson', label: 'foreperson'}, {value: 'casual', label: 'casual'}]}
-          />
-        </div>
-        {withOptions && <div style={{width: '100%', marginTop: '20px'}}>
-          <FieldArray
-            name={`${path}.options`}
-            component={renderQuestionOptions}
-            rerenderOnEveryChange
-            withPoints={false}
-        />
-        </div>}
-      </div>
-        )
+const renderPoll = ({fields, meta: {touched, error, warning}, task, steps}) => {
+  const stepOptions = steps.map((x, ind) => {return {label: ind, value: ind}});
+  return (<div style={{width: '100%', borderBottom: '1px solid grey'}}>
+    {
+      fields.map((step, index) => {
+        const withOptions = task.polls[index] && task.polls[index].type === 'casual';
+        return (
+            <Row key={index}>
+              <Col>
+                <label className='form__form-group-label'>poll type:</label>
+                  <Field
+                      name={`${step}.type`}
+                      component={renderSelectField}
+                      type='text'
+                      options={[{value: 'foreperson', label: 'foreperson'}, {value: 'casual', label: 'casual'}]}
+                  />
+                <div className='form__form-group'>
+                  {withOptions === false ?
+                    <React.Fragment>
+                    <label className='form__form-group-label'>poll text:</label>
+                      <Field
+                        name={`${step}.text`}
+                        component={renderTextArea}
+                        type='text'
+                        />
+                        </React.Fragment> : <div />
+                  }
+                  <label className='form__form-group-label'>Threshold:</label>
+                  <Field
+                      name={`${step}.threshold`}
+                      component={renderField}
+                      type='number'
+                  />
+                  <label className='form__form-group-label'>Poll step:</label>
+                  <Field
+                    name={`${step}.step`}
+                    component={renderSelectField}
+                    options={stepOptions}
+                  />
+                  {withOptions && <div style={{width: '100%', marginTop: '20px'}}>
+                    <FieldArray
+                        name={`${step}.questions`}
+                        component={renderQuestions}
+                        rerenderOnEveryChange
+                        withPoints={false}
+                        poll ={task.polls[index]}
+                    />
+                  </div>}
+                </div>
+              </Col>
+              <Col>
+                <div className='centered-and-flexed'>
+                  <Button type="button" size="sm"
+                          onClick={() => fields.splice(index, 1)}>delete poll</Button>
+                </div>
+              </Col>
+            </Row>)
+      })}
+    <Row className="centered-and-flexed" noGutters>
+      <Button type="button" size="sm" onClick={() => fields.push({})}>
+        <i className="fa fa-plus"/>add poll
+      </Button>
+    </Row>
+  </div>)
 }
+
+const renderQuestions = ({fields, meta: {touched, error, warning}, poll}) => {
+  return (<div style={{width: '100%'}}>
+    {
+      fields.map((step, index) => {
+        let type = null;
+        if (poll.questions[index]) {
+          type = poll.questions[index].type ? poll.questions[index].type : 'text';
+      }
+        let questionOptions = [{value: 'primary', label: 'primary'}, {value: 'single', label: 'single answer'}, {value: 'text', label: 'text'},
+          {value: 'checkbox', label: 'checkbox'}];
+        poll.questions.forEach((q, _index)=>{
+            if (q.type === 'primary'){
+                if (index !== _index) {
+                    questionOptions = questionOptions.filter(x=>x.value!=="primary");
+                }
+            }
+        });
+        return (
+            <Row key={index}>
+              <div className='form__form-group' style={{maxWidth: '300px', marginLeft: '50px'}}>
+                <label className='form__form-group-label'>Question text:</label>
+                  <Field
+                      name={`${step}.text`}
+                      component={renderTextArea}
+                      type='text'
+                  />
+                <label className='form__form-group-label'>Type</label>
+                <Field
+                    name={`${step}.type`}
+                    component={renderSelectField}
+                    type='text'
+                    options={questionOptions}
+                    value = {type}
+                />
+                {
+                  type === 'primary' | type === 'single' | type === 'checkbox' &&
+                  <div style={{width: '100%', marginTop: '20px'}}>
+                    <FieldArray
+                        name={`${step}.options`}
+                        component={renderQuestionOptions}
+                        rerenderOnEveryChange
+                        withPoints={false}
+                    />
+                  </div>
+                }
+              </div>
+              <div className='centered-and-flexed'>
+                <Button type="button" size="sm"
+                        onClick={() => fields.splice(index, 1)}>delete question</Button>
+              </div>
+              {touched && error && <span className='form__form-group-error'>{error}</span>}
+            </Row>
+        )
+      })
+    }
+    <Row className="centered-and-flexed" noGutters>
+      <Button type="button" size="sm" onClick={() => fields.push({})}>
+        <i className="fa fa-plus"/>add question
+      </Button>
+    </Row>
+  </div>)
+
+};
 
 const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRounds, withPoints}) => {
   return (<div style={{width: '100%'}}>
     {
       fields.map((step, index) => {
-        console.log('step: ', step);
         return (
           <Row key={index}>
             <div className='form__form-group' style={{maxWidth: '300px', marginLeft: '50px'}}>
@@ -275,6 +370,113 @@ const renderReadingPeriods = ({fields, meta: {touched, error, warning}, numRound
   </div>)
 }
 
+const renderCases = ({fields, meta: {touched, error, warning}, numRounds}) => {
+  return (<div style={{width: '100%', borderBottom: '1px solid grey', marginTop: '20px'}}>
+    <p>Cases</p>
+    <br/>
+    {
+      fields.map((case_, index) => {
+        return (
+            <Row key={index}>
+              <h3>Case {index + 1}</h3>
+              <Col>
+                  <Row>
+                    <Col>
+                        <p>Version 1, Part 1</p>
+                      <Row>
+                          <Field
+                              name={`cases[${index}].versions[0].parts[0].text`}
+                              type="text"
+                              component={renderTextArea}
+                          />
+                      </Row>
+                    </Col>
+                    <Col>
+                      <p>Reading time</p>
+                      <Field
+                          name={`cases[${index}].versions[0].parts[0].time`}
+                          type="text"
+                          component={renderField}
+                      />
+                    </Col>
+                  </Row>
+                <Row>
+                  <Col>
+                    <p>Version 1, Part 2</p>
+                    <Row>
+                      <Field
+                          name={`cases[${index}].versions[0].parts[1].text`}
+                          type="text"
+                          component={renderTextArea}
+                      />
+                    </Row>
+                  </Col>
+                  <Col>
+                    <p>Reading time</p>
+                    <Field
+                        name={`cases[${index}].versions[0].parts[1].time`}
+                        type="number"
+                        component={renderField}
+                    />
+                  </Col>
+                </Row>
+                <Row>
+                  <Col>
+                    <p>Version 2, Part 1</p>
+                    <Row>
+                      <Field
+                          name={`cases[${index}].versions[1].parts[0].text`}
+                          type="text"
+                          component={renderTextArea}
+                      />
+                    </Row>
+                  </Col>
+                  <Col>
+                    <p>Reading time</p>
+                    <Field
+                        name={`cases[${index}].versions[1].parts[0].time`}
+                        type="number"
+                        component={renderField}
+                    />
+                  </Col>
+                </Row>
+                <Row>
+                  <Col>
+                    <p>Version 2, Part 2</p>
+                    <Row>
+                      <Field
+                          name={`cases[${index}].versions[1].parts[1].text`}
+                          type="text"
+                          component={renderTextArea}
+                      />
+                    </Row>
+                  </Col>
+                  <Col>
+                    <p>Reading time</p>
+                    <Field
+                        name={`cases[${index}].versions[1].parts[1].time`}
+                        type="text"
+                        component={renderField}
+                    />
+                  </Col>
+                </Row>
+              </Col>
+              <Col>
+                <div className='centered-and-flexed'>
+                  <Button type="button" size="sm"
+                          onClick={() => fields.splice(index, 1)}>delete case</Button>
+                </div>
+              </Col>
+            </Row>)
+      })}
+    <Row className="centered-and-flexed" noGutters>
+      <Button type="button" size="sm" onClick={() => fields.push({})}>
+        <i className="fa fa-plus"/>add case
+      </Button>
+    </Row>
+  </div>)
+}
+
 const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneTask, surveyTemplatesOptions, taskArray,
                        fillSurvey, deleteSurvey, numExpRounds, teamFormat, hasPostSurvey, postSurvey, hasPreSurvey, preSurvey}) => {
   let tasks = [], options = [];
@@ -293,6 +495,7 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
     } else {
       taskLabel = `TASK FOR ROUND ${i + 1} ${i === numRounds - 1 ? '(BEST)' : ''}${i === numRounds - 2 ? '(WORST)' : ''}`
     }
+    const steps = taskArray[i].steps;
     tasks.push(
       <div key={'task' + i} className='form__form-group' style={{ borderBottom: '3px solid grey'}}>
         <Row style={{width: '80%'}}>
@@ -348,16 +551,6 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
               component={renderCheckBoxField}
             />
           </Col>
-          <Col>
-            <p>In-round Poll?</p>
-          </Col>
-          <Col>
-            <Field
-                name={`tasks[${i}].hasPoll`}
-                component={renderCheckBoxField}
-                onChange={(e) => deleteSurvey(e, i, 'poll')}
-            />
-          </Col>
         </Row>
         <div className='form__form-group-field' style={{marginBottom: '25px'}}>
           <Field
@@ -375,6 +568,13 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
             name={`tasks[${i}].readingPeriods`}
             component={renderReadingPeriods}
             rerenderonEveryChange
+        />
+        <FieldArray
+            name={`tasks[${i}].polls`}
+            component={renderPoll}
+            task={taskArray[i]}
+            rerenderonEveryChange
+            steps={steps}
         />
         {taskArray && taskArray[i] && taskArray[i].hasPinnedContent && <div style={{width: '100%'}}>
           <p>Pinned content</p>
@@ -419,17 +619,6 @@ const renderTasks = ({fields, meta: {touched, error, warning}, numRounds, cloneT
             rerenderOnEveryChange
             task={taskArray && taskArray[i]}
             teamFormat={teamFormat}
-          />
-        </div>}
-        {taskArray && taskArray[i] && taskArray[i].hasPoll && <div style={{width: '100%'}}>
-          <p>Poll</p>
-          <Field
-              name={`tasks[${i}].poll`}
-              path = {`tasks[${i}].poll`}
-              component={renderPoll}
-              rerenderOnEveryChange
-              task={taskArray && taskArray[i]}
-              teamFormat={teamFormat}
           />
         </div>}
         {i === numRounds - 1 && hasPostSurvey && <div style={{width: '100%'}}>
@@ -508,13 +697,15 @@ class TemplateForm extends React.Component {
     const num = parseInt(e.target.value);
     if (isNaN(num)) return;
     let tasks = this.props.tasks.filter((x, index) => index < num);
+    while (tasks.length < num) {
+      tasks.push({steps: []})
+    }
     this.props.dispatch(change('TemplateForm', 'tasks', tasks))
   }
 
   deleteSurvey = (newValue, taskNumber, fieldName) => {
     if (newValue.target) {
       if (!newValue.target.checked) {
-        console.log('dS', taskNumber, fieldName)
         this.props.dispatch(change('TemplateForm', 'tasks[' + taskNumber + '].' + fieldName, null))
       }
     }
@@ -651,6 +842,23 @@ class TemplateForm extends React.Component {
                 </div>
               </Col>
               </Row>
+              <FieldArray
+                  name="cases"
+                  component={renderCases}
+                  rerenderOnEveryChange
+                  numRounds={numRounds}
+                  cloneTask={this.cloneTask}
+                  fillSurvey={this.fillSurvey}
+                  deleteSurvey={this.deleteSurvey}
+                  taskArray={tasks}
+                  numExpRounds={numExpRounds}
+                  surveyTemplatesOptions={surveyTemplatesOptions}
+                  teamFormat={teamFormat}
+                  hasPostSurvey={hasPostSurvey}
+                  postSurvey={postSurvey}
+                  hasPreSurvey={hasPreSurvey}
+                  preSurvey={preSurvey}
+              />
             </div>
             <FieldArray
               name="tasks"
@@ -732,7 +940,7 @@ const validate = (values, props) => {
   }
 
   values.tasks && values.tasks.forEach((task, i) => {
-    errors.tasks[i] = {steps: [], survey: [], preSurvey: []};
+    errors.tasks[i] = {steps: [], survey: [], preSurvey: [], polls: []};
     if (!task.message) {
       errors.tasks[i].message = 'required';
     } else  if (!task.steps || !task.steps.length) {
@@ -762,6 +970,16 @@ const validate = (values, props) => {
         }
       }
     }
+    // if (task.polls) for (let j = 0; j < task.polls.length; j++) {
+    //   const poll = task.polls[j];
+    //   errors.tasks[i].polls[j] = {};
+    //   if (!poll.type) {
+    //     errors.tasks[i].polls[j].type = 'required';
+    //   }
+    //   if (poll.type === 'casual' && (!poll.options || (poll.options && !poll.options.length))) {
+    //     errors.tasks[i].message = 'casual polls require options';
+    //   }
+    // }
     if (task.preSurvey) for (let j = 0; j < task.preSurvey.length; j++){
       const preSurvey = task.preSurvey[j];
       errors.tasks[i].preSurvey[j] = {};
@@ -786,8 +1004,33 @@ const validate = (values, props) => {
         errors.tasks[i].survey[j].type = 'add options please';
       }
     }
-
+    if (task.readingPeriods && task.readingPeriods.length) {
+      task.readingPeriods.forEach((x, index) => {
+        if (!x.time) {
+          errors.tasks[i].message = 'add time to reading periods'
+        }
+        if (!x.message) {
+          errors.tasks[i].message = 'add messages to reading periods'
+        }
+      })
+    }
+    if (task.polls) {
+      task.polls.forEach((poll, pollIndex) => {
+        if (poll.questions && poll.questions.length) {
+          poll.questions.forEach((question, questionIndex) => {
+            if (question.type === "primary" || question.type === "single" || question.type === "checkbox"){
+              if (!question.options || question.options.length < 2 ) {
+                errors.tasks[i].polls[pollIndex] = { questions: poll.questions.map(q=> ({type:null}))};
+                errors.tasks[i].polls[pollIndex].questions[questionIndex].type = 'add options please';
+              }
+            }
+          })
+        }
+      })
+    }
   });
+
+
   if (values.teamFormat == null) {
     errors.teamFormat = 'required'
   }
@@ -796,6 +1039,15 @@ const validate = (values, props) => {
   }
   if (values.hasPreSurvey && (!values.preSurvey || !values.preSurvey.length) && values.tasks.length && values.tasks[values.numRounds - 1]) {
     errors.tasks[values.numRounds - 1].message = 'add questions to pre-survey please';
+  }
+  if (values.cases && values.cases.length) {
+    const caseCount = values.cases.length;
+    if (caseCount * 2 < values.numRounds) {
+      errors.numRounds = 'Add more cases please';
+    }
+    if (values.numRounds % 2 !== 0) {
+      errors.numRounds = 'Number of rounds is not even';
+    }
   }
   return errors
 };
@@ -822,7 +1074,7 @@ function mapStateToProps(state) {
     hasPostSurvey: selector(state, 'hasPostSurvey'),
     postSurvey: selector(state, 'postSurvey'),
     hasPreSurvey: selector(state, 'hasPreSurvey'),
-    preSurvey: selector(state, 'preSurvey')
+    preSurvey: selector(state, 'preSurvey'),
   }
 }
 

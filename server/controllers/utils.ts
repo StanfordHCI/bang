@@ -366,10 +366,10 @@ createOneTeam = (teamSize: number, numRounds: number, people: any[]) => {
   const rounds = [];
   while (rounds.length < numRounds) {
     const round = {
-      teams: undefined
+      teams: null
     }
     const teams = [{
-      users: undefined
+      users: null
     }]; // There will be only one team
     teams[0].users = Array.from(Array(teamSize).keys());
     round.teams = teams;
@@ -377,6 +377,40 @@ createOneTeam = (teamSize: number, numRounds: number, people: any[]) => {
   }
   return rounds;
 };
+
+export const createDynamicTeams = (teamSize: number, numRounds: number) => {
+  /*
+  * Returns array of {roundPairs, roundGen}
+  * e.g.:
+  * {roundPairs: [[1,6], [2,3], [4,5]], roundGen: {<some roundGen with 50% - n, 50% - 1 teamSize structure>}}
+  * first round in pair is always with 1 user in a team*/
+  const availableNumbers = Array.from(Array(numRounds).keys());
+  const roundPairs = randomPairs(availableNumbers);
+  let roundGen = Array(numRounds);
+  roundPairs.forEach(pair => {
+    pair.forEach((roundNum, indInPair) => {
+      const round = {
+        teams: [],
+      }
+      if (indInPair === 0) { // first round in pair -- 1 user in n teams
+        let teams = [];
+        // make n teams with 1 user in each
+        Array.from(Array(teamSize).keys()).forEach(user => teams.push({users: [user]}));
+        round.teams = teams
+      }
+      if (indInPair === 1) { // second round in pair -- n users in one team
+        let teams = [{users: []}];
+        // make 1 team with n users in it
+        teams[0].users = Array.from(Array(teamSize).keys());
+        round.teams = teams;
+      }
+
+      roundGen[roundNum] = round
+    })
+  })
+  console.log('generated rounds: ', JSON.stringify(roundGen))
+  return {roundGen: roundGen, roundPairs: roundPairs};
+}
 
 export const getBatchTime = (batch) => {
   let result = 0;
@@ -618,26 +652,121 @@ const roundFromFunction = (func, data) => { // if data.points[i] === 0 or undefi
   return result;
 }
 
-// Returns the pairs of IDs of the users in batch that should be unmasked in the numRound
-export const addUnmaskedPairs = async (batch, numRound) => {
-  // takes the chat of prev round and makes pairs of people who were talking
-  let chats = new Set()
-  for (const chatId of batch.rounds[numRound - 1].teams.map(team => team.chat)) {
-    const chat = await Chat.findById(chatId);
-    chats.add(chat);
-  }
-  let unmaskedPairs = new Set();
-  chats.forEach(chat => {
-    if (chat.messages) {
-      for (let i = 1; i < chat.messages.length; i += 1) {
-        const msg = chat.messages[i];
-        const prevMsg = chat.messages[i - 1]
-        if (msg.nickname === 'helperBot' || prevMsg.nickname === 'helperBot' || msg.user.toString() === prevMsg.user.toString()) continue;
-        unmaskedPairs.add([msg.user, prevMsg.user])
-      }
+// Returns the pairs of IDs of the users in batch that should be unmasked in the numRound and sets them in batch
+// numRound: currentRound
+// surveyRound: round in which selective masking questions were asked
+
+function itemInArray(array, item) {
+  for (var i = 0; i < array.length; i++) {
+    // This if statement depends on the format of your array
+    if (array[i][0] == item[0] && array[i][1] == item[1]) {
+      return true;   // Found it
     }
-  })
-  // const unmaskedPairs = [batch.users[0], batch.users[1]].map(x => x.user);
-  await Batch.findByIdAndUpdate(batch._id, { $addToSet: { unmaskedPairs: { $each: Array.from(unmaskedPairs) } } });
+  }
+  return false;   // Not found
 }
 
+export const addUnmaskedPairs = async (batch, numRound, surveyRound) => {
+  const isLike = x => Number(x) === 4;
+  const isDislike = x => Number(x) === 0;
+  const onlyMutual = (x) => {
+    // Returns array of pairs of (z, y), for every z and y that are (z, y) in x && (y, z) in x
+    let result = []
+    x.forEach((y, ind) => {
+      for (let i = ind + 1; i < x.length; ++i) { // check every element for every element, if they are (x, y) and (y, x)
+        if (i === ind) continue;
+        if (y[0].toString() === x[i][1].toString() && y[1].toString() === x[i][0].toString()) {
+          if (!itemInArray(result, y)) {
+            result.push(y);
+          }
+        }
+      }
+    })
+    return result
+  }
+  if(!surveyRound) {
+    console.log('no surveyRound')
+  }
+  const surveys = await Survey.find({batch: batch._id, round: surveyRound + 1, surveyType: 'midsurvey'});
+  let likes = [];
+  let dislikes = [];
+  surveys.forEach(x => {
+    const fromUser = x.user;
+    x.questions.forEach(y => {
+      const result = y.result.split(' ');
+      if (result[1]) { // true if result has format "int userId". True only for attractiveness questions
+        const toUser = result[1];
+        const attraction = result[0];
+        if (isLike(attraction)) {
+          likes.push([fromUser, toUser]);
+        }
+        if (isDislike(attraction)) {
+          dislikes.push([fromUser, toUser]);
+        }
+      }
+    })
+  })
+  likes = onlyMutual(likes)
+  dislikes = onlyMutual(dislikes)
+  await Batch.findByIdAndUpdate(batch._id, { unmaskedPairs: {
+      likes: likes,
+      dislikes: dislikes
+    }});
+}
+
+// Given an array of available numbers, return an array of random pairs
+function randomPairs( availableNumbers: Number[] ) {
+  let pairs = [];
+  while( availableNumbers.length ) {
+    pairs.push([
+      pluckRandomElement( availableNumbers ),
+      pluckRandomElement( availableNumbers )
+    ]);
+  }
+  return pairs;
+}
+
+// Return a random element and remove it from the array
+function pluckRandomElement( array ) {
+  var i = randomInt( array.length );
+  return array.splice( i, 1 )[0];
+}
+
+// Return a random integer 0 <= n < limit
+function randomInt( limit ) {
+  return Math.floor( Math.random() * limit );
+}
+export class SpecificQuestionHandler {
+  private questions: any[];
+  constructor() {
+    // this.questions = [{text: '', options: [], dbField: ''}]
+    this.questions = [];
+  }
+  addQuestion(text, options, dbField) {
+    this.questions.push({text: text.toLowerCase(), options: options, dbField: dbField});
+    return this;
+  }
+  resolveQuestion(text, selectedOption) {
+    const question = this.questions.find(x => x.text.toLowerCase() === text.toLowerCase())
+    if (!question) {
+      return
+    }
+    let selectedOptionNum;
+    if (!question.options || !question.options.length) {
+      selectedOptionNum = selectedOption; // for questions without enum choices
+    } else {
+      selectedOptionNum = question.options[Number(selectedOption)]
+    }
+    console.log('resolve results: ', selectedOptionNum)
+    if (!selectedOptionNum) { // if there is not such number of chosen options we select the last possible option
+      selectedOptionNum =  question.options.slice(-1)[0]
+    }
+    return {selectedOptionNum: selectedOptionNum, dbField: question.dbField};
+  }
+  questionIndex(question) {
+    return this.questions.map(x => x.text.toLowerCase()).indexOf(question.toLowerCase());
+  }
+  getQuestions() {
+    return this.questions;
+  }
+}

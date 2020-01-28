@@ -34,7 +34,6 @@ export const loadTemplate = async function (req, res) {
 export const addTemplate = async function (req, res) {
   try {
     const newTemplate = processPostSurvey(req.body);
-    console.log(newTemplate.tasks[0].poll)
     const template = await Template.create(newTemplate);
     res.json({template: template})
   } catch (e) {

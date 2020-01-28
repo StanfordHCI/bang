@@ -57,18 +57,26 @@ export default function (state = initialState, action) {
         chat: chat
       };
     case VOTED:
-      console.log('action data', action.data)
-      batch = state.batch;
-      const team = batch.rounds[batch.currentRound - 1].teams.find(x => x.users.some(y => y.user === action.data.user.toString()));
-      console.log('team:', team)
-      const teamIndex = batch.rounds[batch.currentRound - 1].teams.indexOf(team);
-      console.log('teamIndex: ', teamIndex)
-      batch.rounds[batch.currentRound - 1]['teams'][teamIndex]['currentPollVotes'] = action.data;
-      console.log('updatedBatch: ', batch)
-      return {
-        ...state,
-        batch: batch
-      };
+      try {
+        batch = state.batch;
+        const team = batch.rounds[batch.currentRound - 1].teams.find(x => x.users.some(y => y.user === action.data.user.toString()));
+        const teamIndex = batch.rounds[batch.currentRound - 1].teams.indexOf(team);
+        if (!batch.rounds[batch.currentRound - 1]['teams'][teamIndex]['currentPollVotes']) {
+          batch.rounds[batch.currentRound - 1]['teams'][teamIndex]['currentPollVotes'] = [];
+        }
+        const pollInd = action.data.pollInd;
+        delete action.data.pollInd;
+        batch.rounds[batch.currentRound - 1]['teams'][teamIndex]['currentPollVotes'][pollInd] = action.data;
+        return {
+          ...state,
+          batch: batch
+        };
+      }
+      catch (e) { // sometimes batch comes here uninitialized, and this error occurs
+        return {
+          ...state,
+        }
+      }
 
     default:
       return state;

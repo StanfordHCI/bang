@@ -40,10 +40,15 @@ export const refreshActiveUsers = () => {
 
 export const vote = (data) => {
   return function (dispatch) {
-    console.log('voted')
     socket.emit('vote', data);
   }
 }
+
+export const voteCasualForm = (data) => {
+  return function (dispatch) {
+    socket.emit('save-polls', data);
+  }
+};
 
 export const loadBatch = () => {
   return function (dispatch, getState) {
@@ -135,6 +140,13 @@ export const loadBatch = () => {
         data: data
       });
     })
+    socket.on('poll-change', (data) =>{
+      dispatch(setSnackbar('New Poll'));
+      dispatch({
+        type: REFRESH_BATCH,
+        data: data
+      });
+    })
     socket.on('receive-message', (data) =>{
       dispatch({
         type: ADD_MESSAGE,
@@ -151,6 +163,11 @@ export const loadBatch = () => {
         data: data,
       })
     });
+    socket.on('clear-poll-votes', (data) => {
+      dispatch({
+        type:'CLEAR_POLL_VOTES',
+      })
+    })
     socket.on('pre-survey', data => {
       dispatch(setSnackbar('Pre-Survey'));
       dispatch({
@@ -166,7 +183,6 @@ export const loadBatch = () => {
       })
     });
     socket.on('voted', data => {
-      dispatch(setSnackbar('Successfully voted!'));
       dispatch({
         type: VOTED,
         data: data,

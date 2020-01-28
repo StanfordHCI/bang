@@ -63,6 +63,9 @@ class MainWrapper extends PureComponent {
               <Link className='topbar__collapse-link' to='/surveys'>
                 surveys
               </Link>
+              {/*<Link to={'/cases'} className='topbar__collapse-link'>*/}
+              {/*  cases*/}
+              {/*</Link>*/}
               <Link className='topbar__collapse-link' to='/waiting'>
                 waitroom
               </Link>

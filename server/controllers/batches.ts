@@ -16,7 +16,7 @@ import {
   notifyWorkers,
   getBatchTime,
   bestRound,
-  worstRound, addUnmaskedPairs,
+  worstRound, addUnmaskedPairs, SpecificQuestionHandler,
 } from "./utils";
 import {errorHandler} from '../services/common'
 import {io} from "../index";
@@ -215,7 +215,6 @@ const startBatch = async function (batch, socket, io) {
 
 export const receiveSurvey = async function (data, socket, io) {
   try {
-    console.log('receiveSurvey');
     let newSurvey = {
       ...data,
       user: socket.userId,
@@ -255,7 +254,35 @@ export const receiveSurvey = async function (data, socket, io) {
         logger.info('module', 'Bonus sent to ' + socket.mturkId)
       }
     }
-    const genderQuestion = x => x.question.toLowerCase() === 'what is your gender?';
+    const questionHandler = new SpecificQuestionHandler();
+    questionHandler.addQuestion('What is the highest degree or level of school you have completed?', ['Less than High School', 'High school or equivalent', 'Some college',
+      'Undergraduate degree', 'Graduate degree', 'Doctorate'], 'degree')
+      .addQuestion('What is your gender?', ['male', 'female', 'prefer not to say'], 'gender')
+      .addQuestion('Which year were you born?', [], 'yearBorn')
+      .addQuestion('How much total combined money did all members of your household earn last year?', ['Less than $20,000', '$20,000 to $34,999',
+        '$35,000 to $49,999', '$50,000 to $74,999', '$75,000 to $99,999', 'Over $100,000'], 'houseHoldEarnings')
+      .addQuestion('Are you of Hispanic, Latino, or of Spanish origin?', ['Yes', 'No'], 'hispanicLatinoSpanish')
+      .addQuestion('How would you describe yourself?', ['American Indian or Alaska Native', 'Asian', 'Black or African American',
+        'Native Hawaiian or Other Pacific Islander', 'White', 'Other'], 'race')
+      .addQuestion('What is your marital status?', ['Single', 'Married', 'Live with Partner', 'Separated',
+        'Divorced', 'Widowed'], 'maritalStatus')
+      .addQuestion('What is your occupation? If you are retired, please describe your main occupation when you were ' +
+        'working.', [], 'occupation')
+      .addQuestion('How long have you worked in this occupation? (If you are retired, how long did you work in this' +
+        ' occupation?)', [], 'occupationTime')
+      .addQuestion('Have you ever served on a jury before?', ['Yes', 'No'], 'juryExperience')
+      .addQuestion('If yes, how many times?', [], 'juryHowManyTimes')
+      .addQuestion('Was it a civil or criminal case?', ['Civil', 'Criminal'], 'civilCriminal')
+      .addQuestion('Did the jur(ies) reach a verdict?', ['Yes', 'No'], 'verdictReached')
+      .addQuestion('Would you say religion provides no guidance in your day-to-day living, some guidance, quite a' +
+        ' bit of guidance, or a great deal of guidance in your day-to-day life?', ['No guidance', 'Some guidance', 'Quite a bit of guidance',
+        'A great deal of guidance'], 'religionGuidance')
+      .addQuestion('We hear a lot of talk these days about liberals and conservatives. Here is a seven-point scale ' +
+        'on which the political views that people might hold are arranged from extremely liberal to extremely conservative. ' +
+        'Where would you place YOURSELF on this scale?', ['Extremely Liberal', 'Liberal', 'Slightly Liberal',
+        'Moderate; Middle of the Road', 'Slightly Conservative', 'Conservative', 'Extremely Conservative'], 'politicalView')
+    const specificQuestion = (x, questionText) => x.question.toLowerCase() === questionText.toLowerCase();
+    const genderQuestion = x => specificQuestion(x, 'what is your gender?');
     if ((newSurvey.surveyType === 'presurvey' || newSurvey.surveyType === 'prepresurvey')) {
       let gender;
       let index;
@@ -288,17 +315,29 @@ export const receiveSurvey = async function (data, socket, io) {
         gender = genderFromInd(index, newSurvey);
       } else {
         if (newSurvey.surveyType === 'prepresurvey') { // looking for gender survey in batch presurvey
-          console.log('preSurvey:', batch.preSurvey)
           const ind = batch.preSurvey.findIndex(x => genderQuestion(x))
           gender = genderFromInd(ind, newSurvey)
         }
       }
-      console.log('gender: ', gender);
       if (gender) {
-        console.log('gender set!')
         await User.findByIdAndUpdate(newSurvey.user, {gender: gender});
         await Batch.updateOne({_id: batch._id, 'users.user': newSurvey.user}, {$set: {'users.$.gender': gender}});
         io.to(batch._id.toString()).emit('refresh-batch', true)
+      }
+      // resolving other specific questions with handler:
+      const psHelper = [];
+      if (newSurvey.surveyType === 'prepresurvey') { // looking for gender survey in batch presurvey
+        batch.preSurvey.forEach((q, ind) => {
+          const qIndex = questionHandler.questionIndex(q.question);
+          console.log('qIndex: ', qIndex, 'q.question: ', q.question);
+          if (qIndex > -1) {
+            const question = questionHandler.getQuestions()[qIndex].text;
+            const resolved = questionHandler.resolveQuestion(question, newSurvey.questions[ind].result);
+            console.log('resolved: ', resolved)
+            psHelper.push(User.findByIdAndUpdate(newSurvey.user, {[resolved.dbField]: resolved.selectedOptionNum}));
+          }
+        })
+        await Promise.all(psHelper);
       }
     }
 
@@ -468,7 +507,6 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   logger.info(module, batch._id + ' : Begin round ' + roundObject.number)
   io.to(batch._id.toString()).emit('refresh-batch', true);
 
-  console.log(batch.hasPreSurvey, i)
   if (batch.hasPreSurvey && i === 0) {
     logger.info(module, batch._id + ' : Begin pre-pre-survey');
     roundObject.status = 'prepresurvey';
@@ -482,15 +520,19 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   }
 
   if (task.readingPeriods && task.readingPeriods.length) {
-    for (let i = 0; i < task.readingPeriods.length; ++i) {
-      const period = task.readingPeriods[i];
-      const ind = i;
-      logger.info(module, batch._id + ` : Begin reading period ${ind + 1} for round ${roundObject.number}`);
-      roundObject.status = `readingPeriod${ind}`;
-      const info = {rounds: rounds}
-      batch = await Batch.findByIdAndUpdate(batch._id, {$set: info}).lean().exec();
-      io.to(batch._id.toString()).emit('reading-period', info);
-      await timeout(period.time * 60000)
+    try {
+      for (let j = 0; j < task.readingPeriods.length; ++j) {
+        const period = task.readingPeriods[j];
+        const ind = j;
+        logger.info(module, batch._id + ` : Begin reading period ${ind + 1} for round ${roundObject.number}`);
+        roundObject.status = `readingPeriod${ind}`;
+        const info = {rounds: rounds}
+        batch = await Batch.findByIdAndUpdate(batch._id, {$set: info}).lean().exec();
+        io.to(batch._id.toString()).emit('reading-period', info);
+        await timeout(period.time * 60000)
+      }
+    } catch (e) {
+      console.log('RP error', e)
     }
     roundObject.status = 'active';
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: {rounds: rounds}});
@@ -508,13 +550,23 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: startTaskInfo}).lean().exec();
     io.to(batch._id.toString()).emit('start-task', startTaskInfo);
   }
-
+  await Batch.updateOne({_id: batch._id}, { $set: { activePoll: null } });
   logger.info(module, batch._id + ' : Begin task for round ' + roundObject.number)
+  io.to(batch._id.toString()).emit('refresh-batch', true);
   let stepsSumTime = 0;
+  let polls = task.polls;
+  if (!polls) {
+    polls = [];
+  }
   for (let j = 0; j < task.steps.length; j++) {
     const step = task.steps[j];
     let time = j === 0 ? step.time : step.time - task.steps[j - 1].time;
     await timeout(batch.roundMinutes * time * 60000);
+    const pollInd = polls.findIndex(x => Number(x.step) === j);
+    if (pollInd > -1) {
+      await Batch.updateOne({_id: batch._id}, { $set: { activePoll: pollInd } });
+      io.to(batch._id.toString()).emit('refresh-batch', true);
+    }
     const stepMessage = {
       user: botId,
       nickname: 'helperBot',
@@ -530,6 +582,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     stepsSumTime = stepsSumTime + step.time;
   }
 
+  // timeout for the time that is not in stepsTime
   await timeout(batch.roundMinutes * (1 - task.steps[task.steps.length - 1].time) * 60000);
 
   if (task.hasMidSurvey) {
@@ -543,10 +596,11 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     })
     await timeout(batch.surveyMinutes * 60000);
   }
-  try {
-    await addUnmaskedPairs(batch, roundObject.number);
-  } catch (e) {
-    console.log('unmasked pairs not added')
+  if (batch.tasks[roundObject.number - 1].selectiveMasking) {
+    try {
+      await addUnmaskedPairs(batch, roundObject.number, batch.tasks.findIndex((x, ind) => x.selectiveMasking && ind >= roundObject.number - 1));
+    } catch (e) {
+    }
   }
 
   if (batch.hasPostSurvey && i === batch.numRounds - 1) {

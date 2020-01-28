@@ -11,7 +11,7 @@ let SurveySchema = new Schema(
 	{
 		user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 		batch: { type: mongoose.Schema.Types.ObjectId, ref: 'Batch' },
-		questions: [ { result: { type: String, required: true }, number: Number } ],
+		questions: [ { result: { type: String, required: false }, type: {type:String, enum: ['primary', 'text', 'single', 'checkbox']}, result_array: [{type: Number}] , number: Number, teammate: { type: mongoose.Schema.Types.ObjectId, ref: 'User' } } ],
 		mainQuestion: {
 			//Picking Rounds
 			expRound1: Number,
@@ -32,6 +32,7 @@ let SurveySchema = new Schema(
 		round: Number,
 		isPost: Boolean, //deprecated, used only to show old results
     surveyType: { type: String, enum: ['presurvey', 'midsurvey', 'postsurvey', 'final', 'poll', 'prepresurvey'], required: true }, //should be used instead of isPost
+		pollInd: { type: Number, required: false, default: 0 }, // for poll type surveys only
 	},
 	options
 );
