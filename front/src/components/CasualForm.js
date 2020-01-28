@@ -47,7 +47,7 @@ const renderTextField = (props) => {
     )
 }
 
-const required = value => value ? undefined : 'Required'
+const required = value => value ? undefined : 'Required';
 
 class CasualForm extends React.Component {
 
@@ -60,17 +60,33 @@ class CasualForm extends React.Component {
     }
 
     submit(data) {
-        const {onSubmit, questions} = this.props;
+        const {onSubmit} = this.props;
+        let {questions} = this.props;
+        if (!questions) {
+            questions = []
+        }
         const _questions = questions.filter(q => q.type === "checkbox");
-        const __questions = data.questions.filter(q => Array.isArray(q.result));
+        let __questions = [];
+        if (data.questions && data.questions.length) {
+            __questions = data.questions.filter(q => Array.isArray(q.result));
+        }
         if (_questions.length !== __questions.length) {
-            throw new SubmissionError({
-                _error: 'At least one checkbox must be selected'
-            })
+
+        }
+        // going through all the questions data and checking whether they are not falsy
+        for (let i = 1; i < data.questions.length; ++i) { // skipping i = 0 because it is not inside the form (primary question)
+            if (!data.questions[i]) {
+                throw new SubmissionError({
+                    _error: 'All questions must be answered!'
+                })
+            }
+        }
+        if (!Array.isArray(data.questions)) {
+            data.questions = [];
         }
         if (questions.length !== data.questions.length) {
             throw new SubmissionError({
-                _error: 'All questions is required'
+                _error: 'All questions are required'
             })
         }
         data.questions.map(question => {

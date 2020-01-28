@@ -701,7 +701,6 @@ class TemplateForm extends React.Component {
     while (tasks.length < num) {
       tasks.push({steps: []})
     }
-    console.log('tasks:', tasks)
     this.props.dispatch(change('TemplateForm', 'tasks', tasks))
   }
 
@@ -1016,21 +1015,22 @@ const validate = (values, props) => {
         }
       })
     }
-
-  });
-
-  values.tasks.forEach((task, taskIndex)=>{
-    task.polls.forEach((poll, pollIndex)=>{
-      poll.questions.forEach((question, questionIndex)=>{
-        if (question.type === "primary" || question.type === "single" || question.type === "checkbox"){
-          if (!question.options || question.options.length < 2 ) {
-            errors.tasks[taskIndex].polls[pollIndex] = { questions: poll.questions.map(q=> ({type:null}))};
-            errors.tasks[taskIndex].polls[pollIndex].questions[questionIndex].type = 'add options please';
-          }
+    if (task.polls) {
+      task.polls.forEach((poll, pollIndex) => {
+        if (poll.questions && poll.questions.length) {
+          poll.questions.forEach((question, questionIndex) => {
+            if (question.type === "primary" || question.type === "single" || question.type === "checkbox"){
+              if (!question.options || question.options.length < 2 ) {
+                errors.tasks[i].polls[pollIndex] = { questions: poll.questions.map(q=> ({type:null}))};
+                errors.tasks[i].polls[pollIndex].questions[questionIndex].type = 'add options please';
+              }
+            }
+          })
         }
       })
-    })
+    }
   });
+
 
   if (values.teamFormat == null) {
     errors.teamFormat = 'required'

@@ -188,7 +188,7 @@ const generateSelectOptions = (template) => {
                     if (poll.type === "casual") {
                         poll.questions = poll.questions
                             .map((question, index) => {
-                                if (question.type !== 3) {
+                                if (question.type !== 'text') {
                                     return {
                                         value: index,
                                         text: question.text,

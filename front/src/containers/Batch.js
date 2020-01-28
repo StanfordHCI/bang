@@ -506,7 +506,10 @@ class Batch extends React.Component {
             }
             return batch.status === 'active' && !member.isActive ? '' : nick;
         });
-        const actualTeamSize = chat.members.length;
+        let actualTeamSize = chat.members.length;
+        if (actualTeamSize === 0) {
+            actualTeamSize = batch.teamSize;
+        }
 
         const nicksOptions = nicks.filter(x => x !== '').map(x => {
             return {value: x, label: x}
