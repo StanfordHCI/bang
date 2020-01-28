@@ -85,7 +85,6 @@ class Vote extends Component {
     }
 
     handleVote(option, question) {
-        const {questionsResult} = this.state;
         const {vote, batch, pollInd} = this.props;
         const obj = Object.assign(option, {type: "primary"}, {
             batch: {
