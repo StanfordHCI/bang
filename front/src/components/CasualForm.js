@@ -67,8 +67,9 @@ class CasualForm extends React.Component {
         }
         const _questions = questions.filter(q => q.type === "checkbox");
         let __questions = [];
+        console.log('data:', data.questions)
         if (data.questions && data.questions.length) {
-            __questions = data.questions.filter(q => Array.isArray(q.result));
+            __questions = data.questions.filter(q => q && q.result && Array.isArray(q.result));
         }
         if (_questions.length !== __questions.length) {
 
@@ -89,7 +90,11 @@ class CasualForm extends React.Component {
                 _error: 'All questions are required'
             })
         }
-        data.questions.map(question => {
+        data.questions.map((question, qInd) => {
+            if (questions[qInd].type === 'primary') { // we dont validate primary Qs
+                console.log('passed primary q')
+                return;
+            }
             if (Array.isArray(question.result)) {
                 let result = [];
                 question.result.forEach((x, index) => {

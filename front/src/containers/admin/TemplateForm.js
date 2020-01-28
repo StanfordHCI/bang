@@ -104,8 +104,7 @@ const renderPoll = ({fields, meta: {touched, error, warning}, task, steps}) => {
                         type='text'
                         />
                         </React.Fragment> : <div />
-                  }}
-
+                  }
                   <label className='form__form-group-label'>Threshold:</label>
                   <Field
                       name={`${step}.threshold`}
