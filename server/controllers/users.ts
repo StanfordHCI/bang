@@ -164,8 +164,9 @@ export const vote = async function (data, socket, io) {
                 errorHandler(e, 'poll creating error')
             }
         } else { // poll was already created, we edit the result value
+            const question = oldPoll.questions.find(q => q.type==="primary")
             await Survey.findByIdAndUpdate(oldPoll._id, {
-                questions: [...oldPoll.questions, {result: data.value, type: data.type} ],
+                questions: question ? [{result: data.value, type: data.type}] : [...oldPoll.questions, {result: data.value, type: data.type}],
             })
         }
     }
@@ -232,6 +233,7 @@ export const savePolls = async function (data, socket, io) {
                 surveyType: 'poll',
                 pollInd: pollInd,
             }
+            newPoll.questions = normalizeArray(newPoll.questions);
             try {
                 await Survey.create(newPoll);
             } catch (e) {
@@ -248,12 +250,21 @@ export const savePolls = async function (data, socket, io) {
                 }
             });
             await Survey.findByIdAndUpdate(oldPoll._id, {
-                questions: [...oldPoll.questions, ...questions],
+                questions: [...oldPoll.questions, ...normalizeArray(questions)],
             })
         }
     }
 };
 
+const normalizeArray = (array) => {
+    const normalizeQuestionsArray = [];
+    array.forEach(x=>{
+        if (x){
+            normalizeQuestionsArray.push(x);
+        }
+    })
+    return normalizeQuestionsArray;
+}
 
 /*
 export const joinBang = async function (data, socket, io) {
