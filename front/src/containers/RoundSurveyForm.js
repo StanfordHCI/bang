@@ -21,6 +21,7 @@ import {bindActionCreators} from "redux";
 import {renderField} from 'Components/form/Text'
 import renderRadioPanel from 'Components/form/RadioPanel'
 import {renderTextArea} from "../components/form/Text";
+import {shuffle} from "../utils";
 
 const replaceNicksInSurvey = (message, users, currentUser, readOnly, unmasked, surveyType) => {
   if (readOnly || surveyType === 'pre') return message;
@@ -34,6 +35,7 @@ const replaceNicksInSurvey = (message, users, currentUser, readOnly, unmasked, s
 
 const renderQuestions = ({fields, meta: {touched, error, warning}, questions, readOnly, users, currentUser, unmasked, surveyType, team}) => {
   let items = [];
+  let itemsWithIndexes = []
   for (let i = 0; i < questions.length; i++) {
     /*let hasVarOfAfkUser = false, selectOptions = [];
     if (questions[i].type ==='select') {
@@ -48,27 +50,30 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, questions, re
         }
       }
     })*/
-    const component = questions[i].type === 'select' ? renderRadioPanel : (questions[i].type === 'text' ? renderField : renderTextArea);
+    const orderedQuestions = questions;
+    const component = orderedQuestions[i].type === 'select' ? renderRadioPanel : (orderedQuestions[i].type === 'text' ? renderField : renderTextArea);
     items.push(
       <div key={i} className='form__form-group'>
         <label className='form__form-group-label'>
-            {replaceNicksInSurvey(questions[i].question, users, currentUser, readOnly, unmasked, surveyType)}
+            {replaceNicksInSurvey(orderedQuestions[i].question, users, currentUser, readOnly, unmasked, surveyType)}
           </label>
         <div className='form__form-group-field' style={{maxWidth: '700px'}}>
-          {questions[i].type !== 'instruction' && <Field
+          {orderedQuestions[i].type !== 'instruction' && <Field
             name={`questions[${i}].result`}
             component={component}
-            type={questions[i].type}
+            type={orderedQuestions[i].type}
             disabled={readOnly}
-            options={questions[i].type ==='select' ? questions[i].selectOptions.map(x => {return {label: replaceNicksInSurvey(x.label, users, currentUser, readOnly, unmasked, surveyType), value: x.value}}) : []}
+            options={orderedQuestions[i].type ==='select' ? orderedQuestions[i].selectOptions.map(x => {return {label: replaceNicksInSurvey(x.label, users, currentUser, readOnly, unmasked, surveyType), value: x.value}}) : []}
           />}
-          {questions[i].type === 'instruction' && <label>
-            {questions[i].question}
+          {orderedQuestions[i].type === 'instruction' && <label>
+            {orderedQuestions[i].question}
           </label>}
         </div>
       </div>
-    )
+    );
+    itemsWithIndexes[i] = {item: items[i], index: orderedQuestions[i].fakeIndex}
   }
+  items = itemsWithIndexes.sort((a, b) => a.index - b.index).map(c => c.item);
 
   return (<div style={{marginTop: '20px'}}>
     {items}
@@ -79,7 +84,49 @@ class RoundSurveyForm extends React.Component {
 
   constructor() {
     super();
-    this.state = {};
+    this.state = {
+      fakeIndexed: [{
+        question: 'a',
+        type: 'select',
+        options: [
+          {option: 'Strongly Disagree'},
+          {option: 'Disagree', },
+          {option: 'Neutral', },
+          {option: 'Agree', },
+          {option: 'Strongly Agree'},
+        ],
+        selectOptions: [
+          {label: 'Strongly Disagree', value: `0`},
+          {label: 'Disagree', value: `1`},
+          {label: 'Neutral', value: `2`},
+          {label: 'Agree', value: `3`},
+          {label: 'Strongly Agree', value: `4`},
+        ],
+        fakeIndex: 0
+      }],
+    };
+  }
+
+  componentDidMount() {
+    const {questions} = this.props;
+    const fakeIndexed = questions;
+    let lastIndex = 0;
+    let forShuffle = [];
+    fakeIndexed.forEach(x => {
+      if (!x.randomOrder) { // put all non-randomized Qs in first place
+        x.fakeIndex = lastIndex;
+        lastIndex++;
+      } else {
+        forShuffle.push(x);
+      }
+    })
+    const range = forShuffle.length;
+    if (range) {
+      const availableIndexes = [...Array(range).keys()].map(x => x + lastIndex);
+      const shuffled = forShuffle.map((x, indiana) => Object.assign(x, {fakeIndex: availableIndexes[indiana]}))
+      fakeIndexed.push(...shuffled);
+    }
+    this.setState({fakeIndexed: fakeIndexed});
   }
 
   render() {
@@ -123,7 +170,7 @@ class RoundSurveyForm extends React.Component {
                     name="questions"
                     component={renderQuestions}
                     rerenderOnEveryChange
-                    questions={newQuestions}
+                    questions={this.state.fakeIndexed}
                     readOnly={readOnly}
                     users={members}
                     currentUser={currentUser}

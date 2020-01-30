@@ -20,6 +20,7 @@ import renderCheckBoxField from 'Components/form/CheckBox'
 import Select from "react-select";
 
 const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType, teamFormat, postSurvey, preSurvey}) => {
+  const isSurvey = true;
   return (<div style={{width: '100%', marginTop: '20px', borderBottom: '1px solid grey'}}>
     {
       fields.map((question, index) => {
@@ -52,6 +53,17 @@ const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType
                     options={[{value: 'text', label: 'text'}, {value: 'select', label: 'select'}, {value: 'instruction', label: 'instruction'}]}
                   />
                 </div>
+                {isSurvey && <div>
+                  <label className='form__form-group-label'>random order?</label>
+                  <div className='form__form-group-field'>
+                    <Field
+                      name={`${question}.randomOrder`}
+                      component={renderCheckBoxField}
+                      // onChange={(e) => {deleteSurvey(e, i, 'survey')}}
+                    />
+                  </div>
+                </div>
+                }
               </div>
               {isSelect &&
               <FieldArray
@@ -59,6 +71,7 @@ const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType
                 component={renderQuestionOptions}
                 rerenderOnEveryChange
                 withPoints={teamFormat === 'single' && surveyType === 'mid'}
+                isSurvey={isSurvey}
               />
               }
             </Col>
@@ -208,7 +221,7 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, poll}) => {
 
 };
 
-const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRounds, withPoints}) => {
+const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRounds, withPoints, isSurvey}) => {
   return (<div style={{width: '100%'}}>
     {
       fields.map((step, index) => {
@@ -232,6 +245,7 @@ const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRoun
             <div>
               <h6>{index + 1} {index === 0 ? 'point' : 'points'}</h6>
             </div>}
+
           </Row>)
       })}
     <Row className="centered-and-flexed" noGutters>

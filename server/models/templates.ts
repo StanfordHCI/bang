@@ -23,7 +23,8 @@ let  TemplateSchema = new Schema({
       question: {type: String, required: true},
       type: {type: String, required: true},
       options: [{option: {type: String, required: true}}],
-      selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+      selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
+      randomOrder: {type: Boolean, default: false},
     }],
     message: {type: String, required: true},
     steps: [{
@@ -34,7 +35,8 @@ let  TemplateSchema = new Schema({
       question: {type: String, required: true},
       type: {type: String, required: true},
       options: [{option: {type: String, required: true}}],
-      selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+      selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
+      randomOrder: {type: Boolean, default: false},
     }],
     pinnedContent: [{
       text: {type: String, required: true},
@@ -63,13 +65,15 @@ let  TemplateSchema = new Schema({
     question: {type: String, required: true},
     type: {type: String, required: true},
     options: [{option: {type: String, required: true}}],
-    selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+    selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
+    randomOrder: {type: Boolean, default: false},
   }],
   preSurvey: [{
     question: {type: String, required: true},
     type: {type: String, required: true},
     options: [{option: {type: String, required: true}}],
-    selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+    selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
+    randomOrder: {type: Boolean, default: false},
   }],
   cases: [{
     versions: [{
