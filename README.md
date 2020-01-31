@@ -8,10 +8,11 @@ Find out more and how to use it at the [Bang wiki](https://github.com/StanfordHC
 
 Bang has the following core functionality:
 
-Get workers registered to do our task
-Recruit workers via a waiting room
-Run the chat client with tasks and surveys included
-Pay bonuses to completed workers
+- Get workers registered to do our task
+- Recruit workers via a waiting room
+- Run the chat client with tasks and surveys included
+- Pay bonuses to completed workers
+
 These will be explained in more detail below:
 
 ### Registration
@@ -28,12 +29,13 @@ waitChatOn controls if a chatbot should be shown before the main task starts. Th
 
 The experiment works by generating several chat rooms, each of TEAM_SIZE people, and letting them work together for ROUND_MINUTES before being moved into another activity. The activity cycle includes the following steps:
 
-pre experiment activities
-chat activities (happens for each round)
-pre chat activities
-chat
-post chat activities
-post experiment activities
+- pre experiment activities
+- chat activities (happens for each round)
+- pre chat activities
+- chat
+- post chat activities
+- post experiment activities
+
 There are usually several rounds of chats and critically, some are with prior teams and some are with random teams. We can can control and randomize when this happens. The user names of each individual are randomized with makeName from tools.ts and the team configurations are governed by createTeams in the same file.
 
 We are moving toward a model where bang can be run with a variety of tasks and activities outlined in an external file, so as to make it easier to run different types of experiments.
