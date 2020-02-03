@@ -109,24 +109,17 @@ class RoundSurveyForm extends React.Component {
 
   componentDidMount() {
     const {questions} = this.props;
-    const fakeIndexed = questions;
-    let lastIndex = 0;
-    let forShuffle = [];
-    fakeIndexed.forEach(x => {
-      if (!x.randomOrder) { // put all non-randomized Qs in first place
-        x.fakeIndex = lastIndex;
-        lastIndex++;
-      } else {
-        forShuffle.push(x);
+    if (questions.some(x => x.randomOrder)) {
+      // puts randomOrder questions into random order after non-randomOrder questions
+      let tempIndex = 0;
+      questions.filter(x => !x.randomOrder).forEach(x => x.fakeIndex = tempIndex++);
+      if (questions.some(x => x.randomOrder)) {
+        const indexes = Array.from(questions.filter(x => x.randomOrder).keys()).map(x => x + tempIndex);
+        const shuffled = shuffle(indexes);
+        questions.filter(x => x.randomOrder).forEach((x, ind) => x.fakeIndex = shuffled[ind]);
       }
-    })
-    const range = forShuffle.length;
-    if (range) {
-      const availableIndexes = [...Array(range).keys()].map(x => x + lastIndex);
-      const shuffled = forShuffle.map((x, indiana) => Object.assign(x, {fakeIndex: availableIndexes[indiana]}))
-      fakeIndexed.push(...shuffled);
     }
-    this.setState({fakeIndexed: fakeIndexed});
+    this.setState({fakeIndexed: questions});
   }
 
   render() {
