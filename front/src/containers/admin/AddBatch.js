@@ -341,7 +341,7 @@ function mapStateToProps(state) {
       loadTeamOrder: false,
       bestRoundFunction: 'highest',
       reconveneWorstRound: false,
-      randomizeExpRound: true,
+      randomizeExpRound: false,
       dynamicTeamSize: false,
       gender: false,
       salary: false,
