@@ -634,7 +634,7 @@ class Batch extends React.Component {
                                     }
                                     // specially format bot messages
                                     if (message.user.toString() === botId) {
-                                        messageClass = 'chat__bubble chat_bot'
+                                        messageClass = 'chat__bubble chat_bot';
                                         messageContent = replaceNicksInTask(messageContent, chat.members, user, batch.maskType === 'unmasked')
                                         messageContent = (ReactHtmlParser(messageContent));
                                     }
@@ -707,7 +707,7 @@ class Batch extends React.Component {
         const {limit, activeCounter} = this.props;
 
         return (<div>
-            <h5 className='bold-text'></h5>
+            <h5 className='bold-text'/>
             <p>We are currently waiting on <b>{limit - activeCounter > 0 ? limit - activeCounter : 0} </b>
                 more MTurk users to accept the task.</p>
             {this.renderChat()}
@@ -979,33 +979,16 @@ class Batch extends React.Component {
     }
 
     renderReadingPeriod(ind) {
-        const {sendMessage, user, chat, batch, currentRound} = this.props;
+        const {batch} = this.props;
         const task = batch.tasks[batch.currentRound - 1];
-
-        const inputProps = {
-            placeholder: 'type here...',
-            value: this.state.message,
-            onChange: this.handleType,
-            onKeyDown: this.handleSubmit,
-            className: 'chat__field-input'
-        };
+        // console.log('currently rendering RP from round', batch.currentRound - 1);
         let md;
-        // if (batch.cases && batch.cases.length && batch.roundPairs && batch.roundPairs.length) {
-        //   const currentPair = batch.roundPairs.find(x => x.pair.some(y => Number(y.roundNumber) === batch.currentRound - 1))
-        //   const currentCaseNumber = currentPair.caseNumber;
-        //   const currentVersionNumber = currentPair.pair.find(x => Number(x.roundNumber) === batch.currentRound - 1).versionNumber;
-        //   const currentPartNumber = ind;
-        //   md = batch.cases[currentCaseNumber].versions[currentVersionNumber].parts[currentPartNumber];
-        //   console.log(currentCaseNumber, currentVersionNumber, currentPartNumber, md)
-        // }
         if (!md || md.text === '') {
             md = {};
             md.text = task.readingPeriods[ind].message;
         }
-        console.log('md', md);
         const converter = new showdown.Converter();
         let html = converter.makeHtml(md.text);
-        console.log('html', html)
         html = html.split('>').join(' style=\'color:black\'>') // changes all the colors in html to black, color in showdown lib is bugged probably
         return (
             <div className='chat'>
@@ -1017,7 +1000,6 @@ class Batch extends React.Component {
                         </div>
                         {task.readingPeriods && task.readingPeriods.length &&
                         <div
-                            // style={{overflow: 'auto'}}
                             dangerouslySetInnerHTML={{__html: html}}/>}
                     </div>}
                 </div>

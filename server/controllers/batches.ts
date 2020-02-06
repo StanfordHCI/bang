@@ -492,6 +492,16 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
       break;
   }
 
+  if (teams.length !== chats.length) {
+    // happens when we are running batches with dynamic team size
+    // we just generate empty chats like in standard flow
+    chats = [];
+    for (let j = 0; j < teamSize; j++) {
+      emptyChats.push(makeNewChat([], batch, i, task))
+    }
+    chats = await Chat.insertMany(emptyChats);
+  }
+
   teams.forEach((team, index) => {
     team.chat = chats[index]._id;
     team.users.forEach(user => {
@@ -599,7 +609,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   if (batch.tasks[roundObject.number - 1].selectiveMasking) {
     try {
       await addUnmaskedPairs(batch, roundObject.number, batch.tasks.findIndex((x, ind) => x.selectiveMasking && ind >= roundObject.number - 1));
-    } catch (e) {
+      } catch (e) {
     }
   }
 
