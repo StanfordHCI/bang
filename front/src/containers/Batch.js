@@ -716,7 +716,7 @@ class Batch extends React.Component {
 
     getNumTask(batch) {
         let numTask = batch.currentRound - 1; // standard flow
-        if (batch.teamFormat === 'single') {
+        if (batch.teamFormat === 'single' && batch.bestRoundFunction !== 'do not reconvene') {
             if (batch.worstRounds && batch.worstRounds.length && Math.max.apply(null, batch.worstRounds) === batch.currentRound) {
                 // if it is the reconvene of worst round, we take survey from task[numRounds - 2]
                 numTask = batch.numRounds - 2;
