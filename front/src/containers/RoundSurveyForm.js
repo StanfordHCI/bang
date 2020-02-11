@@ -69,6 +69,7 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, questions, re
                 value: x.value
               }
             }) : []}
+            readOnly={readOnly}
           />}
           {orderedQuestions[i].type === 'instruction' && <label>
             {orderedQuestions[i].question}

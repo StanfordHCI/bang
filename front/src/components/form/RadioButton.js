@@ -25,7 +25,6 @@ class RadioButtonField extends PureComponent {
 
   render() {
     const disabled = this.props.disabled;
-
     return (
       <label
         className={`radio-btn${disabled ? ' disabled' : ''}${this.props.class ? ` radio-btn--${this.props.class}` : ''}`}>

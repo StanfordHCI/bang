@@ -14,10 +14,12 @@ import { bindActionCreators } from "redux";
 import RenderRadioButtonField from './RadioButton'
 import { connect } from 'react-redux'
 
-const RadioPanel = ({ name, value, disabled, options, onChange, dispatch }) => {
+const RadioPanel = ({ name, value, disabled, options, onChange, dispatch, readOnly }) => {
 
-    const [selected, setSelected] = useState(value);
-
+    let [selected, setSelected] = useState(value); // somehow this doesn't work for admin panel
+    if (readOnly) {
+        selected = value; // fix for admin panel
+    }
     return (
         <div className="radio-panel">
             {options.map(option =>
@@ -38,16 +40,18 @@ const RadioPanel = ({ name, value, disabled, options, onChange, dispatch }) => {
     );
 }
 
-const renderRadioPanel = (props) => (
+const renderRadioPanel = (props) => {
+    return (
     <div className='form__form-group-radio-panel-wrap'>
         <RadioPanel
             {...props.input}
             options={props.options}
             disabled={props.disabled}
+            readOnly={props.readOnly}
         />
         {props.meta.touched && props.meta.error && <span className='form__form-group-error'>{props.meta.error}</span>}
     </div>
-);
+)};
 
 renderRadioPanel.propTypes = {
     input: PropTypes.object.isRequired,
