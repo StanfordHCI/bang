@@ -422,10 +422,15 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
       }
     }
   }
+  let previousRoundWasReconveningBest = batch.randomizeExpRound ? teamFormat === 'single' && batch.expRounds[0] === i :
+      batch.numRounds === i && teamFormat === 'single';
   let task;
   if (teamFormat !== 'single' || roundType === STANDARD) { // standard flow
     task = batch.tasks[i];
   } else { // best round: we take last task
+    if (previousRoundWasReconveningBest) { // we dont take the last task, but the one before last
+      task = batch.tasks[batch.tasks.length - 2]
+    }
     if (roundType === BEST) {
       task = batch.tasks[batch.tasks.length - 1];
     }
