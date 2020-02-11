@@ -259,7 +259,8 @@ class Batch extends React.Component {
         const {batch, currentRound} = this.props;
         if (batch && currentRound) {
             if (batch.status === 'active') {
-                const task = batch.tasks[batch.currentRound - 1];
+                const numTask = this.getNumTask(batch)
+                const task = batch.tasks[numTask];
                 let endMoment = 0;
                 if (batch.currentRound - 1 === 0 && batch.hasPreSurvey) { // prepreSurvey
                     endMoment += batch.surveyMinutes
@@ -980,7 +981,8 @@ class Batch extends React.Component {
 
     renderReadingPeriod(ind) {
         const {batch} = this.props;
-        const task = batch.tasks[batch.currentRound - 1];
+        const numTask = this.getNumTask(batch);
+        const task = batch.tasks[numTask]
         // console.log('currently rendering RP from round', batch.currentRound - 1);
         let md;
         if (!md || md.text === '') {
