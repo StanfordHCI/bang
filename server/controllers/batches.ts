@@ -411,7 +411,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     console.log('reconvene logic error: running worst round');
   }
   let roundType;
-  if (!reconveneWorstCondition && !reconveneBestCondition) {
+  if ((!reconveneWorstCondition && !reconveneBestCondition) || batch.bestRoundFunction === 'do not reconvene') {
     roundType = STANDARD;
   } else {
     if (reconveneWorstCondition) {

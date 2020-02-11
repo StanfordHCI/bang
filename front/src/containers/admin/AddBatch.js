@@ -151,7 +151,8 @@ class AddBatch extends React.Component {
                       name='bestRoundFunction'
                       component={renderSelectField}
                       options={[{value: 'highest', label: 'Highest score'}, {value: 'lowest', label: 'Lowest score'},
-                        {value: 'average', label: 'Closest to average'}, {value: 'random', label: 'Random'}]}
+                        {value: 'average', label: 'Closest to average'}, {value: 'random', label: 'Random'},
+                        {value: 'do not reconvene', label: 'Don\'t reconvene anything!'}]}
                       disabled={this.props.teamFormat !== 'single'}
                   />
                 </div>
@@ -163,7 +164,7 @@ class AddBatch extends React.Component {
                     name='reconveneWorstRound'
                     component={renderSelectField}
                     options={[{value: true, label: 'Reconvene'}, {value: false, label: 'Don\'t Reconvene'}]}
-                    disabled={this.props.teamFormat !== 'single'}
+                    disabled={this.props.teamFormat !== 'single' && this.props.bestRoundFunction}
                   />
                 </div>
               </div>
@@ -331,6 +332,7 @@ function mapStateToProps(state) {
     templateList: state.template.templateList,
     batchList: state.admin.batchList,
     teamFormat: selector(state, 'teamFormat'),
+    bestRoundFunction: selector(state, 'bestRoundFunction'),
     initialValues: {
       teamFormat: 'single',
       maskType: 'masked',
@@ -339,7 +341,7 @@ function mapStateToProps(state) {
       withAutoStop: true,
       rememberTeamOrder: false,
       loadTeamOrder: false,
-      bestRoundFunction: 'highest',
+      bestRoundFunction: 'do not reconvene',
       reconveneWorstRound: false,
       randomizeExpRound: false,
       dynamicTeamSize: false,

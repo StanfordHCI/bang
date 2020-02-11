@@ -95,10 +95,10 @@ let  BatchSchema = new Schema({
   withAutoStop: {type: Boolean, default: true, required: true},
   rememberTeamOrder: {type: Boolean, default: false, required: true},
   teamFormat: {type: String, required: true},
-  bestRoundFunction: {type: String, $enum: ['highest', 'lowest', 'average', 'random']},
+  bestRoundFunction: {type: String, $enum: ['highest', 'lowest', 'average', 'random', 'do not reconvene']}, // do not reconvene anything
   randomizeExpRound: {type: Boolean, default: false},
   worstRounds: [], // [worst round, reconvening of worst round]; (Math.max.apply(null, worstRounds) === number of reconvening round) MUST BE TRUE
-  reconveneWorstRound: {type: Boolean, default: false},
+  reconveneWorstRound: {type: Boolean, default: false}, // this field doesn't matter if bestRoundFunction === 'do not reconvene'
   hasPostSurvey: {type: Boolean, default: false},
   hasPreSurvey: {type: Boolean, default: false},
   postSurvey: [{
