@@ -60,6 +60,7 @@ class AddBatch extends React.Component {
     batch.randomizeExpRound = form.randomizeExpRound;
     batch.reconveneWorstRound = form.reconveneWorstRound;
     batch.dynamicTeamSize = form.dynamicTeamSize;
+    batch.dynamicOptions = form.dynamicOptions;
     // filter parameters
     batch.gender = form.gender;
     batch.salary = form.salary;
@@ -246,7 +247,18 @@ class AddBatch extends React.Component {
                   <Field
                     name='dynamicTeamSize'
                     component={renderSelectField}
-                    options={[{label: 'Regular (n for all rounds)', value: false}, {label: 'Dynamic (50% - 1 50% - n)', value: true},]}
+                    options={[{label: 'Regular (n for all rounds)', value: false}, {label: 'Dynamic (50% - 1 50% - n)', value: true}]}
+                    disabled={this.props.teamFormat !== 'single'}
+                  />
+                </div>
+              </div>
+              <div className='form__form-group'>
+                <label className='form__form-group-label'>Dynamic options: Team or Individual First?</label>
+                <div className='form__form-group-field'>
+                  <Field
+                    name='dynamicOptions'
+                    component={renderSelectField}
+                    options={[{label: 'Team First', value: true}, {label: 'Individual First', value: false}]}
                     disabled={this.props.teamFormat !== 'single'}
                   />
                 </div>
@@ -310,6 +322,9 @@ const validate = (values, props) => {
   if (values.teamFormat === 'single' && values.dynamicTeamSize == null) {
     errors.dynamicTeamSize = 'required'
   }
+  if (values.dynamicTeamSize == true && values.dynamicOptions == null){
+    errors.dynamicOptions = 'required'
+  }
   if (values.teamFormat === 'single' && values.reconveneWorstRound && values.template &&
     props.templateList.filter(x => x._id === values.template) &&
     props.templateList.filter(x => x._id === values.template)[0].numRounds < 6) {
@@ -345,6 +360,7 @@ function mapStateToProps(state) {
       reconveneWorstRound: false,
       randomizeExpRound: false,
       dynamicTeamSize: false,
+      dynamicOptions: null,
       gender: false,
       salary: false,
       userRace: false,
