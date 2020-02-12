@@ -258,7 +258,7 @@ class AddBatch extends React.Component {
                   <Field
                     name='dynamicOptions'
                     component={renderSelectField}
-                    options={[{label: 'Team First', value: true}, {label: 'Individual First', value: false}]}
+                    options={[{label: 'Team First', value: true}, {label: 'Individual First', value: false},]}
                     disabled={this.props.teamFormat !== 'single'}
                   />
                 </div>
