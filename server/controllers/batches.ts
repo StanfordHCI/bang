@@ -226,11 +226,20 @@ export const receiveSurvey = async function (data, socket, io) {
         return;
       }
     }
-    await Survey.create(newSurvey)
     const [batch, user] = await Promise.all([
-      Batch.findById(newSurvey.batch).select('_id roundMinutes numRounds surveyMinutes tasks teamFormat preSurvey').lean().exec(),
+      Batch.findById(newSurvey.batch).select('_id roundMinutes numRounds surveyMinutes tasks teamFormat preSurvey ' +
+          'currentRound rounds').lean().exec(),
       User.findById(newSurvey.user).select('_id systemStatus mturkId').lean().exec()
     ])
+    console.log('teams: ', JSON.stringify(batch.rounds[batch.currentRound - 1].teams), socket.userId.toString());
+    const teammates = batch.rounds[batch.currentRound - 1].teams
+        .find(x => x.users.some(y => y.user._id.toString() === socket.userId.toString())).users
+        .filter(x => x.user._id.toString() !== socket.userId.toString())
+    newSurvey.teamPartners = {};
+    teammates.forEach((x, ind) => {
+      newSurvey.teamPartners[`team_partner_${ind}`] = x.user._id;
+    })
+    await Survey.create(newSurvey)
     if (process.env.MTURK_MODE !== 'off' && newSurvey.surveyType === 'final') {
       if (!batch) {
         logger.info(module, 'Blocked survey, survey/user does not have batch');

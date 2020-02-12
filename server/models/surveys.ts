@@ -44,6 +44,7 @@ let SurveySchema = new Schema(
             required: true
         }, //should be used instead of isPost
         pollInd: {type: Number, required: false, default: 0}, // for poll type surveys only
+		teamPartners: Schema.Types.Mixed, // {team_partner_0: userId, team_partner_1: userId, ...}
     },
     options
 );
