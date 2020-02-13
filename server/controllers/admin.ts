@@ -371,6 +371,7 @@ export const loadBatchResult = async function (req, res) {
         team.users.forEach(user => {
           user.midSurvey = surveys.find(x => x.surveyType === 'midsurvey' && x.user.toString() === user.user.toString() && roundNumber + 1 === x.round)
           user.preSurvey = surveys.find(x => x.surveyType === 'presurvey' && x.user.toString() === user.user.toString() && roundNumber + 1 === x.round)
+          user.polls = surveys.find(x => x.surveyType === 'poll' && x.user.toString() === user.user.toString() && roundNumber + 1 === x.round)
           return user;
         })
         return team;
