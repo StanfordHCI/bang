@@ -237,7 +237,7 @@ export const receiveSurvey = async function (data, socket, io) {
         .filter(x => x.user._id.toString() !== socket.userId.toString())
     newSurvey.teamPartners = {};
     teammates.forEach((x, ind) => {
-      newSurvey.teamPartners[`team_partner_${ind}`] = x.user._id;
+      newSurvey.teamPartners[`team_partner_${ind + 1}`] = x.user._id;
     })
     await Survey.create(newSurvey)
     if (process.env.MTURK_MODE !== 'off' && newSurvey.surveyType === 'final') {
