@@ -564,7 +564,7 @@ class Batch extends React.Component {
             }
             let warning = null;
             const timeLeft = this.state.timeLeft;
-            if (timeLeft < 120 && poll.type === 'casual') {
+            if (timeLeft < 120 && poll.type === 'casual' && poll.questions.some(x => x.type === 'primary')) {
               warning = 'casual';
             }
             return ((actualTeamSize > 1 || // do not show foreperson polls if person is alone in chat
