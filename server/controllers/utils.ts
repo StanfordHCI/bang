@@ -386,6 +386,7 @@ export const createDynamicTeams = (teamSize: number, numRounds: number, dynamicO
   * first round in pair is always with 1 user in a team*/
   const availableNumbers = Array.from(Array(numRounds).keys());
   const roundPairs = consecutivePairs(availableNumbers);
+  console.log("HERE ARE MY ROUNDPAIRS: " + roundPairs)
   let roundGen = Array(numRounds);
   roundPairs.forEach(pair => {
 
@@ -732,8 +733,11 @@ export const addUnmaskedPairs = async (batch, numRound, surveyRound) => {
 //Given an array of available numbers, return an array of consecutive pairs
 function consecutivePairs(availableNumbers: Number[] ) {
   let pairs = [];
-  for(var i = 0; i < availableNumbers.length-1; i++){
-    pairs.push([i, i+1]);
+  while( availableNumbers.length ){
+    pairs.push([
+      availableNumbers.splice(0, 1)[0],
+      availableNumbers.splice(0, 1)[0]
+    ]);
   }
   return pairs;
 }
