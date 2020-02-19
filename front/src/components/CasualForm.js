@@ -75,20 +75,24 @@ class CasualForm extends React.Component {
 
         }
         // going through all the questions data and checking whether they are not falsy
-        for (let i = 1; i < data.questions.length; ++i) { // skipping i = 0 because it is not inside the form (primary question)
-            if (!data.questions[i]) {
+        if(data.questions){ //only do this if there are additional questions besides the primary one
+            for (let i = 1; i < data.questions.length; ++i) { // skipping i = 0 because it is not inside the form (primary question)
+                if (!data.questions[i]) {
+                    throw new SubmissionError({
+                        _error: 'All questions must be answered!'
+                    })
+                }
+            }
+        }
+        if(data.questions){
+            if (questions.length !== data.questions.length) {
                 throw new SubmissionError({
-                    _error: 'All questions must be answered!'
+                    _error: 'All questions are required'
                 })
             }
         }
         if (!Array.isArray(data.questions)) {
             data.questions = [];
-        }
-        if (questions.length !== data.questions.length) {
-            throw new SubmissionError({
-                _error: 'All questions are required'
-            })
         }
         data.questions.map((question, qInd) => {
             if (questions[qInd].type === 'primary') { // we dont validate primary Qs
