@@ -386,7 +386,7 @@ export const createDynamicTeams = (teamSize: number, numRounds: number, dynamicO
   * first round in pair is always with 1 user in a team*/
   const availableNumbers = Array.from(Array(numRounds).keys());
   const roundPairs = consecutivePairs(availableNumbers);
-  console.log("HERE ARE MY ROUNDPAIRS: " + roundPairs)
+  console.log("Round pairs: " + roundPairs)
   let roundGen = Array(numRounds);
   roundPairs.forEach(pair => {
 
