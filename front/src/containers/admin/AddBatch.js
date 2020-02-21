@@ -360,7 +360,7 @@ function mapStateToProps(state) {
       reconveneWorstRound: false,
       randomizeExpRound: false,
       dynamicTeamSize: false,
-      dynamicOptions: null,
+      dynamicOptions: false,
       gender: false,
       salary: false,
       userRace: false,
