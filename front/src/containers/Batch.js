@@ -871,9 +871,12 @@ class Batch extends React.Component {
         data.singleTeamQuestion = null;
       } else {
         data.mainQuestion = null;
-        const processedResult = data.singleTeamQuestion.result.split(' ');
-        [data.singleTeamQuestion.actualPartnerName, data.singleTeamQuestion.chosenPartnerName, data.singleTeamQuestion.numOptions] =
+        var processedResult = null;
+        if(data.singleTeamQuestion.result){ //this may be null due to dynamic team sizing; this edit prevents a crash.
+          const processedResult = data.singleTeamQuestion.result.split(' ');
+          [data.singleTeamQuestion.actualPartnerName, data.singleTeamQuestion.chosenPartnerName, data.singleTeamQuestion.numOptions] =
           [processedResult[1], processedResult[0], processedResult[2]];
+        }
       }
 
     }
