@@ -117,19 +117,19 @@ class PostSurveyForm extends React.Component {
 		const numRounds = batch.numRounds;
 		const allRounds = Array.from(Array(numRounds).keys());
 		const roundPairs = batch.roundPairs;
-		const singleUserRounds = roundPairs.map(x => x.pair).map(x => x[0].roundNumber);
+
 		let nonExpRounds = allRounds;
-		if (singleUserRounds && singleUserRounds.length) {
-			nonExpRounds = allRounds.filter(x => singleUserRounds.indexOf(x) === -1);
+		//Attempt to leverage batch variables
+		if(batch.dynamicTeamSize && batch.dynamicOptions){ //Team First [n,1,n,1]
+			nonExpRounds = nonExpRounds.filter((element, index) => index%2 === 0);
+		}else if(batch.dynamicTeamSize && !batch.dynamicOptions){ //Individual First [1,n,1,n]
+			nonExpRounds = nonExpRounds.filter((element, index) => index%2 !== 0);
+		}else{ //not using dynamic team sizing at all - should have the regular logic.
+			nonExpRounds = allRounds.filter(x => expRounds.indexOf(x) < 0 && worstRounds.indexOf(x) < 0);
 		}
-		let result;
-		let supposedResult = nonExpRounds.filter(x => expRounds.indexOf(x) < 0 && worstRounds.indexOf(x) < 0); // sometimes supposedResult.length can be less than 2
-		if (supposedResult && supposedResult.length >= 2) {
-			result = supposedResult;
-		} else {
-			result = nonExpRounds;
-		}
-		const shuffledNonExpRounds = shuffle(result);
+
+		const shuffledNonExpRounds = shuffle(nonExpRounds);
+
 		let roundsForSurvey = [];
 		roundsForSurvey.push(shuffledNonExpRounds[0], shuffledNonExpRounds[1]);
 		const expPersonRound1 = batch.rounds[roundsForSurvey[0]].teams[0].users.find(x => x.user.toString() !== userId &&
