@@ -116,8 +116,20 @@ class PostSurveyForm extends React.Component {
 		const [expRounds, worstRounds] = [batch.expRounds.map(x => x - 1), batch.worstRounds.map(x => x - 1)];
 		const numRounds = batch.numRounds;
 		const allRounds = Array.from(Array(numRounds).keys());
-		const nonExpRounds = allRounds.filter(x => expRounds.indexOf(x) < 0 && worstRounds.indexOf(x) < 0);
+		const roundPairs = batch.roundPairs;
+
+		let nonExpRounds = allRounds;
+		//Attempt to leverage batch variables
+		if(batch.dynamicTeamSize && batch.dynamicOptions){ //Team First [n,1,n,1]
+			nonExpRounds = nonExpRounds.filter((element, index) => index%2 === 0);
+		}else if(batch.dynamicTeamSize && !batch.dynamicOptions){ //Individual First [1,n,1,n]
+			nonExpRounds = nonExpRounds.filter((element, index) => index%2 !== 0);
+		}else{ //not using dynamic team sizing at all - should have the regular logic.
+			nonExpRounds = allRounds.filter(x => expRounds.indexOf(x) < 0 && worstRounds.indexOf(x) < 0);
+		}
+
 		const shuffledNonExpRounds = shuffle(nonExpRounds);
+
 		let roundsForSurvey = [];
 		roundsForSurvey.push(shuffledNonExpRounds[0], shuffledNonExpRounds[1]);
 		const expPersonRound1 = batch.rounds[roundsForSurvey[0]].teams[0].users.find(x => x.user.toString() !== userId &&
@@ -144,7 +156,10 @@ class PostSurveyForm extends React.Component {
 		const { invalid, batch, user } = this.props;
 		let surveysTotal = 0;
 		batch.tasks.map(task => {surveysTotal += task.hasMidSurvey + task.hasPreSurvey});
-
+		let roundsForSurvey = this.state.roundsForSurvey;
+		if (!roundsForSurvey) {
+			roundsForSurvey = [1, 2];
+		}
 		return (
 			<div>
 				<form className="form" style={{ paddingBottom: '5vh' }} onSubmit={this.props.handleSubmit}>
@@ -223,20 +238,20 @@ class PostSurveyForm extends React.Component {
 									{batch.teamFormat === 'single' &&
 									<div className="form__form-group">
 										<label className="form__form-group-label">
-											We didn't tell you this, but in rounds {this.state.roundsForSurvey[0] + 1} and {this.state.roundsForSurvey[1] + 1} you worked with the same people.
+											We didn't tell you this, but in rounds {roundsForSurvey[0] + 1} and {roundsForSurvey[1] + 1} you worked with the same people.
 											Their names appeared differently between these two rounds.
-											In team {this.state.roundsForSurvey[0] + 1}, one partner's name was {this.state.firstNick}. What was their name in round {this.state.roundsForSurvey[1] + 1}?
+											In team {roundsForSurvey[0] + 1}, one partner's name was {this.state.firstNick}. What was their name in round {roundsForSurvey[1] + 1}?
 										</label>
 										<div className="form__form-group">
 											<Row>
 												<Col>
 													<label className="form__form-group-label">
-														Name in round {this.state.roundsForSurvey[0] + 1}:
+														Name in round {roundsForSurvey[0] + 1}:
 													</label>
 												</Col>
 												<Col>
 													<label className="form__form-group-label">
-														Name in round {this.state.roundsForSurvey[1] + 1}:
+														Name in round {roundsForSurvey[1] + 1}:
 													</label>
 												</Col>
 											</Row>

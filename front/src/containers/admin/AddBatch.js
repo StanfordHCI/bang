@@ -60,6 +60,7 @@ class AddBatch extends React.Component {
     batch.randomizeExpRound = form.randomizeExpRound;
     batch.reconveneWorstRound = form.reconveneWorstRound;
     batch.dynamicTeamSize = form.dynamicTeamSize;
+    batch.dynamicOptions = form.dynamicOptions;
     // filter parameters
     batch.gender = form.gender;
     batch.salary = form.salary;
@@ -151,7 +152,8 @@ class AddBatch extends React.Component {
                       name='bestRoundFunction'
                       component={renderSelectField}
                       options={[{value: 'highest', label: 'Highest score'}, {value: 'lowest', label: 'Lowest score'},
-                        {value: 'average', label: 'Closest to average'}, {value: 'random', label: 'Random'}]}
+                        {value: 'average', label: 'Closest to average'}, {value: 'random', label: 'Random'},
+                        {value: 'do not reconvene', label: 'Don\'t reconvene anything!'}]}
                       disabled={this.props.teamFormat !== 'single'}
                   />
                 </div>
@@ -163,7 +165,7 @@ class AddBatch extends React.Component {
                     name='reconveneWorstRound'
                     component={renderSelectField}
                     options={[{value: true, label: 'Reconvene'}, {value: false, label: 'Don\'t Reconvene'}]}
-                    disabled={this.props.teamFormat !== 'single'}
+                    disabled={this.props.teamFormat !== 'single' && this.props.bestRoundFunction}
                   />
                 </div>
               </div>
@@ -245,7 +247,18 @@ class AddBatch extends React.Component {
                   <Field
                     name='dynamicTeamSize'
                     component={renderSelectField}
-                    options={[{label: 'Regular (n for all rounds)', value: false}, {label: 'Dynamic (50% - 1 50% - n)', value: true},]}
+                    options={[{label: 'Regular (n for all rounds)', value: false}, {label: 'Dynamic (50% - 1 50% - n)', value: true}]}
+                    disabled={this.props.teamFormat !== 'single'}
+                  />
+                </div>
+              </div>
+              <div className='form__form-group'>
+                <label className='form__form-group-label'>Dynamic options: Team or Individual First?</label>
+                <div className='form__form-group-field'>
+                  <Field
+                    name='dynamicOptions'
+                    component={renderSelectField}
+                    options={[{label: 'Team First', value: true}, {label: 'Individual First', value: false},]}
                     disabled={this.props.teamFormat !== 'single'}
                   />
                 </div>
@@ -309,6 +322,9 @@ const validate = (values, props) => {
   if (values.teamFormat === 'single' && values.dynamicTeamSize == null) {
     errors.dynamicTeamSize = 'required'
   }
+  if (values.dynamicTeamSize == true && values.dynamicOptions == null){
+    errors.dynamicOptions = 'required'
+  }
   if (values.teamFormat === 'single' && values.reconveneWorstRound && values.template &&
     props.templateList.filter(x => x._id === values.template) &&
     props.templateList.filter(x => x._id === values.template)[0].numRounds < 6) {
@@ -331,6 +347,7 @@ function mapStateToProps(state) {
     templateList: state.template.templateList,
     batchList: state.admin.batchList,
     teamFormat: selector(state, 'teamFormat'),
+    bestRoundFunction: selector(state, 'bestRoundFunction'),
     initialValues: {
       teamFormat: 'single',
       maskType: 'masked',
@@ -339,10 +356,11 @@ function mapStateToProps(state) {
       withAutoStop: true,
       rememberTeamOrder: false,
       loadTeamOrder: false,
-      bestRoundFunction: 'highest',
+      bestRoundFunction: 'do not reconvene',
       reconveneWorstRound: false,
-      randomizeExpRound: true,
+      randomizeExpRound: false,
       dynamicTeamSize: false,
+      dynamicOptions: false,
       gender: false,
       salary: false,
       userRace: false,

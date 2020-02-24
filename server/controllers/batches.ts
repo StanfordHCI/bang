@@ -226,11 +226,20 @@ export const receiveSurvey = async function (data, socket, io) {
         return;
       }
     }
-    await Survey.create(newSurvey)
     const [batch, user] = await Promise.all([
-      Batch.findById(newSurvey.batch).select('_id roundMinutes numRounds surveyMinutes tasks teamFormat preSurvey').lean().exec(),
+      Batch.findById(newSurvey.batch).select('_id roundMinutes numRounds surveyMinutes tasks teamFormat preSurvey ' +
+          'currentRound rounds').lean().exec(),
       User.findById(newSurvey.user).select('_id systemStatus mturkId').lean().exec()
     ])
+    console.log('teams: ', JSON.stringify(batch.rounds[batch.currentRound - 1].teams), socket.userId.toString());
+    const teammates = batch.rounds[batch.currentRound - 1].teams
+        .find(x => x.users.some(y => y.user._id.toString() === socket.userId.toString())).users
+        .filter(x => x.user._id.toString() !== socket.userId.toString())
+    newSurvey.teamPartners = {};
+    teammates.forEach((x, ind) => {
+      newSurvey.teamPartners[`team_partner_${ind + 1}`] = x.user._id;
+    })
+    await Survey.create(newSurvey)
     if (process.env.MTURK_MODE !== 'off' && newSurvey.surveyType === 'final') {
       if (!batch) {
         logger.info(module, 'Blocked survey, survey/user does not have batch');
@@ -411,7 +420,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     console.log('reconvene logic error: running worst round');
   }
   let roundType;
-  if (!reconveneWorstCondition && !reconveneBestCondition) {
+  if ((!reconveneWorstCondition && !reconveneBestCondition) || batch.bestRoundFunction === 'do not reconvene') {
     roundType = STANDARD;
   } else {
     if (reconveneWorstCondition) {
@@ -422,10 +431,15 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
       }
     }
   }
+  let previousRoundWasReconveningBest = batch.randomizeExpRound ? teamFormat === 'single' && batch.expRounds[0] === i :
+      batch.numRounds === i && teamFormat === 'single';
   let task;
   if (teamFormat !== 'single' || roundType === STANDARD) { // standard flow
     task = batch.tasks[i];
   } else { // best round: we take last task
+    if (previousRoundWasReconveningBest) { // we dont take the last task, but the one before last
+      task = batch.tasks[batch.tasks.length - 2]
+    }
     if (roundType === BEST) {
       task = batch.tasks[batch.tasks.length - 1];
     }
@@ -490,6 +504,16 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
         chats = [chat];
       }
       break;
+  }
+
+  if (teams.length !== chats.length) {
+    // happens when we are running batches with dynamic team size
+    // we just generate empty chats like in standard flow
+    chats = [];
+    for (let j = 0; j < teamSize; j++) {
+      emptyChats.push(makeNewChat([], batch, i, task))
+    }
+    chats = await Chat.insertMany(emptyChats);
   }
 
   teams.forEach((team, index) => {
@@ -599,7 +623,7 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
   if (batch.tasks[roundObject.number - 1].selectiveMasking) {
     try {
       await addUnmaskedPairs(batch, roundObject.number, batch.tasks.findIndex((x, ind) => x.selectiveMasking && ind >= roundObject.number - 1));
-    } catch (e) {
+      } catch (e) {
     }
   }
 

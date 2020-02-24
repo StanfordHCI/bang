@@ -48,7 +48,8 @@ let  BatchSchema = new Schema({
       question: {type: String, required: true},
       type: {type: String, required: true},
       options: [{option: {type: String, required: true}}],
-      selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+      selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
+      randomOrder: {type: Boolean, default: false},
     }],
     message: {type: String, required: true},
     steps: [{
@@ -60,7 +61,8 @@ let  BatchSchema = new Schema({
       type: {type: String, required: true},
       options: [{option: {type: String, required: true}}],
       selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
-      teammate: {type: mongoose.Schema.Types.ObjectId, ref: 'User'} // appears only on questions for selective-masking
+      teammate: {type: mongoose.Schema.Types.ObjectId, ref: 'User'}, // appears only on questions for selective-masking
+      randomOrder: {type: Boolean, default: false},
     }],
     pinnedContent: [{
       text: {type: String, required: true},
@@ -93,23 +95,25 @@ let  BatchSchema = new Schema({
   withAutoStop: {type: Boolean, default: true, required: true},
   rememberTeamOrder: {type: Boolean, default: false, required: true},
   teamFormat: {type: String, required: true},
-  bestRoundFunction: {type: String, $enum: ['highest', 'lowest', 'average', 'random']},
+  bestRoundFunction: {type: String, $enum: ['highest', 'lowest', 'average', 'random', 'do not reconvene']}, // do not reconvene anything
   randomizeExpRound: {type: Boolean, default: false},
   worstRounds: [], // [worst round, reconvening of worst round]; (Math.max.apply(null, worstRounds) === number of reconvening round) MUST BE TRUE
-  reconveneWorstRound: {type: Boolean, default: false},
+  reconveneWorstRound: {type: Boolean, default: false}, // this field doesn't matter if bestRoundFunction === 'do not reconvene'
   hasPostSurvey: {type: Boolean, default: false},
   hasPreSurvey: {type: Boolean, default: false},
   postSurvey: [{
     question: {type: String, required: true},
     type: {type: String, required: true},
     options: [{option: {type: String, required: true}}],
-    selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+    selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
+    randomOrder: {type: Boolean, default: false},
   }],
   preSurvey: [{
     question: {type: String, required: true},
     type: {type: String, required: true},
     options: [{option: {type: String, required: true}}],
-    selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}]
+    selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
+    randomOrder: {type: Boolean, default: false},
   }],
   unmaskedPairs: {
     likes: [[{type: mongoose.Schema.Types.ObjectId, ref: 'User'}, {type: mongoose.Schema.Types.ObjectId, ref: 'User'}]],
@@ -117,6 +121,7 @@ let  BatchSchema = new Schema({
   },
   activePoll: { type: Number, required: false },
   dynamicTeamSize: { type: Boolean, required: true },
+  dynamicOptions: { type: Boolean, required: false },
   roundPairs: [{pair: [{roundNumber: {type: Number}, versionNumber: {type: Number}}, {roundNumber: {type: Number}, versionNumber: {type: Number}}], caseNumber: { type: Number } }],
   cases: [{
     versions: [{

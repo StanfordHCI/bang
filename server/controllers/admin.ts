@@ -34,6 +34,7 @@ export const addBatch = async function (req, res) {
   try {
     const teamFormat = req.body.teamFormat;
     const dynamicTeamSize = req.body.dynamicTeamSize;
+    const dynamicOptions = req.body.dynamicOptions;
     const batches = await Batch.find({$or: [{status: 'waiting'}, {status: 'active'}]}).select('tasks teamSize roundMinutes surveyMinutes numRounds teamFormat').lean().exec();
     let batchSumCost = 0;
     batches.forEach(batch => {
@@ -66,7 +67,7 @@ export const addBatch = async function (req, res) {
     let roundPairs = [];
     if (teamFormat === 'single') {
       if (dynamicTeamSize) { // round generation for 50% n 50% 1 person teams
-        const dynamicTeamsResult = createDynamicTeams(newBatch.teamSize, newBatch.numRounds);
+        const dynamicTeamsResult = createDynamicTeams(newBatch.teamSize, newBatch.numRounds, dynamicOptions);
         roundGen = dynamicTeamsResult.roundGen;
         roundPairs = dynamicTeamsResult.roundPairs;
         if (roundPairs) { // giving roundPairs versions and case numbers
@@ -85,7 +86,7 @@ export const addBatch = async function (req, res) {
                 _case.versions.forEach((version, versionIndex) => {
                   if (versionIndex === versionNumber) {
                     task.pinnedContent = version.parts.map((part, index) => (
-                        {text: part.text, link: part.text}
+                        {text: `part ${index} text`, link: part.text}
                     ))
                   }
                 });
@@ -372,6 +373,7 @@ export const loadBatchResult = async function (req, res) {
         team.users.forEach(user => {
           user.midSurvey = surveys.find(x => x.surveyType === 'midsurvey' && x.user.toString() === user.user.toString() && roundNumber + 1 === x.round)
           user.preSurvey = surveys.find(x => x.surveyType === 'presurvey' && x.user.toString() === user.user.toString() && roundNumber + 1 === x.round)
+          user.polls = surveys.find(x => x.surveyType === 'poll' && x.user.toString() === user.user.toString() && roundNumber + 1 === x.round)
           return user;
         })
         return team;

@@ -55,7 +55,7 @@ class BatchResult extends React.Component {
 		});
 	}
 
-  handleChangeUser = (e) => {
+    handleChangeUser = (e) => {
     const user = e.value;
     let chat = {}, members = [], preSurvey = {}, midSurvey = {};
     if (!!this.state.round && user) {
@@ -63,7 +63,6 @@ class BatchResult extends React.Component {
       const team = batch.rounds[this.state.round - 1].teams[batch.rounds[this.state.round - 1].teams
         .findIndex(x => x.users.some(y => y.user === user))]
       chat = team.chat;
-      console.log(team.users)
       preSurvey = team.users.find(x => x.user === user).preSurvey;
       midSurvey = team.users.find(x => x.user === user).midSurvey;
       members = team.users.map(user=> {
@@ -73,8 +72,7 @@ class BatchResult extends React.Component {
       });
     }
     this.setState({user: user, chat: chat, members: members, midSurvey: midSurvey, preSurvey: preSurvey,
-      finalSurvey: this.props.batch.users.find(x => x.user._id === user).survey})
-
+      finalSurvey: this.props.batch.users.find(x => x.user._id === user).survey});
   }
 
   handleChangeRound = (e) => {
