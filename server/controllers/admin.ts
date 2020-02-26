@@ -380,10 +380,11 @@ export const loadBatchResult = async function (req, res) {
       return round;
     })
 
-    surveys = surveys.filter(x => !!x.isPost)
-
+    // surveys = surveys.filter(x => !!x.isPost)
     batch.users.forEach(user => {
-      user.survey = surveys.find(x => x.user.toString() === user.user._id.toString() && x.isPost)
+      user.survey = surveys.find(x => x.user.toString() === user.user._id.toString() && x.isPost);
+      user.prepresurvey = surveys.find(x => x.surveyType === 'prepresurvey' && x.user.toString() === user.user._id.toString())
+      user.postsurvey = surveys.find(x => x.surveyType === 'postsurvey' && x.user.toString() === user.user._id.toString())
       return user;
     })
 

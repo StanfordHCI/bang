@@ -21,7 +21,7 @@ let  BatchSchema = new Schema({
   rounds: [{
     startTime: Date,
     endTime: Date,
-    status: { type: String, enum: ['completed', 'active', 'presurvey', 'midsurvey', 'prepresurvey'], default: 'presurvey' },
+    status: { type: String, enum: ['completed', 'active', 'presurvey', 'midsurvey', 'prepresurvey', 'postsurvey'], default: 'presurvey' },
     teams: [{
       users: [{
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},

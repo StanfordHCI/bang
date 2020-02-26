@@ -558,9 +558,6 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     } catch (e) {
       console.log('RP error', e)
     }
-    roundObject.status = 'active';
-    batch = await Batch.findByIdAndUpdate(batch._id, {$set: {rounds: rounds}});
-    io.to(batch._id.toString()).emit('refresh-batch', true);
   }
 
   if (task.hasPreSurvey) {
