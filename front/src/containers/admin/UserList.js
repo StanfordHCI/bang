@@ -108,7 +108,6 @@ class UserList extends React.Component {
                       {/*<td>{JSON.stringify(user)}$</td>*/}
                       <td>
                         <Button className="btn btn-danger"
-                                disabled={!user.isTest}
                                 style={{padding: '2px 10px', marginBottom: '0px'}}
                                 onClick={() => this.props.payBonus(user._id)}>
                           1$
