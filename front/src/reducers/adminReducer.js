@@ -92,9 +92,10 @@ export default function (state = initialState, action) {
         batch: null
       };
     case BONUS_PAID:
+      console.log(action.data.users)
       return {
         ...state,
-        userList: action.data,
+        userList: action.data.users,
       }
     default:
       return state;
