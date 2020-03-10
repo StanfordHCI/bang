@@ -28,7 +28,7 @@ const moment = require('moment')
 const cors = require('cors')
 const cron = require('node-cron');
 let currentHIT = '';
-
+errorHandler('abc')
 mongoose.Promise = global.Promise;
 mongoose.connection.on('error', (err) => {
   errorHandler(err, '%s MongoDB connection error. Please make sure MongoDB is running.')
