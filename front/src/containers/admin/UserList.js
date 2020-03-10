@@ -49,7 +49,9 @@ class UserList extends React.Component {
   }
 
   handleSearchChange = s => {
-    let userList = this.props.userList.filter(x => x.mturkId.indexOf(s) > -1);
+    const lowerCasesdList = this.props.userList;
+    lowerCasesdList.forEach((x, ind) => lowerCasesdList[ind].mturkId = lowerCasesdList[ind].mturkId.toLowerCase())
+    let userList = lowerCasesdList.filter(x => x.mturkId.toLowerCase().indexOf(s.toLowerCase()) > -1);
     this.setState({userList: userList});
     this.onChangePage(1);
   }
