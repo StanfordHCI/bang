@@ -287,8 +287,8 @@ export function payBonus(id) {
   return (dispatch, getState) => {
     dispatch(setLoading(true));
     return axios({
-      method: 'post',
-      url: 'admin/pay-bonus/',
+      method: 'put',
+      url: 'admin/users/',
       data: {_id: id}
     })
         .then((response) => {

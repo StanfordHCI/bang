@@ -12,7 +12,7 @@ module.exports = function (app) {
     .get('/users', adminController.loadUserList)
     .delete('/users', adminController.deleteUser)
     .post('/users/', adminController.addUser)
-    .post('/pay-bonus/', adminController.bonusAPI)
+    .put('/users/', adminController.bonusAPI)
     .get('/batches/', adminController.loadBatchList)
     .get('/batch-result/:id/', adminController.loadBatchResult)
     .put('/batches/:id/stop/', adminController.stopBatch)
