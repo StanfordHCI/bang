@@ -566,11 +566,11 @@ const roundRun = async (batch, users, rounds, i, oldNicks, teamSize, io, kickedU
     batch = await Batch.findByIdAndUpdate(batch._id, {$set: {rounds: rounds}});
     io.to(batch._id.toString()).emit('pre-survey', {rounds: rounds});
     await timeout(batch.surveyMinutes * 60000);
-    roundObject.status = 'active';
-    const startTaskInfo =  {rounds: rounds};
-    batch = await Batch.findByIdAndUpdate(batch._id, {$set: startTaskInfo}).lean().exec();
-    io.to(batch._id.toString()).emit('start-task', startTaskInfo);
   }
+  roundObject.status = 'active';
+  const startTaskInfo =  {rounds: rounds};
+  batch = await Batch.findByIdAndUpdate(batch._id, {$set: startTaskInfo}).lean().exec();
+  io.to(batch._id.toString()).emit('start-task', startTaskInfo);
   await Batch.updateOne({_id: batch._id}, { $set: { activePoll: null } });
   logger.info(module, batch._id + ' : Begin task for round ' + roundObject.number)
   io.to(batch._id.toString()).emit('refresh-batch', true);
