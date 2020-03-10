@@ -285,7 +285,11 @@ const usersWithBonuses = async function () {
   users.forEach((user, ind) => {
     let userTotalPaid = 0;
     const userBonuses = allBonuses.filter(x => x.user.toString() === user._id.toString())
-    userBonuses.forEach(bonus => userTotalPaid += bonus.amount);
+    userBonuses.forEach(bonus => {
+      if (bonus.amount > 0) {
+        userTotalPaid += bonus.amount
+      }
+    });
     users[ind].totalBonuses = userTotalPaid;
   })
   return users;
