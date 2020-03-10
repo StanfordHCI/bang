@@ -105,7 +105,7 @@ class UserList extends React.Component {
                       <td>{user.loginLink}</td>
                       <td>{user.systemStatus}</td>
                       <td>{user.connected ? 'yes' : 'no'}</td>
-                      <td>{JSON.stringify(user.totalBonuses)}$</td>
+                      <td>{user}$</td>
                       <td>
                         <Button className="btn btn-danger"
                                 disabled={!user.isTest}
