@@ -282,13 +282,27 @@ export const loadBatchList = async function (req, res) {
   }
 }
 
+const usersWithBonuses = async function () {
+  const users = await User.find({}).select('mturkId systemStatus connected testAssignmentId isTest').lean().exec();
+  const allBonuses = await Bonus.find({}).select('user amount')
+  users.forEach((user, ind) => {
+    let userTotalPaid = 0;
+    const userBonuses = allBonuses.filter(x => x.user.toString() === user._id.toString())
+    userBonuses.forEach(bonus => userTotalPaid += bonus.amount);
+    users[ind].totalBonuses = userTotalPaid;
+  })
+  return users;
+}
+
 export const loadUserList = async function (req, res) {
   try {
-    const users = await User.find({}).select('mturkId systemStatus connected testAssignmentId isTest').lean().exec();
+    let users = await usersWithBonuses();
     users.forEach(user => {
       user.loginLink = process.env.HIT_URL + '?workerId=' + user.mturkId + '&assignmentId=' + user.testAssignmentId;
       return user;
     })
+
+    console.log('users', users);
     res.json({users: users})
   } catch (e) {
     errorHandler(e, 'load users error')
@@ -324,6 +338,29 @@ export const addUser = async function (req, res) {
   }
 }
 
+const handleBonus = async function (amount, userId, batch) {
+  console.log('userId', userId)
+  const user = await User.findOne({_id: userId})
+  console.log('userino: ', user)
+  await payBonus(user.mturkId, user.testAssignmentId, amount.toFixed(2));
+  await Bonus.create({
+    batch: batch ? batch._id: null,
+    user: user._id,
+    amount: amount.toFixed(2),
+    assignment: user.testAssignmentId
+  });
+}
+
+export const bonusAPI = async function (req, res) {
+  console.log('req.body', req.body);
+  try {
+    await handleBonus(1, req.body._id);
+    res.json({users: usersWithBonuses()})
+  } catch (e) {
+    errorHandler(e, 'bonus payment error')
+  }
+}
+
 export const stopBatch = async function (req, res) {
   try {
     let batch = await Batch.findByIdAndUpdate(req.params.id, {$set: {status: 'completed'}}).populate('users.user').lean().exec()
@@ -338,13 +375,7 @@ export const stopBatch = async function (req, res) {
         const user = userObject.user;
         //bangPrs.push(assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL))
         if (bonus > 0 && userObject.isActive) {
-          bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, bonus.toFixed(2)))
-          bangPrs.push(Bonus.create({
-            batch: batch._id,
-            user: user._id,
-            amount: bonus.toFixed(2),
-            assignment: user.testAssignmentId
-          }))
+          bangPrs.push(handleBonus(bonus, user, batch));
         }
       })
       await Promise.all(bangPrs)

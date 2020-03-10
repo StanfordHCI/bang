@@ -8,6 +8,7 @@ import {
   USER_DELETED,
   USER_ADDED,
   SWITCH_EMPTY_BATCHES_VISIBILITY,
+  BONUS_PAID
 } from "../actions/admin";
 
 const initialState = {
@@ -90,6 +91,11 @@ export default function (state = initialState, action) {
         batchList: deletedBatchList,
         batch: null
       };
+    case BONUS_PAID:
+      return {
+        ...state,
+        userList: action.data,
+      }
     default:
       return state;
   }

@@ -4,15 +4,19 @@
  *  admin only layout for viewing all users
  * 
  *  called by:
- *    1. Router.js    
+ *    1. Router.js
+ *
+ *   this.props.userList contains all the users while
+ *   this.state.userList contains only the filtered ones
  */
 
  import React from 'react';
 import {Card, CardBody, Col, Row, Container, Button, Table} from 'reactstrap';
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
-import {loadUserList, addUser, deleteUser, clearUsers} from 'Actions/admin'
+import {loadUserList, addUser, deleteUser, clearUsers, payBonus} from 'Actions/admin'
 import Pagination from 'Components/Pagination';
+import SearchField from 'react-search-field'
 
 const pageSize = 10;
 
@@ -25,13 +29,14 @@ class UserList extends React.Component {
   state = {
     isReady: false,
     page: 1,
-    pageOfItems: []
+    pageOfItems: [],
+    userList: [],
   }
 
   componentWillMount() {
     this.props.loadUserList()
       .then(() => {
-        this.setState({isReady: true, })
+        this.setState({isReady: true, userList: this.props.userList})
       })
   }
 
@@ -39,8 +44,14 @@ class UserList extends React.Component {
     if (page) {
       const from = (parseInt(page) - 1) * pageSize;
       const to = from + pageSize;
-      this.setState({page: page, pageOfItems: this.props.userList.filter((x, index) => from <= index && index < to)});
+      this.setState({page: page, pageOfItems: this.state.userList.filter((x, index) => from <= index && index < to)});
     }
+  }
+
+  handleSearchChange = s => {
+    let userList = this.props.userList.filter(x => x.mturkId.indexOf(s) > -1);
+    this.setState({userList: userList});
+    this.onChangePage(1);
   }
 
   componentWillUnmount() {
@@ -48,7 +59,9 @@ class UserList extends React.Component {
   }
 
   render() {
-    const {userList, willbangLength} = this.props;
+    const {willbangLength} = this.props;
+    const userList = this.state.userList;
+    console.log(userList)
 
     return (
       <Container style={{maxWidth: '100%'}}>
@@ -57,8 +70,19 @@ class UserList extends React.Component {
             <Card>
               {this.state.isReady && <CardBody>
                 <div className='card__title'>
-                  <h5 className='bold-text'>User list ({willbangLength} real willbang users)</h5>
-                  <Button className="btn btn-primary" onClick={() => this.props.addUser()}>Add User</Button>
+                  <Row>
+                    <h5 className='bold-text'>User list ({willbangLength} real willbang users)</h5>
+                  </Row>
+                  <Row>
+                    <Button className="btn btn-primary" onClick={() => this.props.addUser()}>Add User</Button>
+                  </Row>
+                  <Row>
+                    <SearchField
+                        placeholder="Find user.."
+                        onChange={this.handleSearchChange}
+                        searchText=''
+                    />
+                  </Row>
                 </div>
                 <Table className='table table--bordered table--head-accent'>
                   <thead>
@@ -68,6 +92,8 @@ class UserList extends React.Component {
                     <th>login link</th>
                     <th>status</th>
                     <th>connected</th>
+                    <th>total bonuses</th>
+                    <th>pay 1$</th>
                     <th>delete</th>
                   </tr>
                   </thead>
@@ -79,6 +105,15 @@ class UserList extends React.Component {
                       <td>{user.loginLink}</td>
                       <td>{user.systemStatus}</td>
                       <td>{user.connected ? 'yes' : 'no'}</td>
+                      <td>{user.totalBonuses}$</td>
+                      <td>
+                        <Button className="btn btn-danger"
+                                disabled={!user.isTest}
+                                style={{padding: '2px 10px', marginBottom: '0px'}}
+                                onClick={() => this.props.payBonus(user._id)}>
+                          1$
+                        </Button>
+                      </td>
                       <td>
                         <Button className="btn btn-danger"
                                 disabled={!user.isTest}
@@ -114,7 +149,8 @@ function mapDispatchToProps(dispatch) {
     loadUserList,
     addUser,
     deleteUser,
-    clearUsers
+    clearUsers,
+    payBonus,
   }, dispatch);
 }
 
