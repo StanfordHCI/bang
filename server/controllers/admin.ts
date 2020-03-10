@@ -142,7 +142,6 @@ export const addBatch = async function (req, res) {
         newBatch.worstRounds.push(newBatch.numRounds - 1);
       }
     }
-    console.log('expRounds: ', newBatch.expRounds, 'worst: ', newBatch.worstRounds);
     if (teamFormat !== 'single') {
       for (let i = 0; i < newBatch.numRounds; i++) {
         const expIndex = newBatch.expRounds.findIndex(x => x === i + 1);
@@ -216,7 +215,6 @@ export const addBatch = async function (req, res) {
           systemStatus: 'willbang', isTest: false
         }, notifyFilter)).sort({createdAt: -1}).limit(200)
           .select('mturkId testAssignmentId').lean().exec();
-        console.log('users1', users)
         if (req.body.bornAfterYear) {
           users = users.filter(x => {
             if (!x.yearBorn) {
@@ -235,7 +233,6 @@ export const addBatch = async function (req, res) {
             }
           })
         }
-        console.log('filtered users: ', users);
       } else { // stuff for multi-day batches (in development)
         const batchId = newBatch.loadTeamOrder;
         const loadingBatch = await Batch.findOne({_id: batchId});
@@ -302,7 +299,6 @@ export const loadUserList = async function (req, res) {
       return user;
     })
 
-    console.log('users', users);
     res.json({users: users})
   } catch (e) {
     errorHandler(e, 'load users error')
@@ -339,9 +335,7 @@ export const addUser = async function (req, res) {
 }
 
 const handleBonus = async function (amount, userId, batch) {
-  console.log('userId', userId)
   const user = await User.findOne({_id: userId})
-  console.log('userino: ', user)
   await payBonus(user.mturkId, user.testAssignmentId, amount.toFixed(2));
   await Bonus.create({
     batch: batch ? batch._id: null,
@@ -352,7 +346,6 @@ const handleBonus = async function (amount, userId, batch) {
 }
 
 export const bonusAPI = async function (req, res) {
-  console.log('req.body', req.body);
   try {
     await handleBonus(1, req.body._id);
     res.json({users: usersWithBonuses()})

@@ -61,8 +61,6 @@ class UserList extends React.Component {
   render() {
     const {willbangLength} = this.props;
     const userList = this.state.userList;
-    console.log(userList)
-
     return (
       <Container style={{maxWidth: '100%'}}>
         <Row>
