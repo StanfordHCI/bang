@@ -354,7 +354,7 @@ export const addUser = async function (req, res) {
 const handleBonus = async function (amount, userId, batch) {
   const user = await User.findOne({_id: userId})
   console.log('here')
-  // await payBonus(user.mturkId, user.testAssignmentId, amount.toFixed(2));
+  await payBonus(user.mturkId, user.testAssignmentId, amount.toFixed(2));
   await Bonus.create({
     batch: batch ? batch._id: null,
     user: user._id,

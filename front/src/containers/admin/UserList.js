@@ -92,7 +92,7 @@ class UserList extends React.Component {
                     <th>login link</th>
                     <th>status</th>
                     <th>connected</th>
-                    <th>total bonuses</th>
+                    {/*<th>total bonuses</th>*/}
                     <th>pay 1$</th>
                     <th>delete</th>
                   </tr>
@@ -105,7 +105,7 @@ class UserList extends React.Component {
                       <td>{user.loginLink}</td>
                       <td>{user.systemStatus}</td>
                       <td>{user.connected ? 'yes' : 'no'}</td>
-                      <td>{JSON.stringify(user)}$</td>
+                      {/*<td>{JSON.stringify(user)}$</td>*/}
                       <td>
                         <Button className="btn btn-danger"
                                 disabled={!user.isTest}
