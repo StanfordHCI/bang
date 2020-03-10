@@ -280,7 +280,7 @@ export const loadBatchList = async function (req, res) {
 }
 
 const usersWithBonuses = async function () {
-  const users = await User.find({}).select('mturkId systemStatus connected testAssignmentId isTest').lean().exec();
+  const users = await User.find({}).select('mturkId systemStatus connected testAssignmentId isTest _id').lean().exec();
   const allBonuses = await Bonus.find({}).select('user amount')
   users.forEach((user, ind) => {
     let userTotalPaid = 0;
@@ -316,19 +316,32 @@ export const deleteUser = async function (req, res) {
 
 export const addUser = async function (req, res) {
   try {
-    const token = Math.floor(Math.random() * 10000) + Date.now()
-    let user = {
-      token: token,
-      mturkId: token,
-      testAssignmentId: 'test',
-      systemStatus: 'willbang',
-      connected: false,
-      isTest: true
+    console.log('reqaaa', req.body)
+    if (!req.body && ! req.body._id) {
+      const token = Math.floor(Math.random() * 10000) + Date.now()
+      let user = {
+        token: token,
+        mturkId: token,
+        testAssignmentId: 'test',
+        systemStatus: 'willbang',
+        connected: false,
+        isTest: true
+      }
+      await User.create(user);
+      delete user.token;
+      user.loginLink = process.env.HIT_URL + '?workerId=' + user.mturkId + '&assignmentId=' + user.testAssignmentId;
+      res.json({user: user})
     }
-    await User.create(user);
-    delete user.token;
-    user.loginLink = process.env.HIT_URL + '?workerId=' + user.mturkId + '&assignmentId=' + user.testAssignmentId;
-    res.json({user: user})
+    else {
+      try {
+        await handleBonus(1, req.body._id);
+        const users = await usersWithBonuses();
+        res.json({users: users});
+      } catch (e) {
+        errorHandler(e, 'bonus payment error')
+      }
+    }
+
   } catch (e) {
     errorHandler(e, 'add user error')
   }
@@ -336,6 +349,7 @@ export const addUser = async function (req, res) {
 
 const handleBonus = async function (amount, userId, batch) {
   const user = await User.findOne({_id: userId})
+  console.log('here')
   // await payBonus(user.mturkId, user.testAssignmentId, amount.toFixed(2));
   await Bonus.create({
     batch: batch ? batch._id: null,
@@ -346,13 +360,7 @@ const handleBonus = async function (amount, userId, batch) {
 }
 
 export const bonusAPI = async function (req, res) {
-  try {
-    await handleBonus(1, req.body._id);
-    const users = await usersWithBonuses();
-    res.json({users: users});
-  } catch (e) {
-    errorHandler(e, 'bonus payment error')
-  }
+
 }
 
 export const stopBatch = async function (req, res) {

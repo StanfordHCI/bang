@@ -287,7 +287,7 @@ export function payBonus(id) {
   return (dispatch, getState) => {
     dispatch(setLoading(true));
     return axios({
-      method: 'put',
+      method: 'post',
       url: 'admin/users/',
       data: {_id: id}
     })
