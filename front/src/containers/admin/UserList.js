@@ -16,7 +16,6 @@ import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 import {loadUserList, addUser, deleteUser, clearUsers, payBonus} from 'Actions/admin'
 import Pagination from 'Components/Pagination';
-import SearchField from 'react-search-field'
 
 const pageSize = 10;
 
@@ -31,6 +30,7 @@ class UserList extends React.Component {
     page: 1,
     pageOfItems: [],
     userList: [],
+    searchValue: '',
   }
 
   componentWillMount() {
@@ -49,9 +49,10 @@ class UserList extends React.Component {
   }
 
   handleSearchChange = s => {
+    this.setState({searchValue: s.target.value})
     const lowerCasesdList = this.props.userList;
     lowerCasesdList.forEach((x, ind) => lowerCasesdList[ind].mturkId = lowerCasesdList[ind].mturkId.toLowerCase())
-    let userList = lowerCasesdList.filter(x => x.mturkId.toLowerCase().indexOf(s.toLowerCase()) > -1);
+    let userList = lowerCasesdList.filter(x => x.mturkId.toLowerCase().indexOf(s.target.value.toLowerCase()) > -1);
     this.setState({userList: userList});
     this.onChangePage(1);
   }
@@ -77,10 +78,10 @@ class UserList extends React.Component {
                     <Button className="btn btn-primary" onClick={() => this.props.addUser()}>Add User</Button>
                   </Row>
                   <Row>
-                    <SearchField
+                    <input
+                        value={this.state.searchValue}
                         placeholder="Find user.."
                         onChange={this.handleSearchChange}
-                        searchText=''
                     />
                   </Row>
                 </div>
