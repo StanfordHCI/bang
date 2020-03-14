@@ -288,16 +288,12 @@ export function payBonus(id) {
     dispatch(setLoading(true));
     return axios({
       method: 'post',
-      url: 'admin/users/',
+      url: 'admin/users/pay-bonus',
       data: {_id: id}
     })
         .then((response) => {
             console.log('response', response)
           dispatch(setLoading(false));
-          dispatch({
-            type: BONUS_PAID,
-            data: {users: response.data.users}
-          });
           dispatch(setSnackbar('bonus payed!'))
         })
         .catch(err => {

@@ -320,8 +320,6 @@ export const deleteUser = async function (req, res) {
 
 export const addUser = async function (req, res) {
   try {
-    console.log('reqaaa', req.body)
-    if (!req.body && ! req.body._id) {
       const token = Math.floor(Math.random() * 10000) + Date.now()
       let user = {
         token: token,
@@ -335,17 +333,6 @@ export const addUser = async function (req, res) {
       delete user.token;
       user.loginLink = process.env.HIT_URL + '?workerId=' + user.mturkId + '&assignmentId=' + user.testAssignmentId;
       res.json({user: user})
-    }
-    else {
-      try {
-        await handleBonus(1, req.body._id);
-        const users = await usersWithBonuses();
-        res.json({users: users});
-      } catch (e) {
-        errorHandler(e, 'bonus payment error')
-      }
-    }
-
   } catch (e) {
     errorHandler(e, 'add user error')
   }
@@ -353,7 +340,6 @@ export const addUser = async function (req, res) {
 
 const handleBonus = async function (amount, userId, batch) {
   const user = await User.findOne({_id: userId})
-  console.log('here')
   await payBonus(user.mturkId, user.testAssignmentId, amount.toFixed(2));
   await Bonus.create({
     batch: batch ? batch._id: null,
@@ -364,7 +350,9 @@ const handleBonus = async function (amount, userId, batch) {
 }
 
 export const bonusAPI = async function (req, res) {
-
+  await handleBonus(1, req.body._id);
+  const users = await usersWithBonuses();
+  res.json({});
 }
 
 export const stopBatch = async function (req, res) {
