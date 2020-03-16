@@ -110,7 +110,8 @@ class UserList extends React.Component {
                       <td>
                         <Button className="btn btn-danger"
                                 style={{padding: '2px 10px', marginBottom: '0px'}}
-                                onClick={() => this.props.payBonus(user._id)}>
+                                onClick={() => this.props.payBonus(user._id)}
+                                disabled={!user.isTest}>
                           1$
                         </Button>
                       </td>

@@ -351,7 +351,6 @@ const handleBonus = async function (amount, userId, batch) {
 
 export const bonusAPI = async function (req, res) {
   await handleBonus(1, req.body._id);
-  const users = await usersWithBonuses();
   res.json({});
 }
 
