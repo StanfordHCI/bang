@@ -468,6 +468,31 @@ class Batch extends React.Component {
 
   renderChat() {
     const {sendMessage, user, voteCasualForm, chat, batch, currentRound, vote} = this.props;
+
+
+    // Make the chat look different when they're in an individual round, so that users are less confused.
+
+    if(this.props.currentTeam){ //this starts out as null at the very beginning
+
+      if(this.props.currentTeam.length === 1){ // this means we're an individual.
+        //change background color to green
+        if(document.getElementsByClassName("card-body")[0]){
+          document.getElementsByClassName("card-body")[0].style.backgroundColor = "#12755C" //green
+        }
+        // NOTE: The way that this code is dynamically called makes it impossible to create variable names, hence some repetition.
+        //change the title to alert that it is an individual task
+        if(document.getElementsByClassName("bold-text")){
+          if(document.getElementsByClassName("bold-text")[0].innerHTML.length <= "Round n".length + 1){
+            document.getElementsByClassName("bold-text")[0].innerHTML += " - Individual Task! Please complete this task by yourself."
+          }
+        }
+      }else{
+        if(document.getElementsByClassName("card-body")[0]){
+          document.getElementsByClassName("card-body")[0].style.backgroundColor = "#AA72A1" //magenta
+        }
+      }
+    }
+
     let pinnedContent = [];
     try {
       pinnedContent = batch.tasks[currentRound.number - 1].pinnedContent;
