@@ -64,6 +64,7 @@
     "react-redux": "^5.0.7",
     "react-router": "^4.3.1",
     "react-router-dom": "^4.3.1",
+    "react-search-field": "^1.0.0",
     "react-select": "^1.2.1",
     "react-vis": "^1.9.1",
     "react-web-notification": "^0.6.0",

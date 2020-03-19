@@ -106,12 +106,24 @@ class SurveyForm extends React.Component {
   constructor() {
     super();
     this.state = {
-
+      downloadLink: ''
     };
+  }
+  componentDidMount() {
+    const survey = this.props.initialValues;
+    const blob = new Blob([ JSON.stringify(survey) ], { type: 'application/json' });
+    this.setState({downloadLink: URL.createObjectURL(blob)});
   }
 
   dispatchJsonData = (data) => {
-    const survey = JSON.parse(data.target.result)
+    const splitted = data.target.result.split('\n');
+    splitted.forEach((s, ind) => {
+      if (s.indexOf("ObjectId") > -1 || s.indexOf("ISODate") > -1) {
+        delete splitted[ind];
+      }
+    })
+    const joined = splitted.join('');
+    const survey = JSON.parse(joined);
     for (let i in survey) {
       this.props.dispatch(change('SurveyForm', i, survey[i]))
     }
@@ -134,7 +146,11 @@ class SurveyForm extends React.Component {
               <Col><div className='form__panel'>
                 <div className='form__panel-body' style={{borderBottom: '2px solid grey'}}>
                   <Row style={{paddingBottom: '10px'}}>
+                    <p>Please follow JSON style guidelines during file uploading</p>
                     <input type="file" name="json" id="json" onChange={this.handleFileUpload} />
+                  </Row>
+                  <Row>
+                    <a href={this.state.downloadLink} download="survey.json">download survey</a>
                   </Row>
                   <Row>
                     <Col className='form__form-group'>

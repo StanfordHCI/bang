@@ -1,4 +1,6 @@
 // @ts-nocheck
+import { Bonus } from "./models/bonuses";
+
 require("dotenv").config({ path: "./.env" });
 const path = require("path");
 const express = require("express");
@@ -40,7 +42,6 @@ const moment = require("moment");
 const cors = require("cors");
 const cron = require("node-cron");
 let currentHIT = "";
-
 mongoose.Promise = global.Promise;
 mongoose.connection.on("error", err => {
   errorHandler(
@@ -113,6 +114,18 @@ let initialChecks = [
 //     })
 //       .then(() => {})
 //       .catch(err => errorHandler(err, "Test users error"));
+//   }
+// }
+
+// if (process.env.MTURK_MODE === 'off') {
+//   logger.info(module, 'created fake bonuses');
+//   for (let i = 0; i < 16; i++ ) {
+//     Bonus.create({
+//         user: "5e677af97eb5d74e2ed65d63",
+//         batch: "5e677bf37eb5d74e2ed65da0",
+//         amount: 15,
+//         assignment: 'test',
+//       }).then(() => {}).catch(err => errorHandler(err, 'Test bonuses error'))
 //   }
 // }
 

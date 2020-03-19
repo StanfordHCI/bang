@@ -200,12 +200,6 @@ export const addBatch = async function(req, res) {
         newBatch.worstRounds.push(newBatch.numRounds - 1);
       }
     }
-    console.log(
-      "expRounds: ",
-      newBatch.expRounds,
-      "worst: ",
-      newBatch.worstRounds
-    );
     if (teamFormat !== "single") {
       for (let i = 0; i < newBatch.numRounds; i++) {
         const expIndex = newBatch.expRounds.findIndex(x => x === i + 1);
@@ -310,7 +304,6 @@ export const addBatch = async function(req, res) {
           .select("mturkId testAssignmentId")
           .lean()
           .exec();
-        console.log("users1", users);
         if (req.body.bornAfterYear) {
           users = users.filter(x => {
             if (!x.yearBorn) {
@@ -329,7 +322,6 @@ export const addBatch = async function(req, res) {
             }
           });
         }
-        console.log("filtered users: ", users);
       } else {
         // stuff for multi-day batches (in development)
         const batchId = newBatch.loadTeamOrder;
@@ -386,12 +378,30 @@ export const loadBatchList = async function(req, res) {
   }
 };
 
+const usersWithBonuses = async function() {
+  const users = await User.find({})
+    .select("mturkId systemStatus connected testAssignmentId isTest _id")
+    .lean()
+    .exec();
+  const allBonuses = await Bonus.find({}).select("user amount");
+  users.forEach((user, ind) => {
+    let userTotalPaid = 0;
+    const userBonuses = allBonuses.filter(
+      x => x.user.toString() === user._id.toString()
+    );
+    userBonuses.forEach(bonus => {
+      if (bonus.amount > 0) {
+        userTotalPaid += bonus.amount;
+      }
+    });
+    users[ind].totalBonuses = userTotalPaid;
+  });
+  return users;
+};
+
 export const loadUserList = async function(req, res) {
   try {
-    const users = await User.find({})
-      .select("mturkId systemStatus connected testAssignmentId isTest")
-      .lean()
-      .exec();
+    let users = await usersWithBonuses();
     users.forEach(user => {
       user.loginLink =
         process.env.HIT_URL +
@@ -401,6 +411,7 @@ export const loadUserList = async function(req, res) {
         user.testAssignmentId;
       return user;
     });
+
     res.json({ users: users });
   } catch (e) {
     errorHandler(e, "load users error");
@@ -443,6 +454,22 @@ export const addUser = async function(req, res) {
   }
 };
 
+const handleBonus = async function(amount, userId, batch) {
+  const user = await User.findOne({ _id: userId });
+  await payBonus(user.mturkId, user.testAssignmentId, amount.toFixed(2));
+  await Bonus.create({
+    batch: batch ? batch._id : null,
+    user: user._id,
+    amount: amount.toFixed(2),
+    assignment: user.testAssignmentId
+  });
+};
+
+export const bonusAPI = async function(req, res) {
+  await handleBonus(1, req.body._id);
+  res.json({});
+};
+
 export const stopBatch = async function(req, res) {
   try {
     let batch = await Batch.findByIdAndUpdate(req.params.id, {
@@ -469,17 +496,7 @@ export const stopBatch = async function(req, res) {
         const user = userObject.user;
         //bangPrs.push(assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL))
         if (bonus > 0 && userObject.isActive) {
-          bangPrs.push(
-            payBonus(user.mturkId, user.testAssignmentId, bonus.toFixed(2))
-          );
-          bangPrs.push(
-            Bonus.create({
-              batch: batch._id,
-              user: user._id,
-              amount: bonus.toFixed(2),
-              assignment: user.testAssignmentId
-            })
-          );
+          bangPrs.push(handleBonus(bonus, user, batch));
         }
       });
       await Promise.all(bangPrs);
