@@ -470,29 +470,35 @@ class Batch extends React.Component {
     const {sendMessage, user, voteCasualForm, chat, batch, currentRound, vote} = this.props;
 
 
-    // Make the chat look different when they're in an individual round, so that users are less confused.
-
-    if(this.props.currentTeam){ //this starts out as null at the very beginning
-
-      if(this.props.currentTeam.length === 1){ // this means we're an individual.
-        //change background color to green
-        if(document.getElementsByClassName("card-body")[0]){
-          document.getElementsByClassName("card-body")[0].style.backgroundColor = "#12755C" //green
-        }
-        // NOTE: The way that this code is dynamically called makes it impossible to create variable names, hence some repetition.
-        //change the title to alert that it is an individual task
-        if(document.getElementsByClassName("bold-text")){
-          if(document.getElementsByClassName("bold-text")[0].innerHTML.length <= "Round n".length + 1){
-            document.getElementsByClassName("bold-text")[0].innerHTML += " - Individual Task! Please complete this task by yourself."
+    // DYNAMIC TEAM SIZE: Make the chat look different when they're in an individual round, so that users are less confused.
+    if(batch.dynamicTeamSize){
+      if(this.props.currentTeam){ //this starts out as null at the very beginning
+        if(this.props.currentTeam.length === 1){ // this means we're an individual.
+          //change background color to green
+          if(document.getElementsByClassName("card-body")[0]){
+            document.getElementsByClassName("card-body")[0].style.backgroundColor = "#529A88" //green
           }
-        }
-      }else{
-        if(document.getElementsByClassName("card-body")[0]){
-          document.getElementsByClassName("card-body")[0].style.backgroundColor = "#AA72A1" //magenta
+          // NOTE: The way that this code is dynamically called makes it impossible to create variable names, hence some repetition.
+          //change the title to alert that it is an individual task
+          if(document.getElementsByClassName("bold-text")[0]){
+            if(document.getElementsByClassName("bold-text")[0].innerHTML.length <= "Round n".length + 1 && document.getElementsByClassName("bold-text")[0].innerHTML.length > 0){
+              document.getElementsByClassName("bold-text")[0].innerHTML += " - Individual Task! Please complete this task by yourself."
+            }
+          }
+        }else{
+          if(document.getElementsByClassName("card-body")[0]){
+            document.getElementsByClassName("card-body")[0].style.backgroundColor = "#AA72A1" //magenta
+          }
+          //change the title to alert that it is an group task
+          if(document.getElementsByClassName("bold-text")[0]){
+            if(document.getElementsByClassName("bold-text")[0].innerHTML.length <= "Round n".length + 1 && document.getElementsByClassName("bold-text")[0].innerHTML.length > 0){
+              document.getElementsByClassName("bold-text")[0].innerHTML += " - Group Task! Please complete this task with your team."
+            }
+          }
         }
       }
     }
-
+    
     let pinnedContent = [];
     try {
       pinnedContent = batch.tasks[currentRound.number - 1].pinnedContent;
