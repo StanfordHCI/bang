@@ -25,6 +25,8 @@ let  TemplateSchema = new Schema({
       options: [{option: {type: String, required: true}}],
       selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
       randomOrder: {type: Boolean, default: false},
+      to: {type: Number},
+      from: {type: Number},
     }],
     message: {type: String, required: true},
     steps: [{
@@ -37,6 +39,8 @@ let  TemplateSchema = new Schema({
       options: [{option: {type: String, required: true}}],
       selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
       randomOrder: {type: Boolean, default: false},
+      to: {type: Number},
+      from: {type: Number},
     }],
     pinnedContent: [{
       text: {type: String, required: true},
@@ -67,6 +71,8 @@ let  TemplateSchema = new Schema({
     options: [{option: {type: String, required: true}}],
     selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
     randomOrder: {type: Boolean, default: false},
+    to: {type: Number},
+    from: {type: Number},
   }],
   preSurvey: [{
     question: {type: String, required: true},
@@ -74,6 +80,8 @@ let  TemplateSchema = new Schema({
     options: [{option: {type: String, required: true}}],
     selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
     randomOrder: {type: Boolean, default: false},
+    to: {type: Number},
+    from: {type: Number},
   }],
   cases: [{
     versions: [{

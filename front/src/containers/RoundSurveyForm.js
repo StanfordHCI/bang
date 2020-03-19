@@ -22,6 +22,7 @@ import {renderField} from 'Components/form/Text'
 import renderRadioPanel from 'Components/form/RadioPanel'
 import {renderTextArea} from "../components/form/Text";
 import {shuffle} from "../utils";
+import {renderIntegerRank} from "../components/form/renderIntegerRank";
 
 const replaceNicksInSurvey = (message, users, currentUser, readOnly, unmasked, surveyType) => {
   if (readOnly || surveyType === 'pre') return message;
@@ -51,19 +52,45 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, questions, re
       }
     })*/
     const orderedQuestions = questions;
-    const component = orderedQuestions[i].type === 'select' ? renderRadioPanel : (orderedQuestions[i].type === 'text' ? renderField : renderTextArea);
+    let component = orderedQuestions[i].type === 'select' ? renderRadioPanel : (orderedQuestions[i].type === 'text' ? renderField : renderTextArea);
+    if (orderedQuestions[i].type === 'integerRank') {
+      component = renderIntegerRank;
+    }
     items.push(
       <div key={i} className='form__form-group'>
         <label className='form__form-group-label'>
           {replaceNicksInSurvey(orderedQuestions[i].question, users, currentUser, readOnly, unmasked, surveyType)}
         </label>
         <div className='form__form-group-field' style={{maxWidth: '700px'}}>
-          {orderedQuestions[i].type !== 'instruction' && <Field
+          {
+            component === renderIntegerRank &&
+            <div className='form__form-group-field'>
+          <label className='form__form-group-label'>Please rank the following item from {orderedQuestions[i].from} to
+            {' ' + orderedQuestions[i].to}</label>
+              <Field
+                name={`questions[${i}].result`}
+                component={component}
+                type={orderedQuestions[i].type}
+                disabled={readOnly}
+                options={orderedQuestions[i].options.map(x => {
+                  return {
+                    label: x.option,
+                    value: x.option,
+                  }
+                })}
+                from={orderedQuestions[i].from}
+                to={orderedQuestions[i].to}
+                readOnly={readOnly}
+              />}
+            </div>
+
+          }
+          {(orderedQuestions[i].type !== 'instruction' && orderedQuestions[i].type !== 'integerRank') && <Field
             name={`questions[${i}].result`}
             component={component}
             type={orderedQuestions[i].type}
             disabled={readOnly}
-            options={orderedQuestions[i].type === 'select' ? orderedQuestions[i].selectOptions.map(x => {
+            options={(orderedQuestions[i].type === 'select') ? orderedQuestions[i].selectOptions.map(x => {
               return {
                 label: replaceNicksInSurvey(x.label, users, currentUser, readOnly, unmasked, surveyType),
                 value: x.value
@@ -132,7 +159,6 @@ class RoundSurveyForm extends React.Component {
     const {invalid, questions, readOnly, currentUser, members, batch, surveyType, team, selectiveMasking, user} = this.props;
     let newQuestions = [...questions];
     if (selectiveMasking) {
-      console.log(team.users);
       team.users.forEach(x => {
         if (x.user !== user._id) {
           newQuestions.push({
@@ -153,7 +179,6 @@ class RoundSurveyForm extends React.Component {
               {label: 'Strongly Agree', value: `4 ${x.user}`},
             ],
           })
-          console.log(`pushed to newQuestions. ${newQuestions}`)
         }
       })
     }

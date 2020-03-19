@@ -50,6 +50,8 @@ let  BatchSchema = new Schema({
       options: [{option: {type: String, required: true}}],
       selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
       randomOrder: {type: Boolean, default: false},
+      to: {type: Number},
+      from: {type: Number},
     }],
     message: {type: String, required: true},
     steps: [{
@@ -61,8 +63,9 @@ let  BatchSchema = new Schema({
       type: {type: String, required: true},
       options: [{option: {type: String, required: true}}],
       selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
-      teammate: {type: mongoose.Schema.Types.ObjectId, ref: 'User'}, // appears only on questions for selective-masking
       randomOrder: {type: Boolean, default: false},
+      to: {type: Number},
+      from: {type: Number},
     }],
     pinnedContent: [{
       text: {type: String, required: true},
@@ -107,6 +110,8 @@ let  BatchSchema = new Schema({
     options: [{option: {type: String, required: true}}],
     selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
     randomOrder: {type: Boolean, default: false},
+    to: {type: Number},
+    from: {type: Number},
   }],
   preSurvey: [{
     question: {type: String, required: true},
@@ -114,6 +119,8 @@ let  BatchSchema = new Schema({
     options: [{option: {type: String, required: true}}],
     selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
     randomOrder: {type: Boolean, default: false},
+    to: {type: Number},
+    from: {type: Number},
   }],
   unmaskedPairs: {
     likes: [[{type: mongoose.Schema.Types.ObjectId, ref: 'User'}, {type: mongoose.Schema.Types.ObjectId, ref: 'User'}]],
