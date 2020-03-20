@@ -485,7 +485,7 @@ class Batch extends React.Component {
               document.getElementsByClassName("bold-text")[0].innerHTML += " - Individual Task! Please complete this task by yourself."
             }
           }
-        }else{
+        }else if(this.props.currentTeam.length > 1){
           if(document.getElementsByClassName("card-body")[0]){
             document.getElementsByClassName("card-body")[0].style.backgroundColor = "#AA72A1" //magenta
           }
