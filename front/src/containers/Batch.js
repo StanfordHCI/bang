@@ -475,8 +475,8 @@ class Batch extends React.Component {
       if(this.props.currentTeam){ //this starts out as null at the very beginning
         if(this.props.currentTeam.length === 1){ // this means we're an individual.
           //change background color to green
-          if(document.getElementsByClassName("card-body")[0]){
-            document.getElementsByClassName("card-body")[0].style.backgroundColor = "#529A88" //green
+          if(document.getElementsByClassName("chat__contact-list")[0]){
+            document.getElementsByClassName("chat__contact-list")[0].style.backgroundColor = "#529A88" //green
           }
           // NOTE: The way that this code is dynamically called makes it impossible to create variable names, hence some repetition.
           //change the title to alert that it is an individual task
@@ -486,8 +486,8 @@ class Batch extends React.Component {
             }
           }
         }else if(this.props.currentTeam.length > 1){
-          if(document.getElementsByClassName("card-body")[0]){
-            document.getElementsByClassName("card-body")[0].style.backgroundColor = "#AA72A1" //magenta
+          if(document.getElementsByClassName("chat__contact-list")[0]){
+            document.getElementsByClassName("chat__contact-list")[0].style.backgroundColor = "#AA72A1" //magenta
           }
           //change the title to alert that it is an group task
           if(document.getElementsByClassName("bold-text")[0]){
