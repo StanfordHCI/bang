@@ -119,7 +119,7 @@ export const addBatch = async function(req, res) {
                 _case.versions.forEach((version, versionIndex) => {
                   if (versionIndex === versionNumber) {
                     task.pinnedContent = version.parts.map((part, index) => ({
-                      text: `part ${index} text`,
+                      text: `Please click like to review reading material #${index+1} (opens a new window).`,
                       link: part.text
                     }));
                   }
