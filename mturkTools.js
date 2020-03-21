@@ -857,3 +857,29 @@ if (args.unsubscribe) {
     "You asked to be removed from our notification list."
   );
 }
+
+// Adds n new assignments to the bonus bot HIT.
+function addBonusBotAssignments(n) {
+  let bonusHITID = "31J7RYECZL5V0NM6X3YYXPP7U361L0";
+  returnHIT(bonusHITID, a => {
+    console.log(`Before: ${a.HIT.NumberOfAssignmentsAvailable}`);
+  });
+  mturk.createAdditionalAssignmentsForHIT(
+    {
+      HITId: bonusHITID,
+      NumberOfAdditionalAssignments: n
+    },
+    b => {
+      console.log(`Response: ${b}`);
+      returnHIT(bonusHITID, c => {
+      	      console.log(c.HIT)
+        console.log(`After: ${c.HIT.NumberOfAssignmentsAvailable}`);
+      });
+    }
+  );
+}
+
+// addBonusBotAssignments(1);
+
+// mturk.listHITs();
+
