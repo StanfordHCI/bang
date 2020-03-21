@@ -403,11 +403,10 @@ export const createDynamicTeams = (teamSize: number, numRounds: number, dynamicO
           round.teams = teams
           generateGroup = false; // generates individuals next time
       }else{ //make individual pairs
-          let teams = [];
-          // make n teams with 1 user in each
-          Array.from(Array(teamSize).keys()).forEach(user => teams.push({users: [user]}));
-          round.teams = teams
-          generateGroup = true; //generates groups next time
+          let teams = [{users: []}];
+          // make 1 team with n users in it
+          teams[0].users = Array.from(Array(teamSize).keys());
+          round.teams = teams;
       }
       roundGen[roundNum] = round
     })
