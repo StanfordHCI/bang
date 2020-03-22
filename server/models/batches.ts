@@ -128,7 +128,6 @@ let  BatchSchema = new Schema({
   },
   activePoll: { type: Number, required: false },
   dynamicTeamSize: { type: Boolean, required: true },
-  dynamicOptions: { type: Boolean, required: false },
   roundPairs: [{pair: [{roundNumber: {type: Number}, versionNumber: {type: Number}}, {roundNumber: {type: Number}, versionNumber: {type: Number}}], caseNumber: { type: Number } }],
   cases: [{
     versions: [{

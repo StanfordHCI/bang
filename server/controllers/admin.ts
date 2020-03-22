@@ -39,7 +39,6 @@ export const addBatch = async function(req, res) {
   try {
     const teamFormat = req.body.teamFormat;
     const dynamicTeamSize = req.body.dynamicTeamSize;
-    const dynamicOptions = req.body.dynamicOptions;
     const batches = await Batch.find({
       $or: [{ status: "waiting" }, { status: "active" }]
     })
@@ -90,7 +89,6 @@ export const addBatch = async function(req, res) {
         const dynamicTeamsResult = createDynamicTeams(
           newBatch.teamSize,
           newBatch.numRounds,
-          dynamicOptions
         );
         roundGen = dynamicTeamsResult.roundGen;
         roundPairs = dynamicTeamsResult.roundPairs;

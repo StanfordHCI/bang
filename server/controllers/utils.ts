@@ -378,7 +378,7 @@ createOneTeam = (teamSize: number, numRounds: number, people: any[]) => {
   return rounds;
 };
 
-export const createDynamicTeams = (teamSize: number, numRounds: number, dynamicOptions: boolean) => {
+export const createDynamicTeams = (teamSize: number, numRounds: number) => {
   /*
   * Returns array of {roundPairs, roundGen}
   * e.g.:
