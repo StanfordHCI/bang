@@ -386,9 +386,14 @@ export const createDynamicTeams = (teamSize: number, numRounds: number, dynamicO
   * first round in pair is always with 1 user in a team*/
   const availableNumbers = Array.from(Array(numRounds).keys());
   const roundPairs = randomPairs(availableNumbers); // pairs themselves are random
-  console.log("Round pairs: " + roundPairs)
+
+  console.log("Confirming round pairs:")
+  for(var i = 0; i < roundPairs.length; i++){
+    console.log("pair: " + roundPairs[i])
+  }
+  
   let roundGen = Array(numRounds);
-  var generateGroup = true;
+  var generateIndividual = true;
     
   roundPairs.forEach(pair => {
 
@@ -396,17 +401,26 @@ export const createDynamicTeams = (teamSize: number, numRounds: number, dynamicO
       const round = {
         teams: [],
       }
-      if(generateGroup){ //make group pairs  
-          let teams = [];
-          // make n teams with 1 user in each
-          Array.from(Array(teamSize).keys()).forEach(user => teams.push({users: [user]}));
-          round.teams = teams
-          generateGroup = false; // generates individuals next time
-      }else{ //make individual pairs
-          let teams = [{users: []}];
-          // make 1 team with n users in it
-          teams[0].users = Array.from(Array(teamSize).keys());
-          round.teams = teams;
+      if(generateIndividual){ //make individual pairs  
+
+        let teams = [];
+        // make n teams with 1 user in each
+        Array.from(Array(teamSize).keys()).forEach(user => teams.push({users: [user]}));
+        round.teams = teams
+
+        if(indInPair == 1){
+          generateIndividual = false; // alternate
+        }
+
+      }else{ //make group pairs
+        let teams = [{users: []}];
+        // make 1 team with n users in it
+        teams[0].users = Array.from(Array(teamSize).keys());
+        round.teams = teams;
+
+        if(indInPair == 1){
+          generateIndividual = true; // alternate
+        }
       }
       roundGen[roundNum] = round
     })
