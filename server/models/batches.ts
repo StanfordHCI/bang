@@ -41,6 +41,7 @@ let  BatchSchema = new Schema({
   surveyMinutes: {type: Number, required: true},
   expRounds: [],
   numRounds: {type: Number, required: true},
+  dynamicTeamRounds: [],
   tasks: [{
     hasPreSurvey: {type: Boolean, required: true, default: false},
     hasMidSurvey: {type: Boolean, required: true, default: false},

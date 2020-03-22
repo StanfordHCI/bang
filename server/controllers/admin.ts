@@ -92,6 +92,7 @@ export const addBatch = async function(req, res) {
         );
         roundGen = dynamicTeamsResult.roundGen;
         roundPairs = dynamicTeamsResult.roundPairs;
+        newBatch.dynamicTeamRounds = dynamicTeamsResult.dynamicTeamRounds;
         if (roundPairs) {
           // giving roundPairs versions and case numbers
           let precededRoundPairs = [];

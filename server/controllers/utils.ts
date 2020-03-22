@@ -392,6 +392,8 @@ export const createDynamicTeams = (teamSize: number, numRounds: number) => {
     console.log("pair: " + roundPairs[i])
   }
   
+  var sizeNrounds = [];
+
   let roundGen = Array(numRounds);
   var generateIndividual = true;
     
@@ -418,6 +420,9 @@ export const createDynamicTeams = (teamSize: number, numRounds: number) => {
         teams[0].users = Array.from(Array(teamSize).keys());
         round.teams = teams;
 
+        //add to dynamicTeamRounds so that we keep track of which are team (for the purposes of the manip check)
+        sizeNrounds.push(roundNum)
+
         if(indInPair == 1){
           generateIndividual = true; // alternate
         }
@@ -426,7 +431,8 @@ export const createDynamicTeams = (teamSize: number, numRounds: number) => {
     })
   })
   console.log('generated rounds: ', JSON.stringify(roundGen))
-  return {roundGen: roundGen, roundPairs: roundPairs};
+
+  return {roundGen: roundGen, roundPairs: roundPairs, dynamicTeamRounds:sizeNrounds};
 }
 
 export const getBatchTime = (batch) => {

@@ -166,13 +166,10 @@ class PostSurveyForm extends React.Component {
     const roundPairs = batch.roundPairs;
 
     let nonExpRounds = allRounds;
-    //Attempt to leverage batch variables
-    if (batch.dynamicTeamSize && batch.dynamicOptions) {
-      //Team First [n,1,n,1]
-      nonExpRounds = nonExpRounds.filter((element, index) => index % 2 === 0);
-    } else if (batch.dynamicTeamSize && !batch.dynamicOptions) {
-      //Individual First [1,n,1,n]
-      nonExpRounds = nonExpRounds.filter((element, index) => index % 2 !== 0);
+
+    if (batch.dynamicTeamSize) {
+      //Filter out only the ones that have a team (rather than individual)
+      nonExpRounds = nonExpRounds.filter((element, index) => batch.dynamicTeamRounds.includes(index));
     } else {
       //not using dynamic team sizing at all - should have the regular logic.
       nonExpRounds = allRounds.filter(
