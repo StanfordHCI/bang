@@ -388,9 +388,7 @@ export const createDynamicTeams = (teamSize: number, numRounds: number) => {
   const roundPairs = randomPairs(availableNumbers); // pairs themselves are random
 
   console.log("Confirming round pairs:")
-  for(var i = 0; i < roundPairs.length; i++){
-    console.log("pair: " + roundPairs[i])
-  }
+  roundPairs.forEach(p => console.log(`pair: ${p}`))
   
   var sizeNrounds = [];
 
