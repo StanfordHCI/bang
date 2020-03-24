@@ -13,6 +13,7 @@ export const USERS_FETCHED = 'USERS_FETCHED';
 export const USER_ADDED = 'USER_ADDED';
 export const SWITCH_EMPTY_BATCHES_VISIBILITY = 'SWITCH_EMPTY_BATCHES_VISIBILITY';
 export const BONUS_PAID = 'BONUS_PAID';
+export const LOGS_FETCHED = 'LOGS_FETCHED';
 
 export function updateBatch(batch) {
   return dispatch => {
@@ -292,13 +293,33 @@ export function payBonus(id) {
       data: {_id: id}
     })
         .then((response) => {
-            console.log('response', response)
           dispatch(setLoading(false));
           dispatch(setSnackbar('bonus payed!'))
         })
         .catch(err => {
           errorCatcher(err, dispatch)
         });
+  };
+}
+
+export function loadLogs(params) {
+  return dispatch => {
+    dispatch(setLoading(true));
+    return axios({
+      method: 'get',
+      url: 'admin/logs/',
+    })
+      .then((response) => {
+        console.log('response, data', response, response.data.logs, response.data.errorLogs)
+        dispatch(setLoading(false));
+        dispatch({
+          type: LOGS_FETCHED,
+          data: response.data
+        });
+      })
+      .catch(err => {
+        errorCatcher(err, dispatch)
+      });
   };
 }
 

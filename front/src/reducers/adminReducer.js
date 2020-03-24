@@ -8,7 +8,8 @@ import {
   USER_DELETED,
   USER_ADDED,
   SWITCH_EMPTY_BATCHES_VISIBILITY,
-  BONUS_PAID
+  BONUS_PAID,
+  LOGS_FETCHED,
 } from "../actions/admin";
 
 const initialState = {
@@ -92,10 +93,15 @@ export default function (state = initialState, action) {
         batch: null
       };
     case BONUS_PAID:
-      console.log(action.data.users)
       return {
         ...state,
         userList: action.data.users,
+      }
+    case LOGS_FETCHED:
+      return {
+        ...state,
+        logs: action.data.logs,
+        errorLogs: action.data.errorLogs,
       }
     default:
       return state;

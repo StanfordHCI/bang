@@ -1,6 +1,6 @@
 // @ts-nocheck
 import {User} from "../models/users";
-
+const fs = require("fs");
 const moment = require('moment')
 require('dotenv').config({path: './.env'});
 import {Chat} from '../models/chats'
@@ -21,7 +21,6 @@ import {
   runningLive, payBonus, clearRoom, mturk, listAssignmentsForHIT, createOneTeam, createDynamicTeams
 } from "./utils";
 import {timeout} from './batches'
-
 const logger = require('../services/logger');
 const botId = '100000000000000000000001'
 import {io} from '../index'
@@ -411,11 +410,29 @@ export const loadBatchResult = async function (req, res) {
       user.postsurvey = surveys.find(x => x.surveyType === 'postsurvey' && x.user.toString() === user.user._id.toString())
       return user;
     })
-
     res.json({batch: batch})
   } catch (e) {
     errorHandler(e, 'load batch result error')
   }
+}
+
+
+export const loadLogs = async function (req, res) {
+  console.log('loading logs')
+  const logsDir = process.env.LOGS_PATH;
+  const errorLogsDir = process.env.ERROR_LOGS_PATH;
+  let logs, errorLogs;
+  try {
+    logs = fs.readFileSync(logsDir, 'utf-8');
+    logs = logs.split('\n').slice(-100);
+    errorLogs = fs.readFileSync(errorLogsDir, 'utf-8');
+    errorLogs = errorLogs.split('\n').slice(-100);
+    console.log(errorLogs)
+  } catch (e) {
+    errorHandler(e, 'logs error')
+  }
+  let data = {}
+  res.json({logs, errorLogs})
 }
 
 export const notifyUsers = async function (req, res) {
@@ -455,7 +472,6 @@ const startNotification = async (users) => {
     if (user.genNumber) {
       url += '&genNumber=' + user.genNumber;
     }
-    console.log('batchId: ', user.batchId);
     if (user.batchId) {
       url += '&batchId=' + user.batchId;
     }
