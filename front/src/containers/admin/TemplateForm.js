@@ -32,6 +32,14 @@ const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType
           isSelect = true;
         }
 
+        let isIntegerRank = false;
+        if (surveyType === 'mid' && task && task.survey[index] && task.survey[index].type === 'integerRank' ||
+          surveyType === 'pre' && task && task.preSurvey[index] && task.preSurvey[index].type === 'integerRank' ||
+          surveyType === 'post' && postSurvey && postSurvey[index].type === 'integerRank' ||
+          surveyType === 'prepre' && preSurvey && preSurvey[index].type === 'integerRank') {
+          isIntegerRank = true;
+        }
+
         return (
           <Row key={index} >
             <Col>
@@ -50,7 +58,8 @@ const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType
                     name={`${question}.type`}
                     component={renderSelectField}
                     type='text'
-                    options={[{value: 'text', label: 'text'}, {value: 'select', label: 'select'}, {value: 'instruction', label: 'instruction'}]}
+                    options={[{value: 'text', label: 'text'}, {value: 'select', label: 'select'},
+                      {value: 'instruction', label: 'instruction'}, {value: 'integerRank', label: 'integer rank'}]}
                   />
                 </div>
                 {isSurvey && <div>
@@ -73,6 +82,29 @@ const renderSurvey = ({fields, meta: {touched, error, warning}, task, surveyType
                 withPoints={teamFormat === 'single' && surveyType === 'mid'}
                 isSurvey={isSurvey}
               />
+              }
+              {isIntegerRank &&
+              <div>
+                <label className='form__form-group-label'>from: </label>
+                <Field
+                  name={`${question}.from`}
+                  component={renderField}
+                  type='number'/>
+                <label className='form__form-group-label'>to: </label>
+                <Field
+                  name={`${question}.to`}
+                  component={renderField}
+                  type='number'/>
+                <FieldArray
+                  name={`${question}.options`}
+                  component={renderQuestionOptions}
+                  rerenderOnEveryChange
+                  withPoints={false}
+                  isSurvey={isSurvey}
+                  isIntegerRank={true}
+                />
+                />
+              </div>
               }
             </Col>
             <Col>
@@ -221,14 +253,20 @@ const renderQuestions = ({fields, meta: {touched, error, warning}, poll}) => {
 
 };
 
-const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRounds, withPoints, isSurvey}) => {
+const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRounds, withPoints, isSurvey, isIntegerRank}) => {
+  if (fields === [] || !fields || (fields && !fields.length)) {
+    fields.push({})
+  }
+  if (fields && fields.length > 1 && isIntegerRank) {
+    fields = [fields[0]];
+  }
   return (<div style={{width: '100%'}}>
     {
       fields.map((step, index) => {
         return (
           <Row key={index}>
             <div className='form__form-group' style={{maxWidth: '300px', marginLeft: '50px'}}>
-              <label className='form__form-group-label' style={{maxWidth: '50px'}}>option: </label>
+              <label className='form__form-group-label' style={{maxWidth: '50px'}}>{isIntegerRank ? 'object' : 'option'}: </label>
               <div className='form__form-group-field'>
                 <Field
                   name={`${step}.option`}
@@ -237,10 +275,10 @@ const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRoun
                 />
               </div>
             </div>
-            <div className='centered-and-flexed'>
+            {!isIntegerRank && <div className='centered-and-flexed'>
               <Button type="button" size="sm"
-                      onClick={() => fields.splice(index, 1)}>delete option</Button>
-            </div>
+                      onClick={() => fields.splice(index, 1)}>delete {isIntegerRank ? 'object' : 'option'}</Button>
+            </div>}
             {withPoints &&
             <div>
               <h6>{index + 1} {index === 0 ? 'point' : 'points'}</h6>
@@ -249,9 +287,9 @@ const renderQuestionOptions = ({fields, meta: {touched, error, warning}, numRoun
           </Row>)
       })}
     <Row className="centered-and-flexed" noGutters>
-      <Button type="button" size="sm" onClick={() => fields.push({})}>
+      {!isIntegerRank && <Button type="button" size="sm" onClick={() => fields.push({})}>
         <i className="fa fa-plus"/>add option
-      </Button>
+      </Button>}
     </Row>
   </div>)
 }

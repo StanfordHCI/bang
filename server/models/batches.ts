@@ -21,7 +21,7 @@ let  BatchSchema = new Schema({
   rounds: [{
     startTime: Date,
     endTime: Date,
-    status: { type: String, enum: ['completed', 'active', 'presurvey', 'midsurvey', 'prepresurvey'], default: 'presurvey' },
+    status: { type: String, enum: ['completed', 'active', 'presurvey', 'midsurvey', 'prepresurvey', 'postsurvey'], default: 'presurvey' },
     teams: [{
       users: [{
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
@@ -41,6 +41,7 @@ let  BatchSchema = new Schema({
   surveyMinutes: {type: Number, required: true},
   expRounds: [],
   numRounds: {type: Number, required: true},
+  dynamicTeamRounds: [],
   tasks: [{
     hasPreSurvey: {type: Boolean, required: true, default: false},
     hasMidSurvey: {type: Boolean, required: true, default: false},
@@ -50,6 +51,8 @@ let  BatchSchema = new Schema({
       options: [{option: {type: String, required: true}}],
       selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
       randomOrder: {type: Boolean, default: false},
+      to: {type: Number},
+      from: {type: Number},
     }],
     message: {type: String, required: true},
     steps: [{
@@ -61,8 +64,9 @@ let  BatchSchema = new Schema({
       type: {type: String, required: true},
       options: [{option: {type: String, required: true}}],
       selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
-      teammate: {type: mongoose.Schema.Types.ObjectId, ref: 'User'}, // appears only on questions for selective-masking
       randomOrder: {type: Boolean, default: false},
+      to: {type: Number},
+      from: {type: Number},
     }],
     pinnedContent: [{
       text: {type: String, required: true},
@@ -107,6 +111,8 @@ let  BatchSchema = new Schema({
     options: [{option: {type: String, required: true}}],
     selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
     randomOrder: {type: Boolean, default: false},
+    to: {type: Number},
+    from: {type: Number},
   }],
   preSurvey: [{
     question: {type: String, required: true},
@@ -114,6 +120,8 @@ let  BatchSchema = new Schema({
     options: [{option: {type: String, required: true}}],
     selectOptions: [{value: {type: String, required: true}, label: {type: String, required: true}}],
     randomOrder: {type: Boolean, default: false},
+    to: {type: Number},
+    from: {type: Number},
   }],
   unmaskedPairs: {
     likes: [[{type: mongoose.Schema.Types.ObjectId, ref: 'User'}, {type: mongoose.Schema.Types.ObjectId, ref: 'User'}]],
@@ -121,7 +129,6 @@ let  BatchSchema = new Schema({
   },
   activePoll: { type: Number, required: false },
   dynamicTeamSize: { type: Boolean, required: true },
-  dynamicOptions: { type: Boolean, required: false },
   roundPairs: [{pair: [{roundNumber: {type: Number}, versionNumber: {type: Number}}, {roundNumber: {type: Number}, versionNumber: {type: Number}}], caseNumber: { type: Number } }],
   cases: [{
     versions: [{

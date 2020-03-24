@@ -378,54 +378,59 @@ createOneTeam = (teamSize: number, numRounds: number, people: any[]) => {
   return rounds;
 };
 
-export const createDynamicTeams = (teamSize: number, numRounds: number, dynamicOptions: boolean) => {
+export const createDynamicTeams = (teamSize: number, numRounds: number) => {
   /*
   * Returns array of {roundPairs, roundGen}
   * e.g.:
   * {roundPairs: [[1,6], [2,3], [4,5]], roundGen: {<some roundGen with 50% - n, 50% - 1 teamSize structure>}}
   * first round in pair is always with 1 user in a team*/
   const availableNumbers = Array.from(Array(numRounds).keys());
-  const roundPairs = consecutivePairs(availableNumbers);
-  console.log("Round pairs: " + roundPairs)
+  const roundPairs = randomPairs(availableNumbers); // pairs themselves are random
+
+  console.log("Confirming round pairs:")
+  roundPairs.forEach(p => console.log(`pair: ${p}`))
+  
+  var sizeNrounds = [];
+
   let roundGen = Array(numRounds);
+  var generateIndividual = true;
+    
   roundPairs.forEach(pair => {
 
     pair.forEach((roundNum, indInPair) => {
       const round = {
         teams: [],
       }
-      if(dynamicOptions){ // put the team first
-        if (indInPair === 0) { // first round in pair -- n users in one team
-          let teams = [{users: []}];
-          // make 1 team with n users in it
-          teams[0].users = Array.from(Array(teamSize).keys());
-          round.teams = teams;
+      if(generateIndividual){ //make individual pairs  
+
+        let teams = [];
+        // make n teams with 1 user in each
+        Array.from(Array(teamSize).keys()).forEach(user => teams.push({users: [user]}));
+        round.teams = teams
+
+        if(indInPair == 1){
+          generateIndividual = false; // alternate
         }
-        if (indInPair === 1) { // second round in pair -- 1 user in n teams
-          let teams = [];
-          // make n teams with 1 user in each
-          Array.from(Array(teamSize).keys()).forEach(user => teams.push({users: [user]}));
-          round.teams = teams
-        }
-      }else{ // put the individual first
-        if (indInPair === 0) { // first round in pair -- 1 user in n teams
-          let teams = [];
-          // make n teams with 1 user in each
-          Array.from(Array(teamSize).keys()).forEach(user => teams.push({users: [user]}));
-          round.teams = teams
-        }
-        if (indInPair === 1) { // second round in pair -- n users in one team
-          let teams = [{users: []}];
-          // make 1 team with n users in it
-          teams[0].users = Array.from(Array(teamSize).keys());
-          round.teams = teams;
+
+      }else{ //make group pairs
+        let teams = [{users: []}];
+        // make 1 team with n users in it
+        teams[0].users = Array.from(Array(teamSize).keys());
+        round.teams = teams;
+
+        //add to dynamicTeamRounds so that we keep track of which are team (for the purposes of the manip check)
+        sizeNrounds.push(roundNum)
+
+        if(indInPair == 1){
+          generateIndividual = true; // alternate
         }
       }
       roundGen[roundNum] = round
     })
   })
   console.log('generated rounds: ', JSON.stringify(roundGen))
-  return {roundGen: roundGen, roundPairs: roundPairs};
+
+  return {roundGen: roundGen, roundPairs: roundPairs, dynamicTeamRounds:sizeNrounds};
 }
 
 export const getBatchTime = (batch) => {

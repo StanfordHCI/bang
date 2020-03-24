@@ -235,7 +235,7 @@
     margin-bottom: auto;
     width: 100%;
     text-align: center;
-    background-color: #ADFFCB;
+    background-color: #CDC5B4;
     max-height: 100%;
     overflow: auto;
     font-size: 15px;
@@ -245,10 +245,12 @@
     vertical-align: top;
     text-align: left;
     max-height: 30%;
+    background-color: #CDC5B4;
   }
 
   .chat__dialog-pinned-resource {
     background: none;
+    background-color: #CDC5B4;
     border: none;
     color: blue;
     max-height: 30%;
