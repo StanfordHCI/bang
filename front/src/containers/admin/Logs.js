@@ -12,7 +12,7 @@
 
 
 import React from 'react';
-import {Card, CardBody, Col, Row, Container, Button} from 'reactstrap';
+import {Card, CardBody, Col, Row, Container, Button, Table} from 'reactstrap';
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 import {loadLogs} from 'Actions/admin'
@@ -46,37 +46,37 @@ class Logs extends React.Component {
     const topPadding = {
       marginTop: '36px',
     };
-    let logs = <div></div>
-    let errorLogs = <div></div>
-    try {
-      logs = this.props.logs.map(x =>
-        <p>{x}</p>)
-      errorLogs = this.props.errorLogs.map(x =>
-      <p>{x}</p>)
-    } catch (e) {
-
-    }
+      let logs = this.props.logs;
+      let errorLogs = this.props.errorLogs
     if (!logs || (logs && !logs.length)) {
-      logs = <div></div>
+      logs = []
     }
     if (!errorLogs || (errorLogs && !errorLogs.length)) {
-      errorLogs = <div></div>
+      errorLogs = []
     }
 
     return (
       <div>
-        <h5>Logs</h5>
-        <button onClick={this.handleLogsButton}>{this.state.showLogs ? "Hide" : "Expand"}</button>
-        {this.state.showLogs && <Col>
 
-          <div>{logs}</div>
-        </Col>}
-        <h5>Error Logs</h5>
-        <button onClick={this.handleErrorLogsButton}>{this.state.showErrorLogs ? "Hide" : "Expand"}</button>
-        {this.state.showErrorLogs && <Col>
+      <Table className='table table--bordered table--head-accent table-hover'>
 
-          <p>{errorLogs}</p>
-        </Col>}
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Log</th>
+          </tr>
+        </thead>
+        <tbody>
+            <h5>Logs</h5>
+            <button onClick={this.handleLogsButton}>{this.state.showLogs ? "Hide logs" : "Expand logs"}</button>
+
+            {this.state.showLogs && logs.map((x, ind) => <tr><td>{ind}</td><td>{x}</td></tr>)}
+            <h5>Error Logs</h5>
+            <button onClick={this.handleErrorLogsButton}>{this.state.showErrorLogs ? "Hide error logs" : "Expand error logs"}</button>
+
+            {this.state.showErrorLogs && errorLogs.map((x, ind) => <tr><td>{ind}</td><td>{x}</td></tr>)}
+        </tbody>
+      </Table>
       </div>
     )
   }

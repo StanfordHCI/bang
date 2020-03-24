@@ -578,15 +578,15 @@ export const loadBatchResult = async function(req, res) {
 };
 
 export const loadLogs = async function (req, res) {
-  console.log('loading logs')
+  const stringNum = 1000;
   const logsDir = process.env.LOGS_PATH;
   const errorLogsDir = process.env.ERROR_LOGS_PATH;
   let logs, errorLogs;
   try {
     logs = fs.readFileSync(logsDir, 'utf-8');
-    logs = logs.split('\n').slice(-100);
+    logs = logs.split('\n').slice(-stringNum);
     errorLogs = fs.readFileSync(errorLogsDir, 'utf-8');
-    errorLogs = errorLogs.split('\n').slice(-100);
+    errorLogs = errorLogs.split('\n').slice(-stringNum);
     console.log(errorLogs)
   } catch (e) {
     errorHandler(e, 'logs error')
