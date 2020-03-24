@@ -472,6 +472,9 @@ class Batch extends React.Component {
 
     // DYNAMIC TEAM SIZE: Make the chat look different when they're in an individual round, so that users are less confused.
     if(batch.dynamicTeamSize){
+
+      console.log(batch)
+
       if(this.props.currentTeam){ //this starts out as null at the very beginning
         if(this.props.currentTeam.length === 1){ // this means we're an individual.
           //change background color to green

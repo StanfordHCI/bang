@@ -41,6 +41,7 @@ let  BatchSchema = new Schema({
   surveyMinutes: {type: Number, required: true},
   expRounds: [],
   numRounds: {type: Number, required: true},
+  dynamicTeamRounds: [],
   tasks: [{
     hasPreSurvey: {type: Boolean, required: true, default: false},
     hasMidSurvey: {type: Boolean, required: true, default: false},
@@ -128,7 +129,6 @@ let  BatchSchema = new Schema({
   },
   activePoll: { type: Number, required: false },
   dynamicTeamSize: { type: Boolean, required: true },
-  dynamicOptions: { type: Boolean, required: false },
   roundPairs: [{pair: [{roundNumber: {type: Number}, versionNumber: {type: Number}}, {roundNumber: {type: Number}, versionNumber: {type: Number}}], caseNumber: { type: Number } }],
   cases: [{
     versions: [{
