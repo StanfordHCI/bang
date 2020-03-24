@@ -475,8 +475,8 @@ class Batch extends React.Component {
       if(this.props.currentTeam){ //this starts out as null at the very beginning
         if(this.props.currentTeam.length === 1){ // this means we're an individual.
           //change background color to green
-          if(document.getElementsByClassName("card-body")[0]){
-            document.getElementsByClassName("card-body")[0].style.backgroundColor = "#529A88" //green
+          if(document.getElementsByClassName("chat__contact-list")[0]){
+            document.getElementsByClassName("chat__contact-list")[0].style.backgroundColor = "#529A88" //green
           }
           // NOTE: The way that this code is dynamically called makes it impossible to create variable names, hence some repetition.
           //change the title to alert that it is an individual task
@@ -485,9 +485,9 @@ class Batch extends React.Component {
               document.getElementsByClassName("bold-text")[0].innerHTML += " - Individual Task! Please complete this task by yourself."
             }
           }
-        }else{
-          if(document.getElementsByClassName("card-body")[0]){
-            document.getElementsByClassName("card-body")[0].style.backgroundColor = "#AA72A1" //magenta
+        }else if(this.props.currentTeam.length > 1){
+          if(document.getElementsByClassName("chat__contact-list")[0]){
+            document.getElementsByClassName("chat__contact-list")[0].style.backgroundColor = "#AA72A1" //magenta
           }
           //change the title to alert that it is an group task
           if(document.getElementsByClassName("bold-text")[0]){
@@ -1032,7 +1032,7 @@ class Batch extends React.Component {
           {task.readingPeriods && task.readingPeriods.length &&
           <div className='chat__dialog-pinned-message' style={{maxHeight: '90%', color: 'black'}}>
             <div className='chat__dialog-pinned-resources'>
-              <p style={{color: 'black'}}>helperBot</p>
+              <h5 style={{color: 'black'}}>Please take the time to read the text below.</h5>
             </div>
             {task.readingPeriods && task.readingPeriods.length &&
             <div
