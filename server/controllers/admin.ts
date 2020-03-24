@@ -570,24 +570,12 @@ export const loadBatchResult = async function(req, res) {
           x.user.toString() === user.user._id.toString()
       );
       return user;
-<<<<<<< HEAD
-    })
-    res.json({batch: batch})
-||||||| merged common ancestors
-    })
-
-    res.json({batch: batch})
-=======
     });
-
     res.json({ batch: batch });
->>>>>>> 1fe3bcdd80906ad7d32a5a06b2f70749f9c67423
   } catch (e) {
     errorHandler(e, "load batch result error");
   }
 };
-
-<<<<<<< HEAD
 
 export const loadLogs = async function (req, res) {
   console.log('loading logs')
@@ -608,11 +596,6 @@ export const loadLogs = async function (req, res) {
 }
 
 export const notifyUsers = async function (req, res) {
-||||||| merged common ancestors
-export const notifyUsers = async function (req, res) {
-=======
-export const notifyUsers = async function(req, res) {
->>>>>>> 1fe3bcdd80906ad7d32a5a06b2f70749f9c67423
   try {
     let prs = [];
     if (req.body.start) {
@@ -661,12 +644,8 @@ const startNotification = async users => {
     if (user.genNumber) {
       url += "&genNumber=" + user.genNumber;
     }
-<<<<<<< HEAD
-||||||| merged common ancestors
+    
     console.log('batchId: ', user.batchId);
-=======
-    console.log("batchId: ", user.batchId);
->>>>>>> 1fe3bcdd80906ad7d32a5a06b2f70749f9c67423
     if (user.batchId) {
       url += "&batchId=" + user.batchId;
     }
