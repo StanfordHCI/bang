@@ -67,12 +67,9 @@ class Logs extends React.Component {
           </tr>
         </thead>
         <tbody>
-            <h5>Logs</h5>
-            <button onClick={this.handleLogsButton}>{this.state.showLogs ? "Hide logs" : "Expand logs"}</button>
-
+            <button onClick={this.handleLogsButton}>{this.state.showLogs ? "Hide Server Logs" : "Expand Server Logs"}</button>
             {this.state.showLogs && logs.map((x, ind) => <tr><td>{ind}</td><td>{x}</td></tr>)}
-            <h5>Error Logs</h5>
-            <button onClick={this.handleErrorLogsButton}>{this.state.showErrorLogs ? "Hide error logs" : "Expand error logs"}</button>
+            <button onClick={this.handleErrorLogsButton}>{this.state.showErrorLogs ? "Hide Error Logs" : "Expand Error Logs"}</button>
 
             {this.state.showErrorLogs && errorLogs.map((x, ind) => <tr><td>{ind}</td><td>{x}</td></tr>)}
         </tbody>

@@ -585,9 +585,26 @@ export const loadLogs = async function (req, res) {
   try {
     logs = fs.readFileSync(logsDir, 'utf-8');
     logs = logs.split('\n').slice(-stringNum);
+    logs.forEach((x, ind) => {
+      if (x.length > 200) { // if string is too long, we make 2 shorter strings
+        delete logs[ind];
+        const start = x.slice(0, 200);
+        const end = x.slice(200)
+        logs.splice(ind, 0, end)
+        logs.splice(ind, 0, start)
+      }
+    })
     errorLogs = fs.readFileSync(errorLogsDir, 'utf-8');
     errorLogs = errorLogs.split('\n').slice(-stringNum);
-    console.log(errorLogs)
+    errorLogs.forEach((x, ind) => {
+      if (x.length > 200) { // if string is too long, we make 2 shorter strings
+        delete errorLogs[ind];
+        const start = x.slice(0, 200);
+        const end = x.slice(200)
+        errorLogs.splice(ind, 0, end)
+        errorLogs.splice(ind, 0, start)
+      }
+    })
   } catch (e) {
     errorHandler(e, 'logs error')
   }
