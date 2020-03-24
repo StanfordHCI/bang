@@ -588,10 +588,16 @@ export const loadLogs = async function (req, res) {
     logs.forEach((x, ind) => {
       if (x.length > 200) { // if string is too long, we make 2 shorter strings
         delete logs[ind];
-        const start = x.slice(0, 200);
-        const end = x.slice(200)
-        logs.splice(ind, 0, end)
-        logs.splice(ind, 0, start)
+        let string = x;
+        let sliced = [];
+        while (string.length > 0) {
+          sliced.push(string.slice(0, 200))
+          string = string.slice(200)
+        }
+        sliced.reverse()
+        sliced.forEach(x => {
+          logs.splice(ind, 0, x);
+        })
       }
     })
     errorLogs = fs.readFileSync(errorLogsDir, 'utf-8');
