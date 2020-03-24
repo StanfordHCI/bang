@@ -1,4 +1,6 @@
 // @ts-nocheck
+import {error} from "util";
+
 const fs = require("fs");
 const moment = require('moment')
 require('dotenv').config({path: './.env'});
@@ -602,6 +604,7 @@ export const loadLogs = async function (req, res) {
         })
       }
     })
+    logs = logs.slice(-stringNum);
     errorLogs = fs.readFileSync(errorLogsDir, 'utf-8');
     errorLogs = errorLogs.split('\n').slice(-stringNum);
     errorLogs.forEach((x, ind) => {
@@ -613,6 +616,7 @@ export const loadLogs = async function (req, res) {
         errorLogs.splice(ind, 0, start)
       }
     })
+    errorLogs = errorLogs.slice(-stringNum)
   } catch (e) {
     errorHandler(e, 'logs error')
   }
