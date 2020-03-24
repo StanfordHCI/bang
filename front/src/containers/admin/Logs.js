@@ -24,12 +24,22 @@ class Logs extends React.Component {
     this.state = {
       logs: "",
       errorLogs: "",
+      showLogs: false,
+      showErrorLogs: false,
     };
   }
 
 
   componentDidMount() {
     this.props.loadLogs();
+  }
+
+  handleLogsButton = () => {
+    this.setState({showLogs: !this.state.showLogs});
+  }
+
+  handleErrorLogsButton = () => {
+    this.setState({showErrorLogs: !this.state.showErrorLogs});
   }
 
   render() {
@@ -55,16 +65,18 @@ class Logs extends React.Component {
 
     return (
       <div>
-        <Col>
-          <h5>Logs</h5>
+        <h5>Logs</h5>
+        <button onClick={this.handleLogsButton}>{this.state.showLogs ? "Hide" : "Expand"}</button>
+        {this.state.showLogs && <Col>
 
           <div>{logs}</div>
-        </Col>
-        <Col>
-          <h5>Error Logs</h5>
+        </Col>}
+        <h5>Error Logs</h5>
+        <button onClick={this.handleErrorLogsButton}>{this.state.showErrorLogs ? "Hide" : "Expand"}</button>
+        {this.state.showErrorLogs && <Col>
 
           <p>{errorLogs}</p>
-        </Col>
+        </Col>}
       </div>
     )
   }
