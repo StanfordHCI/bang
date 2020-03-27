@@ -176,7 +176,6 @@ class Vote extends Component {
                                             }
                                             return <button
                                                 style={style}
-                                                disabled={disabled}
                                                 onClick={() => {
                                                     this.handleVote(option, question)
                                                 }}>
