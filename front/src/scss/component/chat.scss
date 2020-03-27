@@ -241,6 +241,17 @@
     font-size: 15px;
   }
 
+  .chat__dialog-pinned-reading {
+    padding: 5px;
+    margin-bottom: auto;
+    width: 100%;
+    text-align: left;
+    background-color: #CDC5B4;
+    max-height: 100%;
+    overflow: auto;
+    font-size: 15px;
+  }
+
   .chat__dialog-pinned-resources {
     vertical-align: top;
     text-align: left;

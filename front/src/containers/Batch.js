@@ -1033,7 +1033,7 @@ class Batch extends React.Component {
       <div className='chat'>
         <div className='chat__readingPeriod' style={{marginLeft: 10}}>
           {task.readingPeriods && task.readingPeriods.length &&
-          <div className='chat__dialog-pinned-message' style={{maxHeight: '90%', color: 'black'}}>
+          <div className='chat__dialog-pinned-reading' style={{maxHeight: '90%', color: 'black'}}>
             <div className='chat__dialog-pinned-resources'>
               <h5 style={{color: 'black'}}>Please take the time to read the text below.</h5>
             </div>
