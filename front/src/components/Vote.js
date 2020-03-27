@@ -150,7 +150,7 @@ class Vote extends Component {
             </div>
             {/*POLL TEXT OR FOREPERSON TEXT*/}
             <Button color="primary" onClick={this.openPoll} size="sm">
-                Collapse {this.state.open ? '-' : '+'}
+                {this.state.open ? 'Collapse -' : 'Expand +'}
             </Button>
             <Collapse isOpen={this.state.open}>
                 {
