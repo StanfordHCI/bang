@@ -67,7 +67,6 @@ class Vote extends Component {
         this.setState({votes: votes});
         const disabled = Object.values(votes).some(x => +x >= lockCap);
         if (disabled !== this.state.disabled) {
-            this.props.onDisable(pollInd);
             this.setState({disabled: true})
         }
     }
@@ -94,6 +93,9 @@ class Vote extends Component {
             }, pollInd: pollInd
         });
         vote(obj);
+        if(this.state.disabled){
+            this.setState({disabled: false})
+        }
         this.setState({questionResult: question, selectedOption: option});
     }
 
