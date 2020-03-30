@@ -85,7 +85,7 @@ class CasualForm extends React.Component {
             }
         }
         if(data.questions){
-            if (questions.length !== data.questions.length) {
+            if (questions.length !== data.questions.length && questions.length!=1) { //second condition prevents error message from showing up when there is only the primary question
                 throw new SubmissionError({
                     _error: 'All questions are required'
                 })

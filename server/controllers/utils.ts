@@ -393,7 +393,13 @@ export const createDynamicTeams = (teamSize: number, numRounds: number) => {
   var sizeNrounds = [];
 
   let roundGen = Array(numRounds);
+
   var generateIndividual = true;
+  if(Math.random() > 0.5){
+    var generateIndividual = false; //add a probability that we start with generating group
+  }
+
+  console.log("Confirming generateIndividual status: " + generateIndividual)
     
   roundPairs.forEach(pair => {
 
