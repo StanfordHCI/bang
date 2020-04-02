@@ -100,9 +100,9 @@ export const addHIT = (batch, isMain) => {
     let HITTitle = batch.HITTitle ? batch.HITTitle : bg + "Write online ads - bonus up to $" + hourlyWage + " / hour (";
     const batchTime = Math.round((batch.roundMinutes + batch.surveyMinutes) * batch.numRounds );
     let description =
-      "Work in groups to write ads for new products. This task will take approximately " + batchTime + " minute(s). " +
+      "Work in groups to do a collaborative task. This task will take approximately " + batchTime + " minute(s). " +
       "There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" + bonusPrice + ".";
-    let keywords = "ads, writing, copy editing, advertising";
+    let keywords = "groups, writing, collaboration, decision-making";
     let maxAssignments = isMain ? batch.teamSize * batch.teamSize * 4 : 100;
     let html = fs.readFileSync('./server/services/HITContent.html').toString();
     let hitContent = html
