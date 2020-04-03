@@ -205,18 +205,6 @@ class Batch extends React.Component {
           }
         });
       }
-      if (this.state.timeLeft === 10 && prevState.timeLeft === 11 && roundHasCasualPoll) {
-        console.log('poll last alert');
-        this.setState({
-          isStartNotifySent: true,
-          notifyTitle: 'Bang!',
-          notifyOptions: {
-            body: 'Hung jury! You were not able to agree in time, so your jury was hung.\n',
-            lang: 'en',
-            dir: 'ltr',
-          }
-        });
-      }
     }
   }
 
