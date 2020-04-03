@@ -94,7 +94,7 @@ class UserList extends React.Component {
                     <th>status</th>
                     <th>connected</th>
                     <th>total bonuses</th>
-                    <th>pay 1$</th>
+                    <th>pay $1</th>
                     <th>delete</th>
                   </tr>
                   </thead>
@@ -110,9 +110,8 @@ class UserList extends React.Component {
                       <td>
                         <Button className="btn btn-danger"
                                 style={{padding: '2px 10px', marginBottom: '0px'}}
-                                onClick={() => this.props.payBonus(user._id)}
-                                disabled={!user.isTest}>
-                          1$
+                                onClick={() => this.props.payBonus(user._id)}>
+                          $1
                         </Button>
                       </td>
                       <td>
