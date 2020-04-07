@@ -25,7 +25,7 @@ class Notify extends React.Component {
   }
 
   handleSubmitMessage = () => {
-    this.props.notifyUsers({start: false, message: this.state.note})
+    this.props.notifyUsers({start: false, message: this.state.note, limit: this.state.notifyLimit, pass: this.state.notifyPass})
   }
 
   handleSubmitStart = () => {
@@ -58,10 +58,9 @@ class Notify extends React.Component {
               </div>
             </div>
             <ButtonToolbar className='mx-auto form__button-toolbar'>
-              <Button onClick={this.handleSubmitMessage} disabled={!this.state.note} color='primary' size='sm' type='button' >Submit</Button>
+              <Button onClick={this.handleSubmitMessage} disabled={!this.state.note} color='primary' size='sm' type='button' >Notify Specified Users with Custom Message</Button>
             </ButtonToolbar>
             <div className='form'>
-              <label className='form__form-group-label'>Notify to join (with login link):</label>
               <div className='form__form-group-input-wrap' style={{marginTop: '10px'}}>
                 <label className='form__form-group-label'>how many:</label>
                 <input type="number" value={this.state.notifyLimit} onChange={this.handleLimitChange}/>
@@ -70,7 +69,7 @@ class Notify extends React.Component {
               </div>
             </div>
             <ButtonToolbar className='mx-auto form__button-toolbar'>
-              <Button onClick={this.handleSubmitStart} color='danger' size='sm' type='button' >Notify people to join batch</Button>
+              <Button onClick={this.handleSubmitStart} color='danger' size='sm' type='button' >Notify Specified Users with Start Link</Button>
             </ButtonToolbar>
           </CardBody>
         </Card>

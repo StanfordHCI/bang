@@ -638,6 +638,9 @@ export const notifyUsers = async function (req, res) {
       await startNotification(users);
     } else {
       const users = await User.find({ systemStatus: "willbang", isTest: false })
+        .sort({ createdAt: -1 })
+        .skip(parseInt(req.body.pass))
+        .limit(parseInt(req.body.limit))
         .select("mturkId")
         .lean()
         .exec();
