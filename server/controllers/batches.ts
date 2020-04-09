@@ -18,7 +18,8 @@ import {
   bestRound,
   worstRound,
   addUnmaskedPairs,
-  SpecificQuestionHandler
+  SpecificQuestionHandler,
+  hourlyWage,
 } from "./utils";
 import { errorHandler } from "../services/common";
 import { io } from "../index";
@@ -54,7 +55,7 @@ export const joinBatch = async function(data, socket, io) {
     if (
       socket.systemStatus === "willbang" &&
       batch.users.length < totalBatchUsers &&
-      !batch.users.some(x => x.user.toString() === socket.userId.toString())
+      !batch.users.some((x) => x.user.toString() === socket.userId.toString())
     ) {
       //join to batch
       let nickname;
@@ -64,7 +65,7 @@ export const joinBatch = async function(data, socket, io) {
         animal = chooseOne(randomAnimal);
         adjective = chooseOne(randomAdjective);
         nickname = adjective + animal;
-        batch.users.forEach(user => {
+        batch.users.forEach((user) => {
           if (user.nickname === nickname) {
             nickname = false;
           }
@@ -80,9 +81,9 @@ export const joinBatch = async function(data, socket, io) {
               users: {
                 user: socket.userId,
                 nickname: nickname,
-                joinDate: new Date()
-              }
-            }
+                joinDate: new Date(),
+              },
+            },
           },
           { new: true }
         ),
@@ -92,13 +93,13 @@ export const joinBatch = async function(data, socket, io) {
             $set: {
               batch: batch._id,
               realNick: nickname,
-              currentChat: batch.preChat
-            }
+              currentChat: batch.preChat,
+            },
           },
           { new: true }
         )
           .lean()
-          .exec()
+          .exec(),
       ]);
       user = prs[1];
       batch = prs[0];
@@ -155,20 +156,20 @@ export const loadBatch = async function(data, socket, io) {
         User.findById(socket.userId)
           .select("realNick currentChat")
           .lean()
-          .exec()
+          .exec(),
       ]);
       chat = prs[0];
       chat.members = [prs[1]];
       userInfo = chat.members.find(
-        x => x._id.toString() === socket.userId.toString()
+        (x) => x._id.toString() === socket.userId.toString()
       );
       socket.join(batch.preChat.toString());
     } else if (batch.status === "active") {
       const round = batch.rounds[batch.currentRound - 1];
       if (round) {
         let chatId;
-        round.teams.forEach(team => {
-          team.users.forEach(user => {
+        round.teams.forEach((team) => {
+          team.users.forEach((user) => {
             if (user.user.toString() === socket.userId.toString()) {
               chatId = team.chat;
             }
@@ -186,17 +187,17 @@ export const loadBatch = async function(data, socket, io) {
             user: socket.userId,
             batch: data.batch,
             round: batch.currentRound,
-            surveyType: round.status
+            surveyType: round.status,
           })
             .select("_id")
             .lean()
-            .exec()
+            .exec(),
         ]);
         chat = prs[0];
         chat.members = prs[1];
-        chat.members.forEach(member => {
+        chat.members.forEach((member) => {
           const batchUser = batch.users.find(
-            x => x.user.toString() === member._id.toString()
+            (x) => x.user.toString() === member._id.toString()
           );
           if (batchUser) {
             member.isActive = batchUser.isActive;
@@ -205,7 +206,7 @@ export const loadBatch = async function(data, socket, io) {
         });
         if (prs[2]) batch.surveyDone = true;
         userInfo = chat.members.find(
-          x => x._id.toString() === socket.userId.toString()
+          (x) => x._id.toString() === socket.userId.toString()
         );
         socket.join(chatId.toString());
       } else {
@@ -218,7 +219,7 @@ export const loadBatch = async function(data, socket, io) {
         Survey.findOne({
           user: socket.userId,
           batch: data.batch,
-          surveyType: "final"
+          surveyType: "final",
         })
           .select("_id")
           .lean()
@@ -226,8 +227,8 @@ export const loadBatch = async function(data, socket, io) {
         Survey.count({
           user: socket.userId,
           batch: data.batch,
-          surveyType: { $in: ["presurvey", "midsurvey"] }
-        })
+          surveyType: { $in: ["presurvey", "midsurvey"] },
+        }),
       ]);
       batch.surveyCounter = surveyCounter;
       if (finalSurveyCheck) batch.finalSurveyDone = true;
@@ -236,7 +237,7 @@ export const loadBatch = async function(data, socket, io) {
     socket.emit("loaded-batch", {
       batch: batch,
       chat: chat,
-      userInfo: userInfo
+      userInfo: userInfo,
     });
   } catch (e) {
     errorHandler(e, "load batch error, user: " + socket.userId);
@@ -259,7 +260,7 @@ const startBatch = async function(batch, socket, io) {
         "wrong users length - " + users.length + "; batch will be finished"
       );
       await Batch.findByIdAndUpdate(batch._id, {
-        $set: { status: "completed" }
+        $set: { status: "completed" },
       })
         .lean()
         .exec();
@@ -270,8 +271,8 @@ const startBatch = async function(batch, socket, io) {
             batch: null,
             realNick: null,
             currentChat: null,
-            fakeNick: null
-          }
+            fakeNick: null,
+          },
         }
       );
       return;
@@ -302,7 +303,7 @@ const startBatch = async function(batch, socket, io) {
     const teamSize = batch.teamSize,
       numRounds = batch.numRounds;
     let rounds = [];
-    let oldNicks = users.map(user => user.realNick);
+    let oldNicks = users.map((user) => user.realNick);
 
     let kickedUsers = [];
     for (let i = 0; i < numRounds; i++) {
@@ -334,8 +335,8 @@ const startBatch = async function(batch, socket, io) {
           realNick: null,
           currentChat: null,
           fakeNick: null,
-          systemStatus: "hasbanged"
-        }
+          systemStatus: "hasbanged",
+        },
       }
     );
     logger.info(module, "Main experiment end: " + batch._id);
@@ -360,10 +361,10 @@ const startBatch = async function(batch, socket, io) {
             realNick: null,
             currentChat: null,
             fakeNick: null,
-            systemStatus: "hasbanged"
-          }
+            systemStatus: "hasbanged",
+          },
         }
-      )
+      ),
     ]);
   }
 };
@@ -372,13 +373,13 @@ export const receiveSurvey = async function(data, socket, io) {
   try {
     let newSurvey = {
       ...data,
-      user: socket.userId
+      user: socket.userId,
     };
     if (newSurvey.surveyType === "final") {
       const check = await Survey.findOne({
         batch: newSurvey.batch,
         user: newSurvey.user,
-        surveyType: "final"
+        surveyType: "final",
       });
       if (check) {
         logger.info(module, "Blocked survey, survey exists");
@@ -396,7 +397,7 @@ export const receiveSurvey = async function(data, socket, io) {
       User.findById(newSurvey.user)
         .select("_id systemStatus mturkId")
         .lean()
-        .exec()
+        .exec(),
     ]);
     console.log(
       "teams: ",
@@ -404,10 +405,10 @@ export const receiveSurvey = async function(data, socket, io) {
       socket.userId.toString()
     );
     const teammates = batch.rounds[batch.currentRound - 1].teams
-      .find(x =>
-        x.users.some(y => y.user._id.toString() === socket.userId.toString())
+      .find((x) =>
+        x.users.some((y) => y.user._id.toString() === socket.userId.toString())
       )
-      .users.filter(x => x.user._id.toString() !== socket.userId.toString());
+      .users.filter((x) => x.user._id.toString() !== socket.userId.toString());
     newSurvey.teamPartners = {};
     teammates.forEach((x, ind) => {
       newSurvey.teamPartners[`team_partner_${ind + 1}`] = x.user._id;
@@ -418,7 +419,7 @@ export const receiveSurvey = async function(data, socket, io) {
         logger.info(module, "Blocked survey, survey/user does not have batch");
         return;
       }
-      let bonusPrice = 12 * getBatchTime(batch);
+      let bonusPrice = hourlyWage * getBatchTime(batch);
       if (bonusPrice > 15) {
         logger.info(module, "Bonus was changed for batch " + newSurvey.batch);
         await notifyWorkers(
@@ -441,7 +442,7 @@ export const receiveSurvey = async function(data, socket, io) {
           batch: newSurvey.batch,
           user: socket.userId,
           amount: bonusPrice,
-          assignment: socket.assignmentId
+          assignment: socket.assignmentId,
         };
         await Bonus.create(newBonus);
         logger.info("module", "Bonus sent to " + socket.mturkId);
@@ -457,7 +458,7 @@ export const receiveSurvey = async function(data, socket, io) {
           "Some college",
           "Undergraduate degree",
           "Graduate degree",
-          "Doctorate"
+          "Doctorate",
         ],
         "degree"
       )
@@ -475,7 +476,7 @@ export const receiveSurvey = async function(data, socket, io) {
           "$35,000 to $49,999",
           "$50,000 to $74,999",
           "$75,000 to $99,999",
-          "Over $100,000"
+          "Over $100,000",
         ],
         "houseHoldEarnings"
       )
@@ -492,7 +493,7 @@ export const receiveSurvey = async function(data, socket, io) {
           "Black or African American",
           "Native Hawaiian or Other Pacific Islander",
           "White",
-          "Other"
+          "Other",
         ],
         "race"
       )
@@ -504,7 +505,7 @@ export const receiveSurvey = async function(data, socket, io) {
           "Live with Partner",
           "Separated",
           "Divorced",
-          "Widowed"
+          "Widowed",
         ],
         "maritalStatus"
       )
@@ -543,7 +544,7 @@ export const receiveSurvey = async function(data, socket, io) {
           "No guidance",
           "Some guidance",
           "Quite a bit of guidance",
-          "A great deal of guidance"
+          "A great deal of guidance",
         ],
         "religionGuidance"
       )
@@ -558,13 +559,13 @@ export const receiveSurvey = async function(data, socket, io) {
           "Moderate; Middle of the Road",
           "Slightly Conservative",
           "Conservative",
-          "Extremely Conservative"
+          "Extremely Conservative",
         ],
         "politicalView"
       );
     const specificQuestion = (x, questionText) =>
       x.question.toLowerCase() === questionText.toLowerCase();
-    const genderQuestion = x => specificQuestion(x, "what is your gender?");
+    const genderQuestion = (x) => specificQuestion(x, "what is your gender?");
     if (
       newSurvey.surveyType === "presurvey" ||
       newSurvey.surveyType === "prepresurvey"
@@ -572,7 +573,7 @@ export const receiveSurvey = async function(data, socket, io) {
       let gender;
       let index;
       try {
-        index = batch.tasks[0].preSurvey.findIndex(x => genderQuestion(x));
+        index = batch.tasks[0].preSurvey.findIndex((x) => genderQuestion(x));
       } catch (e) {
         index = -1;
       }
@@ -602,7 +603,7 @@ export const receiveSurvey = async function(data, socket, io) {
       } else {
         if (newSurvey.surveyType === "prepresurvey") {
           // looking for gender survey in batch presurvey
-          const ind = batch.preSurvey.findIndex(x => genderQuestion(x));
+          const ind = batch.preSurvey.findIndex((x) => genderQuestion(x));
           gender = genderFromInd(ind, newSurvey);
         }
       }
@@ -630,7 +631,7 @@ export const receiveSurvey = async function(data, socket, io) {
             console.log("resolved: ", resolved);
             psHelper.push(
               User.findByIdAndUpdate(newSurvey.user, {
-                [resolved.dbField]: resolved.selectedOptionNum
+                [resolved.dbField]: resolved.selectedOptionNum,
               })
             );
           }
@@ -644,20 +645,20 @@ export const receiveSurvey = async function(data, socket, io) {
   }
 };
 
-export const timeout = ms => {
-  return new Promise(resolve => setTimeout(resolve, ms));
+export const timeout = (ms) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 export const payStartBonus = async (users, batch) => {
   let bangPrs = [];
-  users.forEach(user => {
+  users.forEach((user) => {
     bangPrs.push(payBonus(user.mturkId, user.testAssignmentId, 1.0));
     bangPrs.push(
       Bonus.create({
         batch: batch._id,
         user: user._id,
         amount: 1.0,
-        assignment: user.testAssignmentId
+        assignment: user.testAssignmentId,
       })
     );
   });
@@ -668,7 +669,7 @@ const generateTeams = (roundGen, users, roundNumber, oldNicks) => {
   let teams = roundGen[roundNumber - 1].teams.map((team, index) => {
     let teamAnimals = [],
       teamUsers = [];
-    team.users.forEach(user => {
+    team.users.forEach((user) => {
       let partner = users[user].realNick.slice();
       for (let i = 0; i < partner.length; i++) {
         if (partner[i] === partner[i].toUpperCase()) {
@@ -680,23 +681,23 @@ const generateTeams = (roundGen, users, roundNumber, oldNicks) => {
     });
     let animals = randomAnimal
       .slice()
-      .filter(x => !teamAnimals.some(y => y === x));
+      .filter((x) => !teamAnimals.some((y) => y === x));
     let adjectives = randomAdjective.slice();
     for (let i = 0; i < team.users.length; i++) {
       let nickname, animal, adj;
-      animals = animals.filter(x => !teamAnimals.some(y => y === x));
+      animals = animals.filter((x) => !teamAnimals.some((y) => y === x));
       while (true) {
         animal = chooseOne(animals);
         adj = chooseOne(adjectives);
         nickname = adj + animal;
-        if (!oldNicks.some(x => x === nickname)) {
+        if (!oldNicks.some((x) => x === nickname)) {
           oldNicks.push(nickname);
           teamAnimals.push(animal);
           teamUsers.push({
             user: users[team.users[i]]._id,
             nickname: nickname,
             adjective: adj,
-            animal: animal
+            animal: animal,
           });
           break;
         }
@@ -766,7 +767,7 @@ const roundRun = async (
     teams: [],
     status: task.hasPreSurvey ? "presurvey" : "active",
     endTime: null,
-    unmaskedUsers: []
+    unmaskedUsers: [],
   };
   let emptyChats = [];
   let chats;
@@ -853,10 +854,10 @@ const roundRun = async (
 
   teams.forEach((team, index) => {
     team.chat = chats[index]._id;
-    team.users.forEach(user => {
+    team.users.forEach((user) => {
       prsHelper.push(
         User.findByIdAndUpdate(user.user, {
-          $set: { fakeNick: user.nickname, currentChat: team.chat }
+          $set: { fakeNick: user.nickname, currentChat: team.chat },
         })
       );
       return user;
@@ -867,7 +868,7 @@ const roundRun = async (
   roundObject.teams = teams;
   rounds.push(roundObject);
   batch = await Batch.findByIdAndUpdate(batch._id, {
-    $set: { rounds: rounds, currentRound: roundObject.number }
+    $set: { rounds: rounds, currentRound: roundObject.number },
   })
     .lean()
     .exec();
@@ -878,7 +879,7 @@ const roundRun = async (
     logger.info(module, batch._id + " : Begin pre-pre-survey");
     roundObject.status = "prepresurvey";
     batch = await Batch.findByIdAndUpdate(batch._id, {
-      $set: { rounds: rounds }
+      $set: { rounds: rounds },
     });
     io.to(batch._id.toString()).emit("prepre-survey", { rounds: rounds });
     await timeout(batch.surveyMinutes * 60000);
@@ -920,7 +921,7 @@ const roundRun = async (
     );
     roundObject.status = "presurvey";
     batch = await Batch.findByIdAndUpdate(batch._id, {
-      $set: { rounds: rounds }
+      $set: { rounds: rounds },
     });
     io.to(batch._id.toString()).emit("pre-survey", { rounds: rounds });
     await timeout(batch.surveyMinutes * 60000);
@@ -946,7 +947,7 @@ const roundRun = async (
     const step = task.steps[j];
     let time = j === 0 ? step.time : step.time - task.steps[j - 1].time;
     await timeout(batch.roundMinutes * time * 60000);
-    const pollInd = polls.findIndex(x => Number(x.step) === j);
+    const pollInd = polls.findIndex((x) => Number(x.step) === j);
     if (pollInd > -1) {
       await Batch.updateOne(
         { _id: batch._id },
@@ -958,13 +959,13 @@ const roundRun = async (
       user: botId,
       nickname: "helperBot",
       message: "Step " + (j + 1) + ": " + step.message,
-      time: new Date()
+      time: new Date(),
     };
     let ps = [];
-    teams.forEach(team => {
+    teams.forEach((team) => {
       ps.push(
         Chat.findByIdAndUpdate(team.chat, {
-          $addToSet: { messages: stepMessage }
+          $addToSet: { messages: stepMessage },
         })
       );
       io.to(team.chat).emit("receive-message", stepMessage);
@@ -989,7 +990,7 @@ const roundRun = async (
       batch._id + " : Begin survey for round " + roundObject.number
     );
     io.to(batch._id.toString()).emit("mid-survey", midRoundInfo);
-    chats.forEach(chat => {
+    chats.forEach((chat) => {
       clearRoom(chat._id, io);
     });
     await timeout(batch.surveyMinutes * 60000);
@@ -1020,28 +1021,28 @@ const roundRun = async (
     await timeout(batch.surveyMinutes * 60000);
   }
   const [filledChats, roundSurveys] = await Promise.all([
-    Chat.find({ _id: { $in: chats.map(x => x._id) } })
+    Chat.find({ _id: { $in: chats.map((x) => x._id) } })
       .lean()
       .exec(),
     Survey.find({
       batch: batch._id,
       round: i + 1,
-      surveyType: { $in: ["presurvey", "midsurvey"] }
+      surveyType: { $in: ["presurvey", "midsurvey"] },
     })
       .select("user")
       .lean()
-      .exec()
+      .exec(),
   ]);
   for (const team of roundObject.teams) {
     for (const user of team.users) {
       const chat = filledChats.find(
-        x => x._id.toString() === team.chat.toString()
+        (x) => x._id.toString() === team.chat.toString()
       );
       const userSurveys = roundSurveys.filter(
-        x => x.user.toString() === user.user.toString()
+        (x) => x.user.toString() === user.user.toString()
       );
       user.isActive = chat.messages.some(
-        x => x.user.toString() === user.user.toString()
+        (x) => x.user.toString() === user.user.toString()
       );
       const userInDB = await User.findById(user.user);
       if (userInDB.batch === null) {
@@ -1050,7 +1051,7 @@ const roundRun = async (
       if (
         batch &&
         !user.isActive &&
-        !kickedUsers.some(id => id === user.user.toString()) &&
+        !kickedUsers.some((id) => id === user.user.toString()) &&
         userInDB.batch.toString() === batch._id.toString()
       ) {
         await kickUser(user.user, batch._id, i + 1);
@@ -1075,8 +1076,8 @@ const kickUser = async (userId, batchId, kickedAfterRound) => {
     {
       $set: {
         "users.$.isActive": false,
-        "users.$.kickedAfterRound": kickedAfterRound
-      }
+        "users.$.kickedAfterRound": kickedAfterRound,
+      },
     }
   );
   const user = await User.findByIdAndUpdate(
@@ -1087,8 +1088,8 @@ const kickUser = async (userId, batchId, kickedAfterRound) => {
         realNick: null,
         currentChat: null,
         fakeNick: null,
-        systemStatus: "hasbanged"
-      }
+        systemStatus: "hasbanged",
+      },
     },
     { new: true }
   )
@@ -1108,8 +1109,8 @@ const makeNewChat = (messages, batch, i, task) => {
       user: botId,
       nickname: "helperBot",
       time: new Date(),
-      message: "Task: " + (task ? task.message : "empty")
+      message: "Task: " + (task ? task.message : "empty"),
     }),
-    pinnedContent: batch.tasks[i].pinnedContent || []
+    pinnedContent: batch.tasks[i].pinnedContent || [],
   };
 };

@@ -1,4 +1,4 @@
-export const parseNick = nick => {
+export const parseNick = (nick) => {
   if (!nick) return [];
   let animalIndex = -1;
   for (let i = 0; i < nick.length; i++) {
@@ -9,11 +9,10 @@ export const parseNick = nick => {
   }
   let animal = nick.slice(animalIndex, nick.length);
   let adjective = nick.slice(0, animalIndex);
-  return [adjective, animal]; 
+  return [adjective, animal];
 };
 
 export const getUrlParams = (url) => {
-
   // get query string from url (optional) or window
   let queryString = url ? url.split("?")[1] : window.location.search.slice(1);
 
@@ -22,9 +21,8 @@ export const getUrlParams = (url) => {
 
   // if query string exists
   if (queryString) {
-
     // stuff after # is not part of query string, so get rid of it
-    queryString = queryString.split('#')[0];
+    queryString = queryString.split("#")[0];
 
     // split our query string into its component parts
     const arr = queryString.split("&");
@@ -35,15 +33,14 @@ export const getUrlParams = (url) => {
 
       // set parameter name and value (use 'true' if empty)
       let paramName = a[0];
-      let paramValue = typeof (a[1]) === "undefined" ? true : a[1];
+      let paramValue = typeof a[1] === "undefined" ? true : a[1];
 
       // (optional) keep case consistent
       paramName = paramName.toLowerCase();
-      if (typeof paramValue === 'string') paramValue = paramValue.toLowerCase();
+      if (typeof paramValue === "string") paramValue = paramValue.toLowerCase();
 
       // if the paramName ends with square brackets, e.g. colors[] or colors[2]
       if (paramName.match(/\[(\d+)?\]$/)) {
-
         // create key if it doesn't exist
         const key = paramName.replace(/\[(\d+)?\]/, "");
         if (!obj[key]) obj[key] = [];
@@ -62,7 +59,7 @@ export const getUrlParams = (url) => {
         if (!obj[paramName]) {
           // if it doesn't exist, create property
           obj[paramName] = paramValue;
-        } else if (obj[paramName] && typeof obj[paramName] === 'string'){
+        } else if (obj[paramName] && typeof obj[paramName] === "string") {
           // if property does exist and it's a string, convert it to an array
           obj[paramName] = [obj[paramName]];
           obj[paramName].push(paramValue);
@@ -75,14 +72,15 @@ export const getUrlParams = (url) => {
   }
 
   return obj;
-}
+};
 
-export const shuffle = array => {
-  let currentIndex = array.length, temporaryValue, randomIndex;
+export const shuffle = (array) => {
+  let currentIndex = array.length,
+    temporaryValue,
+    randomIndex;
 
   // While there remain elements to shuffle...
   while (0 !== currentIndex) {
-
     // Pick a remaining element...
     randomIndex = Math.floor(Math.random() * currentIndex);
     currentIndex -= 1;
@@ -94,19 +92,24 @@ export const shuffle = array => {
   }
 
   return array;
-}
+};
 
-export const newWindow = content => {
+export const newWindow = (content) => {
   const wind = window.open();
-  wind.document.open().write(content)
-}
+  wind.document.open().write(content);
+};
 
 export const pairInArray = (array, item) => {
   for (let i = 0; i < array.length; i++) {
     // This if statement depends on the format of your array
-    if (array[i][0] === item[0] && array[i][1] === item[1] || array[i][1] === item[0] && array[i][0] === item[1]) {
-      return true;   // Found it
+    if (
+      (array[i][0] === item[0] && array[i][1] === item[1]) ||
+      (array[i][1] === item[0] && array[i][0] === item[1])
+    ) {
+      return true; // Found it
     }
   }
-  return false;   // Not found
-}
+  return false; // Not found
+};
+
+export const hourlyWage = process.env.HOURLY_WAGE;

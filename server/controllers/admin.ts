@@ -1,14 +1,14 @@
 // @ts-nocheck
-import {error} from "util";
+import { error } from "util";
 
 const fs = require("fs");
-const moment = require('moment')
-require('dotenv').config({path: './.env'});
-import {Chat} from '../models/chats'
-import {Batch} from '../models/batches'
-import {Survey} from '../models/surveys'
-import {errorHandler} from '../services/common'
-import {User} from "../models/users";
+const moment = require("moment");
+require("dotenv").config({ path: "./.env" });
+import { Chat } from "../models/chats";
+import { Batch } from "../models/batches";
+import { Survey } from "../models/surveys";
+import { errorHandler } from "../services/common";
+import { User } from "../models/users";
 
 const moment = require("moment");
 require("dotenv").config({ path: "./.env" });
@@ -29,7 +29,8 @@ import {
   mturk,
   listAssignmentsForHIT,
   createOneTeam,
-  createDynamicTeams
+  createDynamicTeams,
+  hourlyWage,
 } from "./utils";
 import { timeout } from "./batches";
 
@@ -45,13 +46,13 @@ export const addBatch = async function(req, res) {
     const teamFormat = req.body.teamFormat;
     const dynamicTeamSize = req.body.dynamicTeamSize;
     const batches = await Batch.find({
-      $or: [{ status: "waiting" }, { status: "active" }]
+      $or: [{ status: "waiting" }, { status: "active" }],
     })
       .select("tasks teamSize roundMinutes surveyMinutes numRounds teamFormat")
       .lean()
       .exec();
     let batchSumCost = 0;
-    batches.forEach(batch => {
+    batches.forEach((batch) => {
       const moneyForBatch = calculateMoneyForBatch(batch);
       batchSumCost = batchSumCost + moneyForBatch;
     });
@@ -93,7 +94,7 @@ export const addBatch = async function(req, res) {
         // round generation for 50% n 50% 1 person teams
         const dynamicTeamsResult = createDynamicTeams(
           newBatch.teamSize,
-          newBatch.numRounds,
+          newBatch.numRounds
         );
         roundGen = dynamicTeamsResult.roundGen;
         roundPairs = dynamicTeamsResult.roundPairs;
@@ -105,26 +106,27 @@ export const addBatch = async function(req, res) {
             precededRoundPairs[ind] = {
               pair: [
                 { roundNumber: pair[0], versionNumber: 0 },
-                { roundNumber: pair[1], versionNumber: 1 }
+                { roundNumber: pair[1], versionNumber: 1 },
               ],
-              caseNumber: ind
+              caseNumber: ind,
             };
           });
           newBatch.roundPairs = precededRoundPairs;
           newBatch.tasks.forEach((task, taskIndex) => {
-            const pair = precededRoundPairs.find(p =>
-              p.pair.some(_pair => _pair.roundNumber === taskIndex)
+            const pair = precededRoundPairs.find((p) =>
+              p.pair.some((_pair) => _pair.roundNumber === taskIndex)
             );
             const versionNumber = pair.pair.find(
-              x => x.roundNumber === taskIndex
+              (x) => x.roundNumber === taskIndex
             ).versionNumber;
             newBatch.cases.forEach((_case, index) => {
               if (index === pair.caseNumber) {
                 _case.versions.forEach((version, versionIndex) => {
                   if (versionIndex === versionNumber) {
                     task.pinnedContent = version.parts.map((part, index) => ({
-                      text: `Click to review reading material #${index+1} (opens a new window).`,
-                      link: part.text
+                      text: `Click to review reading material #${index +
+                        1} (opens a new window).`,
+                      link: part.text,
                     }));
                   }
                 });
@@ -133,20 +135,20 @@ export const addBatch = async function(req, res) {
           });
           // if there are cases, we make readingPeriods out of them
           if (newBatch.cases && newBatch.cases.length) {
-            newBatch.tasks.forEach(x => {
+            newBatch.tasks.forEach((x) => {
               if (!Array.isArray(x.readingPeriods)) {
                 // if reading periods are not defined we define them
                 x.readingPeriods = [];
               }
             });
-            newBatch.roundPairs.forEach(x => {
+            newBatch.roundPairs.forEach((x) => {
               const caseNumber = x.caseNumber;
               // for each round we find out its version number and take data from the case
-              x.pair.forEach(y => {
+              x.pair.forEach((y) => {
                 // rp message === part.text
                 const generatedRPs = newBatch.cases[caseNumber].versions[
                   y.versionNumber
-                ].parts.map(part =>
+                ].parts.map((part) =>
                   Object.assign(part, { message: part.text })
                 );
                 newBatch.tasks[y.roundNumber].readingPeriods.push(
@@ -194,8 +196,8 @@ export const addBatch = async function(req, res) {
         if (newBatch.reconveneWorstRound) {
           const roundNumber = [
             newBatch.numRounds,
-            newBatch.numRounds - 1
-          ].filter(x => x !== newBatch.expRounds[0]);
+            newBatch.numRounds - 1,
+          ].filter((x) => x !== newBatch.expRounds[0]);
           newBatch.worstRounds.push(roundNumber[0]); // round which reconvenes worst round
         }
       } else {
@@ -208,7 +210,7 @@ export const addBatch = async function(req, res) {
     }
     if (teamFormat !== "single") {
       for (let i = 0; i < newBatch.numRounds; i++) {
-        const expIndex = newBatch.expRounds.findIndex(x => x === i + 1);
+        const expIndex = newBatch.expRounds.findIndex((x) => x === i + 1);
         if (expIndex > -1) {
           //exp round
           tasks[i] = newBatch.tasks[expIndex];
@@ -245,7 +247,7 @@ export const addBatch = async function(req, res) {
           nickname: "helperBot",
           message: "Hi, I am helperBot, welcome to our HIT!",
           user: botId,
-          time: new Date()
+          time: new Date(),
         },
         {
           nickname: "helperBot",
@@ -253,7 +255,7 @@ export const addBatch = async function(req, res) {
             "You must be able to stay for the duration of this task, around 1 hour. If you cannot stay for the entire time, " +
             "please leave now. You will not be compensated if you leave preemptively.",
           user: botId,
-          time: new Date()
+          time: new Date(),
         },
         {
           nickname: "helperBot",
@@ -261,12 +263,12 @@ export const addBatch = async function(req, res) {
             "We ask for your patience as we wait for enough active users to begin the task! " +
             "Each 3 minutes, you will be reminded to type something into the chat so that we know you're active and ready to begin.",
           user: botId,
-          time: new Date()
-        }
-      ]
+          time: new Date(),
+        },
+      ],
     });
     const batchWithChat = await Batch.findByIdAndUpdate(batch._id, {
-      $set: { preChat: preChat._id }
+      $set: { preChat: preChat._id },
     });
     res.json({ batch: batchWithChat });
     logger.info(
@@ -300,7 +302,7 @@ export const addBatch = async function(req, res) {
           Object.assign(
             {
               systemStatus: "willbang",
-              isTest: false
+              isTest: false,
             },
             notifyFilter
           )
@@ -311,7 +313,7 @@ export const addBatch = async function(req, res) {
           .lean()
           .exec();
         if (req.body.bornAfterYear) {
-          users = users.filter(x => {
+          users = users.filter((x) => {
             if (!x.yearBorn) {
               return true;
             } else {
@@ -320,7 +322,7 @@ export const addBatch = async function(req, res) {
           });
         }
         if (req.body.bornBeforeYear) {
-          users = users.filter(x => {
+          users = users.filter((x) => {
             if (!x.yearBorn) {
               return true;
             } else {
@@ -393,9 +395,9 @@ const usersWithBonuses = async function() {
   users.forEach((user, ind) => {
     let userTotalPaid = 0;
     const userBonuses = allBonuses.filter(
-      x => x.user.toString() === user._id.toString()
+      (x) => x.user.toString() === user._id.toString()
     );
-    userBonuses.forEach(bonus => {
+    userBonuses.forEach((bonus) => {
       if (bonus.amount > 0) {
         userTotalPaid += bonus.amount;
       }
@@ -408,7 +410,7 @@ const usersWithBonuses = async function() {
 export const loadUserList = async function(req, res) {
   try {
     let users = await usersWithBonuses();
-    users.forEach(user => {
+    users.forEach((user) => {
       user.loginLink =
         process.env.HIT_URL +
         "?workerId=" +
@@ -444,7 +446,7 @@ export const addUser = async function(req, res) {
       testAssignmentId: "test",
       systemStatus: "willbang",
       connected: false,
-      isTest: true
+      isTest: true,
     };
     await User.create(user);
     delete user.token;
@@ -467,7 +469,7 @@ const handleBonus = async function(amount, userId, batch) {
     batch: batch ? batch._id : null,
     user: user._id,
     amount: amount.toFixed(2),
-    assignment: user.testAssignmentId
+    assignment: user.testAssignmentId,
   });
 };
 
@@ -479,7 +481,7 @@ export const bonusAPI = async function(req, res) {
 export const stopBatch = async function(req, res) {
   try {
     let batch = await Batch.findByIdAndUpdate(req.params.id, {
-      $set: { status: "completed" }
+      $set: { status: "completed" },
     })
       .populate("users.user")
       .lean()
@@ -488,17 +490,17 @@ export const stopBatch = async function(req, res) {
       batch: null,
       realNick: null,
       fakeNick: null,
-      currentChat: null
+      currentChat: null,
     };
     if (batch.status === "active" && process.env.MTURK_MODE !== "off") {
       //compensations
       usersChangeQuery.systemStatus = "hasbanged";
       const batchLiveTime =
         moment().diff(moment(batch.startTime), "seconds") / 3600;
-      let bonus = 12 * batchLiveTime - 1;
-      if (bonus > 15) bonus = 15;
+      let bonus = hourlyWage * batchLiveTime - 1; // Why is there a minus 1 here?
+      // if (bonus > 15) bonus = 15; // This seems not relevant here.
       let bangPrs = [];
-      batch.users.forEach(userObject => {
+      batch.users.forEach((userObject) => {
         const user = userObject.user;
         //bangPrs.push(assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL))
         if (bonus > 0 && userObject.isActive) {
@@ -528,25 +530,25 @@ export const loadBatchResult = async function(req, res) {
         .exec(),
       Survey.find({ batch: req.params.id })
         .lean()
-        .exec()
+        .exec(),
     ]);
     batch.rounds.forEach((round, roundNumber) => {
-      round.teams.forEach(team => {
-        team.users.forEach(user => {
+      round.teams.forEach((team) => {
+        team.users.forEach((user) => {
           user.midSurvey = surveys.find(
-            x =>
+            (x) =>
               x.surveyType === "midsurvey" &&
               x.user.toString() === user.user.toString() &&
               roundNumber + 1 === x.round
           );
           user.preSurvey = surveys.find(
-            x =>
+            (x) =>
               x.surveyType === "presurvey" &&
               x.user.toString() === user.user.toString() &&
               roundNumber + 1 === x.round
           );
           user.polls = surveys.find(
-            x =>
+            (x) =>
               x.surveyType === "poll" &&
               x.user.toString() === user.user.toString() &&
               roundNumber + 1 === x.round
@@ -559,17 +561,17 @@ export const loadBatchResult = async function(req, res) {
     });
 
     // surveys = surveys.filter(x => !!x.isPost)
-    batch.users.forEach(user => {
+    batch.users.forEach((user) => {
       user.survey = surveys.find(
-        x => x.user.toString() === user.user._id.toString() && x.isPost
+        (x) => x.user.toString() === user.user._id.toString() && x.isPost
       );
       user.prepresurvey = surveys.find(
-        x =>
+        (x) =>
           x.surveyType === "prepresurvey" &&
           x.user.toString() === user.user._id.toString()
       );
       user.postsurvey = surveys.find(
-        x =>
+        (x) =>
           x.surveyType === "postsurvey" &&
           x.user.toString() === user.user._id.toString()
       );
@@ -581,54 +583,56 @@ export const loadBatchResult = async function(req, res) {
   }
 };
 
-export const loadLogs = async function (req, res) {
+export const loadLogs = async function(req, res) {
   const stringNum = 1000;
   const logsDir = process.env.LOGS_PATH;
   const errorLogsDir = process.env.ERROR_LOGS_PATH;
   let logs, errorLogs;
   try {
-    logs = fs.readFileSync(logsDir, 'utf-8');
-    logs = logs.split('\n').slice(-stringNum);
+    logs = fs.readFileSync(logsDir, "utf-8");
+    logs = logs.split("\n").slice(-stringNum);
     logs.forEach((x, ind) => {
-      if (x.length > 200) { // if string is too long, we make 2 shorter strings
+      if (x.length > 200) {
+        // if string is too long, we make 2 shorter strings
         delete logs[ind];
         let string = x;
         let sliced = [];
         while (string.length > 0) {
-          sliced.push(string.slice(0, 200))
-          string = string.slice(200)
+          sliced.push(string.slice(0, 200));
+          string = string.slice(200);
         }
-        sliced.reverse()
-        sliced.forEach(x => {
+        sliced.reverse();
+        sliced.forEach((x) => {
           logs.splice(ind, 0, x);
-        })
+        });
       }
-    })
+    });
     logs = logs.slice(-stringNum);
-    errorLogs = fs.readFileSync(errorLogsDir, 'utf-8');
-    errorLogs = errorLogs.split('\n').slice(-stringNum);
+    errorLogs = fs.readFileSync(errorLogsDir, "utf-8");
+    errorLogs = errorLogs.split("\n").slice(-stringNum);
     errorLogs.forEach((x, ind) => {
-      if (x.length > 200) { // if string is too long, we make 2 shorter strings
+      if (x.length > 200) {
+        // if string is too long, we make 2 shorter strings
         delete errorLogs[ind];
         const start = x.slice(0, 200);
-        const end = x.slice(200)
-        errorLogs.splice(ind, 0, end)
-        errorLogs.splice(ind, 0, start)
+        const end = x.slice(200);
+        errorLogs.splice(ind, 0, end);
+        errorLogs.splice(ind, 0, start);
       }
-    })
-    errorLogs = errorLogs.slice(-stringNum)
+    });
+    errorLogs = errorLogs.slice(-stringNum);
   } catch (e) {
-    errorHandler(e, 'logs error')
+    errorHandler(e, "logs error");
   }
-  let data = {}
-  res.json({logs, errorLogs})
-}
+  let data = {};
+  res.json({ logs, errorLogs });
+};
 
-export const notifyUsers = async function (req, res) {
+export const notifyUsers = async function(req, res) {
   try {
     let prs = [];
     if (req.body.start) {
-      const users = await User.find({ systemStatus: "willbang", isTest: false })
+      const users = await User.find({ systemStatus: "willbang", isTest: true })
         .sort({ createdAt: -1 })
         .skip(parseInt(req.body.pass))
         .limit(parseInt(req.body.limit))
@@ -645,7 +649,7 @@ export const notifyUsers = async function (req, res) {
         .lean()
         .exec();
       let workers = [];
-      users.forEach(user => {
+      users.forEach((user) => {
         workers.push(user.mturkId);
         if (workers.length >= 99) {
           prs.push(notifyWorkers(workers.slice(), req.body.message, "Bang"));
@@ -663,7 +667,7 @@ export const notifyUsers = async function (req, res) {
   }
 };
 
-const startNotification = async users => {
+const startNotification = async (users) => {
   let counter = 0;
   for (let i = 0; i < users.length; i++) {
     const user = users[i];
@@ -676,31 +680,18 @@ const startNotification = async users => {
     if (user.genNumber) {
       url += "&genNumber=" + user.genNumber;
     }
-    
-    console.log('batchId: ', user.batchId);
+
+    console.log("batchId: ", user.batchId);
     if (user.batchId) {
       url += "&batchId=" + user.batchId;
     }
     const unsubscribe_url = process.env.HIT_URL + "unsubscribe/" + user.mturkId;
-    const message =
-      "Hi! Our HIT is now active. We are starting a new experiment on Bang. " +
-      "Your FULL participation will earn you a bonus of ~$12/hour. " +
-      "\n\n" +
-      "Please join the HIT here: " +
-      url +
-      "\n\n" +
-      "The link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. " +
-      "NOTE: You will be bonused $1 if enough users join the waiting room and the task starts." +
-      "\n\n" +
-      "Our records indicate that you were interested in joining this HIT previously. " +
-      "If you are no longer interested in participating, please UNSUBSCRIBE here: " +
-      unsubscribe_url;
-
+    const message = `Hi! Our HIT is now active. We are starting a new experiment on Bang. Your FULL participation will earn you a bonus of $${hourlyWage}/hour. \\n\\nPlease join the HIT here: ${url}\\n\\nThe link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. NOTE: You will be bonused $1 if enough users join the waiting room and the task starts.\\n\\nOur records indicate that you were interested in joining this HIT previously. If you are no longer interested in participating, please UNSUBSCRIBE here: ${unsubscribe_url}`;
     notifyWorkers([user.mturkId], message, "Bang")
       .then(() => {
         counter++;
       })
-      .catch(e => {});
+      .catch((e) => {});
     if (i % 5 === 0 && i > 0) {
       await timeout(400);
     }
@@ -720,7 +711,7 @@ export const migrateUsers = async (req, res) => {
     while (!stop) {
       let params = {
         MaxResults: 100,
-        QualificationTypeId: "3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG"
+        QualificationTypeId: "3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG",
       };
       if (NextToken) {
         params.NextToken = NextToken;
@@ -739,7 +730,7 @@ export const migrateUsers = async (req, res) => {
     while (!stop) {
       let params = {
         MaxResults: 100,
-        QualificationTypeId: "3H3KEN1OLSVM98I05ACTNWVOM3JBI9"
+        QualificationTypeId: "3H3KEN1OLSVM98I05ACTNWVOM3JBI9",
       };
       if (NextToken) {
         params.NextToken = NextToken;
@@ -757,7 +748,7 @@ export const migrateUsers = async (req, res) => {
     NextToken = "";
     while (!stop) {
       let params = {
-        MaxResults: 100
+        MaxResults: 100,
       };
       if (NextToken) {
         params.NextToken = NextToken;
@@ -771,7 +762,7 @@ export const migrateUsers = async (req, res) => {
           let asParams = {
             HITId: HIT.HITId,
             AssignmentStatuses: ["Submitted", "Approved"],
-            MaxResults: 100
+            MaxResults: 100,
           };
           if (asNextToken) {
             asParams.NextToken = asNextToken;
@@ -795,17 +786,19 @@ export const migrateUsers = async (req, res) => {
 
     let insertUsers = [];
 
-    willbangUsers.forEach(async user => {
-      const as = assignments.find(x => {
+    willbangUsers.forEach(async (user) => {
+      const as = assignments.find((x) => {
         return x.WorkerId == user.WorkerId;
       });
-      const hasBanged = hasbangedUsers.some(x => x.WorkerId === user.WorkerId);
+      const hasBanged = hasbangedUsers.some(
+        (x) => x.WorkerId === user.WorkerId
+      );
       if (as && !hasBanged) {
         insertUsers.push(
           User.create({
             testAssignmentId: as.AssignmentId,
             mturkId: as.WorkerId,
-            token: as.WorkerId
+            token: as.WorkerId,
           })
         );
       }

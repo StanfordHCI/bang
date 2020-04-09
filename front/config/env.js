@@ -1,16 +1,16 @@
-'use strict';
-require('dotenv').config({path: '../.env'});
-const fs = require('fs');
-const path = require('path');
-const paths = require('./paths');
+"use strict";
+require("dotenv").config({ path: "../.env" });
+const fs = require("fs");
+const path = require("path");
+const paths = require("./paths");
 
 // Make sure that including paths.js after env.js will read .env variables.
-delete require.cache[require.resolve('./paths')];
+delete require.cache[require.resolve("./paths")];
 
 const NODE_ENV = process.env.NODE_ENV;
 if (!NODE_ENV) {
   throw new Error(
-    'The NODE_ENV environment variable is required but was not specified.'
+    "The NODE_ENV environment variable is required but was not specified."
   );
 }
 
@@ -21,7 +21,7 @@ var dotenvFiles = [
   // Don't include `.env.local` for `test` environment
   // since normally you expect tests to produce the same
   // results for everyone
-  NODE_ENV !== 'test' && `${paths.dotenv}.local`,
+  NODE_ENV !== "test" && `${paths.dotenv}.local`,
   paths.dotenv,
 ].filter(Boolean);
 
@@ -52,10 +52,10 @@ dotenvFiles.forEach(dotenvFile => {
 // https://github.com/facebookincubator/create-react-app/issues/1023#issuecomment-265344421
 // We also resolve them to make sure all tools using them work consistently.
 const appDirectory = fs.realpathSync(process.cwd());
-process.env.NODE_PATH = (process.env.NODE_PATH || '')
+process.env.NODE_PATH = (process.env.NODE_PATH || "")
   .split(path.delimiter)
-  .filter(folder => folder && !path.isAbsolute(folder))
-  .map(folder => path.resolve(appDirectory, folder))
+  .filter((folder) => folder && !path.isAbsolute(folder))
+  .map((folder) => path.resolve(appDirectory, folder))
   .join(path.delimiter);
 
 // Grab NODE_ENV and REACT_APP_* environment variables and prepare them to be
@@ -64,7 +64,7 @@ const REACT_APP = /^REACT_APP_/i;
 
 function getClientEnvironment(publicUrl) {
   const raw = Object.keys(process.env)
-    .filter(key => REACT_APP.test(key))
+    .filter((key) => REACT_APP.test(key))
     .reduce(
       (env, key) => {
         env[key] = process.env[key];
@@ -73,7 +73,7 @@ function getClientEnvironment(publicUrl) {
       {
         // Useful for determining whether we’re running in production mode.
         // Most importantly, it switches React into the correct mode.
-        NODE_ENV: process.env.NODE_ENV || 'development',
+        NODE_ENV: process.env.NODE_ENV || "development",
         API_HOST: JSON.stringify(process.env.API_HOST),
         // Useful for resolving the correct path to static assets in `public`.
         // For example, <img src={process.env.PUBLIC_URL + '/img/logo.png'} />.
@@ -82,11 +82,12 @@ function getClientEnvironment(publicUrl) {
         PUBLIC_URL: publicUrl,
         MTURK_MODE: process.env.MTURK_MODE,
         HIT_URL: process.env.HIT_URL,
+        HOURLY_WAGE: process.env.HOURLY_WAGE,
       }
     );
   // Stringify all values so we can feed into Webpack DefinePlugin
   const stringified = {
-    'process.env': Object.keys(raw).reduce((env, key) => {
+    "process.env": Object.keys(raw).reduce((env, key) => {
       env[key] = JSON.stringify(raw[key]);
       return env;
     }, {}),

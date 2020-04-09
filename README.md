@@ -1,6 +1,6 @@
 # Bang!
 
-Bang is a tool to study the consistency of socio-psychological phenomenon by running within subjects studies on groups. Bang uses pseudonyms to see what happens when people work in the same groups when they think they're working in new ones.
+Bang is a tool to study the consistency of socio-psychological phenomena by running within subjects studies on groups. Bang uses pseudonyms to see what happens when people work in the same groups when they think they're working in new ones.
 
 ## Getting started
 
@@ -67,7 +67,7 @@ Note: `waitChatOn` exists  in `server.js` and `public/client.js` and needs to ha
 
 ### Running the experiment
 
-The experiment works by generating several chat rooms, each of `TEAM_SIZE` people, and letting them work together for `ROUND_MINUTES` before being moved into another activity. The activity cycle includes the following steps: 
+The experiment works by generating several chat rooms, each of `TEAM_SIZE` people, and letting them work together for `ROUND_MINUTES` before being moved into another activity. The activity cycle includes the following steps:
 
 1. pre experiment activities
 2. chat activities (happens for each round)
@@ -104,4 +104,4 @@ Qualification HITs’ lifetime is 250 sec. Server will notify all 'willbang' use
 All people which are ready with the qualification HIT achieve willBang qualification on Mturk and get email invite to the main task in our site. 
 When in the waiting room there’re enough participants, they get ability to join the batch. After enough people are joined batch experiment automatically starts. 
 As experiment is started all joined participants get start bonus, for now it’s $1.00, and achieve hasBanged qualification on Mturk/our db. 
-From now those participants can’t see our Mturk’s task anymore. After final survey is completed by participant he/she achieve remaining part of his bonus on the basis of $12 per hour.
+From now those participants can’t see our Mturk’s task anymore. After final survey is completed by participant they are paid out a completion bonus at a predetermined hourly wage (nominally $15/hour based on the [fair work](https://fairwork.stanford.edu) rate).

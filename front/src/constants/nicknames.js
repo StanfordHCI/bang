@@ -1,25 +1,25 @@
-import SquirrelSrc from '../img/Squirrel.svg';
-import RhinoSrc from '../img/Rhino.svg';
-import HorseSrc from '../img/Horse.svg';
-import PigSrc from '../img/Pig.svg';
-import PandaSrc from '../img/Panda.svg';
-import MonkeySrc from '../img/Monkey.svg';
-import LionSrc from '../img/Lion.svg';
-import OrangutanSrc from '../img/Orangutan.svg';
-import GorillaSrc from '../img/Gorilla.svg';
-import HippoSrc from '../img/Hippo.svg';
-import RabbitSrc from '../img/Rabbit.svg';
-import WolfSrc from '../img/Wolf.svg';
-import GoatSrc from '../img/Goat.svg';
-import GiraffeSrc from '../img/Giraffe.svg';
-import DonkeySrc from '../img/Donkey.svg';
-import CowSrc from '../img/Cow.svg';
-import BearSrc from '../img/Bear.svg';
-import BisonSrc from '../img/Bison.svg';
+import SquirrelSrc from "../img/Squirrel.svg";
+import RhinoSrc from "../img/Rhino.svg";
+import HorseSrc from "../img/Horse.svg";
+import PigSrc from "../img/Pig.svg";
+import PandaSrc from "../img/Panda.svg";
+import MonkeySrc from "../img/Monkey.svg";
+import LionSrc from "../img/Lion.svg";
+import OrangutanSrc from "../img/Orangutan.svg";
+import GorillaSrc from "../img/Gorilla.svg";
+import HippoSrc from "../img/Hippo.svg";
+import RabbitSrc from "../img/Rabbit.svg";
+import WolfSrc from "../img/Wolf.svg";
+import GoatSrc from "../img/Goat.svg";
+import GiraffeSrc from "../img/Giraffe.svg";
+import DonkeySrc from "../img/Donkey.svg";
+import CowSrc from "../img/Cow.svg";
+import BearSrc from "../img/Bear.svg";
+import BisonSrc from "../img/Bison.svg";
 
-import MaleSrc from '../img/male.png'
-import FemaleSrc from '../img/female.png'
-import UndefinedGenderSrc from '../img/undefinedGender.png'
+import MaleSrc from "../img/male.png";
+import FemaleSrc from "../img/female.png";
+import UndefinedGenderSrc from "../img/undefinedGender.png";
 
 export const animalMap = new Map();
 animalMap.set("Squirrel", SquirrelSrc);
