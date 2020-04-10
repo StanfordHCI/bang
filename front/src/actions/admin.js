@@ -285,17 +285,17 @@ export function notifyUsers(params) {
   };
 }
 
-export function payBonus(id) {
+export function payBonus(id, amount) {
   return (dispatch, getState) => {
     dispatch(setLoading(true));
     return axios({
       method: "post",
       url: "admin/users/pay-bonus",
-      data: { _id: id },
+      data: { _id: id, amount: amount },
     })
       .then((response) => {
         dispatch(setLoading(false));
-        dispatch(setSnackbar("bonus payed!"));
+        dispatch(setSnackbar(`Paid $${amount}!`));
       })
       .catch((err) => {
         errorCatcher(err, dispatch);

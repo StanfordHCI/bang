@@ -11,7 +11,16 @@
  */
 
 import React from "react";
-import { Card, CardBody, Col, Row, Container, Button, Table } from "reactstrap";
+import {
+  Card,
+  CardBody,
+  Col,
+  Row,
+  Container,
+  Button,
+  Input,
+  Table,
+} from "reactstrap";
 import { connect } from "react-redux";
 import { bindActionCreators } from "redux";
 import {
@@ -36,6 +45,7 @@ class UserList extends React.Component {
     pageOfItems: [],
     userList: [],
     searchValue: "",
+    bonusAmount: "",
   };
 
   componentWillMount() {
@@ -71,6 +81,19 @@ class UserList extends React.Component {
     );
     this.setState({ userList: userList });
     this.onChangePage(1);
+  };
+
+  handleBonusChange = (s) => {
+    if (parseFloat(s.target.value)) {
+      this.setState({ bonusAmount: parseFloat(s.target.value) });
+    } else {
+      this.setState({ bonusAmount: 0 });
+    }
+  };
+
+  handleBonus = (user) => {
+    console.log(this.state.bonusAmount);
+    this.props.payBonus(user._id, this.state.bonusAmount);
   };
 
   componentWillUnmount() {
@@ -113,13 +136,25 @@ class UserList extends React.Component {
                     <thead>
                       <tr>
                         <th>#</th>
-                        <th>mturk id</th>
-                        <th>login link</th>
-                        <th>status</th>
-                        <th>connected</th>
-                        <th>total pay</th>
-                        <th>bonus</th>
-                        <th>delete</th>
+                        <th>mturkId</th>
+                        <th>Link</th>
+                        <th>Status</th>
+                        <th>Connected</th>
+                        <th>Paid</th>
+                        <th>
+                          <Input
+                            placeholder="Bonus"
+                            style={{
+                              display: "inline",
+                              width: "5rem",
+                              padding: "2px 10px",
+                              marginRight: "10px",
+                            }}
+                            value={this.state.bonusAmount}
+                            onChange={this.handleBonusChange}
+                          />
+                        </th>
+                        <th>Delete</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -141,9 +176,13 @@ class UserList extends React.Component {
                                   padding: "2px 10px",
                                   marginBottom: "0px",
                                 }}
-                                onClick={() => this.props.payBonus(user._id)}
+                                onClick={() => this.handleBonus(user)}
+                                disabled={!this.state.bonusAmount}
                               >
-                                $1
+                                Pay{" "}
+                                {this.state.bonusAmount
+                                  ? `$${this.state.bonusAmount}`
+                                  : ""}
                               </Button>
                             </td>
                             <td>
@@ -156,7 +195,7 @@ class UserList extends React.Component {
                                 }}
                                 onClick={() => this.props.deleteUser(user._id)}
                               >
-                                delete
+                                Delete {user.mturkId}
                               </Button>
                             </td>
                           </tr>
