@@ -117,8 +117,8 @@ class UserList extends React.Component {
                         <th>login link</th>
                         <th>status</th>
                         <th>connected</th>
-                        <th>total bonuses</th>
-                        <th>pay $1</th>
+                        <th>total pay</th>
+                        <th>bonus</th>
                         <th>delete</th>
                       </tr>
                     </thead>

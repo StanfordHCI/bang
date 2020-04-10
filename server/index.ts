@@ -243,7 +243,7 @@ if (process.env.MTURK_MODE !== "off") {
         .lean()
         .exec();
       if (batches && batches.length) {
-        const HIT = await addHIT(batches[0], false);
+        const HIT: any = await addHIT(batches[0], false);
         currentHIT = HIT.HITId;
         logger.info(module, "Recruit HIT created: " + currentHIT);
         let prs = [];
@@ -296,7 +296,7 @@ if (process.env.MTURK_MODE !== "off") {
           AssignmentStatuses: ["Submitted", "Approved", "Rejected"],
           MaxResults: 100,
         };
-        const as = (await listAssignmentsForHIT(params)).Assignments;
+        const as = ((await listAssignmentsForHIT(params)) as any).Assignments;
         if (as && as.length)
           for (let i = 0; i < as.length; i++) {
             const assignment = as[i];

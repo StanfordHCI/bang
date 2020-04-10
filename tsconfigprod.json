@@ -4,15 +4,10 @@
     "allowJs": true,
     "target": "es5",
     "moduleResolution": "node",
-    "pretty":true,
+    "pretty": true,
     "watch": false,
     "lib": ["dom", "es2017"]
   },
-  "exclude": [
-    "node_modules",
-    "front",
-    "built",
-    "old"
-  ],
+  "exclude": ["node_modules", "front", "built"],
   "typeRoots": ["./node_modules/@types"]
 }

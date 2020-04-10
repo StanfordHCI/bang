@@ -9,9 +9,6 @@ import { Batch } from "../models/batches";
 import { Survey } from "../models/surveys";
 import { errorHandler } from "../services/common";
 import { User } from "../models/users";
-
-const moment = require("moment");
-require("dotenv").config({ path: "./.env" });
 import {
   addHIT,
   listWorkersWithQualificationType,
@@ -58,7 +55,7 @@ export const addBatch = async function(req, res) {
     });
     let newBatch = req.body;
     if (process.env.MTURK_MODE !== "off") {
-      let balance = await getAccountBalance();
+      let balance: any = await getAccountBalance();
       balance = parseFloat(balance.AvailableBalance);
       const moneyForBatch = calculateMoneyForBatch(newBatch);
       if (balance < moneyForBatch + batchSumCost) {
@@ -67,7 +64,7 @@ export const addBatch = async function(req, res) {
           balance +
           ". Experiment cost: $" +
           moneyForBatch.toFixed(2) +
-          " . Waiting/active batches cost: " +
+          ". Waiting/active batches cost: " +
           batchSumCost.toFixed(2);
         await notifyWorkers([process.env.MTURK_NOTIFY_ID], message, "Bang");
         logger.error(module, "balance problems: " + message);
@@ -281,7 +278,7 @@ export const addBatch = async function(req, res) {
     prs.push(activeCheck(io));
     if (process.env.MTURK_MODE !== "off") {
       let users;
-      const notifyFilter = {};
+      const notifyFilter: any = {};
       if (req.body.userRace) {
         notifyFilter.race = req.body.userRace;
       }
@@ -450,7 +447,7 @@ export const addUser = async function(req, res) {
     };
     await User.create(user);
     delete user.token;
-    user.loginLink =
+    (user as any).loginLink =
       process.env.HIT_URL +
       "?workerId=" +
       user.mturkId +
@@ -462,7 +459,7 @@ export const addUser = async function(req, res) {
   }
 };
 
-const handleBonus = async function(amount, userId, batch) {
+const handleBonus = async function(amount, userId, batch = null) {
   const user = await User.findOne({ _id: userId });
   await payBonus(user.mturkId, user.testAssignmentId, amount.toFixed(2));
   await Bonus.create({
@@ -494,7 +491,7 @@ export const stopBatch = async function(req, res) {
     };
     if (batch.status === "active" && process.env.MTURK_MODE !== "off") {
       //compensations
-      usersChangeQuery.systemStatus = "hasbanged";
+      (usersChangeQuery as any).systemStatus = "hasbanged";
       const batchLiveTime =
         moment().diff(moment(batch.startTime), "seconds") / 3600;
       let bonus = hourlyWage * batchLiveTime - 1; // Why is there a minus 1 here?
@@ -714,9 +711,9 @@ export const migrateUsers = async (req, res) => {
         QualificationTypeId: "3H0YKIU04V7ZVLLJH5UALJTJGXZ6DG",
       };
       if (NextToken) {
-        params.NextToken = NextToken;
+        (params as any).NextToken = NextToken;
       }
-      const data = await listWorkersWithQualificationType(params);
+      const data: any = await listWorkersWithQualificationType(params);
       hasbangedUsers = hasbangedUsers.concat(data.Qualifications);
       NextToken = data.NextToken;
       if (!NextToken) stop = true;
@@ -728,14 +725,14 @@ export const migrateUsers = async (req, res) => {
     stop = false;
     NextToken = "";
     while (!stop) {
-      let params = {
+      let params: any = {
         MaxResults: 100,
         QualificationTypeId: "3H3KEN1OLSVM98I05ACTNWVOM3JBI9",
       };
       if (NextToken) {
         params.NextToken = NextToken;
       }
-      const data = await listWorkersWithQualificationType(params);
+      const data: any = await listWorkersWithQualificationType(params);
       willbangUsers = willbangUsers.concat(data.Qualifications);
       NextToken = data.NextToken;
       if (!NextToken) stop = true;
@@ -747,19 +744,19 @@ export const migrateUsers = async (req, res) => {
     stop = false;
     NextToken = "";
     while (!stop) {
-      let params = {
+      let params: any = {
         MaxResults: 100,
       };
       if (NextToken) {
         params.NextToken = NextToken;
       }
-      const data = await listHITs(params);
+      const data: any = await listHITs(params);
       for (let i = 0; i < data.HITs.length; i++) {
         let stopAs = false,
           asNextToken = "";
         while (!stopAs) {
           const HIT = data.HITs[i];
-          let asParams = {
+          let asParams: any = {
             HITId: HIT.HITId,
             AssignmentStatuses: ["Submitted", "Approved"],
             MaxResults: 100,
@@ -767,7 +764,7 @@ export const migrateUsers = async (req, res) => {
           if (asNextToken) {
             asParams.NextToken = asNextToken;
           }
-          const as = await listAssignmentsForHIT(asParams);
+          const as: any = await listAssignmentsForHIT(asParams);
           assignments = assignments.concat(as.Assignments);
           console.log(as.Assignments.length + " added");
           asNextToken = as.NextToken;

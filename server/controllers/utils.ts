@@ -256,8 +256,8 @@ export const getHIT = (id) => {
   });
 };
 
-export const getAccountBalance = () => {
-  return new Promise((resolve, reject) => {
+export const getAccountBalance = () =>
+  new Promise((resolve, reject) => {
     mturk.getAccountBalance((err, data) => {
       if (err) {
         reject(err);
@@ -266,7 +266,6 @@ export const getAccountBalance = () => {
       }
     });
   });
-};
 
 export const disassociateQualificationFromWorker = (
   workerId,
