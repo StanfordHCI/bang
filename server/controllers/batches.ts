@@ -419,29 +419,17 @@ export const receiveSurvey = async function(data, socket, io) {
         logger.info(module, "Blocked survey, survey/user does not have batch");
         return;
       }
-      let bonusPrice = hourlyWage * getBatchTime(batch);
-      if (bonusPrice > 15) {
-        logger.info(module, "Bonus was changed for batch " + newSurvey.batch);
-        await notifyWorkers(
-          [process.env.MTURK_NOTIFY_ID],
-          "Bonus was changed from " +
-            bonusPrice +
-            "$ to 15$ for user " +
-            user.mturkId,
-          "Bang"
-        );
-        bonusPrice = 15;
-      }
+      let bonusAmount = hourlyWage * getBatchTime(batch);
       const bonus = await payBonus(
         socket.mturkId,
         socket.assignmentId,
-        bonusPrice.toFixed(2)
+        bonusAmount.toFixed(2)
       );
       if (bonus) {
         const newBonus = {
           batch: newSurvey.batch,
           user: socket.userId,
-          amount: bonusPrice,
+          amount: bonusAmount,
           assignment: socket.assignmentId,
         };
         await Bonus.create(newBonus);

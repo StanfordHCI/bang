@@ -248,17 +248,13 @@ export const addBatch = async function(req, res) {
         },
         {
           nickname: "helperBot",
-          message:
-            "You must be able to stay for the duration of this task, around 1 hour. If you cannot stay for the entire time, " +
-            "please leave now. You will not be compensated if you leave preemptively.",
+          message: `You must be able to stay for the duration of this task, around 1 hour. If you cannot stay for the entire time, please leave now. You will not be compensated if you leave preemptively.`,
           user: botId,
           time: new Date(),
         },
         {
           nickname: "helperBot",
-          message:
-            "We ask for your patience as we wait for enough active users to begin the task! " +
-            "Each 3 minutes, you will be reminded to type something into the chat so that we know you're active and ready to begin.",
+          message: `We ask for your patience as we wait for enough active users to begin the task! Each 3 minutes, you will be reminded to type something into the chat so that we know you're active and ready to begin.`,
           user: botId,
           time: new Date(),
         },
@@ -494,14 +490,13 @@ export const stopBatch = async function(req, res) {
       (usersChangeQuery as any).systemStatus = "hasbanged";
       const batchLiveTime =
         moment().diff(moment(batch.startTime), "seconds") / 3600;
-      let bonus = hourlyWage * batchLiveTime - 1; // Why is there a minus 1 here?
-      // if (bonus > 15) bonus = 15; // This seems not relevant here.
+      let bonusAmount = hourlyWage * batchLiveTime - 1;
       let bangPrs = [];
       batch.users.forEach((userObject) => {
         const user = userObject.user;
         //bangPrs.push(assignQual(user.mturkId, runningLive ? process.env.PROD_HAS_BANGED_QUAL : process.env.TEST_HAS_BANGED_QUAL))
-        if (bonus > 0 && userObject.isActive) {
-          bangPrs.push(handleBonus(bonus, user, batch));
+        if (bonusAmount > 0 && userObject.isActive) {
+          bangPrs.push(handleBonus(bonusAmount, user, batch));
         }
       });
       await Promise.all(bangPrs);
@@ -693,7 +688,7 @@ const startNotification = async (users) => {
       await timeout(400);
     }
   }
-  logger.info(module, "Start notification sent to " + users.length + " users");
+  logger.info(module, `Start notification sent to ${users.length} users`);
 };
 
 export const migrateUsers = async (req, res) => {

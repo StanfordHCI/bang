@@ -120,21 +120,15 @@ export const addHIT = (batch, isMain) => {
     let time = Date.now();
     const rewardPrice = 0.01;
     const duration = isMain ? 36000 : 250;
-    let bonusPrice = (hourlyWage * getBatchTime(batch)).toFixed(2);
+    let bonusAmount = (hourlyWage * getBatchTime(batch)).toFixed(2);
     let bg = "Recruit task. ";
     let HITTitle = batch.HITTitle
       ? batch.HITTitle
-      : bg + "Write online ads - bonus up to $" + hourlyWage + " / hour (";
+      : `${bg}Write online ads - bonus up to $${hourlyWage} / hour (`;
     const batchTime = Math.round(
       (batch.roundMinutes + batch.surveyMinutes) * batch.numRounds
     );
-    let description =
-      "Work in groups to do a collaborative task. This task will take approximately " +
-      batchTime +
-      " minute(s). " +
-      "There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" +
-      bonusPrice +
-      ".";
+    let description = `Work in groups to do a collaborative task. This task will take approximately ${batchTime} minute(s). There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $${bonusAmount}.`;
     let keywords = "groups, writing, collaboration, decision-making";
     let maxAssignments = isMain ? batch.teamSize * batch.teamSize * 4 : 100;
     let html = fs.readFileSync("./server/services/HITContent.html").toString();
