@@ -60,6 +60,8 @@ const quals = {
   },
 };
 
+export const hourlyWage = parseFloat(process.env.HOURLY_WAGE);
+
 const scheduleQuals = runningLive
   ? [
       quals.onlyUSA,
@@ -115,24 +117,17 @@ export const makeName = function(friends_history, teamSize) {
 export const addHIT = (batch, isMain) => {
   return new Promise((resolve, reject) => {
     let time = Date.now();
-    const hourlyWage = 12;
     const rewardPrice = 0.01;
     const duration = isMain ? 36000 : 250;
-    let bonusPrice = (hourlyWage * getBatchTime(batch)).toFixed(2);
+    let bonusAmount = (hourlyWage * getBatchTime(batch)).toFixed(2);
     let bg = "Recruit task. ";
     let HITTitle = batch.HITTitle
       ? batch.HITTitle
-      : bg + "Write online ads - bonus up to $" + hourlyWage + " / hour (";
+      : `${bg}Write online ads - bonus up to $${hourlyWage} / hour (`;
     const batchTime = Math.round(
       (batch.roundMinutes + batch.surveyMinutes) * batch.numRounds
     );
-    let description =
-      "Work in groups to do a collaborative task. This task will take approximately " +
-      batchTime +
-      " minute(s). " +
-      "There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $" +
-      bonusPrice +
-      ".";
+    let description = `Work in groups to do a collaborative task. This task will take approximately ${batchTime} minute(s). There will be a compensated waiting period, and if you complete the entire task you will receive a bonus of $${bonusAmount}.`;
     let keywords = "groups, writing, collaboration, decision-making";
     let maxAssignments = isMain ? batch.teamSize * batch.teamSize * 4 : 100;
     let html = fs.readFileSync("./server/services/HITContent.html").toString();
@@ -170,7 +165,11 @@ export const addHIT = (batch, isMain) => {
 export const notifyWorkers = (WorkerIds, MessageText, Subject) => {
   return new Promise((resolve, reject) => {
     mturk.notifyWorkers(
-      { WorkerIds: WorkerIds, MessageText: MessageText, Subject: Subject },
+      {
+        WorkerIds: WorkerIds,
+        MessageText: MessageText,
+        Subject: Subject,
+      },
       function(err, data) {
         if (err) {
           reject(err);
@@ -250,8 +249,8 @@ export const getHIT = (id) => {
   });
 };
 
-export const getAccountBalance = () => {
-  return new Promise((resolve, reject) => {
+export const getAccountBalance = () =>
+  new Promise((resolve, reject) => {
     mturk.getAccountBalance((err, data) => {
       if (err) {
         reject(err);
@@ -260,7 +259,6 @@ export const getAccountBalance = () => {
       }
     });
   });
-};
 
 export const disassociateQualificationFromWorker = (
   workerId,
@@ -727,7 +725,7 @@ export const calculateMoneyForBatch = (batch) => {
   const teamFormat = batch.teamFormat;
   const batchCapacity =
     teamFormat === "single" ? batch.teamSize : batch.teamSize ** 2;
-  return batchCapacity * 12 * getBatchTime(batch);
+  return batchCapacity * hourlyWage * getBatchTime(batch);
 };
 
 const roundFromFunction = (func, data) => {

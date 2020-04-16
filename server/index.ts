@@ -17,14 +17,14 @@ import {
   activeCheck,
   refreshActiveUsers,
   vote,
-  savePolls
+  savePolls,
 } from "./controllers/users";
 import {
   joinBatch,
   loadBatch,
   payStartBonus,
   receiveSurvey,
-  timeout
+  timeout,
 } from "./controllers/batches";
 import { errorHandler } from "./services/common";
 import {
@@ -33,7 +33,8 @@ import {
   notifyWorkers,
   assignQual,
   runningLive,
-  clearRoom
+  clearRoom,
+  hourlyWage,
 } from "./controllers/utils";
 import { User } from "./models/users";
 import { Batch } from "./models/batches";
@@ -43,7 +44,7 @@ const cors = require("cors");
 const cron = require("node-cron");
 let currentHIT = "";
 mongoose.Promise = global.Promise;
-mongoose.connection.on("error", err => {
+mongoose.connection.on("error", (err) => {
   errorHandler(
     err,
     "%s MongoDB connection error. Please make sure MongoDB is running."
@@ -62,7 +63,7 @@ const corsOptions = {
   origin: "*", //process.env.NODE_ENV === 'production' ? process.env.API_HOST : 'http://localhost:3000',
   methods: "GET,PUT,POST,DELETE,OPTIONS",
   allowedHeaders: "*",
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
 };
 
 app
@@ -92,14 +93,14 @@ let initialChecks = [
         batch: null,
         currentChat: null,
         realNick: null,
-        fakeNick: null
-      }
+        fakeNick: null,
+      },
     }
   ),
   Batch.updateMany(
     { $or: [{ status: "active" }, { status: "waiting" }] },
     { $set: { status: "completed" } }
-  )
+  ),
 ];
 
 // if (process.env.MTURK_MODE === "off") {
@@ -112,7 +113,7 @@ let initialChecks = [
 //       systemStatus: "willbang",
 //       isTest: true
 //     })
-//       .then(() => {})
+//       .then(() => { })
 //       .catch(err => errorHandler(err, "Test users error"));
 //   }
 // }
@@ -133,8 +134,8 @@ Promise.all(initialChecks)
   .then(() => {
     activeCheck(io);
     io.sockets.on("connection", function(socket) {
-      socket.on("init", data => socketMiddleware("init", init, data, socket));
-      socket.on("refresh-active-users", data =>
+      socket.on("init", (data) => socketMiddleware("init", init, data, socket));
+      socket.on("refresh-active-users", (data) =>
         socketMiddleware(
           "refresh-active-users",
           refreshActiveUsers,
@@ -142,28 +143,28 @@ Promise.all(initialChecks)
           socket
         )
       );
-      socket.on("disconnect", data =>
+      socket.on("disconnect", (data) =>
         socketMiddleware("disconnect", disconnect, data, socket)
       );
-      socket.on("send-message", data =>
+      socket.on("send-message", (data) =>
         socketMiddleware("send-message", sendMessage, data, socket)
       );
-      socket.on("join-batch", data =>
+      socket.on("join-batch", (data) =>
         socketMiddleware("join-batch", joinBatch, data, socket)
       );
-      socket.on("load-batch", data =>
+      socket.on("load-batch", (data) =>
         socketMiddleware("load-batch", loadBatch, data, socket)
       );
-      socket.on("send-survey", data =>
+      socket.on("send-survey", (data) =>
         socketMiddleware("send-survey", receiveSurvey, data, socket)
       );
-      socket.on("vote", data => socketMiddleware("vote", vote, data, socket));
-      socket.on("save-polls", data =>
+      socket.on("vote", (data) => socketMiddleware("vote", vote, data, socket));
+      socket.on("save-polls", (data) =>
         socketMiddleware("save-polls", savePolls, data, socket)
       );
     });
   })
-  .catch(err => {
+  .catch((err) => {
     errorHandler(err, "Initial checks error");
   });
 
@@ -190,16 +191,16 @@ cron.schedule("*/3 * * * *", async function() {
       message:
         "This is your friendly reminder to type something so we know you're active and ready!",
       user: botId,
-      time: new Date()
+      time: new Date(),
     };
     await Chat.findByIdAndUpdate(batch.preChat, {
-      $addToSet: { messages: botMessage }
+      $addToSet: { messages: botMessage },
     });
     io.to(batch.preChat).emit("receive-message", botMessage);
 
     let prs = [],
       kicked = [];
-    batch.users.forEach(item => {
+    batch.users.forEach((item) => {
       const user = item.user;
       if (
         moment().diff(moment(item.joinDate), "second") > 181 &&
@@ -209,12 +210,12 @@ cron.schedule("*/3 * * * *", async function() {
         //kick user
         prs.push(
           User.findByIdAndUpdate(user._id, {
-            $set: { batch: null, realNick: null, currentChat: null }
+            $set: { batch: null, realNick: null, currentChat: null },
           })
         );
         prs.push(
           Batch.findByIdAndUpdate(batch._id, {
-            $pull: { users: { user: user._id } }
+            $pull: { users: { user: user._id } },
           })
         );
         kicked.push(user);
@@ -222,7 +223,7 @@ cron.schedule("*/3 * * * *", async function() {
     });
     if (prs.length > 0) {
       await Promise.all(prs);
-      kicked.forEach(user => {
+      kicked.forEach((user) => {
         io.to(user.socketId).emit("kick-afk", true);
         logger.info(module, "user was kicked: " + user._id);
       });
@@ -242,7 +243,7 @@ if (process.env.MTURK_MODE !== "off") {
         .lean()
         .exec();
       if (batches && batches.length) {
-        const HIT = await addHIT(batches[0], false);
+        const HIT: any = await addHIT(batches[0], false);
         currentHIT = HIT.HITId;
         logger.info(module, "Recruit HIT created: " + currentHIT);
         let prs = [];
@@ -255,7 +256,7 @@ if (process.env.MTURK_MODE !== "off") {
             prs.push(payStartBonus(users, batch));
             prs.push(
               Batch.findByIdAndUpdate(batch._id, {
-                $set: { status: "completed" }
+                $set: { status: "completed" },
               })
             );
             prs.push(
@@ -266,13 +267,13 @@ if (process.env.MTURK_MODE !== "off") {
                     batch: null,
                     realNick: null,
                     fakeNick: null,
-                    currentChat: null
-                  }
+                    currentChat: null,
+                  },
                 }
               )
             );
             io.to(batch._id.toString()).emit("stop-batch", {
-              status: "waiting"
+              status: "waiting",
             });
             clearRoom(batch._id, io);
             logger.info(module, "Batch stopped: " + batch._id);
@@ -293,9 +294,9 @@ if (process.env.MTURK_MODE !== "off") {
         const params = {
           HITId: currentHIT,
           AssignmentStatuses: ["Submitted", "Approved", "Rejected"],
-          MaxResults: 100
+          MaxResults: 100,
         };
-        const as = (await listAssignmentsForHIT(params)).Assignments;
+        const as = ((await listAssignmentsForHIT(params)) as any).Assignments;
         if (as && as.length)
           for (let i = 0; i < as.length; i++) {
             const assignment = as[i];
@@ -308,20 +309,12 @@ if (process.env.MTURK_MODE !== "off") {
                 assignment.AssignmentId +
                 "&workerId=" +
                 assignment.WorkerId;
-              const message =
-                "Hi, thanks for accepting our HIT! " +
-                "Your FULL participation will earn you a bonus of $12/hour." +
-                "\n\n" +
-                "You can join the task here: " +
-                url +
-                "\n\n" +
-                "The link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. " +
-                "NOTE: You will be bonused $1 if enough users join the waiting room and the task starts.";
+              const message = `Hi, thanks for accepting our HIT! Your FULL participation will earn you a bonus of $${hourlyWage}/hour.\\n\\nYou can join the task here: ${url}\\n\\nThe link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. NOTE: You will be bonused $1 if enough users join the waiting room and the task starts.`;
               let prs = [
                 User.create({
                   token: assignment.WorkerId,
                   mturkId: assignment.WorkerId,
-                  testAssignmentId: assignment.AssignmentId
+                  testAssignmentId: assignment.AssignmentId,
                 }),
                 assignQual(
                   assignment.WorkerId,
@@ -329,7 +322,7 @@ if (process.env.MTURK_MODE !== "off") {
                     ? process.env.PROD_WILL_BANG_QUAL
                     : process.env.TEST_WILL_BANG_QUAL
                 ),
-                notifyWorkers([assignment.WorkerId], message, "Bang")
+                notifyWorkers([assignment.WorkerId], message, "Bang"),
               ];
               await Promise.all(prs);
               logger.info(

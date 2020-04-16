@@ -7,87 +7,147 @@
  *    1. Router.js
  */
 
-import React, {PureComponent} from 'react';
-import {Card, CardBody, Col, Row, Container, Button, ButtonToolbar} from 'reactstrap';
-import {connect} from "react-redux";
-import {notifyUsers} from "Actions/admin";
-import {bindActionCreators} from "redux";
-
+import React, { PureComponent } from "react";
+import {
+  Card,
+  CardBody,
+  Col,
+  Row,
+  Container,
+  Button,
+  ButtonToolbar,
+} from "reactstrap";
+import { connect } from "react-redux";
+import { notifyUsers } from "Actions/admin";
+import { bindActionCreators } from "redux";
+import { hourlyWage } from "../../utils";
 
 class Notify extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      note: '',
+      note: "",
       notifyLimit: 0,
-      notifyPass: 200
-    }
+      notifyPass: 200,
+    };
   }
 
   handleSubmitMessage = () => {
-    this.props.notifyUsers({start: false, message: this.state.note, limit: this.state.notifyLimit, pass: this.state.notifyPass})
-  }
+    this.props.notifyUsers({
+      start: false,
+      message: this.state.note,
+      limit: this.state.notifyLimit,
+      pass: this.state.notifyPass,
+    });
+  };
 
   handleSubmitStart = () => {
-    this.props.notifyUsers({start: true, limit: this.state.notifyLimit, pass: this.state.notifyPass})
-  }
+    this.props.notifyUsers({
+      start: true,
+      limit: this.state.notifyLimit,
+      pass: this.state.notifyPass,
+    });
+  };
 
   handleNoteChange = (e) => {
-    this.setState({note: e.target.value})
-  }
+    this.setState({ note: e.target.value });
+  };
 
   handleLimitChange = (e) => {
-    this.setState({notifyLimit: e.target.value})
-  }
+    this.setState({ notifyLimit: e.target.value });
+  };
 
   handlePassChange = (e) => {
-    this.setState({notifyPass: e.target.value})
-  }
+    this.setState({ notifyPass: e.target.value });
+  };
 
   render() {
     return (
       <Container>
         <Card>
           <CardBody>
-            <div className='card__title'>
-              <h5 className='bold-text'>You can send custom message to all willbang users</h5>
+            <div className="card__title">
+              <h5 className="bold-text">
+                You can send custom message to all willbang users.
+              </h5>
             </div>
-            <div className='form'>
-              <div className='form__form-group-input-wrap' style={{marginTop: '10px'}}>
-                <textarea placeholder="add note..." rows="5" value={this.state.note} onChange={this.handleNoteChange}/>
+            <div className="form">
+              <div
+                className="form__form-group-input-wrap"
+                style={{ marginTop: "10px" }}
+              >
+                <textarea
+                  placeholder="add note..."
+                  rows="5"
+                  value={this.state.note}
+                  onChange={this.handleNoteChange}
+                />
               </div>
             </div>
-            <ButtonToolbar className='mx-auto form__button-toolbar'>
-              <Button onClick={this.handleSubmitMessage} disabled={!this.state.note} color='primary' size='sm' type='button' >Notify Specified Users with Custom Message</Button>
+            <ButtonToolbar className="mx-auto form__button-toolbar">
+              <Button
+                onClick={this.handleSubmitMessage}
+                disabled={!this.state.note}
+                color="primary"
+                size="sm"
+                type="button"
+              >
+                Notify Specified Users with Custom Message
+              </Button>
             </ButtonToolbar>
-            <div className='form'>
-              <div className='form__form-group-input-wrap' style={{marginTop: '10px'}}>
-                <label className='form__form-group-label'>how many:</label>
-                <input type="number" value={this.state.notifyLimit} onChange={this.handleLimitChange}/>
-                <label className='form__form-group-label'>how many to skip:</label>
-                <input type="number" value={this.state.notifyPass} onChange={this.handlePassChange}/>
+            <div className="form">
+              <div
+                className="form__form-group-input-wrap"
+                style={{ marginTop: "10px" }}
+              >
+                <label className="form__form-group-label">how many:</label>
+                <input
+                  type="number"
+                  value={this.state.notifyLimit}
+                  onChange={this.handleLimitChange}
+                />
+                <label className="form__form-group-label">
+                  how many to skip:
+                </label>
+                <input
+                  type="number"
+                  value={this.state.notifyPass}
+                  onChange={this.handlePassChange}
+                />
               </div>
             </div>
-            <ButtonToolbar className='mx-auto form__button-toolbar'>
-              <Button onClick={this.handleSubmitStart} color='danger' size='sm' type='button' >Notify Specified Users with Start Link</Button>
+
+            <ButtonToolbar className="mx-auto form__button-toolbar">
+              <Button
+                onClick={this.handleSubmitStart}
+                color="danger"
+                size="sm"
+                type="button"
+              >
+                Notify Specified Users with Start Link
+              </Button>
             </ButtonToolbar>
           </CardBody>
         </Card>
       </Container>
-    )
+    );
   }
 }
 
 function mapStateToProps(state) {
-  return {
-
-  }
+  return {};
 }
 
 function mapDispatchToProps(dispatch) {
-  return bindActionCreators({
-    notifyUsers
-  }, dispatch);
+  return bindActionCreators(
+    {
+      notifyUsers,
+    },
+    dispatch
+  );
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(Notify);
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Notify);

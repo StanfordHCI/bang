@@ -79,3 +79,5 @@ R/allChatFiles.csv
 .idea/*
 .vscode/*
 .DS_Store
+token.json
+.nova/*
