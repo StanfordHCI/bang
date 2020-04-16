@@ -2,14 +2,14 @@ const chooseOne = <T>(list: T[]): T => {
   return list[Math.floor(Math.random() * list.length)];
 };
 
-const teamChecker = roundTeams => {
+const teamChecker = (roundTeams) => {
   let collaborators = {};
-  roundTeams.forEach(teams => {
+  roundTeams.forEach((teams) => {
     Object.entries(teams).forEach(([teamName, team]: [string, string[]]) => {
       team.forEach((person: string) => {
-        let others = team.filter(member => member != person);
+        let others = team.filter((member) => member != person);
         if (person in collaborators) {
-          others.forEach(member => {
+          others.forEach((member) => {
             if (collaborators[person].includes(member)) {
               return false;
             }
@@ -25,19 +25,19 @@ const teamChecker = roundTeams => {
 };
 
 const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-const randomAnimal = "Bison Eagle Pony Moose Deer Duck Rabbit Spider Wolf Lion Snake Shark Bird Bear Fish Horse Badger Marten Otter Lynx".split(
+const randomAnimal = "Camel Dolphin Elephant Monkey Otter Zebra Horse Giraffe Bear Gorilla Hippo Bison".split(
   " "
 );
-const randomAdjective = "new small young little likely nice cultured snappy spry conventional".split(
+const randomAdjective = "bright curious delighted eager excited inquisitive light lively novel inspired fulfilled open".split(
   " "
 );
-let nameCount =  2;
+let nameCount = 2;
 
 const createTeams = (teamSize: number, numRounds: number, people: string[]) => {
   //MEW: helper to convert sets without a type change because we need them.
   function set(array: any[]) {
     const setArray = [];
-    array.forEach(element => {
+    array.forEach((element) => {
       if (!setArray.includes(element)) {
         setArray.push(element);
       }
@@ -52,7 +52,7 @@ const createTeams = (teamSize: number, numRounds: number, people: string[]) => {
 
   let roundTeams = [];
   let collaborators = {};
-  realPeople.forEach(person => {
+  realPeople.forEach((person) => {
     collaborators[person] = [person];
   });
 
@@ -65,22 +65,24 @@ const createTeams = (teamSize: number, numRounds: number, people: string[]) => {
       while (team.length < teamSize) {
         let teamCollaborators = set(
           team
-            .map(member => collaborators[member])
+            .map((member) => collaborators[member])
             .reduce((a, b) => a.concat(b))
         ); //find all prior collaborators
         let remainingOptions = unUsedPeople.filter(
-          person => !teamCollaborators.includes(person)
+          (person) => !teamCollaborators.includes(person)
         ); //find all remaining options
         if (!remainingOptions.length) {
           return createTeams(teamSize, numRounds, realPeople);
         } // deal with random selection overlap
         let newCollaborator = chooseOne(remainingOptions);
-        unUsedPeople = unUsedPeople.filter(person => person != newCollaborator); //update unused people
+        unUsedPeople = unUsedPeople.filter(
+          (person) => person != newCollaborator
+        ); //update unused people
 
         team.push(newCollaborator); // add new collaborator into the team
       }
 
-      team.forEach(member => {
+      team.forEach((member) => {
         collaborators[member] = set(collaborators[member].concat(team));
       }); //Add collaborators from new team
       teams[teamNames[Object.keys(teams).length]] = team; //Add new team
@@ -129,5 +131,5 @@ module.exports = {
       });
     }
   },
-  randomAnimal: randomAnimal
+  randomAnimal: randomAnimal,
 };
