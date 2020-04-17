@@ -93,10 +93,10 @@ export const chooseOne = <T>(list: T[]): T => {
 };
 
 export const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-const randomAnimal = "Camel Dolphin Elephant Monkey Otter Zebra Horse Giraffe Bear Gorilla Hippo Bison".split(
+export const randomAnimal = "Camel Dolphin Elephant Monkey Otter Zebra Horse Giraffe Bear Gorilla Hippo Bison".split(
   " "
 );
-const randomAdjective = "bright curious delighted eager excited inquisitive light lively novel inspired fulfilled open".split(
+export const randomAdjective = "bright curious delighted eager excited inquisitive light lively novel inspired fulfilled open".split(
   " "
 );
 const externalHIT = (taskURL, height = 700) =>
@@ -105,14 +105,6 @@ const externalHIT = (taskURL, height = 700) =>
   "</ExternalURL><FrameHeight>" +
   height +
   "</FrameHeight></ExternalQuestion>";
-
-export const makeName = function(friends_history, teamSize) {
-  if (!friends_history) {
-    let adjective = chooseOne(randomAdjective);
-    let animal = chooseOne(randomAnimal);
-    return { username: adjective + animal, parts: [adjective, animal] };
-  }
-};
 
 export const addHIT = (batch, isMain) => {
   return new Promise((resolve, reject) => {
@@ -401,6 +393,7 @@ export let createOneTeam: (
   numRounds: number,
   people: any[]
 ) => void;
+
 createOneTeam = (teamSize: number, numRounds: number, people: any[]) => {
   const rounds = [];
   while (rounds.length < numRounds) {
