@@ -13,8 +13,8 @@ class Vote extends Component {
             disabled: false,
             warnings: {
                 'casual': <div>
-                    <p style={{color: 'red'}}>Warning: not everyone is in agreement.</p>
-                    <p style={{color: 'grey'}}>You should all be in agreement before the round ends!</p>
+                    <p style={{color: 'grey'}}>You should all try to agree.</p>
+                    <p style={{color: 'grey'}}>However, please do not give up your honest beliefs.</p>
                 </div>
             },
             votes: [],
