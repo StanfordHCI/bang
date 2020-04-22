@@ -26,16 +26,17 @@ MTURK_NOTIFY_ID - special mturk worker-user for notifications about experiment.
 ```
 
 4. Set up mongodb (ver. 4.0)
-5. Start the server (port 3001) by running `node built/index.js`. 
+5. Start the server (port 3001) by running `node built/index.js`.
 6. Build front in prod mode by `npm run build-front` and use /front/build/ as static folder or
-Start dev front-server with hot reload by `npm run start-front` (port 3000)
+   Start dev front-server with hot reload by `npm run start-front` (port 3000)
 
 ## Source/etc files
-All server code - /server; 
-All front code - /front/src, /front/public; 
+
+All server code - /server;
+All front code - /front/src, /front/public;
 Front building utils - /front/scripts, /front/config;
 Built front code - /front/build;
-Built server code - /built; 
+Built server code - /built;
 
 ## Developing
 
@@ -45,7 +46,7 @@ The URL parameters are required because they are read in from Amazon Mechanical 
 
 ## Specification
 
-Bang has the following core functionality:  
+Bang has the following core functionality:
 
 1. Get workers registered to do our task
 2. Recruit workers via a waiting room
@@ -56,14 +57,14 @@ These will be explained in more detail below:
 
 ### Registration
 
-A HIT that runs every hour will allow workers to sign up to be notified of experimental runs in the future. This HIT is low price, `$0.01` reward, and adds the workers who complete it to our `willBang` qualification list. This HIT also includes our IRB. Currently these features are set up in `scheduleBang.ts`. 
+A HIT that runs every hour will allow workers to sign up to be notified of experimental runs in the future. This HIT is low price, `$0.01` reward, and adds the workers who complete it to our `willBang` qualification list. This HIT also includes our IRB. Currently these features are set up in `scheduleBang.ts`.
 
 ### Recruiting
 
 When we start an experiment we need `TEAM_SIZE`(from the `.env` file) squared participants to be active in the `waitChat` before we can start the experiment. This recruiting process initially notifies our `willBang` list and optionally makes the HIT available to other workers on MTurk. During recruiting if participants are not active in `waitChat` we remove them and pay them a nominal participation fee. Once there are enough active workers we remove their `willBang` qualification and add the `hasBanged` qualification, which makes it impossible for them to work on our experiments again. Also at this time, we usually notify ourselves that the experiment has launched.
 
 `waitChatOn` controls if a chatbot should be shown before the main task starts. This is designed so that the participants can stay engaged through the chat interaction and we can make sure they are present. For example, when participants don't respond to the chat bot for a certain time period we no longer consider them active.
-Note: `waitChatOn` exists  in `server.js` and `public/client.js` and needs to have the same value in both places to work as designed.
+Note: `waitChatOn` exists in `server.js` and `public/client.js` and needs to have the same value in both places to work as designed.
 
 ### Running the experiment
 
@@ -76,20 +77,22 @@ The experiment works by generating several chat rooms, each of `TEAM_SIZE` peopl
    3. post chat activities
 3. post experiment activities
 
-There are usually several rounds of chats and critically, some are with prior teams and some are with random teams. We can can control and randomize when this happens. The user names of each individual are randomized with `makeName` from `tools.ts` and the team configurations are governed by `createTeams` in the same file.
+There are usually several rounds of chats and critically, some are with prior teams and some are with random teams. We can can control and randomize when this happens. The user names of each individual are randomized and the team configurations are governed by `createTeams` in the `utils.ts` file.
 
 We are moving toward a model where bang can be run with a variety of tasks and activities outlined in an external file, so as to make it easier to run different types of experiments.
 
 ### Paying
 
-At the end of the task, we provide bonuses to our workers and follow up with any who experienced errors. This currently happens at the start  of the next round of the experiment or on a cron script.
+At the end of the task, we provide bonuses to our workers and follow up with any who experienced errors. This currently happens at the start of the next round of the experiment or on a cron script.
 
 ### System workflow
+
 To achieve admin’s access you need to add following keys into the Local Storage:
 bang-token: any test user mturkId
-bang-admin-token:  (value ADMIN_TOKEN from the .env file)
+bang-admin-token: (value ADMIN_TOKEN from the .env file)
 
-	List of the links which are available only for admin user:
+    List of the links which are available only for admin user:
+
 /templates
 /templates-add
 /batches
@@ -99,9 +102,9 @@ bang-admin-token:  (value ADMIN_TOKEN from the .env file)
 
 main workflow:
 
-For start experiment you need to add new batch at the /batches-add page. After that in will have “waiting” status and server will start posting qualification HITs every 4 minutes. 
+For start experiment you need to add new batch at the /batches-add page. After that in will have “waiting” status and server will start posting qualification HITs every 4 minutes.
 Qualification HITs’ lifetime is 250 sec. Server will notify all 'willbang' users (from previous run) in our db to join us.
-All people which are ready with the qualification HIT achieve willBang qualification on Mturk and get email invite to the main task in our site. 
-When in the waiting room there’re enough participants, they get ability to join the batch. After enough people are joined batch experiment automatically starts. 
+All people which are ready with the qualification HIT achieve willBang qualification on Mturk and get email invite to the main task in our site.
+When in the waiting room there’re enough participants, they get ability to join the batch. After enough people are joined batch experiment automatically starts.
 As experiment is started all joined participants get start bonus, for now it’s $1.00, and achieve hasBanged qualification on Mturk/our db. 
 From now those participants can’t see our Mturk’s task anymore. After final survey is completed by participant they are paid out a completion bonus at a predetermined hourly wage (nominally $15/hour based on the [fair work](https://fairwork.stanford.edu) rate).

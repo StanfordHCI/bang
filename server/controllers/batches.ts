@@ -7,6 +7,8 @@ import { Batch } from "../models/batches";
 import { Bonus } from "../models/bonuses";
 import { Survey } from "../models/surveys";
 import {
+  randomAnimal,
+  randomAdjective,
   clearRoom,
   expireHIT,
   assignQual,
@@ -25,12 +27,6 @@ import { errorHandler } from "../services/common";
 import { io } from "../index";
 const logger = require("../services/logger");
 const botId = "100000000000000000000001";
-const randomAnimal = "Squirrel Rhino Horse Pig Panda Monkey Lion Orangutan Gorilla Hippo Rabbit Wolf Goat Giraffe Donkey Cow Bear Bison".split(
-  " "
-);
-const randomAdjective = "new small young little likely nice cultured snappy spry conventional".split(
-  " "
-);
 const BEST = "best";
 const WORST = "worst";
 const STANDARD = "standard";
@@ -61,12 +57,22 @@ export const joinBatch = async function(data, socket, io) {
       let nickname;
       let adjective;
       let animal;
+
       while (!nickname) {
         animal = chooseOne(randomAnimal);
         adjective = chooseOne(randomAdjective);
         nickname = adjective + animal;
         batch.users.forEach((user) => {
-          if (user.nickname === nickname) {
+          // make sure every user has a unique animal if there are enough animals
+          if (
+            totalBatchUsers > randomAnimal.length &&
+            user.nickname === nickname
+          ) {
+            nickname = false;
+          } else if (
+            user.nickname.includes(animal) ||
+            user.nickname.includes(adjective)
+          ) {
             nickname = false;
           }
         });
@@ -656,24 +662,43 @@ export const payStartBonus = async (users, batch) => {
 const generateTeams = (roundGen, users, roundNumber, oldNicks) => {
   let teams = roundGen[roundNumber - 1].teams.map((team, index) => {
     let teamAnimals = [],
-      teamUsers = [];
+      teamUsers = [],
+      teamAdj = [],
+      prevAnimals = [];
+
+    // don't use animals on any of the users' real nicknames
     team.users.forEach((user) => {
-      let partner = users[user].realNick.slice();
-      for (let i = 0; i < partner.length; i++) {
-        if (partner[i] === partner[i].toUpperCase()) {
-          index = i;
-          break;
-        }
-      }
-      teamAnimals.push(partner.slice(0, index));
+      let animal = users[user].realNick.match(/([A-Z])\w+/)[0];
+      prevAnimals.push(animal);
     });
-    let animals = randomAnimal
-      .slice()
-      .filter((x) => !teamAnimals.some((y) => y === x));
-    let adjectives = randomAdjective.slice();
+
+    // don't use animals on any of the previous users' real nicknames
+    oldNicks.forEach((nick) => {
+      let animal = nick.match(/([A-Z])\w+/)[0];
+      prevAnimals.push(animal);
+    });
+
+    let animals = randomAnimal.filter((x) => !prevAnimals.includes(x));
+
+    if (animals.length < team.users.length) {
+      // too few animals
+      console.log("too few animals");
+      animals = randomAnimal;
+    }
+
+    console.log(animals);
+
+    let adjectives = randomAdjective;
+    // for each user pick a unique animal and adjective
     for (let i = 0; i < team.users.length; i++) {
       let nickname, animal, adj;
-      animals = animals.filter((x) => !teamAnimals.some((y) => y === x));
+
+      // filters animal and adjective list so that we don't repeat any animals or adjectives this round
+      animals = animals.filter((x) => !teamAnimals.includes(x));
+      adjectives = adjectives.filter((x) => !teamAdj.includes(x));
+
+      // make sure none of the old nicknames are the same as the new nickname
+      // adds new nickname to old nickname list
       while (true) {
         animal = chooseOne(animals);
         adj = chooseOne(adjectives);
@@ -681,6 +706,7 @@ const generateTeams = (roundGen, users, roundNumber, oldNicks) => {
         if (!oldNicks.some((x) => x === nickname)) {
           oldNicks.push(nickname);
           teamAnimals.push(animal);
+          teamAdj.push(adj);
           teamUsers.push({
             user: users[team.users[i]]._id,
             nickname: nickname,
