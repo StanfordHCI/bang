@@ -419,26 +419,6 @@ export const loadUserList = async function(req, res) {
   }
 };
 
-export const loadUserDemographics = async function(req, res) {
-  try {
-    let users = await usersWithBonuses();
-    users.forEach((user) => {
-      user.gender = user.gender;
-      user.yearBorn = user.yearBorn;
-      user.householdEarnings = user.householdEarnings;
-      user.hispanicLatinoSpanish = user.hispanicLatinoSpanish;
-      user.race = user.race;
-      user.juryExperience = user.juryExperience;
-      user.emily = "this is a test to prove that the code is working";
-      return user;
-    });
-
-    res.json({ users: users });
-  } catch (e) {
-    errorHandler(e, "load users error");
-  }
-};
-
 export const deleteUser = async function(req, res) {
   try {
     await User.findByIdAndRemove(req.body._id)

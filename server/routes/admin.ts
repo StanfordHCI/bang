@@ -8,7 +8,6 @@ module.exports = function(app) {
 
   adminRoutes
     .get("/users", adminController.loadUserList)
-    .get("/userdem", adminController.loadUserDemographics)
     .delete("/users", adminController.deleteUser)
     .post("/users/", adminController.addUser)
     .post("/users/pay-bonus", adminController.bonusAPI)
