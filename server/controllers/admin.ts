@@ -456,23 +456,15 @@ export const addUser = async function(req, res) {
 };
 
 const notifyUserToFillDemogrpahicSurvey = async function(req, res) {
-  const user = await User.findOne({ _id: req.params.id });
-  return new Promise((resolve, reject) => {
-    mturk.notifyWorkers(
-      {
-        WorkerIds: user.mturkId,
-        MessageText: "Hi there! You are getting this email because you recently completed one of our tasks. We would like to follow up on our task with an additional short demographic quiz. This should take you about one minute, and we will pay you a bonus of $1! Thank you so much again for your work; we really appreciate your time. You can take the survey at: https://stanforduniversity.qualtrics.com/jfe/form/SV_3pKTAsf6UUcX5Rj",
-        Subject: "[Action Requested] Please Fill Out Survey For Additional $1 Bonus!",
-      },
-      function(err, data) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(data);
-        }
-      }
-    );
-  });
+  try{
+    const user = await User.findOne({ _id: req.params.id });
+    const message = "Hi there! You are getting this email because you recently completed one of our tasks. We would like to follow up on our task with an additional short demographic quiz. This should take you about one minute, and we will pay you a bonus of $1! Thank you so much again for your work; we really appreciate your time. You can take the survey at: https://stanforduniversity.qualtrics.com/jfe/form/SV_3pKTAsf6UUcX5Rj";
+    const subject = "[Action Requested] Please Fill Out Survey For Additional $1 Bonus!";
+    await notifyWorkers(user.mturkId, message, subject);
+    res.json({user: user});
+  }catch(e){
+    errorHandler(e, "notify user error");
+  }
 };
 
 const handleBonus = async function(amount, userId, batch = null) {
