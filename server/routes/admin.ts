@@ -16,6 +16,8 @@ module.exports = function(app) {
     .put("/batches/:id/stop/", adminController.stopBatch)
     .post("/batches/", adminController.addBatch)
 
+    .post("/notify-demographics", adminController.notifyUserToFillDemogrpahicSurvey)
+
     .get("/templates/:id", templateController.loadTemplate)
     .get("/templates/", templateController.loadTemplateList)
     .post("/templates/clone/", templateController.cloneTemplate)
