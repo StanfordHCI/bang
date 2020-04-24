@@ -429,7 +429,7 @@ export const loadUserDemographics = async function(req, res) {
       user.hispanicLatinoSpanish = user.hispanicLatinoSpanish;
       user.race = user.race;
       user.juryExperience = user.juryExperience;
-    
+      user.emily = "this is a test to prove that the code is working";
       return user;
     });
 
