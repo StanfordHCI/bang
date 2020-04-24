@@ -16,7 +16,7 @@ module.exports = function(app) {
     .put("/batches/:id/stop/", adminController.stopBatch)
     .post("/batches/", adminController.addBatch)
 
-    .post("/notify-demographics", adminController.notifyUserToFillDemogrpahicSurvey)
+    .post("/notify-demographics/:id/", adminController.notifyUserToFillDemogrpahicSurvey)
 
     .get("/templates/:id", templateController.loadTemplate)
     .get("/templates/", templateController.loadTemplateList)

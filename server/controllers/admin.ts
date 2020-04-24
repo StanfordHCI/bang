@@ -455,8 +455,8 @@ export const addUser = async function(req, res) {
   }
 };
 
-const notifyUserToFillDemogrpahicSurvey = async function(userId, batch = null) {
-  const user = await User.findOne({ _id: userId });
+const notifyUserToFillDemogrpahicSurvey = async function(req, res) {
+  const user = await User.findOne({ _id: req.params.id });
   return new Promise((resolve, reject) => {
     mturk.notifyWorkers(
       {
