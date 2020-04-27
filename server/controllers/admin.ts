@@ -624,7 +624,7 @@ export const notifyUsers = async function(req, res) {
   try {
     let prs = [];
     if (req.body.start) {
-      const users = await User.find({ systemStatus: "willbang", isTest: true })
+      const users = await User.find({ systemStatus: "willbang", isTest: false })
         .sort({ createdAt: -1 })
         .skip(parseInt(req.body.pass))
         .limit(parseInt(req.body.limit))
