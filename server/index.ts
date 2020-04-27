@@ -309,7 +309,7 @@ if (process.env.MTURK_MODE !== "off") {
                 assignment.AssignmentId +
                 "&workerId=" +
                 assignment.WorkerId;
-              const message = `Hi, thanks for accepting our HIT! Your FULL participation will earn you a bonus of $${hourlyWage}/hour.\\n\\nYou can join the task here: ${url}\\n\\nThe link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. NOTE: You will be bonused $1 if enough users join the waiting room and the task starts.`;
+              const message = `Hi, thanks for accepting our HIT! Your FULL participation will earn you a bonus of $${hourlyWage}/hour. You can join the task here: ${url}  The link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. NOTE: You will be bonused $1 if enough users join the waiting room and the task starts.`;
               let prs = [
                 User.create({
                   token: assignment.WorkerId,
