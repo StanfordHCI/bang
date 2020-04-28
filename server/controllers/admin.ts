@@ -660,41 +660,33 @@ export const notifyUsers = async function(req, res) {
 };
 
 const startNotification = async (users) => {
-  let counter = 0;
+  logger.info(module, `Trying ${users.length} start notifications`);
   for (let i = 0; i < users.length; i++) {
     const user = users[i];
-    let url =
-      process.env.HIT_URL +
-      "?assignmentId=" +
-      user.testAssignmentId +
-      "&workerId=" +
-      user.mturkId;
-    if (user.genNumber) {
-      url += "&genNumber=" + user.genNumber;
-    }
-
-    console.log("batchId: ", user.batchId);
-    if (user.batchId) {
-      url += "&batchId=" + user.batchId;
-    }
-    const unsubscribe_url = process.env.HIT_URL + "unsubscribe/" + user.mturkId;
-    const message = `Hi! Our HIT is now active. We are starting a new experiment on Bang. Your FULL participation will earn you a bonus of $${hourlyWage}/hour.  \n\nPlease join the HIT here: ${url} \n\nThe link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. NOTE: You will be bonused $1 if enough users join the waiting room and the task starts. \n\nOur records indicate that you were interested in joining this HIT previously. If you are no longer interested in participating, please UNSUBSCRIBE here: ${unsubscribe_url}`;
-    notifyWorkers([user.mturkId], message, "Bang")
-      .then(() => {
-        counter++;
-        if (i == 0) {
-          logger.info(
-            module,
-            `Notification sent to first user: \n\n${message}`
-          );
-        }
-      })
-      .catch((e) => {});
-    if (i % 5 === 0 && i > 0) {
+    const url = `${process.env.HIT_URL}?assignmentId=${
+      user.testAssignmentId
+    }&workerId=${user.mturkId}${
+      user.genNumber ? `&genNumber=${user.genNumber}` : ""
+    }${user.batchId ? `&batchId=${user.batchId}` : ""}`;
+    const unsubscribe_message = `You received this because you completed our registration task in the past. If you are no longer interested in participating, please UNSUBSCRIBE here: ${
+      process.env.HIT_URL
+    }unsubscribe/${user.mturkId}`;
+    const subject = `Join $${hourlyWage}/hour task`;
+    const message = `Hi ${
+      user.mturkId
+    } — our task is now active. Your FULL participation will earn you a bonus for your time at $${hourlyWage}/hour. \n\nIf you have time to be part of the task (about 1-2 uninterrupted hours), join here now: ${url} \n\nThe link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM, if enough people join, the task will start. NOTE: You will get a $1 bonus if enough users join the waiting room and the task starts. You will get another bonus if you complete the entire task. \n\nDon't worry if you can't join now — we will let you know next time our task is active.\n\n${unsubscribe_message}`;
+    notifyWorkers([user.mturkId], message, subject)
+      .then(() => {})
+      .catch((e) => {
+        logger.info(module, `Notification failed: ${user.mturkId}`);
+      });
+    if (i == 0) {
+      logger.info(module, `Start notification: ${subject}\n\n${message}\n`);
+    } else if (i % 5 === 0) {
+      logger.info(module, `Pausing notifications to avoid timeout`);
       await timeout(400);
     }
   }
-  logger.info(module, `Start notification sent to ${counter} users`);
 };
 
 export const migrateUsers = async (req, res) => {

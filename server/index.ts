@@ -118,6 +118,20 @@ let initialChecks = [
 //   }
 // }
 
+// if (process.env.MTURK_MODE === "off") {
+//   logger.info(module, "created Mark user");
+//     User.create({
+//       token: "A19MTSLG2OYDLZ",
+//       mturkId: "A19MTSLG2OYDLZ",
+//       testAssignmentId: "test",
+//       systemStatus: "willbang",
+//       isTest: true
+//     })
+//       .then(() => { })
+//       .catch(err => errorHandler(err, "Test users error"));
+//   }
+// }
+
 // if (process.env.MTURK_MODE === 'off') {
 //   logger.info(module, 'created fake bonuses');
 //   for (let i = 0; i < 16; i++ ) {
