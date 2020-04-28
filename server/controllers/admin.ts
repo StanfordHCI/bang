@@ -678,7 +678,7 @@ const startNotification = async (users) => {
       url += "&batchId=" + user.batchId;
     }
     const unsubscribe_url = process.env.HIT_URL + "unsubscribe/" + user.mturkId;
-    const message = `Hi! Our HIT is now active. We are starting a new experiment on Bang. Your FULL participation will earn you a bonus of $${hourlyWage}/hour. \\n\\nPlease join the HIT here: ${url}\\n\\nThe link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. NOTE: You will be bonused $1 if enough users join the waiting room and the task starts.\\n\\nOur records indicate that you were interested in joining this HIT previously. If you are no longer interested in participating, please UNSUBSCRIBE here: ${unsubscribe_url}`;
+    const message = `Hi! Our HIT is now active. We are starting a new experiment on Bang. Your FULL participation will earn you a bonus of $${hourlyWage}/hour.  \n \nPlease join the HIT here: ${url} \n \nThe link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM. NOTE: You will be bonused $1 if enough users join the waiting room and the task starts. \n \nOur records indicate that you were interested in joining this HIT previously. If you are no longer interested in participating, please UNSUBSCRIBE here: ${unsubscribe_url}`;
     notifyWorkers([user.mturkId], message, "Bang")
       .then(() => {
         counter++;
@@ -688,7 +688,10 @@ const startNotification = async (users) => {
       await timeout(400);
     }
   }
-  logger.info(module, `Start notification sent to ${users.length} users`);
+  logger.info(
+    module,
+    `Start notification sent to ${users.length} users: \n\n${message}`
+  );
 };
 
 export const migrateUsers = async (req, res) => {

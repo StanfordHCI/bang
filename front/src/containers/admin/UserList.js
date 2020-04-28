@@ -195,7 +195,7 @@ class UserList extends React.Component {
                                 }}
                                 onClick={() => this.props.deleteUser(user._id)}
                               >
-                                Delete {user.mturkId}
+                                Delete user
                               </Button>
                             </td>
                           </tr>
