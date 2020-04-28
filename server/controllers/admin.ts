@@ -641,21 +641,27 @@ export const notifyUsers = async function(req, res) {
         .lean()
         .exec();
       let workers = [];
+      logger.info(module, `Trying ${users.length} custom notifications`);
+      const subject = `Bang!`;
+      const message = `${
+        req.body.message
+      } \n\nYou received this because you completed our registration task in the past. If you are no longer interested in participating, please UNSUBSCRIBE here: ${
+        process.env.HIT_URL
+      }unsubscribe`;
+      logger.info(module, `Custom notification: ${subject}\n\n${message}\n`);
       users.forEach((user) => {
         workers.push(user.mturkId);
         if (workers.length >= 99) {
-          prs.push(notifyWorkers(workers.slice(), req.body.message, "Bang"));
+          prs.push(notifyWorkers(workers.slice(), message, subject));
           workers = [];
         }
       });
-      prs.push(notifyWorkers(workers.slice(), req.body.message, "Bang"));
+      prs.push(notifyWorkers(workers.slice(), message, subject));
       await Promise.all(prs);
-      logger.info(module, "Notification sent to " + users.length + " users");
     }
-
     res.json({});
   } catch (e) {
-    errorHandler(e, "notify users error");
+    errorHandler(e, "Error notifying users");
   }
 };
 
@@ -668,13 +674,12 @@ const startNotification = async (users) => {
     }&workerId=${user.mturkId}${
       user.genNumber ? `&genNumber=${user.genNumber}` : ""
     }${user.batchId ? `&batchId=${user.batchId}` : ""}`;
-    const unsubscribe_message = `You received this because you completed our registration task in the past. If you are no longer interested in participating, please UNSUBSCRIBE here: ${
-      process.env.HIT_URL
-    }unsubscribe/${user.mturkId}`;
     const subject = `Join $${hourlyWage}/hour task`;
     const message = `Hi ${
       user.mturkId
-    } — our task is now active. Your FULL participation will earn you a bonus for your time at $${hourlyWage}/hour. \n\nIf you have time to be part of the task (about 1-2 uninterrupted hours), join here now: ${url} \n\nThe link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM, if enough people join, the task will start. NOTE: You will get a $1 bonus if enough users join the waiting room and the task starts. You will get another bonus if you complete the entire task. \n\nDon't worry if you can't join now — we will let you know next time our task is active.\n\n${unsubscribe_message}`;
+    } — our task is now active. Your FULL participation will earn you a bonus for your time at $${hourlyWage}/hour. \n\nIf you have time to be part of the task (about 1-2 uninterrupted hours), join here now: ${url} \n\nThe link will bring you to click the JOIN BATCH button which will allow you to enter the WAITING ROOM, if enough people join, the task will start. NOTE: You will get a $1 bonus if enough users join the waiting room and the task starts. You will get another bonus if you complete the entire task. \n\nDon't worry if you can't join now — we will let you know next time our task is active.\n\nYou received this because you completed our registration task in the past. If you are no longer interested in participating, please UNSUBSCRIBE here: ${
+      process.env.HIT_URL
+    }unsubscribe/${user.mturkId}`;
     notifyWorkers([user.mturkId], message, subject)
       .then(() => {})
       .catch((e) => {
