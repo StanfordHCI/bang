@@ -368,11 +368,11 @@ export const loadBatchList = async function(req, res) {
     const predicate = remembered
       ? { rememberTeamOrder: true, rounds: { $ne: [] } }
       : {}; // if remembered loads only batches with remembered == true
-    const batchList = await Batch.find(predicate)
-      .sort({ createdAt: -1 })
+    const batchList = (await Batch.find(predicate)
+      // .sort({ createdAt: -1 }) Moved sort out of Mongo because it was hitting a memory cap.
       .select(select)
       .lean()
-      .exec();
+      .exec()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // Sort here instead, after mongo await is done.
     res.json({ batchList: batchList });
   } catch (e) {
     errorHandler(e, "load batches error");
