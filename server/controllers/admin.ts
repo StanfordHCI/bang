@@ -187,7 +187,6 @@ export const addBatch = async function(req, res) {
         // expRound is randomized. It's [numRounds] or [numRounds - 1]
         const min = newBatch.numRounds - 1;
         const roundNumber = Math.floor(Math.random() + 0.5) + min; //random int from min to max
-
         newBatch.expRounds.push(roundNumber);
 
         if (newBatch.reconveneWorstRound) {

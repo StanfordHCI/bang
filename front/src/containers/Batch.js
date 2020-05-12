@@ -929,7 +929,8 @@ class Batch extends React.Component {
     let numTask = batch.currentRound - 1; // standard flow
     if (
       batch.teamFormat === "single" &&
-      batch.bestRoundFunction !== "do not reconvene"
+      batch.bestRoundFunction !== "do not reconvene" &&
+      !batch.randomizeExpRound
     ) {
       if (
         batch.worstRounds &&
