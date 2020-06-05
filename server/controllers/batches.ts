@@ -802,6 +802,9 @@ const roundRun = async (
       // also we do not generate chats and fake nicks
       const bestRoundResult = await bestRound(batch);
       const bestRoundIndex = bestRoundResult.bestRoundIndex;
+
+      console.log(bestRoundResult.expRounds);
+
       if (bestRoundIndex !== undefined) {
         // for setting scores field in DB
         const scores = bestRoundResult.scores;
