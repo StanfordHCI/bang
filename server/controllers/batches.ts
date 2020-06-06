@@ -803,8 +803,6 @@ const roundRun = async (
       const bestRoundResult = await bestRound(batch);
       const bestRoundIndex = bestRoundResult.bestRoundIndex;
 
-      console.log(bestRoundResult.expRounds);
-
       if (bestRoundIndex !== undefined) {
         // for setting scores field in DB
         const scores = bestRoundResult.scores;
