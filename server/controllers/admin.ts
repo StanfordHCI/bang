@@ -185,8 +185,8 @@ export const addBatch = async function(req, res) {
       // single-teamed
       if (newBatch.randomizeExpRound) {
         // expRound is randomized. It's [numRounds] or [numRounds - 1]
-        const min = newBatch.numRounds - 1;
-        const roundNumber = Math.floor(Math.random() + 0.5) + min; //random int from min to max
+        const min = newBatch.numRounds - 1; // if 4 rounds, min is 3
+        const roundNumber = Math.floor(Math.random() + 0.5) + min; //random int from min to max - round number in 4 round batch is either 3 or 4
         newBatch.expRounds.push(roundNumber);
 
         if (newBatch.reconveneWorstRound) {
