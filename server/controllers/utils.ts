@@ -669,12 +669,19 @@ export const bestRound = async (batch) => {
   if (updBatch.randomizeExpRound) {
     excludedRounds.push(updBatch.numRounds - 1);
   }
-  const result = roundFromFunction(bestRoundFunction, {
-    points: points,
-    medianScores: medianScores,
-    currentRound: currentRound,
-    excludedRounds: excludedRounds,
-  });
+
+  // if randomize then always take the 2nd round as the index
+  let result = 1;
+  // else take best round
+  if (!updBatch.randomizeExpRound) {
+    result = roundFromFunction(bestRoundFunction, {
+      points: points,
+      medianScores: medianScores,
+      currentRound: currentRound,
+      excludedRounds: excludedRounds,
+    });
+  }
+
   return {
     bestRoundIndex: result,
     scores: points,
