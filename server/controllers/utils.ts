@@ -485,6 +485,19 @@ export const getBatchTime = (batch) => {
     result = result + batch.roundMinutes;
     if (task.hasPreSurvey) result = result + batch.surveyMinutes;
     if (task.hasMidSurvey) result = result + batch.surveyMinutes;
+    if (batch.cases){
+      for(var i = 0; i < batch.cases.length; i++){
+        for(var j = 0; j < batch.cases.versions.length; j++){
+          result = result + batch.cases[i][j]['time'];
+        }
+      }
+    }
+    if(task.readingPeriods){
+      for(var i = 0; i < task.readingPeriods.length; i++){
+        result = result + task.readingPeriods[i]['time'];
+      }
+    }
+    if(batch.hasPostSurvey) result = result + batch.surveyMinutes;
   });
   return result / 60;
 };
