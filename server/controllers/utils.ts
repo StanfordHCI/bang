@@ -497,8 +497,8 @@ export const getBatchTime = (batch) => {
         result = result + task.readingPeriods[i]['time'];
       }
     }
-    if(batch.hasPostSurvey) result = result + batch.surveyMinutes;
   });
+  if(batch.hasPostSurvey) result = result + batch.surveyMinutes;
   return result / 60;
 };
 
