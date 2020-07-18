@@ -496,11 +496,15 @@ export const getBatchTime = (batch) => {
         console.log(batch.cases[i]);
         console.log("printing batch.cases[i]['versions']");
         console.log(batch.cases[i]['versions']);
-        console.log("printing batch.cases[i]['versions']['parts']");
-        console.log(batch.cases[i]['versions']['parts']);
+        console.log("printing batch.cases[i]['versions'][0]['parts']");
+        console.log(batch.cases[i]['versions'][0]['parts']);
         for(var j = 0; j < batch.cases[i]['versions'].length; j++){
           console.log("inside second for loop");
-          result = result + batch.cases[i]['versions'][j]['time'];
+          for(var k = 0; k < batch.cases[i]['versions'][j]['parts'].length; k++){
+            console.log("time");
+            console.log(batch.cases[i]['versions'][j]['parts'][k]['time']);
+            result = result + batch.cases[i]['versions'][j]['parts'][k]['time'];
+          }         
         }
       }
     }
@@ -515,6 +519,8 @@ export const getBatchTime = (batch) => {
     }
   });
   if(batch.hasPostSurvey) result = result + batch.surveyMinutes;
+  console.log("result:");
+  console.log(result);
   return result / 60;
 };
 
