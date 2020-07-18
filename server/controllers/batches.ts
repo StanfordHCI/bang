@@ -410,6 +410,8 @@ export const receiveSurvey = async function(data, socket, io) {
       JSON.stringify(batch.rounds[batch.currentRound - 1].teams),
       socket.userId.toString()
     );
+    console.log("Attempting to call getBatchTime");
+    console.log(getBatchTime(batch));
     const teammates = batch.rounds[batch.currentRound - 1].teams
       .find((x) =>
         x.users.some((y) => y.user._id.toString() === socket.userId.toString())

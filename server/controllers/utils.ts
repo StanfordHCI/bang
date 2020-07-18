@@ -485,14 +485,22 @@ export const getBatchTime = (batch) => {
     result = result + batch.roundMinutes;
     if (task.hasPreSurvey) result = result + batch.surveyMinutes;
     if (task.hasMidSurvey) result = result + batch.surveyMinutes;
+    console.log("Printing batch cases pre- if case");
+    console.log(batch.cases);
     if (batch.cases){
+      console.log("Printing batch cases inside if...");
+      console.log(batch.cases);
       for(var i = 0; i < batch.cases.length; i++){
         for(var j = 0; j < batch.cases.versions.length; j++){
           result = result + batch.cases[i][j]['time'];
         }
       }
     }
+    console.log("Printing reading periods pre- if case");
+    console.log(task.readingPeriods);
     if(task.readingPeriods){
+      console.log("Printing reading periods inside if...");
+      console.log(task.readingPeriods);
       for(var i = 0; i < task.readingPeriods.length; i++){
         result = result + task.readingPeriods[i]['time'];
       }
@@ -738,6 +746,8 @@ export const calculateMoneyForBatch = (batch) => {
   const teamFormat = batch.teamFormat;
   const batchCapacity =
     teamFormat === "single" ? batch.teamSize : batch.teamSize ** 2;
+  console.log("Attempting to call getBatchTime WHILE INSIDE CALCULATE MONEY");
+  console.log(getBatchTime(batch));
   return batchCapacity * hourlyWage * getBatchTime(batch);
 };
 
