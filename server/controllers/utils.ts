@@ -492,6 +492,10 @@ export const getBatchTime = (batch) => {
       console.log(batch.cases);
       for(var i = 0; i < batch.cases.length; i++){
         console.log("made it inside first for loop");
+        console.log("printing batch.cases[i]");
+        console.log(batch.cases[i]);
+        console.log("printing batch.cases[i]['versions']");
+        console.log(batch.cases[i]['versions']);
         for(var j = 0; j < batch.cases[i]['versions'].length; j++){
           result = result + batch.cases[i][j]['time'];
         }
