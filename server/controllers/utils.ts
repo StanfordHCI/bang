@@ -490,18 +490,14 @@ export const getBatchTime = (batch) => {
         result = result + batch.cases[0]['versions'][0]['parts'][i]['time'];
       }         
     }
-    console.log("Printing reading periods pre- if case");
-    console.log(task.readingPeriods);
     if(task.readingPeriods){
-      console.log("Printing reading periods inside if...");
-      console.log(task.readingPeriods);
       for(var i = 0; i < task.readingPeriods.length; i++){
         result = result + task.readingPeriods[i]['time'];
       }
     }
   });
   if(batch.hasPostSurvey) result = result + batch.surveyMinutes;
-  console.log("result:");
+  console.log("time estimate (minutes):");
   console.log(result);
   return result / 60;
 };
@@ -742,8 +738,6 @@ export const calculateMoneyForBatch = (batch) => {
   const teamFormat = batch.teamFormat;
   const batchCapacity =
     teamFormat === "single" ? batch.teamSize : batch.teamSize ** 2;
-  console.log("Attempting to call getBatchTime WHILE INSIDE CALCULATE MONEY");
-  console.log(getBatchTime(batch));
   return batchCapacity * hourlyWage * getBatchTime(batch);
 };
 
