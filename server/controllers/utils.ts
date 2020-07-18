@@ -485,28 +485,10 @@ export const getBatchTime = (batch) => {
     result = result + batch.roundMinutes;
     if (task.hasPreSurvey) result = result + batch.surveyMinutes;
     if (task.hasMidSurvey) result = result + batch.surveyMinutes;
-    console.log("Printing batch cases pre- if case");
-    console.log(batch.cases);
     if (batch.cases){
-      console.log("Printing batch cases inside if...");
-      console.log(batch.cases);
-      for(var i = 0; i < batch.cases.length; i++){
-        console.log("made it inside first for loop");
-        console.log("printing batch.cases[i]");
-        console.log(batch.cases[i]);
-        console.log("printing batch.cases[i]['versions']");
-        console.log(batch.cases[i]['versions']);
-        console.log("printing batch.cases[i]['versions'][0]['parts']");
-        console.log(batch.cases[i]['versions'][0]['parts']);
-        for(var j = 0; j < batch.cases[i]['versions'].length; j++){
-          console.log("inside second for loop");
-          for(var k = 0; k < batch.cases[i]['versions'][j]['parts'].length; k++){
-            console.log("time");
-            console.log(batch.cases[i]['versions'][j]['parts'][k]['time']);
-            result = result + batch.cases[i]['versions'][j]['parts'][k]['time'];
-          }         
-        }
-      }
+      for(var i = 0; i < batch.cases[0]['versions'][0]['parts'].length; i++){
+        result = result + batch.cases[0]['versions'][0]['parts'][i]['time'];
+      }         
     }
     console.log("Printing reading periods pre- if case");
     console.log(task.readingPeriods);
