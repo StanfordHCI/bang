@@ -130,7 +130,6 @@ let initialChecks = [
 //       .then(() => { })
 //       .catch(err => errorHandler(err, "Test users error"));
 //   }
-// }
 
 // if (process.env.MTURK_MODE === 'off') {
 //   logger.info(module, 'created fake bonuses');
